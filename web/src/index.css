@@ -41,12 +41,12 @@
     @slot;
   }
   /* Portrait tablets are wide enough for side-by-side too. */
-  @media (orientation: portrait) and (min-width: 52rem) {
+  @media (orientation: portrait) and (min-width: 50rem) {
     @slot;
   }
 }
 @custom-variant stacked {
-  @media (max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem)) and ((orientation: landscape) or (max-width: 51.9375rem)) {
+  @media (max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem)) and ((orientation: landscape) or (max-width: 49.9375rem)) {
     @slot;
   }
 }

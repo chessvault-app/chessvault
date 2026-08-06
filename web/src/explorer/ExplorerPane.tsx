@@ -79,7 +79,7 @@ export function ExplorerPane({ className }: { className?: string }) {
                 onChange={(e) => selectBook(e.target.value)}
                 aria-label="Opening book"
                 className={cn(
-                  'bg-surface-2 text-fg border-line h-6 max-w-[8rem] truncate rounded-md border',
+                  'bg-surface-2 text-fg border-line h-6 min-w-0 max-w-[8rem] shrink truncate rounded-md border',
                   'px-1.5 text-xs outline-none',
                 )}
               >

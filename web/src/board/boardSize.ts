@@ -12,7 +12,7 @@ export const BOARD_MAX_W =
   // keeps the board usable on squat windows, where the page then scrolls
   // as a fallback. Side-by-side layouts are height-bound; full desktop
   // additionally caps the board so the side panels keep room.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-21rem)))] wide:max-w-[min(100%,calc(100dvh-10rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
+  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)))] wide:max-w-[min(100%,calc(100dvh-10rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
 
 export const EDITOR_BOARD_MAX_W =
   // The stacked editor has no pane below — just palettes, the toolbar and

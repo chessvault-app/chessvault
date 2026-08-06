@@ -337,21 +337,21 @@ export function EditorView() {
             <Trash2 className="size-3.5" />
           </Button>
           <Button
-            variant={sheetOpen ? 'primary' : 'secondary'}
-            size="sm"
+            variant="ghost"
+            size="icon-sm"
+            active={sheetOpen}
             className="wide:hidden"
             onClick={() => setSheetOpen((v) => !v)}
             title="Position details (side to move, castling, FEN)"
           >
             <Settings2 className="size-3.5" />
-            Position
           </Button>
         </div>
       </div>
 
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
-      <div className="hidden min-h-0 flex-col gap-3 wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="hidden min-h-0 flex-col gap-3 overflow-y-auto wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
         {positionPanels}
       </div>
 
@@ -432,7 +432,7 @@ function PiecePalette({
                   // A board-square backdrop: --board-light is tuned per theme
                   // to keep BOTH piece colours legible, which the page
                   // background is not (black pieces vanish on dark).
-                  'aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
+                  'aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
                   'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
                   active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
                 )}
