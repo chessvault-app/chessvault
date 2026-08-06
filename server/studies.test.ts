@@ -89,4 +89,33 @@ describe('studies api', () => {
     expect((await app.request('/api/studies/Ruy%20Lopez', { method: 'DELETE' })).status).toBe(200);
     expect(existsSync(join(dir, 'Ruy Lopez.pgn'))).toBe(false);
   });
+
+  it('creates studies inside folders and lists them with slash ids', async () => {
+    const res = await app.request('/api/studies', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Openings/Caro-Kann' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(res.status).toBe(200);
+    expect(existsSync(join(dir, 'Openings', 'Caro-Kann.pgn'))).toBe(true);
+
+    const { studies } = await (await app.request('/api/studies')).json();
+    expect(studies.map((s: { id: string }) => s.id)).toContain('Openings/Caro-Kann');
+
+    const got = await app.request('/api/studies/Openings%2FCaro-Kann');
+    expect(got.status).toBe(200);
+    expect((await got.json()).id).toBe('Openings/Caro-Kann');
+
+    // Traversal through folder segments must still be impossible.
+    const evil = await app.request('/api/studies', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Openings/../../evil' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(evil.status).toBe(400);
+
+    expect(
+      (await app.request('/api/studies/Openings%2FCaro-Kann', { method: 'DELETE' })).status,
+    ).toBe(200);
+  });
 });

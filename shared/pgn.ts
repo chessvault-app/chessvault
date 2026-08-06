@@ -37,17 +37,20 @@ function splitComment(raw: string[] | undefined): {
   text?: string;
   shapes: CommentShape[];
   eval?: NodeEval;
+  clock?: number;
 } {
   if (!raw || raw.length === 0) return { shapes: [] };
 
   const texts: string[] = [];
   const shapes: CommentShape[] = [];
   let evaluation: NodeEval | undefined;
+  let clock: number | undefined;
 
   for (const chunk of raw) {
     const parsed = parseComment(chunk);
     if (parsed.text) texts.push(parsed.text);
     shapes.push(...parsed.shapes);
+    if (parsed.clock !== undefined) clock = parsed.clock;
     if (parsed.evaluation) {
       evaluation =
         'pawns' in parsed.evaluation
@@ -60,17 +63,19 @@ function splitComment(raw: string[] | undefined): {
     text: texts.length > 0 ? texts.join('\n') : undefined,
     shapes,
     ...(evaluation ? { eval: evaluation } : {}),
+    ...(clock !== undefined ? { clock } : {}),
   };
 }
 
 /** Rebuild a single chessops comment string from our structured fields. */
 function joinComment(node: MoveNode): string[] {
   const hasEval = node.eval && (node.eval.cp !== undefined || node.eval.mate !== undefined);
-  if (!node.comment && node.shapes.length === 0 && !hasEval) return [];
+  if (!node.comment && node.shapes.length === 0 && !hasEval && node.clock === undefined) return [];
 
   const comment = makeComment({
     text: node.comment ?? '',
     shapes: node.shapes,
+    ...(node.clock !== undefined ? { clock: node.clock } : {}),
     ...(hasEval
       ? {
           evaluation:
@@ -145,7 +150,7 @@ function applyPgnChild(
   const parent = getNode(tree, parentId);
 
   const id = nextParsedId();
-  const { text, shapes, eval: evaluation } = splitComment(child.data.comments);
+  const { text, shapes, eval: evaluation, clock } = splitComment(child.data.comments);
   const starting = splitComment(child.data.startingComments);
 
   const node: MoveNode = {
@@ -161,6 +166,7 @@ function applyPgnChild(
     ...(text ? { comment: text } : {}),
     ...(starting.text ? { startingComment: starting.text } : {}),
     ...(evaluation ? { eval: evaluation } : {}),
+    ...(clock !== undefined ? { clock } : {}),
   };
 
   tree.nodes[id] = node;

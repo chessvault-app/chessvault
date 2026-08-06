@@ -122,11 +122,11 @@ export function ExplorerPane({ className }: { className?: string }) {
           <div className="border-line flex h-8 shrink-0 items-center gap-2 border-b px-3">
             {lineOpening ? (
               <>
-                <span className="text-subtle shrink-0 font-mono text-[0.6875rem] font-semibold">
-                  {lineOpening.eco}
-                </span>
                 <span className="text-fg min-w-0 truncate text-xs font-medium" title={lineOpening.name}>
                   {lineOpening.name}
+                </span>
+                <span className="text-subtle shrink-0 font-mono text-[0.6875rem] font-semibold">
+                  {lineOpening.eco}
                 </span>
               </>
             ) : (

@@ -1,5 +1,6 @@
-import { BookOpen, Download, ExternalLink, Loader2, Swords } from 'lucide-react';
+import { BookOpen, Download, ExternalLink, Loader2, Star, Swords } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -18,6 +19,16 @@ interface GameSummary {
   timeControl: string | null;
   eco: string | null;
   link: string | null;
+  opening: { eco: string; name: string } | null;
+  finalFen: string | null;
+}
+
+const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
+
+interface Preview {
+  fen: string;
+  top: number;
+  left: number;
 }
 
 interface ImportStatus {
@@ -55,6 +66,9 @@ export function GamesView() {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
+  const [starredOnly, setStarredOnly] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null);
 
   const load = useCallback(async (offset = 0): Promise<void> => {
     try {
@@ -69,7 +83,27 @@ export function GamesView() {
 
   useEffect(() => {
     void load();
+    void fetch('/api/games/bookmarks')
+      .then((r) => r.json() as Promise<{ keys: string[] }>)
+      .then((b) => setBookmarks(new Set(b.keys)))
+      .catch(() => {});
   }, [load]);
+
+  const toggleBookmark = async (game: GameSummary): Promise<void> => {
+    const res = await fetch('/api/games/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ file: game.file, index: game.index }),
+    });
+    if (!res.ok) return;
+    const { key, bookmarked } = (await res.json()) as { key: string; bookmarked: boolean };
+    setBookmarks((prev) => {
+      const next = new Set(prev);
+      if (bookmarked) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  };
 
   const openInAnalysis = async (game: GameSummary): Promise<void> => {
     setBusy(`${game.file}#${game.index}`);
@@ -94,7 +128,8 @@ export function GamesView() {
         `/api/games/pgn?file=${encodeURIComponent(game.file)}&index=${game.index}`,
       );
       const { pgn } = (await res.json()) as { pgn: string };
-      const name = `${game.white} vs ${game.black} ${game.date.replaceAll('.', '-')}`;
+      // Studies made from games get filed together in a Games collection.
+      const name = `Games/${game.white} vs ${game.black} ${game.date.replaceAll('.', '-')}`;
       const created = await fetch('/api/studies', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -119,26 +154,40 @@ export function GamesView() {
   };
 
   const needle = query.trim().toLowerCase();
-  const visible = needle
-    ? games.filter((g) =>
-        `${g.white} ${g.black} ${g.eco ?? ''} ${g.date}`.toLowerCase().includes(needle),
-      )
-    : games;
+  const visible = games.filter((g) => {
+    if (starredOnly && !bookmarks.has(gameKey(g))) return false;
+    if (!needle) return true;
+    return `${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
+      .toLowerCase()
+      .includes(needle);
+  });
+  const filtered = starredOnly || needle.length > 0;
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Games</h1>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Filter by player, ECO, date…"
-          className={cn(
-            'bg-surface border-line text-fg h-8 w-56 rounded-md border px-2.5 text-sm',
-            'outline-none focus:border-line-strong',
-          )}
-        />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            active={starredOnly}
+            title={starredOnly ? 'Show all games' : 'Show bookmarked games only'}
+            onClick={() => setStarredOnly((v) => !v)}
+          >
+            <Star className={cn('size-3.5', starredOnly && 'fill-current')} />
+          </Button>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Filter by player, opening, date…"
+            className={cn(
+              'bg-surface border-line text-fg h-8 w-56 rounded-md border px-2.5 text-sm',
+              'outline-none focus:border-line-strong',
+            )}
+          />
+        </div>
       </header>
 
       <ImportPanel onImported={() => void load()} />
@@ -157,20 +206,23 @@ export function GamesView() {
       ) : (
         <Panel flush>
           <PanelHeader
-            title={`${total.toLocaleString()} games${needle ? ` · ${visible.length} shown` : ''}`}
+            title={`${total.toLocaleString()} games${filtered ? ` · ${visible.length} shown` : ''}`}
           />
           <ul className="divide-line min-h-0 divide-y overflow-y-auto">
             {visible.map((game) => (
               <GameRow
-                key={`${game.file}#${game.index}`}
+                key={gameKey(game)}
                 game={game}
-                busy={busy === `${game.file}#${game.index}`}
+                busy={busy === gameKey(game)}
+                bookmarked={bookmarks.has(gameKey(game))}
                 onOpen={() => void openInAnalysis(game)}
                 onStudy={() => void saveAsStudy(game)}
+                onBookmark={() => void toggleBookmark(game)}
+                onPreview={setPreview}
               />
             ))}
           </ul>
-          {games.length < total && !needle && (
+          {games.length < total && !filtered && (
             <div className="border-line flex justify-center border-t p-2">
               <Button variant="ghost" size="sm" onClick={() => void load(games.length)}>
                 Load more ({(total - games.length).toLocaleString()} left)
@@ -178,6 +230,18 @@ export function GamesView() {
             </div>
           )}
         </Panel>
+      )}
+
+      {preview && (
+        <div
+          style={{ top: preview.top, left: preview.left }}
+          className={cn(
+            'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
+            'shadow-[var(--shadow-pop)]',
+          )}
+        >
+          <Board fen={preview.fen} viewOnly coordinates={false} className="rounded" />
+        </div>
       )}
     </div>
   );
@@ -279,17 +343,48 @@ function ImportPanel({ onImported }: { onImported: () => void }) {
 function GameRow({
   game,
   busy,
+  bookmarked,
   onOpen,
   onStudy,
+  onBookmark,
+  onPreview,
 }: {
   game: GameSummary;
   busy: boolean;
+  bookmarked: boolean;
   onOpen: () => void;
   onStudy: () => void;
+  onBookmark: () => void;
+  onPreview: (preview: Preview | null) => void;
 }) {
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showPreview = (e: React.MouseEvent<HTMLLIElement>): void => {
+    if (!game.finalFen) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fen = game.finalFen;
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    hoverTimer.current = setTimeout(() => {
+      // 176px board + padding, clamped into the viewport.
+      const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
+      onPreview({ fen, top, left: Math.max(rect.right - 236, 8) });
+    }, 250);
+  };
+
+  const hidePreview = (): void => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    onPreview(null);
+  };
+
+  const openingLabel = game.opening
+    ? `${game.opening.name} · ${game.opening.eco}`
+    : (game.eco ?? '');
+
   return (
     <li
       onClick={onOpen}
+      onMouseEnter={showPreview}
+      onMouseLeave={hidePreview}
       className="group hover:bg-surface-2 flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors duration-100"
     >
       <ResultDot result={game.result} />
@@ -301,13 +396,25 @@ function GameRow({
           <span className="font-medium">{game.black}</span>
           {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
         </p>
-        <p className="text-subtle text-xs">
+        <p className="text-subtle truncate text-xs" title={openingLabel}>
           {game.date}
-          {game.eco ? ` · ${game.eco}` : ''}
+          {openingLabel ? ` · ${openingLabel}` : ''}
           {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
         </p>
       </div>
       <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">{game.result}</span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={bookmarked ? 'Remove bookmark' : 'Bookmark this game'}
+        className={cn('shrink-0', !bookmarked && 'opacity-0 transition-opacity group-hover:opacity-100')}
+        onClick={(e) => {
+          e.stopPropagation();
+          onBookmark();
+        }}
+      >
+        <Star className={cn('size-3.5', bookmarked && 'fill-warn text-warn')} />
+      </Button>
       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         {busy && <Loader2 className="text-subtle size-3.5 animate-spin" />}
         <Button

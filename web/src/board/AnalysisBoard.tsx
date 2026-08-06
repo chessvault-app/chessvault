@@ -8,7 +8,8 @@ import {
 import { useEffect, useMemo } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
-import { getNode } from '@shared/tree';
+import { getNode, pathTo } from '@shared/tree';
+import { cn } from '@/lib/cn';
 import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
@@ -65,32 +66,96 @@ export function AnalysisBoard() {
       {/* Bounded by height so the board never pushes the controls off-screen,
           and by an absolute cap so it stops stealing room from the side panes
           on a wide display. */}
-      <div className="flex w-full max-w-[min(100%,calc(100dvh-11rem))] items-stretch gap-2 lg:max-w-[min(100%,calc(100dvh-8rem),40rem)]">
-        {engineOn && <EvalBar score={evalScore} className="shrink-0" />}
-        <div className="relative min-w-0 flex-1">
-          <Board
-            fen={node.fen}
-            orientation={orientation}
-            dests={dests}
-            lastMove={lastMove}
-            check={isCheck}
-            shapes={toDrawShapes(node.shapes)}
-            autoShapes={engineArrow}
-            onMove={playMove}
-            onShapesChange={(next) => setShapes(cursorId, fromDrawShapes(next))}
-          />
-          {pendingPromotion && (
-            <PromotionPicker
-              color={pendingPromotion.color}
-              dest={pendingPromotion.dest}
+      <div className="flex w-full max-w-[min(100%,calc(100dvh-11rem))] flex-col gap-1.5 lg:max-w-[min(100%,calc(100dvh-8rem),40rem)]">
+        <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
+        <div className="flex w-full items-stretch gap-2">
+          {engineOn && <EvalBar score={evalScore} className="shrink-0" />}
+          <div className="relative min-w-0 flex-1">
+            <Board
+              fen={node.fen}
               orientation={orientation}
-              onSelect={completePromotion}
-              onCancel={cancelPromotion}
+              dests={dests}
+              lastMove={lastMove}
+              check={isCheck}
+              shapes={toDrawShapes(node.shapes)}
+              autoShapes={engineArrow}
+              onMove={playMove}
+              onShapesChange={(next) => setShapes(cursorId, fromDrawShapes(next))}
             />
-          )}
+            {pendingPromotion && (
+              <PromotionPicker
+                color={pendingPromotion.color}
+                dest={pendingPromotion.dest}
+                orientation={orientation}
+                onSelect={completePromotion}
+                onCancel={cancelPromotion}
+              />
+            )}
+          </div>
         </div>
+        <PlayerBar side={orientation} />
       </div>
       <BoardControls />
+    </div>
+  );
+}
+
+/** "0:09:58.1" style seconds → "9:58"; hours only when they exist. */
+function formatClock(seconds: number): string {
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h > 0
+    ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/**
+ * Name plate for one side of a loaded game: player, rating, and the clock as
+ * it stood at the current move (from the [%clk] comments chess.com and
+ * lichess write). Renders nothing for scratch analysis.
+ */
+function PlayerBar({ side }: { side: 'white' | 'black' }) {
+  const headers = useAnalysis((s) => s.gameHeaders);
+  const tree = useAnalysis((s) => s.tree);
+  const cursorId = useAnalysis((s) => s.cursorId);
+  if (!headers) return null;
+
+  const name = headers[side === 'white' ? 'White' : 'Black'] ?? '?';
+  const elo = headers[side === 'white' ? 'WhiteElo' : 'BlackElo'];
+
+  // The side's clock after its most recent move at or before the cursor.
+  let clock: number | undefined;
+  for (const id of pathTo(tree, cursorId)) {
+    const n = getNode(tree, id);
+    // Odd plies are White's moves.
+    if (n.clock !== undefined && (n.ply % 2 === 1) === (side === 'white')) clock = n.clock;
+  }
+
+  const turn = getNode(tree, cursorId).fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  const toMove = turn === side;
+
+  return (
+    <div className="flex h-6 items-center gap-2 px-0.5">
+      <span
+        className={cn(
+          'size-2.5 shrink-0 rounded-[3px] border',
+          side === 'white' ? 'bg-eval-white border-line-strong' : 'bg-eval-black border-line',
+        )}
+      />
+      <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>
+      {elo && <span className="text-subtle text-xs">{elo}</span>}
+      {clock !== undefined && (
+        <span
+          className={cn(
+            'ml-auto rounded px-1.5 py-0.5 font-mono text-xs tabular-nums',
+            toMove ? 'bg-primary-soft text-primary font-semibold' : 'text-muted',
+          )}
+        >
+          {formatClock(clock)}
+        </span>
+      )}
     </div>
   );
 }

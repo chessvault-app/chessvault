@@ -55,11 +55,15 @@ const AUTOSAVE_MS = 1500;
 
 function loadIntoAnalysis(chapter: Chapter): void {
   loadingChapter = true;
+  // Chapters made from imported games carry players — show their name plates.
+  const hasPlayers =
+    (chapter.headers['White'] ?? '?') !== '?' || (chapter.headers['Black'] ?? '?') !== '?';
   useAnalysis.setState({
     tree: chapter.tree,
     cursorId: chapter.tree.rootId,
     pendingPromotion: null,
     loadError: null,
+    gameHeaders: hasPlayers ? chapter.headers : null,
   });
   loadingChapter = false;
 }

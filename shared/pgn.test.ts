@@ -180,4 +180,21 @@ describe('PGN codec round-trip', () => {
       .filter(Boolean);
     expect(sans).toEqual(['e4', 'e5']);
   });
+
+  it('round-trips %clk clocks losslessly (chess.com imports carry them)', () => {
+    const pgn = '1. e4 {[%clk 0:09:58.1]} e5 {[%clk 0:09:55] good} 2. Nf3 *';
+    const tree = gameToTree(parsePgn(pgn)[0]!);
+    const ids = collectSubtree(tree, tree.rootId);
+    const e4 = getNode(tree, ids[1]!);
+    const e5 = getNode(tree, ids[2]!);
+    expect(e4.clock).toBeCloseTo(598.1);
+    expect(e5.clock).toBe(595);
+    expect(e5.comment).toBe('good');
+
+    const out = treeToPgn(tree, {});
+    expect(out).toContain('[%clk 0:09:58.1]');
+    expect(out).toContain('[%clk 0:09:55]');
+    // Idempotence: a second round-trip must not drift.
+    expect(treeToPgn(gameToTree(parsePgn(out)[0]!), {})).toBe(out);
+  });
 });

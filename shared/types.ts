@@ -42,6 +42,8 @@ export interface MoveNode {
   shapes: CommentShape[];
   /** Evaluation stored in the file as `[%eval]`, or filled in by the engine. */
   eval?: NodeEval;
+  /** Seconds left on the mover's clock, round-tripped as `[%clk]`. */
+  clock?: number;
 }
 
 export type NodeId = string;

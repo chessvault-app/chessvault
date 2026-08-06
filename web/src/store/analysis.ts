@@ -20,7 +20,7 @@ import {
   updateNode,
 } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
-import type { CommentShape, MoveNode, MoveTree, NodeEval, NodeId } from '@shared/types';
+import type { CommentShape, Headers, MoveNode, MoveTree, NodeEval, NodeId } from '@shared/types';
 
 /** A move awaiting the user's choice of promotion piece. */
 export interface PendingPromotion {
@@ -36,6 +36,11 @@ interface AnalysisState {
   pendingPromotion: PendingPromotion | null;
   /** Set when a load fails, so the UI can explain rather than silently no-op. */
   loadError: string | null;
+  /**
+   * Headers of the loaded game (players, ratings, …), kept so the board can
+   * show name plates. Null for scratch analysis / FEN loads.
+   */
+  gameHeaders: Headers | null;
 
   // -- derived helpers (recomputed on read; the tree is small) --
   current: () => MoveNode;
@@ -89,6 +94,7 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
     orientation: 'white',
     pendingPromotion: null,
     loadError: null,
+    gameHeaders: null,
 
     current: () => getNode(get().tree, get().cursorId),
     dests: () => legalDests(get().tree, get().cursorId),
@@ -205,7 +211,7 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
 
     reset: (fen = INITIAL_FEN) => {
       const tree = createTree(fen);
-      set({ tree, cursorId: tree.rootId, pendingPromotion: null, loadError: null });
+      set({ tree, cursorId: tree.rootId, pendingPromotion: null, loadError: null, gameHeaders: null });
     },
 
     loadFen: (fen) => {
@@ -215,7 +221,7 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
         // than throwing later from inside a render.
         const tree = createTree(trimmed);
         positionAt(tree, tree.rootId);
-        set({ tree, cursorId: tree.rootId, pendingPromotion: null, loadError: null });
+        set({ tree, cursorId: tree.rootId, pendingPromotion: null, loadError: null, gameHeaders: null });
         return true;
       } catch (error) {
         set({ loadError: `Invalid FEN: ${(error as Error).message}` });
@@ -231,11 +237,15 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
           set({ loadError: 'No games found in that PGN.' });
           return false;
         }
+        // Name plates only make sense for a real game, not pasted analysis.
+        const hasPlayers =
+          (first.headers['White'] ?? '?') !== '?' || (first.headers['Black'] ?? '?') !== '?';
         set({
           tree: first.tree,
           cursorId: first.tree.rootId,
           pendingPromotion: null,
           loadError: null,
+          gameHeaders: hasPlayers ? first.headers : null,
         });
         return true;
       } catch (error) {

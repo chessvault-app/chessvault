@@ -1,4 +1,4 @@
-import { Library, Plus, Trash2 } from 'lucide-react';
+import { Folder as FolderIcon, Library, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -49,7 +49,7 @@ function StudyList() {
             onKeyDown={(e) => {
               if (e.key === 'Enter') void submit();
             }}
-            placeholder="New study name"
+            placeholder="New study, or Folder/Name"
             className={cn(
               'bg-surface border-line text-fg h-8 w-48 rounded-md border px-2.5 text-sm',
               'outline-none focus:border-line-strong',
@@ -70,15 +70,45 @@ function StudyList() {
           <p className="text-muted max-w-sm text-sm leading-relaxed">
             No studies yet. A study is a set of annotated chapters — lines, comments, arrows —
             saved as plain PGN in <code className="font-mono text-xs">vault/studies/</code>.
+            Name one “Folder/Study” to file it in a collection.
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {studies.map((study) => (
-            <StudyCard key={study.id} study={study} />
-          ))}
-        </ul>
+        <GroupedStudies studies={studies} />
       )}
+    </div>
+  );
+}
+
+/** Studies grouped by folder; folders are just subdirectories in the vault. */
+function GroupedStudies({ studies }: { studies: StudyMeta[] }) {
+  const groups = new Map<string, StudyMeta[]>();
+  for (const study of studies) {
+    const slash = study.id.lastIndexOf('/');
+    const folder = slash === -1 ? '' : study.id.slice(0, slash);
+    const list = groups.get(folder);
+    if (list) list.push(study);
+    else groups.set(folder, [study]);
+  }
+  const folders = [...groups.keys()].sort((a, b) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)));
+
+  return (
+    <div className="flex flex-col gap-4">
+      {folders.map((folder) => (
+        <section key={folder || '(root)'} className="flex flex-col gap-2">
+          {folder && (
+            <h2 className="text-subtle flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]">
+              <FolderIcon className="size-3.5" />
+              {folder}
+            </h2>
+          )}
+          <ul className="flex flex-col gap-2">
+            {groups.get(folder)!.map((study) => (
+              <StudyCard key={study.id} study={study} />
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }
@@ -102,7 +132,9 @@ function StudyCard({ study }: { study: StudyMeta }) {
         )}
       >
         <div className="min-w-0 flex-1">
-          <p className="text-fg truncate text-sm font-semibold">{study.id}</p>
+          <p className="text-fg truncate text-sm font-semibold">
+            {study.id.split('/').at(-1)}
+          </p>
           <p className="text-subtle text-xs">
             {study.chapters} chapter{study.chapters === 1 ? '' : 's'} ·{' '}
             {new Date(study.updatedAt).toLocaleString()}
@@ -117,7 +149,7 @@ function StudyCard({ study }: { study: StudyMeta }) {
               void remove(study.id);
             }}
           >
-            Delete “{study.id}”?
+            Delete “{study.id.split('/').at(-1)}”?
           </Button>
         ) : (
           <Button

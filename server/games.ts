@@ -1,7 +1,12 @@
 import { Hono } from 'hono';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
+import { Chess } from 'chessops/chess';
+import { makeFen } from 'chessops/fen';
 import { PgnParser, makePgn, type Game, type PgnNodeData } from 'chessops/pgn';
+import { parseSan } from 'chessops/san';
+import { hashSetup } from '../shared/zobrist.ts';
+import { openingForKey, type Opening } from './openings.ts';
 import { VAULT_GAMES } from './paths.ts';
 
 /**
@@ -92,6 +97,35 @@ export interface GameSummary {
   timeControl: string | null;
   eco: string | null;
   link: string | null;
+  /** Deepest named position on the mainline, from the offline openings db. */
+  opening: Opening | null;
+  /** Position after the last mainline move — for hover previews. */
+  finalFen: string | null;
+}
+
+/**
+ * Replay the mainline once to get the final position and the deepest opening
+ * name. Skips non-standard games; tolerates broken SAN by stopping there.
+ */
+function replaySummary(game: Game<PgnNodeData>): { opening: Opening | null; finalFen: string | null } {
+  const variant = (game.headers.get('Variant') ?? 'standard').toLowerCase();
+  if (!['standard', 'chess', 'classical', 'normal'].includes(variant) || game.headers.has('FEN')) {
+    return { opening: null, finalFen: null };
+  }
+  const pos = Chess.default();
+  let opening: Opening | null = null;
+  let ply = 0;
+  for (const data of game.moves.mainline()) {
+    const move = parseSan(pos, data.san);
+    if (!move) break;
+    pos.play(move);
+    ply += 1;
+    if (ply <= 40) {
+      const named = openingForKey(hashSetup(pos.toSetup()).toString(16));
+      if (named) opening = named;
+    }
+  }
+  return { opening, finalFen: makeFen(pos.toSetup()) };
 }
 
 const listCache = new Map<string, { mtimeMs: number; games: GameSummary[] }>();
@@ -118,6 +152,7 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
       timeControl: h('TimeControl') ?? null,
       eco: h('ECO') ?? null,
       link: h('Link') ?? (h('Site')?.startsWith('http') ? h('Site')! : null),
+      ...replaySummary(game),
     });
   });
   parser.parse(readFileSync(path, 'utf-8'));
@@ -136,6 +171,28 @@ function walkPgnFiles(root: string): string[] {
 function safeResolve(dir: string, rel: string): string | null {
   const abs = resolve(dir, rel);
   return abs.startsWith(dir + sep) && abs.endsWith('.pgn') ? abs : null;
+}
+
+// ---------------------------------------------------------------------------
+// Bookmarks: starred games, stored as a plain JSON file in the vault so they
+// are versioned and survive re-imports (month files are append-only, so a
+// `file#index` key stays stable).
+
+function bookmarksPath(dir: string): string {
+  return resolve(dir, 'bookmarks.json');
+}
+
+function readBookmarks(dir: string): Set<string> {
+  try {
+    const parsed = JSON.parse(readFileSync(bookmarksPath(dir), 'utf-8')) as { keys?: string[] };
+    return new Set(parsed.keys ?? []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeBookmarks(dir: string, keys: Set<string>): void {
+  writeFileSync(bookmarksPath(dir), `${JSON.stringify({ keys: [...keys].sort() }, null, 2)}\n`);
 }
 
 export function gamesApi(dir: string = VAULT_GAMES): Hono {
@@ -174,6 +231,23 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       .flatMap((path) => parseFileSummaries(dir, path))
       .sort((a, b) => b.date.localeCompare(a.date) || b.index - a.index);
     return c.json({ total: all.length, games: all.slice(offset, offset + limit) });
+  });
+
+  api.get('/games/bookmarks', (c) => c.json({ keys: [...readBookmarks(dir)] }));
+
+  api.post('/games/bookmarks/toggle', async (c) => {
+    const body = await c.req.json<{ file?: string; index?: number }>().catch(() => null);
+    if (!body?.file || !Number.isInteger(body.index) || body.index! < 0) {
+      return c.json({ error: 'need file and index' }, 400);
+    }
+    if (!safeResolve(dir, body.file)) return c.json({ error: 'invalid file' }, 400);
+    const key = `${body.file}#${body.index}`;
+    const keys = readBookmarks(dir);
+    const bookmarked = !keys.has(key);
+    if (bookmarked) keys.add(key);
+    else keys.delete(key);
+    writeBookmarks(dir, keys);
+    return c.json({ key, bookmarked });
   });
 
   api.get('/games/pgn', (c) => {
