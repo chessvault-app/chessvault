@@ -282,7 +282,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
         </button>
       )}
       {!renaming && (
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100">
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -384,7 +384,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             Delete “{name}”?
           </Button>
         ) : (
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
             <Button
               variant="ghost"
               size="icon-sm"

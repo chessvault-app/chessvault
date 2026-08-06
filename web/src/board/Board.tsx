@@ -84,6 +84,8 @@ export function Board({
       addDimensionsCssVarsTo: host.current,
       animation: { enabled: true, duration: 180 },
       highlight: { lastMove: true, check: true },
+      // Touch: dragging a piece must never scroll the page under the board.
+      blockTouchScroll: true,
       movable: {
         free,
         showDests: !free,

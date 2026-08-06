@@ -201,7 +201,7 @@ function CollectionView() {
                       className={cn(
                         'shrink-0',
                         !bookmarks.has(gameKey(game)) &&
-                          'opacity-0 transition-opacity group-hover:opacity-100',
+                          'opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100',
                       )}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -263,7 +263,7 @@ function TwoStepDelete({ onConfirm }: { onConfirm: () => void }) {
       variant="ghost"
       size="icon-sm"
       title="Remove from the collection"
-      className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+      className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
       onClick={(e) => {
         e.stopPropagation();
         setConfirming(true);
@@ -495,9 +495,12 @@ function GameRow({
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // The preview triggers from the row's text area only — hovering the action
-  // buttons (star, delete, add) must not pop a board over them.
+  // buttons (star, delete, add) must not pop a board over them. Touch devices
+  // have no hover; there a tap would fire mouseenter right before the click
+  // and flash a board over the row, so previews are desktop-only.
   const showPreview = (e: React.MouseEvent<HTMLElement>): void => {
     if (!game.finalFen) return;
+    if (window.matchMedia('(pointer: coarse)').matches) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const fen = game.finalFen;
     const orientation = game.userSide ?? 'white';
@@ -559,7 +562,7 @@ function GameRow({
           rel="noreferrer"
           title="View on chess.com (needs internet)"
           onClick={(e) => e.stopPropagation()}
-          className="text-subtle hover:text-fg shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100"
+          className="text-subtle hover:text-fg shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
         >
           <ExternalLink className="size-3.5" />
         </a>

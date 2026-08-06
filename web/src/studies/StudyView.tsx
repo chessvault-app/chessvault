@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, CircleAlert, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, CircleAlert, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { EnginePane } from '@/engine/EnginePane';
@@ -218,16 +218,31 @@ function ChaptersPanel() {
                 <span className="truncate">{chapter.name}</span>
               </button>
             )}
-            {chapters.length > 1 && renaming !== index && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="opacity-0 group-hover:opacity-100"
-                title="Delete this chapter"
-                onClick={() => deleteChapter(index)}
-              >
-                <Trash2 className="size-3" />
-              </Button>
+            {renaming !== index && (
+              <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+                {/* Touch has no double-click, so rename gets a real button. */}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Rename this chapter"
+                  onClick={() => {
+                    setDraft(chapter.name);
+                    setRenaming(index);
+                  }}
+                >
+                  <Pencil className="size-3" />
+                </Button>
+                {chapters.length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Delete this chapter"
+                    onClick={() => deleteChapter(index)}
+                  >
+                    <Trash2 className="size-3" />
+                  </Button>
+                )}
+              </div>
             )}
           </li>
         ))}

@@ -28,6 +28,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Listen on the LAN so the app can be used from a phone on the same
+    // network. Note: over plain http a non-localhost origin is not a secure
+    // context, so SharedArrayBuffer is unavailable there and the engine
+    // falls back to its single-threaded build — expected on mobile for now.
+    host: true,
     headers: crossOriginIsolation,
     proxy: {
       '/api': {

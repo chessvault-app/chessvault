@@ -3,6 +3,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { existsSync } from 'node:fs';
+import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
@@ -54,6 +55,11 @@ if (existsSync(dist)) {
 serve({ fetch: app.fetch, port: PORT }, (info) => {
   console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
   console.log(`  cross-origin isolation: on (Stockfish threads enabled)`);
+  // Phones on the same network reach the app through Vite's LAN address.
+  const lan = Object.values(networkInterfaces())
+    .flat()
+    .find((iface) => iface && iface.family === 'IPv4' && !iface.internal);
+  if (lan) console.log(`  on your phone:      http://${lan.address}:5173`);
 });
 
 export { app };
