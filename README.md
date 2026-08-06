@@ -14,8 +14,8 @@ npm run dev          # http://localhost:5173
 | 1 | Analysis board — Stockfish 18, move tree, variations, FEN/PGN loading | ✅ done |
 | 1 | Board editor | ✅ done |
 | 2 | Local opening book + explorer + book manager + Lichess proxy | ✅ done |
-| 3 | Studies (board-as-main) | ⬜ next |
-| 4 | Notes (markdown with embedded boards) | ⬜ |
+| 3 | Studies — chapters, per-move comments, NAGs, arrows, autosave | ✅ done |
+| 4 | Notes (markdown with embedded boards) | ⬜ next |
 | 5 | Games explorer | ⬜ |
 | 6 | Puzzle trainer | ⬜ |
 
@@ -42,6 +42,10 @@ vault/      YOUR DATA — plain files, git-friendly
 Studies are stored as ordinary PGN, using Lichess's own annotation syntax — arrows as `[%cal]`, circles as `[%csl]`, evaluations as `[%eval]`. Nothing is lost, and the files stay readable in any editor.
 
 That means **saving a study is a codec round-trip**, so `shared/pgn.test.ts` asserts the round-trip is lossless *and* idempotent. A lossy codec would quietly erode annotations a little on every edit — the worst failure mode for a vault, because you'd only notice months later.
+
+## Studies
+
+A study is a set of chapters — each an annotated game tree with variations, per-move comments, `!`/`?` NAGs and drawn arrows/circles. Everything autosaves ~1.5 s after an edit (with a visible saved/unsaved indicator), writes are atomic, and the engine's analysis is never written into the study: only your own moves and annotations are. Files live in `vault/studies/<name>.pgn` and are git-friendly plain text.
 
 ## Engine
 

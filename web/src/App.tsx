@@ -11,6 +11,7 @@ import { navigate, useRoute, type Section } from '@/lib/router';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { AnalysisView } from '@/analysis/AnalysisView';
 import { EditorView } from '@/editor/EditorView';
+import { StudiesView } from '@/studies/StudiesView';
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'analysis', label: 'Analysis', icon: Swords },
@@ -22,7 +23,7 @@ const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
 ];
 
 export function App() {
-  const { section } = useRoute();
+  const { section, params } = useRoute();
 
   return (
     <div className="bg-app text-fg flex h-[100dvh] flex-col overflow-hidden md:flex-row">
@@ -33,6 +34,8 @@ export function App() {
           <AnalysisView />
         ) : section === 'editor' ? (
           <EditorView />
+        ) : section === 'studies' ? (
+          <StudiesView params={params} />
         ) : (
           <Placeholder section={section} />
         )}

@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 
 /** Glyphs for the NAGs a study realistically uses. */
-const NAG_GLYPH: Record<number, string> = {
+export const NAG_GLYPH: Record<number, string> = {
   1: '!',
   2: '?',
   3: '‼',
