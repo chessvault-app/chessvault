@@ -95,7 +95,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           >
             <ArrowLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">{id}</h1>
+          <TitleEditor id={id} backSection={backSection} />
           <SaveIndicator state={saveState} error={error} />
         </div>
 
@@ -111,6 +111,81 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <ExplorerPane className="max-h-72 shrink-0 lg:max-h-[35%]" />
       </div>
     </div>
+  );
+}
+
+/**
+ * The document title, renameable in place (pencil, or double-click). Renames
+ * keep the collection: only the last path segment is edited.
+ */
+function TitleEditor({
+  id,
+  backSection,
+}: {
+  id: string;
+  backSection: 'studies' | 'games';
+}) {
+  const renameOpen = useStudy((s) => s.renameOpen);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const name = id.split('/').at(-1)!;
+  const folder = id.includes('/') ? id.slice(0, id.lastIndexOf('/')) : '';
+
+  const submit = async (): Promise<void> => {
+    setEditing(false);
+    if (!draft.trim() || draft.trim() === name) return;
+    const result = await renameOpen(draft);
+    setFailure(result.error ?? null);
+    if (result.id && result.id !== id) navigate(backSection, encodeURIComponent(result.id));
+  };
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => void submit()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          if (e.key === 'Escape') setEditing(false);
+        }}
+        className={cn(
+          'bg-surface-inset border-line text-fg h-7 min-w-0 flex-1 rounded-md border px-2',
+          'text-sm font-semibold outline-none focus:border-line-strong',
+        )}
+      />
+    );
+  }
+
+  return (
+    <>
+      <h1
+        onDoubleClick={() => {
+          setDraft(name);
+          setEditing(true);
+        }}
+        title={failure ?? id}
+        className={cn('min-w-0 flex-1 truncate text-sm font-semibold', failure ? 'text-bad' : 'text-fg')}
+      >
+        {folder && <span className="text-subtle">{folder} / </span>}
+        {name}
+        {failure ? ` — ${failure}` : ''}
+      </h1>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title="Rename"
+        onClick={() => {
+          setDraft(name);
+          setEditing(true);
+        }}
+      >
+        <Pencil className="size-3.5" />
+      </Button>
+    </>
   );
 }
 

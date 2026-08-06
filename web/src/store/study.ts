@@ -37,6 +37,12 @@ interface StudyState {
   createFolder: (name: string) => Promise<string | null>;
   /** Rename and move are one operation — the id is the path. */
   move: (from: string, to: string) => Promise<string | null>;
+  /**
+   * Rename the OPEN document (study or collection game) in place, keeping its
+   * collection. Saves first, so the move never races the autosave. Returns
+   * the new id on success (caller updates the URL), or an error message.
+   */
+  renameOpen: (newName: string) => Promise<{ id?: string; error?: string }>;
   moveFolder: (from: string, to: string) => Promise<string | null>;
   removeFolder: (name: string) => Promise<string | null>;
   remove: (id: string) => Promise<string | null>;
@@ -139,6 +145,28 @@ export const useStudy = create<StudyState>()((set, get) => {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       await get().refresh();
       return res.ok ? null : (body?.error ?? 'could not move the study');
+    },
+
+    renameOpen: async (newName) => {
+      const { openId, openBase } = get();
+      const trimmed = newName.trim();
+      if (!openId) return { error: 'nothing is open' };
+      if (!trimmed) return { error: 'name cannot be empty' };
+      const folder = openId.includes('/') ? openId.slice(0, openId.lastIndexOf('/')) : '';
+      const to = folder ? `${folder}/${trimmed}` : trimmed;
+      if (to === openId) return { id: openId };
+
+      if (saveTimer) clearTimeout(saveTimer);
+      await get().save();
+      const res = await fetch(`/api/${openBase}/move`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ from: openId, to }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) return { error: body?.error ?? 'could not rename' };
+      set({ openId: to });
+      return { id: to };
     },
 
     moveFolder: async (from, to) => {

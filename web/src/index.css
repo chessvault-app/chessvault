@@ -340,6 +340,12 @@ cg-board square.check {
   font-weight: 700;
 }
 
+/* chessground ships `bottom: -4px`, hanging the file letters half outside the
+   board's bottom edge. Keep them fully inside the last rank. */
+.cg-wrap coords.files {
+  bottom: 2px;
+}
+
 .orientation-white .ranks :nth-child(odd),
 .orientation-white .files :nth-child(even),
 .orientation-black .ranks :nth-child(even),
