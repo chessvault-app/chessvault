@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  Settings2,
   ArrowRight,
   CheckCircle2,
   Eraser,
@@ -49,6 +50,7 @@ export function EditorView() {
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
   const [fenInput, setFenInput] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [fenError, setFenError] = useState<string | null>(null);
 
   const fen = useMemo(() => toFen(state), [state]);
@@ -103,101 +105,8 @@ export function EditorView() {
     navigate('analysis');
   };
 
-  return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:gap-4 lg:overflow-hidden lg:p-4">
-      {/* Board + palette. One combined palette row keeps the vertical chrome
-          small, which is what lets every view share a large board budget.
-          Top-anchored like AnalysisBoard: same board y in every view. */}
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-start">
-        {/* Desktop: one fixed-height combined row above the board (board
-            alignment across views). Phones: the opponent's pieces above the
-            board and the player's below, lichess-editor style. */}
-        <div className={cn('flex w-full items-end justify-center lg:h-10', BOARD_MAX_W)}>
-          <div className="hidden w-full lg:block">
-            <PiecePalette
-              colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
-              tool={tool}
-              onPick={setTool}
-            />
-          </div>
-          <div className="w-full lg:hidden">
-            <PiecePalette
-              colors={[orientation === 'white' ? 'black' : 'white']}
-              tool={tool}
-              onPick={setTool}
-            />
-          </div>
-        </div>
-
-        <div className={cn('w-full', BOARD_MAX_W)}>
-          <Board
-            fen={fen}
-            orientation={orientation}
-            // Dragging is only enabled in move mode, so a drag can never race
-            // with the tool being applied on mousedown.
-            free={tool.kind === 'move'}
-            onSelect={applyTool}
-            onMove={movePiece}
-          />
-        </div>
-
-        <div className={cn('w-full lg:hidden', BOARD_MAX_W)}>
-          <PiecePalette
-            colors={[orientation === 'white' ? 'white' : 'black']}
-            tool={tool}
-            onPick={setTool}
-          />
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button
-            variant={tool.kind === 'move' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setTool({ kind: 'move' })}
-            title="Move: drag pieces around the board"
-          >
-            <MousePointer2 className="size-3.5" />
-            Move
-          </Button>
-          <Button
-            variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setTool({ kind: 'erase' })}
-            title="Erase: click a square to remove its piece"
-          >
-            <Eraser className="size-3.5" />
-            Erase
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
-            title="Flip board"
-          >
-            <FlipVertical2 className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setState(defaultEditorState())}
-            title="Reset to the starting position"
-          >
-            <RotateCcw className="size-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => setState(emptyEditorState())}
-            title="Clear the board"
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Position metadata. shrink-0 on phones so the panels keep their
-          natural height and the page scrolls, instead of being crushed. */}
-      <div className="flex shrink-0 flex-col gap-3 lg:min-h-0 lg:shrink lg:w-[min(27rem,38%)] lg:flex-none">
+  const positionPanels = (
+    <>
         <Panel flush>
           <PanelHeader title="Position" />
           <div className="grid gap-3 p-3">
@@ -335,7 +244,125 @@ export function EditorView() {
             </div>
           </div>
         </Panel>
+    </>
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+      {/* Board + palette. One combined palette row keeps the vertical chrome
+          small, which is what lets every view share a large board budget.
+          Top-anchored like AnalysisBoard: same board y in every view. */}
+      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+        {/* Desktop: one fixed-height combined row above the board (board
+            alignment across views). Phones: the opponent's pieces above the
+            board and the player's below, lichess-editor style. */}
+        <div className={cn('flex w-full items-end justify-center wide:h-10', BOARD_MAX_W)}>
+          <div className="hidden w-full wide:block">
+            <PiecePalette
+              colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
+              tool={tool}
+              onPick={setTool}
+            />
+          </div>
+          <div className="w-full wide:hidden">
+            <PiecePalette
+              colors={[orientation === 'white' ? 'black' : 'white']}
+              tool={tool}
+              onPick={setTool}
+            />
+          </div>
+        </div>
+
+        <div className={cn('w-full', BOARD_MAX_W)}>
+          <Board
+            fen={fen}
+            orientation={orientation}
+            // Dragging is only enabled in move mode, so a drag can never race
+            // with the tool being applied on mousedown.
+            free={tool.kind === 'move'}
+            onSelect={applyTool}
+            onMove={movePiece}
+          />
+        </div>
+
+        <div className={cn('w-full wide:hidden', BOARD_MAX_W)}>
+          <PiecePalette
+            colors={[orientation === 'white' ? 'white' : 'black']}
+            tool={tool}
+            onPick={setTool}
+          />
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant={tool.kind === 'move' ? 'primary' : 'ghost'}
+            size="sm"
+            onClick={() => setTool({ kind: 'move' })}
+            title="Move: drag pieces around the board"
+          >
+            <MousePointer2 className="size-3.5" />
+            Move
+          </Button>
+          <Button
+            variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
+            size="sm"
+            onClick={() => setTool({ kind: 'erase' })}
+            title="Erase: click a square to remove its piece"
+          >
+            <Eraser className="size-3.5" />
+            Erase
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
+            title="Flip board"
+          >
+            <FlipVertical2 className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setState(defaultEditorState())}
+            title="Reset to the starting position"
+          >
+            <RotateCcw className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setState(emptyEditorState())}
+            title="Clear the board"
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+          <Button
+            variant={sheetOpen ? 'primary' : 'secondary'}
+            size="sm"
+            className="wide:hidden"
+            onClick={() => setSheetOpen((v) => !v)}
+            title="Position details (side to move, castling, FEN)"
+          >
+            <Settings2 className="size-3.5" />
+            Position
+          </Button>
+        </div>
       </div>
+
+      {/* Position metadata: a side column when there is width for it, and a
+          bottom sheet behind the toolbar's Position button when stacked. */}
+      <div className="hidden min-h-0 flex-col gap-3 wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
+        {positionPanels}
+      </div>
+
+      {sheetOpen && (
+        <div className="wide:hidden">
+          <div className="bg-scrim fixed inset-0 z-40" onClick={() => setSheetOpen(false)} />
+          <div className="bg-app border-line fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col gap-3 overflow-y-auto rounded-t-2xl border-t p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+            {positionPanels}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -388,10 +415,10 @@ function PiecePalette({
     // Phones: one comfortable touch-sized row per colour. Desktop: a single
     // combined row whose buttons shrink to fit, so the fixed-height strip
     // above the board never clips.
-    <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1 lg:flex-nowrap">
+    <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1 wide:flex-nowrap">
       {colors.map((color, groupIndex) => (
-        <div key={color} className="flex w-full justify-center gap-1 lg:w-auto lg:min-w-0 lg:flex-1">
-          {groupIndex > 0 && <span className="bg-line mx-1.5 hidden h-6 w-px shrink-0 lg:block" />}
+        <div key={color} className="flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1">
+          {groupIndex > 0 && <span className="bg-line mx-1.5 hidden h-6 w-px shrink-0 wide:block" />}
           {ROLES.map((role) => {
             const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
             return (
@@ -406,7 +433,7 @@ function PiecePalette({
                   // to keep BOTH piece colours legible, which the page
                   // background is not (black pieces vanish on dark).
                   'aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
-                  'lg:w-full lg:min-w-0 lg:max-w-10 lg:flex-1',
+                  'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
                   active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
                 )}
               >

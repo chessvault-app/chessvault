@@ -67,23 +67,23 @@ export function AnalysisBoard() {
   return (
     // Top-anchored, not centred: the board must sit at the same y in every
     // view regardless of what each stacks below it.
-    <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-start">
+    <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
       <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
         {/* Small screens: the eval bar lies flat above the board instead of
             stealing width beside it — the board is the scarce resource. */}
         {engineOn && (
-          <EvalBar score={evalScore} orientation="horizontal" className="shrink-0 lg:hidden" />
+          <EvalBar score={evalScore} orientation="horizontal" className="shrink-0 wide:hidden" />
         )}
         {/* Fixed-height strip, matching the editor's palette strip: the board
             top stays put whether or not a player bar is shown. On phones the
             strip only exists when there is a player bar to show. */}
-        <div className={cn('w-full items-end lg:flex lg:h-10', hasGame ? 'flex' : 'hidden lg:flex')}>
+        <div className={cn('w-full items-end wide:flex wide:h-10', hasGame ? 'flex' : 'hidden wide:flex')}>
           <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
         </div>
         <div className="flex w-full items-stretch gap-2">
-          {engineOn && <EvalBar score={evalScore} className="shrink-0 max-lg:hidden" />}
+          {engineOn && <EvalBar score={evalScore} className="shrink-0 stacked:hidden" />}
           <div className="relative min-w-0 flex-1">
             <Board
               fen={node.fen}

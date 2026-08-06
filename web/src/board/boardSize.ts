@@ -10,5 +10,6 @@ export const BOARD_MAX_W =
   // after the controls, pane tabs, a minimum pane and the bottom nav
   // (~21rem), which on tall phones means the full width. The 35dvh floor
   // keeps the board usable on squat windows, where the page then scrolls
-  // as a fallback.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-21rem)))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
+  // as a fallback. Side-by-side layouts are height-bound; full desktop
+  // additionally caps the board so the side panels keep room.
+  'max-w-[min(100%,max(35dvh,calc(100dvh-21rem)))] wide:max-w-[min(100%,calc(100dvh-10rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
