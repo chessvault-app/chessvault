@@ -6,4 +6,4 @@
  * rem cap stops the board from starving the side panes on large displays.
  */
 export const BOARD_MAX_W =
-  'max-w-[min(100%,calc(100dvh-14rem))] lg:max-w-[min(100%,calc(100dvh-12rem),40rem)]';
+  'max-w-[min(100%,calc(100dvh-13rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';

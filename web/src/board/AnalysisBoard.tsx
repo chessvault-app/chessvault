@@ -64,11 +64,17 @@ export function AnalysisBoard() {
   }, [topLine?.moves]);
 
   return (
-    <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-center">
+    // Top-anchored, not centred: the board must sit at the same y in every
+    // view regardless of what each stacks below it.
+    <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-start">
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
-      <div className={cn('flex w-full flex-col gap-1.5', BOARD_MAX_W)}>
-        <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
+      <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+        {/* Fixed-height strip, matching the editor's palette strip: the board
+            top stays put whether or not a player bar is shown. */}
+        <div className="flex h-10 w-full items-end">
+          <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
+        </div>
         <div className="flex w-full items-stretch gap-2">
           {engineOn && <EvalBar score={evalScore} className="shrink-0" />}
           <div className="relative min-w-0 flex-1">
@@ -189,7 +195,7 @@ function PlayerBar({ side }: { side: 'white' | 'black' }) {
   const toMove = turn === side;
 
   return (
-    <div className="flex h-6 items-center gap-2 px-0.5">
+    <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
       <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>
       {elo && <span className="text-subtle text-xs">{elo}</span>}

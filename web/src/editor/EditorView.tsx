@@ -105,13 +105,17 @@ export function EditorView() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:gap-4 lg:overflow-hidden lg:p-4">
-      {/* Board + palettes */}
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-center">
-        <PiecePalette
-          color={orientation === 'white' ? 'black' : 'white'}
-          tool={tool}
-          onPick={setTool}
-        />
+      {/* Board + palette. One combined palette row keeps the vertical chrome
+          small, which is what lets every view share a large board budget.
+          Top-anchored like AnalysisBoard: same board y in every view. */}
+      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-start">
+        <div className={cn('flex h-10 w-full items-end justify-center', BOARD_MAX_W)}>
+          <PiecePalette
+            colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
+            tool={tool}
+            onPick={setTool}
+          />
+        </div>
 
         <div className={cn('w-full', BOARD_MAX_W)}>
           <Board
@@ -124,12 +128,6 @@ export function EditorView() {
             onMove={movePiece}
           />
         </div>
-
-        <PiecePalette
-          color={orientation === 'white' ? 'white' : 'black'}
-          tool={tool}
-          onPick={setTool}
-        />
 
         <div className="flex items-center gap-1">
           <Button
@@ -178,7 +176,9 @@ export function EditorView() {
       </div>
 
       {/* Position metadata */}
-      <div className="flex min-h-0 flex-col gap-3 lg:w-[24rem] lg:shrink-0">
+      {/* Same width as the analysis side column, so the centred board sits at
+          the same x in both views. */}
+      <div className="flex min-h-0 flex-col gap-3 lg:w-[27rem] lg:shrink-0">
         <Panel flush>
           <PanelHeader title="Position" />
           <div className="grid gap-3 p-3">
@@ -355,43 +355,48 @@ function NumberInput({
   );
 }
 
-/** One row of pieces for a colour, acting as the placement palette. */
+/** The placement palette: both colours in one row, opponent side first. */
 function PiecePalette({
-  color,
+  colors,
   tool,
   onPick,
 }: {
-  color: Color;
+  colors: Color[];
   tool: Tool;
   onPick: (tool: Tool) => void;
 }) {
   return (
-    <div className="cg-wrap promo-host flex w-full max-w-[26rem] justify-center gap-1">
-      {ROLES.map((role) => {
-        const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
-        return (
-          <button
-            key={role}
-            type="button"
-            aria-label={`Place ${color} ${role}`}
-            title={`Place ${color} ${role}`}
-            onClick={() => onPick({ kind: 'piece', role, color })}
-            className={cn(
-              // A board-square backdrop: --board-light is tuned per theme to
-              // keep BOTH piece colours legible, which the page background
-              // is not (black pieces vanish on the dark theme).
-              'aspect-square w-11 shrink-0 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
-              active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
-            )}
-          >
-            {/* Same sprite-reuse trick as the promotion picker. */}
-            <span
-              className="block size-full"
-              dangerouslySetInnerHTML={{ __html: `<piece class="${role} ${color}"></piece>` }}
-            />
-          </button>
-        );
-      })}
+    <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1">
+      {colors.map((color, groupIndex) => (
+        <div key={color} className="flex items-center gap-1">
+          {groupIndex > 0 && <span className="bg-line mx-1.5 h-6 w-px" />}
+          {ROLES.map((role) => {
+            const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
+            return (
+              <button
+                key={role}
+                type="button"
+                aria-label={`Place ${color} ${role}`}
+                title={`Place ${color} ${role}`}
+                onClick={() => onPick({ kind: 'piece', role, color })}
+                className={cn(
+                  // A board-square backdrop: --board-light is tuned per theme
+                  // to keep BOTH piece colours legible, which the page
+                  // background is not (black pieces vanish on dark).
+                  'aspect-square w-10 shrink-0 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
+                  active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
+                )}
+              >
+                {/* Same sprite-reuse trick as the promotion picker. */}
+                <span
+                  className="block size-full"
+                  dangerouslySetInnerHTML={{ __html: `<piece class="${role} ${color}"></piece>` }}
+                />
+              </button>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
