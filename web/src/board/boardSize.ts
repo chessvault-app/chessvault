@@ -6,7 +6,9 @@
  * rem cap stops the board from starving the side panes on large displays.
  */
 export const BOARD_MAX_W =
-  // Stacked layouts scroll (like the lichess app): the board takes the full
-  // width and the pane below extends past the fold, so the only mobile cap
-  // is a sanity limit for squat windows. Desktop must fit without scrolling.
-  'max-w-[min(100%,calc(100dvh-8rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
+  // Stacked layouts aim for ZERO page scroll: the board gets what is left
+  // after the controls, pane tabs, a minimum pane and the bottom nav
+  // (~21rem), which on tall phones means the full width. The 35dvh floor
+  // keeps the board usable on squat windows, where the page then scrolls
+  // as a fallback.
+  'max-w-[min(100%,max(35dvh,calc(100dvh-21rem)))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';

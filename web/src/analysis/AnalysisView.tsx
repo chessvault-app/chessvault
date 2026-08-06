@@ -25,8 +25,9 @@ export function AnalysisView() {
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 max-lg:overflow-y-auto lg:flex-row lg:gap-4 lg:p-4">
       <AnalysisBoard />
 
-      {/* Side column. Desktop shows every pane; small screens switch. */}
-      <div className="flex flex-col gap-3 max-lg:shrink-0 lg:min-h-0 lg:w-[min(27rem,38%)] lg:flex-none">
+      {/* Side column. Desktop shows every pane; small screens switch, with
+          the active pane flexing into the space left under the board. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
         <PaneTabs
           className="lg:hidden"
           value={pane}
@@ -45,14 +46,14 @@ export function AnalysisView() {
             existence on short desktop viewports. */}
         <ExplorerPane
           className={cn(
-            'max-lg:h-[26rem] max-lg:shrink-0 lg:min-h-10 lg:max-h-[45%]',
+            'max-lg:min-h-[10rem] max-lg:flex-1 lg:min-h-10 lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
         <Panel
           flush
           className={cn(
-            'min-h-[8.5rem] max-lg:h-[26rem] max-lg:shrink-0 lg:flex-1',
+            'min-h-[8.5rem] flex-1 max-lg:min-h-[10rem]',
             pane !== 'moves' && 'max-lg:hidden',
           )}
         >
