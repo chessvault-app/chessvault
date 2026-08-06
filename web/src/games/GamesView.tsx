@@ -31,6 +31,24 @@ interface ImportStatus {
 
 const PAGE = 200;
 
+/**
+ * chess.com TimeControl headers are raw seconds: "600" (10 min), "180+2"
+ * (3 min + 2 s increment), or "1/86400" (daily, one move per N seconds).
+ */
+function formatTimeControl(tc: string | null): string | null {
+  if (!tc) return null;
+  const daily = tc.match(/^1\/(\d+)$/);
+  if (daily) {
+    const days = Number(daily[1]) / 86_400;
+    return days === 1 ? 'daily' : `daily ${days}d`;
+  }
+  const live = tc.match(/^(\d+)(?:\+(\d+))?$/);
+  if (!live) return tc;
+  const minutes = Number(live[1]) / 60;
+  const base = Number.isInteger(minutes) ? String(minutes) : minutes.toFixed(1);
+  return live[2] !== undefined ? `${base}+${live[2]}` : `${base} min`;
+}
+
 export function GamesView() {
   const [games, setGames] = useState<GameSummary[]>([]);
   const [total, setTotal] = useState(0);
@@ -286,7 +304,7 @@ function GameRow({
         <p className="text-subtle text-xs">
           {game.date}
           {game.eco ? ` · ${game.eco}` : ''}
-          {game.timeControl ? ` · ${game.timeControl}` : ''}
+          {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
         </p>
       </div>
       <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">{game.result}</span>
