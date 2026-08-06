@@ -288,14 +288,18 @@ export function EditorView() {
           />
         </div>
 
-        <div className="flex items-center justify-center gap-2">
+        {/* Phones (< sm): the row spans the board width and the seven
+            controls share it evenly — the pill takes 6 parts, Analyse 1 —
+            instead of huddling at their minimum size in the middle. Wider
+            screens keep content-sized, centred buttons with labels. */}
+        <div className={cn('flex w-full items-center justify-center gap-2', EDITOR_BOARD_MAX_W)}>
           {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
               so the active tool's highlight sits concentric in its corner. */}
-          <div className="bg-surface-2/60 border-line flex items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5">
+          <div className="bg-surface-2/60 border-line flex items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-[6]">
           <Button
             variant={tool.kind === 'move' ? 'primary' : 'ghost'}
             size="sm"
-            className="max-sm:w-9 max-sm:px-0"
+            className="max-sm:flex-1 max-sm:px-0"
             onClick={() => setTool({ kind: 'move' })}
             title="Move: drag pieces around the board"
           >
@@ -305,7 +309,7 @@ export function EditorView() {
           <Button
             variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
             size="sm"
-            className="max-sm:w-9 max-sm:px-0"
+            className="max-sm:flex-1 max-sm:px-0"
             onClick={() => setTool({ kind: 'erase' })}
             title="Erase: click a square to remove its piece"
           >
@@ -315,6 +319,7 @@ export function EditorView() {
           <Button
             variant="ghost"
             size="icon-sm"
+            className="max-sm:flex-1"
             onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
             title="Flip board"
           >
@@ -323,6 +328,7 @@ export function EditorView() {
           <Button
             variant="ghost"
             size="icon-sm"
+            className="max-sm:flex-1"
             onClick={() => setState(defaultEditorState())}
             title="Reset to the starting position"
           >
@@ -331,6 +337,7 @@ export function EditorView() {
           <Button
             variant="ghost"
             size="icon-sm"
+            className="max-sm:flex-1"
             onClick={() => setState(emptyEditorState())}
             title="Clear the board"
           >
@@ -340,7 +347,7 @@ export function EditorView() {
             variant="ghost"
             size="icon-sm"
             active={sheetOpen}
-            className="wide:hidden"
+            className="wide:hidden max-sm:flex-1"
             onClick={() => setSheetOpen((v) => !v)}
             title="Position details (side to move, castling, FEN)"
           >
@@ -350,7 +357,7 @@ export function EditorView() {
           <Button
             variant="primary"
             size="sm"
-            className="max-sm:w-9 max-sm:px-0"
+            className="max-sm:flex-1 max-sm:px-0"
             disabled={!validity.legal}
             onClick={analyse}
             title={validity.legal ? 'Analyse this position' : validity.reason}
