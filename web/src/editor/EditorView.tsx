@@ -351,14 +351,14 @@ export function EditorView() {
 
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
-      <div className="hidden min-h-0 flex-col gap-3 overflow-y-auto wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="hidden min-h-0 flex-col gap-3 overflow-y-auto [&>section]:shrink-0 wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
         {positionPanels}
       </div>
 
       {sheetOpen && (
         <div className="wide:hidden">
           <div className="bg-scrim fixed inset-0 z-40" onClick={() => setSheetOpen(false)} />
-          <div className="bg-app border-line fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col gap-3 overflow-y-auto rounded-t-2xl border-t p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="bg-app border-line fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] space-y-3 overflow-y-auto rounded-t-2xl border-t p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             {positionPanels}
           </div>
         </div>
