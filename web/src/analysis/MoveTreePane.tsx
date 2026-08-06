@@ -45,7 +45,13 @@ export function MoveTreePane({ className }: { className?: string }) {
   return (
     <div
       ref={scroller}
-      className={cn('min-h-0 flex-1 overflow-y-auto px-2 py-2 text-sm leading-relaxed', className)}
+      // The stacked floor keeps a few lines of moves visible even when the
+      // whole panel is squeezed by a squat viewport; the panel's minimum
+      // height follows it, pushing the page into scroll instead of clipping.
+      className={cn(
+        'min-h-0 flex-1 overflow-y-auto px-2 py-2 text-sm leading-relaxed stacked:min-h-24',
+        className,
+      )}
     >
       {isEmpty ? (
         <p className="text-subtle px-2 py-6 text-center text-xs">

@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
   CircleAlert,
   FolderPlus,
   Loader2,
@@ -95,23 +96,34 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     );
   }
 
+  // Rendered twice — at the page top on stacked layouts, in the side column
+  // on wide ones — because CSS cannot reparent. Only one is ever visible.
+  const titleRow = (className: string) => (
+    <div className={cn('flex shrink-0 items-center gap-2', className)}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)'}
+        onClick={() => navigate(backSection)}
+      >
+        <ArrowLeft className="size-3.5" />
+      </Button>
+      <TitleEditor id={id} backSection={backSection} />
+      <SaveIndicator state={saveState} error={error} />
+    </div>
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+      {titleRow('wide:hidden')}
       <AnalysisBoard />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)'}
-            onClick={() => navigate(backSection)}
-          >
-            <ArrowLeft className="size-3.5" />
-          </Button>
-          <TitleEditor id={id} backSection={backSection} />
-          <SaveIndicator state={saveState} error={error} />
-        </div>
+      {/* min-h-0 only where the column manages its own space (side-by-side
+          layouts): stacked keeps the natural content minimum, so a squat
+          viewport scrolls the page instead of crushing panels into their
+          own overflow-hidden. */}
+      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none">
+        {titleRow('stacked:hidden')}
 
         <PaneTabs
           className="lg:hidden"
@@ -130,10 +142,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             <ChaptersPanel />
           </div>
         )}
+        {/* Desktop gets an explicit floor; stacked relies on the content
+            minimum (tree floor + annotation) so the panel can never be
+            squeezed below what it needs and clip its own bottom. */}
         <Panel
           flush
           className={cn(
-            'min-h-[10rem] flex-1',
+            'flex-1 lg:min-h-[10rem]',
             pane !== 'moves' && 'max-lg:hidden',
           )}
         >
@@ -144,6 +159,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
         </Panel>
         <ExplorerPane
+          resizeKey="study-explorer"
           className={cn(
             'max-lg:min-h-[8rem] max-lg:flex-1 lg:max-h-[35%] lg:min-h-0',
             pane !== 'explorer' && 'max-lg:hidden',
@@ -274,25 +290,40 @@ function ChaptersPanel() {
   const addChapter = useStudy((s) => s.addChapter);
   const [renaming, setRenaming] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
+  const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+
+  const toggleFold = (group: string): void =>
+    setFolded((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
 
   // Sub-chapters: a chapter named "Group/Name" files under a group heading.
   // The grouping lives entirely in the ChapterName header — the PGN file
   // stays a flat list of games, readable by any tool.
   const groupOf = (name: string): string =>
     name.includes('/') ? name.slice(0, name.indexOf('/')) : '';
-  const rows: ({ kind: 'group'; group: string } | { kind: 'chapter'; index: number })[] = [];
+  const rows: ({ kind: 'group'; group: string; count: number } | { kind: 'chapter'; index: number })[] = [];
   const seenGroups = new Set<string>();
   chapters.forEach((chapter, index) => {
     const group = groupOf(chapter.name);
     if (group && !seenGroups.has(group)) {
       seenGroups.add(group);
-      rows.push({ kind: 'group', group });
+      rows.push({
+        kind: 'group',
+        group,
+        count: chapters.filter((c) => groupOf(c.name) === group).length,
+      });
     }
+    // Folded groups list only their heading.
+    if (group && folded.has(group)) return;
     rows.push({ kind: 'chapter', index });
   });
 
   return (
-    <Panel flush className="max-h-48 shrink-0">
+    <Panel flush className="max-h-48 shrink-0" resizeKey="study-chapters">
       <PanelHeader
         title={`Chapters · ${chapters.length}`}
         actions={
@@ -323,10 +354,26 @@ function ChaptersPanel() {
       <ul className="min-h-0 overflow-y-auto p-1">
         {rows.map((row) =>
           row.kind === 'group' ? (
-            <li key={`group-${row.group}`} className="group/subch flex items-center gap-1.5 px-2 pb-0.5 pt-1.5">
-              <span className="text-subtle min-w-0 truncate text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-                {row.group}
-              </span>
+            <li key={`group-${row.group}`} className="group/subch flex items-center gap-1 px-1 pb-0.5 pt-1.5">
+              <button
+                type="button"
+                onClick={() => toggleFold(row.group)}
+                title={folded.has(row.group) ? 'Unfold this group' : 'Fold this group'}
+                className="text-subtle hover:text-fg flex h-5 min-w-0 flex-1 items-center gap-1 rounded px-1 text-left transition-colors duration-100"
+              >
+                <ChevronDown
+                  className={cn(
+                    'size-3 shrink-0 transition-transform duration-100',
+                    folded.has(row.group) && '-rotate-90',
+                  )}
+                />
+                <span className="min-w-0 truncate text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+                  {row.group}
+                </span>
+                {folded.has(row.group) && (
+                  <span className="shrink-0 font-mono text-[0.625rem]">{row.count}</span>
+                )}
+              </button>
               <Button
                 variant="ghost"
                 size="icon-sm"

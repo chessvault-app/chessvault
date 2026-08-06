@@ -20,7 +20,13 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
 
-export function ExplorerPane({ className }: { className?: string }) {
+export function ExplorerPane({
+  className,
+  resizeKey,
+}: {
+  className?: string;
+  resizeKey?: string;
+}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const playUci = useAnalysis((s) => s.playUci);
@@ -68,7 +74,7 @@ export function ExplorerPane({ className }: { className?: string }) {
   const fresh = resultFen === node.fen;
 
   return (
-    <Panel flush className={className}>
+    <Panel flush className={className} resizeKey={resizeKey}>
       <PanelHeader
         title="Explorer"
         actions={

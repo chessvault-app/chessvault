@@ -26,8 +26,11 @@ export function AnalysisView() {
       <AnalysisBoard />
 
       {/* Side column. Desktop shows every pane; small screens switch, with
-          the active pane flexing into the space left under the board. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+          the active pane flexing into the space left under the board.
+          min-h-0 only on side-by-side layouts: stacked keeps the natural
+          content minimum so squat viewports scroll instead of crushing
+          panels into their own overflow-hidden. */}
+      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none">
         <PaneTabs
           className="lg:hidden"
           value={pane}
@@ -45,6 +48,7 @@ export function AnalysisView() {
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}
         <ExplorerPane
+          resizeKey="analysis-explorer"
           className={cn(
             'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-10 lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
@@ -53,7 +57,7 @@ export function AnalysisView() {
         <Panel
           flush
           className={cn(
-            'min-h-[8.5rem] flex-1 max-lg:min-h-[8rem]',
+            'flex-1 lg:min-h-[8.5rem]',
             pane !== 'moves' && 'max-lg:hidden',
           )}
         >
