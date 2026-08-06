@@ -52,8 +52,10 @@ function Sidebar({ active }: { active: Section }) {
       )}
     >
       <div className="flex h-14 items-center gap-2.5 px-4 lg:px-4">
-        <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg text-[0.9rem] font-bold">
-          ♞
+        <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg text-[0.95rem] font-bold">
+          {/* U+FE0E forces text presentation — bare U+265F renders as an emoji
+              pawn on many platforms and ignores the CSS colour. */}
+          {'♟︎'}
         </div>
         <span className="hidden truncate text-sm font-semibold tracking-tight lg:block">
           Chess Vault

@@ -184,9 +184,11 @@ function EngineSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
         enabled ? 'bg-primary' : 'bg-surface-3',
       )}
     >
+      {/* left-0 is load-bearing: without it the absolute knob's static
+          position is not the pill's left edge and the translate overshoots. */}
       <span
         className={cn(
-          'absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform duration-200',
+          'absolute left-0 top-0.5 size-4 rounded-full bg-white shadow transition-transform duration-200',
           enabled ? 'translate-x-[1.125rem]' : 'translate-x-0.5',
         )}
       />
