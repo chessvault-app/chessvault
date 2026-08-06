@@ -288,12 +288,12 @@ export function EditorView() {
           />
         </div>
 
-        {/* Phones (< sm): the row spans the board width — the pill flexes
-            and spaces its six square tools evenly, Analyse squares up at the
-            end — so the toolbar lines up with the board without stretching
-            any button. Wider screens keep content-sized, centred buttons
-            with labels. */}
-        <div className={cn('flex w-full items-center justify-center gap-2', EDITOR_BOARD_MAX_W)}>
+        {/* Phones (< sm): the row follows the board width but sits inset
+            from its edges — the pill flexes and spaces its six square tools
+            evenly, Analyse squares up at the end — without stretching any
+            button. Wider screens keep content-sized, centred buttons with
+            labels. */}
+        <div className={cn('flex w-full items-center justify-center gap-2 max-sm:px-4', EDITOR_BOARD_MAX_W)}>
           {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
               so the active tool's highlight sits concentric in its corner. */}
           <div className="bg-surface-2/60 border-line flex items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
