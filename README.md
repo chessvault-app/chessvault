@@ -13,8 +13,8 @@ npm run dev          # http://localhost:5173
 |---|---|---|
 | 1 | Analysis board — Stockfish 18, move tree, variations, FEN/PGN loading | ✅ done |
 | 1 | Board editor | ✅ done |
-| 2 | Local opening book + explorer | ⬜ next |
-| 3 | Studies (board-as-main) | ⬜ |
+| 2 | Local opening book + explorer + book manager + Lichess proxy | ✅ done |
+| 3 | Studies (board-as-main) | ⬜ next |
 | 4 | Notes (markdown with embedded boards) | ⬜ |
 | 5 | Games explorer | ⬜ |
 | 6 | Puzzle trainer | ⬜ |
@@ -58,11 +58,17 @@ If those headers are ever dropped, the engine silently falls back to single-thre
 
 No runtime CDN calls: fonts, icons, WASM and CSS are all bundled. The only features needing network are *imports* (one-time by nature) and the optional Lichess explorer augmentation.
 
-The opening explorer is **local-first**. Lichess's own explorer requires a token and can never work offline, so books are built from PGN you drop into `vault/sources/`. Measured on one month of the Lichess Elite Database (280,246 games):
+The opening explorer is **local-first**. Lichess's own explorer requires a token and can never work offline, so books are built from PGN you drop into `vault/sources/` — either from the book manager inside the explorer pane, or:
 
-- 2.23 M positions indexed in 38 s, zero parse errors
-- 83.8 % of positions occur exactly once → pruned as noise
-- Remaining index: **15.2 MB SQLite**, **0.006 ms** per lookup
+```bash
+npm run build:book                          # every .pgn in vault/sources, one book each
+npm run build:book -- a.pgn b.pgn --name elite    # merge several files into one book
+npm run build:openings                      # ECO names (vendored TSVs, fully offline)
+```
+
+Positions are keyed by a 64-bit Zobrist hash (`shared/zobrist.ts`), streamed with bounded memory, pruned per position (`--min-games`, default 2), with the top 3 reference games kept per position. Measured on one month of the Lichess Elite Database (280,246 games): 361 k positions indexed in 47 s with zero parse errors, 69 MB SQLite, sub-millisecond lookups.
+
+In the explorer pane you can click any move to play it, switch between local books and the (online, token-gated) Lichess masters/players databases, and build or delete books. Online explorer responses are cached on disk, so a position visited once keeps working offline.
 
 Recommended sources (both free, both verified live):
 - [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite" — 2400+ over-the-board games, the Masters-DB equivalent.
@@ -71,7 +77,11 @@ Recommended sources (both free, both verified live):
 ## Lichess token (optional)
 
 Only needed for the *online* explorer augmentation. Create one at
-[lichess.org/account/oauth/token/create](https://lichess.org/account/oauth/token/create) with **no scopes ticked** — any valid token authenticates the explorer. Add `puzzle:read` only if you want your Lichess puzzle history imported. Paste it into `vault/config.json`, which is gitignored.
+[lichess.org/account/oauth/token/create](https://lichess.org/account/oauth/token/create) with **no scopes ticked** — any valid token authenticates the explorer. Add `puzzle:read` only if you want your Lichess puzzle history imported. Put it in `vault/config.json` (gitignored):
+
+```json
+{ "lichessToken": "lip_..." }
+```
 
 Note that Lichess made this endpoint token-only on 2026-03-03 and moved it from `explorer.lichess.ovh` to `explorer.lichess.org`; older guides and wrapper libraries are wrong.
 
@@ -84,6 +94,8 @@ npm start              # serve the built app
 npm test               # unit tests
 npm run typecheck      # tsc --noEmit
 npm run setup:engine   # copy Stockfish into web/public/engine/
+npm run build:book     # index vault/sources PGNs into opening books
+npm run build:openings # compile ECO opening names
 ```
 
 ## Keyboard shortcuts

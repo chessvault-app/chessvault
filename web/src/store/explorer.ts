@@ -77,8 +77,22 @@ interface ExplorerState {
   fetchBuildStatus: () => Promise<BuildStatus | null>;
 }
 
+/**
+ * Remote Lichess databases, addressable through the same switcher as local
+ * books. They go through the server proxy, which caches responses on disk —
+ * needs a token in vault/config.json and (the first time) a connection.
+ */
+export const REMOTE_DBS = [
+  { id: 'lichess:masters', label: 'Masters · lichess' },
+  { id: 'lichess:lichess', label: 'Players · lichess' },
+] as const;
+
+export const isRemoteDb = (name: string | null): boolean =>
+  name !== null && name.startsWith('lichess:');
+
 /** The active book, resolving the persisted choice against what exists. */
 export function activeBook(s: Pick<ExplorerState, 'book' | 'books'>): string | null {
+  if (isRemoteDb(s.book)) return s.book;
   if (s.book && s.books.some((b) => b.name === s.book)) return s.book;
   return s.books[0]?.name ?? null;
 }
@@ -97,9 +111,11 @@ export const useExplorer = create<ExplorerState>()(
         controller?.abort();
         controller = new AbortController();
         const book = activeBook(get());
-        const url = book
-          ? `/api/books/${encodeURIComponent(book)}?fen=${encodeURIComponent(fen)}`
-          : `/api/opening?fen=${encodeURIComponent(fen)}`;
+        const url = isRemoteDb(book)
+          ? `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`
+          : book
+            ? `/api/books/${encodeURIComponent(book)}?fen=${encodeURIComponent(fen)}`
+            : `/api/opening?fen=${encodeURIComponent(fen)}`;
         try {
           const res = await fetch(url, { signal: controller.signal });
           if (fen !== latestFen) return; // user has moved on

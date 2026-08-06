@@ -5,6 +5,8 @@ import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 import {
   activeBook,
+  isRemoteDb,
+  REMOTE_DBS,
   useExplorer,
   type BookInfo,
   type BuildStatus,
@@ -71,7 +73,7 @@ export function ExplorerPane({ className }: { className?: string }) {
         title="Explorer"
         actions={
           <>
-            {enabled && books.length > 1 && (
+            {enabled && (books.length > 0 || isRemoteDb(book)) && (
               <select
                 value={book ?? ''}
                 onChange={(e) => selectBook(e.target.value)}
@@ -81,11 +83,20 @@ export function ExplorerPane({ className }: { className?: string }) {
                   'px-1.5 text-xs outline-none',
                 )}
               >
-                {books.map((b) => (
-                  <option key={b.name} value={b.name}>
-                    {b.name}
-                  </option>
-                ))}
+                <optgroup label="Local books">
+                  {books.map((b) => (
+                    <option key={b.name} value={b.name}>
+                      {b.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Online (via proxy)">
+                  {REMOTE_DBS.map((db) => (
+                    <option key={db.id} value={db.id}>
+                      {db.label}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
             )}
             {enabled && (
@@ -128,7 +139,7 @@ export function ExplorerPane({ className }: { className?: string }) {
 
           {error ? (
             <p className="text-bad px-3 py-3 text-xs">{error}</p>
-          ) : booksLoaded && books.length === 0 ? (
+          ) : booksLoaded && books.length === 0 && !isRemoteDb(book) ? (
             <EmptyBooks onOpenManager={() => setShowManager(true)} />
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>

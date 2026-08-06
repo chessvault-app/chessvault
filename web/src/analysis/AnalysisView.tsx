@@ -98,12 +98,13 @@ export function AnalysisView() {
         <BoardControls />
       </div>
 
-      {/* Side column */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:max-w-[27rem]">
+      {/* Side column. Stacked layouts scroll the whole column; on desktop it
+          fits the viewport and each pane scrolls internally instead. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:max-w-[27rem] lg:overflow-visible">
         <EnginePane className="shrink-0" />
-        {/* min-h keeps either pane from squeezing the other out of existence
-            on short viewports; both scroll internally. */}
-        <ExplorerPane className="min-h-10 max-h-[45%] shrink-0" />
+        {/* The caps keep the explorer from squeezing the move list out of
+            existence on short desktop viewports. */}
+        <ExplorerPane className="max-h-80 shrink-0 lg:min-h-10 lg:max-h-[45%]" />
         <Panel flush className="min-h-[8.5rem] flex-1">
           <PanelHeader title="Moves" actions={<MoveActions />} />
           <MoveTreePane />
