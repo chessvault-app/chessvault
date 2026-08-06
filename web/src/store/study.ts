@@ -49,7 +49,8 @@ interface StudyState {
   open: (id: string, base?: DocBase) => Promise<boolean>;
   close: () => Promise<void>;
   selectChapter: (index: number) => void;
-  addChapter: () => void;
+  /** Append a chapter, optionally inside a sub-chapter group ("Group/Name"). */
+  addChapter: (group?: string) => void;
   renameChapter: (index: number, name: string) => void;
   deleteChapter: (index: number) => void;
   save: () => Promise<void>;
@@ -263,10 +264,13 @@ export const useStudy = create<StudyState>()((set, get) => {
       loadIntoAnalysis(target);
     },
 
-    addChapter: () => {
+    addChapter: (group) => {
       const { openId } = get();
       const chapters = stashCurrent();
-      const name = `Chapter ${chapters.length + 1}`;
+      const inGroup = group
+        ? chapters.filter((c) => c.name.startsWith(`${group}/`)).length
+        : chapters.length;
+      const name = group ? `${group}/Chapter ${inGroup + 1}` : `Chapter ${inGroup + 1}`;
       const fresh: Chapter = {
         id: `ch-new-${Date.now().toString(36)}`,
         name,

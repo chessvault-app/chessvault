@@ -239,89 +239,138 @@ function ChaptersPanel() {
   const [renaming, setRenaming] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
 
+  // Sub-chapters: a chapter named "Group/Name" files under a group heading.
+  // The grouping lives entirely in the ChapterName header — the PGN file
+  // stays a flat list of games, readable by any tool.
+  const groupOf = (name: string): string =>
+    name.includes('/') ? name.slice(0, name.indexOf('/')) : '';
+  const rows: ({ kind: 'group'; group: string } | { kind: 'chapter'; index: number })[] = [];
+  const seenGroups = new Set<string>();
+  chapters.forEach((chapter, index) => {
+    const group = groupOf(chapter.name);
+    if (group && !seenGroups.has(group)) {
+      seenGroups.add(group);
+      rows.push({ kind: 'group', group });
+    }
+    rows.push({ kind: 'chapter', index });
+  });
+
   return (
     <Panel flush className="max-h-48 shrink-0">
       <PanelHeader
         title={`Chapters · ${chapters.length}`}
         actions={
-          <Button variant="ghost" size="icon-sm" title="Add a chapter" onClick={addChapter}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="Add a chapter (rename to “Group/Name” to nest it)"
+            onClick={() => addChapter()}
+          >
             <Plus className="size-3.5" />
           </Button>
         }
       />
       <ul className="min-h-0 overflow-y-auto p-1">
-        {chapters.map((chapter, index) => (
-          <li key={chapter.id} className="group flex items-center">
-            {renaming === index ? (
-              <input
-                autoFocus
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={() => {
-                  renameChapter(index, draft);
-                  setRenaming(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                  if (e.key === 'Escape') setRenaming(null);
-                }}
-                className={cn(
-                  'bg-surface-inset border-line text-fg m-0.5 h-7 min-w-0 flex-1 rounded-md',
-                  'border px-2 text-xs outline-none focus:border-line-strong',
-                )}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => selectChapter(index)}
-                onDoubleClick={() => {
-                  setDraft(chapter.name);
-                  setRenaming(index);
-                }}
-                title="Double-click to rename"
-                className={cn(
-                  'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-xs',
-                  'transition-colors duration-100',
-                  index === chapterIndex
-                    ? 'bg-primary-soft text-primary font-semibold'
-                    : 'text-muted hover:bg-surface-2 hover:text-fg',
-                )}
+        {rows.map((row) =>
+          row.kind === 'group' ? (
+            <li key={`group-${row.group}`} className="group/subch flex items-center gap-1.5 px-2 pb-0.5 pt-1.5">
+              <span className="text-subtle min-w-0 truncate text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+                {row.group}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="size-5 opacity-0 transition-opacity group-hover/subch:opacity-100 pointer-coarse:opacity-100"
+                title={`Add a chapter in “${row.group}”`}
+                onClick={() => addChapter(row.group)}
               >
-                <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.625rem]">
-                  {index + 1}
-                </span>
-                <span className="truncate">{chapter.name}</span>
-              </button>
-            )}
-            {renaming !== index && (
-              <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
-                {/* Touch has no double-click, so rename gets a real button. */}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title="Rename this chapter"
-                  onClick={() => {
-                    setDraft(chapter.name);
-                    setRenaming(index);
-                  }}
-                >
-                  <Pencil className="size-3" />
-                </Button>
-                {chapters.length > 1 && (
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Delete this chapter"
-                    onClick={() => deleteChapter(index)}
-                  >
-                    <Trash2 className="size-3" />
-                  </Button>
-                )}
-              </div>
-            )}
-          </li>
-        ))}
+                <Plus className="size-3" />
+              </Button>
+            </li>
+          ) : (
+            <ChapterRow key={chapters[row.index]!.id} index={row.index} />
+          ),
+        )}
       </ul>
     </Panel>
   );
+
+  function ChapterRow({ index }: { index: number }) {
+    const chapter = chapters[index]!;
+    const nested = chapter.name.includes('/');
+    // Nested chapters show only their own name; the group heading carries
+    // the prefix. Renaming always edits the full "Group/Name" path.
+    const label = nested ? chapter.name.slice(chapter.name.indexOf('/') + 1) : chapter.name;
+    return (
+      <li className={cn('group flex items-center', nested && 'pl-3')}>
+        {renaming === index ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              renameChapter(index, draft);
+              setRenaming(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+              if (e.key === 'Escape') setRenaming(null);
+            }}
+            className={cn(
+              'bg-surface-inset border-line text-fg m-0.5 h-7 min-w-0 flex-1 rounded-md',
+              'border px-2 text-xs outline-none focus:border-line-strong',
+            )}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => selectChapter(index)}
+            onDoubleClick={() => {
+              setDraft(chapter.name);
+              setRenaming(index);
+            }}
+            title="Double-click to rename (use “Group/Name” to nest)"
+            className={cn(
+              'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-xs',
+              'transition-colors duration-100',
+              index === chapterIndex
+                ? 'bg-primary-soft text-primary font-semibold'
+                : 'text-muted hover:bg-surface-2 hover:text-fg',
+            )}
+          >
+            <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.625rem]">
+              {index + 1}
+            </span>
+            <span className="truncate">{label}</span>
+          </button>
+        )}
+        {renaming !== index && (
+          <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+            {/* Touch has no double-click, so rename gets a real button. */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Rename this chapter"
+              onClick={() => {
+                setDraft(chapter.name);
+                setRenaming(index);
+              }}
+            >
+              <Pencil className="size-3" />
+            </Button>
+            {chapters.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Delete this chapter"
+                onClick={() => deleteChapter(index)}
+              >
+                <Trash2 className="size-3" />
+              </Button>
+            )}
+          </div>
+        )}
+      </li>
+    );
+  }
 }
