@@ -6,4 +6,6 @@
  * rem cap stops the board from starving the side panes on large displays.
  */
 export const BOARD_MAX_W =
-  'max-w-[min(100%,calc(100dvh-13rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
+  // Small screens must leave room for the pane tabs + one pane + the bottom
+  // nav (~23rem of chrome); tall phones end up width-bound anyway.
+  'max-w-[min(100%,calc(100dvh-23rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';

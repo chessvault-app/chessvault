@@ -12,7 +12,10 @@ import { useExplorer } from '@/store/explorer';
 import { useStudy } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { PaneTabs } from '@/ui/PaneTabs';
 import { AnnotationPane } from './AnnotationPane';
+
+type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
 export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' | 'game' }) {
   const openId = useStudy((s) => s.openId);
@@ -21,6 +24,8 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const saveState = useStudy((s) => s.saveState);
   const error = useStudy((s) => s.error);
   const [failed, setFailed] = useState(false);
+  // Small screens show one pane at a time under the board.
+  const [pane, setPane] = useState<StudyPane>('moves');
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
@@ -85,7 +90,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
       <AnalysisBoard />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:w-[min(27rem,38%)] lg:flex-none lg:overflow-visible">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
         <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="ghost"
@@ -99,16 +104,39 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           <SaveIndicator state={saveState} error={error} />
         </div>
 
-        <EnginePane className="shrink-0" />
-        {kind === 'study' && <ChaptersPanel />}
-        <Panel flush className="min-h-[10rem] flex-1">
+        <PaneTabs
+          className="lg:hidden"
+          value={pane}
+          onChange={setPane}
+          tabs={[
+            { id: 'moves', label: 'Moves' },
+            { id: 'engine', label: 'Engine' },
+            ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters' }] : []),
+            { id: 'explorer', label: 'Explorer' },
+          ]}
+        />
+        <EnginePane className={cn('shrink-0', pane !== 'engine' && 'max-lg:hidden')} />
+        {kind === 'study' && (
+          <div className={cn('contents', pane !== 'chapters' && 'max-lg:hidden')}>
+            <ChaptersPanel />
+          </div>
+        )}
+        <Panel
+          flush
+          className={cn('min-h-[10rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
+        >
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
           <AnnotationPane
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
           />
         </Panel>
-        <ExplorerPane className="max-h-72 shrink-0 lg:max-h-[35%]" />
+        <ExplorerPane
+          className={cn(
+            'min-h-0 flex-1 lg:max-h-[35%] lg:flex-none',
+            pane !== 'explorer' && 'max-lg:hidden',
+          )}
+        />
       </div>
     </div>
   );

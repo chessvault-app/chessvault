@@ -109,7 +109,10 @@ export function EditorView() {
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-start">
-        <div className={cn('flex h-10 w-full items-end justify-center', BOARD_MAX_W)}>
+        {/* Fixed-height single row on desktop (board alignment across views);
+            natural height on phones, where the palette wraps to comfortable
+            touch-sized rows instead of shrinking into slivers. */}
+        <div className={cn('flex w-full items-end justify-center lg:h-10', BOARD_MAX_W)}>
           <PiecePalette
             colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
             tool={tool}
@@ -175,10 +178,9 @@ export function EditorView() {
         </div>
       </div>
 
-      {/* Position metadata */}
-      {/* Same width as the analysis side column, so the centred board sits at
-          the same x in both views. */}
-      <div className="flex min-h-0 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
+      {/* Position metadata. shrink-0 on phones so the panels keep their
+          natural height and the page scrolls, instead of being crushed. */}
+      <div className="flex shrink-0 flex-col gap-3 lg:min-h-0 lg:shrink lg:w-[min(27rem,38%)] lg:flex-none">
         <Panel flush>
           <PanelHeader title="Position" />
           <div className="grid gap-3 p-3">
@@ -366,12 +368,13 @@ function PiecePalette({
   onPick: (tool: Tool) => void;
 }) {
   return (
-    // No wrapping: the buttons shrink to keep one row at any width, so the
-    // fixed-height strip above the board never clips a second line.
-    <div className="cg-wrap promo-host flex w-full items-center justify-center gap-1">
+    // Phones: one comfortable touch-sized row per colour. Desktop: a single
+    // combined row whose buttons shrink to fit, so the fixed-height strip
+    // above the board never clips.
+    <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1 lg:flex-nowrap">
       {colors.map((color, groupIndex) => (
-        <div key={color} className="flex min-w-0 flex-1 items-center gap-1">
-          {groupIndex > 0 && <span className="bg-line mx-1.5 h-6 w-px shrink-0" />}
+        <div key={color} className="flex w-full justify-center gap-1 lg:w-auto lg:min-w-0 lg:flex-1">
+          {groupIndex > 0 && <span className="bg-line mx-1.5 hidden h-6 w-px shrink-0 lg:block" />}
           {ROLES.map((role) => {
             const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
             return (
@@ -385,7 +388,8 @@ function PiecePalette({
                   // A board-square backdrop: --board-light is tuned per theme
                   // to keep BOTH piece colours legible, which the page
                   // background is not (black pieces vanish on dark).
-                  'aspect-square w-full min-w-0 max-w-10 flex-1 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
+                  'aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
+                  'lg:w-full lg:min-w-0 lg:max-w-10 lg:flex-1',
                   active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
                 )}
               >

@@ -34,6 +34,9 @@ export default defineConfig({
     // falls back to its single-threaded build — expected on mobile for now.
     host: true,
     headers: crossOriginIsolation,
+    // fs events silently die on this machine (seen three times); polling is
+    // slightly more CPU but never goes stale.
+    watch: { usePolling: true, interval: 400 },
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8787',

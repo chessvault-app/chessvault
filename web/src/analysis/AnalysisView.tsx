@@ -4,30 +4,60 @@ import { getNode, isOnMainline } from '@shared/tree';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { EnginePane } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
+import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
 import { PositionLoader } from './PositionLoader';
 
+type AnalysisPane = 'moves' | 'engine' | 'explorer' | 'load';
+
 export function AnalysisView() {
+  // Small screens show ONE pane under the board (lichess-app style); the
+  // others stay mounted but hidden so the engine keeps following the board.
+  const [pane, setPane] = useState<AnalysisPane>('moves');
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
       <AnalysisBoard />
 
-      {/* Side column. Stacked layouts scroll the whole column; on desktop it
-          fits the viewport and each pane scrolls internally instead. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:w-[min(27rem,38%)] lg:flex-none lg:overflow-visible">
-        <EnginePane className="shrink-0" />
+      {/* Side column. Desktop shows every pane; small screens switch. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
+        <PaneTabs
+          className="lg:hidden"
+          value={pane}
+          onChange={setPane}
+          tabs={[
+            { id: 'moves', label: 'Moves' },
+            { id: 'engine', label: 'Engine' },
+            { id: 'explorer', label: 'Explorer' },
+            { id: 'load', label: 'Load' },
+          ]}
+        />
+        <EnginePane
+          className={cn('shrink-0', pane !== 'engine' && 'max-lg:hidden')}
+        />
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}
-        <ExplorerPane className="max-h-80 shrink-0 lg:min-h-10 lg:max-h-[45%]" />
-        <Panel flush className="min-h-[8.5rem] flex-1">
+        <ExplorerPane
+          className={cn(
+            'min-h-0 flex-1 lg:min-h-10 lg:max-h-[45%] lg:flex-none',
+            pane !== 'explorer' && 'max-lg:hidden',
+          )}
+        />
+        <Panel
+          flush
+          className={cn('min-h-[8.5rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
+        >
           <PanelHeader title="Moves" actions={<MoveActions />} />
           <MoveTreePane />
           <StatusBar />
         </Panel>
-        <PositionLoader />
+        <div className={cn(pane !== 'load' && 'max-lg:hidden')}>
+          <PositionLoader />
+        </div>
       </div>
     </div>
   );
