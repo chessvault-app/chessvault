@@ -125,7 +125,7 @@ function CreateMenu() {
           {(
             [
               ['study', 'New study', Library],
-              ['folder', 'New folder', FolderIcon],
+              ['folder', 'New collection', FolderIcon],
             ] as const
           ).map(([kind, label, Icon]) => (
             <button
@@ -157,7 +157,7 @@ function CreateMenu() {
           )}
         >
           <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-            {mode === 'study' ? 'New study' : 'New folder'}
+            {mode === 'study' ? 'New study' : 'New collection'}
           </p>
           {mode === 'study' && folders.length > 0 && (
             <select
@@ -167,7 +167,7 @@ function CreateMenu() {
                 'bg-surface-2 text-fg border-line h-8 rounded-md border px-2 text-xs outline-none',
               )}
             >
-              <option value="">(no folder)</option>
+              <option value="">(no collection)</option>
               {folders.map((f) => (
                 <option key={f} value={f}>
                   {f}
@@ -184,7 +184,7 @@ function CreateMenu() {
               if (e.key === 'Enter') void submit();
               if (e.key === 'Escape') setMode(null);
             }}
-            placeholder={mode === 'study' ? 'Study name' : 'Folder name'}
+            placeholder={mode === 'study' ? 'Study name' : 'Collection name'}
             className={cn(
               'bg-surface-inset border-line text-fg h-8 rounded-md border px-2.5 text-sm',
               'outline-none focus:border-line-strong',
@@ -286,7 +286,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            title="Rename this folder"
+            title="Rename this collection"
             onClick={() => {
               setDraft(folder);
               setRenaming(true);
@@ -297,7 +297,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            title={empty ? 'Delete this empty folder' : 'Only empty folders can be deleted'}
+            title={empty ? 'Delete this empty collection' : 'Only empty collections can be deleted'}
             onClick={async () => setFailure(await removeFolder(folder))}
           >
             <Trash2 className="size-3" />
@@ -400,7 +400,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Move to a folder"
+              title="Move to a collection"
               active={moving}
               onClick={(e) => {
                 e.stopPropagation();
@@ -450,7 +450,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
                   )}
                 >
                   <FolderIcon className="text-subtle size-3" />
-                  {target || '(no folder)'}
+                  {target || '(no collection)'}
                 </button>
               ),
             )}

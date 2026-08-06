@@ -127,7 +127,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       });
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not create folder');
+      return res.ok ? null : (body?.error ?? 'could not create the collection');
     },
 
     move: async (from, to) => {
@@ -149,7 +149,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       });
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not rename the folder');
+      return res.ok ? null : (body?.error ?? 'could not rename the collection');
     },
 
     removeFolder: async (name) => {
@@ -158,7 +158,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       });
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not delete the folder');
+      return res.ok ? null : (body?.error ?? 'could not delete the collection');
     },
 
     create: async (name) => {

@@ -81,7 +81,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono 
   api.post(`/${base}/folders`, async (c) => {
     const body = await c.req.json<{ name?: string }>().catch(() => null);
     const name = body?.name?.trim();
-    if (!name || !validId(name)) return c.json({ error: 'invalid folder name' }, 400);
+    if (!name || !validId(name)) return c.json({ error: 'invalid collection name' }, 400);
     mkdirSync(resolve(dir, name), { recursive: true });
     return c.json({ folder: name });
   });
@@ -107,14 +107,14 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono 
     const from = body?.from?.trim();
     const to = body?.to?.trim();
     if (!from || !to || !validId(from) || !validId(to)) {
-      return c.json({ error: 'invalid folder name' }, 400);
+      return c.json({ error: 'invalid collection name' }, 400);
     }
     const fromPath = resolve(dir, from);
     if (!existsSync(fromPath) || !statSync(fromPath).isDirectory()) {
-      return c.json({ error: 'no such folder' }, 404);
+      return c.json({ error: 'no such collection' }, 404);
     }
     const toPath = resolve(dir, to);
-    if (existsSync(toPath)) return c.json({ error: 'a folder with that name exists' }, 409);
+    if (existsSync(toPath)) return c.json({ error: 'a collection with that name exists' }, 409);
     mkdirSync(resolve(toPath, '..'), { recursive: true });
     renameSync(fromPath, toPath);
     return c.json({ moved: to });
@@ -122,14 +122,14 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono 
 
   api.delete(`/${base}/folders/:name{.+}`, (c) => {
     const name = c.req.param('name');
-    if (!validId(name)) return c.json({ error: 'invalid folder name' }, 400);
+    if (!validId(name)) return c.json({ error: 'invalid collection name' }, 400);
     const path = resolve(dir, name);
     if (!existsSync(path) || !statSync(path).isDirectory()) {
-      return c.json({ error: 'no such folder' }, 404);
+      return c.json({ error: 'no such collection' }, 404);
     }
     // Never delete studies by side effect: a folder must be emptied first.
     if (readdirSync(path).length > 0) {
-      return c.json({ error: 'folder is not empty — move or delete its studies first' }, 409);
+      return c.json({ error: 'collection is not empty — move or delete its studies first' }, 409);
     }
     rmdirSync(path);
     return c.json({ deleted: name });
@@ -149,7 +149,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono 
     const name = body?.name?.trim();
     if (!name || !validId(name)) {
       return c.json(
-        { error: 'study name must be letters, digits, spaces, _ . - (use / for a folder)' },
+        { error: 'study name must be letters, digits, spaces, _ . - (use / for a collection)' },
         400,
       );
     }

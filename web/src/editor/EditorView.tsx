@@ -376,10 +376,11 @@ function PiecePalette({
             title={`Place ${color} ${role}`}
             onClick={() => onPick({ kind: 'piece', role, color })}
             className={cn(
-              'aspect-square w-11 shrink-0 rounded-lg border p-0.5 transition-colors duration-100',
-              active
-                ? 'border-primary bg-primary-soft'
-                : 'border-transparent hover:bg-surface-2',
+              // A board-square backdrop: --board-light is tuned per theme to
+              // keep BOTH piece colours legible, which the page background
+              // is not (black pieces vanish on the dark theme).
+              'aspect-square w-11 shrink-0 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
+              active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
             )}
           >
             {/* Same sprite-reuse trick as the promotion picker. */}
