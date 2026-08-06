@@ -87,10 +87,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
       <AnalysisBoard />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="ghost"
@@ -136,7 +136,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         </Panel>
         <ExplorerPane
           className={cn(
-            'max-lg:min-h-[10rem] max-lg:flex-1 lg:max-h-[35%] lg:min-h-0',
+            'max-lg:min-h-[8rem] max-lg:flex-1 lg:max-h-[35%] lg:min-h-0',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />

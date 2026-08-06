@@ -301,7 +301,7 @@ export function EditorView() {
             title="Move: drag pieces around the board"
           >
             <MousePointer2 className="size-3.5" />
-            Move
+            <span className="hidden sm:inline">Move</span>
           </Button>
           <Button
             variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
@@ -310,7 +310,7 @@ export function EditorView() {
             title="Erase: click a square to remove its piece"
           >
             <Eraser className="size-3.5" />
-            Erase
+            <span className="hidden sm:inline">Erase</span>
           </Button>
           <Button
             variant="ghost"

@@ -28,8 +28,9 @@
 
 /* Layout direction is orientation-aware, not width-only: a Nest Hub or a
    phone held sideways is short and wide, and the panels belong BESIDE the
-   board there. `wide` = side-by-side (desktop width, or any landscape screen
-   with room); `stacked` = its exact complement. Full desktop features (all
+   board there — while portrait ALWAYS stacks, tablets included (lanph3re's call:
+   an iPad Pro upright wants a huge board with panes below). `wide` =
+   side-by-side; `stacked` = its exact complement. Full desktop features (all
    panels at once, no pane tabs) still key off `lg`. */
 /* NOTE: the shorthand form cannot hold a comma-separated media list (Tailwind
    emits a broken selector for the second branch), hence the block form. */
@@ -40,13 +41,9 @@
   @media (orientation: landscape) and (min-width: 44rem) {
     @slot;
   }
-  /* Portrait tablets are wide enough for side-by-side too. */
-  @media (orientation: portrait) and (min-width: 50rem) {
-    @slot;
-  }
 }
 @custom-variant stacked {
-  @media (max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem)) and ((orientation: landscape) or (max-width: 49.9375rem)) {
+  @media (max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem)) {
     @slot;
   }
 }
