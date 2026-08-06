@@ -5,6 +5,7 @@ import type { Color, Role } from 'chessops/types';
 import {
   addMove,
   addSan,
+  addUci,
   createTree,
   deleteSubtree,
   getNode,
@@ -54,6 +55,7 @@ interface AnalysisState {
   completePromotion: (role: Role) => void;
   cancelPromotion: () => void;
   playSan: (san: string) => boolean;
+  playUci: (uci: string) => boolean;
   deleteNode: (id: NodeId) => void;
   promoteNode: (id: NodeId, toMainline: boolean) => void;
   setComment: (id: NodeId, comment: string) => void;
@@ -160,6 +162,14 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
     playSan: (san) => {
       const { tree, cursorId } = get();
       const result = addSan(tree, cursorId, san);
+      if (!result) return false;
+      set({ tree: result.tree, cursorId: result.nodeId });
+      return true;
+    },
+
+    playUci: (uci) => {
+      const { tree, cursorId } = get();
+      const result = addUci(tree, cursorId, uci);
       if (!result) return false;
       set({ tree: result.tree, cursorId: result.nodeId });
       return true;

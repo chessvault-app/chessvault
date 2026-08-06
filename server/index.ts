@@ -3,6 +3,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { existsSync } from 'node:fs';
+import { booksApi } from './books.ts';
 import { REPO_ROOT } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -30,6 +31,8 @@ app.get('/api/health', (c) =>
     version: '0.1.0',
   }),
 );
+
+app.route('/api', booksApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;

@@ -12,7 +12,12 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    include: ['shared/**/*.test.ts', 'server/**/*.test.ts', 'web/src/**/*.test.ts'],
+    include: [
+      'shared/**/*.test.ts',
+      'server/**/*.test.ts',
+      'web/src/**/*.test.ts',
+      'scripts/**/*.test.ts',
+    ],
     environment: 'node',
   },
 });

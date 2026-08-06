@@ -16,6 +16,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
 import { EnginePane } from '@/engine/EnginePane';
 import { EvalBar } from '@/engine/EvalBar';
+import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -100,7 +101,10 @@ export function AnalysisView() {
       {/* Side column */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:max-w-[27rem]">
         <EnginePane className="shrink-0" />
-        <Panel flush className="min-h-0 flex-1">
+        {/* min-h keeps either pane from squeezing the other out of existence
+            on short viewports; both scroll internally. */}
+        <ExplorerPane className="min-h-10 max-h-[45%] shrink-0" />
+        <Panel flush className="min-h-[8.5rem] flex-1">
           <PanelHeader title="Moves" actions={<MoveActions />} />
           <MoveTreePane />
           <StatusBar />
