@@ -40,6 +40,7 @@ export function AnalysisBoard() {
   const node = getNode(tree, cursorId);
   const dests = useAnalysis((s) => s.dests)();
   const isCheck = useAnalysis((s) => s.isCheck)();
+  const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
 
   const lastMove = node.uci
     ? ([node.uci.slice(0, 2), node.uci.slice(2, 4)] as [string, string])
@@ -70,13 +71,19 @@ export function AnalysisBoard() {
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
       <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+        {/* Small screens: the eval bar lies flat above the board instead of
+            stealing width beside it — the board is the scarce resource. */}
+        {engineOn && (
+          <EvalBar score={evalScore} orientation="horizontal" className="shrink-0 lg:hidden" />
+        )}
         {/* Fixed-height strip, matching the editor's palette strip: the board
-            top stays put whether or not a player bar is shown. */}
-        <div className="flex h-10 w-full items-end">
+            top stays put whether or not a player bar is shown. On phones the
+            strip only exists when there is a player bar to show. */}
+        <div className={cn('w-full items-end lg:flex lg:h-10', hasGame ? 'flex' : 'hidden lg:flex')}>
           <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
         </div>
         <div className="flex w-full items-stretch gap-2">
-          {engineOn && <EvalBar score={evalScore} className="shrink-0" />}
+          {engineOn && <EvalBar score={evalScore} className="shrink-0 max-lg:hidden" />}
           <div className="relative min-w-0 flex-1">
             <Board
               fen={node.fen}

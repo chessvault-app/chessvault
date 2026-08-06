@@ -340,10 +340,17 @@ cg-board square.check {
   font-weight: 700;
 }
 
-/* chessground ships `bottom: -4px`, hanging the file letters half outside the
-   board's bottom edge. Keep them fully inside the last rank. */
+/* chessground positions coordinates with fixed pixel offsets (files at
+   bottom:-4px left:24px, ranks at top:-20px), which hang outside the board
+   edge and collide with pieces once squares get small. Percentages scale
+   with the board at every size. */
 .cg-wrap coords.files {
-  bottom: 2px;
+  bottom: 0.5%;
+  left: 3%;
+}
+.cg-wrap coords.ranks {
+  top: -2.5%;
+  left: 1%;
 }
 
 .orientation-white .ranks :nth-child(odd),

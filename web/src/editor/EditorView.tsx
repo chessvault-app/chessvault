@@ -109,15 +109,24 @@ export function EditorView() {
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-start">
-        {/* Fixed-height single row on desktop (board alignment across views);
-            natural height on phones, where the palette wraps to comfortable
-            touch-sized rows instead of shrinking into slivers. */}
+        {/* Desktop: one fixed-height combined row above the board (board
+            alignment across views). Phones: the opponent's pieces above the
+            board and the player's below, lichess-editor style. */}
         <div className={cn('flex w-full items-end justify-center lg:h-10', BOARD_MAX_W)}>
-          <PiecePalette
-            colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
-            tool={tool}
-            onPick={setTool}
-          />
+          <div className="hidden w-full lg:block">
+            <PiecePalette
+              colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
+              tool={tool}
+              onPick={setTool}
+            />
+          </div>
+          <div className="w-full lg:hidden">
+            <PiecePalette
+              colors={[orientation === 'white' ? 'black' : 'white']}
+              tool={tool}
+              onPick={setTool}
+            />
+          </div>
         </div>
 
         <div className={cn('w-full', BOARD_MAX_W)}>
@@ -129,6 +138,14 @@ export function EditorView() {
             free={tool.kind === 'move'}
             onSelect={applyTool}
             onMove={movePiece}
+          />
+        </div>
+
+        <div className={cn('w-full lg:hidden', BOARD_MAX_W)}>
+          <PiecePalette
+            colors={[orientation === 'white' ? 'white' : 'black']}
+            tool={tool}
+            onPick={setTool}
           />
         </div>
 
