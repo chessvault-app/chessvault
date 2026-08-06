@@ -30,7 +30,7 @@ export function AnalysisView() {
           min-h-0 only on side-by-side layouts: stacked keeps the natural
           content minimum so squat viewports scroll instead of crushing
           panels into their own overflow-hidden. */}
-      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
         <PaneTabs
           className="lg:hidden"
           value={pane}
@@ -50,16 +50,18 @@ export function AnalysisView() {
         <ExplorerPane
           resizeKey="analysis-explorer"
           className={cn(
-            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-10 lg:max-h-[45%]',
+            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
+        {/* min-h-min, NOT min-h-auto: Panel's overflow-hidden disables the
+            automatic content-based minimum (it computes to 0), but the
+            explicit min-content keyword still applies — the panel refuses
+            to shrink below its floors (header + tree min-h + status bar)
+            and overflows the column into scroll instead of clipping. */}
         <Panel
           flush
-          className={cn(
-            'flex-1 lg:min-h-[8.5rem]',
-            pane !== 'moves' && 'max-lg:hidden',
-          )}
+          className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <PanelHeader title="Moves" actions={<MoveActions />} />
           <MoveTreePane />

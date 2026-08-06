@@ -122,7 +122,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           layouts): stacked keeps the natural content minimum, so a squat
           viewport scrolls the page instead of crushing panels into their
           own overflow-hidden. */}
-      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
         {titleRow('stacked:hidden')}
 
         <PaneTabs
@@ -142,15 +142,14 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             <ChaptersPanel />
           </div>
         )}
-        {/* Desktop gets an explicit floor; stacked relies on the content
-            minimum (tree floor + annotation) so the panel can never be
-            squeezed below what it needs and clip its own bottom. */}
+        {/* min-h-min, NOT min-h-auto: Panel's overflow-hidden disables the
+            automatic content-based minimum, but the explicit min-content
+            keyword still applies — the panel keeps its floors (header +
+            tree min-h + annotation) and overflows the column into scroll
+            instead of clipping. */}
         <Panel
           flush
-          className={cn(
-            'flex-1 lg:min-h-[10rem]',
-            pane !== 'moves' && 'max-lg:hidden',
-          )}
+          className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
@@ -161,7 +160,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <ExplorerPane
           resizeKey="study-explorer"
           className={cn(
-            'max-lg:min-h-[8rem] max-lg:flex-1 lg:max-h-[35%] lg:min-h-0',
+            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-min lg:max-h-[35%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
