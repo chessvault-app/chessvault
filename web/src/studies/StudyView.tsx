@@ -271,11 +271,7 @@ function SaveIndicator({ state, error }: { state: string; error: string | null }
 
 function ChaptersPanel() {
   const chapters = useStudy((s) => s.chapters);
-  const chapterIndex = useStudy((s) => s.chapterIndex);
-  const selectChapter = useStudy((s) => s.selectChapter);
   const addChapter = useStudy((s) => s.addChapter);
-  const renameChapter = useStudy((s) => s.renameChapter);
-  const deleteChapter = useStudy((s) => s.deleteChapter);
   const [renaming, setRenaming] = useState<number | null>(null);
   const [draft, setDraft] = useState('');
 
@@ -342,90 +338,119 @@ function ChaptersPanel() {
               </Button>
             </li>
           ) : (
-            <ChapterRow key={chapters[row.index]!.id} index={row.index} />
+            <ChapterRow
+              key={chapters[row.index]!.id}
+              index={row.index}
+              renaming={renaming}
+              setRenaming={setRenaming}
+              draft={draft}
+              setDraft={setDraft}
+            />
           ),
         )}
       </ul>
     </Panel>
   );
+}
 
-  function ChapterRow({ index }: { index: number }) {
-    const chapter = chapters[index]!;
-    const nested = chapter.name.includes('/');
-    // Nested chapters show only their own name; the group heading carries
-    // the prefix. Renaming always edits the full "Group/Name" path.
-    const label = nested ? chapter.name.slice(chapter.name.indexOf('/') + 1) : chapter.name;
-    return (
-      <li className={cn('group flex items-center', nested && 'pl-3')}>
-        {renaming === index ? (
-          <input
-            autoFocus
-            onFocus={(e) => e.target.select()}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={() => {
-              renameChapter(index, draft);
-              setRenaming(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-              if (e.key === 'Escape') setRenaming(null);
-            }}
-            className={cn(
-              'bg-surface-inset border-line text-fg m-0.5 h-7 min-w-0 flex-1 rounded-md',
-              'border px-2 text-xs outline-none focus:border-line-strong',
-            )}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => selectChapter(index)}
-            onDoubleClick={() => {
+// A top-level component, NOT nested inside ChaptersPanel: a nested component
+// gets a fresh identity on every parent render, so React would remount the
+// row — and the rename input inside it — on every keystroke.
+function ChapterRow({
+  index,
+  renaming,
+  setRenaming,
+  draft,
+  setDraft,
+}: {
+  index: number;
+  renaming: number | null;
+  setRenaming: (v: number | null) => void;
+  draft: string;
+  setDraft: (v: string) => void;
+}) {
+  const chapters = useStudy((s) => s.chapters);
+  const chapterIndex = useStudy((s) => s.chapterIndex);
+  const selectChapter = useStudy((s) => s.selectChapter);
+  const renameChapter = useStudy((s) => s.renameChapter);
+  const deleteChapter = useStudy((s) => s.deleteChapter);
+
+  const chapter = chapters[index];
+  if (!chapter) return null;
+  const nested = chapter.name.includes('/');
+  // Nested chapters show only their own name; the group heading carries
+  // the prefix. Renaming always edits the full "Group/Name" path.
+  const label = nested ? chapter.name.slice(chapter.name.indexOf('/') + 1) : chapter.name;
+  return (
+    <li className={cn('group flex items-center', nested && 'pl-3')}>
+      {renaming === index ? (
+        <input
+          autoFocus
+          onFocus={(e) => e.target.select()}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            renameChapter(index, draft);
+            setRenaming(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            if (e.key === 'Escape') setRenaming(null);
+          }}
+          className={cn(
+            'bg-surface-inset border-line text-fg m-0.5 h-7 min-w-0 flex-1 rounded-md',
+            'border px-2 text-xs outline-none focus:border-line-strong',
+          )}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => selectChapter(index)}
+          onDoubleClick={() => {
+            setDraft(chapter.name);
+            setRenaming(index);
+          }}
+          title="Double-click to rename (use “Group/Name” to nest)"
+          className={cn(
+            'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-xs',
+            'transition-colors duration-100',
+            index === chapterIndex
+              ? 'bg-primary-soft text-primary font-semibold'
+              : 'text-muted hover:bg-surface-2 hover:text-fg',
+          )}
+        >
+          <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.625rem]">
+            {index + 1}
+          </span>
+          <span className="truncate">{label}</span>
+        </button>
+      )}
+      {renaming !== index && (
+        <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+          {/* Touch has no double-click, so rename gets a real button. */}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="Rename this chapter"
+            onClick={() => {
               setDraft(chapter.name);
               setRenaming(index);
             }}
-            title="Double-click to rename (use “Group/Name” to nest)"
-            className={cn(
-              'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-xs',
-              'transition-colors duration-100',
-              index === chapterIndex
-                ? 'bg-primary-soft text-primary font-semibold'
-                : 'text-muted hover:bg-surface-2 hover:text-fg',
-            )}
           >
-            <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.625rem]">
-              {index + 1}
-            </span>
-            <span className="truncate">{label}</span>
-          </button>
-        )}
-        {renaming !== index && (
-          <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
-            {/* Touch has no double-click, so rename gets a real button. */}
+            <Pencil className="size-3" />
+          </Button>
+          {chapters.length > 1 && (
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Rename this chapter"
-              onClick={() => {
-                setDraft(chapter.name);
-                setRenaming(index);
-              }}
+              title="Delete this chapter"
+              onClick={() => deleteChapter(index)}
             >
-              <Pencil className="size-3" />
+              <Trash2 className="size-3" />
             </Button>
-            {chapters.length > 1 && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title="Delete this chapter"
-                onClick={() => deleteChapter(index)}
-              >
-                <Trash2 className="size-3" />
-              </Button>
-            )}
-          </div>
-        )}
-      </li>
-    );
-  }
+          )}
+        </div>
+      )}
+    </li>
+  );
 }
