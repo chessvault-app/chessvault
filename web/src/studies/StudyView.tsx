@@ -1,4 +1,13 @@
-import { ArrowLeft, Check, CircleAlert, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  CircleAlert,
+  FolderPlus,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { EnginePane } from '@/engine/EnginePane';
@@ -291,14 +300,28 @@ function ChaptersPanel() {
       <PanelHeader
         title={`Chapters · ${chapters.length}`}
         actions={
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="Add a chapter (rename to “Group/Name” to nest it)"
-            onClick={() => addChapter()}
-          >
-            <Plus className="size-3.5" />
-          </Button>
+          <>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Add a sub-chapter — chapters named “Group/Name” nest under a group heading"
+              onClick={() => {
+                // Create it nested and drop straight into the rename input
+                // with the full Group/Name path, so the naming scheme that
+                // drives nesting explains itself.
+                const group = 'New group';
+                const n = chapters.filter((c) => c.name.startsWith(`${group}/`)).length + 1;
+                addChapter(group);
+                setDraft(`${group}/Chapter ${n}`);
+                setRenaming(chapters.length);
+              }}
+            >
+              <FolderPlus className="size-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" title="Add a chapter" onClick={() => addChapter()}>
+              <Plus className="size-3.5" />
+            </Button>
+          </>
         }
       />
       <ul className="min-h-0 overflow-y-auto p-1">
@@ -337,6 +360,7 @@ function ChaptersPanel() {
         {renaming === index ? (
           <input
             autoFocus
+            onFocus={(e) => e.target.select()}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={() => {
