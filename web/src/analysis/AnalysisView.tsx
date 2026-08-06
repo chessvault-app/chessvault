@@ -17,7 +17,7 @@ export function AnalysisView() {
 
       {/* Side column. Stacked layouts scroll the whole column; on desktop it
           fits the viewport and each pane scrolls internally instead. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:max-w-[27rem] lg:overflow-visible">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:w-[min(27rem,38%)] lg:flex-none lg:overflow-visible">
         <EnginePane className="shrink-0" />
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}

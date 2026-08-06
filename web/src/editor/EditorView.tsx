@@ -178,7 +178,7 @@ export function EditorView() {
       {/* Position metadata */}
       {/* Same width as the analysis side column, so the centred board sits at
           the same x in both views. */}
-      <div className="flex min-h-0 flex-col gap-3 lg:w-[27rem] lg:shrink-0">
+      <div className="flex min-h-0 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
         <Panel flush>
           <PanelHeader title="Position" />
           <div className="grid gap-3 p-3">
@@ -366,10 +366,12 @@ function PiecePalette({
   onPick: (tool: Tool) => void;
 }) {
   return (
-    <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1">
+    // No wrapping: the buttons shrink to keep one row at any width, so the
+    // fixed-height strip above the board never clips a second line.
+    <div className="cg-wrap promo-host flex w-full items-center justify-center gap-1">
       {colors.map((color, groupIndex) => (
-        <div key={color} className="flex items-center gap-1">
-          {groupIndex > 0 && <span className="bg-line mx-1.5 h-6 w-px" />}
+        <div key={color} className="flex min-w-0 flex-1 items-center gap-1">
+          {groupIndex > 0 && <span className="bg-line mx-1.5 h-6 w-px shrink-0" />}
           {ROLES.map((role) => {
             const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
             return (
@@ -383,7 +385,7 @@ function PiecePalette({
                   // A board-square backdrop: --board-light is tuned per theme
                   // to keep BOTH piece colours legible, which the page
                   // background is not (black pieces vanish on dark).
-                  'aspect-square w-10 shrink-0 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
+                  'aspect-square w-full min-w-0 max-w-10 flex-1 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100',
                   active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
                 )}
               >

@@ -15,6 +15,7 @@ import {
   createTree,
   getNode,
   legalDests,
+  mainlineFrom,
   moveNumberLabel,
   pathTo,
   positionAt,
@@ -62,7 +63,11 @@ function cleanBlockPgn(pgn: string): string {
 export function ChessBlockView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
   const initial = useMemo(() => parseBlock(String(node.attrs.pgn ?? '*')), []);
   const [tree, setTree] = useState<MoveTree>(initial.tree);
-  const [cursorId, setCursorId] = useState<NodeId>(initial.tree.rootId);
+  // A note board opens at the END of its line — the position the note is
+  // talking about — not at the start; step back to replay.
+  const [cursorId, setCursorId] = useState<NodeId>(
+    mainlineFrom(initial.tree, initial.tree.rootId).at(-1) ?? initial.tree.rootId,
+  );
   const headers = useRef<Headers>(initial.headers);
   const [orientation, setOrientation] = useState<Color>('white');
   const [pendingPromotion, setPendingPromotion] = useState<{

@@ -85,7 +85,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
       <AnalysisBoard />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:max-w-[27rem] lg:overflow-visible">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto lg:w-[min(27rem,38%)] lg:flex-none lg:overflow-visible">
         <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="ghost"
