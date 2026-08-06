@@ -362,7 +362,11 @@ cg-board square.check {
   color: color-mix(in oklch, var(--board-light), white 60%);
 }
 
-.cg-wrap {
+/* Radius/clip/shadow live on cg-container, not .cg-wrap: chessground floors
+   the container to a multiple of 8 device pixels (crisp squares), so it can
+   sit up to 8 device-px short of the wrap — rounding the wrap then leaves
+   the board's own right/bottom corners square. */
+.cg-wrap cg-container {
   border-radius: calc(var(--radius) * 0.6);
   overflow: hidden;
   box-shadow: var(--shadow-panel);

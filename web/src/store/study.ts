@@ -72,31 +72,45 @@ let loadingChapter = false;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 const AUTOSAVE_MS = 1500;
 
+const asSide = (value: string | undefined): 'white' | 'black' | null =>
+  value === 'white' || value === 'black' ? value : null;
+
 function loadIntoAnalysis(chapter: Chapter): void {
   loadingChapter = true;
   // Chapters made from imported games carry players — show their name plates.
   const hasPlayers =
     (chapter.headers['White'] ?? '?') !== '?' || (chapter.headers['Black'] ?? '?') !== '?';
-  // Collected games record which side the vault owner played.
-  const side = chapter.headers['VaultSide'];
+  // Board side: an explicitly saved flip wins, then the side the vault owner
+  // played (collected games), and a fresh study starts white-side-down.
+  const orientation =
+    asSide(chapter.headers['Orientation']) ?? asSide(chapter.headers['VaultSide']) ?? 'white';
   useAnalysis.setState({
     tree: chapter.tree,
     cursorId: chapter.tree.rootId,
     pendingPromotion: null,
     loadError: null,
     gameHeaders: hasPlayers ? chapter.headers : null,
-    ...(side === 'white' || side === 'black' ? { orientation: side } : {}),
+    orientation,
   });
   loadingChapter = false;
 }
 
 export const useStudy = create<StudyState>()((set, get) => {
-  /** Pull the live tree out of the analysis store into the chapter list. */
+  /** Pull the live tree (and board side) out of the analysis store. */
   const stashCurrent = (): Chapter[] => {
     const { openId, chapters, chapterIndex } = get();
     if (!openId) return chapters;
-    const live = useAnalysis.getState().tree;
-    return chapters.map((c, i) => (i === chapterIndex ? { ...c, tree: live } : c));
+    const { tree: live, orientation } = useAnalysis.getState();
+    return chapters.map((c, i) => {
+      if (i !== chapterIndex) return c;
+      // The flip is part of the chapter: persisted as an Orientation header,
+      // written only when it differs from the load-time default.
+      const headers = { ...c.headers };
+      const defaultSide = asSide(headers['VaultSide']) ?? 'white';
+      if (orientation !== defaultSide) headers['Orientation'] = orientation;
+      else delete headers['Orientation'];
+      return { ...c, tree: live, headers };
+    });
   };
 
   const scheduleSave = (): void => {
@@ -317,11 +331,13 @@ export const useStudy = create<StudyState>()((set, get) => {
   };
 });
 
-// Any tree change in the analysis store while a study is open marks it dirty
-// and schedules an autosave. Chapter loads set `loadingChapter` so swapping
-// chapters never counts as an edit.
+// Any tree change — or a board flip, which is saved as part of the chapter —
+// while a study is open marks it dirty and schedules an autosave. Chapter
+// loads set `loadingChapter` so swapping chapters never counts as an edit.
 useAnalysis.subscribe((state, prev) => {
-  if (state.tree === prev.tree || loadingChapter) return;
+  if ((state.tree === prev.tree && state.orientation === prev.orientation) || loadingChapter) {
+    return;
+  }
   const study = useStudy.getState();
   if (!study.openId) return;
   useStudy.setState({ saveState: 'dirty' });

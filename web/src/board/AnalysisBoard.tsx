@@ -9,6 +9,7 @@ import { useEffect, useMemo } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, pathTo } from '@shared/tree';
+import { BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -64,10 +65,9 @@ export function AnalysisBoard() {
 
   return (
     <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 lg:flex-1 lg:justify-center">
-      {/* Bounded by height so the board never pushes the controls off-screen,
-          and by an absolute cap so it stops stealing room from the side panes
-          on a wide display. */}
-      <div className="flex w-full max-w-[min(100%,calc(100dvh-11rem))] flex-col gap-1.5 lg:max-w-[min(100%,calc(100dvh-8rem),40rem)]">
+      {/* Bounded by the shared budget so the board is the same size in every
+          view — see boardSize.ts. */}
+      <div className={cn('flex w-full flex-col gap-1.5', BOARD_MAX_W)}>
         <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
         <div className="flex w-full items-stretch gap-2">
           {engineOn && <EvalBar score={evalScore} className="shrink-0" />}

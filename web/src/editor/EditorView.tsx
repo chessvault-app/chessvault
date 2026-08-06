@@ -16,6 +16,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import {
   defaultEditorState,
@@ -112,7 +113,7 @@ export function EditorView() {
           onPick={setTool}
         />
 
-        <div className="w-full max-w-[min(100%,calc(100dvh-16rem))] lg:max-w-[min(100%,calc(100dvh-14rem),36rem)]">
+        <div className={cn('w-full', BOARD_MAX_W)}>
           <Board
             fen={fen}
             orientation={orientation}
