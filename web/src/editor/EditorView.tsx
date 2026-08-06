@@ -288,7 +288,8 @@ export function EditorView() {
           />
         </div>
 
-        <div className="flex items-center justify-center gap-1">
+        <div className="flex items-center justify-center gap-2">
+          <div className="bg-surface-2/60 border-line flex items-center gap-0.5 rounded-xl border p-0.5">
           <Button
             variant={tool.kind === 'move' ? 'primary' : 'ghost'}
             size="sm"
@@ -341,7 +342,7 @@ export function EditorView() {
           >
             <Settings2 className="size-3.5" />
           </Button>
-          <div className="bg-line mx-1 h-5 w-px" />
+          </div>
           <Button
             variant="primary"
             size="sm"

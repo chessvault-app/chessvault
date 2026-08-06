@@ -257,6 +257,13 @@
     overscroll-behavior: none;
   }
 
+  /* Native <select> popups inherit the control's font — a text-xs mono
+     control makes an unreadable dropdown list. Options get their own size. */
+  option {
+    font-size: 1rem;
+    font-family: var(--font-sans);
+  }
+
   /* Only show focus rings for keyboard users, but never suppress them entirely. */
   :focus-visible {
     outline: 2px solid var(--primary);
