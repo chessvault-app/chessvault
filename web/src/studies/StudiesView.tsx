@@ -1,4 +1,4 @@
-import { Folder as FolderIcon, Library, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Folder as FolderIcon, Library, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -14,28 +14,21 @@ export function StudiesView({ params }: { params: string[] }) {
 
 function StudyList() {
   const studies = useStudy((s) => s.studies);
+  const folders = useStudy((s) => s.folders);
   const listLoaded = useStudy((s) => s.listLoaded);
   const error = useStudy((s) => s.error);
   const refresh = useStudy((s) => s.refresh);
-  const create = useStudy((s) => s.create);
 
-  const [name, setName] = useState('');
-  const [createError, setCreateError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const submit = async (): Promise<void> => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const failure = await create(trimmed);
-    setCreateError(failure);
-    if (!failure) {
-      setName('');
-      navigate('studies', encodeURIComponent(trimmed));
-    }
-  };
+  const needle = query.trim().toLowerCase();
+  const visible = needle
+    ? studies.filter((s) => s.id.toLowerCase().includes(needle))
+    : studies;
 
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
@@ -44,45 +37,170 @@ function StudyList() {
         <div className="flex items-center gap-2">
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void submit();
-            }}
-            placeholder="New study, or Folder/Name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search studies…"
             className={cn(
               'bg-surface border-line text-fg h-8 w-48 rounded-md border px-2.5 text-sm',
               'outline-none focus:border-line-strong',
             )}
           />
-          <Button variant="primary" size="sm" disabled={!name.trim()} onClick={() => void submit()}>
-            <Plus className="mr-1 size-3.5" />
-            Create
-          </Button>
+          <CreateMenu />
         </div>
       </header>
 
-      {(error ?? createError) && <p className="text-bad text-xs">{error ?? createError}</p>}
+      {error && <p className="text-bad text-xs">{error}</p>}
 
-      {listLoaded && studies.length === 0 ? (
+      {listLoaded && studies.length === 0 && folders.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Library className="text-subtle size-6" strokeWidth={1.5} />
           <p className="text-muted max-w-sm text-sm leading-relaxed">
             No studies yet. A study is a set of annotated chapters — lines, comments, arrows —
             saved as plain PGN in <code className="font-mono text-xs">vault/studies/</code>.
-            Name one “Folder/Study” to file it in a collection.
           </p>
         </div>
       ) : (
-        <GroupedStudies studies={studies} />
+        <GroupedStudies studies={visible} allFolders={needle ? [] : folders} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * [Create ▾] → New study / New folder, then an inline form. Studies can be
+ * filed into an existing folder from a dropdown rather than typed paths.
+ */
+function CreateMenu() {
+  const folders = useStudy((s) => s.folders);
+  const create = useStudy((s) => s.create);
+  const createFolder = useStudy((s) => s.createFolder);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mode, setMode] = useState<'study' | 'folder' | null>(null);
+  const [name, setName] = useState('');
+  const [folder, setFolder] = useState('');
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const submit = async (): Promise<void> => {
+    const trimmed = name.trim();
+    if (!trimmed || !mode) return;
+    if (mode === 'folder') {
+      const err = await createFolder(trimmed);
+      setFailure(err);
+      if (!err) {
+        setMode(null);
+        setName('');
+      }
+      return;
+    }
+    const id = folder ? `${folder}/${trimmed}` : trimmed;
+    const err = await create(id);
+    setFailure(err);
+    if (!err) navigate('studies', encodeURIComponent(id));
+  };
+
+  return (
+    <div className="relative">
+      <Button variant="primary" size="sm" onClick={() => setMenuOpen((v) => !v)}>
+        <Plus className="mr-1 size-3.5" />
+        Create
+        <ChevronDown className="ml-1 size-3" />
+      </Button>
+
+      {menuOpen && (
+        <div
+          className={cn(
+            'border-line bg-surface absolute right-0 top-9 z-40 w-40 rounded-lg border p-1',
+            'shadow-[var(--shadow-pop)]',
+          )}
+        >
+          {(
+            [
+              ['study', 'New study', Library],
+              ['folder', 'New folder', FolderIcon],
+            ] as const
+          ).map(([kind, label, Icon]) => (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => {
+                setMode(kind);
+                setMenuOpen(false);
+                setName('');
+                setFailure(null);
+              }}
+              className={cn(
+                'hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5',
+                'text-left text-sm transition-colors duration-100',
+              )}
+            >
+              <Icon className="text-subtle size-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {mode && (
+        <div
+          className={cn(
+            'border-line bg-surface absolute right-0 top-9 z-40 flex w-72 flex-col gap-2 rounded-lg',
+            'border p-3 shadow-[var(--shadow-pop)]',
+          )}
+        >
+          <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
+            {mode === 'study' ? 'New study' : 'New folder'}
+          </p>
+          {mode === 'study' && folders.length > 0 && (
+            <select
+              value={folder}
+              onChange={(e) => setFolder(e.target.value)}
+              className={cn(
+                'bg-surface-2 text-fg border-line h-8 rounded-md border px-2 text-xs outline-none',
+              )}
+            >
+              <option value="">(no folder)</option>
+              {folders.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          )}
+          <input
+            autoFocus
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void submit();
+              if (e.key === 'Escape') setMode(null);
+            }}
+            placeholder={mode === 'study' ? 'Study name' : 'Folder name'}
+            className={cn(
+              'bg-surface-inset border-line text-fg h-8 rounded-md border px-2.5 text-sm',
+              'outline-none focus:border-line-strong',
+            )}
+          />
+          {failure && <p className="text-bad text-xs">{failure}</p>}
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" disabled={!name.trim()} onClick={() => void submit()}>
+              Create
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
 /** Studies grouped by folder; folders are just subdirectories in the vault. */
-function GroupedStudies({ studies }: { studies: StudyMeta[] }) {
+function GroupedStudies({ studies, allFolders }: { studies: StudyMeta[]; allFolders: string[] }) {
   const groups = new Map<string, StudyMeta[]>();
+  for (const folder of allFolders) groups.set(folder, []);
   for (const study of studies) {
     const slash = study.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : study.id.slice(0, slash);
@@ -102,11 +220,15 @@ function GroupedStudies({ studies }: { studies: StudyMeta[] }) {
               {folder}
             </h2>
           )}
-          <ul className="flex flex-col gap-2">
-            {groups.get(folder)!.map((study) => (
-              <StudyCard key={study.id} study={study} />
-            ))}
-          </ul>
+          {groups.get(folder)!.length === 0 ? (
+            <p className="text-subtle px-1 text-xs">Empty collection.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {groups.get(folder)!.map((study) => (
+                <StudyCard key={study.id} study={study} />
+              ))}
+            </ul>
+          )}
         </section>
       ))}
     </div>

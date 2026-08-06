@@ -3,87 +3,38 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { relative, resolve, sep } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { makeFen } from 'chessops/fen';
-import { PgnParser, makePgn, type Game, type PgnNodeData } from 'chessops/pgn';
+import {
+  PgnParser,
+  makePgn,
+  parseComment,
+  type Game,
+  type PgnNodeData,
+} from 'chessops/pgn';
 import { parseSan } from 'chessops/san';
 import { hashSetup } from '../shared/zobrist.ts';
 import { openingForKey, type Opening } from './openings.ts';
 import { VAULT_GAMES } from './paths.ts';
 
 /**
- * Imported games live as plain PGN in vault/games/, one file per
- * chess.com month: vault/games/chesscom/<user>/<YYYY-MM>.pgn. Imports are
- * incremental — a month already on disk is never refetched, except the
- * current (still growing) one. The chess.com public API needs no auth.
+ * The Games section is a curated COLLECTION: one PGN file per kept game in
+ * vault/games/collection/, each annotatable exactly like a study chapter.
+ *
+ * chess.com history is *browsed*, not bulk-imported: the archive month list
+ * comes from the public API, a month's games are cached on first view as
+ * vault/games/chesscom/<user>/<YYYY-MM>.pgn (so browsing stays offline
+ * afterwards), and individual games are promoted into the collection.
  */
 
 const USER_RE = /^[A-Za-z0-9_.-]{1,60}$/;
+const MONTH_RE = /^\d{4}-\d{2}$/;
 // chess.com asks bots to identify themselves; a UA with contact beats a 403.
 const FETCH_HEADERS = { 'User-Agent': 'chess-vault (personal offline study app)' };
 
-interface ImportJob {
-  user: string;
-  running: boolean;
-  monthsDone: number;
-  monthsTotal: number;
-  games: number;
-  error: string | null;
-  startedAt: number;
-}
-
-let job: ImportJob | null = null;
-
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(20_000) });
-  if (!res.ok) throw new Error(`chess.com replied ${res.status} for ${url}`);
+  if (!res.ok) throw new Error(`chess.com replied ${res.status}`);
   return (await res.json()) as T;
 }
-
-async function runImport(user: string, dir: string): Promise<void> {
-  const current: ImportJob = {
-    user,
-    running: true,
-    monthsDone: 0,
-    monthsTotal: 0,
-    games: 0,
-    error: null,
-    startedAt: Date.now(),
-  };
-  job = current;
-  try {
-    const { archives } = await fetchJson<{ archives: string[] }>(
-      `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`,
-    );
-    current.monthsTotal = archives.length;
-    const userDir = resolve(dir, 'chesscom', user.toLowerCase());
-    mkdirSync(userDir, { recursive: true });
-
-    const now = new Date();
-    const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
-
-    for (const url of archives) {
-      const [year, month] = url.split('/').slice(-2);
-      const key = `${year}-${month}`;
-      const path = resolve(userDir, `${key}.pgn`);
-      if (existsSync(path) && key !== currentMonth) {
-        current.monthsDone += 1;
-        continue; // already imported and closed — months never change
-      }
-      const body = await fetchJson<{ games: { pgn?: string }[] }>(url);
-      const pgns = body.games.map((g) => g.pgn).filter((p): p is string => Boolean(p));
-      if (pgns.length > 0) writeFileSync(path, `${pgns.join('\n\n')}\n`);
-      current.games += pgns.length;
-      current.monthsDone += 1;
-    }
-  } catch (error) {
-    current.error = (error as Error).message;
-  } finally {
-    current.running = false;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Listing. Header-level metadata parsed per file and cached by mtime, so the
-// games table stays fast without a database — these are still plain files.
 
 export interface GameSummary {
   file: string;
@@ -97,20 +48,30 @@ export interface GameSummary {
   timeControl: string | null;
   eco: string | null;
   link: string | null;
-  /** Deepest named position on the mainline, from the offline openings db. */
   opening: Opening | null;
-  /** Position after the last mainline move — for hover previews. */
   finalFen: string | null;
+  /** Which side the vault's owner played, when it can be determined. */
+  userSide: 'white' | 'black' | null;
+  /** True when the game carries comments, NAGs or variations. */
+  annotated: boolean;
 }
 
-/**
- * Replay the mainline once to get the final position and the deepest opening
- * name. Skips non-standard games; tolerates broken SAN by stopping there.
- */
-function replaySummary(game: Game<PgnNodeData>): { opening: Opening | null; finalFen: string | null } {
+function replaySummary(game: Game<PgnNodeData>): {
+  opening: Opening | null;
+  finalFen: string | null;
+  annotated: boolean;
+} {
+  let annotated = false;
+  for (const node of game.moves.mainlineNodes()) {
+    if (node.children.length > 1) annotated = true;
+    if (node.data.nags?.length) annotated = true;
+    if (node.data.comments?.some((c) => parseComment(c).text.trim().length > 0)) annotated = true;
+    if (annotated) break;
+  }
+
   const variant = (game.headers.get('Variant') ?? 'standard').toLowerCase();
   if (!['standard', 'chess', 'classical', 'normal'].includes(variant) || game.headers.has('FEN')) {
-    return { opening: null, finalFen: null };
+    return { opening: null, finalFen: null, annotated };
   }
   const pos = Chess.default();
   let opening: Opening | null = null;
@@ -125,26 +86,43 @@ function replaySummary(game: Game<PgnNodeData>): { opening: Opening | null; fina
       if (named) opening = named;
     }
   }
-  return { opening, finalFen: makeFen(pos.toSetup()) };
+  return { opening, finalFen: makeFen(pos.toSetup()), annotated };
 }
 
+// Summaries parsed per file and cached by mtime — plain files stay fast
+// without a database.
 const listCache = new Map<string, { mtimeMs: number; games: GameSummary[] }>();
 
 function parseFileSummaries(dir: string, path: string): GameSummary[] {
   const stat = statSync(path);
-  const rel = relative(dir, path);
+  const rel = relative(dir, path).split(sep).join('/');
   const cached = listCache.get(rel);
   if (cached && cached.mtimeMs === stat.mtimeMs) return cached.games;
+
+  // Archive files live at chesscom/<user>/<month>.pgn — the path names the
+  // player, which is what lets every row know which side they played.
+  const pathUser = rel.startsWith('chesscom/') ? (rel.split('/')[1]?.toLowerCase() ?? null) : null;
 
   const games: GameSummary[] = [];
   const parser = new PgnParser((game, err) => {
     if (err) return;
     const h = (key: string): string | undefined => game.headers.get(key);
+    const white = h('White') ?? '?';
+    const black = h('Black') ?? '?';
+    const vaultSide = h('VaultSide');
+    const userSide =
+      vaultSide === 'white' || vaultSide === 'black'
+        ? vaultSide
+        : pathUser && white.toLowerCase() === pathUser
+          ? 'white'
+          : pathUser && black.toLowerCase() === pathUser
+            ? 'black'
+            : null;
     games.push({
       file: rel,
       index: games.length,
-      white: h('White') ?? '?',
-      black: h('Black') ?? '?',
+      white,
+      black,
       whiteElo: Number(h('WhiteElo')) || 0,
       blackElo: Number(h('BlackElo')) || 0,
       result: h('Result') ?? '*',
@@ -152,6 +130,7 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
       timeControl: h('TimeControl') ?? null,
       eco: h('ECO') ?? null,
       link: h('Link') ?? (h('Site')?.startsWith('http') ? h('Site')! : null),
+      userSide,
       ...replaySummary(game),
     });
   });
@@ -160,11 +139,13 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
   return games;
 }
 
-function walkPgnFiles(root: string): string[] {
-  if (!existsSync(root)) return [];
-  return readdirSync(root, { recursive: true, encoding: 'utf-8' })
-    .filter((f) => f.endsWith('.pgn'))
-    .map((f) => resolve(root, f));
+function parseGames(path: string): Game<PgnNodeData>[] {
+  const games: Game<PgnNodeData>[] = [];
+  const parser = new PgnParser((game, err) => {
+    if (!err) games.push(game);
+  });
+  parser.parse(readFileSync(path, 'utf-8'));
+  return games;
 }
 
 /** Resolve a client-supplied relative file safely inside the games dir. */
@@ -173,10 +154,23 @@ function safeResolve(dir: string, rel: string): string | null {
   return abs.startsWith(dir + sep) && abs.endsWith('.pgn') ? abs : null;
 }
 
+function monthPath(dir: string, user: string, month: string): string {
+  return resolve(dir, 'chesscom', user.toLowerCase(), `${month}.pgn`);
+}
+
+/** Fetch one month from chess.com into the on-disk cache. */
+async function cacheMonth(dir: string, user: string, month: string): Promise<void> {
+  const [year, mm] = month.split('-');
+  const body = await fetchJson<{ games: { pgn?: string }[] }>(
+    `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/${year}/${mm}`,
+  );
+  const pgns = body.games.map((g) => g.pgn).filter((p): p is string => Boolean(p));
+  mkdirSync(resolve(dir, 'chesscom', user.toLowerCase()), { recursive: true });
+  writeFileSync(monthPath(dir, user, month), pgns.length > 0 ? `${pgns.join('\n\n')}\n` : '');
+}
+
 // ---------------------------------------------------------------------------
-// Bookmarks: starred games, stored as a plain JSON file in the vault so they
-// are versioned and survive re-imports (month files are append-only, so a
-// `file#index` key stays stable).
+// Bookmarks: starred collection games, stored as plain JSON in the vault.
 
 function bookmarksPath(dir: string): string {
   return resolve(dir, 'bookmarks.json');
@@ -195,42 +189,115 @@ function writeBookmarks(dir: string, keys: Set<string>): void {
   writeFileSync(bookmarksPath(dir), `${JSON.stringify({ keys: [...keys].sort() }, null, 2)}\n`);
 }
 
+// ---------------------------------------------------------------------------
+
 export function gamesApi(dir: string = VAULT_GAMES): Hono {
-  mkdirSync(dir, { recursive: true });
+  const collectionDir = resolve(dir, 'collection');
+  mkdirSync(collectionDir, { recursive: true });
   const api = new Hono();
 
-  api.post('/games/import/chesscom', async (c) => {
-    if (job?.running) return c.json({ error: 'an import is already running' }, 409);
-    const body = await c.req.json<{ username?: string }>().catch(() => null);
-    const user = body?.username?.trim();
-    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
-    void runImport(user, dir);
-    return c.json({ started: true, user });
+  /** The collection: one game per file, newest date first. */
+  api.get('/games', (c) => {
+    const games = readdirSync(collectionDir)
+      .filter((f) => f.endsWith('.pgn'))
+      .flatMap((f) => parseFileSummaries(dir, resolve(collectionDir, f)))
+      .sort((a, b) => b.date.localeCompare(a.date) || a.file.localeCompare(b.file));
+    return c.json({ total: games.length, games });
   });
 
-  api.get('/games/import/status', (c) =>
-    c.json(
-      job
-        ? {
-            running: job.running,
-            user: job.user,
-            monthsDone: job.monthsDone,
-            monthsTotal: job.monthsTotal,
-            games: job.games,
-            error: job.error,
-            seconds: (Date.now() - job.startedAt) / 1000,
-          }
-        : { running: false },
-    ),
-  );
+  /** Months available for a user: remote archive list merged with the cache. */
+  api.get('/games/archive/months', async (c) => {
+    const user = c.req.query('user')?.trim();
+    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
 
-  api.get('/games', (c) => {
-    const limit = Math.min(Number(c.req.query('limit')) || 200, 1000);
-    const offset = Number(c.req.query('offset')) || 0;
-    const all = walkPgnFiles(dir)
-      .flatMap((path) => parseFileSummaries(dir, path))
-      .sort((a, b) => b.date.localeCompare(a.date) || b.index - a.index);
-    return c.json({ total: all.length, games: all.slice(offset, offset + limit) });
+    const cachedMonths = new Map<string, number>();
+    const userDir = resolve(dir, 'chesscom', user.toLowerCase());
+    if (existsSync(userDir)) {
+      for (const f of readdirSync(userDir).filter((f) => f.endsWith('.pgn'))) {
+        const month = f.slice(0, -'.pgn'.length);
+        cachedMonths.set(month, parseFileSummaries(dir, resolve(userDir, f)).length);
+      }
+    }
+
+    let remote: string[] = [];
+    let offline = false;
+    try {
+      const body = await fetchJson<{ archives: string[] }>(
+        `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`,
+      );
+      remote = body.archives.map((url) => url.split('/').slice(-2).join('-'));
+    } catch {
+      offline = true; // cached months still browse fine
+    }
+
+    const all = [...new Set([...remote, ...cachedMonths.keys()])].sort().reverse();
+    return c.json({
+      offline,
+      months: all.map((month) => ({
+        month,
+        cached: cachedMonths.has(month),
+        games: cachedMonths.get(month) ?? null,
+      })),
+    });
+  });
+
+  /** One month's games, cached on disk the first time it is viewed. */
+  api.get('/games/archive/month', async (c) => {
+    const user = c.req.query('user')?.trim();
+    const month = c.req.query('month')?.trim();
+    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
+    if (!month || !MONTH_RE.test(month)) return c.json({ error: 'invalid month' }, 400);
+
+    const path = monthPath(dir, user, month);
+    const now = new Date();
+    const currentMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    // The current month keeps growing; refetch it when we can.
+    if (!existsSync(path) || month === currentMonth) {
+      try {
+        await cacheMonth(dir, user, month);
+      } catch (error) {
+        if (!existsSync(path)) {
+          return c.json({ error: `could not fetch that month (${(error as Error).message})` }, 502);
+        }
+        // offline with a stale cache — serve what we have
+      }
+    }
+    return c.json({ month, games: parseFileSummaries(dir, path) });
+  });
+
+  /** Promote one archived game into the collection. */
+  api.post('/games/collect', async (c) => {
+    const body = await c.req
+      .json<{ file?: string; index?: number }>()
+      .catch(() => null);
+    if (!body?.file || !Number.isInteger(body.index) || body.index! < 0) {
+      return c.json({ error: 'need file and index' }, 400);
+    }
+    const path = safeResolve(dir, body.file);
+    if (!path || !existsSync(path)) return c.json({ error: 'no such file' }, 404);
+
+    const game = parseGames(path)[body.index!];
+    if (!game) return c.json({ error: 'no such game' }, 404);
+
+    // Record which side the vault owner played, for board orientation.
+    const pathUser = body.file.startsWith('chesscom/')
+      ? (body.file.split('/')[1]?.toLowerCase() ?? null)
+      : null;
+    const white = (game.headers.get('White') ?? '').toLowerCase();
+    const black = (game.headers.get('Black') ?? '').toLowerCase();
+    if (pathUser === white) game.headers.set('VaultSide', 'white');
+    else if (pathUser === black) game.headers.set('VaultSide', 'black');
+
+    const date = (game.headers.get('UTCDate') ?? game.headers.get('Date') ?? '').replaceAll('.', '-');
+    const base = `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`
+      .replace(/[^A-Za-z0-9 _.-]/g, '')
+      .trim();
+    let name = base;
+    for (let n = 2; existsSync(resolve(collectionDir, `${name}.pgn`)); n += 1) {
+      name = `${base} (${n})`;
+    }
+    writeFileSync(resolve(collectionDir, `${name}.pgn`), makePgn(game));
+    return c.json({ id: name });
   });
 
   api.get('/games/bookmarks', (c) => c.json({ keys: [...readBookmarks(dir)] }));
@@ -258,13 +325,7 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
     }
     const path = safeResolve(dir, file);
     if (!path || !existsSync(path)) return c.json({ error: 'no such file' }, 404);
-
-    const games: Game<PgnNodeData>[] = [];
-    const parser = new PgnParser((game, err) => {
-      if (!err) games.push(game);
-    });
-    parser.parse(readFileSync(path, 'utf-8'));
-    const game = games[index];
+    const game = parseGames(path)[index];
     if (!game) return c.json({ error: 'no such game' }, 404);
     return c.json({ pgn: makePgn(game) });
   });

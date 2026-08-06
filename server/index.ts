@@ -3,11 +3,12 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi } from './lichess.ts';
 import { studiesApi } from './studies.ts';
-import { REPO_ROOT } from './paths.ts';
+import { REPO_ROOT, VAULT_GAMES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -38,6 +39,9 @@ app.get('/api/health', (c) =>
 app.route('/api', booksApi());
 app.route('/api', lichessExplorerApi());
 app.route('/api', studiesApi());
+// The games collection speaks the same document API as studies: an annotated
+// game is a one-chapter study living in vault/games/collection/.
+app.route('/api', studiesApi(resolve(VAULT_GAMES, 'collection'), 'games/docs'));
 app.route('/api', gamesApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.

@@ -38,7 +38,7 @@ export function App() {
         ) : section === 'studies' ? (
           <StudiesView params={params} />
         ) : section === 'games' ? (
-          <GamesView />
+          <GamesView params={params} />
         ) : (
           <Placeholder section={section} />
         )}

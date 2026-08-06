@@ -43,13 +43,19 @@ function countChapters(pgn: string): number {
   return pgn.match(/^\[Event /gm)?.length ?? (pgn.trim() ? 1 : 0);
 }
 
-export function studiesApi(dir: string = VAULT_STUDIES): Hono {
+/**
+ * PGN-document CRUD over a directory. Mounted twice: at `studies` for
+ * vault/studies, and at `games/docs` for the games collection — an annotated
+ * game is the same kind of document as a one-chapter study.
+ */
+export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono {
   mkdirSync(dir, { recursive: true });
   const api = new Hono();
   const pathOf = (id: string): string => resolve(dir, `${id}.pgn`);
 
-  api.get('/studies', (c) => {
-    const studies = readdirSync(dir, { recursive: true, encoding: 'utf-8' })
+  api.get(`/${base}`, (c) => {
+    const entries = readdirSync(dir, { recursive: true, encoding: 'utf-8' });
+    const studies = entries
       .filter((f) => f.endsWith('.pgn'))
       .map((file) => {
         const path = resolve(dir, file);
@@ -63,11 +69,24 @@ export function studiesApi(dir: string = VAULT_STUDIES): Hono {
         };
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    return c.json({ studies });
+    // Folders listed explicitly so empty ones still show as collections.
+    const folders = entries
+      .filter((f) => statSync(resolve(dir, f)).isDirectory())
+      .map((f) => f.split(sep).join('/'))
+      .sort();
+    return c.json({ studies, folders });
+  });
+
+  api.post(`/${base}/folders`, async (c) => {
+    const body = await c.req.json<{ name?: string }>().catch(() => null);
+    const name = body?.name?.trim();
+    if (!name || !validId(name)) return c.json({ error: 'invalid folder name' }, 400);
+    mkdirSync(resolve(dir, name), { recursive: true });
+    return c.json({ folder: name });
   });
 
   // `{.+}` lets the id contain slashes: folders are part of the id.
-  api.get('/studies/:id{.+}', (c) => {
+  api.get(`/${base}/:id{.+}`, (c) => {
     const id = c.req.param('id');
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
     const path = pathOf(id);
@@ -75,7 +94,7 @@ export function studiesApi(dir: string = VAULT_STUDIES): Hono {
     return c.json({ id, pgn: readFileSync(path, 'utf-8') });
   });
 
-  api.post('/studies', async (c) => {
+  api.post(`/${base}`, async (c) => {
     const body = await c.req.json<{ name?: string }>().catch(() => null);
     const name = body?.name?.trim();
     if (!name || !validId(name)) {
@@ -96,7 +115,7 @@ export function studiesApi(dir: string = VAULT_STUDIES): Hono {
     return c.json({ id: name });
   });
 
-  api.put('/studies/:id{.+}', async (c) => {
+  api.put(`/${base}/:id{.+}`, async (c) => {
     const id = c.req.param('id');
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
     const body = await c.req.json<{ pgn?: string }>().catch(() => null);
@@ -111,7 +130,7 @@ export function studiesApi(dir: string = VAULT_STUDIES): Hono {
     return c.json({ saved: id, bytes: body.pgn.length });
   });
 
-  api.delete('/studies/:id{.+}', (c) => {
+  api.delete(`/${base}/:id{.+}`, (c) => {
     const id = c.req.param('id');
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
     const path = pathOf(id);

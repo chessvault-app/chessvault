@@ -13,12 +13,20 @@ export interface StudyMeta {
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
+/**
+ * Which document API the open document belongs to: real studies, or the games
+ * collection (same server contract, different directory).
+ */
+export type DocBase = 'studies' | 'games/docs';
+
 interface StudyState {
   studies: StudyMeta[];
+  folders: string[];
   listLoaded: boolean;
 
   /** The open study, or null on the list screen. */
   openId: string | null;
+  openBase: DocBase;
   chapters: Chapter[];
   chapterIndex: number;
   saveState: SaveState;
@@ -26,8 +34,9 @@ interface StudyState {
 
   refresh: () => Promise<void>;
   create: (name: string) => Promise<string | null>;
+  createFolder: (name: string) => Promise<string | null>;
   remove: (id: string) => Promise<string | null>;
-  open: (id: string) => Promise<boolean>;
+  open: (id: string, base?: DocBase) => Promise<boolean>;
   close: () => Promise<void>;
   selectChapter: (index: number) => void;
   addChapter: () => void;
@@ -58,12 +67,15 @@ function loadIntoAnalysis(chapter: Chapter): void {
   // Chapters made from imported games carry players — show their name plates.
   const hasPlayers =
     (chapter.headers['White'] ?? '?') !== '?' || (chapter.headers['Black'] ?? '?') !== '?';
+  // Collected games record which side the vault owner played.
+  const side = chapter.headers['VaultSide'];
   useAnalysis.setState({
     tree: chapter.tree,
     cursorId: chapter.tree.rootId,
     pendingPromotion: null,
     loadError: null,
     gameHeaders: hasPlayers ? chapter.headers : null,
+    ...(side === 'white' || side === 'black' ? { orientation: side } : {}),
   });
   loadingChapter = false;
 }
@@ -84,8 +96,10 @@ export const useStudy = create<StudyState>()((set, get) => {
 
   return {
     studies: [],
+    folders: [],
     listLoaded: false,
     openId: null,
+    openBase: 'studies',
     chapters: [],
     chapterIndex: 0,
     saveState: 'saved',
@@ -94,11 +108,22 @@ export const useStudy = create<StudyState>()((set, get) => {
     refresh: async () => {
       try {
         const res = await fetch('/api/studies');
-        const body = (await res.json()) as { studies: StudyMeta[] };
-        set({ studies: body.studies, listLoaded: true, error: null });
+        const body = (await res.json()) as { studies: StudyMeta[]; folders?: string[] };
+        set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
       } catch {
         set({ listLoaded: true, error: 'vault server unreachable' });
       }
+    },
+
+    createFolder: async (name) => {
+      const res = await fetch('/api/studies/folders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      await get().refresh();
+      return res.ok ? null : (body?.error ?? 'could not create folder');
     },
 
     create: async (name) => {
@@ -120,9 +145,9 @@ export const useStudy = create<StudyState>()((set, get) => {
       return res.ok ? null : (body?.error ?? 'delete failed');
     },
 
-    open: async (id) => {
+    open: async (id, base = 'studies') => {
       try {
-        const res = await fetch(`/api/studies/${encodeURIComponent(id)}`);
+        const res = await fetch(`/api/${base}/${encodeURIComponent(id)}`);
         if (!res.ok) {
           set({ error: `could not open “${id}”` });
           return false;
@@ -137,7 +162,7 @@ export const useStudy = create<StudyState>()((set, get) => {
             headers: { Event: `${id}: Chapter 1`, ChapterName: 'Chapter 1', Result: '*' },
           });
         }
-        set({ openId: id, chapters, chapterIndex: 0, saveState: 'saved', error: null });
+        set({ openId: id, openBase: base, chapters, chapterIndex: 0, saveState: 'saved', error: null });
         loadIntoAnalysis(chapters[0]!);
         return true;
       } catch {
@@ -205,12 +230,12 @@ export const useStudy = create<StudyState>()((set, get) => {
     },
 
     save: async () => {
-      const { openId } = get();
+      const { openId, openBase } = get();
       if (!openId) return;
       const chapters = stashCurrent();
       set({ chapters, saveState: 'saving' });
       try {
-        const res = await fetch(`/api/studies/${encodeURIComponent(openId)}`, {
+        const res = await fetch(`/api/${openBase}/${encodeURIComponent(openId)}`, {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ pgn: chaptersToPgn(chapters) }),

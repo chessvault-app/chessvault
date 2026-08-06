@@ -91,12 +91,63 @@ export function AnalysisBoard() {
                 onCancel={cancelPromotion}
               />
             )}
+            <NagBadge node={node} orientation={orientation} />
           </div>
         </div>
         <PlayerBar side={orientation} />
       </div>
       <BoardControls />
     </div>
+  );
+}
+
+/** Move-quality NAGs drawn on the board, chess.com-style colour coding. */
+const BOARD_NAGS: Record<number, { glyph: string; color: string }> = {
+  1: { glyph: '!', color: '#3aab3a' },
+  2: { glyph: '?', color: '#ee8b1f' },
+  3: { glyph: '!!', color: '#1baca6' },
+  4: { glyph: '??', color: '#fa412d' },
+  5: { glyph: '!?', color: '#c46ad4' },
+  6: { glyph: '?!', color: '#f0c15c' },
+};
+
+/**
+ * Badge pinned to the destination square's top-right corner when the move on
+ * screen carries a quality NAG — the annotation is visible on the board
+ * itself, not only in the move list.
+ */
+function NagBadge({
+  node,
+  orientation,
+}: {
+  node: { uci?: string; nags: number[] };
+  orientation: 'white' | 'black';
+}) {
+  const nag = node.nags.find((n) => BOARD_NAGS[n]);
+  if (!nag || !node.uci || node.uci.length < 4) return null;
+  const badge = BOARD_NAGS[nag]!;
+
+  const dest = node.uci.slice(2, 4);
+  const file = dest.charCodeAt(0) - 97;
+  const rank = dest.charCodeAt(1) - 49;
+  const column = orientation === 'white' ? file : 7 - file;
+  const rowFromTop = orientation === 'white' ? 7 - rank : rank;
+
+  return (
+    <span
+      aria-hidden
+      style={{
+        left: `calc(${(column + 1) * 12.5}% - 0.85rem)`,
+        top: `calc(${rowFromTop * 12.5}% - 0.4rem)`,
+        backgroundColor: badge.color,
+      }}
+      className={cn(
+        'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
+        'text-sm font-bold text-white shadow-md',
+      )}
+    >
+      {badge.glyph}
+    </span>
   );
 }
 

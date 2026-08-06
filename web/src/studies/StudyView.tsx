@@ -12,7 +12,7 @@ import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { AnnotationPane } from './AnnotationPane';
 
-export function StudyView({ id }: { id: string }) {
+export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' | 'game' }) {
   const openId = useStudy((s) => s.openId);
   const open = useStudy((s) => s.open);
   const close = useStudy((s) => s.close);
@@ -20,16 +20,19 @@ export function StudyView({ id }: { id: string }) {
   const error = useStudy((s) => s.error);
   const [failed, setFailed] = useState(false);
 
+  const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
+  const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
+
   useEffect(() => {
     let cancelled = false;
-    void open(id).then((ok) => {
+    void open(id, base).then((ok) => {
       if (!cancelled) setFailed(!ok);
     });
     return () => {
       cancelled = true;
       void close();
     };
-  }, [id, open, close]);
+  }, [id, base, open, close]);
 
   // A study with unsaved edits must survive an accidental tab close.
   useEffect(() => {
@@ -45,9 +48,9 @@ export function StudyView({ id }: { id: string }) {
       <div className="grid h-full place-items-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted text-sm">{error ?? `Could not open “${id}”.`}</p>
-          <Button variant="secondary" size="sm" onClick={() => navigate('studies')}>
+          <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
             <ArrowLeft className="mr-1 size-3.5" />
-            All studies
+            {kind === 'game' ? 'All games' : 'All studies'}
           </Button>
         </div>
       </div>
@@ -71,8 +74,8 @@ export function StudyView({ id }: { id: string }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            title="All studies (saves first)"
-            onClick={() => navigate('studies')}
+            title={kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)'}
+            onClick={() => navigate(backSection)}
           >
             <ArrowLeft className="size-3.5" />
           </Button>
@@ -81,7 +84,7 @@ export function StudyView({ id }: { id: string }) {
         </div>
 
         <EnginePane className="shrink-0" />
-        <ChaptersPanel />
+        {kind === 'study' && <ChaptersPanel />}
         <Panel flush className="min-h-[10rem] flex-1">
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
