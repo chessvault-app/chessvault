@@ -1,4 +1,12 @@
-import { ChevronDown, Folder as FolderIcon, Library, Plus, Trash2 } from 'lucide-react';
+import {
+  ChevronDown,
+  Folder as FolderIcon,
+  FolderInput,
+  Library,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -214,18 +222,13 @@ function GroupedStudies({ studies, allFolders }: { studies: StudyMeta[]; allFold
     <div className="flex flex-col gap-4">
       {folders.map((folder) => (
         <section key={folder || '(root)'} className="flex flex-col gap-2">
-          {folder && (
-            <h2 className="text-subtle flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]">
-              <FolderIcon className="size-3.5" />
-              {folder}
-            </h2>
-          )}
+          {folder && <FolderHeader folder={folder} empty={groups.get(folder)!.length === 0} />}
           {groups.get(folder)!.length === 0 ? (
             <p className="text-subtle px-1 text-xs">Empty collection.</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {groups.get(folder)!.map((study) => (
-                <StudyCard key={study.id} study={study} />
+                <StudyCard key={study.id} study={study} allFolders={folders.filter(Boolean)} />
               ))}
             </ul>
           )}
@@ -235,33 +238,140 @@ function GroupedStudies({ studies, allFolders }: { studies: StudyMeta[]; allFold
   );
 }
 
-function StudyCard({ study }: { study: StudyMeta }) {
+function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
+  const moveFolder = useStudy((s) => s.moveFolder);
+  const removeFolder = useStudy((s) => s.removeFolder);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(folder);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  return (
+    <div className="group/folder flex h-6 items-center gap-1.5">
+      <FolderIcon className="text-subtle size-3.5 shrink-0" />
+      {renaming ? (
+        <input
+          autoFocus
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={async () => {
+            setRenaming(false);
+            if (draft.trim() && draft.trim() !== folder) {
+              setFailure(await moveFolder(folder, draft.trim()));
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            if (e.key === 'Escape') setRenaming(false);
+          }}
+          className={cn(
+            'bg-surface-inset border-line text-fg h-6 w-48 rounded-md border px-2 text-xs',
+            'outline-none focus:border-line-strong',
+          )}
+        />
+      ) : (
+        <button
+          type="button"
+          onDoubleClick={() => {
+            setDraft(folder);
+            setRenaming(true);
+          }}
+          title="Double-click to rename"
+          className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]"
+        >
+          {folder}
+        </button>
+      )}
+      {!renaming && (
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="Rename this folder"
+            onClick={() => {
+              setDraft(folder);
+              setRenaming(true);
+            }}
+          >
+            <Pencil className="size-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={empty ? 'Delete this empty folder' : 'Only empty folders can be deleted'}
+            onClick={async () => setFailure(await removeFolder(folder))}
+          >
+            <Trash2 className="size-3" />
+          </Button>
+        </div>
+      )}
+      {failure && <span className="text-bad text-xs">{failure}</span>}
+    </div>
+  );
+}
+
+function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string[] }) {
   const remove = useStudy((s) => s.remove);
+  const move = useStudy((s) => s.move);
   const [confirming, setConfirming] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [moving, setMoving] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const name = study.id.split('/').at(-1)!;
+  const folder = study.id.includes('/') ? study.id.slice(0, study.id.lastIndexOf('/')) : '';
+
+  const rename = async (): Promise<void> => {
+    setRenaming(false);
+    const next = draft.trim();
+    if (!next || next === name) return;
+    setFailure(await move(study.id, folder ? `${folder}/${next}` : next));
+  };
 
   return (
     <li>
       <div
         role="button"
         tabIndex={0}
-        onClick={() => navigate('studies', encodeURIComponent(study.id))}
+        onClick={() => {
+          if (!renaming) navigate('studies', encodeURIComponent(study.id));
+        }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') navigate('studies', encodeURIComponent(study.id));
+          if (e.key === 'Enter' && !renaming) navigate('studies', encodeURIComponent(study.id));
         }}
         className={cn(
-          'bg-surface border-line hover:border-line-strong group flex cursor-pointer items-center',
-          'gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
+          'bg-surface border-line hover:border-line-strong group relative flex cursor-pointer',
+          'items-center gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
         )}
       >
         <div className="min-w-0 flex-1">
-          <p className="text-fg truncate text-sm font-semibold">
-            {study.id.split('/').at(-1)}
-          </p>
+          {renaming ? (
+            <input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onBlur={() => void rename()}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setRenaming(false);
+              }}
+              className={cn(
+                'bg-surface-inset border-line text-fg h-7 w-full max-w-sm rounded-md border px-2',
+                'text-sm outline-none focus:border-line-strong',
+              )}
+            />
+          ) : (
+            <p className="text-fg truncate text-sm font-semibold">{name}</p>
+          )}
           <p className="text-subtle text-xs">
             {study.chapters} chapter{study.chapters === 1 ? '' : 's'} ·{' '}
             {new Date(study.updatedAt).toLocaleString()}
           </p>
+          {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>
+
         {confirming ? (
           <Button
             variant="danger"
@@ -271,22 +381,80 @@ function StudyCard({ study }: { study: StudyMeta }) {
               void remove(study.id);
             }}
           >
-            Delete “{study.id.split('/').at(-1)}”?
+            Delete “{name}”?
           </Button>
         ) : (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="opacity-0 group-hover:opacity-100"
-            title="Delete this study"
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirming(true);
-              setTimeout(() => setConfirming(false), 3000);
-            }}
+          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Rename this study"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDraft(name);
+                setRenaming(true);
+              }}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Move to a folder"
+              active={moving}
+              onClick={(e) => {
+                e.stopPropagation();
+                setMoving((v) => !v);
+              }}
+            >
+              <FolderInput className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Delete this study"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirming(true);
+                setTimeout(() => setConfirming(false), 3000);
+              }}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
+          </div>
+        )}
+
+        {moving && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={cn(
+              'border-line bg-surface absolute right-3 top-full z-40 mt-1 w-56 rounded-lg border p-1',
+              'shadow-[var(--shadow-pop)]',
+            )}
           >
-            <Trash2 className="size-3.5" />
-          </Button>
+            <p className="text-subtle px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+              Move to
+            </p>
+            {['', ...allFolders.filter((f) => f !== folder)].map((target) =>
+              target === folder ? null : (
+                <button
+                  key={target || '(root)'}
+                  type="button"
+                  onClick={async () => {
+                    setMoving(false);
+                    setFailure(await move(study.id, target ? `${target}/${name}` : name));
+                  }}
+                  className={cn(
+                    'hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5',
+                    'text-left text-xs transition-colors duration-100',
+                  )}
+                >
+                  <FolderIcon className="text-subtle size-3" />
+                  {target || '(no folder)'}
+                </button>
+              ),
+            )}
+          </div>
         )}
       </div>
     </li>

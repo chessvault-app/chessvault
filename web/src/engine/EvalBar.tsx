@@ -32,7 +32,9 @@ export function EvalBar({
   return (
     <div
       className={cn(
-        'bg-eval-black relative overflow-hidden',
+        // The explicit border keeps the dark half readable against a dark
+        // panel background (and the light half against a light one).
+        'bg-eval-black relative overflow-hidden border border-black/20 dark:border-white/25',
         orientation === 'vertical' ? 'h-full w-3 rounded-full' : 'h-3 w-full rounded-full',
         className,
       )}

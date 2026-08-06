@@ -581,9 +581,9 @@ function ResultDot({
     const lost = (result === '1-0' && userSide === 'black') || (result === '0-1' && userSide === 'white');
     className = won ? 'bg-good' : lost ? 'bg-bad' : 'bg-surface-3';
   } else if (result === '1-0') {
-    className = 'bg-eval-white border-line border';
+    className = 'border-black/40 bg-[#f2f2f2] border';
   } else if (result === '0-1') {
-    className = 'bg-eval-black';
+    className = 'border-white/50 bg-[#1a1a1a] border';
   }
   return <span title={result} className={cn('size-2 shrink-0 rounded-full', className)} />;
 }

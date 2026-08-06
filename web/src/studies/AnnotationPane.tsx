@@ -14,7 +14,13 @@ const ASSESSMENT_NAGS = [14, 16, 18, 10, 13, 15, 17, 19];
  * flushed on blur and debounced while typing, so every keystroke doesn't
  * churn the tree (and the autosave that watches it).
  */
-export function AnnotationPane({ className }: { className?: string }) {
+export function AnnotationPane({
+  className,
+  rootPlaceholder = 'Chapter introduction…',
+}: {
+  className?: string;
+  rootPlaceholder?: string;
+}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const setComment = useAnalysis((s) => s.setComment);
@@ -73,7 +79,7 @@ export function AnnotationPane({ className }: { className?: string }) {
         onBlur={() => {
           if (draft !== (node.comment ?? '')) setComment(cursorId, draft);
         }}
-        placeholder={atRoot ? 'Chapter introduction…' : `Comment on ${node.san ?? 'this move'}…`}
+        placeholder={atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`}
         rows={2}
         className={cn(
           'bg-surface-inset border-line text-fg w-full resize-none rounded-md border px-2 py-1.5',

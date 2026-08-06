@@ -144,8 +144,9 @@ export const useEngine = create<EngineState>()(
     {
       name: 'chess-vault:engine',
       // Only preferences persist; live search state must not survive a reload.
+      // `enabled` is deliberately NOT persisted: the engine always starts off
+      // (lanph3re's preference) and is switched on per session when wanted.
       partialize: (s) => ({
-        enabled: s.enabled,
         flavor: s.flavor,
         threads: s.threads,
         hashMb: s.hashMb,
@@ -154,6 +155,8 @@ export const useEngine = create<EngineState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
+        // Older persisted blobs carried `enabled` — force the always-off start.
+        state.enabled = false;
         // First run: size threads to this machine rather than shipping a guess.
         if (state.threads === 2 && navigator.hardwareConcurrency) {
           state.threads = defaultThreads();

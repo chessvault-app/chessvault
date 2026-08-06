@@ -35,6 +35,10 @@ interface StudyState {
   refresh: () => Promise<void>;
   create: (name: string) => Promise<string | null>;
   createFolder: (name: string) => Promise<string | null>;
+  /** Rename and move are one operation — the id is the path. */
+  move: (from: string, to: string) => Promise<string | null>;
+  moveFolder: (from: string, to: string) => Promise<string | null>;
+  removeFolder: (name: string) => Promise<string | null>;
   remove: (id: string) => Promise<string | null>;
   open: (id: string, base?: DocBase) => Promise<boolean>;
   close: () => Promise<void>;
@@ -124,6 +128,37 @@ export const useStudy = create<StudyState>()((set, get) => {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       await get().refresh();
       return res.ok ? null : (body?.error ?? 'could not create folder');
+    },
+
+    move: async (from, to) => {
+      const res = await fetch('/api/studies/move', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ from, to }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      await get().refresh();
+      return res.ok ? null : (body?.error ?? 'could not move the study');
+    },
+
+    moveFolder: async (from, to) => {
+      const res = await fetch('/api/studies/folders/move', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ from, to }),
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      await get().refresh();
+      return res.ok ? null : (body?.error ?? 'could not rename the folder');
+    },
+
+    removeFolder: async (name) => {
+      const res = await fetch(`/api/studies/folders/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      await get().refresh();
+      return res.ok ? null : (body?.error ?? 'could not delete the folder');
     },
 
     create: async (name) => {

@@ -7,6 +7,8 @@ import { MoveActions } from '@/analysis/AnalysisView';
 import { MoveTreePane } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
+import { useEngine } from '@/store/engine';
+import { useExplorer } from '@/store/explorer';
 import { useStudy } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -33,6 +35,20 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       void close();
     };
   }, [id, base, open, close]);
+
+  // Reviewing a game starts quiet: engine and explorer off, so the position
+  // is judged by eye first. The explorer preference is restored on leave; the
+  // engine always starts off anyway.
+  useEffect(() => {
+    if (kind !== 'game') return;
+    const engine = useEngine.getState();
+    if (engine.enabled) engine.setEnabled(false);
+    const explorerWasOn = useExplorer.getState().enabled;
+    if (explorerWasOn) useExplorer.setState({ enabled: false });
+    return () => {
+      if (explorerWasOn) useExplorer.setState({ enabled: true });
+    };
+  }, [kind, id]);
 
   // A study with unsaved edits must survive an accidental tab close.
   useEffect(() => {
@@ -88,7 +104,9 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Panel flush className="min-h-[10rem] flex-1">
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
-          <AnnotationPane />
+          <AnnotationPane
+            rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
+          />
         </Panel>
         <ExplorerPane className="max-h-72 shrink-0 lg:max-h-[35%]" />
       </div>

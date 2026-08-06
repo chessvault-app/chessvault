@@ -189,10 +189,12 @@ function PlayerBar({ side }: { side: 'white' | 'black' }) {
 
   return (
     <div className="flex h-6 items-center gap-2 px-0.5">
+      {/* Explicit colours + contrast borders: the token colours melt into the
+          matching theme background (black square on dark bg, white on light). */}
       <span
         className={cn(
           'size-2.5 shrink-0 rounded-[3px] border',
-          side === 'white' ? 'bg-eval-white border-line-strong' : 'bg-eval-black border-line',
+          side === 'white' ? 'border-black/40 bg-[#f2f2f2]' : 'border-white/50 bg-[#1a1a1a]',
         )}
       />
       <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>

@@ -5,6 +5,7 @@ import {
   readFileSync,
   readdirSync,
   renameSync,
+  rmdirSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -83,6 +84,55 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono 
     if (!name || !validId(name)) return c.json({ error: 'invalid folder name' }, 400);
     mkdirSync(resolve(dir, name), { recursive: true });
     return c.json({ folder: name });
+  });
+
+  // Rename and move are the same operation: the id is the path. Renames of
+  // whole folders drag their studies along because they are real directories.
+  api.post(`/${base}/move`, async (c) => {
+    const body = await c.req.json<{ from?: string; to?: string }>().catch(() => null);
+    const from = body?.from?.trim();
+    const to = body?.to?.trim();
+    if (!from || !to || !validId(from) || !validId(to)) {
+      return c.json({ error: 'invalid study id' }, 400);
+    }
+    if (!existsSync(pathOf(from))) return c.json({ error: 'no such study' }, 404);
+    if (existsSync(pathOf(to))) return c.json({ error: 'a study with that name exists' }, 409);
+    mkdirSync(resolve(pathOf(to), '..'), { recursive: true });
+    renameSync(pathOf(from), pathOf(to));
+    return c.json({ moved: to });
+  });
+
+  api.post(`/${base}/folders/move`, async (c) => {
+    const body = await c.req.json<{ from?: string; to?: string }>().catch(() => null);
+    const from = body?.from?.trim();
+    const to = body?.to?.trim();
+    if (!from || !to || !validId(from) || !validId(to)) {
+      return c.json({ error: 'invalid folder name' }, 400);
+    }
+    const fromPath = resolve(dir, from);
+    if (!existsSync(fromPath) || !statSync(fromPath).isDirectory()) {
+      return c.json({ error: 'no such folder' }, 404);
+    }
+    const toPath = resolve(dir, to);
+    if (existsSync(toPath)) return c.json({ error: 'a folder with that name exists' }, 409);
+    mkdirSync(resolve(toPath, '..'), { recursive: true });
+    renameSync(fromPath, toPath);
+    return c.json({ moved: to });
+  });
+
+  api.delete(`/${base}/folders/:name{.+}`, (c) => {
+    const name = c.req.param('name');
+    if (!validId(name)) return c.json({ error: 'invalid folder name' }, 400);
+    const path = resolve(dir, name);
+    if (!existsSync(path) || !statSync(path).isDirectory()) {
+      return c.json({ error: 'no such folder' }, 404);
+    }
+    // Never delete studies by side effect: a folder must be emptied first.
+    if (readdirSync(path).length > 0) {
+      return c.json({ error: 'folder is not empty — move or delete its studies first' }, 409);
+    }
+    rmdirSync(path);
+    return c.json({ deleted: name });
   });
 
   // `{.+}` lets the id contain slashes: folders are part of the id.

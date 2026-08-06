@@ -118,4 +118,52 @@ describe('studies api', () => {
       (await app.request('/api/studies/Openings%2FCaro-Kann', { method: 'DELETE' })).status,
     ).toBe(200);
   });
+
+  it('renames, moves between folders, renames folders, deletes empty folders', async () => {
+    const post = (url: string, body: unknown) =>
+      app.request(url, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'content-type': 'application/json' },
+      });
+
+    await post('/api/studies', { name: 'Scratch' });
+
+    // Rename in place.
+    expect((await post('/api/studies/move', { from: 'Scratch', to: 'King s Indian' })).status).toBe(200);
+    expect(existsSync(join(dir, 'King s Indian.pgn'))).toBe(true);
+
+    // Move into a folder (created implicitly).
+    expect(
+      (await post('/api/studies/move', { from: 'King s Indian', to: 'Repertoire/King s Indian' })).status,
+    ).toBe(200);
+    expect(existsSync(join(dir, 'Repertoire', 'King s Indian.pgn'))).toBe(true);
+
+    // Rename the folder — the study inside moves with it.
+    expect(
+      (await post('/api/studies/folders/move', { from: 'Repertoire', to: 'Black Repertoire' })).status,
+    ).toBe(200);
+    expect(existsSync(join(dir, 'Black Repertoire', 'King s Indian.pgn'))).toBe(true);
+
+    // A non-empty folder refuses deletion; emptied, it deletes.
+    expect(
+      (await app.request('/api/studies/folders/Black%20Repertoire', { method: 'DELETE' })).status,
+    ).toBe(409);
+    // Move the study out (to the root) rather than deleting it.
+    expect(
+      (await post('/api/studies/move', { from: 'Black Repertoire/King s Indian', to: 'King s Indian' })).status,
+    ).toBe(200);
+    expect(
+      (await app.request('/api/studies/folders/Black%20Repertoire', { method: 'DELETE' })).status,
+    ).toBe(200);
+    expect(existsSync(join(dir, 'Black Repertoire'))).toBe(false);
+
+    // Collisions and traversal refused.
+    await post('/api/studies', { name: 'Other' });
+    expect((await post('/api/studies/move', { from: 'Other', to: 'King s Indian' })).status).toBe(409);
+    expect((await post('/api/studies/move', { from: 'Other', to: '../evil' })).status).toBe(400);
+
+    await app.request('/api/studies/King%20s%20Indian', { method: 'DELETE' });
+    await app.request('/api/studies/Other', { method: 'DELETE' });
+  });
 });
