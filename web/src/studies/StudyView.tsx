@@ -87,10 +87,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 max-lg:overflow-y-auto lg:flex-row lg:gap-4 lg:p-4">
       <AnalysisBoard />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
+      <div className="flex flex-col gap-3 max-lg:shrink-0 lg:min-h-0 lg:w-[min(27rem,38%)] lg:flex-none">
         <div className="flex shrink-0 items-center gap-2">
           <Button
             variant="ghost"
@@ -123,7 +123,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         )}
         <Panel
           flush
-          className={cn('min-h-[10rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn(
+            'min-h-[10rem] max-lg:h-[26rem] max-lg:shrink-0 lg:flex-1',
+            pane !== 'moves' && 'max-lg:hidden',
+          )}
         >
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
@@ -133,7 +136,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         </Panel>
         <ExplorerPane
           className={cn(
-            'min-h-0 flex-1 lg:max-h-[35%] lg:flex-none',
+            'max-lg:h-[26rem] max-lg:shrink-0 lg:max-h-[35%] lg:min-h-0',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />

@@ -20,11 +20,13 @@ export function AnalysisView() {
   const [pane, setPane] = useState<AnalysisPane>('moves');
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 lg:flex-row lg:gap-4 lg:p-4">
+    // Stacked layouts scroll the page (full-width board, pane past the fold,
+    // like the lichess app); desktop fits the viewport with internal scrolls.
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 max-lg:overflow-y-auto lg:flex-row lg:gap-4 lg:p-4">
       <AnalysisBoard />
 
       {/* Side column. Desktop shows every pane; small screens switch. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:w-[min(27rem,38%)] lg:flex-none">
+      <div className="flex flex-col gap-3 max-lg:shrink-0 lg:min-h-0 lg:w-[min(27rem,38%)] lg:flex-none">
         <PaneTabs
           className="lg:hidden"
           value={pane}
@@ -43,13 +45,16 @@ export function AnalysisView() {
             existence on short desktop viewports. */}
         <ExplorerPane
           className={cn(
-            'min-h-0 flex-1 lg:min-h-10 lg:max-h-[45%] lg:flex-none',
+            'max-lg:h-[26rem] max-lg:shrink-0 lg:min-h-10 lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
         <Panel
           flush
-          className={cn('min-h-[8.5rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn(
+            'min-h-[8.5rem] max-lg:h-[26rem] max-lg:shrink-0 lg:flex-1',
+            pane !== 'moves' && 'max-lg:hidden',
+          )}
         >
           <PanelHeader title="Moves" actions={<MoveActions />} />
           <MoveTreePane />
