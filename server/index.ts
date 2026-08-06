@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { existsSync } from 'node:fs';
 import { booksApi } from './books.ts';
+import { gamesApi } from './games.ts';
 import { lichessExplorerApi } from './lichess.ts';
 import { studiesApi } from './studies.ts';
 import { REPO_ROOT } from './paths.ts';
@@ -37,6 +38,7 @@ app.get('/api/health', (c) =>
 app.route('/api', booksApi());
 app.route('/api', lichessExplorerApi());
 app.route('/api', studiesApi());
+app.route('/api', gamesApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;

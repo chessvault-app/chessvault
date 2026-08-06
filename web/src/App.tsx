@@ -11,6 +11,7 @@ import { navigate, useRoute, type Section } from '@/lib/router';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { AnalysisView } from '@/analysis/AnalysisView';
 import { EditorView } from '@/editor/EditorView';
+import { GamesView } from '@/games/GamesView';
 import { StudiesView } from '@/studies/StudiesView';
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
@@ -36,6 +37,8 @@ export function App() {
           <EditorView />
         ) : section === 'studies' ? (
           <StudiesView params={params} />
+        ) : section === 'games' ? (
+          <GamesView />
         ) : (
           <Placeholder section={section} />
         )}
@@ -55,10 +58,11 @@ function Sidebar({ active }: { active: Section }) {
       )}
     >
       <div className="flex h-14 items-center gap-2.5 px-4 lg:px-4">
-        <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg text-[0.95rem] font-bold">
-          {/* U+FE0E forces text presentation — bare U+265F renders as an emoji
-              pawn on many platforms and ignores the CSS colour. */}
-          {'♟︎'}
+        <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg">
+          {/* The cburnett pawn — the same pawn as on the board. */}
+          <svg viewBox="5 4.5 35 37" className="size-5" fill="currentColor" aria-hidden>
+            <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
+          </svg>
         </div>
         <span className="hidden truncate text-sm font-semibold tracking-tight lg:block">
           Chess Vault
