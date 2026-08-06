@@ -289,10 +289,13 @@ export function EditorView() {
         </div>
 
         <div className="flex items-center justify-center gap-2">
-          <div className="bg-surface-2/60 border-line flex items-center gap-0.5 rounded-xl border p-0.5">
+          {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
+              so the active tool's highlight sits concentric in its corner. */}
+          <div className="bg-surface-2/60 border-line flex items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5">
           <Button
             variant={tool.kind === 'move' ? 'primary' : 'ghost'}
             size="sm"
+            className="max-sm:w-9 max-sm:px-0"
             onClick={() => setTool({ kind: 'move' })}
             title="Move: drag pieces around the board"
           >
@@ -302,6 +305,7 @@ export function EditorView() {
           <Button
             variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
             size="sm"
+            className="max-sm:w-9 max-sm:px-0"
             onClick={() => setTool({ kind: 'erase' })}
             title="Erase: click a square to remove its piece"
           >
@@ -346,6 +350,7 @@ export function EditorView() {
           <Button
             variant="primary"
             size="sm"
+            className="max-sm:w-9 max-sm:px-0"
             disabled={!validity.legal}
             onClick={analyse}
             title={validity.legal ? 'Analyse this position' : validity.reason}
