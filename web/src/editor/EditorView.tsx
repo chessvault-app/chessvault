@@ -218,11 +218,6 @@ export function EditorView() {
               )}
             </div>
 
-            <Button variant="primary" size="md" disabled={!validity.legal} onClick={analyse}>
-              Analyse this position
-              <ArrowRight className="size-4" />
-            </Button>
-
             <div className="border-line mt-1 grid gap-2 border-t pt-3">
               <input
                 value={fenInput}
@@ -293,7 +288,7 @@ export function EditorView() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-1 px-2">
+        <div className="flex items-center justify-center gap-1">
           <Button
             variant={tool.kind === 'move' ? 'primary' : 'ghost'}
             size="sm"
@@ -345,6 +340,17 @@ export function EditorView() {
             title="Position details (side to move, castling, FEN)"
           >
             <Settings2 className="size-3.5" />
+          </Button>
+          <div className="bg-line mx-1 h-5 w-px" />
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!validity.legal}
+            onClick={analyse}
+            title={validity.legal ? 'Analyse this position' : validity.reason}
+          >
+            <span className="hidden sm:inline">Analyse</span>
+            <ArrowRight className="size-3.5" />
           </Button>
         </div>
       </div>
