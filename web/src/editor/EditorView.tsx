@@ -17,7 +17,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_MAX_W } from '@/board/boardSize';
+import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import {
   defaultEditorState,
@@ -252,11 +252,11 @@ export function EditorView() {
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 stacked:my-auto wide:flex-1 wide:justify-start">
         {/* Desktop: one fixed-height combined row above the board (board
             alignment across views). Phones: the opponent's pieces above the
             board and the player's below, lichess-editor style. */}
-        <div className={cn('flex w-full items-end justify-center wide:h-10', BOARD_MAX_W)}>
+        <div className={cn('flex w-full items-end justify-center wide:h-10', EDITOR_BOARD_MAX_W)}>
           <div className="hidden w-full wide:block">
             <PiecePalette
               colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
@@ -273,7 +273,7 @@ export function EditorView() {
           </div>
         </div>
 
-        <div className={cn('w-full', BOARD_MAX_W)}>
+        <div className={cn('w-full', EDITOR_BOARD_MAX_W)}>
           <Board
             fen={fen}
             orientation={orientation}
@@ -285,7 +285,7 @@ export function EditorView() {
           />
         </div>
 
-        <div className={cn('w-full wide:hidden', BOARD_MAX_W)}>
+        <div className={cn('w-full wide:hidden', EDITOR_BOARD_MAX_W)}>
           <PiecePalette
             colors={[orientation === 'white' ? 'white' : 'black']}
             tool={tool}
@@ -293,7 +293,7 @@ export function EditorView() {
           />
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-center gap-1 px-2">
           <Button
             variant={tool.kind === 'move' ? 'primary' : 'ghost'}
             size="sm"

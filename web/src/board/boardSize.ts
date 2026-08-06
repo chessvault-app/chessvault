@@ -13,3 +13,9 @@ export const BOARD_MAX_W =
   // as a fallback. Side-by-side layouts are height-bound; full desktop
   // additionally caps the board so the side panels keep room.
   'max-w-[min(100%,max(35dvh,calc(100dvh-21rem)))] wide:max-w-[min(100%,calc(100dvh-10rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
+
+export const EDITOR_BOARD_MAX_W =
+  // The stacked editor has no pane below — just palettes, the toolbar and
+  // the nav (~16rem) — so its board can run essentially full-width on
+  // phones instead of inheriting the analysis pane reserve.
+  'max-w-[min(100%,max(35dvh,calc(100dvh-16rem)))] wide:max-w-[min(100%,calc(100dvh-10rem))] lg:max-w-[min(100%,calc(100dvh-10rem),48rem)]';
