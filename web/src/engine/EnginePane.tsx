@@ -188,7 +188,7 @@ function EngineSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () =>
           position is not the pill's left edge and the translate overshoots. */}
       <span
         className={cn(
-          'absolute left-0 top-0.5 size-4 rounded-full bg-white shadow transition-transform duration-200',
+          'bg-knob absolute left-0 top-0.5 size-4 rounded-full shadow transition-transform duration-200',
           enabled ? 'translate-x-[1.125rem]' : 'translate-x-0.5',
         )}
       />

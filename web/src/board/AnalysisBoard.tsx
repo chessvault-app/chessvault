@@ -18,6 +18,7 @@ import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
+import { SideDot } from '@/ui/SideDot';
 
 /**
  * The complete board column driven by the analysis store: eval bar, board with
@@ -101,14 +102,14 @@ export function AnalysisBoard() {
   );
 }
 
-/** Move-quality NAGs drawn on the board, chess.com-style colour coding. */
-const BOARD_NAGS: Record<number, { glyph: string; color: string }> = {
-  1: { glyph: '!', color: '#3aab3a' },
-  2: { glyph: '?', color: '#ee8b1f' },
-  3: { glyph: '!!', color: '#1baca6' },
-  4: { glyph: '??', color: '#fa412d' },
-  5: { glyph: '!?', color: '#c46ad4' },
-  6: { glyph: '?!', color: '#f0c15c' },
+/** Move-quality NAGs drawn on the board, coloured via the --nag-* tokens. */
+const BOARD_NAGS: Record<number, { glyph: string; className: string }> = {
+  1: { glyph: '!', className: 'bg-nag-good' },
+  2: { glyph: '?', className: 'bg-nag-mistake' },
+  3: { glyph: '!!', className: 'bg-nag-brilliant' },
+  4: { glyph: '??', className: 'bg-nag-blunder' },
+  5: { glyph: '!?', className: 'bg-nag-interesting' },
+  6: { glyph: '?!', className: 'bg-nag-dubious' },
 };
 
 /**
@@ -139,11 +140,11 @@ function NagBadge({
       style={{
         left: `calc(${(column + 1) * 12.5}% - 0.85rem)`,
         top: `calc(${rowFromTop * 12.5}% - 0.4rem)`,
-        backgroundColor: badge.color,
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-sm font-bold text-white shadow-md',
+        'text-nag-fg text-sm font-bold shadow-md',
+        badge.className,
       )}
     >
       {badge.glyph}
@@ -189,14 +190,7 @@ function PlayerBar({ side }: { side: 'white' | 'black' }) {
 
   return (
     <div className="flex h-6 items-center gap-2 px-0.5">
-      {/* Explicit colours + contrast borders: the token colours melt into the
-          matching theme background (black square on dark bg, white on light). */}
-      <span
-        className={cn(
-          'size-2.5 shrink-0 rounded-[3px] border',
-          side === 'white' ? 'border-black/40 bg-[#f2f2f2]' : 'border-white/50 bg-[#1a1a1a]',
-        )}
-      />
+      <SideDot side={side} />
       <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>
       {elo && <span className="text-subtle text-xs">{elo}</span>}
       {clock !== undefined && (

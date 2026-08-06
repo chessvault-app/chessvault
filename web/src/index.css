@@ -75,6 +75,35 @@
   /* Eval bar: the "white advantage" / "black advantage" fills. */
   --eval-white: oklch(97% 0.004 264);
   --eval-black: oklch(30% 0.014 264);
+  /* Keeps the bar's dark half readable against a matching background. */
+  --eval-border: oklch(0% 0 0 / 20%);
+  /* Text sitting ON an eval fill (W/D/B bars, result badges). */
+  --on-eval-white: oklch(0% 0 0 / 75%);
+  --on-eval-black: oklch(100% 0 0 / 85%);
+
+  /* -------------------------------------------------------------------------
+     Theme-invariant chess colours. These deliberately do NOT flip with the
+     theme: "the colour of the black pieces" is a fact about chess, not about
+     the UI. The -line pairs are opposing-contrast borders so each square
+     stays visible on the background that matches it. */
+  --side-white: oklch(95.5% 0 0);
+  --side-white-line: oklch(0% 0 0 / 40%);
+  --side-black: oklch(21% 0 0);
+  --side-black-line: oklch(100% 0 0 / 50%);
+
+  /* Move-quality NAG badges, chess.com's colour language. */
+  --nag-good: #3aab3a;
+  --nag-mistake: #ee8b1f;
+  --nag-brilliant: #1baca6;
+  --nag-blunder: #fa412d;
+  --nag-interesting: #c46ad4;
+  --nag-dubious: #f0c15c;
+  --nag-fg: oklch(100% 0 0);
+
+  /* Toggle-switch knob: white on the filled track in both themes. */
+  --knob: oklch(100% 0 0);
+  /* Modal scrim (promotion picker). */
+  --scrim: oklch(0% 0 0 / 45%);
 
   --shadow-color: 264 22% 30%;
   --radius: 0.625rem;
@@ -119,6 +148,7 @@
 
   --eval-white: oklch(93% 0.005 266);
   --eval-black: oklch(13% 0.012 266);
+  --eval-border: oklch(100% 0 0 / 25%);
 
   --shadow-color: 266 40% 4%;
 }
@@ -154,6 +184,25 @@
 
   --color-eval-white: var(--eval-white);
   --color-eval-black: var(--eval-black);
+  --color-eval-border: var(--eval-border);
+  --color-on-eval-white: var(--on-eval-white);
+  --color-on-eval-black: var(--on-eval-black);
+
+  --color-side-white: var(--side-white);
+  --color-side-white-line: var(--side-white-line);
+  --color-side-black: var(--side-black);
+  --color-side-black-line: var(--side-black-line);
+
+  --color-nag-good: var(--nag-good);
+  --color-nag-mistake: var(--nag-mistake);
+  --color-nag-brilliant: var(--nag-brilliant);
+  --color-nag-blunder: var(--nag-blunder);
+  --color-nag-interesting: var(--nag-interesting);
+  --color-nag-dubious: var(--nag-dubious);
+  --color-nag-fg: var(--nag-fg);
+
+  --color-knob: var(--knob);
+  --color-scrim: var(--scrim);
 
   --radius-DEFAULT: var(--radius);
   --radius-lg: calc(var(--radius) + 0.25rem);

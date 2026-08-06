@@ -16,6 +16,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
+import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 interface GameSummary {
@@ -575,15 +576,24 @@ function ResultDot({
   userSide: 'white' | 'black' | null;
 }) {
   // From the user's perspective when known: green won, red lost, gray draw.
-  let className = 'bg-surface-3';
   if (userSide) {
-    const won = (result === '1-0' && userSide === 'white') || (result === '0-1' && userSide === 'black');
-    const lost = (result === '1-0' && userSide === 'black') || (result === '0-1' && userSide === 'white');
-    className = won ? 'bg-good' : lost ? 'bg-bad' : 'bg-surface-3';
-  } else if (result === '1-0') {
-    className = 'border-black/40 bg-[#f2f2f2] border';
-  } else if (result === '0-1') {
-    className = 'border-white/50 bg-[#1a1a1a] border';
+    const won =
+      (result === '1-0' && userSide === 'white') || (result === '0-1' && userSide === 'black');
+    const lost =
+      (result === '1-0' && userSide === 'black') || (result === '0-1' && userSide === 'white');
+    return (
+      <span
+        title={result}
+        className={cn(
+          'size-2 shrink-0 rounded-full',
+          won ? 'bg-good' : lost ? 'bg-bad' : 'bg-surface-3',
+        )}
+      />
+    );
   }
-  return <span title={result} className={cn('size-2 shrink-0 rounded-full', className)} />;
+  // Otherwise the dot shows which side won, in the pieces' own colours.
+  if (result === '1-0' || result === '0-1') {
+    return <SideDot side={result === '1-0' ? 'white' : 'black'} shape="circle" title={result} />;
+  }
+  return <span title={result} className="bg-surface-3 size-2 shrink-0 rounded-full" />;
 }

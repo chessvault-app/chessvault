@@ -191,9 +191,9 @@ function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
   if (total === 0) return null;
   const pct = (n: number): number => (100 * n) / total;
   const segments = [
-    { value: pct(w), className: 'bg-eval-white text-black/80' },
+    { value: pct(w), className: 'bg-eval-white text-on-eval-white' },
     { value: pct(d), className: 'bg-surface-3 text-muted' },
-    { value: pct(b), className: 'bg-eval-black text-white/90' },
+    { value: pct(b), className: 'bg-eval-black text-on-eval-black' },
   ];
   return (
     <div
@@ -267,8 +267,8 @@ function ResultBadge({ result }: { result: string }) {
     <span
       className={cn(
         'shrink-0 rounded px-1 py-px font-mono text-[0.625rem] font-semibold',
-        result === '1-0' && 'bg-eval-white text-black/80',
-        result === '0-1' && 'bg-eval-black text-white/90',
+        result === '1-0' && 'bg-eval-white text-on-eval-white',
+        result === '0-1' && 'bg-eval-black text-on-eval-black',
         result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted',
       )}
     >
@@ -309,7 +309,7 @@ function ExplorerSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () 
     >
       <span
         className={cn(
-          'absolute left-0 top-0.5 size-4 rounded-full bg-white shadow transition-transform duration-200',
+          'bg-knob absolute left-0 top-0.5 size-4 rounded-full shadow transition-transform duration-200',
           enabled ? 'translate-x-[1.125rem]' : 'translate-x-0.5',
         )}
       />

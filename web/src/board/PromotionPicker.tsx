@@ -35,7 +35,7 @@ export function PromotionPicker({
 
   return (
     <div
-      className="absolute inset-0 z-40 bg-black/45 backdrop-blur-[2px]"
+      className="bg-scrim absolute inset-0 z-40 backdrop-blur-[2px]"
       onClick={onCancel}
       onContextMenu={(e) => {
         e.preventDefault();

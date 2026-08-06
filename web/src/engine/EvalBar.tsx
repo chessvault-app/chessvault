@@ -34,7 +34,7 @@ export function EvalBar({
       className={cn(
         // The explicit border keeps the dark half readable against a dark
         // panel background (and the light half against a light one).
-        'bg-eval-black relative overflow-hidden border border-black/20 dark:border-white/25',
+        'bg-eval-black border-eval-border relative overflow-hidden border',
         orientation === 'vertical' ? 'h-full w-3 rounded-full' : 'h-3 w-full rounded-full',
         className,
       )}
@@ -64,7 +64,7 @@ export function EvalBar({
         <span
           className={cn(
             'absolute inset-0 flex items-center px-1.5 font-mono text-[0.5625rem] font-semibold',
-            whiteAhead ? 'justify-start text-black/70' : 'justify-end text-white/80',
+            whiteAhead ? 'text-on-eval-white justify-start' : 'text-on-eval-black justify-end',
           )}
         >
           {label}
