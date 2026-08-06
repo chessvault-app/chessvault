@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi } from './lichess.ts';
+import { puzzlesApi } from './puzzles.ts';
 import { studiesApi } from './studies.ts';
 import { REPO_ROOT, VAULT_GAMES, VAULT_NOTES } from './paths.ts';
 
@@ -46,6 +47,7 @@ app.route('/api', studiesApi(resolve(VAULT_GAMES, 'collection'), 'games/docs'));
 // Notes: the same document API over markdown files.
 app.route('/api', studiesApi(VAULT_NOTES, 'notes', '.md'));
 app.route('/api', gamesApi());
+app.route('/api', puzzlesApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;
