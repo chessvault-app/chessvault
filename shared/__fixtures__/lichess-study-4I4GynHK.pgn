@@ -1,0 +1,277 @@
+[Event "Lucas Opening Homework - Ruy Lopez: Mainline"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C60"]
+[Opening "Ruy Lopez"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Mainline"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/MZLsPulI"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "04:42:56"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 { 3. Bb5 is known as the Ruy Lopez opening or Spanish game. White threatens to trade off Black's c6 knight, the defender of e5, so indirectly threatening to win the pawn, though it is not an immediate threat because of a tactical trick where Black can win the pawn back.
+White is playing for quick development and control of the center. They would like to eventually play c3 and d4 to build a pawn majority in the center.
+Usually, Black wishes to play ...Nf6, which develops a piece while threatening to take White's undefended e4 pawn.
+At this position, Black has a few responses.
+(a) 3...a6, the Morphy defense, force White to make a decision about the bishop: retreat or exchange. The oldest continuation is to take the knight 4Bxc6 the Exchange variation. This does not win the e5 pawn. The Exchange variation is playable, but more popular is 4. Ba4, preserving the bishop pair and pressure on Black's knight.
+After 4. Ba4, the main line is 4 ...Nf6, as in the Berlin. However, by including 3 ...a6 4 Ba4, Black now has the option of cutting off the bishop's pressure whenever they wish with ...b5.
+(b) ...Nf6, the Berlin defense, is the main sideline. Recognizing there is no immediate threat to their pawn center, Black develops and threatens Nxe4 instead. The Berlin has a reputation for being solid but very drawish. The opening often leads into a quick exchange of queens and equal endgame (the Berlin Endgame) or a fast draw by repetition.)
+Two next most common sidelines are
+(c) 3...f5, the Schliemann or Jaenisch gambit, is a sharp line where Black attacks White's center from the flank. Accepting with 4. exf5 allows 4...e4. The usual response is 4.d3, which renews the threat of 5. exf5 because the pawn on d3 presvents 5...e4.
+(d) 3...g6, the fianchetto or Smyslov defense, prepares a king-side fianchetto, although often Black delays actually playing ...Bg7 until they have played ...d6. } *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - Exchange Variation"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C69"]
+[Opening "Ruy Lopez: Exchange Variation, Normal Variation"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - Exchange Variation"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/totI0w8M"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "20:41:13"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 { White chooses to trade off Black's knight for a bishop. This reduces Blacks' control of the center, and alleviates the risk that White's bishop may become trapped on the queenside. Black gets the bishop pair, but at the cost of doubled pawns.
+(a) 4...dxc6 is the main move. Taking back this way, though it takes a pawn away from the center, opens lines for Black's queen and queen's bishop to enter the game. Black's e5 pawn is still defended tactically for now. Nxe5 may be met with ...Qd4 forking the knight and e4 pawn. So, before White can win it they must defend the e4 pawn either 5. O-O intending Re1, or 5. Nc3. An alternative is 5.d4 attacking e5 and opening the center.
+(b) 4...bxc6, the Lutikov variation leaves White with a small advantage. White can win a pawn but Black gets compensation, } 4... dxc6 (4... bxc6 5. Nxe5 Qe7 6. d4 d6 7. Nxc6 Qxe4+ 8. Qe2 Qxe2+ 9. Kxe2 { White up a pawn but having lost castling rights, the position is not cut-and-dry. More critical is to open the position and press their lead in development. }) 5. O-O { The main White move is to castle. } (5. Nxe5 Qd4 6. Nf3 Qxe4+ { If White takes the e5 pawn then Black can take back e4 pawn. } 7. Qe2 Qxe2+ 8. Kxe2) *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense 4...Nf6"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C88"]
+[Opening "Ruy Lopez: Closed"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense 4...Nf6"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/IFppa6Jo"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "04:59:54"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 { White has a few responses:
+(a) 4 Bxc6 is the Exchange variation. White eliminates Black's knight, weakening e5. White cannot take e5 straight away, however; Although playable, the Exchange variation is not the mainline.
+(b) Ba4 is the main line. As Carl Jaenisch determined in the 19th century, "the object of [3. Bb5] is not to double a Pawn for Black by taking his [Knight], but to confine the development of his right wing as long as possible." White preserves their bishop pair and the pressure on Black's knight.
+Once White has played 4. Ba4, Black has the possibility of ending the threat on their knight by playing ...b5 at their leisure. In fact, White must take some care to not fall into the Noah's Ark Trap, in which Black traps White's bishop on the b3-square with an ...a6, ...b5, and ...c4 pawn advance on the queenside. } 4. Ba4 { White chooses to keep their bishop. The keep the pressure on Black's knight and indirectly on the e5 pawn that it defends.
+The key difference between this position and the position after 3. Bb5 is that now Black has the option of b5, whenever they like, which will cut off the threat of Bxc6 followed by Nxe5 for good. Black doesn't need to play ...b5 until White protects their e-pawn so usually concentrations on development first.
+Black's main priority should be to develop their kingside and castle.
+(a) 4 ...Nf6 is by far the most common continuation and most principled move. Black starts development of their kingside, while also threatening the e4 pawn. This is just referred to as the main line, rather than the Berlin defense deferred.
+(b) 4...Bc5, the deferred Classical defense, develops the kingside and begins to pressure f2. Playing in this order allows Black to play d6 or to develop their kingside knight to e7 next, without blocking in the bishop.
+(c) 4...d6, known as the Modern Steinitz, directly defends the pawn and seeks to end any danger of Nxe5. Black wants a quieter game, avoiding mainline Spanish theory. It opens the way for the queenside bishop to develop to d7, interposing the pin, or to g4, but the kingside bishop will now have a harder time reaching its potential.
+(d) 4...b5, straight away is called the Caro variation. ...b5 ends White's bishop pressure on the Black's knight and its indirect pressure on e5.
+We will only cover 4...Nf6 in this chapter and leave the rest in other chapters. } 4... Nf6 { 4...Nf6 attacks e4 pawn. White has a number of responses:
+(a) 5 d3 is the Anderssen variation. By defending with a pawn, White essentially eliminates any option of ...Nxe4. This also means White renews the threat of Bxc6 dxc6 Nxe4, as Qd4 is no longer forks White's knight and pawn. This variation is an option for White to avoid learning the extensive theory after 5.0-0.
+(b) Nc3 is the Tarrasch variation. This develops a piece and defend e4. White usually ends up play d3 as well.
+Both these options are playable but, compared to the main line, both intefere with the plan of playing c3 and d4. Without playing 3 and d4 to create some central tension, it will be difficult to generate open files for the rooks, additionaly White's star attacker currently residing on a4 is risks get swapped off if it does not have the option of retreating to c2.
+(c) 5 Qe2, the Wormald attack, rtains the option of c3 and d4 and introduces the medium-term plan of shifting the king's rook across to d1 in a single move after White castles kingside. The downside is that it places the queen on a file that is very likely to get opened or at least half-opened.
+(d) O-O is the main line. White castles their king to safety and is ready to bring their rook to e1. Black can take the pawn with 5...Nxe4, the Open Spanish, but White can get Black's e-pawn in exchange.
+This is the most subtle way to maintain material equality: Black makes no net gain in material and White gets to spend time on a developing move instead of defending the pawn. Moreover, opening up the e-file while White is castled and Black is not creates tactical opportunities for White. Therefore, Black in fact usually does not capture. The most common line is 5...Be7, the closed Spanish, leaving the pawn and preparing to castle. } 5. O-O { White keeps the option to play c3 and d4 open by preparing to protect e4 with Re1. Once e4 is defended, White's threat to take e5 is renewed because Black's tactic with Qd4 would no longer work.
+Black must decide between several priorities: castling is one, which means choosing where to develop their kingside bishop (5...Be7 or 5...Bc5). At some point, they'd like to defend their e5-pawn (5...b5 or 5...d6). Finally, they may be eyeing White's e4-pawn and thinking, isn't that haning? (5...Nxe4).
+(a) 5...Bc5, the Neo-Archangelsk variation. By developing the bishop to the attacking g1-a7 diagonal and pins the f2 pawn, Bc5 means Black can defend the e-pawn with d6 without trapping the bishop behind the pawn chain. This line discourages 6 Re1 because after 6...Ng4 White finds themselves moving the rook back to f1 to defend their pawn. However, this makes White's other plan even better, White can gain tempo on the bishop with c3 and d4 and achieve the big center they wanted.
+(b) 5...Be7 is the mainline and leads to Closed Spanish. Though it may look passive to develop the bishop behind the pawn chain, Be7 has several purposes. Firstly, it avoids losing tempo from c3 and d4. Secondly, it ensures White gets no tactics involving an e-file pin, nor can they pin the knight with Bg5. Finally, by developing behind the pawn chain, the bishop can more readily help defend the Black's kingside.
+(c) 5...b5 helps defend e5 by ending the threat of Bxc6 and is the most flexible approach. Black can pay Be7 and d6 to transpose into the Closed Spanish, but they have other choices, 5...b5 made room for Black to fianchetto their bishop to b7, the Archangelsk variation where it (along with ...Bc5 if Black chooses) pressures White's kingside. 5...b5 is the main sideline
+(d) 5...d6. Black plays ...d6 to defend their e5 pawn, which ends the threat o of Nxe5 and liberates Black's c6 knight from guard duty (it may instead chase down White's Spanish bishop). Black can choose to play it now, 5...d6, the Deferred Steinitz. 5...d6 closes in the kingside bishop but as we have seen it is happy to develop to Be7 (transposing into Averbakh variation of the Closed Spanish) or more commonly, Black plays g6 and fianchettos it. Black does pin their own knight but they can now play Bd7 to unpin it or Bg5 to pin White's knight.
+Like the Modern Steinitz (4...d6), the Defered Steinitz is an improvement over the Old Steinitz (3...d6 before playing a6) because Black now has the option of b5. If White tries 6. d4 the Black can use the Noah's Ark trap.
+(e) ...Nxe5 is the Open Spanish. For the moment, White has left the e4 pawn undefended. Black can take it this turn before White gets in with the move Re1, though as usual when a player grabs a pawn in the Ruy Lopez, they find they cannot hold onto it. The usual continuation 6 d4 allows White to take Black's e-pawn. } 5... Be7 (5... Bc5 6. c3 b5 7. Bb3 d6 8. d4 Bb6) (5... d6 6. d4 b5 7. Bb3 Nxd4 8. Nxd4 exd4 { Black wins a pawn. White cannot take the d-pawn or he will lose the b3 bishop. } 9. Qxd4 c5 10. Qc3 c4 { This is known as the Noah's Ark trap. }) (5... b5 6. Bb3 Bc5) (5... Nxe4 6. d4 (6. Nxe5 Nxe5 7. Re1 Nd6 (7... f5 8. Qh5+ g6) 8. Rxe5+ Be7) (6. Bxc6 dxc6 7. Re1 f5 (7... Nd6 8. Nxe5 Be7) 8. Nxe5 Be7 (8... Be6) (8... Qd5) (8... Qd6) (8... Qe7) (8... Bd7) (8... Qf6 9. d4 Be6) 9. Qh5+ g6 10. Nxg6) (6. Re1 Nc5 7. Bxc6 dxc6 8. Rxe5+ Ne6 9. Ng5 Bd6 10. Nxe6 Bxe6) 6... b5 7. Bb3 d5 (7... exd4 8. Re1 d5 9. Bg5 Be7 10. Nxd4 Nxd4 11. Bxe7 Qxe7 (11... Kxe7 12. Qxd4 Be6) 12. Bxd5 Ne6) 8. dxe5) 6. Re1 (6. d3 b5 7. Bb3 d6) 6... b5 7. Bb3 d5 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - 4...Bc5 Deferred Classical defense"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C70"]
+[Opening "Ruy Lopez: Morphy Defense, Classical Defense Deferred"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - 4...Bc5 Deferred Classical defense"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/lueXWOPz"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "21:02:26"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Bc5 { 5 O-O and 5 c3 seems like the most popular responses from the masters. } 5. c3 (5. O-O Nge7 6. c3 Ng6 7. d4 Ba7) 5... Nge7 6. d4 exd4 7. cxd4 Bb4+ 8. Bd2 Bxd2+ 9. Qxd2 d5 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - 4...d6 Modern Steinitz"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C76"]
+[Opening "Ruy Lopez: Morphy Defense, Modern Steinitz Defense, Fianchetto Variation"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - 4...d6 Modern Steinitz"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/Eg3wNk42"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "21:08:30"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 d6 { Much of the play and counterplay in the beginning of the Spanish opening resolves around White creating threats to play Nxe5, Black defending against them, and White finding new ways to reinvigorate the threat. By defending e5 with a pawn, 4...d6 defuses the threat for good.
+4...d6 has the advantage of defending e5 and allowing Black's queen's bishop to develop but closes off the diagonal Black opened for the king's bishop when they played 1...e5, and transforms White's White's bishop's latent pressure on their knight into a pin. The "modern Steinitz" or "deferred Steinitz" defense is a strict improvement over Steinitz's original suggestion or the "Old Steinitz", 3...d6, because the inclusion of 3...a6 4. Ba4 means Black can cut off that pin whenever they wish with ...b5.
+White has a few options:
+(a) 5 d4. Black has a tactic to defend e5 pawn.
+(b) 5 c3. It turns out, is an important move for White to include as it prepares d4 and also gives their bishop the c2 square to retreat to. This usually played either now or after castling and either order usually transposes. Black's priorities are usually to unpin their knight (5...Bd7) and improve their unhappy king's bishop (...g6 * Bg7), but there are number of transpotions they may try as ...d6 usually comes at some point in the other defenses too. One sideline of note is 5 c3 f5 the Siesta variation. } 5. c3 (5. d4 b5 { Exciting intermezzo! } (5... exd4 6. Nxd4 Bd7 7. Nxc6 bxc6) 6. Bb3 Nxd4 7. Nxd4 exd4 8. Qxd4 c5 9. Qc3 c4) 5... Bd7 6. d4 g6 7. O-O Bg7 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - 4...b5 Caro variation"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C70"]
+[Opening "Ruy Lopez: Morphy Defense, Caro Variation"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - 4...b5 Caro variation"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/HDcGNbWN"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "21:34:24"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 b5 { 4...b5 straight away is called the Caro variation.
+...b5 ends White's bishop's pressure on the Black's knight and its indirect pressure on e5. This would end White's threat to win the e-pawn and Black usually ends up playing at some point.
+It is not typical to play it straight away on move four, however., because White isn't actually threatening to win the pawn yet. Black still has the tactic Qd4 fork the white knight and e4 pawn. Black would get the pawn back and the bishop pair to boot. Therefore, there is no immediate need to cash in until White protects their e4 pawn and there is no need for Black to give White the tempo to move their bishop onto the more dangerous b3-f7 diagonal. } *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Berlin Defense"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C67"]
+[Opening "Ruy Lopez: Berlin Defense, lanph3re Gambit Accepted"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Berlin Defense"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/4acTGosV"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "21:39:28"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 { 3...Nf6 is the main sideline to 3...a6. The Berlin defense is known for being solid and is used at the top level of chess as a reliable drawing weapon. The mainline continuation leads an equal endgame known as the Berlin Wall, where it is difficult for White to achieve better than a draw. Another common variation leads to a quick draw by repetition by turn 14.
+White has a few options:
+(a) 4. O-O allows black to take the e4 pawn. This is a trade because White can recover the material by applying pressure on the e-file.
+(b) 4 d3 avoid these main Berlin defense continuations. It defends e4 so defuses the threat of 4...Nxe4 but also reinforce White's threat on e5.
+(c) 4 Qe2 is a tricky sideline. It, too, defends e4 so avoid the trade of e-pawns, but also defends f2 defusing the ...Bc5 ... Qd4 ...Qxf2# threat.
+(d) Nxe5 is so-called Halloween attack. It resembles the well-known Halloween gamit but worse becuase Nc3 has been replaced by Bb5, reducing White's space advantage. } 4. O-O { This move is known as lanph3re gambit.
+Black has several options
+(a) 4...Nxe4 taking the pawn. This is actually a trade.
+(b) 4...Bc5 the Beverwijk variation is the main alternative to 4...Nxe4. Black pressures f2 and White's castled king. This is sharp because 5. Re1 to defend e4 but un-defends f2. So after 5...Ng4, White finds themselves having to move it back 6. Rf1. White has the choice to capture e5 due to a tactic that arises from the c5 and e5 squares being forkable. More commonly, White plays for c3 and d4 instead.
+(c) 4...Be7 before taking the pawn shelters Black's king and gets ready to castle. This prevents any mischief around a discovered check. Now the threat of 5...Nxe4 is more severe, as while White can still recover the pawn, they would have to give up the bishop pair to do so.
+(d) 4...Ng4, the Fishing pole variation, invites White to blunder by accepting a sacrificial knight but opening the h-file and exposing themselves to potential checkmate. } 4... Nxe4 (4... Bc5 5. Re1 Ng4 6. Rf1 (6. d4 { 6. d4 is blunder } 6... Nxd4 7. Nxd4 Qh4)) (4... Be7 5. c3 Nxe4 6. Re1 Nd6 7. Bxc6 dxc6 8. Nxe5 Bf5 { 4...Be7 functionally declines the gambit as it gives White time to play Re1 and defend the e4 pawn. It is typically a quieter continuation. }) (4... Ng4 5. h3 h5 6. c3 a6) 5. Re1 Nd6 6. Nxe5 Nxe5 (6... Nxb5 7. Nxc6+ { Black loses his queen. }) 7. Rxe5+ Be7 8. Bf1 O-O *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Schliemann defense"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C63"]
+[Opening "Ruy Lopez: Schliemann Defense, Classical Variation"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Schliemann defense"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/q7JXSeDj"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "23:22:24"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 f5 { 3...f5 introduces Schliemann defense (or Jaenisch Gambit) is actually not a gambit. Despite the apparent similarity to the Latvian gambit, Black's knight on c6 changes everything.
+Unlike in the Latvian, White can't capture on e5 immediately, and capturing on e5 after exchanging on c6 (4. Bxc6 dxc6 5 Nxe5) doesn't win the pawn either because ...dxc6 let Black's queen into the game and the usual Ruy Lopez rejoinder 5...Qd4 wins it straight back.
+The pawn on f5 isn't free either. 4. exf5 and 4...e4 embarrasses the knight, who (again because of the knight on c6) doesn't have e5 or d4 squares to move to.
+So rather than blast the Jaenisch off the board, White must act natural and ait to exploit Black's weakened kingside further down the line.
+So the real option for White are defending the e4:
+(a) 4 Nc3 is the Dyckhoff variation. Recapturing with the knight (4...fxe4 5. Nxe4) invites 5...d5 and leads to the hair-raising sacrifice 6 Nxe5 and a razor-sharp repudiation of the gambit.
+(b) d3 is a popualr and less sharp alternative, intending to recapture on e4 with the pawn. } 4. Nc3 (4. d3 fxe4 5. dxe4 Nf6) (4. Bxc6 { White cannot take Black's e-pawn for free here. } 4... dxc6 5. Nxe5 Qd4 { The usual Ruy Lopez Queen rejoinder trick to win back a pawn. The intermezzo 6 Qh5+ does not work. } 6. Qh5+ g6 7. Nxg6 hxg6 { The rook is defended by Black's queen. } 8. Qxh8 Qxh8) (4. exf5 e4 5. Qe2 Qe7 6. Bxc6 dxc6 7. Nd4 Qe5 8. Nf3 Qe7 9. Nd4 { Draw in repetition. }) 4... fxe4 5. Nxe4 d5 6. Nxe5 dxe4 7. Nxc6 Qg5 8. Qe2 Nf6 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Smylov defense"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C60"]
+[Opening "Ruy Lopez: Fianchetto Defense"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Smylov defense"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/eIEMXZV2"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "23:35:34"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 g6 { 3...g6 introduces the Smylov defense. Black allows their Bf8 to go to g7, which would place it on the long diagonal for activity. White can play a few moves, such as 4 Nc3 and 4 O-O as Black's quiet move doesn't interfere with White's development } 4. O-O Bg7 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - 4 ... Nf6 - Anderssen variation"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C77"]
+[Opening "Ruy Lopez: Morphy Defense, Anderssen Variation"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - 4 ... Nf6 - Anderssen variation"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/DtYfRXV4"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "23:45:11"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. d3 { 5 d3, Anderssen variation. White doesn't want to attack immediately with O-O, c3 and d4. They instead want to attack after building an impregnable fortress that offers no chances of counterplay. Though passive and harmless-looking, this move defends the e4-pawn and makes Bxc6 followed by Nxe5 a reality. Black must therefore either defend e5 or run off White's a4 bishop. Simplest is 5...b5, which removes the threat of Bxc6 but loosens Black's queenside pawns, inviting a later a4 thrust by White. Black can instead solidify their crucial e5 pawn with 5...d6 but this pins the c6 knight and restricts the f8 bishop. Finally, Black can protect e5 more actively with 5...Bc5, where Bxc6 dxc6 7 Nxe5 can be met with 7...Qd4; however, other White responses, such as 6 c3 will often lead Black back to a choice between ...d6 and b5. } 5... d6 (5... b5 6. Bb3 Be7 7. O-O d6) 6. c3 g6 7. O-O Bg7 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - 4...Nf6 - Tarrasch variation"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C77"]
+[Opening "Ruy Lopez: Morphy Defense, Tarrasch Variation"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - 4...Nf6 - Tarrasch variation"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/ODVlUi2j"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "23:51:08"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. Nc3 { Nc3 is the Tarrasch variation. This develops a piece and defend e4. White usually ends up playing d3 as well after 5...b5 6 Bb3 Be7 7 d3. } 5... b5 6. Bb3 Be7 7. d3 d6 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Morphy defense - 4...Nf6 - Wormald attack"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C86"]
+[Opening "Ruy Lopez: Closed, Worrall Attack, Castling Line"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Morphy defense - 4...Nf6 - Wormald attack"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/WRpU2t2P"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "23:53:33"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. Qe2 { Defending e4 with 5 Qe2 is the Wormald attack, retains the option of c3 and d4 and introduces the medium-term plan of shifting the king's rook across to d1 in a single move after White castles kingside. The downside is that it places the queen on a file that is very likely to get opened or at least half-opened. } 5... b5 6. Bb3 Be7 7. c3 O-O 8. O-O d5 9. d3 Bb7 *
+
+
+[Event "Lucas Opening Homework - Ruy Lopez: Marshall Gambit"]
+[Date "2026.07.23"]
+[Result "*"]
+[Variant "Standard"]
+[ECO "C89"]
+[Opening "Ruy Lopez: Marshall Attack, Modern Main Line"]
+[StudyName "Lucas Opening Homework - Ruy Lopez"]
+[ChapterName "Marshall Gambit"]
+[ChapterURL "https://lichess.org/study/4I4GynHK/v06pVVgT"]
+[Annotator "https://lichess.org/@/stautxie2025"]
+[UTCDate "2026.07.23"]
+[UTCTime "23:56:55"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 O-O 8. c3 d5 { 8...d5 is the Marshall gambit. Black is attacking e4 twice and in general threatening to overrun the center of the board. White has no better option than to accept the proffered pawn with
+(a) 9 exd5
+(b) 9 d4: White declines the gambit. } 9. exd5 { Black has two responses:
+(a) 9...Nxd5
+(b) 9...e4 is the aggressive Steiner variation, and has given Black surprising success at the amateur } 9... Nxd5 10. Nxe5 Nxe5 { Black takes the opportunity to swap off White's useful central knight and instead draw the e1 rook out to a vulnerable square on the fifth rank. } 11. Rxe5 { Black's knight must be saved from the combined attack by White's bishop and rook.
+When the American master Frank Marshall surprised future World Champion Jose Capablanca with the Marshall Gambit in 1918, his chosen follow-up was 11...Nf6, returning the knight to the kingside where Black's attack will be taking place. But in the century since then, trial and error has caused 11...c6 to evolve into the mainline. } 11... c6 { Black's move ...c6 nails down the d5 knight. For White to chop it off (12. Bxd5) would now leave Black with the bishop pair on an open board, and three queenside pawns that would tightly restrain White's four. White's responses are
+(a) 12 d4 is a natural developing move and the main line. Skip ahead to the first major fork in the road, at 14 ... Qh3
+(b) 12 d3 is a significant sideline favored by Alexey Shirov. The pawn itself will be weaker for being on d3 instead of d4, but in return White gains the possibility of quickly converting the extra pawn into a passed pawn with a later c4 push. 12 d3 scores slightly better than 12 d4 at master level and is significantly less analyzed. } 12. d4 (12. d3 Bd6 13. Re1 Bf5 14. Qf3 Qh4 15. g3 Qh3) 12... Bd6 13. Re1 Qh4 14. g3 (14. h3 Bxh3 15. gxh3 Qxh3 16. Nd2 Bh2+ 17. Kh1 Bg3+ 18. Kg1 Qh2+ 19. Kf1 Qxf2#) 14... Qh3 { We have arrived at a critical point in the Marshall Gambit. Black has a simple threat of ...Bg4, after which the White queen will have to guard against the checkmate threat with ...Bf3 and ...Qg2. This would draw the queen away from the defense of the e1-rook and the unsupported rook would then have difficulty resisting a Black takeover of the e-file starting with ...Rae8.
+White has two options
+(a) 15 Be3 (Mainline)
+The old main line is 15 Be3, White pre-emptively blocks the e-file against Black's potential takeover. 15 Be3 makes sense in the context of White's development; the b1-knight will have to come to d2 if it hopes to influence matters on the kingside, but playing it immediately would box the c1-bishop, so get that bishop out of the way first.
+But what does the bishop do on e3? Well, nothing. Black has no threats against either f2 or d4, and a few moves down the line White may well be forced to meet a Black pawn push to f5 with the blocking move f4 (to stop Black playing ...f4 herself), at which point the bishop itself will be a target of the d5-knight and a rook on e8.
+(b) 15 Re4
+If White wants to take decisive action against the invading Black queen, the move 15. Re4 threatening Rh4 and preventing ...Bg4 is an excellent alternative to the main line. } 15. Be3 (15. Re4 g5 16. Qf1 Qh6 17. Re1 Nf4 18. Bxf4 gxf4 19. Qd3 Kh8 20. Nd2 f5 21. Kg2 Ra7 22. Nf3 Rg7 23. Rh1 Qg6) 15... Bg4 16. Qd3 Rae8 (16... Bf3 17. Qf1 Qf5) (16... f5 17. Qf1 Qh5 18. f4 g5 19. Nd2) 17. Nd2 Re6 18. Qf1 Qh5 19. f3 Nxe3 20. Qf2 Nd5 21. fxg4 Qxg4 { Black takes back the sacrificed pawn. The position is roughly equal. } *
+
+

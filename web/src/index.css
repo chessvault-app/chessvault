@@ -1,0 +1,353 @@
+/* Cascade layer order, declared before anything else so it wins.
+
+   This matters more than it looks: chessground ships plain unlayered CSS, and
+   unlayered rules beat *any* @layer rule no matter the import order. Left alone,
+   `.cg-wrap { position: relative }` silently overrides a Tailwind `absolute`
+   class and there is no specificity fix. Importing chessground into its own
+   layer below `utilities` restores the expected precedence, so Tailwind classes
+   work on chessground elements. */
+@layer theme, base, chessground, components, utilities;
+
+@import 'tailwindcss';
+
+/* Fonts are installed as packages and bundled, never fetched from a CDN — the
+   app has to render correctly with the network cable pulled. `wght.css` is the
+   weight-axis-only Inter build (smaller than the optical-size one); the files
+   carry unicode-range, so browsers still only pull the subset they need. */
+@import '@fontsource-variable/inter/wght.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/600.css';
+
+/* chessground's structural CSS + the cburnett piece set. Both are vendored from
+   node_modules rather than a CDN so the app works with no network, and both go
+   into the `chessground` layer declared above. */
+@import '@lichess-org/chessground/assets/chessground.base.css' layer(chessground);
+@import '@lichess-org/chessground/assets/chessground.cburnett.css' layer(chessground);
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Every colour is OKLCH so that light and dark stay perceptually matched: a
+   pair of themes built by nudging lightness on a fixed hue/chroma reads as one
+   system instead of two. Semantic names only — no `gray-700` at call sites, so
+   re-theming happens here and nowhere else.
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --app-bg: oklch(98.4% 0.003 264);
+  --app-bg-accent: oklch(96.5% 0.008 264);
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(97.2% 0.004 264);
+  --surface-3: oklch(94.4% 0.006 264);
+  --surface-inset: oklch(96% 0.005 264);
+
+  --border: oklch(91% 0.006 264);
+  --border-strong: oklch(84% 0.009 264);
+
+  --text: oklch(23% 0.02 264);
+  --text-muted: oklch(52% 0.016 264);
+  --text-subtle: oklch(64% 0.013 264);
+
+  --primary: oklch(55% 0.204 276);
+  --primary-hover: oklch(49% 0.208 276);
+  --primary-fg: oklch(99% 0 0);
+  --primary-soft: oklch(94% 0.035 276);
+  --ring: oklch(55% 0.204 276 / 45%);
+
+  --good: oklch(58% 0.15 150);
+  --bad: oklch(56% 0.2 25);
+  --warn: oklch(70% 0.15 75);
+  --info: oklch(60% 0.13 230);
+
+  /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
+  --board-light: oklch(91% 0.035 84);
+  --board-dark: oklch(62% 0.072 52);
+  --board-frame: oklch(88% 0.01 264);
+  --sq-last-move: oklch(83% 0.16 108 / 55%);
+  --sq-selected: oklch(62% 0.15 150 / 50%);
+  --sq-dest: oklch(45% 0.09 150 / 42%);
+  --sq-check: oklch(58% 0.23 27);
+
+  /* Eval bar: the "white advantage" / "black advantage" fills. */
+  --eval-white: oklch(97% 0.004 264);
+  --eval-black: oklch(30% 0.014 264);
+
+  --shadow-color: 264 22% 30%;
+  --radius: 0.625rem;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --app-bg: oklch(17.5% 0.014 266);
+  --app-bg-accent: oklch(15% 0.015 266);
+  --surface: oklch(21.5% 0.017 266);
+  --surface-2: oklch(25% 0.018 266);
+  --surface-3: oklch(29% 0.019 266);
+  --surface-inset: oklch(19% 0.016 266);
+
+  --border: oklch(31% 0.02 266);
+  --border-strong: oklch(40% 0.024 266);
+
+  --text: oklch(96% 0.005 266);
+  --text-muted: oklch(70% 0.016 266);
+  --text-subtle: oklch(57% 0.017 266);
+
+  --primary: oklch(69% 0.17 277);
+  --primary-hover: oklch(75% 0.16 277);
+  --primary-fg: oklch(17% 0.02 277);
+  --primary-soft: oklch(30% 0.06 277);
+  --ring: oklch(69% 0.17 277 / 50%);
+
+  --good: oklch(72% 0.16 152);
+  --bad: oklch(69% 0.18 25);
+  --warn: oklch(80% 0.15 80);
+  --info: oklch(72% 0.13 232);
+
+  /* Cooler, desaturated board so it recedes against the dark chrome. */
+  --board-light: oklch(60% 0.024 250);
+  --board-dark: oklch(39% 0.031 256);
+  --board-frame: oklch(27% 0.018 266);
+  --sq-last-move: oklch(72% 0.15 110 / 42%);
+  --sq-selected: oklch(65% 0.15 152 / 45%);
+  --sq-dest: oklch(72% 0.11 152 / 38%);
+  --sq-check: oklch(62% 0.24 27);
+
+  --eval-white: oklch(93% 0.005 266);
+  --eval-black: oklch(13% 0.012 266);
+
+  --shadow-color: 266 40% 4%;
+}
+
+/* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile
+   to `var(--surface)` directly, so flipping `.dark` re-themes without a rebuild
+   and without duplicating every utility behind a `dark:` variant. */
+@theme inline {
+  --color-app: var(--app-bg);
+  --color-app-accent: var(--app-bg-accent);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-inset: var(--surface-inset);
+
+  --color-border-DEFAULT: var(--border);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-soft: var(--primary-soft);
+
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+  --color-info: var(--info);
+
+  --color-eval-white: var(--eval-white);
+  --color-eval-black: var(--eval-black);
+
+  --radius-DEFAULT: var(--radius);
+  --radius-lg: calc(var(--radius) + 0.25rem);
+  --radius-xl: calc(var(--radius) + 0.5rem);
+
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --shadow-panel: 0 1px 2px -1px hsl(var(--shadow-color) / 12%), 0 4px 16px -6px hsl(var(--shadow-color) / 14%);
+  --shadow-pop: 0 4px 12px -2px hsl(var(--shadow-color) / 18%), 0 16px 40px -12px hsl(var(--shadow-color) / 22%);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    /* Prevent iOS Safari from inflating text in landscape. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--app-bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+  }
+
+  /* Only show focus rings for keyboard users, but never suppress them entirely. */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--primary-soft);
+    color: var(--text);
+  }
+
+  /* Slim, theme-aware scrollbars. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--border-strong);
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-subtle);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Board theme.
+
+   chessground ships its square colours as a base64 SVG with fixed hex values,
+   which can't respond to CSS variables. Replacing it with a conic-gradient
+   checkerboard makes both square colours token-driven, so the board themes
+   along with the rest of the app for free.
+   --------------------------------------------------------------------------- */
+
+cg-board {
+  background-color: var(--board-light);
+  background-image: repeating-conic-gradient(
+    var(--board-dark) 0% 25%,
+    transparent 0% 50%
+  );
+  background-size: 25% 25%;
+  background-position: top left;
+}
+
+cg-board square.last-move {
+  background-color: var(--sq-last-move);
+}
+
+cg-board square.selected {
+  background-color: var(--sq-selected);
+}
+
+/* Empty legal destination: a centred dot. Occupied (`.oc`): a ring, so the
+   piece underneath stays visible. */
+cg-board square.move-dest {
+  background: radial-gradient(var(--sq-dest) 19%, transparent 20%);
+}
+
+cg-board square.oc.move-dest {
+  background: radial-gradient(transparent 0 78%, var(--sq-dest) 78%);
+}
+
+cg-board square.move-dest:hover,
+cg-board square.move-dest.hover {
+  background: var(--sq-dest);
+}
+
+cg-board square.check {
+  background: radial-gradient(
+    ellipse at center,
+    var(--sq-check) 0%,
+    color-mix(in oklch, var(--sq-check), transparent 40%) 32%,
+    transparent 78%
+  );
+}
+
+/* Coordinate labels.
+
+   These alternate to match the square each label sits on: odd children land on
+   light squares, even on dark. Both variants are pushed well past the contrast
+   chessground ships with, which is close to illegible on a themed board. */
+.cg-wrap coords {
+  font-family: var(--font-mono);
+  font-size: 0.66em;
+  font-weight: 700;
+}
+
+.orientation-white .ranks :nth-child(odd),
+.orientation-white .files :nth-child(even),
+.orientation-black .ranks :nth-child(even),
+.orientation-black .files :nth-child(odd) {
+  /* On a light square: go dark. */
+  color: color-mix(in oklch, var(--board-dark), black 55%);
+}
+
+.orientation-white .ranks :nth-child(even),
+.orientation-white .files :nth-child(odd),
+.orientation-black .ranks :nth-child(odd),
+.orientation-black .files :nth-child(even) {
+  /* On a dark square: go bright. */
+  color: color-mix(in oklch, var(--board-light), white 60%);
+}
+
+.cg-wrap {
+  border-radius: calc(var(--radius) * 0.6);
+  overflow: hidden;
+  box-shadow: var(--shadow-panel);
+}
+
+/* Promotion picker.
+
+   The piece sprites are scoped to `.cg-wrap piece.<role>.<color>`, so the picker
+   hosts itself inside a `.cg-wrap` to inherit them rather than duplicating a
+   whole piece set. These rules undo the board decoration that comes with that
+   class; positioning is left to Tailwind, which now wins thanks to the layer
+   order declared at the top of this file. */
+.cg-wrap.promo-host {
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.promo-host piece {
+  /* `display: block` is load-bearing: `piece` is an unknown element and so
+     defaults to inline, which ignores width/height. chessground normally gets a
+     block box for free via `position: absolute`, which is overridden here. */
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  z-index: auto;
+  will-change: auto;
+}
+
+/* Dragged piece should float above every pane. */
+.cg-wrap piece.dragging {
+  z-index: 30;
+  cursor: grabbing;
+}
+
+.cg-wrap piece.ghost {
+  opacity: 0.28;
+}

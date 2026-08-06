@@ -1,0 +1,21 @@
+node_modules/
+dist/
+
+# Derived, rebuildable artefacts. Safe to delete; regenerate with the
+# `build:*` scripts.
+data/
+web/public/engine/
+
+# Holds the Lichess API token — never commit this.
+vault/config.json
+
+# Large PGN collections the user drops in to be indexed. The books built from
+# them live in data/, so neither needs version control.
+vault/sources/*
+!vault/sources/.gitkeep
+
+# The rest of vault/ is deliberately NOT ignored: studies, notes and games are
+# plain text and benefit from being version-controlled.
+
+.DS_Store
+*.log

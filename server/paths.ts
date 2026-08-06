@@ -1,0 +1,23 @@
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+/** Repo root, resolved from this file so it works regardless of cwd. */
+export const REPO_ROOT = resolve(here, '..');
+
+/** The user's irreplaceable data. Plain files, intentionally git-friendly. */
+export const VAULT = resolve(REPO_ROOT, 'vault');
+export const VAULT_STUDIES = resolve(VAULT, 'studies');
+export const VAULT_NOTES = resolve(VAULT, 'notes');
+export const VAULT_GAMES = resolve(VAULT, 'games');
+/** PGN files the user drops in to be indexed into opening books. */
+export const VAULT_SOURCES = resolve(VAULT, 'sources');
+export const VAULT_CONFIG = resolve(VAULT, 'config.json');
+
+/** Derived, rebuildable artefacts. Safe to delete at any time. */
+export const DATA = resolve(REPO_ROOT, 'data');
+export const DATA_BOOKS = resolve(DATA, 'books');
+export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
+export const DATA_OPENINGS = resolve(DATA, 'openings.json');
+export const DATA_EXPLORER_CACHE = resolve(DATA, 'explorer-cache');

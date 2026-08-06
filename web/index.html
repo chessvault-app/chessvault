@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Chess Vault</title>
+    <meta name="description" content="A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      // Set the theme class before first paint so dark-theme users never see a
+      // white flash. Mirrors the resolution logic in src/store/theme.ts.
+      (function () {
+        try {
+          var raw = localStorage.getItem('chess-vault:theme');
+          var pref = raw ? JSON.parse(raw).state.preference : 'system';
+          var dark =
+            pref === 'dark' ||
+            (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {
+          /* first run, or storage blocked — fall through to light */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
