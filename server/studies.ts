@@ -45,26 +45,26 @@ function countChapters(pgn: string): number {
 }
 
 /**
- * PGN-document CRUD over a directory. Mounted twice: at `studies` for
- * vault/studies, and at `games/docs` for the games collection — an annotated
- * game is the same kind of document as a one-chapter study.
+ * Plain-file document CRUD over a directory. Mounted three times: `studies`
+ * (vault/studies, .pgn), `games/docs` (the games collection, .pgn — an
+ * annotated game is a one-chapter study), and `notes` (vault/notes, .md).
  */
-export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono {
+export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = '.pgn'): Hono {
   mkdirSync(dir, { recursive: true });
   const api = new Hono();
-  const pathOf = (id: string): string => resolve(dir, `${id}.pgn`);
+  const pathOf = (id: string): string => resolve(dir, `${id}${ext}`);
 
   api.get(`/${base}`, (c) => {
     const entries = readdirSync(dir, { recursive: true, encoding: 'utf-8' });
     const studies = entries
-      .filter((f) => f.endsWith('.pgn'))
+      .filter((f) => f.endsWith(ext))
       .map((file) => {
         const path = resolve(dir, file);
         const stat = statSync(path);
         return {
           // Ids always use forward slashes, whatever the OS separator is.
-          id: file.slice(0, -'.pgn'.length).split(sep).join('/'),
-          chapters: countChapters(readFileSync(path, 'utf-8')),
+          id: file.slice(0, -ext.length).split(sep).join('/'),
+          chapters: ext === '.pgn' ? countChapters(readFileSync(path, 'utf-8')) : 1,
           bytes: stat.size,
           updatedAt: stat.mtime.toISOString(),
         };
@@ -156,11 +156,13 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies'): Hono 
     const path = pathOf(name);
     if (existsSync(path)) return c.json({ error: 'a study with that name exists' }, 409);
     mkdirSync(resolve(path, '..'), { recursive: true });
-    const chapterTitle = name.split('/').at(-1)!;
-    // A fresh study is one empty chapter from the start position.
+    const title = name.split('/').at(-1)!;
+    // A fresh study is one empty chapter; a fresh note is a heading.
     writeFileSync(
       path,
-      `[Event "${chapterTitle}: Chapter 1"]\n[ChapterName "Chapter 1"]\n[Result "*"]\n\n*\n`,
+      ext === '.md'
+        ? `# ${title}\n\n`
+        : `[Event "${title}: Chapter 1"]\n[ChapterName "Chapter 1"]\n[Result "*"]\n\n*\n`,
     );
     return c.json({ id: name });
   });

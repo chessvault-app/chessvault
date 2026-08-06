@@ -372,6 +372,90 @@ cg-board square.check {
   box-shadow: var(--shadow-panel);
 }
 
+/* ---------------------------------------------------------------------------
+   Note editor typography. Tiptap renders semantic HTML; these give it the
+   reading rhythm of a document without pulling in a typography plugin. */
+.note-editor {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--text);
+  min-height: 60vh;
+}
+.note-editor > * + * {
+  margin-top: 0.6em;
+}
+.note-editor h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-top: 1em;
+}
+.note-editor h2 {
+  font-size: 1.25em;
+  font-weight: 650;
+  margin-top: 1em;
+}
+.note-editor h3 {
+  font-size: 1.05em;
+  font-weight: 650;
+  margin-top: 0.9em;
+}
+.note-editor ul,
+.note-editor ol {
+  padding-left: 1.4em;
+}
+.note-editor ul {
+  list-style: disc;
+}
+.note-editor ol {
+  list-style: decimal;
+}
+.note-editor blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.9em;
+  color: var(--text-muted);
+}
+.note-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+.note-editor pre {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7em 0.9em;
+  overflow-x: auto;
+}
+.note-editor pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.note-editor a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.note-editor hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.2em 0;
+}
+/* The caret placeholder line Tiptap needs for empty docs. */
+.note-editor p.is-editor-empty:first-child::before {
+  content: 'Write… (# heading, - list, **bold** — markdown shortcuts work)';
+  color: var(--text-subtle);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 /* Promotion picker.
 
    The piece sprites are scoped to `.cg-wrap piece.<role>.<color>`, so the picker

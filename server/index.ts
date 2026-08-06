@@ -9,7 +9,7 @@ import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi } from './lichess.ts';
 import { studiesApi } from './studies.ts';
-import { REPO_ROOT, VAULT_GAMES } from './paths.ts';
+import { REPO_ROOT, VAULT_GAMES, VAULT_NOTES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -43,6 +43,8 @@ app.route('/api', studiesApi());
 // The games collection speaks the same document API as studies: an annotated
 // game is a one-chapter study living in vault/games/collection/.
 app.route('/api', studiesApi(resolve(VAULT_GAMES, 'collection'), 'games/docs'));
+// Notes: the same document API over markdown files.
+app.route('/api', studiesApi(VAULT_NOTES, 'notes', '.md'));
 app.route('/api', gamesApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.

@@ -12,6 +12,7 @@ import { ThemeToggle } from '@/ui/ThemeToggle';
 import { AnalysisView } from '@/analysis/AnalysisView';
 import { EditorView } from '@/editor/EditorView';
 import { GamesView } from '@/games/GamesView';
+import { NotesView } from '@/notes/NotesView';
 import { StudiesView } from '@/studies/StudiesView';
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
@@ -39,6 +40,8 @@ export function App() {
           <StudiesView params={params} />
         ) : section === 'games' ? (
           <GamesView params={params} />
+        ) : section === 'notes' ? (
+          <NotesView params={params} />
         ) : (
           <Placeholder section={section} />
         )}
