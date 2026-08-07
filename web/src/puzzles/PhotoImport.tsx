@@ -9,6 +9,7 @@ import {
   type Point,
   type Quad,
 } from './ocr/image';
+import { detectBoardQuad } from './ocr/detect';
 import { classifyBoard, labelsToFen, type Template } from './ocr/classify';
 
 /** Below this ratio-test margin a square is flagged for eyeballing. */
@@ -59,15 +60,18 @@ export function PhotoImport({
       setImg(image);
       setReading(null);
       setPasteHint(null);
-      // Default quad: centred, inset 12% — close enough to grab and drag.
+      // Pre-place the handles on the detected board; the fallback quad
+      // (centred, inset 12%) is close enough to grab and drag.
       const ix = image.naturalWidth * 0.12;
       const iy = image.naturalHeight * 0.12;
-      setCorners([
-        { x: ix, y: iy },
-        { x: image.naturalWidth - ix, y: iy },
-        { x: image.naturalWidth - ix, y: image.naturalHeight - iy },
-        { x: ix, y: image.naturalHeight - iy },
-      ]);
+      setCorners(
+        detectQuad(image) ?? [
+          { x: ix, y: iy },
+          { x: image.naturalWidth - ix, y: iy },
+          { x: image.naturalWidth - ix, y: image.naturalHeight - iy },
+          { x: ix, y: image.naturalHeight - iy },
+        ],
+      );
     };
     image.src = url;
   }, []);
@@ -373,6 +377,24 @@ export function PhotoImport({
       </div>
     </div>
   );
+}
+
+/**
+ * Run corner detection on a freshly decoded image. Detection happens on a
+ * size-capped decode (phone photos run to 48 MP; the blob analysis needs
+ * nothing like that), and the quad scales back to natural coordinates.
+ */
+function detectQuad(image: HTMLImageElement): Quad | null {
+  const cap = 1600 / Math.max(image.naturalWidth, image.naturalHeight);
+  const k = Math.min(1, cap);
+  const off = document.createElement('canvas');
+  off.width = Math.max(1, Math.round(image.naturalWidth * k));
+  off.height = Math.max(1, Math.round(image.naturalHeight * k));
+  const ctx = off.getContext('2d')!;
+  ctx.drawImage(image, 0, 0, off.width, off.height);
+  const quad = detectBoardQuad(grayscaleFrom(ctx.getImageData(0, 0, off.width, off.height)));
+  if (!quad) return null;
+  return quad.map((p) => ({ x: p.x / k, y: p.y / k })) as unknown as Quad;
 }
 
 function squareName(cellIndex: number, blackAtBottom: boolean): string {
