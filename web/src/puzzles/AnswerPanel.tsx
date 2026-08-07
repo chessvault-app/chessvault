@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getNode, mainlineFrom } from '@shared/tree';
+import { ArrowUpToLine, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getNode, isOnMainline, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable } from '@/analysis/MoveTreePane';
 import { Button } from '@/ui/Button';
@@ -16,12 +16,15 @@ export function AnswerPanel({
   tree,
   cursorId,
   onSelect,
+  onPromote,
   title = 'Moves',
   emptyText = 'Play a move on the board.',
 }: {
   tree: MoveTree;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
+  /** When set, a header action promotes an off-mainline cursor's line. */
+  onPromote?: (id: NodeId) => void;
   title?: string;
   emptyText?: string;
 }) {
@@ -39,7 +42,22 @@ export function AnswerPanel({
 
   return (
     <Panel flush className="min-h-[10rem] shrink-0">
-      <PanelHeader title={title} />
+      <PanelHeader
+        title={title}
+        actions={
+          onPromote &&
+          !isOnMainline(tree, cursorId) && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Make this line the mainline"
+              onClick={() => onPromote(cursorId)}
+            >
+              <ArrowUpToLine className="size-3.5" />
+            </Button>
+          )
+        }
+      />
       {isEmpty ? (
         <p className="text-subtle px-3 py-4 text-center text-xs">{emptyText}</p>
       ) : (

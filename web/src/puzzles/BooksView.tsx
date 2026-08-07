@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  ArrowUpToLine,
   BookMarked,
   Check,
   Eye,
@@ -23,7 +22,6 @@ import {
   addUci,
   createTree,
   getNode,
-  isOnMainline,
   legalDests,
   mainlineFrom,
   positionAt,
@@ -991,6 +989,9 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           tree={tree}
           cursorId={cursorId}
           onSelect={setCursorId}
+          onPromote={
+            phase === 'solving' ? (id) => setTree(promoteToMainline(tree, id)) : undefined
+          }
           emptyText="Nothing entered yet — find the first move on the board."
         />
 
@@ -1031,17 +1032,6 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                 )}
                 Submit
               </Button>
-              {phase === 'solving' && !isOnMainline(tree, cursorId) && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  title="Make this line the answer that gets judged"
-                  onClick={() => setTree(promoteToMainline(tree, cursorId))}
-                >
-                  <ArrowUpToLine className="size-3.5" />
-                  Make mainline
-                </Button>
-              )}
               <Button
                 variant="ghost"
                 size="sm"
