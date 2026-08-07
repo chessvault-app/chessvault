@@ -46,7 +46,7 @@ export function AnalysisView() {
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
       <AnalysisBoard />
 
       {/* Side column. Desktop shows every pane; small screens switch, with

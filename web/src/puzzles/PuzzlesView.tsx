@@ -373,7 +373,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
 
   if (analysing && puzzle) {
     return (
-      <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+      <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
         <AnalysisBoard />
         <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
           <div className="flex shrink-0 items-center gap-2">
@@ -401,7 +401,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
       {/* Board column, matching the shared budget so the board sits where
           every other view puts it. */}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">

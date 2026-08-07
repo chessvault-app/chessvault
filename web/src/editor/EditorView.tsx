@@ -260,7 +260,7 @@ export function EditorView() {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
