@@ -42,6 +42,10 @@ const BANDS = [
   { id: 'expert', label: 'Expert', min: 2200, max: 9999 },
 ] as const;
 
+/** Ratings are internal curation data — users see the band, not the number. */
+const bandOf = (rating: number): string =>
+  BANDS.find((b) => rating >= b.min && rating <= b.max)?.label ?? '—';
+
 type ResultFilter = 'all' | 'solved' | 'review';
 type BandFilter = 'any' | (typeof BANDS)[number]['id'];
 
@@ -248,7 +252,7 @@ export function DashboardPage() {
                       <X className="text-bad size-3.5 shrink-0" aria-label="failed" />
                     )}
                     <span className="text-fg font-mono">#{h.id}</span>
-                    <span className="text-subtle font-mono tabular-nums">{h.puzzleRating}</span>
+                    <span className="text-subtle">{bandOf(h.puzzleRating)}</span>
                     {!h.win && (
                       <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
                         to review
