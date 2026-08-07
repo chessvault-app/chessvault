@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   BookMarked,
+  Camera,
   Check,
   Eye,
   Loader2,
@@ -41,6 +42,8 @@ import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
+import { PhotoImport, type PhotoReading } from './PhotoImport';
+import { harvestTemplates, isValidTemplate } from './ocr/classify';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
 import { AnswerPanel } from './AnswerPanel';
 import { formatScore } from '@/engine/uci';
@@ -369,6 +372,39 @@ function PuzzleEntry({
   onCancel: () => void;
 }) {
   const [fen, setFen] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  // The aligned photo's cell features, kept until the user confirms the
+  // position: confirming harvests them as this book's font templates.
+  const [photo, setPhoto] = useState<PhotoReading | null>(null);
+  const [prefill, setPrefill] = useState<string | null>(null);
+
+  const confirmPosition = (confirmed: string): void => {
+    if (photo) {
+      // Fire-and-forget: template learning must never block puzzle entry.
+      void (async () => {
+        try {
+          const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`);
+          const existing = res.ok
+            ? ((await res.json()) as { templates: unknown[] }).templates.filter(isValidTemplate)
+            : [];
+          const templates = harvestTemplates(
+            photo.features,
+            confirmed,
+            photo.blackAtBottom,
+            existing,
+          );
+          await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`, {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ templates }),
+          });
+        } catch {
+          // learning is best-effort
+        }
+      })();
+    }
+    setFen(confirmed);
+  };
 
   if (fen === null) {
     return (
@@ -377,13 +413,33 @@ function PuzzleEntry({
           <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
             <ArrowLeft className="size-3.5" />
           </Button>
-          <p className="text-muted text-sm">
+          <p className="text-muted min-w-0 flex-1 truncate text-sm">
             Puzzle #{number} — set up the diagram, then record the solution.
           </p>
+          <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
+            <Camera className="size-3.5" />
+            From photo
+          </Button>
         </div>
         <div className="min-h-0 flex-1">
-          <EditorView useLabel="Record solution" onUse={setFen} />
+          <EditorView
+            key={prefill ?? 'blank'}
+            initialFen={prefill ?? undefined}
+            useLabel="Record solution"
+            onUse={confirmPosition}
+          />
         </div>
+        {importing && (
+          <PhotoImport
+            slug={slug}
+            onApply={(reading) => {
+              setPhoto(reading);
+              if (reading.fen) setPrefill(reading.fen);
+              setImporting(false);
+            }}
+            onClose={() => setImporting(false)}
+          />
+        )}
       </div>
     );
   }

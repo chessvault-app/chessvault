@@ -69,6 +69,35 @@ describe('puzzle books api', () => {
     expect(after.progress[puzzle.id]).toBeUndefined();
   });
 
+  it('stores and returns OCR templates per book', async () => {
+    await post('/api/puzzlebooks', { title: 'OCR Book' });
+    const slug = encodeURIComponent('OCR Book');
+
+    const empty = await app.request(`/api/puzzlebooks/${slug}/ocr`);
+    expect(((await empty.json()) as { templates: unknown[] }).templates).toEqual([]);
+
+    const templates = [{ label: 'K', feature: 'QUJD' }];
+    const put = await app.request(`/api/puzzlebooks/${slug}/ocr`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ templates }),
+    });
+    expect(put.status).toBe(200);
+
+    const back = await app.request(`/api/puzzlebooks/${slug}/ocr`);
+    expect(((await back.json()) as { templates: unknown[] }).templates).toEqual(templates);
+
+    const bad = await app.request(`/api/puzzlebooks/${slug}/ocr`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ templates: [{ label: 42 }] }),
+    });
+    expect(bad.status).toBe(400);
+
+    // Leave the fixture as the other tests expect it.
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
   it('deletes a book', async () => {
     const slug = encodeURIComponent('1001 Sacrifices');
     expect((await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' })).status).toBe(200);

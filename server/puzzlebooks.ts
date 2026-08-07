@@ -57,6 +57,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   const bookDir = (slug: string): string => resolve(dir, slug);
   const puzzlesPath = (slug: string): string => resolve(bookDir(slug), 'puzzles.json');
   const progressPath = (slug: string): string => resolve(bookDir(slug), 'progress.json');
+  const ocrPath = (slug: string): string => resolve(bookDir(slug), 'ocr.json');
 
   const validBook = (slug: string): boolean =>
     SLUG_RE.test(slug) && existsSync(resolve(bookDir(slug), 'book.json'));
@@ -168,6 +169,36 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     delete progress[c.req.param('id')];
     writeJson(progressPath(slug), progress);
     return c.json({ ok: true });
+  });
+
+  // Diagram-OCR templates: what THIS book's printed pieces look like,
+  // harvested from confirmed positions (see web/src/puzzles/ocr). Opaque
+  // to the server beyond shape checks; the pixel math lives client-side.
+  api.get('/puzzlebooks/:slug/ocr', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    return c.json(readJson<{ templates: unknown[] }>(ocrPath(slug), { templates: [] }));
+  });
+
+  api.put('/puzzlebooks/:slug/ocr', async (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as { templates?: unknown };
+    if (!Array.isArray(body.templates) || body.templates.length > 400) {
+      return c.json({ error: 'expected { templates: [...] } (max 400)' }, 400);
+    }
+    const ok = body.templates.every((t) => {
+      const template = t as { label?: unknown; feature?: unknown };
+      return (
+        typeof template.label === 'string' &&
+        template.label.length <= 8 &&
+        typeof template.feature === 'string' &&
+        template.feature.length <= 512
+      );
+    });
+    if (!ok) return c.json({ error: 'malformed template' }, 400);
+    writeJson(ocrPath(slug), { templates: body.templates });
+    return c.json({ ok: true, count: body.templates.length });
   });
 
   api.post('/puzzlebooks/:slug/attempt', async (c) => {

@@ -52,12 +52,17 @@ type Tool =
 export function EditorView({
   onUse,
   useLabel = 'Analyse',
+  initialFen,
 }: {
   /** Embedded mode: hand the legal position back instead of navigating. */
   onUse?: (fen: string) => void;
   useLabel?: string;
+  /** Prefill (e.g. a diagram read from a photo); falls back to the start. */
+  initialFen?: string;
 }) {
-  const [state, setState] = useState<EditorState>(defaultEditorState);
+  const [state, setState] = useState<EditorState>(
+    () => (initialFen ? fromFen(initialFen) : undefined) ?? defaultEditorState(),
+  );
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
   const [fenInput, setFenInput] = useState('');
