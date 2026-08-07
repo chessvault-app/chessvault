@@ -108,7 +108,7 @@ export function DashboardPage() {
           <StatCard label="Solved" value={user ? String(user.wins) : '…'} />
           <StatCard
             label="Attempts"
-            title="Rated attempts only — review sessions don't count here, which is why this can differ from the review pool"
+            title="Training attempts only — review sessions don't count here, which is why this can differ from the review pool"
             value={user ? String(user.attempts) : '…'}
           />
           <StatCard label="Win rate" value={winRate === null ? '—' : `${winRate}%`} />

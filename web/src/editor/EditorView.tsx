@@ -426,7 +426,7 @@ export function EditorView({
             className="max-sm:w-9 max-sm:px-0"
             disabled={!validity.legal}
             onClick={analyse}
-            title={validity.legal ? 'Analyse this position' : validity.reason}
+            title={validity.legal ? (onUse ? useLabel : 'Analyse this position') : validity.reason}
           >
             {/* Analysis = the game-review microscope; embedded mode records
                 a move list, so the glyph says "list", not "go". */}

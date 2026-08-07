@@ -534,7 +534,7 @@ function Trainer({
                   size="sm"
                   variant={difficulty === d.id ? 'primary' : 'secondary'}
                   className="min-w-0 flex-1 px-0"
-                  title={'hint' in d ? `Puzzles rated ${d.hint}` : 'Any difficulty'}
+                  title={'hint' in d ? `Difficulty ${d.hint}` : 'Any difficulty'}
                   onClick={() => pickDifficulty(d.id)}
                 >
                   {d.label}
