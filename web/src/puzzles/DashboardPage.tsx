@@ -2,7 +2,9 @@ import { ArrowLeft, BookMarked, Check, ChevronRight, RotateCcw, Trash2, X } from
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
+import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { ProgressBar } from '@/ui/ProgressBar';
 
 /**
  * Training overview: counters, results by difficulty band, and the recent
@@ -136,20 +138,7 @@ export function DashboardPage() {
               return (
                 <div key={band.label} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
                   <span className="text-muted text-xs">{band.label}</span>
-                  <div className="bg-surface-inset flex h-2 overflow-hidden rounded-full">
-                    {inBand.length > 0 && (
-                      <>
-                        <div
-                          className="bg-nag-good h-full"
-                          style={{ width: `${(100 * wins) / inBand.length}%` }}
-                        />
-                        <div
-                          className="bg-nag-blunder h-full"
-                          style={{ width: `${(100 * losses) / inBand.length}%` }}
-                        />
-                      </>
-                    )}
-                  </div>
+                  <ProgressBar total={inBand.length} solved={wins} failed={losses} showEmpty />
                   <span className="text-subtle w-16 text-right font-mono text-[0.6875rem] tabular-nums">
                     {inBand.length > 0 ? `${wins}/${inBand.length}` : '—'}
                   </span>
@@ -187,18 +176,12 @@ export function DashboardPage() {
                     <span className="text-subtle shrink-0 font-mono tabular-nums">
                       {b.solved}/{b.puzzles}
                     </span>
-                    {b.puzzles > 0 && (
-                      <span className="bg-surface-inset flex h-1.5 w-24 shrink-0 overflow-hidden rounded-full">
-                        <span
-                          className="bg-nag-good h-full"
-                          style={{ width: `${(100 * b.solved) / b.puzzles}%` }}
-                        />
-                        <span
-                          className="bg-nag-blunder h-full"
-                          style={{ width: `${(100 * b.failed) / b.puzzles}%` }}
-                        />
-                      </span>
-                    )}
+                    <ProgressBar
+                      total={b.puzzles}
+                      solved={b.solved}
+                      failed={b.failed}
+                      className="w-24 shrink-0"
+                    />
                     <ChevronRight className="text-subtle size-3.5 shrink-0" />
                   </button>
                 </li>
@@ -315,30 +298,6 @@ function ResetButton({ onDone }: { onDone: () => void }) {
       <Trash2 className="size-3.5" />
       {armed ? 'Really reset everything?' : 'Reset'}
     </Button>
-  );
-}
-
-function FilterChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        active
-          ? 'bg-primary-soft text-primary rounded-md px-2 py-1 text-[0.6875rem] font-semibold'
-          : 'text-muted hover:bg-surface-2 hover:text-fg rounded-md px-2 py-1 text-[0.6875rem] transition-colors duration-100'
-      }
-    >
-      {label}
-    </button>
   );
 }
 

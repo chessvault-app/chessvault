@@ -661,29 +661,30 @@ function Trainer({
           </div>
         </Panel>
 
-        {/* Category — a card linking to the themes page, not a dropdown. */}
+        {/* Category — the same panel idiom as everything else in this
+            column; the whole panel is the link to the themes page. */}
         <button
           type="button"
           onClick={() => navigate('puzzles', 'themes')}
           className={cn(
             'bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex shrink-0',
-            'items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-100',
+            'items-center gap-2.5 rounded-xl border px-3 text-left shadow-[var(--shadow-panel)] transition-colors duration-100',
+            'h-10',
           )}
         >
-          <Puzzle className="text-subtle group-hover:text-primary size-4 shrink-0 transition-colors" />
-          <span className="min-w-0 flex-1">
-            <span className="text-subtle block text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-              Category
-            </span>
-            <span className="text-fg block truncate text-xs font-medium">
-              {mode === 'single'
-                ? `Puzzle #${puzzleId}`
-                : mode === 'failed'
-                  ? 'Failed puzzles'
-                  : theme
-                    ? themeLabel(theme)
-                    : 'All themes'}
-            </span>
+          <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+            Category
+          </span>
+          <span className="min-w-0 flex-1" />
+          <Puzzle className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+          <span className="text-fg truncate text-xs font-medium">
+            {mode === 'single'
+              ? `Puzzle #${puzzleId}`
+              : mode === 'failed'
+                ? 'Failed puzzles'
+                : theme
+                  ? themeLabel(theme)
+                  : 'All themes'}
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />
         </button>

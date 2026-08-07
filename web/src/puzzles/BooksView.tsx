@@ -60,6 +60,9 @@ import {
 } from './ocr/classify';
 import { boardFromImage, featuresFromImage, loadImage } from './ocr/browser';
 import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
+import { FilterChip } from '@/ui/FilterChip';
+import { PaneTabs } from '@/ui/PaneTabs';
+import { ProgressBar } from '@/ui/ProgressBar';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
 import { AnswerPanel } from './AnswerPanel';
 import { formatScore } from '@/engine/uci';
@@ -551,21 +554,15 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
     <div className="flex min-h-0 shrink-0">
       <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width }}>
       {evidence.solutionPage && (
-        <div className="bg-surface-inset flex shrink-0 gap-0.5 self-start rounded-lg p-0.5">
-          {(['diagram', 'solutions'] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={cn(
-                'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                tab === t ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-              )}
-            >
-              {t === 'diagram' ? 'Diagram' : 'Solutions'}
-            </button>
-          ))}
-        </div>
+        <PaneTabs
+          className="self-start"
+          tabs={[
+            { id: 'diagram' as const, label: 'Diagram' },
+            { id: 'solutions' as const, label: 'Solutions' },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
       )}
       {tab === 'diagram' && evidence.page ? (
         <>
@@ -643,7 +640,9 @@ function PuzzleNavigator({
     if (target) navigate('puzzles', 'books', slug, target.id);
   };
   return (
-    <Panel flush resizeKey="book-problems" defaultHeight={260} className="min-h-[8rem]">
+    // stacked:order-last — on phones the Submit row must sit right under
+    // the moves panel, with the (tall) jump grid after it.
+    <Panel flush resizeKey="book-problems" defaultHeight={260} className="min-h-[8rem] stacked:order-last">
       <PanelHeader
         title="Puzzles"
         actions={
@@ -712,36 +711,6 @@ function PuzzleNavigator({
 }
 
 /**
- * Solved/failed progress as a bar — the track keeps a visible border even
- * when empty, and the counts live in the tooltip instead of UI text.
- */
-function ProgressBar({
-  total,
-  solved,
-  failed,
-  className,
-}: {
-  total: number;
-  solved: number;
-  failed: number;
-  className?: string;
-}) {
-  if (total === 0) return null;
-  return (
-    <span
-      title={`${solved} solved · ${failed} failed · ${total - solved - failed} remaining`}
-      className={cn(
-        'bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border',
-        className,
-      )}
-    >
-      <span className="bg-nag-good h-full" style={{ width: `${(100 * solved) / total}%` }} />
-      <span className="bg-nag-blunder h-full" style={{ width: `${(100 * failed) / total}%` }} />
-    </span>
-  );
-}
-
-/**
  * The book's puzzles as an information-dense, filterable list: number,
  * fidelity tier, goal, attempt history — filters double as the tier
  * legend (each chip carries its description as a tooltip).
@@ -779,13 +748,6 @@ function PuzzleList({
       (tierFilter === 'all' || p.provenance === tierFilter),
   );
 
-  const chip = (active: boolean, extra?: string): string =>
-    cn(
-      'shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-      active ? 'bg-primary-soft border-primary/40 text-primary' : 'border-line text-muted hover:border-line-strong',
-      extra,
-    );
-
   return (
     <>
       <ProgressBar
@@ -795,22 +757,32 @@ function PuzzleList({
         className="mb-3"
       />
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
-        {(['all', 'new', 'failed', 'solved'] as const).map((s) => (
-          <button key={s} type="button" onClick={() => setStateFilter(s)} className={chip(stateFilter === s)}>
-            {s} <span className="opacity-60">{stateCounts[s]}</span>
-          </button>
+        {(
+          [
+            ['all', 'All'],
+            ['new', 'New'],
+            ['failed', 'Failed'],
+            ['solved', 'Solved'],
+          ] as const
+        ).map(([id, label]) => (
+          <FilterChip
+            key={id}
+            label={label}
+            count={stateCounts[id]}
+            active={stateFilter === id}
+            onClick={() => setStateFilter(id)}
+          />
         ))}
         {tiers.size > 0 && <span className="border-line mx-1 h-4 border-l" />}
         {[...tiers.entries()].map(([tier, count]) => (
-          <button
+          <FilterChip
             key={tier}
-            type="button"
+            label={PROVENANCE_META[tier].label}
+            count={count}
             title={PROVENANCE_META[tier].title}
+            active={tierFilter === tier}
             onClick={() => setTierFilter(tierFilter === tier ? 'all' : tier)}
-            className={chip(tierFilter === tier)}
-          >
-            {PROVENANCE_META[tier].label} <span className="opacity-60">{count}</span>
-          </button>
+          />
         ))}
       </div>
       <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
@@ -1146,28 +1118,16 @@ function PuzzleEntry({
         // evidence views are one tap away instead of crowding it out.
         <div className="flex min-h-0 flex-1 flex-col">
           {(evidence?.page || draft) && (
-            <div className="bg-surface-inset mx-4 mt-2 flex shrink-0 gap-0.5 self-start rounded-lg p-0.5">
-              {(['board', 'diagram', 'solutions'] as const)
-                .filter(
-                  (v) =>
-                    v === 'board' ||
-                    (v === 'diagram' && (evidence?.page || draft)) ||
-                    (v === 'solutions' && evidence?.solutionPage),
-                )
-                .map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setStackedView(v)}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors',
-                      stackedView === v ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-                    )}
-                  >
-                    {v}
-                  </button>
-                ))}
-            </div>
+            <PaneTabs
+              className="mx-4 mt-2"
+              tabs={[
+                { id: 'board' as const, label: 'Board' },
+                { id: 'diagram' as const, label: 'Diagram' },
+                ...(evidence?.solutionPage ? [{ id: 'solutions' as const, label: 'Solutions' }] : []),
+              ]}
+              value={stackedView}
+              onChange={setStackedView}
+            />
           )}
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
             {stackedView === 'board' ? (
