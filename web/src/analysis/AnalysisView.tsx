@@ -1,6 +1,6 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getNode, isOnMainline } from '@shared/tree';
+import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
@@ -111,25 +111,15 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const deleteNode = useAnalysis((s) => s.deleteNode);
-  const promoteNode = useAnalysis((s) => s.promoteNode);
   const reset = useAnalysis((s) => s.reset);
 
   const node = getNode(tree, cursorId);
   const atRoot = node.parentId === null;
-  const offMainline = !atRoot && !isOnMainline(tree, cursorId);
 
+  // Promotion lives on the variation rows themselves (see MoveTreePane),
+  // the same control in every moves table.
   return (
     <>
-      {offMainline && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => promoteNode(cursorId, true)}
-          title="Make this the main line"
-        >
-          Promote
-        </Button>
-      )}
       <Button
         variant="ghost"
         size="icon-sm"

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { ArrowUpToLine, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getNode, isOnMainline, mainlineFrom } from '@shared/tree';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
+import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable } from '@/analysis/MoveTreePane';
 import { Button } from '@/ui/Button';
@@ -23,7 +23,7 @@ export function AnswerPanel({
   tree: MoveTree;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  /** When set, a header action promotes an off-mainline cursor's line. */
+  /** When set, every variation row carries a promote-to-mainline button. */
   onPromote?: (id: NodeId) => void;
   title?: string;
   emptyText?: string;
@@ -42,27 +42,12 @@ export function AnswerPanel({
 
   return (
     <Panel flush className="min-h-[10rem] shrink-0">
-      <PanelHeader
-        title={title}
-        actions={
-          onPromote &&
-          !isOnMainline(tree, cursorId) && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Make this line the mainline"
-              onClick={() => onPromote(cursorId)}
-            >
-              <ArrowUpToLine className="size-3.5" />
-            </Button>
-          )
-        }
-      />
+      <PanelHeader title={title} />
       {isEmpty ? (
         <p className="text-subtle px-3 py-4 text-center text-xs">{emptyText}</p>
       ) : (
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed">
-          <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} />
+          <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} onPromote={onPromote} />
         </div>
       )}
       {/* The same navigation toolbar every board in the app has. */}
