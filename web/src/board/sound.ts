@@ -1,13 +1,17 @@
 /**
- * Move sounds, synthesised with WebAudio — no audio assets to ship or
- * license, and they work fully offline. Deliberately quiet and short:
- * a woody tap for a move, a lower double-knock for a capture, a brief
- * two-note alert for check.
+ * Move sounds. Move and capture are the lichess standard samples
+ * (web/public/sound, from lila's public/sound/standard — AGPL, fine for
+ * this personal, non-distributed vault). Lichess has no distinct check
+ * sound, so check plays the move sample plus a short synthesised accent.
+ * Everything is decoded once into WebAudio buffers: no play latency, and
+ * overlapping sounds mix instead of cutting each other off.
  */
 
 export type SoundKind = 'move' | 'capture' | 'check';
 
 let ctx: AudioContext | null = null;
+const buffers = new Map<string, AudioBuffer>();
+const loading = new Map<string, Promise<void>>();
 
 function audio(): AudioContext | null {
   try {
@@ -20,42 +24,70 @@ function audio(): AudioContext | null {
   }
 }
 
-/** One decaying tone: frequency glides down, gain snaps up then dies. */
-function tap(
-  ac: AudioContext,
-  at: number,
-  freqFrom: number,
-  freqTo: number,
-  duration: number,
-  peak: number,
-): void {
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freqFrom, at);
-  osc.frequency.exponentialRampToValueAtTime(freqTo, at + duration);
-  gain.gain.setValueAtTime(peak, at);
-  gain.gain.exponentialRampToValueAtTime(0.001, at + duration);
-  osc.connect(gain).connect(ac.destination);
-  osc.start(at);
-  osc.stop(at + duration + 0.01);
+function load(ac: AudioContext, file: string): Promise<void> {
+  let pending = loading.get(file);
+  if (!pending) {
+    pending = fetch(`/sound/${file}`)
+      .then((res) => res.arrayBuffer())
+      .then((data) => ac.decodeAudioData(data))
+      .then((buffer) => {
+        buffers.set(file, buffer);
+      })
+      .catch(() => {
+        loading.delete(file); // allow a retry on the next play
+      });
+    loading.set(file, pending);
+  }
+  return pending;
+}
+
+function playSample(ac: AudioContext, file: string): void {
+  const play = (): void => {
+    const buffer = buffers.get(file);
+    if (!buffer) return;
+    const source = ac.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ac.destination);
+    source.start();
+  };
+  if (buffers.has(file)) play();
+  // First use: play as soon as the decode lands — a beat late once, then
+  // instant forever.
+  else void load(ac, file).then(play);
+}
+
+/** The check accent: a brief, quiet two-note alert over the move sample. */
+function playAccent(ac: AudioContext): void {
+  const at = ac.currentTime + 0.02;
+  for (const [offset, freq] of [
+    [0, 740],
+    [0.085, 990],
+  ] as const) {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, at + offset);
+    gain.gain.setValueAtTime(0.07, at + offset);
+    gain.gain.exponentialRampToValueAtTime(0.001, at + offset + 0.1);
+    osc.connect(gain).connect(ac.destination);
+    osc.start(at + offset);
+    osc.stop(at + offset + 0.12);
+  }
 }
 
 export function playSound(kind: SoundKind): void {
   const ac = audio();
   if (!ac) return;
-  const now = ac.currentTime;
   switch (kind) {
     case 'move':
-      tap(ac, now, 520, 160, 0.09, 0.18);
+      playSample(ac, 'Move.mp3');
       break;
     case 'capture':
-      tap(ac, now, 340, 110, 0.1, 0.22);
-      tap(ac, now + 0.045, 220, 90, 0.09, 0.18);
+      playSample(ac, 'Capture.mp3');
       break;
     case 'check':
-      tap(ac, now, 740, 700, 0.07, 0.14);
-      tap(ac, now + 0.085, 990, 940, 0.12, 0.14);
+      playSample(ac, 'Move.mp3');
+      playAccent(ac);
       break;
   }
 }

@@ -148,7 +148,7 @@ export const useExplorer = create<ExplorerState>()(
       };
 
       return {
-        enabled: true,
+        enabled: false,
         book: null,
         books: [],
         booksLoaded: false,

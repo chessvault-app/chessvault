@@ -518,7 +518,7 @@ function GameRow({
   };
 
   const openingLabel = game.opening
-    ? `${game.opening.name} · ${game.opening.eco}`
+    ? `${game.opening.eco} ${game.opening.name}`
     : (game.eco ?? '');
 
   return (

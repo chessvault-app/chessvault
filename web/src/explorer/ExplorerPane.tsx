@@ -74,7 +74,15 @@ export function ExplorerPane({
   const fresh = resultFen === node.fen;
 
   return (
-    <Panel flush className={className} resizeKey={resizeKey}>
+    // While the explorer is off there is nothing to size: no resize grip,
+    // no default height — the panel collapses to its header. The compact
+    // default (when on) shows the top handful of moves; drag for more.
+    <Panel
+      flush
+      className={className}
+      resizeKey={enabled ? resizeKey : undefined}
+      defaultHeight={enabled ? 300 : undefined}
+    >
       <PanelHeader
         title="Explorer"
         actions={
@@ -128,11 +136,14 @@ export function ExplorerPane({
           <div className="border-line flex h-8 shrink-0 items-center gap-2 border-b px-3">
             {lineOpening ? (
               <>
-                <span className="text-fg min-w-0 truncate text-xs font-medium" title={lineOpening.name}>
-                  {lineOpening.name}
-                </span>
                 <span className="text-subtle shrink-0 font-mono text-[0.6875rem] font-semibold">
                   {lineOpening.eco}
+                </span>
+                <span
+                  className="text-fg min-w-0 truncate text-xs font-medium"
+                  title={`${lineOpening.eco} ${lineOpening.name}`}
+                >
+                  {lineOpening.name}
                 </span>
               </>
             ) : (

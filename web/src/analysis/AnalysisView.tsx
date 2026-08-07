@@ -5,6 +5,7 @@ import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { EnginePane } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
+import { copyText } from '@/lib/clipboard';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
@@ -39,7 +40,7 @@ export function AnalysisView() {
     analysis.reset();
     const engine = useEngine.getState();
     if (engine.enabled) engine.setEnabled(false);
-    useExplorer.setState({ enabled: true });
+    useExplorer.setState({ enabled: false });
   }, []);
 
   return (
@@ -67,15 +68,6 @@ export function AnalysisView() {
         <EnginePane
           className={cn('shrink-0', pane !== 'engine' && 'max-lg:hidden')}
         />
-        {/* The caps keep the explorer from squeezing the move list out of
-            existence on short desktop viewports. */}
-        <ExplorerPane
-          resizeKey="analysis-explorer"
-          className={cn(
-            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
-            pane !== 'explorer' && 'max-lg:hidden',
-          )}
-        />
         {/* min-h-min, NOT min-h-auto: Panel's overflow-hidden disables the
             automatic content-based minimum (it computes to 0), but the
             explicit min-content keyword still applies — the panel refuses
@@ -97,6 +89,15 @@ export function AnalysisView() {
           <MoveTreePane />
           <StatusBar />
         </Panel>
+        {/* The caps keep the explorer from squeezing the move list out of
+            existence on short desktop viewports. */}
+        <ExplorerPane
+          resizeKey="analysis-explorer"
+          className={cn(
+            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
+            pane !== 'explorer' && 'max-lg:hidden',
+          )}
+        />
       </div>
     </div>
   );
@@ -147,22 +148,14 @@ export function StatusBar() {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const exportPgn = useAnalysis((s) => s.exportPgn);
-  const [copied, setCopied] = useState<'fen' | 'pgn' | null>(null);
+  const [copied, setCopied] = useState<'fen' | 'pgn' | 'failed' | null>(null);
 
   const node = getNode(tree, cursorId);
 
-  const copy = useCallback(
-    async (kind: 'fen' | 'pgn', value: string) => {
-      try {
-        await navigator.clipboard.writeText(value);
-        setCopied(kind);
-        setTimeout(() => setCopied(null), 1400);
-      } catch {
-        // Clipboard can be blocked; the FEN is selectable below regardless.
-      }
-    },
-    [],
-  );
+  const copy = useCallback(async (kind: 'fen' | 'pgn', value: string) => {
+    setCopied((await copyText(value)) ? kind : 'failed');
+    setTimeout(() => setCopied(null), 1400);
+  }, []);
 
   return (
     <div className="border-line flex shrink-0 items-center gap-2 border-t px-2 py-1.5">
@@ -172,11 +165,11 @@ export function StatusBar() {
       >
         {node.fen}
       </code>
-      <Button variant="ghost" size="sm" onClick={() => copy('fen', node.fen)}>
-        {copied === 'fen' ? 'Copied' : 'FEN'}
+      <Button variant="ghost" size="sm" onClick={() => void copy('fen', node.fen)}>
+        {copied === 'fen' ? 'Copied' : copied === 'failed' ? 'Failed' : 'FEN'}
       </Button>
-      <Button variant="ghost" size="sm" onClick={() => copy('pgn', exportPgn())}>
-        {copied === 'pgn' ? 'Copied' : 'PGN'}
+      <Button variant="ghost" size="sm" onClick={() => void copy('pgn', exportPgn())}>
+        {copied === 'pgn' ? 'Copied' : copied === 'failed' ? 'Failed' : 'PGN'}
       </Button>
     </div>
   );

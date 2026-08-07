@@ -9,9 +9,15 @@ interface PanelProps {
   /**
    * Makes the panel height-resizable on desktop: a grip appears along the
    * bottom edge, and the chosen height persists in localStorage under this
-   * key. Double-click the grip to return to the default flex sizing.
+   * key. Double-click the grip to return to the default.
    */
   resizeKey?: string;
+  /**
+   * Height (px) used on desktop while the user has not dragged their own —
+   * the compact out-of-the-box size. Without it, resets return the panel
+   * to plain flex sizing.
+   */
+  defaultHeight?: number;
 }
 
 const storageKey = (key: string): string => `vault:panel-h:${key}`;
@@ -34,7 +40,7 @@ function useLgViewport(enabled: boolean): boolean {
 }
 
 /** The standard raised surface: every pane in the app sits in one of these. */
-export function Panel({ children, className, flush = false, resizeKey }: PanelProps) {
+export function Panel({ children, className, flush = false, resizeKey, defaultHeight }: PanelProps) {
   const ref = useRef<HTMLElement>(null);
   const drag = useRef<{ y: number; h: number } | null>(null);
   const [height, setHeight] = useState<number | null>(() => {
@@ -52,13 +58,22 @@ export function Panel({ children, className, flush = false, resizeKey }: PanelPr
 
   // The inline style must beat whatever flex/min/max classes the call site
   // uses by default — but only on desktop, where the grip is visible; small
-  // screens keep their flex behaviour untouched.
-  const sized = resizeKey !== undefined && lg && height !== null;
+  // screens keep their flex behaviour untouched. A user-dragged height is
+  // exact; the default is only a CAP, so sparse content isn't padded out
+  // to an empty box.
+  const style =
+    !lg || resizeKey === undefined
+      ? undefined
+      : height !== null
+        ? { height, minHeight: 0, maxHeight: height, flex: 'none' as const }
+        : defaultHeight !== undefined
+          ? { minHeight: 0, maxHeight: defaultHeight, flex: 'none' as const }
+          : undefined;
 
   return (
     <section
       ref={ref}
-      style={sized ? { height, minHeight: 0, maxHeight: height, flex: 'none' } : undefined}
+      style={style}
       className={cn(
         'bg-surface border-line rounded-xl border shadow-[var(--shadow-panel)]',
         'flex min-h-0 flex-col overflow-hidden',

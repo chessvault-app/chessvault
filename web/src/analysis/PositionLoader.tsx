@@ -61,10 +61,11 @@ function LoadDialog({ onClose }: { onClose: () => void }) {
     try {
       const clip = await navigator.clipboard.readText();
       if (clip.trim()) setText(clip);
-      textarea.current?.focus();
     } catch {
-      // Clipboard read needs permission; typing still works.
+      // Clipboard read is denied in cross-origin isolated documents (the
+      // COOP/COEP headers Stockfish needs); ⌘V into the field still works.
     }
+    textarea.current?.focus();
   };
 
   return (
