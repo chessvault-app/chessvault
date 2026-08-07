@@ -7,6 +7,7 @@ import {
   FlipVertical2,
   FolderInput,
   ImageUp,
+  Microscope,
   MousePointer2,
   RotateCcw,
   Trash2,
@@ -428,7 +429,8 @@ export function EditorView({
             title={validity.legal ? 'Analyse this position' : validity.reason}
           >
             <span className="hidden sm:inline">{onUse ? useLabel : 'Analyse'}</span>
-            <ArrowRight className="size-3.5" />
+            {/* Same glyph as the game-review button: analysis = microscope. */}
+            {onUse ? <ArrowRight className="size-3.5" /> : <Microscope className="size-3.5" />}
           </Button>
         </div>
       </div>
