@@ -809,50 +809,45 @@ function PuzzleList({
           </button>
         ))}
       </div>
-      <div className="bg-surface border-line divide-line divide-y overflow-hidden rounded-xl border">
+      <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {visible.map((p) => {
-          const prog = progress[p.id];
           const state = stateOf(p);
+          const meta =
+            p.provenance && p.provenance in PROVENANCE_META
+              ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
+              : null;
+          const prog = progress[p.id];
           return (
             <button
               key={p.id}
               type="button"
               onClick={() => navigate('puzzles', 'books', slug, p.id)}
-              className="hover:bg-surface-2 flex h-9 w-full items-center gap-3 px-3 text-left transition-colors duration-75"
+              title={[
+                meta ? `${meta.label} — ${meta.title}` : null,
+                prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
+              ]
+                .filter(Boolean)
+                .join('\n')}
+              className={cn(
+                'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-sm font-semibold transition-colors duration-100',
+                state === 'solved'
+                  ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
+                  : state === 'failed'
+                    ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
+                    : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
+              )}
             >
-              <span className="text-fg w-12 shrink-0 font-mono text-xs font-semibold">
-                #{p.number ?? puzzles.indexOf(p) + 1}
-              </span>
-              {p.provenance && p.provenance in PROVENANCE_META && (
-                <span
-                  title={PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].title}
-                  className={cn(
-                    'w-20 shrink-0 rounded-full border px-1.5 py-px text-center text-[0.625rem] font-medium',
-                    PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].className,
-                  )}
-                >
-                  {PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].label}
-                </span>
+              {p.number ?? puzzles.indexOf(p) + 1}
+              {meta && (
+                <span className={cn('absolute right-1.5 top-1.5 size-1.5 rounded-full', meta.dot)} />
               )}
-              <span className="min-w-0 flex-1" />
-              {prog && (
-                <span className="text-subtle shrink-0 text-[0.625rem]">
-                  {prog.wins}/{prog.tries} tries
-                </span>
-              )}
-              <span
-                className={cn(
-                  'size-2 shrink-0 rounded-full',
-                  state === 'solved' ? 'bg-nag-good' : state === 'failed' ? 'bg-nag-blunder' : 'bg-line-strong',
-                )}
-              />
             </button>
           );
         })}
-        {visible.length === 0 && (
-          <p className="text-subtle p-4 text-center text-xs">Nothing matches these filters.</p>
-        )}
       </div>
+      {visible.length === 0 && (
+        <p className="text-subtle p-4 text-center text-xs">Nothing matches these filters.</p>
+      )}
     </>
   );
 }
@@ -1752,9 +1747,6 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                 )}
               />
             )}
-            {puzzle.mateIn ? (
-              <span className="text-muted truncate text-sm">Mate in {puzzle.mateIn}</span>
-            ) : null}
           </span>
           <span className="min-w-0 flex-1" />
           {puzzle.evidence?.page && (
