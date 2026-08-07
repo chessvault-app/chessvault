@@ -649,59 +649,49 @@ function PuzzleNavigator({
           </>
         }
       />
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {puzzles.map((p, i) => {
-          const last = progress[p.id]?.last;
-          const current = p.id === currentId;
-          const meta =
-            p.provenance && p.provenance in PROVENANCE_META
-              ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
-              : null;
-          return (
-            <button
-              key={p.id}
-              ref={current ? currentRef : undefined}
-              type="button"
-              onClick={() => go(i)}
-              className={cn(
-                'flex h-8 w-full items-center gap-2.5 px-3 text-left transition-colors duration-75',
-                current ? 'bg-primary-soft' : 'hover:bg-surface-2',
-              )}
-            >
-              <span
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        {/* Same card language as the book page, at panel scale: state
+            colours the tile, the corner dot is the fidelity tier, and the
+            current puzzle wears the primary ring. */}
+        <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(2.5rem,1fr))]">
+          {puzzles.map((p, i) => {
+            const last = progress[p.id]?.last;
+            const current = p.id === currentId;
+            const meta =
+              p.provenance && p.provenance in PROVENANCE_META
+                ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
+                : null;
+            const prog = progress[p.id];
+            return (
+              <button
+                key={p.id}
+                ref={current ? currentRef : undefined}
+                type="button"
+                onClick={() => go(i)}
+                title={[
+                  meta ? `${meta.label} — ${meta.title}` : null,
+                  prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
+                ]
+                  .filter(Boolean)
+                  .join('\n')}
                 className={cn(
-                  'w-10 shrink-0 font-mono text-xs font-semibold',
-                  current ? 'text-primary' : 'text-fg',
+                  'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-[0.6875rem] font-semibold transition-colors duration-100',
+                  current && 'ring-primary/60 ring-2',
+                  last === 'win'
+                    ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
+                    : last === 'loss'
+                      ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
+                      : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
                 )}
               >
-                #{p.number ?? i + 1}
-              </span>
-              {meta && (
-                <span
-                  title={meta.title}
-                  className={cn(
-                    'shrink-0 rounded-full border px-1.5 py-px text-[0.625rem] font-medium',
-                    meta.className,
-                  )}
-                >
-                  {meta.label}
-                </span>
-              )}
-              <span className="min-w-0 flex-1" />
-              {progress[p.id] && (
-                <span className="text-subtle shrink-0 text-[0.625rem]">
-                  {progress[p.id]!.wins}/{progress[p.id]!.tries}
-                </span>
-              )}
-              <span
-                className={cn(
-                  'size-2 shrink-0 rounded-full',
-                  last === 'win' ? 'bg-nag-good' : last === 'loss' ? 'bg-nag-blunder' : 'bg-line-strong',
+                {p.number ?? i + 1}
+                {meta && (
+                  <span className={cn('absolute right-1 top-1 size-1.5 rounded-full', meta.dot)} />
                 )}
-              />
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </Panel>
   );
