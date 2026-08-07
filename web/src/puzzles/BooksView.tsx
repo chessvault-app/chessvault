@@ -2,6 +2,10 @@ import {
   ArrowLeft,
   BookMarked,
   Check,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
   Compass,
   Eye,
   Loader2,
@@ -680,6 +684,9 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   // Physical-board contemplation (lanph3re's ask): a free side-line played from
   // the current position, judged by nobody, snapped away on resume.
   const [explore, setExplore] = useState<PlayedMove[] | null>(null);
+  // Reviewing an earlier entered position (null = live), driven by the
+  // standard nav toolbar.
+  const [review, setReview] = useState<number | null>(null);
   const [wrongMove, setWrongMove] = useState<PlayedMove | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
   const [failed, setFailed] = useState(false);
@@ -712,6 +719,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setCursor(0);
     setCursorTrail([]);
     setExplore(null);
+    setReview(null);
     setWrongMove(null);
     setPhase('solving');
     setFailed(false);
@@ -721,9 +729,18 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   }, [book, puzzleId]);
 
   const solvingFen = played.at(-1)?.fen ?? puzzle?.fen;
+  const reviewing = review !== null && !explore;
+  const reviewFen = reviewing ? (review === 0 ? puzzle?.fen : played[review! - 1]?.fen) : undefined;
+  const reviewUci = reviewing && review! > 0 ? played[review! - 1]?.uci : undefined;
   const currentFen =
-    wrongMove?.fen ?? (explore ? (explore.at(-1)?.fen ?? solvingFen) : solvingFen);
-  const lastUci = wrongMove?.uci ?? (explore ? explore.at(-1)?.uci : undefined) ?? played.at(-1)?.uci;
+    wrongMove?.fen ??
+    reviewFen ??
+    (explore ? (explore.at(-1)?.fen ?? solvingFen) : solvingFen);
+  const lastUci =
+    wrongMove?.uci ??
+    (reviewing ? reviewUci : undefined) ??
+    (explore ? explore.at(-1)?.uci : undefined) ??
+    played.at(-1)?.uci;
   // chessops rejects nonsense positions loudly — never construct the view
   // before the puzzle has loaded.
   const view = currentFen ? boardStateOf(currentFen, lastUci) : null;
@@ -752,7 +769,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   };
 
   const applyMove = (orig: string, dest: string, promotion?: string): void => {
-    if (!solution || !view || !currentFen || phase !== 'solving') return;
+    if (!solution || !view || !currentFen || phase !== 'solving' || reviewing) return;
 
     // Exploring: any legal move goes onto the side-line, judged by nobody.
     if (explore) {
@@ -800,9 +817,17 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     }
   };
 
+  /** Step the review cursor; landing on the newest ply resumes live play. */
+  const goToPly = (target: number): void => {
+    if (explore) return;
+    const clamped = Math.max(0, Math.min(target, played.length));
+    setReview(clamped >= played.length ? null : clamped);
+  };
+
   /** Take back — the exploration line first, then committed moves. */
   const undo = (): void => {
     if (phase !== 'solving') return;
+    setReview(null);
     if (explore && explore.length > 0) {
       setExplore((prev) => (prev ?? []).slice(0, -1));
       return;
@@ -855,6 +880,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setCursor(0);
     setCursorTrail([]);
     setExplore(null);
+    setReview(null);
     setWrongMove(null);
     setPhase('solving');
     setFailed(false);
@@ -868,6 +894,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     void report(false);
     timers.current.forEach(clearTimeout);
     setExplore(null);
+    setReview(null);
     setWrongMove(null);
     // Replay the scripted line from the start, one move per beat.
     const total = solution.uci.length;
@@ -922,7 +949,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             <Board
               fen={view.fen}
               orientation={orientation}
-              dests={phase === 'solving' ? view.dests : new Map()}
+              dests={phase === 'solving' && !reviewing ? view.dests : new Map()}
               lastMove={view.lastMove}
               check={view.check}
               onMove={onMove}
@@ -948,7 +975,9 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                     : 'text-muted',
               )}
             >
-              {explore && phase === 'solving'
+              {reviewing
+                ? 'Reviewing — jump to the newest move to continue.'
+                : explore && phase === 'solving'
                 ? 'Exploring freely — nothing is judged until you resume.'
                 : phase === 'wrong'
                 ? 'Not the book move — try again.'
@@ -981,31 +1010,33 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           </span>
         </div>
 
-        <Panel flush className="shrink-0">
-          <PanelHeader title={`Progress · ${played.length}/${puzzle.uci.length} plies`} />
-          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 font-mono text-[0.8125rem]">
-            {played.length === 0 && !explore ? (
-              <p className="text-subtle font-sans text-xs">
-                Nothing entered yet — find the first move on the board.
-              </p>
-            ) : (
-              played.map((m, i) => (
-                <span key={i}>
-                  {i % 2 === 0 ? (
-                    <span className="text-subtle">
-                      {Math.floor(i / 2) + 1}
-                      {orientation === 'black' && i === 0 ? '…' : '.'}
-                    </span>
-                  ) : null}{' '}
-                  {m.san}
-                </span>
-              ))
-            )}
-            {explore && (
-              <span className="text-subtle basis-full italic">
-                exploring: {explore.length === 0 ? '—' : explore.map((m) => m.san).join(' ')}
-              </span>
-            )}
+        <Panel flush className="min-h-[10rem] shrink-0">
+          <PanelHeader title={`Moves · ${played.length}/${puzzle.uci.length} plies`} />
+          <BookMovesTable
+            played={played}
+            blackFirst={orientation === 'black'}
+            current={review ?? played.length}
+            onSelect={goToPly}
+          />
+          {explore && (
+            <p className="text-subtle border-line border-t px-3 py-1.5 font-mono text-[0.8125rem] italic">
+              exploring: {explore.length === 0 ? '—' : explore.map((m) => m.san).join(' ')}
+            </p>
+          )}
+          {/* The same navigation toolbar every board in the app has. */}
+          <div className="border-line flex w-full shrink-0 items-center justify-center gap-1 border-t py-1">
+            <Button variant="ghost" size="icon" title="Start" disabled={!!explore || played.length === 0} onClick={() => goToPly(0)}>
+              <ChevronFirst className="size-[1.1rem]" />
+            </Button>
+            <Button variant="ghost" size="icon" title="Back" disabled={!!explore || played.length === 0} onClick={() => goToPly((review ?? played.length) - 1)}>
+              <ChevronLeft className="size-[1.1rem]" />
+            </Button>
+            <Button variant="ghost" size="icon" title="Forward" disabled={!!explore || !reviewing} onClick={() => goToPly((review ?? played.length) + 1)}>
+              <ChevronRight className="size-[1.1rem]" />
+            </Button>
+            <Button variant="ghost" size="icon" title="Newest" disabled={!!explore || !reviewing} onClick={() => goToPly(played.length)}>
+              <ChevronLast className="size-[1.1rem]" />
+            </Button>
           </div>
         </Panel>
 
@@ -1076,6 +1107,68 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The entered line as the app's standard moves table (number gutter,
+ * White/Black cells); clicking a move reviews that position.
+ */
+function BookMovesTable({
+  played,
+  blackFirst,
+  current,
+  onSelect,
+}: {
+  played: PlayedMove[];
+  blackFirst: boolean;
+  current: number;
+  onSelect: (ply: number) => void;
+}) {
+  if (played.length === 0) {
+    return (
+      <p className="text-subtle px-3 py-4 text-center text-xs">
+        Nothing entered yet — find the first move on the board.
+      </p>
+    );
+  }
+  const rows: { number: number; white: number | null; black: number | null }[] = [];
+  for (let i = 0; i < played.length; i++) {
+    const isWhiteMove = blackFirst ? i % 2 === 1 : i % 2 === 0;
+    const number = Math.floor((i + (blackFirst ? 1 : 0)) / 2) + 1;
+    if (isWhiteMove || rows.length === 0 || rows.at(-1)!.black !== null) {
+      rows.push({ number, white: isWhiteMove ? i : null, black: isWhiteMove ? null : i });
+    } else {
+      rows.at(-1)!.black = i;
+    }
+  }
+  const cell = (index: number | null): React.ReactNode =>
+    index === null ? (
+      <span className="text-subtle flex items-center px-3 py-1">…</span>
+    ) : (
+      <button
+        type="button"
+        onClick={() => onSelect(index + 1)}
+        className={cn(
+          'flex items-baseline px-3 py-1 text-left font-medium transition-colors duration-100',
+          index + 1 === current ? 'bg-primary text-primary-fg' : 'hover:bg-surface-2',
+        )}
+      >
+        {played[index]!.san}
+      </button>
+    );
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto text-sm">
+      {rows.map((row, r) => (
+        <div key={r} className="border-line/60 grid grid-cols-[2rem_1fr_1fr] border-b">
+          <span className="bg-surface-inset/60 border-line/60 text-subtle flex items-center justify-center border-r font-mono text-[0.6875rem]">
+            {row.number}
+          </span>
+          {cell(row.white)}
+          {cell(row.black)}
+        </div>
+      ))}
     </div>
   );
 }

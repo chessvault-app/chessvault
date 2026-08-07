@@ -73,8 +73,8 @@ function Shell() {
 
 /** Sub-entries under Puzzles: the themes catalogue and failed-review. */
 const PUZZLE_SUBNAV = [
-  { param: 'books', label: 'Books', icon: BookMarked },
   { param: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { param: 'books', label: 'Books', icon: BookMarked },
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
   { param: 'failed', label: 'Review failed', icon: RotateCcw },
 ] as const;

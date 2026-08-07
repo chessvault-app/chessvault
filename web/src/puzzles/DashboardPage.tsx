@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, RotateCcw, Trash2, X } from 'lucide-react';
+import { ArrowLeft, BookMarked, Check, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
@@ -25,6 +25,14 @@ interface MetaUser {
   streak: number;
 }
 
+interface BookSummary {
+  slug: string;
+  title: string;
+  puzzles: number;
+  solved: number;
+  failed: number;
+}
+
 const BANDS = [
   { id: 'easy', label: 'Easy', min: 0, max: 1399 },
   { id: 'medium', label: 'Medium', min: 1400, max: 1799 },
@@ -39,6 +47,7 @@ export function DashboardPage() {
   const [user, setUser] = useState<MetaUser | null>(null);
   const [failed, setFailed] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
+  const [books, setBooks] = useState<BookSummary[] | null>(null);
 
   const refresh = useCallback(() => {
     void fetch('/api/puzzles/meta')
@@ -50,6 +59,9 @@ export function DashboardPage() {
     void fetch('/api/puzzles/history?limit=500')
       .then((r) => r.json())
       .then((d: { attempts: HistoryEntry[] }) => setHistory(d.attempts));
+    void fetch('/api/puzzlebooks')
+      .then((r) => r.json())
+      .then((d: { books: BookSummary[] }) => setBooks(d.books));
   }, []);
   useEffect(() => refresh(), [refresh]);
 
@@ -146,6 +158,54 @@ export function DashboardPage() {
             })}
           </div>
         </Panel>
+
+        {books !== null && books.length > 0 && (
+          <Panel flush className="mb-4">
+            <PanelHeader
+              title="Books"
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  title="All puzzle books"
+                  onClick={() => navigate('puzzles', 'books')}
+                >
+                  <BookMarked className="size-3.5" />
+                  Shelf
+                </Button>
+              }
+            />
+            <ul>
+              {books.map((b) => (
+                <li key={b.slug} className="border-line border-b last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate('puzzles', 'books', b.slug)}
+                    className="hover:bg-surface-2 flex w-full items-center gap-3 px-3 py-2 text-left text-xs transition-colors duration-100"
+                  >
+                    <span className="text-fg min-w-0 flex-1 truncate font-medium">{b.title}</span>
+                    <span className="text-subtle shrink-0 font-mono tabular-nums">
+                      {b.solved}/{b.puzzles}
+                    </span>
+                    {b.puzzles > 0 && (
+                      <span className="bg-surface-inset flex h-1.5 w-24 shrink-0 overflow-hidden rounded-full">
+                        <span
+                          className="bg-nag-good h-full"
+                          style={{ width: `${(100 * b.solved) / b.puzzles}%` }}
+                        />
+                        <span
+                          className="bg-nag-blunder h-full"
+                          style={{ width: `${(100 * b.failed) / b.puzzles}%` }}
+                        />
+                      </span>
+                    )}
+                    <ChevronRight className="text-subtle size-3.5 shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        )}
 
         <Panel flush>
           <PanelHeader
