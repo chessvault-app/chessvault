@@ -28,6 +28,7 @@ import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
+import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import {
@@ -85,6 +86,7 @@ type Phase =
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'themes') return <ThemesPage />;
   if (params[0] === 'dashboard') return <DashboardPage />;
+  if (params[0] === 'books') return <BooksView params={params.slice(1)} />;
   if (params[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
   if (params[0] === 'id' && params[1]) {
     return <Trainer key={`id-${params[1]}`} theme="" mode="single" puzzleId={params[1]} />;

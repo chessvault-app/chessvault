@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookMarked,
   BookOpen,
   Grid2x2,
   LayoutGrid,
@@ -72,6 +73,7 @@ function Shell() {
 
 /** Sub-entries under Puzzles: the themes catalogue and failed-review. */
 const PUZZLE_SUBNAV = [
+  { param: 'books', label: 'Books', icon: BookMarked },
   { param: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
   { param: 'failed', label: 'Review failed', icon: RotateCcw },

@@ -49,7 +49,14 @@ type Tool =
   | { kind: 'erase' }
   | { kind: 'piece'; role: Role; color: Color };
 
-export function EditorView() {
+export function EditorView({
+  onUse,
+  useLabel = 'Analyse',
+}: {
+  /** Embedded mode: hand the legal position back instead of navigating. */
+  onUse?: (fen: string) => void;
+  useLabel?: string;
+}) {
   const [state, setState] = useState<EditorState>(defaultEditorState);
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
@@ -130,9 +137,13 @@ export function EditorView() {
     setTimeout(() => setCopied(null), 1400);
   };
 
-  /** Hand the position to the analysis board. */
+  /** Hand the position to the analysis board — or to the embedder. */
   const analyse = (): void => {
     if (!validity.legal) return;
+    if (onUse) {
+      onUse(fen);
+      return;
+    }
     if (!useAnalysis.getState().loadFen(fen)) return;
     useAnalysis.setState({ handoff: true });
     navigate('analysis');
@@ -377,7 +388,7 @@ export function EditorView() {
             onClick={analyse}
             title={validity.legal ? 'Analyse this position' : validity.reason}
           >
-            <span className="hidden sm:inline">Analyse</span>
+            <span className="hidden sm:inline">{onUse ? useLabel : 'Analyse'}</span>
             <ArrowRight className="size-3.5" />
           </Button>
         </div>
