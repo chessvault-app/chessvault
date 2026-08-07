@@ -389,8 +389,8 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
             </Button>
           </div>
           <Panel flush className="min-h-min flex-1">
-            <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
             <EngineBlock />
+            <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
             <MoveTreePane />
             <StatusBar />
           </Panel>

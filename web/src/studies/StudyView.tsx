@@ -149,8 +149,8 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           flush
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
-          <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <EngineBlock />
+          <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
           <AnnotationPane
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}

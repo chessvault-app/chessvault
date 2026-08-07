@@ -73,6 +73,7 @@ export function AnalysisView() {
           flush
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
+          <EngineBlock />
           <PanelHeader
             title="Moves"
             actions={
@@ -82,7 +83,6 @@ export function AnalysisView() {
               </>
             }
           />
-          <EngineBlock />
           <MoveTreePane />
           <StatusBar />
         </Panel>

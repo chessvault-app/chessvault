@@ -4,6 +4,7 @@ import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
+import { PanelHeader } from '@/ui/Panel';
 import { cn } from '@/lib/cn';
 import { EvalBar } from './EvalBar';
 import { formatPv } from './pv.ts';
@@ -45,20 +46,25 @@ export function EngineBlock({ className }: { className?: string }) {
   const score = top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
 
   return (
-    <div className={cn('border-line shrink-0 border-b', className)}>
-      <div className="flex h-9 items-center justify-between gap-2 px-3">
-        <span className="text-subtle flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-          Engine
-          {enabled && top && (
-            <span className="font-mono normal-case tracking-normal">
-              depth {top.depth}
-              {top.selDepth ? `/${top.selDepth}` : ''}
-              {finished ? '' : '…'}
-            </span>
-          )}
-        </span>
-        <span className="flex items-center gap-1">
-          {enabled && (
+    // The identical header the standalone Engine panel had — the merge
+    // must not change how the headers look (lanph3re's call), only remove the
+    // extra panel chrome between engine and moves.
+    <div className={cn('shrink-0', className)}>
+      <PanelHeader
+        title={
+          <span className="flex items-center gap-1.5">
+            Engine
+            {enabled && top && (
+              <span className="text-subtle font-mono normal-case tracking-normal">
+                depth {top.depth}
+                {top.selDepth ? `/${top.selDepth}` : ''}
+                {finished ? '' : '…'}
+              </span>
+            )}
+          </span>
+        }
+        actions={
+          <>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -68,10 +74,10 @@ export function EngineBlock({ className }: { className?: string }) {
             >
               <Settings2 className="size-3.5" />
             </Button>
-          )}
-          <EngineSwitch enabled={enabled} onToggle={toggle} />
-        </span>
-      </div>
+            <EngineSwitch enabled={enabled} onToggle={toggle} />
+          </>
+        }
+      />
 
       {enabled && showSettings && <EngineSettings />}
 
@@ -84,14 +90,14 @@ export function EngineBlock({ className }: { className?: string }) {
 
       {enabled && !error && (
         <>
-          <div className="flex items-center gap-2 px-3 pb-1">
+          <div className="flex items-center gap-2 px-3 pt-2.5">
             <span className="text-fg min-w-[3.75rem] font-mono text-lg font-semibold tabular-nums">
               {score ? formatScore(score) : '…'}
             </span>
             <EvalBar score={score} orientation="horizontal" className="flex-1" />
           </div>
 
-          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-1.5">
+          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2">
             {visibleLines.length === 0 ? (
               <li className="text-subtle px-1.5 py-1 text-xs">Thinking…</li>
             ) : (
@@ -108,6 +114,10 @@ export function EngineBlock({ className }: { className?: string }) {
           </ul>
         </>
       )}
+      {/* Closes the expanded engine body so the Moves header below reads
+          as its own section; when the engine is off the header's own
+          bottom border already does the job. */}
+      {enabled && <div className="border-line border-b" />}
     </div>
   );
 }
