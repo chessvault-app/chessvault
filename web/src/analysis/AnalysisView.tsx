@@ -1,7 +1,7 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode, isOnMainline } from '@shared/tree';
-import { AnalysisBoard } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
@@ -84,6 +84,9 @@ export function AnalysisView() {
             }
           />
           <MoveTreePane />
+          {/* Navigation lives at the bottom of the moves panel (lanph3re's
+              call), not under the board. */}
+          <BoardControls className="border-line border-t" />
           <StatusBar />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of

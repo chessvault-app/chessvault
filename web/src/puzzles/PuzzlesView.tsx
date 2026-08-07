@@ -14,7 +14,7 @@ import type { Color, Role } from 'chessops/types';
 import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
-import { AnalysisBoard } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -392,6 +392,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
             <EngineBlock />
             <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
             <MoveTreePane />
+            <BoardControls className="border-line border-t" />
             <StatusBar />
           </Panel>
         </div>

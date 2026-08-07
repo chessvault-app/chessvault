@@ -151,7 +151,6 @@ export function AnalysisBoard() {
         </div>
         <PlayerBar side={orientation} />
       </div>
-      <BoardControls />
     </div>
   );
 }
@@ -261,7 +260,7 @@ function PlayerBar({ side }: { side: 'white' | 'black' }) {
   );
 }
 
-export function BoardControls() {
+export function BoardControls({ className }: { className?: string }) {
   const goToStart = useAnalysis((s) => s.goToStart);
   const goBack = useAnalysis((s) => s.goBack);
   const goForward = useAnalysis((s) => s.goForward);
@@ -306,7 +305,7 @@ export function BoardControls() {
   }, [goBack, goForward, goToStart, goToEnd, flip]);
 
   return (
-    <div className="flex w-full items-center justify-center gap-1">
+    <div className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}>
       <Button variant="ghost" size="icon" onClick={goToStart} title="Start (↑)">
         <ChevronFirst className="size-[1.1rem]" />
       </Button>

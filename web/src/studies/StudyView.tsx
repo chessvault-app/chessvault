@@ -10,7 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { AnalysisBoard } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions } from '@/analysis/AnalysisView';
@@ -152,6 +152,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           <EngineBlock />
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
+          <BoardControls className="border-line border-t" />
           <AnnotationPane
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
           />
