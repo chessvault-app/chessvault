@@ -137,6 +137,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       uci?: string[];
       san?: string[];
       wildcards?: number[];
+      /** Correcting an existing puzzle: swap it in place, keep its id
+       *  (progress stays attached) and its book metadata. */
+      replaceId?: string;
     };
     if (
       typeof body.fen !== 'string' ||
@@ -151,6 +154,24 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       (n) => Number.isInteger(n) && n >= 0 && n < body.uci!.length,
     );
     const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
+    if (body.replaceId !== undefined) {
+      const at = puzzles.findIndex((p) => p.id === body.replaceId);
+      if (at === -1) return c.json({ error: 'unknown puzzle' }, 404);
+      const previous = puzzles[at]! as BookPuzzle & Record<string, unknown>;
+      const corrected = {
+        ...previous, // number/evidence/etc survive the correction
+        fen: body.fen,
+        uci: body.uci,
+        san: body.san,
+        added: new Date().toISOString(),
+        provenance: 'corrected',
+      } as BookPuzzle;
+      if (wildcards.length > 0) (corrected as { wildcards?: number[] }).wildcards = wildcards;
+      else delete (corrected as { wildcards?: number[] }).wildcards;
+      puzzles[at] = corrected;
+      writeJson(puzzlesPath(slug), puzzles);
+      return c.json({ puzzle: corrected });
+    }
     const puzzle: BookPuzzle = {
       id: `p${Date.now().toString(36)}`,
       fen: body.fen,

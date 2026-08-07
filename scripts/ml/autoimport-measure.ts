@@ -13,10 +13,10 @@
 // solution.
 //
 // Usage: npx tsx scripts/ml/autoimport-measure.ts <pages_dir> [--limit N]
-import { readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
-import { parseFen, makeFen } from 'chessops/fen';
+import { parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
 import { squareRank } from 'chessops/util';
 import type { Move, NormalMove } from 'chessops/types';
@@ -31,9 +31,14 @@ const RENDER_WIDTH = 1400;
 // --- inputs -------------------------------------------------------------------
 
 const pagesDir = process.argv[2];
-if (!pagesDir) throw new Error('usage: autoimport-measure <pages_dir> [--limit N]');
+if (!pagesDir) throw new Error('usage: autoimport-measure <pages_dir> [--limit N] [--emit <dir>]');
 const limitAt = process.argv.indexOf('--limit');
 const limit = limitAt > 0 ? Number(process.argv[limitAt + 1]) : Infinity;
+// --emit dumps per-puzzle board grays + per-page grays for the import step's
+// evidence images; forces fresh page reads (the cache has no pixels).
+const emitAt = process.argv.indexOf('--emit');
+const emitDir = emitAt > 0 ? process.argv[emitAt + 1]! : null;
+if (emitDir) mkdirSync(emitDir, { recursive: true });
 
 const net = parseCellNet(
   readFileSync(resolve(REPO, 'web', 'public', 'models', 'cellnet-v1.bin')).buffer.slice(0) as ArrayBuffer,
@@ -372,6 +377,22 @@ interface PuzzleResult {
   sans?: string[];
   status: string;
   detail?: string;
+  /** Section goal from the page header, e.g. mate depth (0 = not a mate section). */
+  mateIn?: number;
+  /** Squares mentioned anywhere in the solution entry — corroboration data. */
+  squares?: string[];
+  /** Diagram bounds as FRACTIONS of the page — resolution-independent, the
+   *  UI draws the highlight over the page image with these. */
+  rect?: { x: number; y: number; w: number; h: number };
+}
+
+const MATE_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+
+function pageMateGoal(text: string): number {
+  const m = /mate in (\w+)/i.exec(text);
+  if (!m) return 0;
+  const word = m[1]!.toLowerCase();
+  return MATE_WORDS[word] ?? (Number(word) > 0 && Number(word) < 9 ? Number(word) : 0);
 }
 
 /** Replay a mainline; on success record each token's piece for learning. */
@@ -421,7 +442,7 @@ for (const pageInfo of textData.pages) {
   if (boardsRead >= limit) break;
   if (pageInfo.page < 5 || pageInfo.page > 105) continue;
   let page: Gray | null = null;
-  const needsPage = ![...readCache.values()].some((c) => c.page === pageInfo.page);
+  const needsPage = emitDir !== null || ![...readCache.values()].some((c) => c.page === pageInfo.page);
   if (needsPage) {
     try {
       page = loadGray(resolve(pagesDir, `page-${String(pageInfo.page).padStart(3, '0')}.gray`));
@@ -485,8 +506,32 @@ for (const pageInfo of textData.pages) {
     const uncertain = readings.filter((r) => r.confidence < 0.35).length;
     boardsRead++;
 
-    results.set(label.value, { number: label.value, page: pageInfo.page, fen, uncertain, status: 'read' });
+    results.set(label.value, {
+      number: label.value,
+      page: pageInfo.page,
+      fen,
+      uncertain,
+      status: 'read',
+      mateIn: pageMateGoal(textData.pages.find((p) => p.page === pageInfo.page)?.text ?? ''),
+      rect: {
+        x: rect.x / pageGray.w,
+        y: rect.y / pageGray.h,
+        w: rect.w / pageGray.w,
+        h: rect.h / pageGray.h,
+      },
+    });
     readCache.set(label.value, { fen, uncertain, page: pageInfo.page });
+    if (emitDir) {
+      const out = Buffer.alloc(8 + 512 * 512);
+      out.writeUInt32LE(512, 0);
+      out.writeUInt32LE(512, 4);
+      Buffer.from(board.data.buffer, board.data.byteOffset, 512 * 512).copy(out, 8);
+      writeFileSync(resolve(emitDir, `n${label.value}.gray`), out);
+      const pageCopy = resolve(emitDir, `page${String(pageInfo.page).padStart(3, '0')}.gray`);
+      if (!existsSync(pageCopy)) {
+        copyFileSync(resolve(pagesDir, `page-${String(pageInfo.page).padStart(3, '0')}.gray`), pageCopy);
+      }
+    }
   }
   if (pageInfo.page % 20 === 0) console.log(`page ${pageInfo.page}: ${results.size} puzzles so far`);
 }
@@ -500,6 +545,10 @@ function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
     entry.status = 'no-solution-text';
     return;
   }
+  // Corroboration data for the engine-hybrid import: every square the book's
+  // entry mentions (variations included — the author wrote about the TRUE
+  // position, which is exactly what a misread board would fail to overlap).
+  entry.squares = [...new Set(solution.match(/[a-h][1-8]/g) ?? [])];
   const mainline = parseMainline(solution);
   if (!mainline) {
     entry.status = 'unparseable-solution';
@@ -526,7 +575,8 @@ let rescued = 0;
 for (const entry of results.values()) {
   if (entry.status !== 'replay-failed') continue;
   validateEntry(entry, hints);
-  if (entry.status === 'validated') rescued++;
+  // validateEntry mutates status; widen so TS forgets the narrowing.
+  if ((entry.status as string) === 'validated') rescued++;
 }
 console.log(`pass 2 with learned dialect rescued ${rescued} puzzles`);
 

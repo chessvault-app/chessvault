@@ -1,8 +1,10 @@
 import {
   ArrowLeft,
   BookMarked,
+  BookOpen,
   FileUp,
   ImageUp,
+  Pencil,
   ScanSearch,
   Check,
   Eye,
@@ -83,6 +85,17 @@ interface BookPuzzle {
   uci: string[];
   san: string[];
   wildcards?: number[];
+  /** Auto-imported puzzles carry their book number, fidelity tier and the
+   *  source page (with the diagram's bounds as page fractions) so the
+   *  original context is one click away. */
+  number?: number;
+  provenance?:
+    | 'book-parsed'
+    | 'engine-corroborated'
+    | 'engine-only'
+    | 'engine-unverified'
+    | 'corrected';
+  evidence?: { page?: string; rect?: { x: number; y: number; w: number; h: number } };
 }
 
 interface PuzzleProgress {
@@ -123,11 +136,52 @@ export function BooksView({ params }: { params: string[] }) {
   // Route segments arrive URL-encoded ("Test%20Book").
   const slug = params[0] ? decodeURIComponent(params[0]) : null;
   const puzzleId = params[1] ? decodeURIComponent(params[1]) : null;
+  // /books/<slug>/fix/<id>: correct an existing puzzle through entry flow.
+  if (slug && puzzleId === 'fix' && params[2]) {
+    return (
+      <PuzzleCorrector
+        key={`${slug}/fix/${params[2]}`}
+        slug={slug}
+        puzzleId={decodeURIComponent(params[2])}
+      />
+    );
+  }
   if (slug && puzzleId) {
     return <BookTrainer key={`${slug}/${puzzleId}`} slug={slug} puzzleId={puzzleId} />;
   }
   if (slug) return <BookPage key={slug} slug={slug} />;
   return <Shelf />;
+}
+
+/** Load the puzzle, then reuse the standard entry flow to replace it. */
+function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string }) {
+  const [book, setBook] = useState<BookDetail | null>(null);
+  useEffect(() => {
+    void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('missing'))))
+      .then((d: BookDetail) => setBook(d))
+      .catch(() => setBook(null));
+  }, [slug]);
+  const puzzle = book?.puzzles.find((p) => p.id === puzzleId);
+  if (!book) {
+    return (
+      <div className="text-subtle grid h-full place-items-center">
+        <Loader2 className="size-5 animate-spin" />
+      </div>
+    );
+  }
+  if (!puzzle) {
+    return <div className="text-muted grid h-full place-items-center text-sm">Puzzle not found.</div>;
+  }
+  return (
+    <PuzzleEntry
+      slug={slug}
+      number={puzzle.number ?? book.puzzles.indexOf(puzzle) + 1}
+      replace={puzzle}
+      onDone={() => navigate('puzzles', 'books', slug, puzzle.id)}
+      onCancel={() => navigate('puzzles', 'books', slug, puzzle.id)}
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -430,6 +484,7 @@ function BookPage({ slug }: { slug: string }) {
             <p className="text-subtle mb-3 text-xs">
               {solvedCount}/{book.puzzles.length} solved — tap a number to train it.
             </p>
+            <ProvenanceLegend puzzles={book.puzzles} />
             <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
               {book.puzzles.map((p, i) => {
                 const last = book.progress[p.id]?.last;
@@ -448,13 +503,146 @@ function BookPage({ slug }: { slug: string }) {
                           : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
                     )}
                   >
-                    {i + 1}
+                    {p.number ?? i + 1}
                   </button>
                 );
               })}
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * How each auto-imported puzzle earned its place, shown once per book so
+ * the badges in the trainer need no explanation.
+ */
+function ProvenanceLegend({ puzzles }: { puzzles: BookPuzzle[] }) {
+  const counts = new Map<keyof typeof PROVENANCE_META, number>();
+  for (const p of puzzles) {
+    if (p.provenance && p.provenance in PROVENANCE_META) {
+      counts.set(p.provenance, (counts.get(p.provenance) ?? 0) + 1);
+    }
+  }
+  if (counts.size === 0) return null;
+  return (
+    <div className="bg-surface border-line mb-3 flex flex-col gap-1.5 rounded-xl border p-3">
+      {[...counts.entries()].map(([provenance, count]) => {
+        const meta = PROVENANCE_META[provenance];
+        return (
+          <div key={provenance} className="flex items-baseline gap-2 text-xs">
+            <span
+              className={cn(
+                'shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-medium',
+                meta.className,
+              )}
+            >
+              {meta.label}
+            </span>
+            <span className="text-subtle shrink-0 font-mono">{count}</span>
+            <span className="text-muted min-w-0">{meta.title}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const PROVENANCE_META = {
+  'book-parsed': {
+    label: 'book',
+    title: 'Solution parsed from the book and replay-verified',
+    className: 'border-good/40 text-good',
+  },
+  'engine-corroborated': {
+    label: 'engine+text',
+    title: 'Engine solution, corroborated by the book text',
+    className: 'border-primary/40 text-primary',
+  },
+  'engine-only': {
+    label: 'engine',
+    title: 'Engine solution (decisive line, no text corroboration)',
+    className: 'border-line-strong text-muted',
+  },
+  'engine-unverified': {
+    label: 'unverified',
+    title: 'Engine best line only — nothing decisive found; check the source if it feels off',
+    className: 'border-warn/50 text-warn',
+  },
+  corrected: {
+    label: 'corrected',
+    title: 'You corrected this puzzle by hand — highest confidence',
+    className: 'border-good/40 text-good',
+  },
+} as const;
+
+function ProvenanceBadge({ provenance }: { provenance: keyof typeof PROVENANCE_META }) {
+  const meta = PROVENANCE_META[provenance];
+  if (!meta) return null;
+  return (
+    <span
+      title={meta.title}
+      className={cn(
+        'shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-medium',
+        meta.className,
+      )}
+    >
+      {meta.label}
+    </span>
+  );
+}
+
+/**
+ * The puzzle's source: the scanned book page with THIS diagram outlined.
+ * The rect is stored as page fractions, so the highlight is a simple
+ * percent-positioned overlay on the rendered image.
+ */
+function SourcePageViewer({
+  slug,
+  page,
+  rect,
+  onClose,
+}: {
+  slug: string;
+  page: string;
+  rect?: { x: number; y: number; w: number; h: number };
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={onClose}>
+      <div
+        className="bg-surface border-line flex max-h-full flex-col gap-2 overflow-hidden rounded-xl border p-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2">
+          <BookOpen className="text-subtle size-4" />
+          <h2 className="text-fg flex-1 text-sm font-semibold">Source page</h2>
+          <Button variant="ghost" size="icon-sm" title="Close" onClick={onClose}>
+            <X className="size-3.5" />
+          </Button>
+        </div>
+        <div className="min-h-0 overflow-auto">
+          <div className="relative w-fit">
+            <img
+              src={diagramUrl(slug, page)}
+              alt="book page"
+              className="max-h-[80vh] w-auto rounded"
+            />
+            {rect && (
+              <div
+                className="border-primary pointer-events-none absolute rounded-sm border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"
+                style={{
+                  left: `${rect.x * 100}%`,
+                  top: `${rect.y * 100}%`,
+                  width: `${rect.w * 100}%`,
+                  height: `${rect.h * 100}%`,
+                }}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -495,6 +683,7 @@ function PuzzleEntry({
   slug,
   number,
   draft,
+  replace,
   onDone,
   onCancel,
 }: {
@@ -502,6 +691,8 @@ function PuzzleEntry({
   number: number;
   /** Entering an imported diagram: shown for eyeballing, deleted on save. */
   draft?: { id: string; imageUrl: string; fen: string | null };
+  /** Correcting an existing puzzle: prefilled, replaced in place on save. */
+  replace?: BookPuzzle;
   onDone: () => void;
   onCancel: () => void;
 }) {
@@ -510,7 +701,7 @@ function PuzzleEntry({
   // The aligned image's cell features, kept until the user confirms the
   // position: confirming harvests them as this book's font templates.
   const [photo, setPhoto] = useState<PhotoReading | null>(null);
-  const [prefill, setPrefill] = useState<string | null>(draft?.fen ?? null);
+  const [prefill, setPrefill] = useState<string | null>(replace?.fen ?? draft?.fen ?? null);
   const [templates, setTemplates] = useState<Template[]>([]);
   useEffect(() => {
     void bookTemplates(slug).then(setTemplates);
@@ -613,6 +804,7 @@ function PuzzleEntry({
       slug={slug}
       number={number}
       fen={fen}
+      replaceId={replace?.id}
       onBack={() => setFen(null)}
       onDone={finish}
     />
@@ -623,12 +815,15 @@ function SolutionRecorder({
   slug,
   number,
   fen,
+  replaceId,
   onBack,
   onDone,
 }: {
   slug: string;
   number: number;
   fen: string;
+  /** When set, the save REPLACES this puzzle instead of appending. */
+  replaceId?: string;
   onBack: () => void;
   onDone: () => void;
 }) {
@@ -727,6 +922,7 @@ function SolutionRecorder({
         uci: line.map((m) => m.uci),
         san: line.map((m) => m.san),
         wildcards: [...wildcards],
+        ...(replaceId ? { replaceId } : {}),
       }),
     });
     setSaving(false);
@@ -909,6 +1105,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [helped, setHelped] = useState(false);
   const [wrong, setWrong] = useState(false);
   const [engineApproved, setEngineApproved] = useState(false);
+  const [showSource, setShowSource] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
@@ -941,6 +1138,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setHelped(false);
     setWrong(false);
     setEngineApproved(false);
+    setShowSource(false);
     reported.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book, puzzleId]);
@@ -1201,9 +1399,37 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             <ArrowLeft className="size-3.5" />
           </Button>
           <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-            {book.title} · #{index + 1}
+            {book.title} · #{puzzle.number ?? index + 1}
           </span>
+          {puzzle.provenance && <ProvenanceBadge provenance={puzzle.provenance} />}
+          {puzzle.evidence?.page && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Show the book page this puzzle was read from"
+              onClick={() => setShowSource(true)}
+            >
+              <BookOpen className="size-3.5" />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title="Correct this puzzle (position and solution)"
+            onClick={() => navigate('puzzles', 'books', slug, 'fix', puzzle.id)}
+          >
+            <Pencil className="size-3.5" />
+          </Button>
         </div>
+
+        {showSource && puzzle.evidence?.page && (
+          <SourcePageViewer
+            slug={slug}
+            page={puzzle.evidence.page}
+            rect={puzzle.evidence.rect}
+            onClose={() => setShowSource(false)}
+          />
+        )}
 
         <AnswerPanel
           tree={tree}
