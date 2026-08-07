@@ -250,6 +250,10 @@ export const useStudy = create<StudyState>()((set, get) => {
     },
 
     close: async () => {
+      // Idempotent: the view's unmount cleanup calls this even when the
+      // study was already detached (e.g. the explorer handed a game to the
+      // analysis tab) — a second run must not wipe the handed-off tree.
+      if (!get().openId) return;
       if (saveTimer) clearTimeout(saveTimer);
       if (get().saveState !== 'saved') await get().save();
       set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved' });

@@ -4,6 +4,7 @@ import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
+import { useStudy } from '@/store/study';
 import {
   activeBook,
   isRemoteDb,
@@ -249,6 +250,11 @@ function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: strin
         const res = await fetch(`/api/refgames/${id}/pgn`);
         if (res.ok) {
           const { pgn } = (await res.json()) as { pgn: string };
+          // The explorer also lives inside study/game views, which keep
+          // their document in the SAME analysis store with dirty-tracking
+          // autosave. Detach (saving real edits) BEFORE loading the elite
+          // game, or the autosave would write it over the open document.
+          if (useStudy.getState().openId) await useStudy.getState().close();
           if (useAnalysis.getState().loadPgn(pgn)) {
             useAnalysis.setState({ handoff: true });
             navigate('analysis');
