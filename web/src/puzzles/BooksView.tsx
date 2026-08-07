@@ -76,6 +76,7 @@ interface BookSummary {
   puzzles: number;
   solved: number;
   failed: number;
+  cover?: boolean;
 }
 
 interface BookPuzzle {
@@ -96,10 +97,17 @@ interface BookPuzzle {
     | 'engine-only'
     | 'engine-unverified'
     | 'corrected';
-  evidence?: { page?: string; rect?: { x: number; y: number; w: number; h: number } };
+  evidence?: BookEvidence;
 }
 
 type SourceRect = { x: number; y: number; w: number; h: number };
+
+interface BookEvidence {
+  page?: string;
+  rect?: SourceRect;
+  /** The solutions page covering this puzzle's number (page-level match). */
+  solutionPage?: string;
+}
 
 interface PuzzleProgress {
   tries: number;
@@ -113,7 +121,7 @@ interface BookDraft {
   image: string;
   fen: string | null;
   number?: number;
-  evidence?: { page?: string; rect?: SourceRect };
+  evidence?: BookEvidence;
 }
 
 interface BookDetail {
@@ -267,34 +275,34 @@ function Shelf() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {books.map((b) => (
               <button
                 key={b.slug}
                 type="button"
                 onClick={() => navigate('puzzles', 'books', b.slug)}
-                className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex flex-col gap-3 rounded-xl border p-4 text-left transition-colors duration-100"
+                className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex items-stretch gap-3 rounded-xl border p-3 text-left transition-colors duration-100"
               >
-                <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
-                <span className="min-w-0">
-                  <span className="text-fg block truncate text-sm font-medium">{b.title}</span>
-                  <span className="text-subtle block text-xs">
-                    {b.puzzles} puzzle{b.puzzles === 1 ? '' : 's'}
-                    {b.puzzles > 0 ? ` · ${b.solved} solved` : ''}
-                  </span>
-                </span>
-                {b.puzzles > 0 && (
-                  <span className="bg-surface-inset flex h-1.5 w-full overflow-hidden rounded-full">
-                    <span
-                      className="bg-nag-good h-full"
-                      style={{ width: `${(100 * b.solved) / b.puzzles}%` }}
-                    />
-                    <span
-                      className="bg-nag-blunder h-full"
-                      style={{ width: `${(100 * b.failed) / b.puzzles}%` }}
-                    />
+                {b.cover ? (
+                  <img
+                    src={diagramUrl(b.slug, 'cover.jpg')}
+                    alt=""
+                    className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
+                  />
+                ) : (
+                  <span className="bg-surface-inset border-line grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
+                    <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
                   </span>
                 )}
+                <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
+                  <span className="min-w-0">
+                    <span className="text-fg block truncate text-sm font-medium">{b.title}</span>
+                    <span className="text-subtle block text-xs">
+                      {b.puzzles} puzzle{b.puzzles === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} />
+                </span>
               </button>
             ))}
           </div>
@@ -503,6 +511,80 @@ function BookPage({ slug }: { slug: string }) {
 }
 
 /**
+ * The correction sidebar: the book's own scans, right where the board is
+ * being fixed. Diagram tab = the page cropped to this puzzle's diagram;
+ * Solutions tab = the solutions page covering its number.
+ */
+function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }) {
+  const [tab, setTab] = useState<'diagram' | 'solutions'>('diagram');
+  return (
+    <aside className="border-line flex w-80 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+      {evidence.solutionPage && (
+        <div className="bg-surface-inset flex shrink-0 gap-0.5 self-start rounded-lg p-0.5">
+          {(['diagram', 'solutions'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={cn(
+                'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                tab === t ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
+              )}
+            >
+              {t === 'diagram' ? 'Diagram' : 'Solutions'}
+            </button>
+          ))}
+        </div>
+      )}
+      {tab === 'diagram' && evidence.page ? (
+        <>
+          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={288} />
+          <p className="text-subtle text-xs leading-relaxed">
+            The book&rsquo;s own scan — make the board match it.
+          </p>
+        </>
+      ) : tab === 'solutions' && evidence.solutionPage ? (
+        <img
+          src={diagramUrl(slug, evidence.solutionPage)}
+          alt="solutions page"
+          className="border-line w-full rounded-md border"
+        />
+      ) : null}
+    </aside>
+  );
+}
+
+/**
+ * Solved/failed progress as a bar — the track keeps a visible border even
+ * when empty, and the counts live in the tooltip instead of UI text.
+ */
+function ProgressBar({
+  total,
+  solved,
+  failed,
+  className,
+}: {
+  total: number;
+  solved: number;
+  failed: number;
+  className?: string;
+}) {
+  if (total === 0) return null;
+  return (
+    <span
+      title={`${solved} solved · ${failed} failed · ${total - solved - failed} remaining`}
+      className={cn(
+        'bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border',
+        className,
+      )}
+    >
+      <span className="bg-nag-good h-full" style={{ width: `${(100 * solved) / total}%` }} />
+      <span className="bg-nag-blunder h-full" style={{ width: `${(100 * failed) / total}%` }} />
+    </span>
+  );
+}
+
+/**
  * The book's puzzles as an information-dense, filterable list: number,
  * fidelity tier, goal, attempt history — filters double as the tier
  * legend (each chip carries its description as a tooltip).
@@ -567,7 +649,12 @@ function PuzzleList({
             {PROVENANCE_META[tier].label} <span className="opacity-60">{count}</span>
           </button>
         ))}
-        <span className="text-subtle ml-auto text-xs">{solvedCount}/{puzzles.length} solved</span>
+        <ProgressBar
+          total={puzzles.length}
+          solved={solvedCount}
+          failed={stateCounts.failed}
+          className="ml-auto w-32 self-center"
+        />
       </div>
       <div className="bg-surface border-line divide-line divide-y overflow-hidden rounded-xl border">
         {visible.map((p) => {
@@ -856,59 +943,42 @@ function PuzzleEntry({
   };
 
   if (fen === null) {
+    const evidence = replace?.evidence ?? draft?.evidence;
     return (
       <div className="flex h-full min-h-0 flex-col">
-        <div className="flex shrink-0 items-center gap-2 px-4 pt-3">
+        <div className="border-line flex h-12 shrink-0 items-center gap-2 border-b px-4">
           <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
             <ArrowLeft className="size-3.5" />
           </Button>
-          <p className="text-muted min-w-0 flex-1 truncate text-sm">
-            Puzzle #{number} — set up the diagram, then record the solution.
-          </p>
+          <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+            {replace ? 'Correct' : 'Enter'} puzzle&nbsp;
+            <span className="font-mono">#{number}</span>
+          </h1>
           <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
             <ImageUp className="size-3.5" />
             From image
           </Button>
         </div>
-        {(() => {
-          // The evidence, embedded where it is used: correct the board
-          // against the book's own scan.
-          const evidence = replace?.evidence ?? draft?.evidence;
-          if (evidence?.page) {
-            return (
-              <div className="flex shrink-0 items-start gap-3 px-4 pt-2">
-                <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={264} />
-                <p className="text-subtle max-w-[16rem] text-xs leading-relaxed">
-                  The book&rsquo;s own scan — make the board match it, then
-                  record the solution.
-                </p>
-              </div>
-            );
-          }
-          if (draft) {
-            return (
-              <div className="flex shrink-0 items-center gap-3 px-4 pt-2">
-                <img
-                  src={draft.imageUrl}
-                  alt="book diagram"
-                  className="border-line h-36 rounded-md border"
-                />
-                <p className="text-subtle max-w-[16rem] text-xs leading-relaxed">
-                  The diagram from the book — make the board match it, then
-                  record the solution.
-                </p>
-              </div>
-            );
-          }
-          return null;
-        })()}
-        <div className="min-h-0 flex-1">
-          <EditorView
-            key={prefill ?? 'blank'}
-            initialFen={prefill ?? undefined}
-            useLabel="Record solution"
-            onUse={confirmPosition}
-          />
+        <div className="flex min-h-0 flex-1">
+          {evidence?.page ? (
+            <SourcePane slug={slug} evidence={evidence} />
+          ) : draft ? (
+            <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+              <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
+              <p className="text-subtle text-xs leading-relaxed">
+                The diagram from the book — make the board match it, then
+                record the solution.
+              </p>
+            </aside>
+          ) : null}
+          <div className="min-h-0 min-w-0 flex-1">
+            <EditorView
+              key={prefill ?? 'blank'}
+              initialFen={prefill ?? undefined}
+              useLabel="Record solution"
+              onUse={confirmPosition}
+            />
+          </div>
         </div>
         {importing && (
           <PhotoImport

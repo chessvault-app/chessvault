@@ -88,6 +88,8 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
           puzzles: puzzles.length,
           solved,
           failed,
+          // Cover scan (diagrams/cover.jpg), written by the book importer.
+          cover: existsSync(resolve(diagramsDir(slug), 'cover.jpg')),
         };
       })
       .sort((a, b) => a.title.localeCompare(b.title));
