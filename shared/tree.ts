@@ -235,9 +235,19 @@ export function updateNode(
 }
 
 /** Standard chess move-number label, e.g. ply 1 -> `1.`, ply 2 -> `1...`. */
-export function moveNumberLabel(ply: number): string {
-  const moveNumber = Math.ceil(ply / 2);
-  return ply % 2 === 1 ? `${moveNumber}.` : `${moveNumber}...`;
+export function moveNumberLabel(ply: number, blackFirst = false): string {
+  const effective = ply + (blackFirst ? 1 : 0);
+  const moveNumber = Math.ceil(effective / 2);
+  return effective % 2 === 1 ? `${moveNumber}.` : `${moveNumber}...`;
+}
+
+/**
+ * True when the root position has Black to move — every ply-parity
+ * computation (move numbers, White/Black table columns) must shift by one
+ * for such trees, or Black's moves land in White's column.
+ */
+export function blackToMoveAtRoot(tree: MoveTree): boolean {
+  return getNode(tree, tree.rootId).fen.split(' ')[1] === 'b';
 }
 
 /** True when `id` is on the mainline all the way back to the root. */

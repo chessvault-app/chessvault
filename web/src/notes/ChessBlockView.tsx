@@ -12,6 +12,7 @@ import type { Color, Role } from 'chessops/types';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import {
   addMove,
+  blackToMoveAtRoot,
   createTree,
   getNode,
   legalDests,
@@ -228,6 +229,7 @@ function MoveStrip({
 }) {
   const chips: React.ReactNode[] = [];
   const path = new Set(pathTo(tree, cursorId));
+  const blackFirst = blackToMoveAtRoot(tree);
 
   const renderLine = (startId: NodeId, depth: number): void => {
     let nodeId: NodeId | undefined = startId;
@@ -249,8 +251,8 @@ function MoveStrip({
                 : 'text-muted hover:bg-surface-2',
           )}
         >
-          {(needNumber || node.ply % 2 === 1) && (
-            <span className="text-subtle">{moveNumberLabel(node.ply)}</span>
+          {(needNumber || (node.ply + (blackFirst ? 1 : 0)) % 2 === 1) && (
+            <span className="text-subtle">{moveNumberLabel(node.ply, blackFirst)}</span>
           )}
           {node.san}
         </button>,

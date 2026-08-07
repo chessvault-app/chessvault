@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { getNode, moveNumberLabel } from '@shared/tree';
+import { blackToMoveAtRoot, getNode, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
@@ -103,6 +103,7 @@ export function MainlineTable({
 }) {
   const out: React.ReactNode[] = [];
   let row: RowState | null = null;
+  const blackFirst = blackToMoveAtRoot(tree);
 
   const flushRow = (): void => {
     if (!row) return;
@@ -128,8 +129,9 @@ export function MainlineTable({
     const [mainChildId, ...variationIds] = node.children;
     if (!mainChildId) break;
     const child = getNode(tree, mainChildId);
-    const number = Math.ceil(child.ply / 2);
-    const isWhite = child.ply % 2 === 1;
+    const effectivePly = child.ply + (blackFirst ? 1 : 0);
+    const number = Math.ceil(effectivePly / 2);
+    const isWhite = effectivePly % 2 === 1;
 
     if (isWhite) {
       flushRow();
@@ -237,6 +239,7 @@ interface LineProps {
 function Line({ tree, fromId, cursorId, onSelect, depth, continued = false }: LineProps) {
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
+  const blackFirst = blackToMoveAtRoot(tree);
   // A comment or variation breaks the run of moves, so the next move needs its
   // number repeated to stay readable — the same convention PGN and Lichess use.
   let flowInterrupted = !continued;
@@ -248,14 +251,14 @@ function Line({ tree, fromId, cursorId, onSelect, depth, continued = false }: Li
 
     const child = getNode(tree, mainChildId);
     // White's moves always carry a number; Black's only after an interruption.
-    const showNumber = child.ply % 2 === 1 || flowInterrupted;
+    const showNumber = (child.ply + (blackFirst ? 1 : 0)) % 2 === 1 || flowInterrupted;
     flowInterrupted = false;
 
     items.push(
       <MoveChip
         key={mainChildId}
         label={child.san ?? '?'}
-        number={showNumber ? moveNumberLabel(child.ply) : undefined}
+        number={showNumber ? moveNumberLabel(child.ply, blackFirst) : undefined}
         nags={child.nags}
         hasComment={Boolean(child.comment)}
         active={mainChildId === cursorId}
@@ -325,7 +328,7 @@ function VariationBranch({
     <>
       <MoveChip
         label={node.san ?? '?'}
-        number={moveNumberLabel(node.ply)}
+        number={moveNumberLabel(node.ply, blackToMoveAtRoot(tree))}
         nags={node.nags}
         hasComment={Boolean(node.comment)}
         active={startId === cursorId}

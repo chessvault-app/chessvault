@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowUpToLine,
   BookMarked,
   Check,
   Eye,
@@ -18,7 +19,17 @@ import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
 import { parseSquare, parseUci, squareRank } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
-import { addUci, createTree, getNode, legalDests, mainlineFrom, positionAt, updateNode } from '@shared/tree';
+import {
+  addUci,
+  createTree,
+  getNode,
+  isOnMainline,
+  legalDests,
+  mainlineFrom,
+  positionAt,
+  promoteToMainline,
+  updateNode,
+} from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { Board } from '@/board/Board';
@@ -1020,6 +1031,17 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                 )}
                 Submit
               </Button>
+              {phase === 'solving' && !isOnMainline(tree, cursorId) && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  title="Make this line the answer that gets judged"
+                  onClick={() => setTree(promoteToMainline(tree, cursorId))}
+                >
+                  <ArrowUpToLine className="size-3.5" />
+                  Make mainline
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
