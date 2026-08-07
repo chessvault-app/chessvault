@@ -74,7 +74,7 @@ export function HomePage() {
           </div>
           <div>
             <h1 className="text-fg text-xl font-semibold tracking-tight">Chess Vault</h1>
-            <p className="text-subtle text-sm">Your chess, on your disk.</p>
+            <p className="text-subtle text-sm">Your chess, in your vault.</p>
           </div>
         </div>
 
