@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ArrowUpToLine } from 'lucide-react';
-import { blackToMoveAtRoot, getNode, moveNumberLabel } from '@shared/tree';
+import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
@@ -70,26 +70,29 @@ export function MoveTreePane({ className }: { className?: string }) {
   const isEmpty = root.children.length === 0;
 
   return (
-    <div
-      ref={scroller}
-      // The floor keeps a few lines of moves visible even when the whole
-      // panel is squeezed by a short viewport; the panel's minimum height
-      // follows it, pushing its column into scroll instead of clipping.
-      className={cn('min-h-24 flex-1 overflow-y-auto text-sm leading-relaxed', className)}
-    >
-      {isEmpty ? (
-        <p className="text-subtle px-2 py-6 text-center text-xs">
-          Play a move on the board, or load a FEN or PGN.
-        </p>
-      ) : (
-        <MainlineTable
-          tree={tree}
-          cursorId={cursorId}
-          onSelect={setCursor}
-          onPromote={(id) => promoteNode(id, true)}
-        />
-      )}
-    </div>
+    <>
+      <div
+        ref={scroller}
+        // The floor keeps a few lines of moves visible even when the whole
+        // panel is squeezed by a short viewport; the panel's minimum height
+        // follows it, pushing its column into scroll instead of clipping.
+        className={cn('min-h-24 flex-1 overflow-y-auto text-sm leading-relaxed', className)}
+      >
+        {isEmpty ? (
+          <p className="text-subtle px-2 py-6 text-center text-xs">
+            Play a move on the board, or load a FEN or PGN.
+          </p>
+        ) : (
+          <MainlineTable
+            tree={tree}
+            cursorId={cursorId}
+            onSelect={setCursor}
+            onPromote={(id) => promoteNode(id, true)}
+          />
+        )}
+      </div>
+      <PromoteStrip tree={tree} cursorId={cursorId} onPromote={(id) => promoteNode(id, true)} />
+    </>
   );
 }
 
@@ -242,6 +245,34 @@ interface LineProps {
   depth: number;
   /** True when the caller already rendered the move this line continues. */
   continued?: boolean;
+}
+
+/**
+ * The visible promotion affordance: a full-width strip pinned under the
+ * moves table whenever the CURRENT position sits on a side line. The
+ * inline row buttons stay for direct manipulation; this one is the one
+ * you cannot miss.
+ */
+export function PromoteStrip({
+  tree,
+  cursorId,
+  onPromote,
+}: {
+  tree: MoveTree;
+  cursorId: NodeId;
+  onPromote: (id: NodeId) => void;
+}) {
+  if (isOnMainline(tree, cursorId)) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => onPromote(cursorId)}
+      className="bg-primary/10 text-primary hover:bg-primary/20 border-line flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-xs font-medium transition-colors duration-100"
+    >
+      <ArrowUpToLine className="size-3.5" />
+      Side line — make it the mainline
+    </button>
+  );
 }
 
 /** Inline promote-to-mainline action, sitting on the variation it lifts. */

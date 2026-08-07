@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
-import { MainlineTable } from '@/analysis/MoveTreePane';
+import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
@@ -50,6 +50,7 @@ export function AnswerPanel({
           <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} onPromote={onPromote} />
         </div>
       )}
+      {onPromote && <PromoteStrip tree={tree} cursorId={cursorId} onPromote={onPromote} />}
       {/* The same navigation toolbar every board in the app has. */}
       <div className="border-line flex w-full shrink-0 items-center justify-center gap-1 border-t py-1">
         <Button
