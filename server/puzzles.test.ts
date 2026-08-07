@@ -9,6 +9,7 @@ import { puzzlesApi } from './puzzles.ts';
 describe('puzzles api', () => {
   let dir: string;
   let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
 
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), 'puzzles-api-'));
@@ -33,10 +34,14 @@ describe('puzzles api', () => {
         ('endgame', 2400, 'ccc'), ('long', 2400, 'ccc');
     `);
     db.close();
-    app = new Hono().route('/api', puzzlesApi(dbPath, join(dir, 'state')));
+    puzzles = puzzlesApi(dbPath, join(dir, 'state'));
+    app = new Hono().route('/api', puzzles);
   });
 
-  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+  afterAll(() => {
+    puzzles.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
 
   const attempt = (id: string, win: boolean, counted?: boolean): Promise<Response> | Response =>
     app.request('/api/puzzles/attempt', {

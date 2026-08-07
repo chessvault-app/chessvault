@@ -73,7 +73,7 @@ function pickPuzzle(
 export function puzzlesApi(
   dbPath: string = DATA_PUZZLES,
   stateDir: string = resolve(VAULT, 'puzzles'),
-): Hono {
+): Hono & { closeDb: () => void } {
   const statePath = resolve(stateDir, 'state.json');
   const historyPath = resolve(stateDir, 'history.jsonl');
 
@@ -128,6 +128,12 @@ export function puzzlesApi(
     if (!existsSync(dbPath)) return null;
     handle = new Database(dbPath, { readonly: true, fileMustExist: true });
     return handle;
+  };
+
+  // Windows can't delete an open database file, so tests need this.
+  const closeDb = (): void => {
+    handle?.close();
+    handle = null;
   };
 
   const api = new Hono();
@@ -279,5 +285,5 @@ export function puzzlesApi(
     });
   });
 
-  return api;
+  return Object.assign(api, { closeDb });
 }
