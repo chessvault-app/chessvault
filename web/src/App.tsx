@@ -8,7 +8,6 @@ import {
   Library,
   NotebookPen,
   Puzzle,
-  RotateCcw,
   Swords,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -72,12 +71,12 @@ function Shell() {
   );
 }
 
-/** Sub-entries under Puzzles: the themes catalogue and failed-review. */
+/** Sub-entries under Puzzles. Failed-review deliberately has no entry —
+    the dashboard and the trainer already link it where it's relevant. */
 const PUZZLE_SUBNAV = [
   { param: 'dashboard', label: 'Dashboard', icon: BarChart3 },
   { param: 'books', label: 'Books', icon: BookMarked },
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
-  { param: 'failed', label: 'Review failed', icon: RotateCcw },
 ] as const;
 
 function Sidebar({ active, params }: { active: Section; params: string[] }) {
