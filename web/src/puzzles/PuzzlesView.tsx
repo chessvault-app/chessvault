@@ -9,7 +9,7 @@ import {
   RotateCw,
   Swords,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Color, Role } from 'chessops/types';
 import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
@@ -20,6 +20,7 @@ import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
 import { MoveTreePane } from '@/analysis/MoveTreePane';
+import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -37,7 +38,6 @@ import {
   positionAt,
   positionWith,
   puzzleTree,
-  sanLine,
   solverColor,
   type ApiPuzzle,
   type PuzzlePosition,
@@ -231,6 +231,14 @@ function Trainer({
   // What the board shows: the live machine position, or a reviewed ply.
   const displayed = review !== null && puzzle ? positionAt(puzzle, review) : view;
   const reviewing = review !== null;
+
+  // The played line as a move tree, so the panel renders exactly like the
+  // analysis tab's table. Rebuilt per ply; puzzle lines are short.
+  const answerTree = useMemo(() => (puzzle && plies > 0 ? puzzleTree(puzzle, plies).tree : null), [puzzle, plies]);
+  const answerIds = useMemo(
+    () => (answerTree ? mainlineFrom(answerTree, answerTree.rootId) : []),
+    [answerTree],
+  );
 
   // Any machine progress snaps the board back to live.
   useEffect(() => setReview(null), [plies, phase]);
@@ -536,14 +544,11 @@ function Trainer({
           )}
         </Panel>
 
-        {puzzle && plies > 0 && (
+        {answerTree && (
           <AnswerPanel
-            title="Moves"
-            fen={puzzle.fen}
-            sans={sanLine(puzzle, plies)}
-            current={review ?? plies}
-            emptyText=""
-            onSelect={goToPly}
+            tree={answerTree}
+            cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
+            onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
           />
         )}
 

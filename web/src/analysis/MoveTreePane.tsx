@@ -92,7 +92,7 @@ interface RowState {
   black: { id: NodeId; node: MoveNode } | 'ellipsis' | null;
 }
 
-function MainlineTable({
+export function MainlineTable({
   tree,
   cursorId,
   onSelect,
