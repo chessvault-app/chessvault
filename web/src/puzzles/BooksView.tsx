@@ -1004,7 +1004,13 @@ function TwoStepConfirm({
       variant={armed ? 'danger' : 'ghost'}
       size={armed ? 'sm' : 'icon-sm'}
       title={title}
-      className={cn(className, armed && 'opacity-100')}
+      // Armed state may float over card content: an opaque surface under
+      // the danger tint (bg colour + gradient stack on one element) keeps
+      // whatever is behind it from bleeding through.
+      className={cn(
+        className,
+        armed && 'bg-surface bg-linear-to-b from-bad/12 to-bad/12 opacity-100 shadow-md',
+      )}
       onClick={() => {
         if (!armed) {
           setArmed(true);
