@@ -83,12 +83,7 @@ export function MoveTreePane({ className }: { className?: string }) {
             Play a move on the board, or load a FEN or PGN.
           </p>
         ) : (
-          <MainlineTable
-            tree={tree}
-            cursorId={cursorId}
-            onSelect={setCursor}
-            onPromote={(id) => promoteNode(id, true)}
-          />
+          <MainlineTable tree={tree} cursorId={cursorId} onSelect={setCursor} />
         )}
       </div>
       <PromoteStrip tree={tree} cursorId={cursorId} onPromote={(id) => promoteNode(id, true)} />
@@ -106,13 +101,10 @@ export function MainlineTable({
   tree,
   cursorId,
   onSelect,
-  onPromote,
 }: {
   tree: MoveTree;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  /** When set, every variation row carries a promote-to-mainline button. */
-  onPromote?: (id: NodeId) => void;
 }) {
   const out: React.ReactNode[] = [];
   let row: RowState | null = null;
@@ -176,15 +168,13 @@ export function MainlineTable({
         out.push(
           <div
             key={`var-${variationId}`}
-            className="border-line/60 text-muted flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-2 pr-2 text-[0.8125rem]"
+            className="border-line/60 text-muted flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-[0.8125rem]"
           >
-            {onPromote && <PromoteButton onClick={() => onPromote(variationId)} />}
             <VariationBranch
               tree={tree}
               startId={variationId}
               cursorId={cursorId}
               onSelect={onSelect}
-              onPromote={onPromote}
               depth={1}
             />
           </div>,
@@ -241,7 +231,6 @@ interface LineProps {
   fromId: NodeId;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  onPromote?: (id: NodeId) => void;
   depth: number;
   /** True when the caller already rendered the move this line continues. */
   continued?: boolean;
@@ -270,21 +259,7 @@ export function PromoteStrip({
       className="bg-primary/10 text-primary hover:bg-primary/20 border-line flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-xs font-medium transition-colors duration-100"
     >
       <ArrowUpToLine className="size-3.5" />
-      Side line — make it the mainline
-    </button>
-  );
-}
-
-/** Inline promote-to-mainline action, sitting on the variation it lifts. */
-function PromoteButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      title="Make this line the mainline"
-      onClick={onClick}
-      className="text-subtle hover:text-primary hover:bg-surface-3 -my-0.5 self-center rounded p-1 transition-colors duration-100"
-    >
-      <ArrowUpToLine className="size-3" />
+      Make mainline
     </button>
   );
 }
@@ -294,7 +269,7 @@ function PromoteButton({ onClick }: { onClick: () => void }) {
  * child continues inline, and every further child becomes a parenthesised
  * variation rendered as a nested block.
  */
-function Line({ tree, fromId, cursorId, onSelect, onPromote, depth, continued = false }: LineProps) {
+function Line({ tree, fromId, cursorId, onSelect, depth, continued = false }: LineProps) {
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
   const blackFirst = blackToMoveAtRoot(tree);
@@ -349,13 +324,11 @@ function Line({ tree, fromId, cursorId, onSelect, onPromote, depth, continued = 
             'text-subtle text-[0.8125rem]',
           )}
         >
-          {onPromote && <PromoteButton onClick={() => onPromote(variationId)} />}
           <VariationBranch
             tree={tree}
             startId={variationId}
             cursorId={cursorId}
             onSelect={onSelect}
-            onPromote={onPromote}
             depth={depth + 1}
           />
         </div>,
@@ -375,14 +348,12 @@ function VariationBranch({
   startId,
   cursorId,
   onSelect,
-  onPromote,
   depth,
 }: {
   tree: MoveTree;
   startId: NodeId;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  onPromote?: (id: NodeId) => void;
   depth: number;
 }) {
   const node = getNode(tree, startId);
@@ -408,7 +379,6 @@ function VariationBranch({
         fromId={startId}
         cursorId={cursorId}
         onSelect={onSelect}
-        onPromote={onPromote}
         depth={depth}
         continued={!node.comment}
       />

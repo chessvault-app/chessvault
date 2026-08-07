@@ -23,7 +23,7 @@ export function AnswerPanel({
   tree: MoveTree;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  /** When set, every variation row carries a promote-to-mainline button. */
+  /** When set, a strip offers promoting the current side line. */
   onPromote?: (id: NodeId) => void;
   title?: string;
   emptyText?: string;
@@ -47,7 +47,7 @@ export function AnswerPanel({
         <p className="text-subtle px-3 py-4 text-center text-xs">{emptyText}</p>
       ) : (
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed">
-          <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} onPromote={onPromote} />
+          <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} />
         </div>
       )}
       {onPromote && <PromoteStrip tree={tree} cursorId={cursorId} onPromote={onPromote} />}
