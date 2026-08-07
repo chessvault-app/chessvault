@@ -22,6 +22,9 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
 
+/** Continuations shown before the list folds behind “show all”. */
+const MOVE_LIMIT = 8;
+
 export function ExplorerPane({
   className,
   resizeKey,
@@ -50,6 +53,9 @@ export function ExplorerPane({
   const error = useExplorer((s) => s.error);
 
   const [showManager, setShowManager] = useState(false);
+  // Rare continuations are noise most of the time — show the top handful
+  // and keep the pane's room for the reference games below.
+  const [allMoves, setAllMoves] = useState(false);
 
   const node = getNode(tree, cursorId);
   const book = activeBook({ book: selectedBook, books });
@@ -167,13 +173,24 @@ export function ExplorerPane({
                   No games from this position in “{book}”.
                 </p>
               ) : (
-                <table className="w-full text-xs">
-                  <tbody>
-                    {moves.map((m) => (
-                      <MoveRow key={m.uci} move={m} onPlay={() => playUci(m.uci)} />
-                    ))}
-                  </tbody>
-                </table>
+                <>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      {(allMoves ? moves : moves.slice(0, MOVE_LIMIT)).map((m) => (
+                        <MoveRow key={m.uci} move={m} onPlay={() => playUci(m.uci)} />
+                      ))}
+                    </tbody>
+                  </table>
+                  {moves.length > MOVE_LIMIT && (
+                    <button
+                      type="button"
+                      onClick={() => setAllMoves((v) => !v)}
+                      className="text-subtle hover:text-fg w-full px-3 py-1 text-left text-[0.6875rem] transition-colors duration-100"
+                    >
+                      {allMoves ? 'Show fewer moves' : `Show all ${moves.length} moves`}
+                    </button>
+                  )}
+                </>
               )}
               {topGames.length > 0 && <TopGamesList games={topGames} onPlay={playUci} />}
             </div>

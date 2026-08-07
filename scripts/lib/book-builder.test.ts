@@ -91,6 +91,8 @@ describe('buildBook', () => {
       out: join(dir, 'test.sqlite'),
       // Tiny flush threshold so the upsert/merge path is exercised too.
       flushRows: 2,
+      // Pinned below the fixture's game count so truncation is exercised.
+      topGames: 3,
     });
     db = new Database(join(dir, 'test.sqlite'), { readonly: true });
   });

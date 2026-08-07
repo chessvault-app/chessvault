@@ -53,7 +53,9 @@ const PROGRESS_EVERY = 10_000;
 export async function buildBook(options: BuildOptions): Promise<BuildResult> {
   const maxPly = options.maxPly ?? 24;
   const minGames = options.minGames ?? 2;
-  const topGames = options.topGames ?? 3;
+  // 8 (was 3): the explorer now leans on reference games for discovery, so
+  // a position keeps a longer bench of its strongest games.
+  const topGames = options.topGames ?? 8;
   const flushRows = options.flushRows ?? 4_000_000;
 
   const db = new Database(options.out);

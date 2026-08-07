@@ -86,7 +86,15 @@ for (const job of jobs) {
         console.log(`  ${p.games.toLocaleString()} games  (${rate.toLocaleString()}/s, ${p.parseErrors} errors)`);
       },
     });
-    renameSync(building, out);
+    try {
+      renameSync(building, out);
+    } catch (error) {
+      // Windows: a server holding the old book open blocks the rename
+      // (EPERM). Leave the .building file — the server that spawned this
+      // build closes its handle and finishes the swap itself.
+      if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error;
+      console.log('  rename deferred (target busy) — server will swap the file in');
+    }
   } catch (error) {
     rmSync(building, { force: true });
     throw error;

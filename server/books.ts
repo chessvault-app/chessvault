@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
@@ -110,6 +110,18 @@ export function booksApi(dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAUL
       current.running = false;
       current.exitCode = code;
       closeDb(name); // reopen the freshly renamed file on next query
+      // Windows: our own read handle blocks the script's rename-over, so it
+      // leaves the fresh file beside the target and we swap it in here —
+      // synchronously after closeDb, before any request can reopen the old
+      // file.
+      const building = `${bookPath(name)}.building`;
+      if (code === 0 && existsSync(building)) {
+        try {
+          renameSync(building, bookPath(name));
+        } catch {
+          current.log.push(`could not swap in ${building} — delete the book and rebuild`);
+        }
+      }
     });
   };
 
