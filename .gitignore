@@ -17,5 +17,10 @@ vault/sources/*
 # The rest of vault/ is deliberately NOT ignored: studies, notes and games are
 # plain text and benefit from being version-controlled.
 
+# The vault's own fine-grained history (auto-committed by the server on every
+# change — see server/vaultBackup.ts). Browse it with:
+#   git --git-dir=vault/.history.git log --stat
+vault/.history.git/
+
 .DS_Store
 *.log

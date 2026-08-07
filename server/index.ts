@@ -13,6 +13,7 @@ import { puzzlesApi } from './puzzles.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { refGamesApi } from './refgames.ts';
 import { studiesApi } from './studies.ts';
+import { startVaultBackup } from './vaultBackup.ts';
 import { REPO_ROOT, VAULT_GAMES, VAULT_NOTES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -65,6 +66,11 @@ if (existsSync(dist)) {
   app.use('/*', serveStatic({ root: './dist' }));
   app.get('*', serveStatic({ path: './dist/index.html' }));
 }
+
+// Safety net: every vault change is auto-committed to vault/.history.git.
+void startVaultBackup().catch((error: Error) =>
+  console.error('[vault-backup] disabled:', error.message),
+);
 
 serve({ fetch: app.fetch, port: PORT }, (info) => {
   console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
