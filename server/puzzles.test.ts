@@ -111,6 +111,19 @@ describe('puzzles api', () => {
     expect((await app.request('/api/puzzles/next?mode=failed')).status).toBe(404);
   });
 
+  it('uncounted attempts never introduce new puzzles to the review pool', async () => {
+    // ccc has no counted attempt yet — a failed uncounted replay of it must
+    // not enter the pool, or 'to review' could exceed 'attempts'.
+    await attempt('ccc', false, false);
+    let meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.failed).toBe(0);
+
+    // A counted fail makes it reviewable like any trained puzzle.
+    await attempt('ccc', false);
+    meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.failed).toBe(1);
+  });
+
   it('reset wipes counters, history and the review pool', async () => {
     // Ensure there is something to wipe.
     await attempt('ccc', false);

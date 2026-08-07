@@ -109,15 +109,20 @@ export function puzzlesApi(
 
   /**
    * Puzzles whose LATEST attempt was a loss: solving one cleanly (in any
-   * mode) removes it from the pool, failing re-adds it.
+   * mode) removes it from the pool, failing re-adds it. Only puzzles with
+   * at least one COUNTED attempt are eligible — an uncounted replay can
+   * re-add a trained puzzle but never introduce a new one, which keeps
+   * the dashboard invariant attempts >= review pool.
    */
   const failedPool = (): string[] => {
     const latest = new Map<string, boolean>();
+    const trained = new Set<string>();
     for (const line of historyLines()) {
-      const entry = JSON.parse(line) as { id: string; win: boolean };
+      const entry = JSON.parse(line) as { id: string; win: boolean; counted?: boolean };
       latest.set(entry.id, entry.win);
+      if (entry.counted !== false) trained.add(entry.id);
     }
-    return [...latest].filter(([, win]) => !win).map(([id]) => id);
+    return [...latest].filter(([id, win]) => !win && trained.has(id)).map(([id]) => id);
   };
 
   // Lazily opened read-only handle for the process lifetime. A rebuild

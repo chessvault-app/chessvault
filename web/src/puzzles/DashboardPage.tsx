@@ -79,12 +79,16 @@ export function DashboardPage() {
   const [resultFilter, setResultFilter] = useState<ResultFilter>('all');
   const [bandFilter, setBandFilter] = useState<BandFilter>('any');
   const latestById = new Map<string, HistoryEntry>();
+  const trained = new Set<string>();
   for (const h of history ?? []) {
     if (!latestById.has(h.id)) latestById.set(h.id, h);
+    if (h.counted !== false) trained.add(h.id);
   }
+  // Mirrors the server's pool rule: only trained puzzles are reviewable.
+  const toReview = (h: HistoryEntry): boolean => !h.win && trained.has(h.id);
   const puzzles = [...latestById.values()].filter((h) => {
     if (resultFilter === 'solved' && !h.win) return false;
-    if (resultFilter === 'review' && h.win) return false;
+    if (resultFilter === 'review' && !toReview(h)) return false;
     if (bandFilter !== 'any') {
       const band = BANDS.find((b) => b.id === bandFilter)!;
       if (h.puzzleRating < band.min || h.puzzleRating > band.max) return false;
@@ -253,7 +257,7 @@ export function DashboardPage() {
                     )}
                     <span className="text-fg font-mono">#{h.id}</span>
                     <span className="text-subtle">{bandOf(h.puzzleRating)}</span>
-                    {!h.win && (
+                    {toReview(h) && (
                       <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
                         to review
                       </span>
