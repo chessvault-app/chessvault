@@ -13,6 +13,8 @@ import {
 import { useMemo, useState } from 'react';
 import { parseSquare } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
+import { getNode, mainlineFrom } from '@shared/tree';
+import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { copyText } from '@/lib/clipboard';
 import { navigate } from '@/lib/router';
@@ -91,10 +93,30 @@ export function EditorView() {
     });
   };
 
-  const loadFen = (): void => {
-    const next = fromFen(fenInput);
+  /**
+   * FEN loads as-is; a PGN loads the END of its main line — the position
+   * the game arrived at is what a position editor can meaningfully edit.
+   */
+  const loadInput = (): void => {
+    const value = fenInput.trim();
+    if (!value) return;
+    const looksLikePgn = /^\s*\[/.test(value) || /\b1\s*\.\s*[A-Za-z]/.test(value);
+    let fenToLoad = value;
+    if (looksLikePgn) {
+      try {
+        const first = pgnToChapters(value)[0];
+        if (!first) throw new Error('no games');
+        const tree = first.tree;
+        const lastId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
+        fenToLoad = getNode(tree, lastId).fen;
+      } catch {
+        setFenError('That PGN could not be read.');
+        return;
+      }
+    }
+    const next = fromFen(fenToLoad);
     if (!next) {
-      setFenError('That FEN could not be read.');
+      setFenError(looksLikePgn ? 'That PGN could not be read.' : 'That FEN could not be read.');
       return;
     }
     setFenError(null);
@@ -227,7 +249,7 @@ export function EditorView() {
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Load a FEN to edit"
+              title="Load a FEN or PGN to edit"
               onClick={() => setLoadOpen(true)}
             >
               <FolderInput className="size-3.5" />
@@ -382,21 +404,27 @@ export function EditorView() {
           <div className="bg-scrim fixed inset-0 z-40" onClick={() => setLoadOpen(false)} />
           <div className="fixed inset-x-4 top-[15dvh] z-50 mx-auto max-w-md">
             <Panel flush>
-              <PanelHeader title="Load FEN" />
+              <PanelHeader title="Load position" />
               <div className="flex flex-col gap-2 p-3">
-                <input
+                <textarea
                   autoFocus
                   value={fenInput}
                   onChange={(e) => setFenInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') loadFen();
+                    // Enter submits; Shift+Enter keeps a newline for PGN.
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      loadInput();
+                    }
                     if (e.key === 'Escape') setLoadOpen(false);
                   }}
+                  rows={5}
                   spellCheck={false}
-                  placeholder="Paste a FEN to edit"
+                  placeholder="Paste a FEN, or a PGN to edit its final position"
                   className={cn(
-                    'bg-surface-inset border-line h-9 w-full rounded-md border px-2.5',
-                    'font-mono text-xs outline-none placeholder:font-sans focus:border-primary/50',
+                    'bg-surface-inset border-line w-full resize-none rounded-md border px-2.5 py-2',
+                    'font-mono text-xs leading-relaxed outline-none',
+                    'placeholder:text-subtle placeholder:font-sans focus:border-primary/50',
                   )}
                 />
                 {fenError && <p className="text-bad text-xs">{fenError}</p>}
@@ -407,7 +435,7 @@ export function EditorView() {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={loadFen}
+                    onClick={loadInput}
                     disabled={!fenInput.trim()}
                   >
                     Load
