@@ -135,50 +135,75 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
   };
 
   return (
-    <svg
-      ref={svg}
-      viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
-      preserveAspectRatio="none"
-      className="bg-surface-inset block h-16 w-full cursor-crosshair touch-none select-none"
-      onPointerDown={(e) => {
-        try {
-          e.currentTarget.setPointerCapture(e.pointerId);
-        } catch {
-          // Synthetic events can carry unknown pointer ids; scrubbing
-          // still works, only drag-capture is lost.
-        }
-        scrub(e);
-      }}
-      onPointerMove={(e) => {
-        if (e.buttons & 1) scrub(e);
-      }}
-      role="slider"
-      aria-label="Evaluation graph — click to jump to a move"
-    >
-      <path d={area} fill="var(--color-eval-white)" opacity="0.85" />
-      {/* Equality midline. */}
-      <line
-        x1="0"
-        y1={GRAPH_H / 2}
-        x2={GRAPH_W}
-        y2={GRAPH_H / 2}
-        stroke="var(--color-eval-border)"
-        strokeWidth="0.4"
-        strokeDasharray="1.5 1.5"
-        vectorEffect="non-scaling-stroke"
-      />
-      {cursorIndex >= 0 && (
+    <div className="relative">
+      <svg
+        ref={svg}
+        viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
+        preserveAspectRatio="none"
+        className="bg-surface-inset block h-16 w-full cursor-crosshair touch-none select-none"
+        onPointerDown={(e) => {
+          try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+          } catch {
+            // Synthetic events can carry unknown pointer ids; scrubbing
+            // still works, only drag-capture is lost.
+          }
+          scrub(e);
+        }}
+        onPointerMove={(e) => {
+          if (e.buttons & 1) scrub(e);
+        }}
+        role="slider"
+        aria-label="Evaluation graph — click to jump to a move"
+      >
+        <path d={area} fill="var(--color-eval-white)" opacity="0.85" />
+        {/* Equality line (eval 0.0). */}
         <line
-          x1={x(cursorIndex)}
-          y1="0"
-          x2={x(cursorIndex)}
-          y2={GRAPH_H}
-          stroke="var(--color-primary)"
-          strokeWidth="1.5"
+          x1="0"
+          y1={GRAPH_H / 2}
+          x2={GRAPH_W}
+          y2={GRAPH_H / 2}
+          stroke="var(--color-line-strong)"
+          strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
-      )}
-    </svg>
+        {cursorIndex >= 0 && (
+          <line
+            x1={x(cursorIndex)}
+            y1="0"
+            x2={x(cursorIndex)}
+            y2={GRAPH_H}
+            stroke="var(--color-primary)"
+            strokeWidth="1.5"
+            vectorEffect="non-scaling-stroke"
+          />
+        )}
+      </svg>
+      {/* Move dots live in an HTML overlay: the SVG is stretched
+          non-uniformly, which would squash circles into ellipses. Judged
+          moves wear their NAG colour; clean moves get neutral dots. */}
+      <div className="pointer-events-none absolute inset-0">
+        {points.map((p, i) =>
+          i === 0 ? null : (
+            <span
+              key={p.id}
+              style={{ left: `${(i / (points.length - 1)) * 100}%`, top: `${(1 - p.chances) * 100}%` }}
+              className={cn(
+                'absolute -translate-x-1/2 -translate-y-1/2 rounded-full',
+                p.nag === 4
+                  ? 'bg-nag-blunder size-2'
+                  : p.nag === 2
+                    ? 'bg-nag-mistake size-2'
+                    : p.nag === 6
+                      ? 'bg-nag-dubious size-2'
+                      : 'bg-line-strong size-1',
+                i === cursorIndex && 'ring-primary ring-2',
+              )}
+            />
+          ),
+        )}
+      </div>
+    </div>
   );
 }
 

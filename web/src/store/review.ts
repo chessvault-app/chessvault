@@ -28,6 +28,8 @@ export interface GraphPoint {
   id: string;
   /** White's winning chances 0..1, for the evaluation graph. */
   chances: number;
+  /** Quality NAG the review stamped on the move reaching this position. */
+  nag: number | null;
 }
 
 interface ReviewState {
@@ -135,7 +137,11 @@ export const useReview = create<ReviewState>()((set, get) => ({
         progress: 1,
         white: summarise(verdicts, 'white'),
         black: summarise(verdicts, 'black'),
-        points: ids.map((id, i) => ({ id, chances: winningChances(scores[i]!) })),
+        points: ids.map((id, i) => ({
+          id,
+          chances: winningChances(scores[i]!),
+          nag: i === 0 ? null : verdicts[i - 1]!.nag,
+        })),
       });
     } catch (error) {
       set({ status: 'error', error: (error as Error).message });
