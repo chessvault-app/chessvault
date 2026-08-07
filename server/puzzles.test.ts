@@ -4,20 +4,7 @@ import { Hono } from 'hono';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { eloDelta, puzzlesApi } from './puzzles.ts';
-
-describe('elo', () => {
-  it('is zero-sum-ish around equal ratings', () => {
-    expect(eloDelta(1500, 1500, true)).toBe(16);
-    expect(eloDelta(1500, 1500, false)).toBe(-16);
-  });
-
-  it('pays little for beating weak puzzles, much for strong ones', () => {
-    expect(eloDelta(1500, 1100, true)).toBeLessThan(5);
-    expect(eloDelta(1500, 1900, true)).toBeGreaterThan(27);
-    expect(eloDelta(1500, 1100, false)).toBeLessThan(-27);
-  });
-});
+import { puzzlesApi } from './puzzles.ts';
 
 describe('puzzles api', () => {
   let dir: string;
@@ -51,84 +38,69 @@ describe('puzzles api', () => {
 
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
-  it('reports meta with default user state', async () => {
+  const attempt = (id: string, win: boolean, counted?: boolean): Promise<Response> | Response =>
+    app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(counted === undefined ? { id, win } : { id, win, counted }),
+    });
+
+  it('reports meta with default counters', async () => {
     const res = await app.request('/api/puzzles/meta');
     const body = await res.json();
     expect(body.ready).toBe(true);
     expect(body.puzzles).toBe(3);
-    expect(body.user.rating).toBe(1500);
+    expect(body.user).toEqual({ attempts: 0, wins: 0, streak: 0 });
     expect(body.themes.find((t: { theme: string }) => t.theme === 'fork').count).toBe(1);
   });
 
-  it('serves a puzzle near the user rating', async () => {
-    const res = await app.request('/api/puzzles/next');
-    const { puzzle } = await res.json();
-    // 1500-centred window catches aaa/bbb but not ccc at 2400.
+  it('filters by difficulty range and theme', async () => {
+    const easy = await (await app.request('/api/puzzles/next?max=1600')).json();
+    expect(['aaa', 'bbb']).toContain(easy.puzzle.id);
+
+    const expert = await (await app.request('/api/puzzles/next?min=2000')).json();
+    expect(expert.puzzle.id).toBe('ccc');
+
+    const fork = await (await app.request('/api/puzzles/next?theme=fork')).json();
+    expect(fork.puzzle.id).toBe('bbb');
+
+    expect((await app.request('/api/puzzles/next?theme=nosuchtheme')).status).toBe(404);
+  });
+
+  it('counts attempts, wins and streaks', async () => {
+    const win = await (await attempt('aaa', true)).json();
+    expect(win.user).toEqual({ attempts: 1, wins: 1, streak: 1 });
+
+    const loss = await (await attempt('bbb', false)).json();
+    expect(loss.user).toEqual({ attempts: 2, wins: 1, streak: 0 });
+  });
+
+  it('never re-serves attempted puzzles while others remain', async () => {
+    // aaa and bbb are attempted; every fresh pick must be ccc.
+    for (let i = 0; i < 5; i++) {
+      const { puzzle } = await (await app.request('/api/puzzles/next')).json();
+      expect(puzzle.id).toBe('ccc');
+    }
+    // With every puzzle in the range attempted, repeats are allowed
+    // rather than dead-ending.
+    const { puzzle } = await (await app.request('/api/puzzles/next?max=1600')).json();
     expect(['aaa', 'bbb']).toContain(puzzle.id);
   });
 
-  it('filters by theme', async () => {
-    const res = await app.request('/api/puzzles/next?theme=fork');
-    const { puzzle } = await res.json();
-    expect(puzzle.id).toBe('bbb');
-  });
-
-  it('404s a theme with no puzzles', async () => {
-    const res = await app.request('/api/puzzles/next?theme=nosuchtheme');
-    expect(res.status).toBe(404);
-  });
-
-  it('applies an attempt to the rating, streak and history', async () => {
-    const win = await app.request('/api/puzzles/attempt', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: 'aaa', win: true }),
-    });
-    const winBody = await win.json();
-    expect(winBody.delta).toBe(16);
-    expect(winBody.user.rating).toBe(1516);
-    expect(winBody.user.streak).toBe(1);
-
-    // Losing to the 2400 puzzle from ~1516 would round to 0 (expected score
-    // ≈ 0.006) — use the near-rated one for a meaningful loss.
-    const loss = await app.request('/api/puzzles/attempt', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: 'bbb', win: false }),
-    });
-    const lossBody = await loss.json();
-    expect(lossBody.delta).toBeLessThan(0);
-    expect(lossBody.user.streak).toBe(0);
-    expect(lossBody.user.attempts).toBe(2);
-
-    const history = await app.request('/api/puzzles/history');
-    const { attempts } = await history.json();
-    expect(attempts).toHaveLength(2);
-    expect(attempts[0].id).toBe('bbb'); // newest first
-  });
-
-  it('tracks failed puzzles and serves them for unrated review', async () => {
-    // From the previous test: aaa was won, bbb was lost → pool is [bbb].
+  it('tracks failed puzzles and retires them after an uncounted review solve', async () => {
     const meta = await (await app.request('/api/puzzles/meta')).json();
-    expect(meta.failed).toBe(1);
+    expect(meta.failed).toBe(1); // bbb
 
     const next = await app.request('/api/puzzles/next?mode=failed');
     expect(next.status).toBe(200);
-    const { puzzle } = await next.json();
-    expect(puzzle.id).toBe('bbb');
+    expect((await next.json()).puzzle.id).toBe('bbb');
 
-    // Practice solve: unrated, so the rating and counters stay put …
+    // Review solve: counters stay put …
     const before = (await (await app.request('/api/puzzles/meta')).json()).user;
-    const attempt = await app.request('/api/puzzles/attempt', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: 'bbb', win: true, rated: false }),
-    });
-    const body = await attempt.json();
-    expect(body.delta).toBe(0);
+    const body = await (await attempt('bbb', true, false)).json();
     expect(body.user).toEqual(before);
 
-    // … but the clean solve empties the failed pool.
+    // … but the clean solve empties the pool.
     const after = await (await app.request('/api/puzzles/meta')).json();
     expect(after.failed).toBe(0);
     expect((await app.request('/api/puzzles/next?mode=failed')).status).toBe(404);
@@ -142,11 +114,7 @@ describe('puzzles api', () => {
     });
     expect(bad.status).toBe(400);
 
-    const unknown = await app.request('/api/puzzles/attempt', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: 'zzz', win: true }),
-    });
-    expect(unknown.status).toBe(404);
+    const unknown = await attempt('zzz', true);
+    expect((await unknown).status).toBe(404);
   });
 });

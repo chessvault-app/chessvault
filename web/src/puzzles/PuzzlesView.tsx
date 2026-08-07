@@ -26,15 +26,12 @@ import {
   judgeMove,
   positionAt,
   positionWith,
-  sanLine,
   solverColor,
-  startAt,
   type ApiPuzzle,
   type PuzzlePosition,
 } from './puzzle';
 
 interface UserState {
-  rating: number;
   attempts: number;
   wins: number;
   streak: number;
@@ -47,6 +44,20 @@ interface Meta {
   user: UserState;
 }
 
+/**
+ * No rating system — the app is single-user (lanph3re's call). Difficulty is
+ * an explicit puzzle-rating range instead, remembered across sessions.
+ */
+const DIFFICULTIES = [
+  { id: 'any', label: 'Any', query: {} },
+  { id: 'easy', label: 'Easy', query: { max: 1400 }, hint: 'up to 1400' },
+  { id: 'medium', label: 'Medium', query: { min: 1400, max: 1800 }, hint: '1400–1800' },
+  { id: 'hard', label: 'Hard', query: { min: 1800, max: 2200 }, hint: '1800–2200' },
+  { id: 'expert', label: 'Expert', query: { min: 2200 }, hint: '2200+' },
+] as const;
+type DifficultyId = (typeof DIFFICULTIES)[number]['id'];
+const DIFFICULTY_KEY = 'vault:puzzle-difficulty';
+
 /** What the solver is doing right now. */
 type Phase =
   | 'loading'
@@ -56,15 +67,11 @@ type Phase =
   | 'wrong' // off-script move shown briefly before rollback
   | 'done';
 
-interface Attempt {
-  win: boolean;
-  delta: number;
-}
-
 /**
  * Routes: #/puzzles trains across all themes, #/puzzles/themes is the
- * category page, #/puzzles/theme/<t> trains one theme. The trainer is
- * keyed by theme so switching category boots a clean state machine.
+ * category page, #/puzzles/theme/<t> trains one theme, #/puzzles/failed
+ * reviews previously failed puzzles (uncounted). The trainer is keyed so
+ * switching category boots a clean state machine.
  */
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'themes') return <ThemesPage />;
@@ -73,11 +80,6 @@ export function PuzzlesView({ params = [] }: { params?: string[] }) {
   return <Trainer key={theme} theme={theme} mode="fresh" />;
 }
 
-/**
- * `fresh` trains rated puzzles near the user's rating; `failed` replays
- * puzzles whose latest attempt was a loss — unrated practice that removes
- * a puzzle from the pool once solved cleanly.
- */
 function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [puzzle, setPuzzle] = useState<ApiPuzzle | null>(null);
@@ -85,17 +87,17 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   const [plies, setPlies] = useState(0);
   const [view, setView] = useState<PuzzlePosition | null>(null);
   const [failed, setFailed] = useState(false);
-  const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [hint, setHint] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<DifficultyId>(() => {
+    const stored = localStorage.getItem(DIFFICULTY_KEY);
+    return DIFFICULTIES.some((d) => d.id === stored) ? (stored as DifficultyId) : 'any';
+  });
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
     color: Color;
   } | null>(null);
-
-  // Reviewing earlier plies of the line (null = live position).
-  const [review, setReview] = useState<number | null>(null);
 
   // One attempt per puzzle: recorded at the first mistake or the clean solve.
   const reported = useRef(false);
@@ -117,11 +119,10 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
       const res = await fetch('/api/puzzles/attempt', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id, win, rated: mode === 'fresh' }),
+        body: JSON.stringify({ id, win, counted: mode === 'fresh' }),
       });
       if (res.ok) {
-        const data = (await res.json()) as { user: UserState; delta: number };
-        setAttempt({ win, delta: data.delta });
+        const data = (await res.json()) as { user: UserState };
         setMeta((m) => (m ? { ...m, user: data.user } : m));
       }
     },
@@ -129,25 +130,27 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   );
 
   const loadNext = useCallback(
-    async (selectedTheme: string) => {
+    async (selectedTheme: string, selectedDifficulty: DifficultyId) => {
       timers.current.forEach(clearTimeout);
       timers.current = [];
       setPhase('loading');
       setPuzzle(null);
-      setAttempt(null);
       setFailed(false);
       setHint(0);
       setError(null);
       setPendingPromotion(null);
       reported.current = false;
 
-      const query =
-        mode === 'failed'
-          ? '?mode=failed'
-          : selectedTheme
-            ? `?theme=${encodeURIComponent(selectedTheme)}`
-            : '';
-      const res = await fetch(`/api/puzzles/next${query}`);
+      const query = new URLSearchParams();
+      if (mode === 'failed') query.set('mode', 'failed');
+      else {
+        if (selectedTheme) query.set('theme', selectedTheme);
+        const range = DIFFICULTIES.find((d) => d.id === selectedDifficulty)?.query ?? {};
+        if ('min' in range) query.set('min', String(range.min));
+        if ('max' in range) query.set('max', String(range.max));
+      }
+      const qs = query.toString();
+      const res = await fetch(`/api/puzzles/next${qs ? `?${qs}` : ''}`);
       if (!res.ok) {
         setError(((await res.json()) as { error?: string }).error ?? `HTTP ${res.status}`);
         return;
@@ -155,7 +158,6 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
       setPuzzle(next);
       setPlies(0);
-      setReview(null);
       setView(positionAt(next, 0));
       setPhase('setup');
       // Let the position register, then play the opponent's setup move.
@@ -175,68 +177,31 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
     if (booted.current) return;
     booted.current = true;
     void refreshMeta();
-    void loadNext(theme);
+    void loadNext(theme, difficulty);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // What the board actually shows: the live machine position, or an
-  // earlier ply while reviewing the move list.
-  const displayed = review !== null && puzzle ? positionAt(puzzle, review) : view;
-  const reviewing = review !== null;
+  const pickDifficulty = (id: DifficultyId): void => {
+    setDifficulty(id);
+    localStorage.setItem(DIFFICULTY_KEY, id);
+    void loadNext(theme, id);
+  };
 
-  // Sound per rendered position (live or review). No SAN here, so a capture
-  // is detected by the piece count dropping; a fresh puzzle stays silent.
+  // Sound per rendered position. No SAN here, so a capture is detected by
+  // the piece count dropping; a fresh puzzle (no lastMove) stays silent.
   const prevPieces = useRef<number | null>(null);
   useEffect(() => {
-    if (!displayed) {
+    if (!view) {
       prevPieces.current = null;
       return;
     }
-    const pieces = displayed.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+    const pieces = view.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
     const prev = prevPieces.current;
     prevPieces.current = pieces;
-    if (prev === null || !displayed.lastMove) return;
-    playSound(displayed.check ? 'check' : pieces < prev ? 'capture' : 'move');
+    if (prev === null || !view.lastMove) return;
+    playSound(view.check ? 'check' : pieces < prev ? 'capture' : 'move');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayed?.fen]);
-
-  // Any progress of the solving machine snaps the board back to live.
-  useEffect(() => setReview(null), [plies, phase]);
-
-  /** Step the review cursor; landing on the newest ply resumes live play. */
-  const goToPly = useCallback(
-    (target: number): void => {
-      if (!puzzle) return;
-      const clamped = Math.max(1, Math.min(target, plies));
-      setReview(clamped >= plies ? null : clamped);
-    },
-    [puzzle, plies],
-  );
-
-  // Wheel over the board walks the line, like the analysis board. Manual
-  // listener: React's synthetic wheel handler is passive.
-  const boardColumn = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = boardColumn.current;
-    if (!el) return;
-    let acc = 0;
-    const onWheel = (e: WheelEvent): void => {
-      e.preventDefault();
-      acc += e.deltaY;
-      if (Math.abs(acc) < 24) return;
-      const direction = acc > 0 ? 1 : -1;
-      acc = 0;
-      setReview((current) => {
-        const at = current ?? pliesRef.current;
-        const next = Math.max(1, Math.min(at + direction, pliesRef.current));
-        return next >= pliesRef.current ? null : next;
-      });
-    };
-    el.addEventListener('wheel', onWheel, { passive: false });
-    return () => el.removeEventListener('wheel', onWheel);
-  }, []);
-  const pliesRef = useRef(plies);
-  pliesRef.current = plies;
+  }, [view?.fen]);
 
   const finish = (p: ApiPuzzle, finalPlies: number): void => {
     setPhase('done');
@@ -287,7 +252,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   };
 
   const onMove = (orig: string, dest: string): void => {
-    if (!puzzle || !view || phase !== 'solving' || reviewing) return;
+    if (!puzzle || !view || phase !== 'solving') return;
     // A pawn reaching the last rank needs the picker before it can be judged.
     const to = parseSquare(dest);
     const lastRank = view.turn === 'white' ? 7 : 0;
@@ -323,15 +288,15 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   };
 
   const analyse = (): void => {
-    if (!displayed) return;
-    if (!useAnalysis.getState().loadFen(displayed.fen)) return;
+    if (!view) return;
+    if (!useAnalysis.getState().loadFen(view.fen)) return;
     useAnalysis.setState({ handoff: true });
     navigate('analysis');
   };
 
   const orientation: Color = puzzle ? solverColor(puzzle) : 'white';
   const hintShapes: DrawShape[] =
-    puzzle && phase === 'solving' && !reviewing && hint > 0
+    puzzle && phase === 'solving' && hint > 0
       ? (() => {
           const uci = puzzle.moves.split(' ')[plies]!;
           const orig = uci.slice(0, 2) as DrawShape['orig'];
@@ -360,6 +325,10 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
     );
   }
 
+  const stats = meta
+    ? `${meta.user.wins}/${meta.user.attempts} solved${meta.user.streak > 1 ? ` · streak ${meta.user.streak}` : ''}`
+    : '';
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
       {/* Board column, matching the shared budget so the board sits where
@@ -368,13 +337,13 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
           <div className="relative w-full">
-            {displayed ? (
+            {view ? (
               <Board
-                fen={displayed.fen}
+                fen={view.fen}
                 orientation={orientation}
-                dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
-                lastMove={displayed.lastMove}
-                check={displayed.check}
+                dests={phase === 'solving' ? view.dests : new Map()}
+                lastMove={view.lastMove}
+                check={view.check}
                 autoShapes={hintShapes}
                 onMove={onMove}
               />
@@ -396,62 +365,45 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
                 onCancel={() => setPendingPromotion(null)}
               />
             )}
-            {!reviewing && phase === 'wrong' && (
-              <MoveBadge kind="bad" view={view} orientation={orientation} />
-            )}
-            {!reviewing && phase === 'done' && !failed && (
+            {phase === 'wrong' && <MoveBadge kind="bad" view={view} orientation={orientation} />}
+            {phase === 'done' && !failed && (
               <MoveBadge kind="good" view={view} orientation={orientation} />
             )}
           </div>
-          <StatusStrip phase={phase} failed={failed} reviewing={reviewing} orientation={orientation} />
+          <StatusStrip phase={phase} failed={failed} orientation={orientation} />
         </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
         <Panel flush className="shrink-0">
-          <PanelHeader title="Your rating" />
-          <div className="flex items-baseline gap-3 px-3 py-2.5">
-            <span className="text-fg font-mono text-2xl font-bold tabular-nums">
-              {meta?.user.rating ?? '…'}
-            </span>
-            {attempt && mode === 'fresh' && (
-              <span
-                className={cn(
-                  'font-mono text-sm font-semibold tabular-nums',
-                  attempt.delta >= 0 ? 'text-good' : 'text-bad',
-                )}
-              >
-                {attempt.delta >= 0 ? '+' : ''}
-                {attempt.delta}
-              </span>
-            )}
-            {mode === 'failed' && (
-              <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
-                practice · unrated
-              </span>
-            )}
-            <span className="text-subtle ml-auto text-xs">
-              {meta ? `${meta.user.wins}/${meta.user.attempts} solved` : ''}
-              {meta && meta.user.streak > 1 ? ` · streak ${meta.user.streak}` : ''}
-            </span>
-          </div>
+          <PanelHeader
+            title="Training"
+            actions={<span className="text-subtle text-xs">{stats}</span>}
+          />
+          {mode === 'failed' ? (
+            <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">
+              Reviewing puzzles you failed before — not counted, and a clean solve retires the
+              puzzle from this list.
+            </p>
+          ) : (
+            <div className="flex gap-1 p-2.5">
+              {DIFFICULTIES.map((d) => (
+                <Button
+                  key={d.id}
+                  size="sm"
+                  variant={difficulty === d.id ? 'primary' : 'secondary'}
+                  className="min-w-0 flex-1 px-0"
+                  title={'hint' in d ? `Puzzles rated ${d.hint}` : 'Any difficulty'}
+                  onClick={() => pickDifficulty(d.id)}
+                >
+                  {d.label}
+                </Button>
+              ))}
+            </div>
+          )}
         </Panel>
 
-        {puzzle && plies > 0 && (
-          <Panel flush className="shrink-0">
-            <PanelHeader title="Moves" />
-            <div className="max-h-36 overflow-y-auto px-3 py-2 text-sm leading-relaxed">
-              <MoveLine
-                puzzle={puzzle}
-                plies={plies}
-                current={review ?? plies}
-                onSelect={goToPly}
-              />
-            </div>
-          </Panel>
-        )}
-
-        <Panel flush className="min-h-min flex-1">
+        <Panel flush className="shrink-0">
           <PanelHeader
             title="Puzzle"
             actions={
@@ -461,7 +413,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
               )
             }
           />
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
+          <div className="flex flex-col gap-3 p-3">
             {phase === 'done' && puzzle ? (
               <>
                 <p className={cn('text-sm font-semibold', failed ? 'text-bad' : 'text-good')}>
@@ -479,7 +431,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
                         key={t}
                         className="bg-surface-2 text-muted rounded px-1.5 py-0.5 text-[0.6875rem]"
                       >
-                        {t}
+                        {themeLabel(t)}
                       </span>
                     ))}
                   </dd>
@@ -498,17 +450,21 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
             ) : (
               <p className="text-muted text-xs leading-relaxed">
                 {phase === 'loading'
-                  ? 'Finding a puzzle near your rating…'
+                  ? 'Finding a puzzle…'
                   : failed
                     ? 'Keep looking — find the best move.'
                     : 'Find the best move. The rating and themes stay hidden until you finish.'}
               </p>
             )}
 
-            <div className="mt-auto flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {phase === 'done' ? (
                 <>
-                  <Button variant="primary" size="sm" onClick={() => void loadNext(theme)}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => void loadNext(theme, difficulty)}
+                  >
                     <RotateCw className="size-3.5" />
                     Next puzzle
                   </Button>
@@ -524,7 +480,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
                     size="sm"
                     disabled={phase !== 'solving'}
                     onClick={() => setHint((h) => Math.min(h + 1, 2))}
-                    title="First press marks the piece, second the move (no rating penalty)"
+                    title="First press marks the piece, second the move (not counted as a fail)"
                   >
                     <Lightbulb className="size-3.5" />
                     Hint
@@ -539,7 +495,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
                     <Eye className="size-3.5" />
                     Solution
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => void loadNext(theme)}>
+                  <Button variant="ghost" size="sm" onClick={() => void loadNext(theme, difficulty)}>
                     Skip
                   </Button>
                 </>
@@ -577,17 +533,14 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
 function StatusStrip({
   phase,
   failed,
-  reviewing,
   orientation,
 }: {
   phase: Phase;
   failed: boolean;
-  reviewing: boolean;
   orientation: Color;
 }) {
-  const text = reviewing
-    ? 'Reviewing — scroll or click the last move to come back.'
-    : phase === 'loading'
+  const text =
+    phase === 'loading'
       ? '…'
       : phase === 'setup' || phase === 'opponent'
         ? 'Opponent is moving…'
@@ -663,52 +616,4 @@ function isPawnMove(fen: string, orig: string): boolean {
     }
   }
   return false;
-}
-
-/**
- * The played line so far, numbered from the puzzle's real move number —
- * click any move to review that position, the newest to come back live.
- */
-function MoveLine({
-  puzzle,
-  plies,
-  current,
-  onSelect,
-}: {
-  puzzle: ApiPuzzle;
-  plies: number;
-  current: number;
-  onSelect: (ply: number) => void;
-}) {
-  const sans = sanLine(puzzle, plies);
-  const { moveNumber, blackToMove } = startAt(puzzle);
-  return (
-    <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
-      {sans.map((san, i) => {
-        const isWhiteMove = blackToMove ? i % 2 === 1 : i % 2 === 0;
-        const number = moveNumber + Math.floor((i + (blackToMove ? 1 : 0)) / 2);
-        return (
-          <span key={i} className="flex items-baseline gap-1">
-            {i === 0 && blackToMove ? (
-              <span className="text-subtle font-mono text-xs">{number}…</span>
-            ) : isWhiteMove ? (
-              <span className="text-subtle font-mono text-xs">{number}.</span>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => onSelect(i + 1)}
-              className={cn(
-                'rounded px-1 font-mono text-[0.8125rem] transition-colors duration-100',
-                i + 1 === current
-                  ? 'bg-primary-soft text-primary font-semibold'
-                  : 'text-fg hover:bg-surface-2',
-              )}
-            >
-              {san}
-            </button>
-          </span>
-        );
-      })}
-    </div>
-  );
 }

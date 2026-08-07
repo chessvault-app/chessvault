@@ -6,8 +6,13 @@ import { DATA_PUZZLES, VAULT } from './paths.ts';
 
 /**
  * Puzzle trainer backed by the local Lichess dump (data/puzzles.sqlite,
- * built by `npm run build:puzzles`). The user's training state is vault
- * data: a rating in state.json and an append-only history.jsonl.
+ * built by `npm run build:puzzles`). Single-user by design: no rating
+ * system (lanph3re's call) — difficulty is an explicit range filter, progress
+ * is counters, and every attempt lands in an append-only history.jsonl
+ * that drives two rules:
+ *
+ *  - fresh training never re-serves an attempted puzzle (6.1 M is plenty);
+ *  - puzzles whose latest attempt failed form the review pool.
  */
 
 export interface PuzzleRow {
@@ -23,62 +28,46 @@ export interface PuzzleRow {
 }
 
 interface UserState {
-  rating: number;
   attempts: number;
   wins: number;
   streak: number;
 }
 
-const DEFAULT_STATE: UserState = { rating: 1500, attempts: 0, wins: 0, streak: 0 };
+const DEFAULT_STATE: UserState = { attempts: 0, wins: 0, streak: 0 };
 
 /**
- * Plain Elo against the puzzle's rating, K=32. The puzzle's own rating never
- * moves. Deliberately simple — one user, no need for Glicko's deviation
- * bookkeeping on top of a fixed puzzle pool.
- */
-export function eloDelta(user: number, puzzle: number, win: boolean): number {
-  const expected = 1 / (1 + 10 ** ((puzzle - user) / 400));
-  return Math.round(32 * ((win ? 1 : 0) - expected));
-}
-
-/**
- * A random puzzle whose rating lies within a window around `center`,
- * optionally within a theme. Selection is count + random offset over the
- * covering index, so it stays fast on millions of rows; the window widens
- * until it finds candidates.
+ * A random puzzle in the rating range, optionally within a theme.
+ * Count + random offset over the covering index; a handful of retries
+ * dodges already-attempted puzzles, and if everything drawn is attempted
+ * (tiny pools) the last draw is served anyway — a repeat beats a dead end.
  */
 function pickPuzzle(
   db: InstanceType<typeof Database>,
-  center: number,
+  min: number,
+  max: number,
   theme: string | null,
   exclude: Set<string>,
 ): PuzzleRow | null {
-  for (let window = 100; window <= 1600; window *= 2) {
-    const min = center - window;
-    const max = center + window;
-    const where = theme
-      ? 'FROM themes WHERE theme = ? AND rating BETWEEN ? AND ?'
-      : 'FROM puzzles WHERE rating BETWEEN ? AND ?';
-    const args = theme ? [theme, min, max] : [min, max];
-    const count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
-    if (count === 0) continue;
+  const where = theme
+    ? 'FROM themes WHERE theme = ? AND rating BETWEEN ? AND ?'
+    : 'FROM puzzles WHERE rating BETWEEN ? AND ?';
+  const args = theme ? [theme, min, max] : [min, max];
+  const count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
+  if (count === 0) return null;
 
-    // A handful of tries dodges recently-seen puzzles without a NOT IN over
-    // an unbounded history.
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const offset = Math.floor(Math.random() * count);
-      const id = (
-        db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`).get(...args, offset) as { id: string }
-      ).id;
-      if (exclude.has(id)) continue;
-      return db
-        .prepare(
-          'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
-        )
-        .get(id) as PuzzleRow;
-    }
+  const byId = db.prepare(
+    'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
+  );
+  let fallback: string | null = null;
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const offset = Math.floor(Math.random() * count);
+    const id = (
+      db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`).get(...args, offset) as { id: string }
+    ).id;
+    if (!exclude.has(id)) return byId.get(id) as PuzzleRow;
+    fallback = id;
   }
-  return null;
+  return fallback ? (byId.get(fallback) as PuzzleRow) : null;
 }
 
 export function puzzlesApi(
@@ -90,7 +79,12 @@ export function puzzlesApi(
 
   const readState = (): UserState => {
     try {
-      return { ...DEFAULT_STATE, ...(JSON.parse(readFileSync(statePath, 'utf-8')) as UserState) };
+      const raw = JSON.parse(readFileSync(statePath, 'utf-8')) as Partial<UserState>;
+      return {
+        attempts: raw.attempts ?? 0,
+        wins: raw.wins ?? 0,
+        streak: raw.streak ?? 0,
+      };
     } catch {
       return { ...DEFAULT_STATE };
     }
@@ -101,32 +95,29 @@ export function puzzlesApi(
     writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
   };
 
-  /** Ids of the most recent attempts, to avoid immediate repeats. */
-  const recentIds = (limit: number): Set<string> => {
+  const historyLines = (): string[] => {
     try {
-      const lines = readFileSync(historyPath, 'utf-8').trimEnd().split('\n');
-      return new Set(lines.slice(-limit).map((l) => (JSON.parse(l) as { id: string }).id));
+      return readFileSync(historyPath, 'utf-8').trimEnd().split('\n');
     } catch {
-      return new Set();
+      return [];
     }
   };
+
+  /** Every puzzle ever attempted — fresh training never repeats one. */
+  const attemptedIds = (): Set<string> =>
+    new Set(historyLines().map((l) => (JSON.parse(l) as { id: string }).id));
 
   /**
    * Puzzles whose LATEST attempt was a loss: solving one cleanly (in any
    * mode) removes it from the pool, failing re-adds it.
    */
   const failedPool = (): string[] => {
-    try {
-      const lines = readFileSync(historyPath, 'utf-8').trimEnd().split('\n');
-      const latest = new Map<string, boolean>();
-      for (const line of lines) {
-        const entry = JSON.parse(line) as { id: string; win: boolean };
-        latest.set(entry.id, entry.win);
-      }
-      return [...latest].filter(([, win]) => !win).map(([id]) => id);
-    } catch {
-      return [];
+    const latest = new Map<string, boolean>();
+    for (const line of historyLines()) {
+      const entry = JSON.parse(line) as { id: string; win: boolean };
+      latest.set(entry.id, entry.win);
     }
+    return [...latest].filter(([, win]) => !win).map(([id]) => id);
   };
 
   // Lazily opened read-only handle for the process lifetime. A rebuild
@@ -155,7 +146,9 @@ export function puzzlesApi(
       hasTable
         ? db.prepare('SELECT theme, count FROM theme_counts ORDER BY count DESC').all()
         : db
-            .prepare('SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme ORDER BY count DESC')
+            .prepare(
+              'SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme ORDER BY count DESC',
+            )
             .all()
     ) as { theme: string; count: number }[];
     return themesCache;
@@ -187,11 +180,13 @@ export function puzzlesApi(
         503,
       );
     }
+
     // Practice mode: re-serve puzzles whose latest attempt failed.
     if (c.req.query('mode') === 'failed') {
       const pool = failedPool();
-      const avoid = recentIds(1);
-      const candidates = pool.length > 1 ? pool.filter((id) => !avoid.has(id)) : pool;
+      const last = historyLines().at(-1);
+      const lastId = last ? (JSON.parse(last) as { id: string }).id : null;
+      const candidates = pool.length > 1 ? pool.filter((id) => id !== lastId) : pool;
       if (candidates.length === 0) {
         return c.json({ error: 'No failed puzzles to review — nothing to fix.' }, 404);
       }
@@ -206,15 +201,15 @@ export function puzzlesApi(
     }
 
     const theme = c.req.query('theme') || null;
-    const user = readState();
-    const center = Number(c.req.query('rating') || user.rating);
-    const puzzle = pickPuzzle(db, center, theme, recentIds(200));
+    const min = Number(c.req.query('min')) || 0;
+    const max = Number(c.req.query('max')) || 9999;
+    const puzzle = pickPuzzle(db, min, max, theme, attemptedIds());
     if (!puzzle) return c.json({ error: 'No puzzle matches that filter.' }, 404);
     return c.json({ puzzle });
   });
 
   api.post('/puzzles/attempt', async (c) => {
-    const body = (await c.req.json()) as { id?: string; win?: boolean; rated?: boolean };
+    const body = (await c.req.json()) as { id?: string; win?: boolean; counted?: boolean };
     if (typeof body.id !== 'string' || typeof body.win !== 'boolean') {
       return c.json({ error: 'expected { id, win }' }, 400);
     }
@@ -226,45 +221,41 @@ export function puzzlesApi(
       : undefined;
     if (!row) return c.json({ error: `unknown puzzle: ${body.id}` }, 404);
 
-    // Practice attempts (reviewing failed puzzles) never move the rating or
-    // the counters — the solver has seen the answer — but they DO update
-    // the failed pool through the history.
-    const rated = body.rated !== false;
+    // Review attempts don't move the counters — the solver has seen the
+    // answer — but they DO update the failed pool through the history.
+    const counted = body.counted !== false;
     const state = readState();
-    const delta = rated ? eloDelta(state.rating, row.rating, body.win) : 0;
-    const next: UserState = rated
+    const next: UserState = counted
       ? {
-          rating: state.rating + delta,
           attempts: state.attempts + 1,
           wins: state.wins + (body.win ? 1 : 0),
           streak: body.win ? state.streak + 1 : 0,
         }
       : state;
-    if (rated) writeState(next);
+    if (counted) writeState(next);
     mkdirSync(stateDir, { recursive: true });
     appendFileSync(
       historyPath,
       `${JSON.stringify({
         id: body.id,
         win: body.win,
-        rated,
+        counted,
         puzzleRating: row.rating,
-        before: state.rating,
-        after: next.rating,
         at: new Date().toISOString(),
       })}\n`,
     );
-    return c.json({ user: next, delta });
+    return c.json({ user: next });
   });
 
   api.get('/puzzles/history', (c) => {
     const limit = Math.min(Number(c.req.query('limit') || 50), 500);
-    try {
-      const lines = readFileSync(historyPath, 'utf-8').trimEnd().split('\n');
-      return c.json({ attempts: lines.slice(-limit).reverse().map((l) => JSON.parse(l)) });
-    } catch {
-      return c.json({ attempts: [] });
-    }
+    const lines = historyLines();
+    return c.json({
+      attempts: lines
+        .slice(-limit)
+        .reverse()
+        .map((l) => JSON.parse(l)),
+    });
   });
 
   return api;
