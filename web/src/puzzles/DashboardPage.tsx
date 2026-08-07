@@ -26,11 +26,14 @@ interface MetaUser {
 }
 
 const BANDS = [
-  { label: 'Easy', min: 0, max: 1399 },
-  { label: 'Medium', min: 1400, max: 1799 },
-  { label: 'Hard', min: 1800, max: 2199 },
-  { label: 'Expert', min: 2200, max: 9999 },
+  { id: 'easy', label: 'Easy', min: 0, max: 1399 },
+  { id: 'medium', label: 'Medium', min: 1400, max: 1799 },
+  { id: 'hard', label: 'Hard', min: 1800, max: 2199 },
+  { id: 'expert', label: 'Expert', min: 2200, max: 9999 },
 ] as const;
+
+type ResultFilter = 'all' | 'solved' | 'review';
+type BandFilter = 'any' | (typeof BANDS)[number]['id'];
 
 export function DashboardPage() {
   const [user, setUser] = useState<MetaUser | null>(null);
@@ -52,6 +55,24 @@ export function DashboardPage() {
 
   const counted = (history ?? []).filter((h) => h.counted !== false);
   const winRate = user && user.attempts > 0 ? Math.round((100 * user.wins) / user.attempts) : null;
+
+  // The puzzle list shows each puzzle ONCE, judged by its latest attempt
+  // (history arrives newest-first). Filters cut by outcome and rating band.
+  const [resultFilter, setResultFilter] = useState<ResultFilter>('all');
+  const [bandFilter, setBandFilter] = useState<BandFilter>('any');
+  const latestById = new Map<string, HistoryEntry>();
+  for (const h of history ?? []) {
+    if (!latestById.has(h.id)) latestById.set(h.id, h);
+  }
+  const puzzles = [...latestById.values()].filter((h) => {
+    if (resultFilter === 'solved' && !h.win) return false;
+    if (resultFilter === 'review' && h.win) return false;
+    if (bandFilter !== 'any') {
+      const band = BANDS.find((b) => b.id === bandFilter)!;
+      if (h.puzzleRating < band.min || h.puzzleRating > band.max) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="h-full min-h-0 overflow-y-auto">
@@ -127,35 +148,73 @@ export function DashboardPage() {
         </Panel>
 
         <Panel flush>
-          <PanelHeader title="Recent attempts" />
+          <PanelHeader
+            title="Puzzles"
+            actions={
+              <span className="text-subtle text-xs">
+                {history === null ? '' : `${puzzles.length}`}
+              </span>
+            }
+          />
+          {/* Filters: outcome × rating band. Click a row to replay it. */}
+          <div className="border-line flex flex-wrap items-center gap-1 border-b px-3 py-2">
+            {(
+              [
+                ['all', 'All'],
+                ['solved', 'Solved'],
+                ['review', 'To review'],
+              ] as [ResultFilter, string][]
+            ).map(([id, label]) => (
+              <FilterChip
+                key={id}
+                label={label}
+                active={resultFilter === id}
+                onClick={() => setResultFilter(id)}
+              />
+            ))}
+            <span className="bg-line mx-1 h-4 w-px" />
+            <FilterChip label="Any" active={bandFilter === 'any'} onClick={() => setBandFilter('any')} />
+            {BANDS.map((b) => (
+              <FilterChip
+                key={b.id}
+                label={b.label}
+                active={bandFilter === b.id}
+                onClick={() => setBandFilter(b.id)}
+              />
+            ))}
+          </div>
           {history === null ? (
             <p className="text-subtle px-3 py-3 text-xs">Loading…</p>
-          ) : history.length === 0 ? (
+          ) : puzzles.length === 0 ? (
             <p className="text-subtle px-3 py-3 text-xs">
-              No attempts yet — go solve something.
+              {history.length === 0 ? 'No attempts yet — go solve something.' : 'Nothing matches this filter.'}
             </p>
           ) : (
             <ul className="max-h-96 overflow-y-auto">
-              {history.slice(0, 50).map((h, i) => (
-                <li
-                  key={`${h.id}-${i}`}
-                  className="border-line flex items-center gap-2.5 border-b px-3 py-1.5 text-xs last:border-b-0"
-                >
-                  {h.win ? (
-                    <Check className="text-good size-3.5 shrink-0" aria-label="solved" />
-                  ) : (
-                    <X className="text-bad size-3.5 shrink-0" aria-label="failed" />
-                  )}
-                  <span className="text-fg font-mono">#{h.id}</span>
-                  <span className="text-subtle font-mono tabular-nums">{h.puzzleRating}</span>
-                  {h.counted === false && (
-                    <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
-                      review
+              {puzzles.slice(0, 200).map((h) => (
+                <li key={h.id} className="border-line border-b last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => navigate('puzzles', 'id', h.id)}
+                    title={`Replay puzzle #${h.id}`}
+                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors duration-100"
+                  >
+                    {h.win ? (
+                      <Check className="text-good size-3.5 shrink-0" aria-label="solved" />
+                    ) : (
+                      <X className="text-bad size-3.5 shrink-0" aria-label="failed" />
+                    )}
+                    <span className="text-fg font-mono">#{h.id}</span>
+                    <span className="text-subtle font-mono tabular-nums">{h.puzzleRating}</span>
+                    {!h.win && (
+                      <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
+                        to review
+                      </span>
+                    )}
+                    <span className="text-subtle ml-auto tabular-nums" title={h.at}>
+                      {when(h.at)}
                     </span>
-                  )}
-                  <span className="text-subtle ml-auto tabular-nums" title={h.at}>
-                    {when(h.at)}
-                  </span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -201,6 +260,30 @@ function ResetButton({ onDone }: { onDone: () => void }) {
       <Trash2 className="size-3.5" />
       {armed ? 'Really reset everything?' : 'Reset'}
     </Button>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={
+        active
+          ? 'bg-primary-soft text-primary rounded-md px-2 py-1 text-[0.6875rem] font-semibold'
+          : 'text-muted hover:bg-surface-2 hover:text-fg rounded-md px-2 py-1 text-[0.6875rem] transition-colors duration-100'
+      }
+    >
+      {label}
+    </button>
   );
 }
 

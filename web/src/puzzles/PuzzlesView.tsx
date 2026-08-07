@@ -86,11 +86,28 @@ export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'themes') return <ThemesPage />;
   if (params[0] === 'dashboard') return <DashboardPage />;
   if (params[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
+  if (params[0] === 'id' && params[1]) {
+    return <Trainer key={`id-${params[1]}`} theme="" mode="single" puzzleId={params[1]} />;
+  }
   const theme = params[0] === 'theme' ? (params[1] ?? '') : '';
   return <Trainer key={theme} theme={theme} mode="fresh" />;
 }
 
-function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
+/**
+ * `fresh` trains unseen puzzles; `failed` cycles the review pool;
+ * `single` replays one specific puzzle (from the dashboard). Only fresh
+ * attempts count — the other modes still update the review pool through
+ * the history.
+ */
+function Trainer({
+  theme,
+  mode,
+  puzzleId,
+}: {
+  theme: string;
+  mode: 'fresh' | 'failed' | 'single';
+  puzzleId?: string;
+}) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [puzzle, setPuzzle] = useState<ApiPuzzle | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -151,16 +168,22 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
       setPendingPromotion(null);
       reported.current = false;
 
-      const query = new URLSearchParams();
-      if (mode === 'failed') query.set('mode', 'failed');
-      else {
-        if (selectedTheme) query.set('theme', selectedTheme);
-        const range = DIFFICULTIES.find((d) => d.id === selectedDifficulty)?.query ?? {};
-        if ('min' in range) query.set('min', String(range.min));
-        if ('max' in range) query.set('max', String(range.max));
+      let url: string;
+      if (mode === 'single') {
+        url = `/api/puzzles/by-id/${encodeURIComponent(puzzleId ?? '')}`;
+      } else {
+        const query = new URLSearchParams();
+        if (mode === 'failed') query.set('mode', 'failed');
+        else {
+          if (selectedTheme) query.set('theme', selectedTheme);
+          const range = DIFFICULTIES.find((d) => d.id === selectedDifficulty)?.query ?? {};
+          if ('min' in range) query.set('min', String(range.min));
+          if ('max' in range) query.set('max', String(range.max));
+        }
+        const qs = query.toString();
+        url = `/api/puzzles/next${qs ? `?${qs}` : ''}`;
       }
-      const qs = query.toString();
-      const res = await fetch(`/api/puzzles/next${qs ? `?${qs}` : ''}`);
+      const res = await fetch(url);
       if (!res.ok) {
         setError(((await res.json()) as { error?: string }).error ?? `HTTP ${res.status}`);
         return;
@@ -177,7 +200,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
         setPhase('solving');
       });
     },
-    [mode],
+    [mode, puzzleId],
   );
 
   // One boot per real mount: StrictMode replays effects, and without the
@@ -460,7 +483,12 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
               </Button>
             }
           />
-          {mode === 'failed' ? (
+          {mode === 'single' ? (
+            <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">
+              Replaying puzzle #{puzzleId} — not counted; a clean solve still retires it from the
+              review list.
+            </p>
+          ) : mode === 'failed' ? (
             <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">
               Reviewing puzzles you failed before — not counted, and a clean solve retires the
               puzzle from this list.
@@ -543,10 +571,12 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
                   <Button
                     variant="primary"
                     size="sm"
-                    onClick={() => void loadNext(theme, difficulty)}
+                    onClick={() =>
+                      mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
+                    }
                   >
                     <RotateCw className="size-3.5" />
-                    Next puzzle
+                    {mode === 'single' ? 'Back to dashboard' : 'Next puzzle'}
                   </Button>
                   <Button variant="secondary" size="sm" onClick={analyse}>
                     <Swords className="size-3.5" />
@@ -575,9 +605,15 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
                     <Eye className="size-3.5" />
                     Solution
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => void loadNext(theme, difficulty)}>
-                    Skip
-                  </Button>
+                  {mode !== 'single' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void loadNext(theme, difficulty)}
+                    >
+                      Skip
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -599,7 +635,13 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
               Category
             </span>
             <span className="text-fg block truncate text-xs font-medium">
-              {mode === 'failed' ? 'Failed puzzles' : theme ? themeLabel(theme) : 'All themes'}
+              {mode === 'single'
+                ? `Puzzle #${puzzleId}`
+                : mode === 'failed'
+                  ? 'Failed puzzles'
+                  : theme
+                    ? themeLabel(theme)
+                    : 'All themes'}
             </span>
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />

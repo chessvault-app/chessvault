@@ -208,6 +208,19 @@ export function puzzlesApi(
     return c.json({ puzzle });
   });
 
+  // A specific puzzle, for targeted replays from the dashboard.
+  api.get('/puzzles/by-id/:id', (c) => {
+    const db = puzzleDb();
+    if (!db) return c.json({ error: 'no puzzle database' }, 503);
+    const puzzle = db
+      .prepare(
+        'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
+      )
+      .get(c.req.param('id')) as PuzzleRow | undefined;
+    if (!puzzle) return c.json({ error: `unknown puzzle: ${c.req.param('id')}` }, 404);
+    return c.json({ puzzle });
+  });
+
   api.post('/puzzles/attempt', async (c) => {
     const body = (await c.req.json()) as { id?: string; win?: boolean; counted?: boolean };
     if (typeof body.id !== 'string' || typeof body.win !== 'boolean') {
