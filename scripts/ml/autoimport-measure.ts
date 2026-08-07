@@ -131,9 +131,18 @@ function parseMainline(body: string): Mainline | null {
   const scanner = /(\d{1,3})\s*((?:\.\s*)+)|(\S+)/g;
   const tokens: string[] = [];
   let startsBlack: boolean | null = null;
+  let lastNumber = 0;
+  let lastDots = 0;
   for (const m of clean.matchAll(scanner)) {
     if (m[1] !== undefined) {
-      if (startsBlack === null) startsBlack = (m[2]!.match(/\./g) ?? []).length >= 2;
+      const number = Number(m[1]);
+      const dots = (m[2]!.match(/\./g) ?? []).length;
+      if (startsBlack === null) startsBlack = dots >= 2;
+      // A marker that does not ADVANCE ends the mainline: mate-in-one
+      // entries list ALTERNATIVE solutions as "1.Rxh6# 1.Qh7# 1.Nf7#".
+      else if (number < lastNumber || (number === lastNumber && dots <= lastDots)) break;
+      lastNumber = number;
+      lastDots = dots;
       continue;
     }
     const word = m[3]!;
