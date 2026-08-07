@@ -121,11 +121,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       {titleRow('wide:hidden')}
       <AnalysisBoard />
 
-      {/* min-h-0 only where the column manages its own space (side-by-side
-          layouts): stacked keeps the natural content minimum, so a squat
-          viewport scrolls the page instead of crushing panels into their
-          own overflow-hidden. */}
-      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
+      {/* The column is the scroll container on every layout: panels keep
+          explicit floors, the move table scrolls internally, and a squat
+          viewport scrolls the column by the shortfall. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {titleRow('stacked:hidden')}
 
         <PaneTabs
@@ -143,14 +142,12 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             <ChaptersPanel />
           </div>
         )}
-        {/* min-h-min, NOT min-h-auto: Panel's overflow-hidden disables the
-            automatic content-based minimum, but the explicit min-content
-            keyword still applies — the panel keeps its floors (header +
-            tree min-h + annotation) and overflows the column into scroll
-            instead of clipping. */}
+        {/* An explicit floor, not min-h-min: intrinsic sizing counts the
+            move table's full content, so a content floor grows with the
+            game. See AnalysisView. */}
         <Panel
           flush
-          className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn('min-h-[22rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
           <PanelHeader

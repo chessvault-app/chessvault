@@ -53,11 +53,10 @@ export function AnalysisView() {
       <AnalysisBoard />
 
       {/* Side column. Desktop shows every pane; small screens switch, with
-          the active pane flexing into the space left under the board.
-          min-h-0 only on side-by-side layouts: stacked keeps the natural
-          content minimum so squat viewports scroll instead of crushing
-          panels into their own overflow-hidden. */}
-      <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
+          the active pane flexing into the space left under the board. The
+          column scrolls on every layout: panels keep explicit floors and
+          the move table scrolls internally. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <PaneTabs
           className="lg:hidden"
           value={pane}
@@ -67,14 +66,14 @@ export function AnalysisView() {
             { id: 'explorer', label: 'Explorer' },
           ]}
         />
-        {/* min-h-min, NOT min-h-auto: Panel's overflow-hidden disables the
-            automatic content-based minimum (it computes to 0), but the
-            explicit min-content keyword still applies — the panel refuses
-            to shrink below its floors (header + tree min-h + status bar)
-            and overflows the column into scroll instead of clipping. */}
+        {/* An EXPLICIT floor, not min-h-min: intrinsic sizing counts the
+            move table's full content (overflow is ignored), so a content
+            floor grows with the game. The fixed floor keeps the panel
+            bounded — the table scrolls inside — while the column scrolls
+            when the viewport can't fit the floor. */}
         <Panel
           flush
-          className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn('min-h-[22rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
           <PanelHeader
