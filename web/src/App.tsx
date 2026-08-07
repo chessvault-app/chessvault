@@ -18,6 +18,7 @@ import { EditorView } from '@/editor/EditorView';
 import { GamesView } from '@/games/GamesView';
 import { NotesView } from '@/notes/NotesView';
 import { PuzzlesView } from '@/puzzles/PuzzlesView';
+import { HomePage } from '@/home/HomePage';
 import { StudiesView } from '@/studies/StudiesView';
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
@@ -45,7 +46,9 @@ function Shell() {
       <Sidebar active={section} params={params} />
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
-        {section === 'analysis' ? (
+        {section === 'home' ? (
+          <HomePage />
+        ) : section === 'analysis' ? (
           <AnalysisView />
         ) : section === 'editor' ? (
           <EditorView />
@@ -82,7 +85,12 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         'w-[4.25rem] lg:w-52',
       )}
     >
-      <div className="flex h-14 items-center gap-2.5 px-4 lg:px-4">
+      <button
+        type="button"
+        onClick={() => navigate('home')}
+        title="Home"
+        className="hover:bg-surface-2 flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
+      >
         <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg">
           {/* The cburnett pawn — the same pawn as on the board. */}
           <svg viewBox="5 4.5 35 37" className="size-5" fill="currentColor" aria-hidden>
@@ -92,7 +100,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         <span className="hidden truncate text-sm font-semibold tracking-tight lg:block">
           Chess Vault
         </span>
-      </div>
+      </button>
 
       <div className="flex flex-1 flex-col gap-0.5 p-2">
         {NAV.map(({ section, label, icon: Icon }) => {

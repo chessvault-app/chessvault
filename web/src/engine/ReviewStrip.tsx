@@ -115,10 +115,10 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
   const x = (i: number): number => (i / (points.length - 1)) * GRAPH_W;
   const y = (chances: number): number => (1 - chances) * GRAPH_H;
 
-  const area =
-    `M 0 ${GRAPH_H} ` +
-    points.map((p, i) => `L ${x(i).toFixed(2)} ${y(p.chances).toFixed(2)}`).join(' ') +
-    ` L ${GRAPH_W} ${GRAPH_H} Z`;
+  const outline = points
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(2)} ${y(p.chances).toFixed(2)}`)
+    .join(' ');
+  const area = `M 0 ${GRAPH_H} ${outline.replace(/^M/, 'L')} L ${GRAPH_W} ${GRAPH_H} Z`;
 
   const cursorIndex = points.findIndex((p) => p.id === cursorId);
 
@@ -157,6 +157,14 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
         aria-label="Evaluation graph — click to jump to a move"
       >
         <path d={area} fill="var(--color-eval-white)" opacity="0.85" />
+        {/* Thin line joining the move dots along the curve. */}
+        <path
+          d={outline}
+          fill="none"
+          stroke="var(--color-eval-border)"
+          strokeWidth="1"
+          vectorEffect="non-scaling-stroke"
+        />
         {/* Equality line (eval 0.0). */}
         <line
           x1="0"

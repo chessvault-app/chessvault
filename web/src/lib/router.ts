@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export const SECTIONS = ['analysis', 'editor', 'studies', 'notes', 'games', 'puzzles'] as const;
+export const SECTIONS = ['home', 'analysis', 'editor', 'studies', 'notes', 'games', 'puzzles'] as const;
 export type Section = (typeof SECTIONS)[number];
 
 const isSection = (v: string): v is Section => (SECTIONS as readonly string[]).includes(v);
@@ -13,7 +13,7 @@ export interface Route {
 
 function parse(hash: string): Route {
   const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
-  const [head = 'analysis', ...params] = segments;
+  const [head = 'home', ...params] = segments;
   return { section: isSection(head) ? head : 'analysis', params };
 }
 
