@@ -23,6 +23,7 @@ export function AnalysisView() {
   // Small screens show ONE pane under the board (lichess-app style); the
   // others stay mounted but hidden so the engine keeps following the board.
   const [pane, setPane] = useState<AnalysisPane>('moves');
+  const engineOn = useEngine((s) => s.enabled);
 
   // Stateless page (lanph3re's call): entering analysis always starts a fresh
   // board with the engine off and the explorer at its default — UNLESS a
@@ -73,7 +74,10 @@ export function AnalysisView() {
             when the viewport can't fit the floor. */}
         <Panel
           flush
-          className={cn('min-h-[22rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          // The engine block lives inside this panel, so its eval bar and PV
+          // lines (~7rem) would otherwise eat the move table's rows — the
+          // floor grows with it and the column scrolls instead.
+          className={cn(engineOn ? 'min-h-[28rem]' : 'min-h-[22rem]', 'flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
           <PanelHeader

@@ -6,12 +6,13 @@ import {
   Puzzle,
   Swords,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { navigate, type Section } from '@/lib/router';
 
 /**
- * The landing page — deliberately minimal (lanph3re's call): the pawn, the
- * name, and one card per section. Reached from the sidebar logo and as
- * the default route.
+ * The landing page — minimal, but not empty-handed: the vault sections
+ * carry their live counts (lanph3re's design-audit call: structural elements
+ * should encode something true). Tools (analysis, editor) stay bare.
  */
 
 const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof Swords }[] = [
@@ -24,6 +25,42 @@ const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof S
 ];
 
 export function HomePage() {
+  const [counts, setCounts] = useState<Partial<Record<Section, number>>>({});
+  useEffect(() => {
+    const grab = async (url: string): Promise<unknown> => {
+      try {
+        const res = await fetch(url);
+        return res.ok ? res.json() : null;
+      } catch {
+        return null;
+      }
+    };
+    void (async () => {
+      // The notes/games endpoints speak the studies document API, so all
+      // three answer with a `studies` list.
+      const [studies, notes, games, books] = await Promise.all([
+        grab('/api/studies'),
+        grab('/api/notes'),
+        grab('/api/games/docs'),
+        grab('/api/puzzlebooks'),
+      ]);
+      const docs = (v: unknown): number | undefined =>
+        Array.isArray((v as { studies?: unknown[] })?.studies)
+          ? (v as { studies: unknown[] }).studies.length
+          : undefined;
+      const next: Partial<Record<Section, number>> = {
+        studies: docs(studies),
+        notes: docs(notes),
+        games: docs(games),
+      };
+      const bookList = (books as { books?: { puzzles: number }[] })?.books;
+      if (Array.isArray(bookList)) {
+        next.puzzles = bookList.reduce((n, b) => n + (b.puzzles ?? 0), 0);
+      }
+      setCounts(next);
+    })();
+  }, []);
+
   return (
     <div className="grid h-full min-h-0 place-items-center overflow-y-auto p-6">
       <div className="w-full max-w-lg">
@@ -50,7 +87,15 @@ export function HomePage() {
             >
               <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
               <span>
-                <span className="text-fg block text-sm font-medium">{label}</span>
+                <span className="text-fg block text-sm font-medium">
+                  {label}
+                  {counts[section] !== undefined && (
+                    <span className="text-subtle font-mono text-xs font-normal">
+                      {' '}
+                      · {counts[section]}
+                    </span>
+                  )}
+                </span>
                 <span className="text-subtle block text-xs leading-snug">{blurb}</span>
               </span>
             </button>

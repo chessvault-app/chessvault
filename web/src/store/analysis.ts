@@ -254,9 +254,15 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
         // Name plates only make sense for a real game, not pasted analysis.
         const hasPlayers =
           (first.headers['White'] ?? '?') !== '?' || (first.headers['Black'] ?? '?') !== '?';
+        // Land on the LAST mainline move: pasting a game means "show me this
+        // game", not "show me the starting position with moves off-screen".
+        let cursorId = first.tree.rootId;
+        while (getNode(first.tree, cursorId).children[0] !== undefined) {
+          cursorId = getNode(first.tree, cursorId).children[0]!;
+        }
         set({
           tree: first.tree,
-          cursorId: first.tree.rootId,
+          cursorId,
           pendingPromotion: null,
           loadError: null,
           gameHeaders: hasPlayers ? first.headers : null,
