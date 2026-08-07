@@ -32,3 +32,5 @@ vault/.history.git/
 
 # pdf.js decoders staged by setup-engine — derived, rebuildable.
 web/public/pdfjs-wasm/
+
+__pycache__/
