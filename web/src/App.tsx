@@ -3,6 +3,7 @@ import {
   BookMarked,
   BookOpen,
   Grid2x2,
+  House,
   LayoutGrid,
   Library,
   NotebookPen,
@@ -165,6 +166,9 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
 }
 
 function MobileNav({ active }: { active: Section }) {
+  // Desktop reaches home through the sidebar's logo; the bottom bar needs
+  // its own entry or a phone can never get back to the landing page.
+  const tabs = [{ section: 'home' as Section, label: 'Home', icon: House }, ...NAV];
   return (
     <nav
       className={cn(
@@ -173,7 +177,7 @@ function MobileNav({ active }: { active: Section }) {
         'pb-[env(safe-area-inset-bottom)]',
       )}
     >
-      {NAV.map(({ section, label, icon: Icon }) => {
+      {tabs.map(({ section, label, icon: Icon }) => {
         const isActive = section === active;
         return (
           <button

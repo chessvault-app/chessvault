@@ -223,6 +223,19 @@ function Shelf() {
     void load();
   };
 
+  // Delete confirmation takes over the whole card instead of floating a
+  // chip over the title — nothing to collide with, nothing ambiguous.
+  const [arming, setArming] = useState<string | null>(null);
+  const armTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (armTimer.current) clearTimeout(armTimer.current);
+  }, []);
+  const arm = (slug: string | null): void => {
+    if (armTimer.current) clearTimeout(armTimer.current);
+    setArming(slug);
+    if (slug !== null) armTimer.current = setTimeout(() => setArming(null), 5000);
+  };
+
   const create = async (): Promise<void> => {
     const res = await fetch('/api/puzzlebooks', {
       method: 'POST',
@@ -317,12 +330,33 @@ function Shelf() {
                   </span>
                 </button>
                 {/* Hover-revealed on mouse; always present under a thumb. */}
-                <TwoStepConfirm
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   title="Delete this book and its progress"
-                  armedLabel="Delete book?"
                   className="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
-                  onConfirm={() => void removeBook(b.slug)}
-                />
+                  onClick={() => arm(b.slug)}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+                {arming === b.slug && (
+                  <div className="border-bad/40 bg-surface absolute inset-0 z-10 flex flex-wrap items-center justify-center gap-2 rounded-xl border p-3">
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={() => {
+                        arm(null);
+                        void removeBook(b.slug);
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Delete this book?
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => arm(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
