@@ -1009,7 +1009,8 @@ function TwoStepConfirm({
       // whatever is behind it from bleeding through.
       className={cn(
         className,
-        armed && 'bg-surface bg-linear-to-b from-bad/12 to-bad/12 opacity-100 shadow-md',
+        armed &&
+          'bg-surface bg-linear-to-b from-bad/12 to-bad/12 opacity-100 shadow-md hover:bg-surface hover:from-bad/20 hover:to-bad/20',
       )}
       onClick={() => {
         if (!armed) {
