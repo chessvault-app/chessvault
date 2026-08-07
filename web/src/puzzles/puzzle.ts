@@ -4,6 +4,8 @@ import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import type { Color } from 'chessops/types';
+import { addMove, createTree } from '@shared/tree';
+import type { MoveTree, NodeId } from '@shared/types';
 
 /**
  * Pure puzzle mechanics, lichess semantics: `fen` is the position BEFORE
@@ -97,6 +99,22 @@ export function judgeMove(puzzle: ApiPuzzle, plies: number, uci: string): Judgem
   // Off-script but mates: accepted, puzzle over.
   makeSanAndPlay(pos, move);
   return pos.isCheckmate() ? 'complete' : 'wrong';
+}
+
+/**
+ * The played line as an analysis MoveTree, cursor id of the final position
+ * included — so in-place analysis starts with the whole puzzle navigable,
+ * not just its last FEN.
+ */
+export function puzzleTree(puzzle: ApiPuzzle, plies: number): { tree: MoveTree; lastId: NodeId } {
+  let tree = createTree(puzzle.fen);
+  let lastId = tree.rootId;
+  for (const uci of puzzle.moves.split(' ').slice(0, plies)) {
+    const result = addMove(tree, lastId, parseUci(uci)!);
+    tree = result.tree;
+    lastId = result.nodeId;
+  }
+  return { tree, lastId };
 }
 
 /** SAN for the solution move at `plies`, for the solution viewer. */

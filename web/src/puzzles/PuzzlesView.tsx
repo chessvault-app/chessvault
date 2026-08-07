@@ -34,6 +34,7 @@ import {
   judgeMove,
   positionAt,
   positionWith,
+  puzzleTree,
   solverColor,
   type ApiPuzzle,
   type PuzzlePosition,
@@ -311,9 +312,20 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   );
 
   const analyse = (): void => {
-    if (!view) return;
-    if (!useAnalysis.getState().loadFen(view.fen)) return;
-    useAnalysis.setState({ orientation });
+    if (!puzzle) return;
+    // Seed the analysis tree with the whole played line (lanph3re's call), so
+    // the puzzle moves are navigable, with the cursor on the final
+    // position. An off-script mating finish isn't in the scripted line and
+    // is left out — the engine will show the mate anyway.
+    const { tree, lastId } = puzzleTree(puzzle, plies);
+    useAnalysis.setState({
+      tree,
+      cursorId: lastId,
+      orientation,
+      pendingPromotion: null,
+      loadError: null,
+      gameHeaders: null,
+    });
     useEngine.getState().setEnabled(true);
     setAnalysing(true);
   };

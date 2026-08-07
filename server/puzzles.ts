@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DATA_PUZZLES, VAULT } from './paths.ts';
 
@@ -245,6 +245,14 @@ export function puzzlesApi(
       })}\n`,
     );
     return c.json({ user: next });
+  });
+
+  // Wipe counters, history, and with it the failed pool — everything the
+  // trainer knows about past attempts. Puzzle data itself is untouched.
+  api.post('/puzzles/reset', (c) => {
+    rmSync(statePath, { force: true });
+    rmSync(historyPath, { force: true });
+    return c.json({ ok: true, user: { ...DEFAULT_STATE } });
   });
 
   api.get('/puzzles/history', (c) => {

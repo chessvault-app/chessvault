@@ -106,6 +106,23 @@ describe('puzzles api', () => {
     expect((await app.request('/api/puzzles/next?mode=failed')).status).toBe(404);
   });
 
+  it('reset wipes counters, history and the review pool', async () => {
+    // Ensure there is something to wipe.
+    await attempt('ccc', false);
+    let meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.user.attempts).toBeGreaterThan(0);
+    expect(meta.failed).toBeGreaterThan(0);
+
+    const res = await app.request('/api/puzzles/reset', { method: 'POST' });
+    expect(res.status).toBe(200);
+
+    meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.user).toEqual({ attempts: 0, wins: 0, streak: 0 });
+    expect(meta.failed).toBe(0);
+    const history = await (await app.request('/api/puzzles/history')).json();
+    expect(history.attempts).toEqual([]);
+  });
+
   it('rejects malformed attempts and unknown puzzles', async () => {
     const bad = await app.request('/api/puzzles/attempt', {
       method: 'POST',

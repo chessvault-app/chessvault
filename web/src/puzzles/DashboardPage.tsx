@@ -1,5 +1,5 @@
-import { ArrowLeft, Check, RotateCcw, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, Check, RotateCcw, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -37,7 +37,7 @@ export function DashboardPage() {
   const [failed, setFailed] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     void fetch('/api/puzzles/meta')
       .then((r) => r.json())
       .then((d: { user: MetaUser; failed?: number }) => {
@@ -48,6 +48,7 @@ export function DashboardPage() {
       .then((r) => r.json())
       .then((d: { attempts: HistoryEntry[] }) => setHistory(d.attempts));
   }, []);
+  useEffect(() => refresh(), [refresh]);
 
   const counted = (history ?? []).filter((h) => h.counted !== false);
   const winRate = user && user.attempts > 0 ? Math.round((100 * user.wins) / user.attempts) : null;
@@ -65,6 +66,7 @@ export function DashboardPage() {
             <ArrowLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg text-base font-semibold">Puzzle dashboard</h1>
+          <ResetButton onDone={refresh} />
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -161,6 +163,44 @@ export function DashboardPage() {
         </Panel>
       </div>
     </div>
+  );
+}
+
+/**
+ * Two-step confirm instead of a browser dialog: first click arms it, the
+ * second (within 4 s) wipes counters + history. Everything about past
+ * attempts is gone — including the review pool — so it stays deliberate.
+ */
+function ResetButton({ onDone }: { onDone: () => void }) {
+  const [armed, setArmed] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+
+  const click = async (): Promise<void> => {
+    if (!armed) {
+      setArmed(true);
+      timer.current = setTimeout(() => setArmed(false), 4000);
+      return;
+    }
+    if (timer.current) clearTimeout(timer.current);
+    setArmed(false);
+    await fetch('/api/puzzles/reset', { method: 'POST' });
+    onDone();
+  };
+
+  return (
+    <Button
+      variant={armed ? 'primary' : 'ghost'}
+      size="sm"
+      className={armed ? 'ml-auto' : 'text-subtle ml-auto'}
+      title="Wipe attempts, history and the review pool"
+      onClick={() => void click()}
+    >
+      <Trash2 className="size-3.5" />
+      {armed ? 'Really reset everything?' : 'Reset'}
+    </Button>
   );
 }
 
