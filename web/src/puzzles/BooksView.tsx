@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   BookMarked,
   Check,
+  Compass,
   Eye,
   Loader2,
   Plus,
@@ -673,6 +674,12 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
   const [played, setPlayed] = useState<PlayedMove[]>([]);
   const [cursor, setCursor] = useState(0);
+  // Cursor value after each accepted move, so undo can rewind rebased
+  // cursors (transpositions) faithfully.
+  const [cursorTrail, setCursorTrail] = useState<number[]>([]);
+  // Physical-board contemplation (lanph3re's ask): a free side-line played from
+  // the current position, judged by nobody, snapped away on resume.
+  const [explore, setExplore] = useState<PlayedMove[] | null>(null);
   const [wrongMove, setWrongMove] = useState<PlayedMove | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
   const [failed, setFailed] = useState(false);
@@ -703,6 +710,8 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     if (!puzzle) return;
     setPlayed([]);
     setCursor(0);
+    setCursorTrail([]);
+    setExplore(null);
     setWrongMove(null);
     setPhase('solving');
     setFailed(false);
@@ -711,8 +720,10 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book, puzzleId]);
 
-  const currentFen = wrongMove?.fen ?? played.at(-1)?.fen ?? puzzle?.fen;
-  const lastUci = wrongMove?.uci ?? played.at(-1)?.uci;
+  const solvingFen = played.at(-1)?.fen ?? puzzle?.fen;
+  const currentFen =
+    wrongMove?.fen ?? (explore ? (explore.at(-1)?.fen ?? solvingFen) : solvingFen);
+  const lastUci = wrongMove?.uci ?? (explore ? explore.at(-1)?.uci : undefined) ?? played.at(-1)?.uci;
   // chessops rejects nonsense positions loudly — never construct the view
   // before the puzzle has loaded.
   const view = currentFen ? boardStateOf(currentFen, lastUci) : null;
@@ -742,6 +753,18 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
 
   const applyMove = (orig: string, dest: string, promotion?: string): void => {
     if (!solution || !view || !currentFen || phase !== 'solving') return;
+
+    // Exploring: any legal move goes onto the side-line, judged by nobody.
+    if (explore) {
+      const pos = Chess.fromSetup(parseFen(currentFen).unwrap()).unwrap();
+      const uci = orig + dest + (promotion ?? '');
+      const move = parseUci(uci);
+      if (!move || !pos.isLegal(move)) return;
+      const san = makeSanAndPlay(pos, move);
+      setExplore((prev) => [...(prev ?? []), { uci, san, fen: makeFen(pos.toSetup()) }]);
+      return;
+    }
+
     const verdict = judgeBookMove(solution, currentFen, cursor, orig, dest, promotion);
 
     if (verdict.kind === 'wrong') {
@@ -770,10 +793,28 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
 
     setPlayed((prev) => [...prev, verdict.move]);
     setCursor(verdict.cursor);
+    setCursorTrail((prev) => [...prev, verdict.cursor]);
     if (verdict.kind === 'complete') {
       setPhase('done');
       void report(!failed);
     }
+  };
+
+  /** Take back — the exploration line first, then committed moves. */
+  const undo = (): void => {
+    if (phase !== 'solving') return;
+    if (explore && explore.length > 0) {
+      setExplore((prev) => (prev ?? []).slice(0, -1));
+      return;
+    }
+    if (explore) {
+      setExplore(null); // empty exploration: undo leaves it
+      return;
+    }
+    if (played.length === 0) return;
+    setPlayed((prev) => prev.slice(0, -1));
+    setCursorTrail((prev) => prev.slice(0, -1));
+    setCursor(cursorTrail.at(-2) ?? 0);
   };
 
   const onMove = (orig: string, dest: string): void => {
@@ -812,6 +853,8 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     timers.current.forEach(clearTimeout);
     setPlayed([]);
     setCursor(0);
+    setCursorTrail([]);
+    setExplore(null);
     setWrongMove(null);
     setPhase('solving');
     setFailed(false);
@@ -824,6 +867,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setFailed(true);
     void report(false);
     timers.current.forEach(clearTimeout);
+    setExplore(null);
     setWrongMove(null);
     // Replay the scripted line from the start, one move per beat.
     const total = solution.uci.length;
@@ -904,7 +948,9 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                     : 'text-muted',
               )}
             >
-              {phase === 'wrong'
+              {explore && phase === 'solving'
+                ? 'Exploring freely — nothing is judged until you resume.'
+                : phase === 'wrong'
                 ? 'Not the book move — try again.'
                 : phase === 'checking'
                   ? 'Off the book — asking Stockfish…'
@@ -938,7 +984,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
         <Panel flush className="shrink-0">
           <PanelHeader title={`Progress · ${played.length}/${puzzle.uci.length} plies`} />
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 font-mono text-[0.8125rem]">
-            {played.length === 0 ? (
+            {played.length === 0 && !explore ? (
               <p className="text-subtle font-sans text-xs">
                 Nothing entered yet — find the first move on the board.
               </p>
@@ -954,6 +1000,11 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                   {m.san}
                 </span>
               ))
+            )}
+            {explore && (
+              <span className="text-subtle basis-full italic">
+                exploring: {explore.length === 0 ? '—' : explore.map((m) => m.san).join(' ')}
+              </span>
             )}
           </div>
         </Panel>
@@ -981,6 +1032,30 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             </>
           ) : (
             <>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={phase !== 'solving' || (!explore && played.length === 0)}
+                title="Take back the last move (no penalty)"
+                onClick={undo}
+              >
+                <Undo2 className="size-3.5" />
+                Undo
+              </Button>
+              <Button
+                variant={explore ? 'primary' : 'ghost'}
+                size="sm"
+                disabled={phase !== 'solving'}
+                title={
+                  explore
+                    ? 'Snap back to the solving position'
+                    : 'Move pieces freely to think — like on a physical board'
+                }
+                onClick={() => setExplore(explore ? null : [])}
+              >
+                <Compass className="size-3.5" />
+                {explore ? 'Resume' : 'Explore'}
+              </Button>
               <Button variant="ghost" size="sm" disabled={phase !== 'solving'} onClick={showSolution} title="Counts as a failed attempt">
                 <Eye className="size-3.5" />
                 Solution
