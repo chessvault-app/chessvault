@@ -5,6 +5,8 @@ import {
   ChevronRight,
   FileUp,
   ImageUp,
+  Maximize2,
+  Minimize2,
   Pencil,
   ScanSearch,
   Check,
@@ -629,16 +631,16 @@ function PuzzleNavigator({
   return (
     <Panel flush resizeKey="book-problems" defaultHeight={260} className="min-h-[8rem]">
       <PanelHeader
-        title="Problems"
+        title="Puzzles"
         actions={
           <>
-            <Button variant="ghost" size="icon-sm" title="Previous problem" disabled={at <= 0} onClick={() => go(at - 1)}>
+            <Button variant="ghost" size="icon-sm" title="Previous puzzle" disabled={at <= 0} onClick={() => go(at - 1)}>
               <ChevronLeft className="size-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Next problem"
+              title="Next puzzle"
               disabled={at < 0 || at >= puzzles.length - 1}
               onClick={() => go(at + 1)}
             >
@@ -860,44 +862,33 @@ const PROVENANCE_META = {
     label: 'book',
     title: 'Solution parsed from the book and replay-verified',
     className: 'border-good/40 text-good',
+    dot: 'bg-good',
   },
   'engine-corroborated': {
     label: 'engine+text',
     title: 'Engine solution, corroborated by the book text',
     className: 'border-primary/40 text-primary',
+    dot: 'bg-primary',
   },
   'engine-only': {
     label: 'engine',
     title: 'Engine solution (decisive line, no text corroboration)',
     className: 'border-line-strong text-muted',
+    dot: 'bg-line-strong',
   },
   'engine-unverified': {
     label: 'unverified',
     title: 'Engine best line only — nothing decisive found; check the source if it feels off',
     className: 'border-warn/50 text-warn',
+    dot: 'bg-warn',
   },
   corrected: {
     label: 'corrected',
     title: 'You corrected this puzzle by hand — highest confidence',
     className: 'border-good/40 text-good',
+    dot: 'bg-good',
   },
 } as const;
-
-function ProvenanceBadge({ provenance }: { provenance: keyof typeof PROVENANCE_META }) {
-  const meta = PROVENANCE_META[provenance];
-  if (!meta) return null;
-  return (
-    <span
-      title={meta.title}
-      className={cn(
-        'shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-medium',
-        meta.className,
-      )}
-    >
-      {meta.label}
-    </span>
-  );
-}
 
 /**
  * The correction aid: the scanned source page, cropped to THIS diagram
@@ -931,38 +922,38 @@ function SourceCrop({
   const ch = Math.min(1 - cy, r.h + 2 * margin);
 
   if (full) {
+    // Whole page at the pane's own width: the surrounding pane scrolls
+    // vertically, nothing gets clipped, and widening the pane zooms in.
     return (
-      <div className="flex flex-col gap-1">
-        <div className="border-line relative max-h-[46vh] w-fit overflow-auto rounded-md border">
-          <div className="relative w-fit">
-            <img src={src} alt="book page" style={{ width: width * 2 }} />
-            <div
-              className="border-primary pointer-events-none absolute rounded-sm border-2"
-              style={{
-                left: `${r.x * 100}%`,
-                top: `${r.y * 100}%`,
-                width: `${r.w * 100}%`,
-                height: `${r.h * 100}%`,
-              }}
-            />
-          </div>
-        </div>
-        <button
-          type="button"
+      <div className="relative" style={{ width }}>
+        <img src={src} alt="book page" className="border-line w-full rounded-md border" />
+        <div
+          className="border-primary pointer-events-none absolute rounded-sm border-2"
+          style={{
+            left: `${r.x * 100}%`,
+            top: `${r.y * 100}%`,
+            width: `${r.w * 100}%`,
+            height: `${r.h * 100}%`,
+          }}
+        />
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          title="Back to the diagram"
           onClick={() => setFull(false)}
-          className="text-subtle self-start text-xs underline-offset-2 hover:underline"
+          className="absolute right-1.5 top-1.5 shadow-md"
         >
-          just the diagram
-        </button>
+          <Minimize2 className="size-3.5" />
+        </Button>
       </div>
     );
   }
 
   const scale = natural ? width / (cw * natural.w) : 1;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="relative" style={{ width }}>
       <div
-        className="border-line relative overflow-hidden rounded-md border"
+        className="border-line overflow-hidden rounded-md border"
         style={{ width, height: natural ? ch * natural.h * scale : width }}
       >
         <img
@@ -984,13 +975,15 @@ function SourceCrop({
         />
       </div>
       {!plain && (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          title="Show the whole page"
           onClick={() => setFull(true)}
-          className="text-subtle self-start text-xs underline-offset-2 hover:underline"
+          className="absolute right-1.5 top-1.5 shadow-md"
         >
-          show the whole page
-        </button>
+          <Maximize2 className="size-3.5" />
+        </Button>
       )}
     </div>
   );
@@ -1096,81 +1089,79 @@ function PuzzleEntry({
     }
   };
 
-  if (fen === null) {
-    const evidence = replace?.evidence ?? draft?.evidence;
-    return (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="border-line flex h-12 shrink-0 items-center gap-2 border-b px-4">
-          <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
-            <ArrowLeft className="size-3.5" />
-          </Button>
-          <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-            {replace ? 'Correct' : 'Enter'} puzzle&nbsp;
-            <span className="font-mono">#{number}</span>
-          </h1>
+  // ONE persistent layout for both phases — the evidence pane and header
+  // stay put while the right side swaps editor <-> recorder (seamless).
+  const evidence = replace?.evidence ?? draft?.evidence;
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="border-line flex h-12 shrink-0 items-center gap-2 border-b px-4">
+        <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
+          <ArrowLeft className="size-3.5" />
+        </Button>
+        <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+          {replace ? 'Fix' : 'Add'} <span className="font-mono">#{number}</span>
+        </h1>
+        {fen === null && (
           <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
             <ImageUp className="size-3.5" />
             From image
           </Button>
-        </div>
-        <div className="flex min-h-0 flex-1">
-          {evidence?.page ? (
-            <SourcePane slug={slug} evidence={evidence} />
-          ) : draft ? (
-            <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
-              <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
-              <p className="text-subtle text-xs leading-relaxed">
-                The diagram from the book — make the board match it, then
-                record the solution.
-              </p>
-            </aside>
-          ) : null}
-          <div className="min-h-0 min-w-0 flex-1">
+        )}
+      </div>
+      <div className="flex min-h-0 flex-1">
+        {evidence?.page ? (
+          <SourcePane slug={slug} evidence={evidence} />
+        ) : draft ? (
+          <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+            <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
+            <p className="text-subtle text-xs leading-relaxed">
+              The diagram from the book — make the board match it, then
+              record the solution.
+            </p>
+          </aside>
+        ) : null}
+        <div className="min-h-0 min-w-0 flex-1">
+          {fen === null ? (
             <EditorView
               key={prefill ?? 'blank'}
               initialFen={prefill ?? undefined}
               useLabel="Record solution"
               onUse={confirmPosition}
             />
-          </div>
+          ) : (
+            <SolutionRecorder
+              slug={slug}
+              fen={fen}
+              replaceId={replace?.id}
+              onBack={() => setFen(null)}
+              onDone={finish}
+            />
+          )}
         </div>
-        {importing && (
-          <PhotoImport
-            templates={templates}
-            onApply={(reading) => {
-              setPhoto(reading);
-              if (reading.fen) setPrefill(reading.fen);
-              setImporting(false);
-            }}
-            onClose={() => setImporting(false)}
-          />
-        )}
       </div>
-    );
-  }
-
-  return (
-    <SolutionRecorder
-      slug={slug}
-      number={number}
-      fen={fen}
-      replaceId={replace?.id}
-      onBack={() => setFen(null)}
-      onDone={finish}
-    />
+      {importing && fen === null && (
+        <PhotoImport
+          templates={templates}
+          onApply={(reading) => {
+            setPhoto(reading);
+            if (reading.fen) setPrefill(reading.fen);
+            setImporting(false);
+          }}
+          onClose={() => setImporting(false)}
+        />
+      )}
+    </div>
   );
 }
 
 function SolutionRecorder({
   slug,
-  number,
   fen,
   replaceId,
   onBack,
   onDone,
 }: {
   slug: string;
-  number: number;
   fen: string;
   /** When set, the save REPLACES this puzzle instead of appending. */
   replaceId?: string;
@@ -1323,8 +1314,8 @@ function SolutionRecorder({
           <Button variant="ghost" size="icon-sm" title="Back to the position" onClick={onBack}>
             <ArrowLeft className="size-3.5" />
           </Button>
-          <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-            Puzzle #{number} — solution
+          <span className="text-muted min-w-0 flex-1 truncate text-sm">
+            Record the solution — every move, both sides.
           </span>
         </div>
 
@@ -1746,13 +1737,26 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           >
             <ArrowLeft className="size-3.5" />
           </Button>
-          <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-            {book.title} · #{puzzle.number ?? index + 1}
+          {/* The puzzle number IS the title; the tier collapses to a dot
+              (tooltip explains), the goal reads as plain language. */}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="text-fg font-mono text-sm font-semibold">
+              #{puzzle.number ?? index + 1}
+            </span>
+            {puzzle.provenance && puzzle.provenance in PROVENANCE_META && (
+              <span
+                title={`${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].label} — ${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].title}`}
+                className={cn(
+                  'size-2 shrink-0 cursor-help rounded-full',
+                  PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].dot,
+                )}
+              />
+            )}
+            {puzzle.mateIn ? (
+              <span className="text-muted truncate text-sm">Mate in {puzzle.mateIn}</span>
+            ) : null}
           </span>
-          {puzzle.provenance && <ProvenanceBadge provenance={puzzle.provenance} />}
-          {puzzle.mateIn ? (
-            <span className="text-subtle shrink-0 text-xs">Mate in {puzzle.mateIn}</span>
-          ) : null}
+          <span className="min-w-0 flex-1" />
           {puzzle.evidence?.page && (
             <span className="group relative grid size-7 shrink-0 place-items-center">
               <Eye className="text-subtle group-hover:text-fg size-3.5 cursor-help transition-colors" />
@@ -1793,20 +1797,24 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
 
         <PuzzleNavigator slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
 
-        <div className="flex shrink-0 flex-wrap gap-2">
+        {/* The primary action stretches to fill the row (lanph3re: a left-biased
+            cluster looks unbalanced, centring is worse) — secondaries sit
+            compactly at its right. */}
+        <div className="flex shrink-0 gap-2">
           {phase === 'done' ? (
             <>
               {next && (
                 <Button
                   variant="primary"
                   size="sm"
+                  className="flex-1"
                   onClick={() => navigate('puzzles', 'books', slug, next)}
                 >
                   <RotateCw className="size-3.5" />
                   Next unsolved
                 </Button>
               )}
-              <Button variant="secondary" size="sm" onClick={retry}>
+              <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
                 <RotateCcw className="size-3.5" />
                 Retry
               </Button>
@@ -1819,6 +1827,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
               <Button
                 variant="primary"
                 size="sm"
+                className="flex-1"
                 disabled={phase !== 'solving' || !hasMoves}
                 title="Grade the mainline — this is the only judged moment"
                 onClick={() => void submit()}

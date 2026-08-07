@@ -364,15 +364,16 @@ function StatCard({
   );
 }
 
-/** "14:03" today, "Aug 6" earlier this year, "2025-11-02" before that. */
+/** "14:03" today, "Aug 6" earlier this year, "11/2/2025" before that.
+    Locale pinned to English — the OS locale must not leak in (see lib/dates). */
 function when(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
   if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   }
   if (d.getFullYear() === now.getFullYear()) {
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
-  return d.toLocaleDateString();
+  return d.toLocaleDateString('en-US');
 }

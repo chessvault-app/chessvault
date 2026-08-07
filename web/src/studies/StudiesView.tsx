@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
+import { formatWhen } from '@/lib/dates';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { StudyView } from './StudyView';
@@ -367,7 +368,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
           )}
           <p className="text-subtle text-xs">
             {study.chapters} chapter{study.chapters === 1 ? '' : 's'} ·{' '}
-            {new Date(study.updatedAt).toLocaleString()}
+            {formatWhen(study.updatedAt)}
           </p>
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>
