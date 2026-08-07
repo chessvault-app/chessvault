@@ -24,3 +24,6 @@ vault/.history.git/
 
 .DS_Store
 *.log
+
+# pdf.js decoders staged by setup-engine — derived, rebuildable.
+web/public/pdfjs-wasm/

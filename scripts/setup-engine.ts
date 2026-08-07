@@ -65,3 +65,29 @@ const mb = (n: number): string => `${(n / 1e6).toFixed(1)} MB`;
 console.log(
   `  engine: ${copied} copied (${mb(bytes)}), ${skipped} already current -> web/public/engine/`,
 );
+
+/**
+ * pdf.js image decoders, same static-sibling story as the engine: the worker
+ * resolves `${wasmUrl}<codec>` at runtime, so the files must be served as-is.
+ * npm's pdfjs-dist ships NO .wasm binaries — only the JS fallback decoders —
+ * which is why PdfImport passes `useWasm: false`. Without these, JBIG2/JPX
+ * scans (most scanned books) silently render as smears.
+ */
+const PDFJS_SOURCE = resolve(REPO_ROOT, 'node_modules/pdfjs-dist/wasm');
+const PDFJS_TARGET = resolve(REPO_ROOT, 'web/public/pdfjs-wasm');
+const DECODERS = ['jbig2_nowasm_fallback.js', 'openjpeg_nowasm_fallback.js', 'quickjs-eval.js'];
+
+mkdirSync(PDFJS_TARGET, { recursive: true });
+let pdfjsCopied = 0;
+for (const name of DECODERS) {
+  const from = resolve(PDFJS_SOURCE, name);
+  const to = resolve(PDFJS_TARGET, name);
+  if (!existsSync(from)) {
+    console.warn(`  missing in pdfjs-dist, skipping: ${name}`);
+    continue;
+  }
+  if (existsSync(to) && statSync(to).size === statSync(from).size) continue;
+  copyFileSync(from, to);
+  pdfjsCopied++;
+}
+console.log(`  pdfjs: ${pdfjsCopied} decoder(s) copied -> web/public/pdfjs-wasm/`);

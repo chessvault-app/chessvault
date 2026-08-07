@@ -50,7 +50,14 @@ export function PdfImport({
     setError(null);
     setFound([]);
     try {
-      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pdf = await pdfjs.getDocument({
+        data: await file.arrayBuffer(),
+        // Scanned books embed JBIG2/JPX images. npm's pdfjs-dist ships only
+        // the JS fallback decoders (no .wasm), staged by setup-engine — so
+        // skip the doomed wasm fetch and load the fallbacks directly.
+        useWasm: false,
+        wasmUrl: `${window.location.origin}/pdfjs-wasm/`,
+      }).promise;
       const results: Found[] = [];
       for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
         setProgress(`page ${pageNo}/${pdf.numPages} — ${results.length} diagrams so far`);
