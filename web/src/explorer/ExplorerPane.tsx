@@ -1,6 +1,7 @@
 import { BookOpen, Compass, ExternalLink, Hammer, Loader2, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
+import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 import {
@@ -231,6 +232,36 @@ function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
 }
 
 function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: string) => boolean }) {
+  /**
+   * A top game is a reference into the reference-games database when one
+   * is built from the same sources: clicking opens the WHOLE game on the
+   * board (lanph3re's call). When the game isn't indexed there, fall back to
+   * the old behaviour and just play the move.
+   */
+  const open = async (g: TopGame): Promise<void> => {
+    try {
+      const query = new URLSearchParams({ white: g.white, black: g.black });
+      if (g.date) query.set('date', g.date);
+      if (g.result) query.set('result', g.result);
+      const found = await fetch(`/api/refgames/find?${query}`);
+      if (found.ok) {
+        const { id } = (await found.json()) as { id: number };
+        const res = await fetch(`/api/refgames/${id}/pgn`);
+        if (res.ok) {
+          const { pgn } = (await res.json()) as { pgn: string };
+          if (useAnalysis.getState().loadPgn(pgn)) {
+            useAnalysis.setState({ handoff: true });
+            navigate('analysis');
+            return;
+          }
+        }
+      }
+    } catch {
+      // offline server hiccup — the fallback below still works
+    }
+    onPlay(g.uci);
+  };
+
   return (
     <div className="border-line border-t px-1.5 pb-2">
       <p className="text-subtle px-1.5 pb-1 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
@@ -243,8 +274,8 @@ function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: strin
             <li key={i} className="flex items-center">
               <button
                 type="button"
-                onClick={() => onPlay(g.uci)}
-                title={`Play ${g.uci}`}
+                onClick={() => void open(g)}
+                title="Open this game"
                 className={cn(
                   'hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1',
                   'text-left text-xs transition-colors duration-100',

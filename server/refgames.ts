@@ -72,6 +72,26 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono {
     return c.json({ total, rows });
   });
 
+  // Match a book's top-game reference (metadata only) to a full game
+  // here, so the explorer can open it on the board.
+  api.get('/refgames/find', (c) => {
+    const d = db();
+    if (!d) return c.json({ error: 'no reference games database' }, 503);
+    const { white, black, date, result } = c.req.query();
+    if (!white || !black) return c.json({ error: 'expected white & black' }, 400);
+    const row = d
+      .prepare(
+        `SELECT id FROM games
+         WHERE white = ? AND black = ? AND (? IS NULL OR date = ?) AND (? IS NULL OR result = ?)
+         LIMIT 1`,
+      )
+      .get(white, black, date ?? null, date ?? null, result ?? null, result ?? null) as
+      | { id: number }
+      | undefined;
+    if (!row) return c.json({ error: 'not indexed' }, 404);
+    return c.json({ id: row.id });
+  });
+
   api.get('/refgames/:id/pgn', (c) => {
     const d = db();
     if (!d) return c.json({ error: 'no reference games database' }, 503);
