@@ -857,7 +857,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                 onClick={() => navigate('puzzles', 'books', slug)}
               >
                 <X className="size-3.5" />
-                Give up
+                Skip
               </Button>
             </>
           )}
