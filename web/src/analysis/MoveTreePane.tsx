@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { getNode, moveNumberLabel } from '@shared/tree';
-import type { MoveTree, NodeId } from '@shared/types';
+import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 
@@ -24,8 +24,33 @@ export const NAG_GLYPH: Record<number, string> = {
   22: '⨀',
 };
 
-const nagText = (nags: number[]): string => nags.map((n) => NAG_GLYPH[n] ?? `$${n}`).join('');
+/** Colour for the quality NAGs, matching board badges and the eval graph. */
+const NAG_CLASS: Record<number, string> = {
+  1: 'text-nag-good',
+  2: 'text-nag-mistake',
+  3: 'text-nag-brilliant',
+  4: 'text-nag-blunder',
+  5: 'text-nag-interesting',
+  6: 'text-nag-dubious',
+};
 
+const nagText = (nags: number[]): string => nags.map((n) => NAG_GLYPH[n] ?? `$${n}`).join('');
+const nagClass = (nags: number[]): string | undefined => {
+  const quality = nags.find((n) => NAG_CLASS[n]);
+  return quality ? NAG_CLASS[quality] : undefined;
+};
+
+const FIGURINE: Record<string, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
+
+/** SAN with figurines — uppercase piece letters never mean anything else. */
+const figurine = (san: string): string => san.replace(/[KQRBN]/g, (m) => FIGURINE[m]!);
+
+/**
+ * The move list, lichess-style (lanph3re's mock): the mainline is a table —
+ * number gutter, White's cell, Black's cell — and comments/variations
+ * interrupt it as full-width rows, with `…` continuation cells picking the
+ * move pair back up. Inside variations the old inline flow remains.
+ */
 export function MoveTreePane({ className }: { className?: string }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -48,25 +73,149 @@ export function MoveTreePane({ className }: { className?: string }) {
       // The floor keeps a few lines of moves visible even when the whole
       // panel is squeezed by a short viewport; the panel's minimum height
       // follows it, pushing its column into scroll instead of clipping.
-      className={cn(
-        'min-h-24 flex-1 overflow-y-auto px-2 py-2 text-sm leading-relaxed',
-        className,
-      )}
+      className={cn('min-h-24 flex-1 overflow-y-auto text-sm leading-relaxed', className)}
     >
       {isEmpty ? (
         <p className="text-subtle px-2 py-6 text-center text-xs">
           Play a move on the board, or load a FEN or PGN.
         </p>
       ) : (
-        <Line
-          tree={tree}
-          fromId={tree.rootId}
-          cursorId={cursorId}
-          onSelect={setCursor}
-          depth={0}
-        />
+        <MainlineTable tree={tree} cursorId={cursorId} onSelect={setCursor} />
       )}
     </div>
+  );
+}
+
+interface RowState {
+  number: number;
+  white: { id: NodeId; node: MoveNode } | 'ellipsis' | null;
+  black: { id: NodeId; node: MoveNode } | 'ellipsis' | null;
+}
+
+function MainlineTable({
+  tree,
+  cursorId,
+  onSelect,
+}: {
+  tree: MoveTree;
+  cursorId: NodeId;
+  onSelect: (id: NodeId) => void;
+}) {
+  const out: React.ReactNode[] = [];
+  let row: RowState | null = null;
+
+  const flushRow = (): void => {
+    if (!row) return;
+    const { number, white, black } = row;
+    out.push(
+      <div
+        key={`row-${number}-${typeof white === 'object' && white ? white.id : 'w'}-${typeof black === 'object' && black ? black.id : 'b'}`}
+        className="border-line/60 grid grid-cols-[2rem_1fr_1fr] border-b"
+      >
+        <span className="bg-surface-inset/60 border-line/60 text-subtle flex items-center justify-center border-r font-mono text-[0.6875rem]">
+          {number}
+        </span>
+        <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} />
+        <MoveCell entry={black} cursorId={cursorId} onSelect={onSelect} />
+      </div>,
+    );
+    row = null;
+  };
+
+  let cursor: NodeId | undefined = tree.rootId;
+  while (cursor) {
+    const node = getNode(tree, cursor);
+    const [mainChildId, ...variationIds] = node.children;
+    if (!mainChildId) break;
+    const child = getNode(tree, mainChildId);
+    const number = Math.ceil(child.ply / 2);
+    const isWhite = child.ply % 2 === 1;
+
+    if (isWhite) {
+      flushRow();
+      row = { number, white: { id: mainChildId, node: child }, black: null };
+    } else if (row) {
+      row.black = { id: mainChildId, node: child };
+    } else {
+      row = { number, white: 'ellipsis', black: { id: mainChildId, node: child } };
+    }
+
+    const interrupts = Boolean(child.comment) || variationIds.length > 0;
+    if (interrupts) {
+      // The pair resumes on its own row after the interruption ("2 c4 …" /
+      // "2 … e6"), the same convention as PGN and lichess.
+      if (isWhite && row) row.black = 'ellipsis';
+      flushRow();
+
+      if (child.comment) {
+        out.push(
+          <p
+            key={`${mainChildId}-comment`}
+            className="border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5 text-xs leading-relaxed"
+          >
+            {child.comment}
+          </p>,
+        );
+      }
+      for (const variationId of variationIds) {
+        out.push(
+          <div
+            key={`var-${variationId}`}
+            className="border-line/60 text-muted flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-[0.8125rem]"
+          >
+            <VariationBranch
+              tree={tree}
+              startId={variationId}
+              cursorId={cursorId}
+              onSelect={onSelect}
+              depth={1}
+            />
+          </div>,
+        );
+      }
+    } else if (!isWhite) {
+      flushRow();
+    }
+
+    cursor = mainChildId;
+  }
+  flushRow();
+
+  return <div>{out}</div>;
+}
+
+function MoveCell({
+  entry,
+  cursorId,
+  onSelect,
+}: {
+  entry: { id: NodeId; node: MoveNode } | 'ellipsis' | null;
+  cursorId: NodeId;
+  onSelect: (id: NodeId) => void;
+}) {
+  if (entry === null) return <span />;
+  if (entry === 'ellipsis') {
+    return <span className="text-subtle flex items-center px-3 py-1">…</span>;
+  }
+  const { id, node } = entry;
+  const active = id === cursorId;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(id)}
+      data-active={active}
+      className={cn(
+        'flex items-baseline gap-1 px-3 py-1 text-left font-medium transition-colors duration-100',
+        active ? 'bg-primary text-primary-fg' : 'hover:bg-surface-2',
+      )}
+    >
+      <span>{figurine(node.san ?? '?')}</span>
+      {node.nags.length > 0 && (
+        <span className={cn('font-semibold', !active && nagClass(node.nags))}>
+          {nagText(node.nags)}
+        </span>
+      )}
+    </button>
   );
 }
 
@@ -76,21 +225,21 @@ interface LineProps {
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
   depth: number;
+  /** True when the caller already rendered the move this line continues. */
+  continued?: boolean;
 }
 
 /**
- * Renders one line and its variations.
- *
- * Mirrors PGN's own shape: the first child continues inline, and every further
- * child becomes a parenthesised variation rendered as a nested block. The result
- * reads the same as the notation in the file on disk.
+ * Inline rendering for variations, mirroring PGN's own shape: the first
+ * child continues inline, and every further child becomes a parenthesised
+ * variation rendered as a nested block.
  */
-function Line({ tree, fromId, cursorId, onSelect, depth }: LineProps) {
+function Line({ tree, fromId, cursorId, onSelect, depth, continued = false }: LineProps) {
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
   // A comment or variation breaks the run of moves, so the next move needs its
   // number repeated to stay readable — the same convention PGN and Lichess use.
-  let flowInterrupted = true;
+  let flowInterrupted = !continued;
 
   while (cursor) {
     const node = getNode(tree, cursor);
@@ -107,7 +256,7 @@ function Line({ tree, fromId, cursorId, onSelect, depth }: LineProps) {
         key={mainChildId}
         label={child.san ?? '?'}
         number={showNumber ? moveNumberLabel(child.ply) : undefined}
-        nags={nagText(child.nags)}
+        nags={child.nags}
         hasComment={Boolean(child.comment)}
         active={mainChildId === cursorId}
         onClick={() => onSelect(mainChildId)}
@@ -120,10 +269,7 @@ function Line({ tree, fromId, cursorId, onSelect, depth }: LineProps) {
       items.push(
         <p
           key={`${mainChildId}-comment`}
-          className={cn(
-            'border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 italic',
-            depth === 0 ? 'text-muted text-xs' : 'text-subtle text-[0.6875rem]',
-          )}
+          className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-[0.6875rem] italic"
         >
           {child.comment}
         </p>,
@@ -138,9 +284,8 @@ function Line({ tree, fromId, cursorId, onSelect, depth }: LineProps) {
           className={cn(
             'my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5',
             'border-line/70 border-l-2 pl-2',
-            // Variations are dimmer than the mainline, and dimmer again the
-            // deeper they nest, so the main line stays readable at a glance.
-            depth === 0 ? 'text-muted' : 'text-subtle text-[0.8125rem]',
+            // Deeper variations dim further so the parent line stays readable.
+            'text-subtle text-[0.8125rem]',
           )}
         >
           <VariationBranch
@@ -181,7 +326,7 @@ function VariationBranch({
       <MoveChip
         label={node.san ?? '?'}
         number={moveNumberLabel(node.ply)}
-        nags={nagText(node.nags)}
+        nags={node.nags}
         hasComment={Boolean(node.comment)}
         active={startId === cursorId}
         onClick={() => onSelect(startId)}
@@ -193,7 +338,14 @@ function VariationBranch({
           {node.comment}
         </p>
       )}
-      <Line tree={tree} fromId={startId} cursorId={cursorId} onSelect={onSelect} depth={depth} />
+      <Line
+        tree={tree}
+        fromId={startId}
+        cursorId={cursorId}
+        onSelect={onSelect}
+        depth={depth}
+        continued={!node.comment}
+      />
     </>
   );
 }
@@ -201,7 +353,7 @@ function VariationBranch({
 interface MoveChipProps {
   label: string;
   number?: string;
-  nags: string;
+  nags: number[];
   hasComment: boolean;
   active: boolean;
   onClick: () => void;
@@ -221,11 +373,18 @@ function MoveChip({ label, number, nags, hasComment, active, onClick }: MoveChip
           active && 'bg-primary text-primary-fg hover:bg-primary',
         )}
       >
-        {label}
-        {nags && <span className="ml-px font-semibold">{nags}</span>}
+        {figurine(label)}
+        {nags.length > 0 && (
+          <span className={cn('ml-px font-semibold', !active && nagClass(nags))}>
+            {nagText(nags)}
+          </span>
+        )}
         {hasComment && (
           <span
-            className={cn('ml-1 inline-block size-1 rounded-full align-middle', active ? 'bg-primary-fg/70' : 'bg-info')}
+            className={cn(
+              'ml-1 inline-block size-1 rounded-full align-middle',
+              active ? 'bg-primary-fg/70' : 'bg-info',
+            )}
             title="Has a comment"
           />
         )}
