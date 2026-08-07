@@ -1,5 +1,6 @@
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 import { parseFen } from 'chessops/fen';
+import { figurine } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -55,7 +56,7 @@ export function AnswerPanel({
         type="button"
         onClick={() => onSelect(index + 1)}
         className={cn(
-          'flex items-baseline px-3 py-1 text-left font-medium transition-colors duration-100',
+          'flex items-baseline gap-1 px-3 py-1 text-left font-medium transition-colors duration-100',
           index === wrongAt
             ? 'bg-nag-blunder/20 text-nag-blunder'
             : index + 1 === current
@@ -63,8 +64,8 @@ export function AnswerPanel({
               : 'hover:bg-surface-2',
         )}
       >
-        {sans[index]}
-        {index === wrongAt && <span className="ml-1 font-semibold">⁇</span>}
+        <span>{figurine(sans[index]!)}</span>
+        {index === wrongAt && <span className="font-semibold">⁇</span>}
       </button>
     );
 

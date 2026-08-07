@@ -43,7 +43,7 @@ const nagClass = (nags: number[]): string | undefined => {
 const FIGURINE: Record<string, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
 
 /** SAN with figurines — uppercase piece letters never mean anything else. */
-const figurine = (san: string): string => san.replace(/[KQRBN]/g, (m) => FIGURINE[m]!);
+export const figurine = (san: string): string => san.replace(/[KQRBN]/g, (m) => FIGURINE[m]!);
 
 /**
  * The move list, lichess-style (lanph3re's mock): the mainline is a table —
