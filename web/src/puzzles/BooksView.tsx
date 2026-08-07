@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   BookMarked,
-  BookOpen,
   FileUp,
   ImageUp,
   Pencil,
@@ -89,6 +88,8 @@ interface BookPuzzle {
    *  source page (with the diagram's bounds as page fractions) so the
    *  original context is one click away. */
   number?: number;
+  /** Section goal, e.g. 2 = "Mate in two". */
+  mateIn?: number;
   provenance?:
     | 'book-parsed'
     | 'engine-corroborated'
@@ -97,6 +98,8 @@ interface BookPuzzle {
     | 'corrected';
   evidence?: { page?: string; rect?: { x: number; y: number; w: number; h: number } };
 }
+
+type SourceRect = { x: number; y: number; w: number; h: number };
 
 interface PuzzleProgress {
   tries: number;
@@ -109,6 +112,8 @@ interface BookDraft {
   id: string;
   image: string;
   fen: string | null;
+  number?: number;
+  evidence?: { page?: string; rect?: SourceRect };
 }
 
 interface BookDetail {
@@ -452,6 +457,11 @@ function BookPage({ slug }: { slug: string }) {
                   )}
                 >
                   <img src={diagramUrl(slug, d.image)} alt="diagram" className="w-full" />
+                  {d.number !== undefined && (
+                    <span className="text-subtle block py-0.5 text-center font-mono text-[0.625rem]">
+                      #{d.number}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -480,35 +490,12 @@ function BookPage({ slug }: { slug: string }) {
             </p>
           </div>
         ) : (
-          <>
-            <p className="text-subtle mb-3 text-xs">
-              {solvedCount}/{book.puzzles.length} solved — tap a number to train it.
-            </p>
-            <ProvenanceLegend puzzles={book.puzzles} />
-            <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
-              {book.puzzles.map((p, i) => {
-                const last = book.progress[p.id]?.last;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => navigate('puzzles', 'books', slug, p.id)}
-                    title={last ? `Last attempt: ${last}` : 'Not attempted'}
-                    className={cn(
-                      'flex aspect-square items-center justify-center rounded-lg border font-mono text-sm font-semibold transition-colors duration-100',
-                      last === 'win'
-                        ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
-                        : last === 'loss'
-                          ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                          : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
-                    )}
-                  >
-                    {p.number ?? i + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </>
+          <PuzzleList
+            slug={slug}
+            puzzles={book.puzzles}
+            progress={book.progress}
+            solvedCount={solvedCount}
+          />
         )}
       </div>
     </div>
@@ -516,37 +503,119 @@ function BookPage({ slug }: { slug: string }) {
 }
 
 /**
- * How each auto-imported puzzle earned its place, shown once per book so
- * the badges in the trainer need no explanation.
+ * The book's puzzles as an information-dense, filterable list: number,
+ * fidelity tier, goal, attempt history — filters double as the tier
+ * legend (each chip carries its description as a tooltip).
  */
-function ProvenanceLegend({ puzzles }: { puzzles: BookPuzzle[] }) {
-  const counts = new Map<keyof typeof PROVENANCE_META, number>();
+function PuzzleList({
+  slug,
+  puzzles,
+  progress,
+  solvedCount,
+}: {
+  slug: string;
+  puzzles: BookPuzzle[];
+  progress: Record<string, PuzzleProgress>;
+  solvedCount: number;
+}) {
+  const [stateFilter, setStateFilter] = useState<'all' | 'new' | 'failed' | 'solved'>('all');
+  const [tierFilter, setTierFilter] = useState<'all' | keyof typeof PROVENANCE_META>('all');
+
+  const stateOf = (p: BookPuzzle): 'new' | 'failed' | 'solved' => {
+    const last = progress[p.id]?.last;
+    return last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new';
+  };
+  const tiers = new Map<keyof typeof PROVENANCE_META, number>();
   for (const p of puzzles) {
     if (p.provenance && p.provenance in PROVENANCE_META) {
-      counts.set(p.provenance, (counts.get(p.provenance) ?? 0) + 1);
+      tiers.set(p.provenance, (tiers.get(p.provenance) ?? 0) + 1);
     }
   }
-  if (counts.size === 0) return null;
+  const stateCounts = { all: puzzles.length, new: 0, failed: 0, solved: 0 };
+  for (const p of puzzles) stateCounts[stateOf(p)]++;
+
+  const visible = puzzles.filter(
+    (p) =>
+      (stateFilter === 'all' || stateOf(p) === stateFilter) &&
+      (tierFilter === 'all' || p.provenance === tierFilter),
+  );
+
+  const chip = (active: boolean, extra?: string): string =>
+    cn(
+      'shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+      active ? 'bg-primary-soft border-primary/40 text-primary' : 'border-line text-muted hover:border-line-strong',
+      extra,
+    );
+
   return (
-    <div className="bg-surface border-line mb-3 flex flex-col gap-1.5 rounded-xl border p-3">
-      {[...counts.entries()].map(([provenance, count]) => {
-        const meta = PROVENANCE_META[provenance];
-        return (
-          <div key={provenance} className="flex items-baseline gap-2 text-xs">
-            <span
-              className={cn(
-                'shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-medium',
-                meta.className,
-              )}
+    <>
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        {(['all', 'new', 'failed', 'solved'] as const).map((s) => (
+          <button key={s} type="button" onClick={() => setStateFilter(s)} className={chip(stateFilter === s)}>
+            {s} <span className="opacity-60">{stateCounts[s]}</span>
+          </button>
+        ))}
+        {tiers.size > 0 && <span className="border-line mx-1 h-4 border-l" />}
+        {[...tiers.entries()].map(([tier, count]) => (
+          <button
+            key={tier}
+            type="button"
+            title={PROVENANCE_META[tier].title}
+            onClick={() => setTierFilter(tierFilter === tier ? 'all' : tier)}
+            className={chip(tierFilter === tier)}
+          >
+            {PROVENANCE_META[tier].label} <span className="opacity-60">{count}</span>
+          </button>
+        ))}
+        <span className="text-subtle ml-auto text-xs">{solvedCount}/{puzzles.length} solved</span>
+      </div>
+      <div className="bg-surface border-line divide-line divide-y overflow-hidden rounded-xl border">
+        {visible.map((p) => {
+          const prog = progress[p.id];
+          const state = stateOf(p);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => navigate('puzzles', 'books', slug, p.id)}
+              className="hover:bg-surface-2 flex h-9 w-full items-center gap-3 px-3 text-left transition-colors duration-75"
             >
-              {meta.label}
-            </span>
-            <span className="text-subtle shrink-0 font-mono">{count}</span>
-            <span className="text-muted min-w-0">{meta.title}</span>
-          </div>
-        );
-      })}
-    </div>
+              <span className="text-fg w-12 shrink-0 font-mono text-xs font-semibold">
+                #{p.number ?? puzzles.indexOf(p) + 1}
+              </span>
+              {p.provenance && p.provenance in PROVENANCE_META && (
+                <span
+                  title={PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].title}
+                  className={cn(
+                    'w-20 shrink-0 rounded-full border px-1.5 py-px text-center text-[0.625rem] font-medium',
+                    PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].className,
+                  )}
+                >
+                  {PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].label}
+                </span>
+              )}
+              <span className="text-muted min-w-0 flex-1 truncate text-xs">
+                {p.mateIn ? `Mate in ${p.mateIn}` : `${p.san.length}-ply solution`}
+              </span>
+              {prog && (
+                <span className="text-subtle shrink-0 text-[0.625rem]">
+                  {prog.wins}/{prog.tries} tries
+                </span>
+              )}
+              <span
+                className={cn(
+                  'size-2 shrink-0 rounded-full',
+                  state === 'solved' ? 'bg-nag-good' : state === 'failed' ? 'bg-nag-blunder' : 'bg-line-strong',
+                )}
+              />
+            </button>
+          );
+        })}
+        {visible.length === 0 && (
+          <p className="text-subtle p-4 text-center text-xs">Nothing matches these filters.</p>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -595,55 +664,93 @@ function ProvenanceBadge({ provenance }: { provenance: keyof typeof PROVENANCE_M
 }
 
 /**
- * The puzzle's source: the scanned book page with THIS diagram outlined.
- * The rect is stored as page fractions, so the highlight is a simple
- * percent-positioned overlay on the rendered image.
+ * The correction aid: the scanned source page, cropped to THIS diagram
+ * (with a little margin), expandable inline to the whole page — the
+ * evidence lives inside the entry/correction flow where it is actually
+ * used, never in a lookup popup. Rects are page fractions; the crop is
+ * plain pixel math once the image's natural size is known.
  */
-function SourcePageViewer({
+function SourceCrop({
   slug,
   page,
   rect,
-  onClose,
+  width = 288,
 }: {
   slug: string;
   page: string;
-  rect?: { x: number; y: number; w: number; h: number };
-  onClose: () => void;
+  rect?: SourceRect;
+  width?: number;
 }) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onClick={onClose}>
-      <div
-        className="bg-surface border-line flex max-h-full flex-col gap-2 overflow-hidden rounded-xl border p-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-2">
-          <BookOpen className="text-subtle size-4" />
-          <h2 className="text-fg flex-1 text-sm font-semibold">Source page</h2>
-          <Button variant="ghost" size="icon-sm" title="Close" onClick={onClose}>
-            <X className="size-3.5" />
-          </Button>
-        </div>
-        <div className="min-h-0 overflow-auto">
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [full, setFull] = useState(false);
+  const src = diagramUrl(slug, page);
+  const r = rect ?? { x: 0, y: 0, w: 1, h: 1 };
+  const margin = 0.035;
+  const cx = Math.max(0, r.x - margin);
+  const cy = Math.max(0, r.y - margin);
+  const cw = Math.min(1 - cx, r.w + 2 * margin);
+  const ch = Math.min(1 - cy, r.h + 2 * margin);
+
+  if (full) {
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="border-line relative max-h-[46vh] w-fit overflow-auto rounded-md border">
           <div className="relative w-fit">
-            <img
-              src={diagramUrl(slug, page)}
-              alt="book page"
-              className="max-h-[80vh] w-auto rounded"
+            <img src={src} alt="book page" style={{ width: width * 2 }} />
+            <div
+              className="border-primary pointer-events-none absolute rounded-sm border-2"
+              style={{
+                left: `${r.x * 100}%`,
+                top: `${r.y * 100}%`,
+                width: `${r.w * 100}%`,
+                height: `${r.h * 100}%`,
+              }}
             />
-            {rect && (
-              <div
-                className="border-primary pointer-events-none absolute rounded-sm border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.25)]"
-                style={{
-                  left: `${rect.x * 100}%`,
-                  top: `${rect.y * 100}%`,
-                  width: `${rect.w * 100}%`,
-                  height: `${rect.h * 100}%`,
-                }}
-              />
-            )}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => setFull(false)}
+          className="text-subtle self-start text-xs underline-offset-2 hover:underline"
+        >
+          just the diagram
+        </button>
       </div>
+    );
+  }
+
+  const scale = natural ? width / (cw * natural.w) : 1;
+  return (
+    <div className="flex flex-col gap-1">
+      <div
+        className="border-line relative overflow-hidden rounded-md border"
+        style={{ width, height: natural ? ch * natural.h * scale : width }}
+      >
+        <img
+          src={src}
+          alt="book diagram in its page"
+          onLoad={(e) =>
+            setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+          }
+          className="max-w-none"
+          style={
+            natural
+              ? {
+                  width: natural.w * scale,
+                  marginLeft: -cx * natural.w * scale,
+                  marginTop: -cy * natural.h * scale,
+                }
+              : undefined
+          }
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => setFull(true)}
+        className="text-subtle self-start text-xs underline-offset-2 hover:underline"
+      >
+        show the whole page
+      </button>
     </div>
   );
 }
@@ -690,7 +797,7 @@ function PuzzleEntry({
   slug: string;
   number: number;
   /** Entering an imported diagram: shown for eyeballing, deleted on save. */
-  draft?: { id: string; imageUrl: string; fen: string | null };
+  draft?: { id: string; imageUrl: string; fen: string | null; evidence?: BookDraft['evidence'] };
   /** Correcting an existing puzzle: prefilled, replaced in place on save. */
   replace?: BookPuzzle;
   onDone: () => void;
@@ -763,19 +870,38 @@ function PuzzleEntry({
             From image
           </Button>
         </div>
-        {draft && (
-          <div className="flex shrink-0 items-center gap-3 px-4 pt-2">
-            <img
-              src={draft.imageUrl}
-              alt="book diagram"
-              className="border-line h-36 rounded-md border"
-            />
-            <p className="text-subtle max-w-[16rem] text-xs leading-relaxed">
-              The diagram from the book — make the board match it, then
-              record the solution.
-            </p>
-          </div>
-        )}
+        {(() => {
+          // The evidence, embedded where it is used: correct the board
+          // against the book's own scan.
+          const evidence = replace?.evidence ?? draft?.evidence;
+          if (evidence?.page) {
+            return (
+              <div className="flex shrink-0 items-start gap-3 px-4 pt-2">
+                <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={264} />
+                <p className="text-subtle max-w-[16rem] text-xs leading-relaxed">
+                  The book&rsquo;s own scan — make the board match it, then
+                  record the solution.
+                </p>
+              </div>
+            );
+          }
+          if (draft) {
+            return (
+              <div className="flex shrink-0 items-center gap-3 px-4 pt-2">
+                <img
+                  src={draft.imageUrl}
+                  alt="book diagram"
+                  className="border-line h-36 rounded-md border"
+                />
+                <p className="text-subtle max-w-[16rem] text-xs leading-relaxed">
+                  The diagram from the book — make the board match it, then
+                  record the solution.
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
         <div className="min-h-0 flex-1">
           <EditorView
             key={prefill ?? 'blank'}
@@ -1105,7 +1231,6 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [helped, setHelped] = useState(false);
   const [wrong, setWrong] = useState(false);
   const [engineApproved, setEngineApproved] = useState(false);
-  const [showSource, setShowSource] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
@@ -1138,7 +1263,6 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setHelped(false);
     setWrong(false);
     setEngineApproved(false);
-    setShowSource(false);
     reported.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book, puzzleId]);
@@ -1402,34 +1526,18 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             {book.title} · #{puzzle.number ?? index + 1}
           </span>
           {puzzle.provenance && <ProvenanceBadge provenance={puzzle.provenance} />}
-          {puzzle.evidence?.page && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Show the book page this puzzle was read from"
-              onClick={() => setShowSource(true)}
-            >
-              <BookOpen className="size-3.5" />
-            </Button>
-          )}
+          {puzzle.mateIn ? (
+            <span className="text-subtle shrink-0 text-xs">Mate in {puzzle.mateIn}</span>
+          ) : null}
           <Button
             variant="ghost"
             size="icon-sm"
-            title="Correct this puzzle (position and solution)"
+            title="Correct this puzzle against the book scan"
             onClick={() => navigate('puzzles', 'books', slug, 'fix', puzzle.id)}
           >
             <Pencil className="size-3.5" />
           </Button>
         </div>
-
-        {showSource && puzzle.evidence?.page && (
-          <SourcePageViewer
-            slug={slug}
-            page={puzzle.evidence.page}
-            rect={puzzle.evidence.rect}
-            onClose={() => setShowSource(false)}
-          />
-        )}
 
         <AnswerPanel
           tree={tree}

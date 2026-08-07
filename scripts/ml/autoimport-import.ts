@@ -235,6 +235,8 @@ interface ImportedPuzzle {
   wildcards?: number[];
   added: string;
   number: number;
+  /** Section goal (e.g. 2 = "Mate in two") when the page header names one. */
+  mateIn?: number;
   /** engine-unverified = legal position + side, but the engine found
    *  nothing DECISIVE — lanph3re's import-everything tier; badge + evidence
    *  make opportunistic review cheap. */
@@ -284,6 +286,7 @@ async function main(): Promise<void> {
         number: entry.number,
         provenance,
         evidence,
+        ...(entry.mateIn ? { mateIn: entry.mateIn } : {}),
       });
     };
 
@@ -383,6 +386,11 @@ async function main(): Promise<void> {
     image: `n${entry.number}.jpg`,
     fen: entry.fen ? fullFen(entry.fen, entry.side ?? 'w') : null,
     added: now,
+    number: entry.number,
+    evidence: {
+      page: `page${String(entry.page).padStart(3, '0')}.jpg`,
+      rect: entry.rect ?? { x: 0, y: 0, w: 1, h: 1 },
+    },
   }));
   writeFileSync(resolve(BOOK, 'drafts.json'), `${JSON.stringify(drafts, null, 1)}\n`);
 
