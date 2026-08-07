@@ -29,6 +29,8 @@ interface BookPuzzle {
   fen: string;
   uci: string[];
   san: string[];
+  /** Ply indices where any legal move is accepted (defender don't-cares). */
+  wildcards?: number[];
   added: string;
 }
 
@@ -127,6 +129,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       fen?: string;
       uci?: string[];
       san?: string[];
+      wildcards?: number[];
     };
     if (
       typeof body.fen !== 'string' ||
@@ -137,12 +140,16 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     ) {
       return c.json({ error: 'expected { fen, uci[], san[] } with a non-empty solution' }, 400);
     }
+    const wildcards = (body.wildcards ?? []).filter(
+      (n) => Number.isInteger(n) && n >= 0 && n < body.uci!.length,
+    );
     const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
     const puzzle: BookPuzzle = {
       id: `p${Date.now().toString(36)}`,
       fen: body.fen,
       uci: body.uci,
       san: body.san,
+      ...(wildcards.length > 0 ? { wildcards } : {}),
       added: new Date().toISOString(),
     };
     puzzles.push(puzzle);

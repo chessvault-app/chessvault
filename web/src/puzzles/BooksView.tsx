@@ -29,7 +29,15 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
-import { judgeMove, positionAt, positionWith, type ApiPuzzle } from './puzzle';
+import {
+  boardStateOf,
+  judgeBookMove,
+  scriptedFen,
+  type BookSolution,
+  type PlayedMove,
+} from './bookJudge';
+import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
+import { formatScore } from '@/engine/uci';
 
 /**
  * Book puzzles (lanph3re's long-wanted feature): positions transcribed from
@@ -54,6 +62,7 @@ interface BookPuzzle {
   fen: string;
   uci: string[];
   san: string[];
+  wildcards?: number[];
 }
 
 interface PuzzleProgress {
@@ -398,14 +407,18 @@ function SolutionRecorder({
   onDone: () => void;
 }) {
   const [line, setLine] = useState<{ uci: string; san: string; fen: string }[]>([]);
+  const [wildcards, setWildcards] = useState<ReadonlySet<number>>(new Set());
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
     color: Color;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verdicts, setVerdicts] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const solverSide: Color = parseFen(fen).unwrap().turn;
   const currentFen = line.at(-1)?.fen ?? fen;
   const pos = Chess.fromSetup(parseFen(currentFen).unwrap()).unwrap();
   const dests = chessgroundDests(pos);
@@ -417,6 +430,7 @@ function SolutionRecorder({
     const san = makeSanAndPlay(pos, move);
     playSound(san.includes('#') || san.includes('+') ? 'check' : san.includes('x') ? 'capture' : 'move');
     setLine((prev) => [...prev, { uci, san, fen: makeFen(pos.toSetup()) }]);
+    setVerdicts(null);
   };
 
   const onMove = (orig: string, dest: string): void => {
@@ -437,6 +451,46 @@ function SolutionRecorder({
     setPendingPromotion(null);
   };
 
+  const undo = (): void => {
+    setLine((prev) => prev.slice(0, -1));
+    setWildcards((prev) => new Set([...prev].filter((i) => i < line.length - 1)));
+    setVerdicts(null);
+  };
+
+  const toggleWildcard = (index: number): void => {
+    setWildcards((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  /**
+   * Engine proofread (lanph3re's tier 3): every SOLVER move must keep the
+   * position decisively won, and the final position must be decisive.
+   * Catches transcription slips and the occasional book misprint.
+   */
+  const verify = async (): Promise<void> => {
+    setVerifying(true);
+    const notes: string[] = [];
+    for (let i = 0; i < line.length; i++) {
+      const mover: Color = i % 2 === 0 ? solverSide : solverSide === 'white' ? 'black' : 'white';
+      if (mover !== solverSide) continue;
+      const score = await evaluateWhitePov(line[i]!.fen);
+      const pov = solverSide === 'white' ? 1 : -1;
+      const cp = score.mate !== undefined ? (score.mate * pov > 0 ? 10000 : -10000) : (score.cp ?? 0) * pov;
+      if (cp < 150) {
+        notes.push(
+          `After ${Math.floor(i / 2) + 1}. ${line[i]!.san} the engine sees only ${formatScore(score)} — check the transcription.`,
+        );
+      }
+    }
+    if (notes.length === 0) notes.push('Engine agrees: every solver move keeps a decisive advantage.');
+    setVerdicts(notes);
+    setVerifying(false);
+  };
+
   const save = async (): Promise<void> => {
     setSaving(true);
     const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
@@ -446,6 +500,7 @@ function SolutionRecorder({
         fen,
         uci: line.map((m) => m.uci),
         san: line.map((m) => m.san),
+        wildcards: [...wildcards],
       }),
     });
     setSaving(false);
@@ -464,7 +519,7 @@ function SolutionRecorder({
           <div className="relative w-full">
             <Board
               fen={currentFen}
-              orientation={parseFen(fen).unwrap().turn}
+              orientation={solverSide}
               dests={dests}
               lastMove={
                 line.at(-1)
@@ -478,7 +533,7 @@ function SolutionRecorder({
               <PromotionPicker
                 color={pendingPromotion.color}
                 dest={pendingPromotion.dest}
-                orientation={parseFen(fen).unwrap().turn}
+                orientation={solverSide}
                 onSelect={completePromotion}
                 onCancel={() => setPendingPromotion(null)}
               />
@@ -510,7 +565,7 @@ function SolutionRecorder({
                 size="icon-sm"
                 title="Undo the last move"
                 disabled={line.length === 0}
-                onClick={() => setLine((prev) => prev.slice(0, -1))}
+                onClick={undo}
               >
                 <Undo2 className="size-3.5" />
               </Button>
@@ -523,23 +578,63 @@ function SolutionRecorder({
                 move to find.
               </p>
             ) : (
-              line.map((m, i) => (
-                <span key={i} className="font-mono text-[0.8125rem]">
-                  {i % 2 === 0 ? (
-                    <span className="text-subtle">
-                      {Math.floor(i / 2) + 1}
-                      {parseFen(fen).unwrap().turn === 'black' && i === 0 ? '…' : '.'}
-                    </span>
-                  ) : null}{' '}
-                  {m.san}
-                </span>
-              ))
+              line.map((m, i) => {
+                // Defender plies (the side NOT to move in the diagram) can
+                // be marked "any move" — the ~ books use.
+                const isDefender = i % 2 === 1;
+                return (
+                  <span key={i} className="flex items-baseline gap-0.5 font-mono text-[0.8125rem]">
+                    {i % 2 === 0 ? (
+                      <span className="text-subtle">
+                        {Math.floor(i / 2) + 1}
+                        {solverSide === 'black' && i === 0 ? '…' : '.'}
+                      </span>
+                    ) : null}
+                    {isDefender ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleWildcard(i)}
+                        title={
+                          wildcards.has(i)
+                            ? 'Any move accepted here (click to require this exact move)'
+                            : 'Click to accept ANY move here (the book\u2019s K~)'
+                        }
+                        className={cn(
+                          'rounded px-1 transition-colors duration-100',
+                          wildcards.has(i)
+                            ? 'bg-primary-soft text-primary'
+                            : 'hover:bg-surface-2',
+                        )}
+                      >
+                        {wildcards.has(i) ? `${m.san.charAt(0)}~` : m.san}
+                      </button>
+                    ) : (
+                      <span className="px-1">{m.san}</span>
+                    )}
+                  </span>
+                );
+              })
             )}
           </div>
+          {line.some((_, i) => i % 2 === 1) && (
+            <p className="text-subtle border-line border-t px-3 py-1.5 text-[0.6875rem]">
+              Tip: click an opponent move to mark it “any move” (the book's ~).
+            </p>
+          )}
         </Panel>
 
+        {verdicts && (
+          <div className="bg-surface border-line shrink-0 rounded-xl border p-3 text-xs">
+            {verdicts.map((note, i) => (
+              <p key={i} className={note.startsWith('Engine agrees') ? 'text-good' : 'text-warn'}>
+                {note}
+              </p>
+            ))}
+          </div>
+        )}
         {error && <p className="text-bad text-xs">{error}</p>}
-        <div className="flex shrink-0 gap-2">
+
+        <div className="flex shrink-0 flex-wrap gap-2">
           <Button
             variant="primary"
             size="sm"
@@ -549,7 +644,17 @@ function SolutionRecorder({
             {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
             Save puzzle
           </Button>
-          <Button variant="ghost" size="sm" disabled={line.length === 0} onClick={() => setLine([])}>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={line.length === 0 || verifying}
+            title="Ask Stockfish whether every solver move really wins"
+            onClick={() => void verify()}
+          >
+            {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
+            Verify
+          </Button>
+          <Button variant="ghost" size="sm" disabled={line.length === 0} onClick={() => { setLine([]); setWildcards(new Set()); setVerdicts(null); }}>
             <RotateCcw className="size-3.5" />
             Start over
           </Button>
@@ -562,14 +667,16 @@ function SolutionRecorder({
 // ---------------------------------------------------------------------------
 // Strict trainer: the solver enters every move, both sides
 
-type Phase = 'loading' | 'solving' | 'wrong' | 'done';
+type Phase = 'loading' | 'solving' | 'wrong' | 'checking' | 'done';
 
 function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
-  const [plies, setPlies] = useState(0);
-  const [view, setView] = useState<ReturnType<typeof positionAt> | null>(null);
+  const [played, setPlayed] = useState<PlayedMove[]>([]);
+  const [cursor, setCursor] = useState(0);
+  const [wrongMove, setWrongMove] = useState<PlayedMove | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
   const [failed, setFailed] = useState(false);
+  const [engineApproved, setEngineApproved] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
@@ -581,20 +688,8 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
 
   const puzzle = book?.puzzles.find((p) => p.id === puzzleId) ?? null;
   const index = book && puzzle ? book.puzzles.indexOf(puzzle) : -1;
-  // The puzzle-mechanics helpers speak the {fen, moves} shape; in a book
-  // puzzle the solver plays from ply 0, no setup move.
-  const asApi: ApiPuzzle | null = puzzle
-    ? {
-        id: puzzle.id,
-        fen: puzzle.fen,
-        moves: puzzle.uci.join(' '),
-        rating: 0,
-        popularity: 0,
-        plays: 0,
-        themes: '',
-        game_url: null,
-        opening_tags: null,
-      }
+  const solution: BookSolution | null = puzzle
+    ? { fen: puzzle.fen, uci: puzzle.uci, ...(puzzle.wildcards ? { wildcards: puzzle.wildcards } : {}) }
     : null;
 
   useEffect(() => {
@@ -605,14 +700,22 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   }, [slug]);
 
   useEffect(() => {
-    if (!asApi) return;
-    setPlies(0);
-    setView(positionAt(asApi, 0));
+    if (!puzzle) return;
+    setPlayed([]);
+    setCursor(0);
+    setWrongMove(null);
     setPhase('solving');
     setFailed(false);
+    setEngineApproved(false);
     reported.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book, puzzleId]);
+
+  const currentFen = wrongMove?.fen ?? played.at(-1)?.fen ?? puzzle?.fen;
+  const lastUci = wrongMove?.uci ?? played.at(-1)?.uci;
+  // chessops rejects nonsense positions loudly — never construct the view
+  // before the puzzle has loaded.
+  const view = currentFen ? boardStateOf(currentFen, lastUci) : null;
 
   const report = async (win: boolean): Promise<void> => {
     if (reported.current || !puzzle) return;
@@ -624,33 +727,57 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     });
   };
 
-  const applyMove = (uci: string): void => {
-    if (!asApi || phase !== 'solving') return;
-    const verdict = judgeMove(asApi, plies, uci);
-    if (verdict === 'wrong') {
-      setFailed(true);
-      void report(false);
-      setView(positionWith(asApi, plies, uci));
-      setPhase('wrong');
-      timers.current.push(
-        setTimeout(() => {
-          setView(positionAt(asApi, plies));
-          setPhase('solving');
-        }, 650),
-      );
+  const rejectMove = (move: PlayedMove): void => {
+    setFailed(true);
+    void report(false);
+    setWrongMove(move);
+    setPhase('wrong');
+    timers.current.push(
+      setTimeout(() => {
+        setWrongMove(null);
+        setPhase('solving');
+      }, 650),
+    );
+  };
+
+  const applyMove = (orig: string, dest: string, promotion?: string): void => {
+    if (!solution || !view || !currentFen || phase !== 'solving') return;
+    const verdict = judgeBookMove(solution, currentFen, cursor, orig, dest, promotion);
+
+    if (verdict.kind === 'wrong') {
+      if (verdict.move.san !== '?') rejectMove(verdict.move);
       return;
     }
-    const next = plies + 1;
-    setPlies(next);
-    setView(positionAt(asApi, next));
-    if (verdict === 'complete') {
+    if (verdict.kind === 'engine') {
+      // The book text can't settle this one — ask Stockfish whether the
+      // move still wins decisively against best defence.
+      const mover = view.turn;
+      setPlayed((prev) => [...prev, verdict.move]);
+      setPhase('checking');
+      void movePasses(verdict.move.fen, mover).then((passes) => {
+        if (passes) {
+          setEngineApproved(true);
+          setCursor(verdict.cursor);
+          setPhase('done');
+          void report(!failed);
+        } else {
+          setPlayed((prev) => prev.slice(0, -1));
+          rejectMove(verdict.move);
+        }
+      });
+      return;
+    }
+
+    setPlayed((prev) => [...prev, verdict.move]);
+    setCursor(verdict.cursor);
+    if (verdict.kind === 'complete') {
       setPhase('done');
       void report(!failed);
     }
   };
 
   const onMove = (orig: string, dest: string): void => {
-    if (!view || phase !== 'solving') return;
+    if (phase !== 'solving' || !view) return;
     const to = parseSquare(dest);
     const lastRank = view.turn === 'white' ? 7 : 0;
     const pos = Chess.fromSetup(parseFen(view.fen).unwrap()).unwrap();
@@ -659,23 +786,20 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       setPendingPromotion({ orig, dest, color: view.turn });
       return;
     }
-    applyMove(orig + dest);
+    applyMove(orig, dest);
   };
 
   const completePromotion = (role: Role): void => {
     if (!pendingPromotion) return;
     const letter = { queen: 'q', rook: 'r', bishop: 'b', knight: 'n', king: '', pawn: '' }[role];
-    applyMove(pendingPromotion.orig + pendingPromotion.dest + letter);
+    applyMove(pendingPromotion.orig, pendingPromotion.dest, letter);
     setPendingPromotion(null);
   };
 
   // Sound per rendered position (see PuzzlesView for the mechanism).
   const prevPieces = useRef<number | null>(null);
   useEffect(() => {
-    if (!view) {
-      prevPieces.current = null;
-      return;
-    }
+    if (!view) return;
     const pieces = view.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
     const prev = prevPieces.current;
     prevPieces.current = pieces;
@@ -685,29 +809,40 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   }, [view?.fen]);
 
   const retry = (): void => {
-    if (!asApi) return;
     timers.current.forEach(clearTimeout);
-    setPlies(0);
-    setView(positionAt(asApi, 0));
+    setPlayed([]);
+    setCursor(0);
+    setWrongMove(null);
     setPhase('solving');
     setFailed(false);
+    setEngineApproved(false);
     reported.current = false;
   };
 
   const showSolution = (): void => {
-    if (!asApi || phase === 'done') return;
+    if (!solution || phase === 'done' || phase === 'checking') return;
     setFailed(true);
     void report(false);
-    const total = asApi.moves.split(' ').length;
-    let at = plies;
+    timers.current.forEach(clearTimeout);
+    setWrongMove(null);
+    // Replay the scripted line from the start, one move per beat.
+    const total = solution.uci.length;
+    let at = 0;
+    setPlayed([]);
+    setCursor(0);
     const step = (): void => {
       at++;
-      setPlies(at);
-      setView(positionAt(asApi, at));
+      const fenAt = scriptedFen(solution, at);
+      const uciAt = solution.uci[at - 1]!;
+      setPlayed((prev) => [
+        ...prev.slice(0, at - 1),
+        { uci: uciAt, san: puzzle?.san[at - 1] ?? '?', fen: fenAt },
+      ]);
+      setCursor(at);
       if (at < total) timers.current.push(setTimeout(step, 650));
       else setPhase('done');
     };
-    step();
+    timers.current.push(setTimeout(step, 400));
   };
 
   const analyse = (): void => {
@@ -726,13 +861,12 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   if (book === null || !puzzle || !view) {
     return (
       <div className="text-subtle grid h-full place-items-center text-sm">
-        {book === null ? <Loader2 className="size-5 animate-spin" /> : 'That puzzle does not exist.'}
+        {!puzzle && book !== null ? 'That puzzle does not exist.' : <Loader2 className="size-5 animate-spin" />}
       </div>
     );
   }
 
   const orientation = parseFen(puzzle.fen).unwrap().turn;
-  const solvedSan = puzzle.san.slice(0, plies);
   const next = nextUnsolved();
 
   return (
@@ -772,11 +906,15 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             >
               {phase === 'wrong'
                 ? 'Not the book move — try again.'
-                : phase === 'done'
-                  ? failed
-                    ? 'Done, with help. Retry it clean later.'
-                    : 'Exactly as the book has it.'
-                  : `Enter every move — ${view.turn} plays next.`}
+                : phase === 'checking'
+                  ? 'Off the book — asking Stockfish…'
+                  : phase === 'done'
+                    ? failed
+                      ? 'Done, with help. Retry it clean later.'
+                      : engineApproved
+                        ? 'Not the book\u2019s move \u2014 but the engine approves. Solved.'
+                        : 'Exactly as the book has it.'
+                    : `Enter every move — ${view.turn} plays next.`}
             </span>
           </div>
         </div>
@@ -798,14 +936,14 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
         </div>
 
         <Panel flush className="shrink-0">
-          <PanelHeader title={`Progress · ${plies}/${puzzle.uci.length} plies`} />
+          <PanelHeader title={`Progress · ${played.length}/${puzzle.uci.length} plies`} />
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 font-mono text-[0.8125rem]">
-            {solvedSan.length === 0 ? (
+            {played.length === 0 ? (
               <p className="text-subtle font-sans text-xs">
                 Nothing entered yet — find the first move on the board.
               </p>
             ) : (
-              solvedSan.map((san, i) => (
+              played.map((m, i) => (
                 <span key={i}>
                   {i % 2 === 0 ? (
                     <span className="text-subtle">
@@ -813,7 +951,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                       {orientation === 'black' && i === 0 ? '…' : '.'}
                     </span>
                   ) : null}{' '}
-                  {san}
+                  {m.san}
                 </span>
               ))
             )}
