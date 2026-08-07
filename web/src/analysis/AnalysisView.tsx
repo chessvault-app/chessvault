@@ -86,7 +86,7 @@ export function AnalysisView() {
           <MoveTreePane />
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
-          <BoardControls className="border-line border-t" />
+          <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />
           <StatusBar />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of

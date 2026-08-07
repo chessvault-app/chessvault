@@ -392,7 +392,7 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
             <EngineBlock />
             <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
             <MoveTreePane />
-            <BoardControls className="border-line border-t" />
+            <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />
             <StatusBar />
           </Panel>
         </div>

@@ -151,6 +151,11 @@ export function AnalysisBoard() {
         </div>
         <PlayerBar side={orientation} />
       </div>
+      {/* Below lg the side column shows one pane at a time, so the panel's
+          nav row can be off-screen (Explorer tab) — and touch has neither
+          wheel nor arrow keys. This copy keeps navigation reachable there;
+          desktop uses the copy in the Moves panel. */}
+      <BoardControls className="lg:hidden" />
     </div>
   );
 }
@@ -260,7 +265,14 @@ function PlayerBar({ side }: { side: 'white' | 'black' }) {
   );
 }
 
-export function BoardControls({ className }: { className?: string }) {
+export function BoardControls({
+  className,
+  keyboard = true,
+}: {
+  className?: string;
+  /** Exactly one rendered instance may own the arrow-key listener. */
+  keyboard?: boolean;
+}) {
   const goToStart = useAnalysis((s) => s.goToStart);
   const goBack = useAnalysis((s) => s.goBack);
   const goForward = useAnalysis((s) => s.goForward);
@@ -269,6 +281,7 @@ export function BoardControls({ className }: { className?: string }) {
 
   // Arrow keys should drive the board from anywhere except a text field.
   useEffect(() => {
+    if (!keyboard) return;
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
@@ -302,7 +315,7 @@ export function BoardControls({ className }: { className?: string }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goBack, goForward, goToStart, goToEnd, flip]);
+  }, [keyboard, goBack, goForward, goToStart, goToEnd, flip]);
 
   return (
     <div className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}>

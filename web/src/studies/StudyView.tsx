@@ -152,7 +152,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           <EngineBlock />
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
           <MoveTreePane />
-          <BoardControls className="border-line border-t" />
+          <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />
           <AnnotationPane
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
           />
