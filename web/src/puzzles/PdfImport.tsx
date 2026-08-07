@@ -8,7 +8,8 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { grayFromCanvas, cropDiagram } from './ocr/browser';
 import { detectDiagrams } from './ocr/detect';
-import { classifyBoard, labelsToFen, type Template } from './ocr/classify';
+import { classifyBoard, labelsToFen, type CellReading, type Template } from './ocr/classify';
+import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -69,12 +70,15 @@ export function PdfImport({
         canvas.height = Math.round(viewport.height);
         await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
 
+        const net = await loadCellNet();
         for (const rect of detectDiagrams(grayFromCanvas(canvas))) {
-          const { dataUrl, features } = cropDiagram(canvas, rect);
+          const { dataUrl, board, features } = cropDiagram(canvas, rect);
+          let cells: CellReading[] | null = null;
+          if (net) cells = classifyBoardNet(net, board);
+          else if (templates.length > 0) cells = classifyBoard(features, templates);
           let fen: string | null = null;
           let uncertain = 0;
-          if (templates.length > 0) {
-            const cells = classifyBoard(features, templates);
+          if (cells) {
             fen = labelsToFen(
               cells.map((c) => c.label),
               false,
@@ -163,7 +167,7 @@ export function PdfImport({
             <p className="text-subtle text-xs">
               {found.length} diagram{found.length === 1 ? '' : 's'} found — untick any false
               positives, then add them as drafts.
-              {templates.length === 0 &&
+              {found.every((f) => f.fen === null) &&
                 ' Positions are unread for now: confirming the first draft teaches this book’s font.'}
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">

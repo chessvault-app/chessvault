@@ -10,7 +10,8 @@ import {
   type Quad,
 } from './ocr/image';
 import { detectBoardQuad } from './ocr/detect';
-import { classifyBoard, labelsToFen, type Template } from './ocr/classify';
+import { classifyBoard, labelsToFen, type CellReading, type Template } from './ocr/classify';
+import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
 
 /** Below this ratio-test margin a square is flagged for eyeballing. */
 const CONFIDENT = 0.35;
@@ -182,7 +183,7 @@ export function PhotoImport({
     setReading(null);
   };
 
-  const read = (): void => {
+  const read = async (): Promise<void> => {
     if (!img || !corners) return;
     // Decode pixels once, at natural size, through an offscreen canvas.
     const off = document.createElement('canvas');
@@ -192,13 +193,20 @@ export function PhotoImport({
     ctx.drawImage(img, 0, 0);
     const gray = grayscaleFrom(ctx.getImageData(0, 0, off.width, off.height));
     const board = warpQuad(gray, corners);
+    // Features are always computed: confirming the position harvests them
+    // as this book's font regardless of which classifier read the board.
     const features = boardFeatures(board);
 
-    if (templates.length === 0) {
+    // The trained net reads any style with no calibration; the per-book
+    // templates are the fallback (and stay the personalisation layer).
+    const net = await loadCellNet();
+    let cells: CellReading[] | null = null;
+    if (net) cells = classifyBoardNet(net, board);
+    else if (templates.length > 0) cells = classifyBoard(features, templates);
+    if (!cells) {
       setReading({ fen: null, features, uncertain: [] });
       return;
     }
-    const cells = classifyBoard(features, templates);
     const fen = labelsToFen(
       cells.map((c) => c.label),
       blackAtBottom,
@@ -295,7 +303,7 @@ export function PhotoImport({
               onPointerUp={() => (dragging.current = null)}
             />
             <div className="flex flex-wrap items-center gap-3">
-              <Button variant="primary" size="sm" onClick={read}>
+              <Button variant="primary" size="sm" onClick={() => void read()}>
                 <ScanSearch className="size-3.5" />
                 Read position
               </Button>

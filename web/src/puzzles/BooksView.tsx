@@ -53,7 +53,8 @@ import {
   labelsToFen,
   type Template,
 } from './ocr/classify';
-import { featuresFromImage, loadImage } from './ocr/browser';
+import { boardFromImage, featuresFromImage, loadImage } from './ocr/browser';
+import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
 import { AnswerPanel } from './AnswerPanel';
 import { formatScore } from '@/engine/uci';
@@ -266,10 +267,13 @@ function BookPage({ slug }: { slug: string }) {
     setRereading(true);
     try {
       const current = await bookTemplates(slug);
+      const net = await loadCellNet();
       const updates: { id: string; fen: string | null }[] = [];
       for (const d of book.drafts) {
         const img = await loadImage(diagramUrl(slug, d.image));
-        const cells = classifyBoard(featuresFromImage(img), current);
+        const cells = net
+          ? classifyBoardNet(net, boardFromImage(img))
+          : classifyBoard(featuresFromImage(img), current);
         updates.push({
           id: d.id,
           fen: labelsToFen(
