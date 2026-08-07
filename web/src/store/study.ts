@@ -286,24 +286,44 @@ export const useStudy = create<StudyState>()((set, get) => {
       const trimmed = name.trim();
       if (!trimmed) return;
       const { openId } = get();
-      const chapters = stashCurrent().map((c, i) =>
-        i === index
-          ? {
-              ...c,
-              name: trimmed,
-              headers: { ...c.headers, ChapterName: trimmed, Event: `${openId}: ${trimmed}` },
-            }
-          : c,
-      );
+      const stashed = stashCurrent();
+      const oldName = stashed[index]?.name ?? '';
+      const withName = (c: Chapter, next: string): Chapter => ({
+        ...c,
+        name: next,
+        headers: { ...c.headers, ChapterName: next, Event: `${openId}: ${next}` },
+      });
+      const chapters = stashed.map((c, i) => {
+        if (i === index) return withName(c, trimmed);
+        // Sub-chapters follow their parent's new name.
+        if (!oldName.includes('/') && c.name.startsWith(`${oldName}/`)) {
+          return withName(c, `${trimmed}/${c.name.slice(oldName.length + 1)}`);
+        }
+        return c;
+      });
       set({ chapters, saveState: 'dirty' });
       scheduleSave();
     },
 
     deleteChapter: (index) => {
-      const { chapterIndex } = get();
+      const { chapterIndex, openId } = get();
       const chapters = stashCurrent();
       if (chapters.length <= 1) return; // a study always has at least one chapter
-      const next = chapters.filter((_, i) => i !== index);
+      const target = chapters[index]!;
+      let next = chapters.filter((_, i) => i !== index);
+      // Deleting a parent promotes its sub-chapters to top level rather
+      // than orphaning or destroying them.
+      if (!target.name.includes('/')) {
+        next = next.map((c) => {
+          if (!c.name.startsWith(`${target.name}/`)) return c;
+          const promoted = c.name.slice(target.name.length + 1);
+          return {
+            ...c,
+            name: promoted,
+            headers: { ...c.headers, ChapterName: promoted, Event: `${openId}: ${promoted}` },
+          };
+        });
+      }
       const nextIndex = Math.min(chapterIndex > index ? chapterIndex - 1 : chapterIndex, next.length - 1);
       set({ chapters: next, chapterIndex: nextIndex, saveState: 'dirty' });
       loadIntoAnalysis(next[nextIndex]!);

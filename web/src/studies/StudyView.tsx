@@ -3,7 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
-  FolderPlus,
+  ListTree,
   Loader2,
   Pencil,
   Plus,
@@ -290,109 +290,79 @@ function ChaptersPanel() {
   const [draft, setDraft] = useState('');
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
 
-  const toggleFold = (group: string): void =>
+  const toggleFold = (parent: string): void =>
     setFolded((prev) => {
       const next = new Set(prev);
-      if (next.has(group)) next.delete(group);
-      else next.add(group);
+      if (next.has(parent)) next.delete(parent);
+      else next.add(parent);
       return next;
     });
 
-  // Sub-chapters: a chapter named "Group/Name" files under a group heading.
-  // The grouping lives entirely in the ChapterName header — the PGN file
-  // stays a flat list of games, readable by any tool.
-  const groupOf = (name: string): string =>
+  // Sub-chapters nest under a NORMAL chapter (lanph3re's call — no separate
+  // group headings). Storage stays a flat PGN: a sub-chapter's ChapterName
+  // is "Parent/Name", written by the UI, never typed by the user. A sub
+  // whose parent is gone renders top-level under its full name.
+  const parentOf = (name: string): string =>
     name.includes('/') ? name.slice(0, name.indexOf('/')) : '';
-  const rows: ({ kind: 'group'; group: string; count: number } | { kind: 'chapter'; index: number })[] = [];
-  const seenGroups = new Set<string>();
+  const topNames = new Set(chapters.filter((c) => !c.name.includes('/')).map((c) => c.name));
+  const subsOf = new Map<string, number[]>();
+  const tops: number[] = [];
   chapters.forEach((chapter, index) => {
-    const group = groupOf(chapter.name);
-    if (group && !seenGroups.has(group)) {
-      seenGroups.add(group);
-      rows.push({
-        kind: 'group',
-        group,
-        count: chapters.filter((c) => groupOf(c.name) === group).length,
-      });
+    const parent = parentOf(chapter.name);
+    if (parent && topNames.has(parent)) {
+      subsOf.set(parent, [...(subsOf.get(parent) ?? []), index]);
+    } else {
+      tops.push(index);
     }
-    // Folded groups list only their heading.
-    if (group && folded.has(group)) return;
-    rows.push({ kind: 'chapter', index });
   });
+  const rows: { index: number; sub: boolean; childCount: number; isFolded: boolean }[] = [];
+  for (const index of tops) {
+    const name = chapters[index]!.name;
+    const children = subsOf.get(name) ?? [];
+    const isFolded = folded.has(name);
+    rows.push({ index, sub: false, childCount: children.length, isFolded });
+    if (!isFolded) for (const child of children) rows.push({ index: child, sub: true, childCount: 0, isFolded: false });
+  }
+
+  /** Create a sub-chapter under `parentIndex` and open its rename input. */
+  const addSub = (parentName: string): void => {
+    const n = chapters.filter((c) => c.name.startsWith(`${parentName}/`)).length + 1;
+    addChapter(parentName);
+    setFolded((prev) => {
+      const next = new Set(prev);
+      next.delete(parentName);
+      return next;
+    });
+    setDraft(`Chapter ${n}`);
+    setRenaming(chapters.length);
+  };
 
   return (
     <Panel flush className="max-h-48 shrink-0" resizeKey="study-chapters">
       <PanelHeader
         title={`Chapters · ${chapters.length}`}
         actions={
-          <>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Add a sub-chapter — chapters named “Group/Name” nest under a group heading"
-              onClick={() => {
-                // Create it nested and drop straight into the rename input
-                // with the full Group/Name path, so the naming scheme that
-                // drives nesting explains itself.
-                const group = 'New group';
-                const n = chapters.filter((c) => c.name.startsWith(`${group}/`)).length + 1;
-                addChapter(group);
-                setDraft(`${group}/Chapter ${n}`);
-                setRenaming(chapters.length);
-              }}
-            >
-              <FolderPlus className="size-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" title="Add a chapter" onClick={() => addChapter()}>
-              <Plus className="size-3.5" />
-            </Button>
-          </>
+          <Button variant="ghost" size="icon-sm" title="Add a chapter" onClick={() => addChapter()}>
+            <Plus className="size-3.5" />
+          </Button>
         }
       />
       <ul className="min-h-0 overflow-y-auto p-1">
-        {rows.map((row) =>
-          row.kind === 'group' ? (
-            <li key={`group-${row.group}`} className="group/subch flex items-center gap-1 px-1 pb-0.5 pt-1.5">
-              <button
-                type="button"
-                onClick={() => toggleFold(row.group)}
-                title={folded.has(row.group) ? 'Unfold this group' : 'Fold this group'}
-                className="text-subtle hover:text-fg flex h-5 min-w-0 flex-1 items-center gap-1 rounded px-1 text-left transition-colors duration-100"
-              >
-                <ChevronDown
-                  className={cn(
-                    'size-3 shrink-0 transition-transform duration-100',
-                    folded.has(row.group) && '-rotate-90',
-                  )}
-                />
-                <span className="min-w-0 truncate text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-                  {row.group}
-                </span>
-                {folded.has(row.group) && (
-                  <span className="shrink-0 font-mono text-[0.625rem]">{row.count}</span>
-                )}
-              </button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className="size-5 opacity-0 transition-opacity group-hover/subch:opacity-100 pointer-coarse:opacity-100"
-                title={`Add a chapter in “${row.group}”`}
-                onClick={() => addChapter(row.group)}
-              >
-                <Plus className="size-3" />
-              </Button>
-            </li>
-          ) : (
-            <ChapterRow
-              key={chapters[row.index]!.id}
-              index={row.index}
-              renaming={renaming}
-              setRenaming={setRenaming}
-              draft={draft}
-              setDraft={setDraft}
-            />
-          ),
-        )}
+        {rows.map((row) => (
+          <ChapterRow
+            key={chapters[row.index]!.id}
+            index={row.index}
+            sub={row.sub}
+            childCount={row.childCount}
+            isFolded={row.isFolded}
+            onToggleFold={() => toggleFold(chapters[row.index]!.name)}
+            onAddSub={() => addSub(chapters[row.index]!.name)}
+            renaming={renaming}
+            setRenaming={setRenaming}
+            draft={draft}
+            setDraft={setDraft}
+          />
+        ))}
       </ul>
     </Panel>
   );
@@ -403,12 +373,22 @@ function ChaptersPanel() {
 // row — and the rename input inside it — on every keystroke.
 function ChapterRow({
   index,
+  sub,
+  childCount,
+  isFolded,
+  onToggleFold,
+  onAddSub,
   renaming,
   setRenaming,
   draft,
   setDraft,
 }: {
   index: number;
+  sub: boolean;
+  childCount: number;
+  isFolded: boolean;
+  onToggleFold: () => void;
+  onAddSub: () => void;
   renaming: number | null;
   setRenaming: (v: number | null) => void;
   draft: string;
@@ -422,22 +402,31 @@ function ChapterRow({
 
   const chapter = chapters[index];
   if (!chapter) return null;
-  const nested = chapter.name.includes('/');
-  // Nested chapters show only their own name; the group heading carries
-  // the prefix. Renaming always edits the full "Group/Name" path.
-  const label = nested ? chapter.name.slice(chapter.name.indexOf('/') + 1) : chapter.name;
+  const slash = chapter.name.indexOf('/');
+  // Rows show and edit only their OWN name; the parent prefix is plumbing
+  // the UI maintains (and slashes are stripped so it stays that way).
+  const ownName = sub && slash >= 0 ? chapter.name.slice(slash + 1) : chapter.name;
+  const prefix = sub && slash >= 0 ? chapter.name.slice(0, slash + 1) : '';
+
+  const startRename = (): void => {
+    setDraft(ownName);
+    setRenaming(index);
+  };
+  const commitRename = (): void => {
+    const segment = draft.replace(/\//g, '-').trim();
+    if (segment) renameChapter(index, `${prefix}${segment}`);
+    setRenaming(null);
+  };
+
   return (
-    <li className={cn('group flex items-center', nested && 'pl-3')}>
+    <li className={cn('group flex items-center', sub && 'pl-5')}>
       {renaming === index ? (
         <input
           autoFocus
           onFocus={(e) => e.target.select()}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => {
-            renameChapter(index, draft);
-            setRenaming(null);
-          }}
+          onBlur={commitRename}
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             if (e.key === 'Escape') setRenaming(null);
@@ -451,44 +440,68 @@ function ChapterRow({
         <button
           type="button"
           onClick={() => selectChapter(index)}
-          onDoubleClick={() => {
-            setDraft(chapter.name);
-            setRenaming(index);
-          }}
-          title="Double-click to rename (use “Group/Name” to nest)"
+          onDoubleClick={startRename}
+          title="Double-click to rename"
           className={cn(
-            'flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left text-xs',
+            'flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-xs',
             'transition-colors duration-100',
             index === chapterIndex
               ? 'bg-primary-soft text-primary font-semibold'
               : 'text-muted hover:bg-surface-2 hover:text-fg',
           )}
         >
+          {childCount > 0 ? (
+            <span
+              role="button"
+              tabIndex={-1}
+              title={isFolded ? `Unfold ${childCount} sub-chapters` : 'Fold sub-chapters'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFold();
+              }}
+              className="hover:text-fg -m-1 shrink-0 p-1"
+            >
+              <ChevronDown
+                className={cn('size-3 transition-transform duration-100', isFolded && '-rotate-90')}
+              />
+            </span>
+          ) : (
+            <span className="size-3 shrink-0" />
+          )}
           <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.625rem]">
             {index + 1}
           </span>
-          <span className="truncate">{label}</span>
+          <span className="truncate">{ownName}</span>
+          {isFolded && childCount > 0 && (
+            <span className="text-subtle shrink-0 font-mono text-[0.625rem]">+{childCount}</span>
+          )}
         </button>
       )}
       {renaming !== index && (
         <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+          {!sub && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Add a sub-chapter"
+              onClick={onAddSub}
+            >
+              <ListTree className="size-3" />
+            </Button>
+          )}
           {/* Touch has no double-click, so rename gets a real button. */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="Rename this chapter"
-            onClick={() => {
-              setDraft(chapter.name);
-              setRenaming(index);
-            }}
-          >
+          <Button variant="ghost" size="icon-sm" title="Rename this chapter" onClick={startRename}>
             <Pencil className="size-3" />
           </Button>
           {chapters.length > 1 && (
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Delete this chapter"
+              title={
+                childCount > 0
+                  ? 'Delete this chapter (its sub-chapters move to the top level)'
+                  : 'Delete this chapter'
+              }
               onClick={() => deleteChapter(index)}
             >
               <Trash2 className="size-3" />
