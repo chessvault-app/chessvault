@@ -5,6 +5,7 @@ import { logger } from 'hono/logger';
 import { existsSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
+import { authApi, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi } from './lichess.ts';
@@ -37,6 +38,11 @@ app.get('/api/health', (c) =>
     version: '0.1.0',
   }),
 );
+
+// Auth first: its own routes stay reachable while everything /api after
+// this point requires the session (no-op unless appPassword is set).
+app.route('/api', authApi());
+app.use('/api/*', requireAuth());
 
 app.route('/api', booksApi());
 app.route('/api', lichessExplorerApi());

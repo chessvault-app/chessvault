@@ -1,7 +1,9 @@
 import {
+  ChevronRight,
   Eye,
   Lightbulb,
   Loader2,
+  Puzzle,
   RotateCw,
   Swords,
 } from 'lucide-react';
@@ -19,6 +21,7 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
+import { ThemesPage, themeLabel } from './ThemesPage';
 import {
   judgeMove,
   positionAt,
@@ -56,9 +59,19 @@ interface Attempt {
   delta: number;
 }
 
-export function PuzzlesView() {
+/**
+ * Routes: #/puzzles trains across all themes, #/puzzles/themes is the
+ * category page, #/puzzles/theme/<t> trains one theme. The trainer is
+ * keyed by theme so switching category boots a clean state machine.
+ */
+export function PuzzlesView({ params = [] }: { params?: string[] }) {
+  if (params[0] === 'themes') return <ThemesPage />;
+  const theme = params[0] === 'theme' ? (params[1] ?? '') : '';
+  return <Trainer key={theme} theme={theme} />;
+}
+
+function Trainer({ theme }: { theme: string }) {
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [theme, setTheme] = useState('');
   const [puzzle, setPuzzle] = useState<ApiPuzzle | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
   const [plies, setPlies] = useState(0);
@@ -85,7 +98,6 @@ export function PuzzlesView() {
     const res = await fetch('/api/puzzles/meta');
     setMeta((await res.json()) as Meta);
   }, []);
-  useEffect(() => void refreshMeta(), [refreshMeta]);
 
   const report = useCallback(
     async (id: string, win: boolean) => {
@@ -139,7 +151,13 @@ export function PuzzlesView() {
     [],
   );
 
+  // One boot per real mount: StrictMode replays effects, and without the
+  // guard the page fetched (and briefly showed) two different puzzles.
+  const booted = useRef(false);
   useEffect(() => {
+    if (booted.current) return;
+    booted.current = true;
+    void refreshMeta();
     void loadNext(theme);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -448,29 +466,26 @@ export function PuzzlesView() {
           </div>
         </Panel>
 
-        <Panel flush className="shrink-0">
-          <PanelHeader title="Theme" />
-          <div className="p-3">
-            <select
-              value={theme}
-              onChange={(e) => {
-                setTheme(e.target.value);
-                void loadNext(e.target.value);
-              }}
-              className={cn(
-                'bg-surface-inset border-line h-8 w-full rounded-md border px-2 text-xs',
-                'outline-none focus:border-primary/50',
-              )}
-            >
-              <option value="">Any theme</option>
-              {meta?.themes?.map((t) => (
-                <option key={t.theme} value={t.theme}>
-                  {t.theme} ({t.count.toLocaleString()})
-                </option>
-              ))}
-            </select>
-          </div>
-        </Panel>
+        {/* Category — a card linking to the themes page, not a dropdown. */}
+        <button
+          type="button"
+          onClick={() => navigate('puzzles', 'themes')}
+          className={cn(
+            'bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex shrink-0',
+            'items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-colors duration-100',
+          )}
+        >
+          <Puzzle className="text-subtle group-hover:text-primary size-4 shrink-0 transition-colors" />
+          <span className="min-w-0 flex-1">
+            <span className="text-subtle block text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+              Category
+            </span>
+            <span className="text-fg block truncate text-xs font-medium">
+              {theme ? themeLabel(theme) : 'All themes'}
+            </span>
+          </span>
+          <ChevronRight className="text-subtle size-3.5 shrink-0" />
+        </button>
       </div>
     </div>
   );

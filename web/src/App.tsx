@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { navigate, useRoute, type Section } from '@/lib/router';
+import { PasswordGate } from '@/auth/PasswordGate';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { AnalysisView } from '@/analysis/AnalysisView';
 import { EditorView } from '@/editor/EditorView';
@@ -26,6 +27,14 @@ const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
 ];
 
 export function App() {
+  return (
+    <PasswordGate>
+      <Shell />
+    </PasswordGate>
+  );
+}
+
+function Shell() {
   const { section, params } = useRoute();
 
   return (
@@ -44,7 +53,7 @@ export function App() {
         ) : section === 'notes' ? (
           <NotesView params={params} />
         ) : section === 'puzzles' ? (
-          <PuzzlesView />
+          <PuzzlesView params={params} />
         ) : (
           <Placeholder section={section} />
         )}

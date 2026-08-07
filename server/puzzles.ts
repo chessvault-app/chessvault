@@ -123,6 +123,26 @@ export function puzzlesApi(
 
   const api = new Hono();
 
+  // Theme counts never change while the process lives (a rebuild replaces
+  // the file and the server restarts), so compute once and keep. Newer
+  // databases carry a precomputed theme_counts table; older ones pay one
+  // ~1 s GROUP BY on first request instead of on every request.
+  let themesCache: { theme: string; count: number }[] | null = null;
+  const themeCounts = (db: InstanceType<typeof Database>): { theme: string; count: number }[] => {
+    if (themesCache) return themesCache;
+    const hasTable = db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'theme_counts'")
+      .get();
+    themesCache = (
+      hasTable
+        ? db.prepare('SELECT theme, count FROM theme_counts ORDER BY count DESC').all()
+        : db
+            .prepare('SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme ORDER BY count DESC')
+            .all()
+    ) as { theme: string; count: number }[];
+    return themesCache;
+  };
+
   api.get('/puzzles/meta', (c) => {
     const db = puzzleDb();
     const user = readState();
@@ -132,10 +152,12 @@ export function puzzlesApi(
         (r) => [r.key, r.value],
       ),
     );
-    const themes = db
-      .prepare('SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme ORDER BY count DESC')
-      .all() as { theme: string; count: number }[];
-    return c.json({ ready: true as const, puzzles: Number(meta.puzzles ?? 0), themes, user });
+    return c.json({
+      ready: true as const,
+      puzzles: Number(meta.puzzles ?? 0),
+      themes: themeCounts(db),
+      user,
+    });
   });
 
   api.get('/puzzles/next', (c) => {

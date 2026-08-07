@@ -136,6 +136,9 @@ db.exec(`
   CREATE INDEX idx_puzzles_rating ON puzzles (rating);
   CREATE INDEX idx_themes ON themes (theme, rating);
 `);
+// Precomputed: GROUP BY over ~28 M theme rows costs ~1 s, far too slow to
+// run per /puzzles/meta request.
+db.exec('CREATE TABLE theme_counts AS SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme');
 
 const setMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
 setMeta.run('schema_version', String(PUZZLE_SCHEMA_VERSION));
