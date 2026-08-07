@@ -517,15 +517,23 @@ function BookPage({ slug }: { slug: string }) {
  * being fixed. Diagram tab = the page cropped to this puzzle's diagram;
  * Solutions tab = the solutions page covering its number.
  */
+const SOURCE_PANE_WIDTH_KEY = 'vault:panel-w:book-source';
+const SOURCE_PANE_DEFAULT_W = 340;
+
 function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }) {
   const [tab, setTab] = useState<'diagram' | 'solutions'>('diagram');
+  const [width, setWidth] = useState<number>(() => {
+    const stored = Number(localStorage.getItem(SOURCE_PANE_WIDTH_KEY));
+    return Number.isFinite(stored) && stored > 0 ? stored : SOURCE_PANE_DEFAULT_W;
+  });
+  const drag = useRef<{ x: number; w: number } | null>(null);
+  useEffect(() => {
+    if (width === SOURCE_PANE_DEFAULT_W) localStorage.removeItem(SOURCE_PANE_WIDTH_KEY);
+    else localStorage.setItem(SOURCE_PANE_WIDTH_KEY, String(Math.round(width)));
+  }, [width]);
   return (
-    <aside
-      // Native horizontal resize: drag the bottom-right grip to widen the
-      // pane until the solutions page is comfortably legible.
-      className="border-line flex shrink-0 resize-x flex-col gap-2 overflow-auto border-r p-4"
-      style={{ width: 340, minWidth: 300, maxWidth: 760 }}
-    >
+    <div className="flex min-h-0 shrink-0">
+      <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width }}>
       {evidence.solutionPage && (
         <div className="bg-surface-inset flex shrink-0 gap-0.5 self-start rounded-lg p-0.5">
           {(['diagram', 'solutions'] as const).map((t) => (
@@ -545,10 +553,9 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
       )}
       {tab === 'diagram' && evidence.page ? (
         <>
-          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={292} />
+          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={width - 32} />
           <p className="text-subtle text-xs leading-relaxed">
-            The book&rsquo;s own scan — make the board match it. Drag the
-            pane&rsquo;s corner to resize.
+            The book&rsquo;s own scan — make the board match it.
           </p>
         </>
       ) : tab === 'solutions' && evidence.solutionPage ? (
@@ -558,14 +565,44 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
           className="border-line w-full rounded-md border"
         />
       ) : null}
-    </aside>
+      </aside>
+      <div
+        title="Drag to resize · double-click to reset"
+        onDoubleClick={() => {
+          drag.current = null;
+          setWidth(SOURCE_PANE_DEFAULT_W);
+        }}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          drag.current = { x: e.clientX, w: width };
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current || (e.buttons & 1) === 0) return;
+          const next = drag.current.w + e.clientX - drag.current.x;
+          setWidth(Math.min(Math.max(next, 280), Math.min(820, window.innerWidth * 0.55)));
+        }}
+        onPointerUp={() => {
+          drag.current = null;
+        }}
+        className={cn(
+          'border-line/60 hover:bg-surface-2 flex w-2.5 shrink-0 touch-none',
+          'cursor-col-resize items-center justify-center border-l transition-colors',
+        )}
+      >
+        {/* The grip, centred on the divider line — same idiom as the
+            panels' bottom-edge resize. */}
+        <div className="bg-line h-8 w-[3px] rounded-full" />
+      </div>
+    </div>
   );
 }
 
 /**
- * Jump strip for the trainer: every puzzle as a tiny state-coloured chip,
- * scrolled to keep the current one in view — move anywhere in the book
- * without going back to the list.
+ * Problem navigator, in the same idiom as the explorer panels: a proper
+ * list panel under the moves pane. Rows show number, tier and state; the
+ * current problem is highlighted and kept in view. Height is draggable
+ * and remembered (Panel resizeKey), like the other side panels.
  */
 function PuzzleNavigator({
   slug,
@@ -580,22 +617,44 @@ function PuzzleNavigator({
 }) {
   const at = puzzles.findIndex((p) => p.id === currentId);
   const currentRef = useRef<HTMLButtonElement>(null);
+  // puzzles.length in the deps: the book loads async, so the row to scroll
+  // to may not exist on the first run.
   useEffect(() => {
-    currentRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
-  }, [currentId]);
+    currentRef.current?.scrollIntoView({ block: 'center' });
+  }, [currentId, puzzles.length]);
   const go = (index: number): void => {
     const target = puzzles[index];
     if (target) navigate('puzzles', 'books', slug, target.id);
   };
   return (
-    <div className="flex shrink-0 items-center gap-1">
-      <Button variant="ghost" size="icon-sm" title="Previous puzzle" disabled={at <= 0} onClick={() => go(at - 1)}>
-        <ChevronLeft className="size-3.5" />
-      </Button>
-      <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto py-1 [scrollbar-width:none]">
+    <Panel flush resizeKey="book-problems" defaultHeight={260} className="min-h-[8rem]">
+      <PanelHeader
+        title="Problems"
+        actions={
+          <>
+            <Button variant="ghost" size="icon-sm" title="Previous problem" disabled={at <= 0} onClick={() => go(at - 1)}>
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Next problem"
+              disabled={at < 0 || at >= puzzles.length - 1}
+              onClick={() => go(at + 1)}
+            >
+              <ChevronRight className="size-3.5" />
+            </Button>
+          </>
+        }
+      />
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {puzzles.map((p, i) => {
           const last = progress[p.id]?.last;
           const current = p.id === currentId;
+          const meta =
+            p.provenance && p.provenance in PROVENANCE_META
+              ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
+              : null;
           return (
             <button
               key={p.id}
@@ -603,31 +662,46 @@ function PuzzleNavigator({
               type="button"
               onClick={() => go(i)}
               className={cn(
-                'h-6 shrink-0 rounded-md border px-1.5 font-mono text-[0.625rem] font-semibold transition-colors',
-                current
-                  ? 'bg-primary-soft border-primary/50 text-primary'
-                  : last === 'win'
-                    ? 'bg-nag-good/10 border-nag-good/30 text-nag-good'
-                    : last === 'loss'
-                      ? 'bg-nag-blunder/10 border-nag-blunder/30 text-nag-blunder'
-                      : 'border-line text-subtle hover:border-line-strong hover:text-fg',
+                'flex h-8 w-full items-center gap-2.5 px-3 text-left transition-colors duration-75',
+                current ? 'bg-primary-soft' : 'hover:bg-surface-2',
               )}
             >
-              {p.number ?? i + 1}
+              <span
+                className={cn(
+                  'w-10 shrink-0 font-mono text-xs font-semibold',
+                  current ? 'text-primary' : 'text-fg',
+                )}
+              >
+                #{p.number ?? i + 1}
+              </span>
+              {meta && (
+                <span
+                  title={meta.title}
+                  className={cn(
+                    'shrink-0 rounded-full border px-1.5 py-px text-[0.625rem] font-medium',
+                    meta.className,
+                  )}
+                >
+                  {meta.label}
+                </span>
+              )}
+              <span className="min-w-0 flex-1" />
+              {progress[p.id] && (
+                <span className="text-subtle shrink-0 text-[0.625rem]">
+                  {progress[p.id]!.wins}/{progress[p.id]!.tries}
+                </span>
+              )}
+              <span
+                className={cn(
+                  'size-2 shrink-0 rounded-full',
+                  last === 'win' ? 'bg-nag-good' : last === 'loss' ? 'bg-nag-blunder' : 'bg-line-strong',
+                )}
+              />
             </button>
           );
         })}
       </div>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title="Next puzzle"
-        disabled={at < 0 || at >= puzzles.length - 1}
-        onClick={() => go(at + 1)}
-      >
-        <ChevronRight className="size-3.5" />
-      </Button>
-    </div>
+    </Panel>
   );
 }
 
