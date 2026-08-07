@@ -1,13 +1,16 @@
 import {
+  ArrowLeft,
   ChevronDown,
   Download,
   ExternalLink,
   Loader2,
   NotebookPen,
   Plus,
+  Search,
   Star,
   Swords,
   Trash2,
+  Trophy,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Board } from '@/board/Board';
@@ -72,8 +75,162 @@ function formatTimeControl(tc: string | null): string | null {
 
 /** Router shell: the collection list, or one collected game open for study. */
 export function GamesView({ params }: { params: string[] }) {
+  // 'elite' is reserved for the reference-games browser; everything else
+  // is a collection document id.
+  if (params[0] === 'elite') return <EliteBrowser />;
   const id = params[0] ? decodeURIComponent(params[0]) : null;
   return id ? <StudyView id={id} kind="game" /> : <CollectionView />;
+}
+
+interface RefGame {
+  id: number;
+  white: string;
+  black: string;
+  white_elo: number;
+  black_elo: number;
+  result: string;
+  date: string | null;
+  event: string | null;
+  eco: string | null;
+  opening: string | null;
+}
+
+/**
+ * Browse the reference database (data/refgames.sqlite — Lichess Elite or
+ * whatever PGN collections were indexed). Click a game to open it on the
+ * analysis board.
+ */
+function EliteBrowser() {
+  const [meta, setMeta] = useState<{ ready: boolean; games?: number; sources?: string } | null>(
+    null,
+  );
+  const [query, setQuery] = useState('');
+  const [rows, setRows] = useState<RefGame[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const search = useCallback(async (q: string, offset: number) => {
+    setLoading(true);
+    const res = await fetch(
+      `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}`,
+    );
+    if (res.ok) {
+      const data = (await res.json()) as { total: number; rows: RefGame[] };
+      setTotal(data.total);
+      setRows((prev) => (offset === 0 ? data.rows : [...prev, ...data.rows]));
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void fetch('/api/refgames')
+      .then((r) => r.json())
+      .then((d: { ready: boolean; games?: number; sources?: string }) => {
+        setMeta(d);
+        if (d.ready) void search('', 0);
+      });
+  }, [search]);
+
+  const onQuery = (q: string): void => {
+    setQuery(q);
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = setTimeout(() => void search(q, 0), 250);
+  };
+
+  const openGame = async (game: RefGame): Promise<void> => {
+    const res = await fetch(`/api/refgames/${game.id}/pgn`);
+    if (!res.ok) return;
+    const { pgn } = (await res.json()) as { pgn: string };
+    if (useAnalysis.getState().loadPgn(pgn)) {
+      useAnalysis.setState({ handoff: true });
+      navigate('analysis');
+    }
+  };
+
+  if (meta && !meta.ready) {
+    return (
+      <div className="grid h-full place-items-center p-8">
+        <div className="max-w-md text-center">
+          <p className="text-fg mb-2 text-sm font-semibold">No reference games yet</p>
+          <p className="text-muted text-xs leading-relaxed">
+            Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into
+            vault/sources and index them once:
+          </p>
+          <code className="bg-surface-inset border-line text-subtle mt-3 block rounded-md border p-3 text-left font-mono text-[0.6875rem]">
+            npm run build:refgames
+          </code>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex h-full min-h-0 max-w-3xl flex-col gap-3 p-4">
+      <div className="flex shrink-0 items-center gap-2">
+        <Button variant="ghost" size="icon-sm" title="Back to games" onClick={() => navigate('games')}>
+          <ArrowLeft className="size-3.5" />
+        </Button>
+        <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+          Elite games{meta?.games ? ` · ${meta.games.toLocaleString()}` : ''}
+        </h1>
+      </div>
+
+      <label className="bg-surface-inset border-line focus-within:border-primary/50 flex shrink-0 items-center gap-2 rounded-lg border px-3">
+        <Search className="text-subtle size-3.5 shrink-0" />
+        <input
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder="Search by player name…"
+          spellCheck={false}
+          className="text-fg placeholder:text-subtle h-9 w-full bg-transparent text-sm outline-none"
+        />
+      </label>
+
+      <Panel flush className="min-h-0 flex-1">
+        <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
+        <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
+          {rows.map((g) => (
+            <li key={g.id}>
+              <button
+                type="button"
+                onClick={() => void openGame(g)}
+                title="Open on the analysis board"
+                className="hover:bg-surface-2 flex w-full items-center gap-3 px-3 py-2 text-left text-xs transition-colors duration-100"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="text-fg block truncate font-medium">
+                    {g.white} <span className="text-subtle font-mono">{g.white_elo}</span>
+                    <span className="text-subtle"> — </span>
+                    {g.black} <span className="text-subtle font-mono">{g.black_elo}</span>
+                  </span>
+                  <span className="text-subtle block truncate">
+                    {g.eco ? `${g.eco} ` : ''}
+                    {g.opening ?? ''}
+                  </span>
+                </span>
+                <span className="text-muted shrink-0 font-mono">{g.result}</span>
+                <span className="text-subtle shrink-0 font-mono">{g.date ?? ''}</span>
+              </button>
+            </li>
+          ))}
+          {rows.length < total && (
+            <li className="p-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                disabled={loading}
+                onClick={() => void search(query, rows.length)}
+              >
+                {loading ? <Loader2 className="size-3.5 animate-spin" /> : 'Load more'}
+              </Button>
+            </li>
+          )}
+        </ul>
+      </Panel>
+    </div>
+  );
 }
 
 /**
@@ -184,7 +341,20 @@ function CollectionView() {
         </div>
       ) : (
         <Panel flush>
-          <PanelHeader title={`Collection · ${visible.length}`} />
+          <PanelHeader
+            title={`Collection · ${visible.length}`}
+            actions={
+              <Button
+                variant="ghost"
+                size="sm"
+                title="Browse the indexed reference games"
+                onClick={() => navigate('games', 'elite')}
+              >
+                <Trophy className="size-3.5" />
+                Elite games
+              </Button>
+            }
+          />
           <ul className="divide-line min-h-0 divide-y overflow-y-auto">
             {visible.map((game) => (
               <GameRow
