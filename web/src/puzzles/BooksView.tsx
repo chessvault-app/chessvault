@@ -1,7 +1,9 @@
 import {
   ArrowLeft,
   BookMarked,
-  Camera,
+  FileUp,
+  ImageUp,
+  ScanSearch,
   Check,
   Eye,
   Loader2,
@@ -43,7 +45,15 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
 import { PhotoImport, type PhotoReading } from './PhotoImport';
-import { harvestTemplates, isValidTemplate } from './ocr/classify';
+import { PdfImport } from './PdfImport';
+import {
+  classifyBoard,
+  harvestTemplates,
+  isValidTemplate,
+  labelsToFen,
+  type Template,
+} from './ocr/classify';
+import { featuresFromImage, loadImage } from './ocr/browser';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
 import { AnswerPanel } from './AnswerPanel';
 import { formatScore } from '@/engine/uci';
@@ -81,12 +91,32 @@ interface PuzzleProgress {
   at: string;
 }
 
+interface BookDraft {
+  id: string;
+  image: string;
+  fen: string | null;
+}
+
 interface BookDetail {
   slug: string;
   title: string;
   puzzles: BookPuzzle[];
   progress: Record<string, PuzzleProgress>;
+  drafts?: BookDraft[];
 }
+
+async function bookTemplates(slug: string): Promise<Template[]> {
+  try {
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`);
+    if (!res.ok) return [];
+    return ((await res.json()) as { templates: unknown[] }).templates.filter(isValidTemplate);
+  } catch {
+    return [];
+  }
+}
+
+const diagramUrl = (slug: string, file: string): string =>
+  `/api/puzzlebooks/${encodeURIComponent(slug)}/diagrams/${file}`;
 
 export function BooksView({ params }: { params: string[] }) {
   // Route segments arrive URL-encoded ("Test%20Book").
@@ -221,6 +251,43 @@ function BookPage({ slug }: { slug: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
   const [adding, setAdding] = useState(false);
   const [missing, setMissing] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [draft, setDraft] = useState<BookDraft | null>(null);
+  const [rereading, setRereading] = useState(false);
+
+  useEffect(() => {
+    void bookTemplates(slug).then(setTemplates);
+  }, [slug, adding, draft]);
+
+  /** Re-run recognition on every stored draft with the current font. */
+  const rereadDrafts = async (): Promise<void> => {
+    if (!book?.drafts?.length) return;
+    setRereading(true);
+    try {
+      const current = await bookTemplates(slug);
+      const updates: { id: string; fen: string | null }[] = [];
+      for (const d of book.drafts) {
+        const img = await loadImage(diagramUrl(slug, d.image));
+        const cells = classifyBoard(featuresFromImage(img), current);
+        updates.push({
+          id: d.id,
+          fen: labelsToFen(
+            cells.map((c) => c.label),
+            false,
+          ),
+        });
+      }
+      await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+      await load();
+    } finally {
+      setRereading(false);
+    }
+  };
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
@@ -245,16 +312,21 @@ function BookPage({ slug }: { slug: string }) {
     );
   }
 
-  if (adding) {
+  if (adding || draft) {
     return (
       <PuzzleEntry
         slug={slug}
         number={(book?.puzzles.length ?? 0) + 1}
+        draft={draft ? { ...draft, imageUrl: diagramUrl(slug, draft.image) } : undefined}
         onDone={() => {
           setAdding(false);
+          setDraft(null);
           void load();
         }}
-        onCancel={() => setAdding(false)}
+        onCancel={() => {
+          setAdding(false);
+          setDraft(null);
+        }}
       />
     );
   }
@@ -278,12 +350,67 @@ function BookPage({ slug }: { slug: string }) {
           <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
             {book?.title ?? slug}
           </h1>
+          <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
+            <FileUp className="size-3.5" />
+            Import PDF
+          </Button>
           <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
             <Plus className="size-3.5" />
             Add puzzle
           </Button>
           <TwoStepDelete onConfirm={() => void deleteBook()} />
         </div>
+
+        {(book?.drafts?.length ?? 0) > 0 && (
+          <div className="bg-surface border-line mb-4 rounded-xl border p-3">
+            <div className="mb-2 flex items-center gap-2">
+              <p className="text-muted min-w-0 flex-1 text-xs">
+                {book!.drafts!.length} imported diagram{book!.drafts!.length === 1 ? '' : 's'}{' '}
+                awaiting a solution — tap one to enter it.
+              </p>
+              {templates.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={rereading}
+                  title="Re-run recognition on every draft with the learned font"
+                  onClick={() => void rereadDrafts()}
+                >
+                  {rereading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
+                  Read diagrams
+                </Button>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+              {book!.drafts!.map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDraft(d)}
+                  title={d.fen ? 'Position read — confirm and record the solution' : 'Position not read yet'}
+                  className={cn(
+                    'overflow-hidden rounded-lg border transition-colors',
+                    d.fen ? 'border-good/50' : 'border-line hover:border-line-strong',
+                  )}
+                >
+                  <img src={diagramUrl(slug, d.image)} alt="diagram" className="w-full" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {importing && (
+          <PdfImport
+            slug={slug}
+            templates={templates}
+            onDone={() => {
+              setImporting(false);
+              void load();
+            }}
+            onClose={() => setImporting(false)}
+          />
+        )}
 
         {book === null ? (
           <p className="text-subtle text-sm">Loading…</p>
@@ -363,47 +490,67 @@ function TwoStepDelete({ onConfirm }: { onConfirm: () => void }) {
 function PuzzleEntry({
   slug,
   number,
+  draft,
   onDone,
   onCancel,
 }: {
   slug: string;
   number: number;
+  /** Entering an imported diagram: shown for eyeballing, deleted on save. */
+  draft?: { id: string; imageUrl: string; fen: string | null };
   onDone: () => void;
   onCancel: () => void;
 }) {
   const [fen, setFen] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
-  // The aligned photo's cell features, kept until the user confirms the
+  // The aligned image's cell features, kept until the user confirms the
   // position: confirming harvests them as this book's font templates.
   const [photo, setPhoto] = useState<PhotoReading | null>(null);
-  const [prefill, setPrefill] = useState<string | null>(null);
+  const [prefill, setPrefill] = useState<string | null>(draft?.fen ?? null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  useEffect(() => {
+    void bookTemplates(slug).then(setTemplates);
+  }, [slug]);
 
   const confirmPosition = (confirmed: string): void => {
-    if (photo) {
-      // Fire-and-forget: template learning must never block puzzle entry.
-      void (async () => {
-        try {
-          const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`);
-          const existing = res.ok
-            ? ((await res.json()) as { templates: unknown[] }).templates.filter(isValidTemplate)
-            : [];
-          const templates = harvestTemplates(
-            photo.features,
-            confirmed,
-            photo.blackAtBottom,
-            existing,
-          );
-          await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`, {
-            method: 'PUT',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ templates }),
-          });
-        } catch {
-          // learning is best-effort
+    // Fire-and-forget: template learning must never block puzzle entry.
+    void (async () => {
+      try {
+        let source = photo;
+        if (!source && draft) {
+          // A draft confirmation teaches the font from its stored crop.
+          const img = await loadImage(draft.imageUrl);
+          source = { fen: null, features: featuresFromImage(img), blackAtBottom: false };
         }
-      })();
-    }
+        if (!source) return;
+        const existing = await bookTemplates(slug);
+        const next = harvestTemplates(
+          source.features,
+          confirmed,
+          source.blackAtBottom,
+          existing,
+        );
+        await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ templates: next }),
+        });
+      } catch {
+        // learning is best-effort
+      }
+    })();
     setFen(confirmed);
+  };
+
+  const finish = (): void => {
+    // The saved puzzle replaces its draft.
+    if (draft) {
+      void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts/${draft.id}`, {
+        method: 'DELETE',
+      }).finally(onDone);
+    } else {
+      onDone();
+    }
   };
 
   if (fen === null) {
@@ -417,10 +564,23 @@ function PuzzleEntry({
             Puzzle #{number} — set up the diagram, then record the solution.
           </p>
           <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
-            <Camera className="size-3.5" />
-            From photo
+            <ImageUp className="size-3.5" />
+            From image
           </Button>
         </div>
+        {draft && (
+          <div className="flex shrink-0 items-center gap-3 px-4 pt-2">
+            <img
+              src={draft.imageUrl}
+              alt="book diagram"
+              className="border-line h-36 rounded-md border"
+            />
+            <p className="text-subtle max-w-[16rem] text-xs leading-relaxed">
+              The diagram from the book — make the board match it, then
+              record the solution.
+            </p>
+          </div>
+        )}
         <div className="min-h-0 flex-1">
           <EditorView
             key={prefill ?? 'blank'}
@@ -431,7 +591,7 @@ function PuzzleEntry({
         </div>
         {importing && (
           <PhotoImport
-            slug={slug}
+            templates={templates}
             onApply={(reading) => {
               setPhoto(reading);
               if (reading.fen) setPrefill(reading.fen);
@@ -450,7 +610,7 @@ function PuzzleEntry({
       number={number}
       fen={fen}
       onBack={() => setFen(null)}
-      onDone={onDone}
+      onDone={finish}
     />
   );
 }

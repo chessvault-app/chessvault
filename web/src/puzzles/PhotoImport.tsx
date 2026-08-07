@@ -1,4 +1,4 @@
-import { Camera, Loader2, ScanSearch, X } from 'lucide-react';
+import { ImageUp, ScanSearch, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
@@ -9,44 +9,38 @@ import {
   type Point,
   type Quad,
 } from './ocr/image';
-import {
-  classifyBoard,
-  isValidTemplate,
-  labelsToFen,
-  type Template,
-} from './ocr/classify';
+import { classifyBoard, labelsToFen, type Template } from './ocr/classify';
 
 /** Below this ratio-test margin a square is flagged for eyeballing. */
 const CONFIDENT = 0.35;
 
 export interface PhotoReading {
-  /** Recognised position, or null on the book's first (calibration) photo. */
+  /** Recognised position, or null when there were no templates to match. */
   fen: string | null;
-  /** Cell features of the aligned photo, kept for template harvesting. */
+  /** Cell features of the aligned image, kept for template harvesting. */
   features: Uint8Array[];
   blackAtBottom: boolean;
 }
 
 /**
- * Photo → position: pick a page photo, drag the four handles onto the
- * diagram's corners, and the book's learned piece font reads the board.
- * The first diagram of a book has nothing to match against — it comes
- * back unread, the user sets it up by hand, and confirming it TEACHES
- * the font (see harvestTemplates), so every later photo just works.
+ * Image → position: pick a figure (a screenshot or scan of a diagram),
+ * drag the four handles onto the board's corners, and the given template
+ * set reads the position. With an empty template set (a book's first
+ * diagram) the image comes back unread — the caller's confirmation flow
+ * then teaches the font via harvestTemplates.
  */
 export function PhotoImport({
-  slug,
+  templates,
   onApply,
   onClose,
 }: {
-  slug: string;
+  templates: Template[];
   onApply: (reading: PhotoReading) => void;
   onClose: () => void;
 }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);
   const [blackAtBottom, setBlackAtBottom] = useState(false);
-  const [templates, setTemplates] = useState<Template[] | null>(null);
   const [reading, setReading] = useState<{
     fen: string | null;
     features: Uint8Array[];
@@ -54,13 +48,6 @@ export function PhotoImport({
   } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef<number | null>(null);
-
-  useEffect(() => {
-    void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`)
-      .then((r) => (r.ok ? r.json() : { templates: [] }))
-      .then((d: { templates: unknown[] }) => setTemplates(d.templates.filter(isValidTemplate)))
-      .catch(() => setTemplates([]));
-  }, [slug]);
 
   const pick = (file: File): void => {
     const url = URL.createObjectURL(file);
@@ -82,7 +69,7 @@ export function PhotoImport({
     image.src = url;
   };
 
-  // Fit the photo to the modal; all pointer math converts through `scale`.
+  // Fit the image to the modal; all pointer math converts through `scale`.
   const displayW = 560;
   const scale = img ? Math.min(displayW / img.naturalWidth, 480 / img.naturalHeight) : 1;
 
@@ -157,7 +144,7 @@ export function PhotoImport({
   };
 
   const read = (): void => {
-    if (!img || !corners || templates === null) return;
+    if (!img || !corners) return;
     // Decode pixels once, at natural size, through an offscreen canvas.
     const off = document.createElement('canvas');
     off.width = img.naturalWidth;
@@ -188,8 +175,8 @@ export function PhotoImport({
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
       <div className="bg-surface border-line flex max-h-full w-full max-w-[38rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4">
         <div className="flex items-center gap-2">
-          <Camera className="text-subtle size-4" />
-          <h2 className="text-fg flex-1 text-sm font-semibold">Position from photo</h2>
+          <ImageUp className="text-subtle size-4" />
+          <h2 className="text-fg flex-1 text-sm font-semibold">Position from an image</h2>
           <Button variant="ghost" size="icon-sm" title="Close" onClick={onClose}>
             <X className="size-3.5" />
           </Button>
@@ -207,10 +194,8 @@ export function PhotoImport({
               }}
             />
             <span className="text-muted text-sm">
-              Choose a photo of the page
-              <span className="text-subtle block text-xs">
-                phones open the camera from here
-              </span>
+              Choose an image of the diagram
+              <span className="text-subtle block text-xs">a screenshot or scan works best</span>
             </span>
           </label>
         ) : (
@@ -226,12 +211,8 @@ export function PhotoImport({
               onPointerUp={() => (dragging.current = null)}
             />
             <div className="flex flex-wrap items-center gap-3">
-              <Button variant="primary" size="sm" disabled={templates === null} onClick={read}>
-                {templates === null ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <ScanSearch className="size-3.5" />
-                )}
+              <Button variant="primary" size="sm" onClick={read}>
+                <ScanSearch className="size-3.5" />
                 Read position
               </Button>
               <label className="text-muted flex items-center gap-1.5 text-xs">
@@ -255,7 +236,7 @@ export function PhotoImport({
                     if (file) pick(file);
                   }}
                 />
-                different photo
+                different image
               </label>
             </div>
           </>
@@ -272,7 +253,7 @@ export function PhotoImport({
               <p className="text-muted">
                 First diagram of this book — nothing to match against yet. Set
                 the position up by hand; confirming it teaches the app this
-                book&rsquo;s piece font, and the next photos will read themselves.
+                book&rsquo;s piece font, and the next images will read themselves.
               </p>
             ) : (
               <>

@@ -6,6 +6,7 @@ import {
   Eraser,
   FlipVertical2,
   FolderInput,
+  ImageUp,
   MousePointer2,
   RotateCcw,
   Trash2,
@@ -23,6 +24,9 @@ import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
+import { PhotoImport } from '@/puzzles/PhotoImport';
+import { builtinTemplates } from '@/puzzles/ocr/builtin';
+import type { Template } from '@/puzzles/ocr/classify';
 import {
   defaultEditorState,
   emptyEditorState,
@@ -67,6 +71,15 @@ export function EditorView({
   const [orientation, setOrientation] = useState<Color>('white');
   const [fenInput, setFenInput] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Image import runs against the app's built-in piece templates, so a
+  // screenshot of any lichess/chessground-style board reads with no setup.
+  const [imageTemplates, setImageTemplates] = useState<Template[] | null>(null);
+
+  const openImageImport = (): void => {
+    void builtinTemplates()
+      .then(setImageTemplates)
+      .catch(() => setImageTemplates([]));
+  };
   const [loadOpen, setLoadOpen] = useState(false);
   const [fenError, setFenError] = useState<string | null>(null);
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
@@ -265,6 +278,14 @@ export function EditorView({
             <Button
               variant="ghost"
               size="icon-sm"
+              title="Read the position from an image"
+              onClick={openImageImport}
+            >
+              <ImageUp className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
               title="Load a FEN or PGN to edit"
               onClick={() => setLoadOpen(true)}
             >
@@ -272,6 +293,19 @@ export function EditorView({
             </Button>
           </div>
         </Panel>
+      {imageTemplates !== null && (
+        <PhotoImport
+          templates={imageTemplates}
+          onApply={(reading) => {
+            if (reading.fen) {
+              const next = fromFen(reading.fen);
+              if (next) setState(next);
+            }
+            setImageTemplates(null);
+          }}
+          onClose={() => setImageTemplates(null)}
+        />
+      )}
     </>
   );
 

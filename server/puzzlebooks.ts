@@ -5,6 +5,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
@@ -58,6 +59,8 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   const puzzlesPath = (slug: string): string => resolve(bookDir(slug), 'puzzles.json');
   const progressPath = (slug: string): string => resolve(bookDir(slug), 'progress.json');
   const ocrPath = (slug: string): string => resolve(bookDir(slug), 'ocr.json');
+  const draftsPath = (slug: string): string => resolve(bookDir(slug), 'drafts.json');
+  const diagramsDir = (slug: string): string => resolve(bookDir(slug), 'diagrams');
 
   const validBook = (slug: string): boolean =>
     SLUG_RE.test(slug) && existsSync(resolve(bookDir(slug), 'book.json'));
@@ -120,6 +123,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       title: book.title ?? slug,
       puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []),
       progress: readJson<Record<string, PuzzleProgress>>(progressPath(slug), {}),
+      drafts: readJson<
+        { id: string; image: string; fen: string | null; added: string }[]
+      >(draftsPath(slug), []),
     });
   });
 
@@ -199,6 +205,96 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     if (!ok) return c.json({ error: 'malformed template' }, 400);
     writeJson(ocrPath(slug), { templates: body.templates });
     return c.json({ ok: true, count: body.templates.length });
+  });
+
+  // Drafts: diagrams detected in an imported PDF, waiting for the user to
+  // confirm the position and record the solution. Each keeps its cropped
+  // board image so it can be eyeballed and re-read as the font improves.
+  interface Draft {
+    id: string;
+    image: string;
+    fen: string | null;
+    added: string;
+  }
+
+  api.post('/puzzlebooks/:slug/drafts', async (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as {
+      drafts?: { image?: string; fen?: string | null }[];
+    };
+    if (!Array.isArray(body.drafts) || body.drafts.length === 0 || body.drafts.length > 500) {
+      return c.json({ error: 'expected { drafts: [...] } (1..500)' }, 400);
+    }
+    const existing = readJson<Draft[]>(draftsPath(slug), []);
+    mkdirSync(diagramsDir(slug), { recursive: true });
+    const added: Draft[] = [];
+    for (const [index, entry] of body.drafts.entries()) {
+      const match = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(entry.image ?? '');
+      if (!match) return c.json({ error: `draft ${index}: expected a jpeg/png data URL` }, 400);
+      const bytes = Buffer.from(match[2]!, 'base64');
+      if (bytes.length > 400_000) return c.json({ error: `draft ${index}: image too large` }, 400);
+      const id = `d${Date.now().toString(36)}${index.toString(36)}`;
+      const file = `${id}.${match[1] === 'png' ? 'png' : 'jpg'}`;
+      writeFileSync(resolve(diagramsDir(slug), file), bytes);
+      added.push({
+        id,
+        image: file,
+        fen: typeof entry.fen === 'string' ? entry.fen : null,
+        added: new Date().toISOString(),
+      });
+    }
+    writeJson(draftsPath(slug), [...existing, ...added]);
+    return c.json({ added: added.length });
+  });
+
+  // Bulk FEN updates after a client-side re-read of the stored diagrams.
+  api.put('/puzzlebooks/:slug/drafts', async (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as {
+      updates?: { id?: string; fen?: string | null }[];
+    };
+    if (!Array.isArray(body.updates)) return c.json({ error: 'expected { updates: [...] }' }, 400);
+    const drafts = readJson<Draft[]>(draftsPath(slug), []);
+    for (const update of body.updates) {
+      const draft = drafts.find((d) => d.id === update.id);
+      if (draft) draft.fen = typeof update.fen === 'string' ? update.fen : null;
+    }
+    writeJson(draftsPath(slug), drafts);
+    return c.json({ ok: true });
+  });
+
+  api.delete('/puzzlebooks/:slug/drafts/:id', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const drafts = readJson<Draft[]>(draftsPath(slug), []);
+    const doomed = drafts.find((d) => d.id === c.req.param('id'));
+    if (!doomed) return c.json({ error: 'unknown draft' }, 404);
+    try {
+      unlinkSync(resolve(diagramsDir(slug), doomed.image));
+    } catch {
+      // already gone
+    }
+    writeJson(
+      draftsPath(slug),
+      drafts.filter((d) => d.id !== doomed.id),
+    );
+    return c.json({ ok: true });
+  });
+
+  api.get('/puzzlebooks/:slug/diagrams/:file', (c) => {
+    const slug = c.req.param('slug');
+    const file = c.req.param('file');
+    if (!validBook(slug) || !/^[A-Za-z0-9]+\.(jpg|png)$/.test(file)) {
+      return c.json({ error: 'unknown diagram' }, 404);
+    }
+    const path = resolve(diagramsDir(slug), file);
+    if (!existsSync(path)) return c.json({ error: 'unknown diagram' }, 404);
+    return c.body(new Uint8Array(readFileSync(path)), 200, {
+      'content-type': file.endsWith('.png') ? 'image/png' : 'image/jpeg',
+      'cache-control': 'no-store',
+    });
   });
 
   api.post('/puzzlebooks/:slug/attempt', async (c) => {

@@ -98,6 +98,56 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('stores, updates, serves and deletes drafts', async () => {
+    await post('/api/puzzlebooks', { title: 'Draft Book' });
+    const slug = encodeURIComponent('Draft Book');
+    // 1x1 white JPEG-ish payload is enough for the API contract.
+    const image = `data:image/png;base64,${Buffer.from('fakepng').toString('base64')}`;
+
+    const created = await post(`/api/puzzlebooks/${slug}/drafts`, {
+      drafts: [{ image }, { image, fen: '8/8/8/8/8/8/8/8 w - - 0 1' }],
+    });
+    expect(created.status).toBe(200);
+
+    const detail = (await (await app.request(`/api/puzzlebooks/${slug}`)).json()) as {
+      drafts: { id: string; image: string; fen: string | null }[];
+    };
+    expect(detail.drafts).toHaveLength(2);
+    expect(detail.drafts[0]!.fen).toBeNull();
+    expect(detail.drafts[1]!.fen).toContain('8/8');
+
+    const served = await app.request(
+      `/api/puzzlebooks/${slug}/diagrams/${detail.drafts[0]!.image}`,
+    );
+    expect(served.status).toBe(200);
+    expect(served.headers.get('content-type')).toBe('image/png');
+
+    const updated = await app.request(`/api/puzzlebooks/${slug}/drafts`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ updates: [{ id: detail.drafts[0]!.id, fen: 'k7/8/8/8/8/8/8/K7 w - - 0 1' }] }),
+    });
+    expect(updated.status).toBe(200);
+
+    const del = await app.request(
+      `/api/puzzlebooks/${slug}/drafts/${detail.drafts[1]!.id}`,
+      { method: 'DELETE' },
+    );
+    expect(del.status).toBe(200);
+    const after = (await (await app.request(`/api/puzzlebooks/${slug}`)).json()) as {
+      drafts: { fen: string | null }[];
+    };
+    expect(after.drafts).toHaveLength(1);
+    expect(after.drafts[0]!.fen).toContain('k7');
+
+    const bad = await post(`/api/puzzlebooks/${slug}/drafts`, {
+      drafts: [{ image: 'not-a-data-url' }],
+    });
+    expect(bad.status).toBe(400);
+
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
   it('deletes a book', async () => {
     const slug = encodeURIComponent('1001 Sacrifices');
     expect((await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' })).status).toBe(200);
