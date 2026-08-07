@@ -218,6 +218,11 @@ function Shelf() {
   }, []);
   useEffect(() => void load(), [load]);
 
+  const removeBook = async (slug: string): Promise<void> => {
+    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    void load();
+  };
+
   const create = async (): Promise<void> => {
     const res = await fetch('/api/puzzlebooks', {
       method: 'POST',
@@ -283,33 +288,41 @@ function Shelf() {
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {books.map((b) => (
-              <button
-                key={b.slug}
-                type="button"
-                onClick={() => navigate('puzzles', 'books', b.slug)}
-                className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex items-stretch gap-3 rounded-xl border p-3 text-left transition-colors duration-100"
-              >
-                {b.cover ? (
-                  <img
-                    src={diagramUrl(b.slug, 'cover.jpg')}
-                    alt=""
-                    className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
-                  />
-                ) : (
-                  <span className="bg-surface-inset border-line grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
-                    <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
-                  </span>
-                )}
-                <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
-                  <span className="min-w-0">
-                    <span className="text-fg block truncate text-sm font-medium">{b.title}</span>
-                    <span className="text-subtle block text-xs">
-                      {b.puzzles} puzzle{b.puzzles === 1 ? '' : 's'}
+              <div key={b.slug} className="relative">
+                <button
+                  type="button"
+                  onClick={() => navigate('puzzles', 'books', b.slug)}
+                  className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex w-full items-stretch gap-3 rounded-xl border p-3 text-left transition-colors duration-100"
+                >
+                  {b.cover ? (
+                    <img
+                      src={diagramUrl(b.slug, 'cover.jpg')}
+                      alt=""
+                      className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
+                    />
+                  ) : (
+                    <span className="bg-surface-inset border-line grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
+                      <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
                     </span>
+                  )}
+                  <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
+                    {/* pr keeps long titles clear of the delete overlay */}
+                    <span className="min-w-0 pr-7">
+                      <span className="text-fg block truncate text-sm font-medium">{b.title}</span>
+                      <span className="text-subtle block text-xs">
+                        {b.puzzles} puzzle{b.puzzles === 1 ? '' : 's'}
+                      </span>
+                    </span>
+                    <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} />
                   </span>
-                  <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} />
-                </span>
-              </button>
+                </button>
+                <TwoStepConfirm
+                  title="Delete this book and its progress"
+                  armedLabel="Really delete?"
+                  className="absolute right-2 top-2"
+                  onConfirm={() => void removeBook(b.slug)}
+                />
+              </div>
             ))}
           </div>
         )}
@@ -376,9 +389,9 @@ function BookPage({ slug }: { slug: string }) {
   }, [slug]);
   useEffect(() => void load(), [load]);
 
-  const deleteBook = async (): Promise<void> => {
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
-    navigate('puzzles', 'books');
+  const resetProgress = async (): Promise<void> => {
+    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/progress`, { method: 'DELETE' });
+    void load();
   };
 
   if (missing) {
@@ -437,7 +450,12 @@ function BookPage({ slug }: { slug: string }) {
             <Plus className="size-3.5" />
             <span className="hidden wide:inline">Add puzzle</span>
           </Button>
-          <TwoStepDelete onConfirm={() => void deleteBook()} />
+          <TwoStepConfirm
+            title="Reset all progress in this book"
+            armedLabel="Really reset progress?"
+            icon={RotateCcw}
+            onConfirm={() => void resetProgress()}
+          />
         </div>
 
         {(book?.drafts?.length ?? 0) > 0 && (
@@ -961,8 +979,20 @@ function SourceCrop({
   );
 }
 
-/** Delete armed on first click, fires on the second within 4 s. */
-function TwoStepDelete({ onConfirm }: { onConfirm: () => void }) {
+/** Destructive action armed on first click, fires on the second within 4 s. */
+function TwoStepConfirm({
+  onConfirm,
+  title,
+  armedLabel,
+  icon: Icon = Trash2,
+  className,
+}: {
+  onConfirm: () => void;
+  title: string;
+  armedLabel: string;
+  icon?: typeof Trash2;
+  className?: string;
+}) {
   const [armed, setArmed] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => {
@@ -972,7 +1002,8 @@ function TwoStepDelete({ onConfirm }: { onConfirm: () => void }) {
     <Button
       variant={armed ? 'primary' : 'ghost'}
       size={armed ? 'sm' : 'icon-sm'}
-      title="Delete this book and its progress"
+      title={title}
+      className={className}
       onClick={() => {
         if (!armed) {
           setArmed(true);
@@ -980,11 +1011,12 @@ function TwoStepDelete({ onConfirm }: { onConfirm: () => void }) {
           return;
         }
         if (timer.current) clearTimeout(timer.current);
+        setArmed(false);
         onConfirm();
       }}
     >
-      <Trash2 className="size-3.5" />
-      {armed ? 'Really delete?' : null}
+      <Icon className="size-3.5" />
+      {armed ? armedLabel : null}
     </Button>
   );
 }

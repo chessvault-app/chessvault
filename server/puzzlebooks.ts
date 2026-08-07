@@ -116,6 +116,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({ ok: true });
   });
 
+  // Wipe every attempt on this book; the puzzles themselves stay put.
+  api.delete('/puzzlebooks/:slug/progress', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    rmSync(progressPath(slug), { force: true });
+    return c.json({ ok: true });
+  });
+
   api.get('/puzzlebooks/:slug', (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);

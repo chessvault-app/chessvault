@@ -69,6 +69,27 @@ describe('puzzle books api', () => {
     expect(after.progress[puzzle.id]).toBeUndefined();
   });
 
+  it('resets progress without touching puzzles', async () => {
+    const slug = encodeURIComponent('1001 Sacrifices');
+    const added = await post(`/api/puzzlebooks/${slug}/puzzles`, {
+      fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+      uci: ['a1a2', 'h1h2'],
+      san: ['Ka2', 'Kh2'],
+    });
+    const { puzzle } = await added.json();
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: puzzle.id, win: true });
+
+    const reset = await app.request(`/api/puzzlebooks/${slug}/progress`, { method: 'DELETE' });
+    expect(reset.status).toBe(200);
+    const after = await (await app.request(`/api/puzzlebooks/${slug}`)).json();
+    expect(after.puzzles).toHaveLength(1);
+    expect(after.progress).toEqual({});
+
+    expect(
+      (await app.request('/api/puzzlebooks/nope/progress', { method: 'DELETE' })).status,
+    ).toBe(404);
+  });
+
   it('stores and returns OCR templates per book', async () => {
     await post('/api/puzzlebooks', { title: 'OCR Book' });
     const slug = encodeURIComponent('OCR Book');
