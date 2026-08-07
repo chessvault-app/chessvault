@@ -47,6 +47,13 @@ export function AnalysisView() {
     useReview.getState().clear();
   }, []);
 
+  // A game review left running would walk the whole game on background
+  // threads with no visible sign anywhere else in the app — abort it on
+  // leave (the run loop bails after the in-flight ply and frees its worker).
+  useEffect(() => () => {
+    if (useReview.getState().status === 'running') useReview.getState().clear();
+  }, []);
+
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.

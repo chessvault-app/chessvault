@@ -39,6 +39,12 @@ export function EngineBlock({ className }: { className?: string }) {
     analyse(node.fen);
   }, [node.fen, enabled, analyse]);
 
+  // SPA leak guard: navigating away unmounts this block but nothing else
+  // would halt an in-flight `go` — Stockfish would keep burning threads
+  // with no UI attached. Stop the search; the worker stays warm and the
+  // analyse effect above resumes it on remount.
+  useEffect(() => () => useEngine.getState().stop(), []);
+
   // Only trust results that belong to the position on screen.
   const fresh = resultFen === node.fen;
   const visibleLines = fresh ? lines : [];
