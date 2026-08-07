@@ -18,6 +18,7 @@ import {
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { SideDot } from '@/ui/SideDot';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -305,10 +306,12 @@ function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: strin
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">
+                  <SideDot side="white" className="mr-1 inline-block size-2 align-[-1px]" />
                   <span className="text-fg">{g.white}</span>
                   <span className="text-subtle font-mono text-[0.625rem]"> {g.whiteElo || ''} </span>
                   <span className="text-subtle">v</span>
-                  <span className="text-fg"> {g.black}</span>
+                  <SideDot side="black" className="mx-1 inline-block size-2 align-[-1px]" />
+                  <span className="text-fg">{g.black}</span>
                   <span className="text-subtle font-mono text-[0.625rem]"> {g.blackElo || ''}</span>
                 </span>
                 <ResultBadge result={g.result} />

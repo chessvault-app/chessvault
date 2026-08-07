@@ -216,8 +216,10 @@ function EliteBrowser() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate font-medium">
+                    <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
                     {g.white} <span className="text-subtle font-mono">{g.white_elo}</span>
                     <span className="text-subtle"> — </span>
+                    <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
                     {g.black} <span className="text-subtle font-mono">{g.black_elo}</span>
                   </span>
                   <span className="text-subtle block truncate">
@@ -733,11 +735,13 @@ function GameRow({
         <ResultDot result={game.result} userSide={game.userSide} />
         <div className="min-w-0 flex-1">
           <p className="text-fg truncate text-sm">
+            <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
             <span className={cn('font-medium', game.userSide === 'white' && 'text-primary')}>
               {game.white}
             </span>
             {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
             <span className="text-subtle"> vs </span>
+            <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
             <span className={cn('font-medium', game.userSide === 'black' && 'text-primary')}>
               {game.black}
             </span>
