@@ -1,6 +1,8 @@
 import {
   ArrowLeft,
   BookMarked,
+  ChevronLeft,
+  ChevronRight,
   FileUp,
   ImageUp,
   Pencil,
@@ -518,7 +520,12 @@ function BookPage({ slug }: { slug: string }) {
 function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }) {
   const [tab, setTab] = useState<'diagram' | 'solutions'>('diagram');
   return (
-    <aside className="border-line flex w-80 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+    <aside
+      // Native horizontal resize: drag the bottom-right grip to widen the
+      // pane until the solutions page is comfortably legible.
+      className="border-line flex shrink-0 resize-x flex-col gap-2 overflow-auto border-r p-4"
+      style={{ width: 340, minWidth: 300, maxWidth: 760 }}
+    >
       {evidence.solutionPage && (
         <div className="bg-surface-inset flex shrink-0 gap-0.5 self-start rounded-lg p-0.5">
           {(['diagram', 'solutions'] as const).map((t) => (
@@ -538,9 +545,10 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
       )}
       {tab === 'diagram' && evidence.page ? (
         <>
-          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={288} />
+          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={292} />
           <p className="text-subtle text-xs leading-relaxed">
-            The book&rsquo;s own scan — make the board match it.
+            The book&rsquo;s own scan — make the board match it. Drag the
+            pane&rsquo;s corner to resize.
           </p>
         </>
       ) : tab === 'solutions' && evidence.solutionPage ? (
@@ -551,6 +559,75 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
         />
       ) : null}
     </aside>
+  );
+}
+
+/**
+ * Jump strip for the trainer: every puzzle as a tiny state-coloured chip,
+ * scrolled to keep the current one in view — move anywhere in the book
+ * without going back to the list.
+ */
+function PuzzleNavigator({
+  slug,
+  puzzles,
+  progress,
+  currentId,
+}: {
+  slug: string;
+  puzzles: BookPuzzle[];
+  progress: Record<string, PuzzleProgress>;
+  currentId: string;
+}) {
+  const at = puzzles.findIndex((p) => p.id === currentId);
+  const currentRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    currentRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [currentId]);
+  const go = (index: number): void => {
+    const target = puzzles[index];
+    if (target) navigate('puzzles', 'books', slug, target.id);
+  };
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <Button variant="ghost" size="icon-sm" title="Previous puzzle" disabled={at <= 0} onClick={() => go(at - 1)}>
+        <ChevronLeft className="size-3.5" />
+      </Button>
+      <div className="flex min-w-0 flex-1 gap-1 overflow-x-auto py-1 [scrollbar-width:none]">
+        {puzzles.map((p, i) => {
+          const last = progress[p.id]?.last;
+          const current = p.id === currentId;
+          return (
+            <button
+              key={p.id}
+              ref={current ? currentRef : undefined}
+              type="button"
+              onClick={() => go(i)}
+              className={cn(
+                'h-6 shrink-0 rounded-md border px-1.5 font-mono text-[0.625rem] font-semibold transition-colors',
+                current
+                  ? 'bg-primary-soft border-primary/50 text-primary'
+                  : last === 'win'
+                    ? 'bg-nag-good/10 border-nag-good/30 text-nag-good'
+                    : last === 'loss'
+                      ? 'bg-nag-blunder/10 border-nag-blunder/30 text-nag-blunder'
+                      : 'border-line text-subtle hover:border-line-strong hover:text-fg',
+              )}
+            >
+              {p.number ?? i + 1}
+            </button>
+          );
+        })}
+      </div>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title="Next puzzle"
+        disabled={at < 0 || at >= puzzles.length - 1}
+        onClick={() => go(at + 1)}
+      >
+        <ChevronRight className="size-3.5" />
+      </Button>
+    </div>
   );
 }
 
@@ -631,6 +708,12 @@ function PuzzleList({
 
   return (
     <>
+      <ProgressBar
+        total={puzzles.length}
+        solved={solvedCount}
+        failed={stateCounts.failed}
+        className="mb-3"
+      />
       <div className="mb-2 flex flex-wrap items-center gap-1.5">
         {(['all', 'new', 'failed', 'solved'] as const).map((s) => (
           <button key={s} type="button" onClick={() => setStateFilter(s)} className={chip(stateFilter === s)}>
@@ -649,12 +732,6 @@ function PuzzleList({
             {PROVENANCE_META[tier].label} <span className="opacity-60">{count}</span>
           </button>
         ))}
-        <ProgressBar
-          total={puzzles.length}
-          solved={solvedCount}
-          failed={stateCounts.failed}
-          className="ml-auto w-32 self-center"
-        />
       </div>
       <div className="bg-surface border-line divide-line divide-y overflow-hidden rounded-xl border">
         {visible.map((p) => {
@@ -681,9 +758,7 @@ function PuzzleList({
                   {PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META].label}
                 </span>
               )}
-              <span className="text-muted min-w-0 flex-1 truncate text-xs">
-                {p.mateIn ? `Mate in ${p.mateIn}` : `${p.san.length}-ply solution`}
-              </span>
+              <span className="min-w-0 flex-1" />
               {prog && (
                 <span className="text-subtle shrink-0 text-[0.625rem]">
                   {prog.wins}/{prog.tries} tries
@@ -762,11 +837,14 @@ function SourceCrop({
   page,
   rect,
   width = 288,
+  plain = false,
 }: {
   slug: string;
   page: string;
   rect?: SourceRect;
   width?: number;
+  /** No whole-page toggle — for hover peeks. */
+  plain?: boolean;
 }) {
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [full, setFull] = useState(false);
@@ -831,13 +909,15 @@ function SourceCrop({
           }
         />
       </div>
-      <button
-        type="button"
-        onClick={() => setFull(true)}
-        className="text-subtle self-start text-xs underline-offset-2 hover:underline"
-      >
-        show the whole page
-      </button>
+      {!plain && (
+        <button
+          type="button"
+          onClick={() => setFull(true)}
+          className="text-subtle self-start text-xs underline-offset-2 hover:underline"
+        >
+          show the whole page
+        </button>
+      )}
     </div>
   );
 }
@@ -1599,6 +1679,24 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           {puzzle.mateIn ? (
             <span className="text-subtle shrink-0 text-xs">Mate in {puzzle.mateIn}</span>
           ) : null}
+          {puzzle.evidence?.page && (
+            <span className="group relative grid size-7 shrink-0 place-items-center">
+              <Eye className="text-subtle group-hover:text-fg size-3.5 cursor-help transition-colors" />
+              {/* Hover peek: the scan next to the board — a two-second
+                  "was this read right?" check without leaving the puzzle. */}
+              <span className="pointer-events-none absolute right-0 top-8 z-40 hidden group-hover:block">
+                <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
+                  <SourceCrop
+                    slug={slug}
+                    page={puzzle.evidence.page}
+                    rect={puzzle.evidence.rect}
+                    width={252}
+                    plain
+                  />
+                </span>
+              </span>
+            </span>
+          )}
           <Button
             variant="ghost"
             size="icon-sm"
@@ -1618,6 +1716,8 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           }
           emptyText="Nothing entered yet — find the first move on the board."
         />
+
+        <PuzzleNavigator slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
 
         <div className="flex shrink-0 flex-wrap gap-2">
           {phase === 'done' ? (
