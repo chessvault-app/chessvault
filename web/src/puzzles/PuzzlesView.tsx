@@ -513,13 +513,11 @@ function Trainer({
 
         <Panel flush className="shrink-0">
           <PanelHeader
-            title={
-              puzzle && (mode === 'single' || phase === 'done') ? (
-                <span>
-                  Puzzle <span className="font-mono normal-case tracking-normal">#{puzzle.id}</span>
-                </span>
-              ) : (
-                'Puzzle'
+            title="Puzzle"
+            actions={
+              puzzle &&
+              phase === 'done' && (
+                <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
               )
             }
           />
@@ -622,10 +620,7 @@ function Trainer({
           </div>
         </Panel>
 
-        {/* Category — a card linking to the themes page, not a dropdown.
-            Hidden while replaying a specific puzzle: its identity lives in
-            the Puzzle panel header, not here. */}
-        {mode !== 'single' && (
+        {/* Category — a card linking to the themes page, not a dropdown. */}
         <button
           type="button"
           onClick={() => navigate('puzzles', 'themes')}
@@ -640,12 +635,17 @@ function Trainer({
               Category
             </span>
             <span className="text-fg block truncate text-xs font-medium">
-              {mode === 'failed' ? 'Failed puzzles' : theme ? themeLabel(theme) : 'All themes'}
+              {mode === 'single'
+                ? `Puzzle #${puzzleId}`
+                : mode === 'failed'
+                  ? 'Failed puzzles'
+                  : theme
+                    ? themeLabel(theme)
+                    : 'All themes'}
             </span>
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />
         </button>
-        )}
       </div>
     </div>
   );
