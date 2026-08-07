@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Eraser,
   FlipVertical2,
+  FolderInput,
   MousePointer2,
   RotateCcw,
   Trash2,
@@ -13,6 +14,7 @@ import { useMemo, useState } from 'react';
 import { parseSquare } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
 import { Board } from '@/board/Board';
+import { copyText } from '@/lib/clipboard';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
@@ -51,7 +53,9 @@ export function EditorView() {
   const [orientation, setOrientation] = useState<Color>('white');
   const [fenInput, setFenInput] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [loadOpen, setLoadOpen] = useState(false);
   const [fenError, setFenError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
 
   const fen = useMemo(() => toFen(state), [state]);
   const validity = useMemo(() => validate(state), [state]);
@@ -96,6 +100,12 @@ export function EditorView() {
     setFenError(null);
     setState(next);
     setFenInput('');
+    setLoadOpen(false);
+  };
+
+  const copyFen = async (): Promise<void> => {
+    setCopied((await copyText(fen)) ? 'ok' : 'failed');
+    setTimeout(() => setCopied(null), 1400);
   };
 
   /** Hand the position to the analysis board. */
@@ -191,53 +201,37 @@ export function EditorView() {
               </Field>
             </div>
           </div>
-        </Panel>
 
-        <Panel flush>
-          <PanelHeader title="FEN" />
-          <div className="grid gap-2 p-3">
-            <code className="bg-surface-inset border-line block break-all rounded-md border px-2 py-1.5 font-mono text-[0.6875rem] leading-relaxed">
+          {/* FEN lives in a status footer, not its own panel — reading it
+              back or loading a new one is occasional, editing is constant
+              (lanph3re's call, same as the analysis Load panel). */}
+          {!validity.legal && (
+            <p className="text-warn flex items-start gap-1.5 px-3 pb-1.5 text-xs">
+              <AlertCircle className="mt-px size-3.5 shrink-0" />
+              {validity.reason}
+            </p>
+          )}
+          <div className="border-line flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
+            {validity.legal && (
+              <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label="Legal position" />
+            )}
+            <code
+              className="text-subtle min-w-0 flex-1 truncate font-mono text-[0.6875rem]"
+              title={fen}
+            >
               {fen}
             </code>
-
-            <div
-              className={cn(
-                'flex items-start gap-1.5 text-xs',
-                validity.legal ? 'text-good' : 'text-warn',
-              )}
+            <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
+              {copied === 'ok' ? 'Copied' : copied === 'failed' ? 'Failed' : 'Copy'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Load a FEN to edit"
+              onClick={() => setLoadOpen(true)}
             >
-              {validity.legal ? (
-                <>
-                  <CheckCircle2 className="mt-px size-3.5 shrink-0" />
-                  Legal position.
-                </>
-              ) : (
-                <>
-                  <AlertCircle className="mt-px size-3.5 shrink-0" />
-                  {validity.reason}
-                </>
-              )}
-            </div>
-
-            <div className="border-line mt-1 grid gap-2 border-t pt-3">
-              <input
-                value={fenInput}
-                onChange={(e) => setFenInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') loadFen();
-                }}
-                spellCheck={false}
-                placeholder="Paste a FEN to edit"
-                className={cn(
-                  'bg-surface-inset border-line h-8 w-full rounded-md border px-2',
-                  'font-mono text-xs outline-none placeholder:font-sans focus:border-primary/50',
-                )}
-              />
-              {fenError && <p className="text-bad text-xs">{fenError}</p>}
-              <Button size="sm" onClick={loadFen} disabled={!fenInput.trim()}>
-                Load FEN
-              </Button>
-            </div>
+              <FolderInput className="size-3.5" />
+            </Button>
           </div>
         </Panel>
     </>
@@ -380,6 +374,49 @@ export function EditorView() {
             {positionPanels}
           </div>
         </div>
+      )}
+
+      {/* Load-a-FEN modal, same pattern as the analysis loader. */}
+      {loadOpen && (
+        <>
+          <div className="bg-scrim fixed inset-0 z-40" onClick={() => setLoadOpen(false)} />
+          <div className="fixed inset-x-4 top-[15dvh] z-50 mx-auto max-w-md">
+            <Panel flush>
+              <PanelHeader title="Load FEN" />
+              <div className="flex flex-col gap-2 p-3">
+                <input
+                  autoFocus
+                  value={fenInput}
+                  onChange={(e) => setFenInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') loadFen();
+                    if (e.key === 'Escape') setLoadOpen(false);
+                  }}
+                  spellCheck={false}
+                  placeholder="Paste a FEN to edit"
+                  className={cn(
+                    'bg-surface-inset border-line h-9 w-full rounded-md border px-2.5',
+                    'font-mono text-xs outline-none placeholder:font-sans focus:border-primary/50',
+                  )}
+                />
+                {fenError && <p className="text-bad text-xs">{fenError}</p>}
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setLoadOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={loadFen}
+                    disabled={!fenInput.trim()}
+                  >
+                    Load
+                  </Button>
+                </div>
+              </div>
+            </Panel>
+          </div>
+        </>
       )}
     </div>
   );
