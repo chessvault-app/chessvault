@@ -271,10 +271,17 @@ export const useStudy = create<StudyState>()((set, get) => {
     addChapter: (group) => {
       const { openId } = get();
       const chapters = stashCurrent();
+      // The name IS the identity for grouping and sub-chapter promotion, so
+      // it must be unique. Counting alone collides after deletions (create
+      // 3, delete 2, create -> a second "Chapter 3"); probe upward instead.
+      const taken = new Set(chapters.map((c) => c.name));
       const inGroup = group
         ? chapters.filter((c) => c.name.startsWith(`${group}/`)).length
         : chapters.length;
-      const name = group ? `${group}/Chapter ${inGroup + 1}` : `Chapter ${inGroup + 1}`;
+      let n = inGroup + 1;
+      const nameFor = (i: number): string => (group ? `${group}/Chapter ${i}` : `Chapter ${i}`);
+      while (taken.has(nameFor(n))) n++;
+      const name = nameFor(n);
       const fresh: Chapter = {
         id: `ch-new-${Date.now().toString(36)}`,
         name,
@@ -292,6 +299,8 @@ export const useStudy = create<StudyState>()((set, get) => {
       const { openId } = get();
       const stashed = stashCurrent();
       const oldName = stashed[index]?.name ?? '';
+      // Duplicate names break grouping and delete-promotion — refuse.
+      if (stashed.some((c, i) => i !== index && c.name === trimmed)) return;
       const withName = (c: Chapter, next: string): Chapter => ({
         ...c,
         name: next,

@@ -446,7 +446,7 @@ function Trainer({
             <EngineBlock />
             <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
             <MoveTreePane />
-            <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />
+            <BoardControls className="border-line border-t stacked:hidden" keyboard={false} />
             <StatusBar />
           </Panel>
         </div>

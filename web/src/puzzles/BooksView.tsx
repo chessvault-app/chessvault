@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FileUp,
-  ImageUp,
   Maximize2,
   Minimize2,
   Pencil,
@@ -49,7 +48,7 @@ import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
-import { PhotoImport, type PhotoReading } from './PhotoImport';
+import { type PhotoReading } from './PhotoImport';
 import { PdfImport } from './PdfImport';
 import {
   classifyBoard,
@@ -428,13 +427,15 @@ function BookPage({ slug }: { slug: string }) {
           <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
             {book?.title ?? slug}
           </h1>
-          <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
+          {/* Stacked headers drop the button labels — five labelled
+              controls in a phone-width row read as clutter. */}
+          <Button variant="secondary" size="sm" title="Import a book PDF" onClick={() => setImporting(true)}>
             <FileUp className="size-3.5" />
-            Import PDF
+            <span className="hidden wide:inline">Import PDF</span>
           </Button>
-          <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
+          <Button variant="primary" size="sm" title="Add a puzzle" onClick={() => setAdding(true)}>
             <Plus className="size-3.5" />
-            Add puzzle
+            <span className="hidden wide:inline">Add puzzle</span>
           </Button>
           <TwoStepDelete onConfirm={() => void deleteBook()} />
         </div>
@@ -555,7 +556,7 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
       <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width }}>
       {evidence.solutionPage && (
         <PaneTabs
-          className="self-start"
+          className="mb-1"
           tabs={[
             { id: 'diagram' as const, label: 'Diagram' },
             { id: 'solutions' as const, label: 'Solutions' },
@@ -1009,24 +1010,16 @@ function PuzzleEntry({
   onCancel: () => void;
 }) {
   const [fen, setFen] = useState<string | null>(null);
-  const [importing, setImporting] = useState(false);
-  // The aligned image's cell features, kept until the user confirms the
-  // position: confirming harvests them as this book's font templates.
-  const [photo, setPhoto] = useState<PhotoReading | null>(null);
-  const [prefill, setPrefill] = useState<string | null>(replace?.fen ?? draft?.fen ?? null);
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [prefill] = useState<string | null>(replace?.fen ?? draft?.fen ?? null);
   const wide = useWideLayout();
   const [stackedView, setStackedView] = useState<'board' | 'diagram' | 'solutions'>('board');
-  useEffect(() => {
-    void bookTemplates(slug).then(setTemplates);
-  }, [slug]);
 
   const confirmPosition = (confirmed: string): void => {
     // Fire-and-forget: template learning must never block puzzle entry.
     void (async () => {
       try {
-        let source = photo;
-        if (!source && draft) {
+        let source: PhotoReading | null = null;
+        if (draft) {
           // A draft confirmation teaches the font from its stored crop.
           const img = await loadImage(draft.imageUrl);
           source = { fen: null, features: featuresFromImage(img), blackAtBottom: false };
@@ -1084,19 +1077,15 @@ function PuzzleEntry({
     );
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="border-line flex h-12 shrink-0 items-center gap-2 border-b px-4">
+      {/* Same borderless header as everywhere else; image import lives in
+          the editor's own Position panel, not up here. */}
+      <div className="flex h-12 shrink-0 items-center gap-2 px-4">
         <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
           <ArrowLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
           {replace ? 'Fix' : 'Add'} <span className="font-mono">#{number}</span>
         </h1>
-        {fen === null && (
-          <Button variant="secondary" size="sm" onClick={() => setImporting(true)}>
-            <ImageUp className="size-3.5" />
-            From image
-          </Button>
-        )}
       </div>
       {wide ? (
         <div className="flex min-h-0 flex-1">
@@ -1156,17 +1145,6 @@ function PuzzleEntry({
             ) : null}
           </div>
         </div>
-      )}
-      {importing && fen === null && (
-        <PhotoImport
-          templates={templates}
-          onApply={(reading) => {
-            setPhoto(reading);
-            if (reading.fen) setPrefill(reading.fen);
-            setImporting(false);
-          }}
-          onClose={() => setImporting(false)}
-        />
       )}
     </div>
   );

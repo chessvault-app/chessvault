@@ -106,10 +106,15 @@ export function DashboardPage() {
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <StatCard label="Solved" value={user ? String(user.wins) : '…'} />
-          <StatCard label="Attempts" value={user ? String(user.attempts) : '…'} />
+          <StatCard
+            label="Attempts"
+            title="Rated attempts only — review sessions don't count here, which is why this can differ from the review pool"
+            value={user ? String(user.attempts) : '…'}
+          />
           <StatCard label="Win rate" value={winRate === null ? '—' : `${winRate}%`} />
           <StatCard
             label="To review"
+            title="Distinct puzzles whose LATEST attempt failed — review-session results included"
             value={String(failed)}
             action={
               failed > 0 ? (
@@ -304,14 +309,16 @@ function ResetButton({ onDone }: { onDone: () => void }) {
 function StatCard({
   label,
   value,
+  title,
   action,
 }: {
   label: string;
   value: string;
+  title?: string;
   action?: React.ReactNode;
 }) {
   return (
-    <div className="bg-surface border-line flex items-center justify-between rounded-xl border px-3 py-2.5">
+    <div title={title} className="bg-surface border-line flex items-center justify-between rounded-xl border px-3 py-2.5">
       <div>
         <div className="text-subtle text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
           {label}

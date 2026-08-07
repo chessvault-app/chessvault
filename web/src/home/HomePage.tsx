@@ -15,6 +15,8 @@ import { navigate, type Section } from '@/lib/router';
  * should encode something true). Tools (analysis, editor) stay bare.
  */
 
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
 const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof Swords }[] = [
   { section: 'analysis', label: 'Analysis', blurb: 'Free board with engine and explorer', icon: Swords },
   { section: 'editor', label: 'Editor', blurb: 'Set up any position', icon: Grid2x2 },
@@ -38,11 +40,11 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so all
       // three answer with a `studies` list.
-      const [studies, notes, games, books] = await Promise.all([
+      const [studies, notes, games, puzzles] = await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
         grab('/api/games/docs'),
-        grab('/api/puzzlebooks'),
+        grab('/api/puzzles/meta'),
       ]);
       const docs = (v: unknown): number | undefined =>
         Array.isArray((v as { studies?: unknown[] })?.studies)
@@ -53,10 +55,9 @@ export function HomePage() {
         notes: docs(notes),
         games: docs(games),
       };
-      const bookList = (books as { books?: { puzzles: number }[] })?.books;
-      if (Array.isArray(bookList)) {
-        next.puzzles = bookList.reduce((n, b) => n + (b.puzzles ?? 0), 0);
-      }
+      // The trainer's own pool (the full lichess db), not the book totals.
+      const trainerPool = (puzzles as { puzzles?: number })?.puzzles;
+      if (typeof trainerPool === 'number' && trainerPool > 0) next.puzzles = trainerPool;
       setCounts(next);
     })();
   }, []);
@@ -92,7 +93,7 @@ export function HomePage() {
                   {counts[section] !== undefined && (
                     <span className="text-subtle font-mono text-xs font-normal">
                       {' '}
-                      · {counts[section]}
+                      · {compact.format(counts[section]!)}
                     </span>
                   )}
                 </span>

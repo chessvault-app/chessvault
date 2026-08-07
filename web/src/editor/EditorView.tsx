@@ -1,7 +1,7 @@
 import {
   AlertCircle,
   Settings2,
-  ArrowRight,
+  ListPlus,
   CheckCircle2,
   Eraser,
   FlipVertical2,
@@ -428,8 +428,9 @@ export function EditorView({
             onClick={analyse}
             title={validity.legal ? 'Analyse this position' : validity.reason}
           >
-            {/* Same glyph as the game-review button: analysis = microscope. */}
-            {onUse ? <ArrowRight className="size-3.5" /> : <Microscope className="size-3.5" />}
+            {/* Analysis = the game-review microscope; embedded mode records
+                a move list, so the glyph says "list", not "go". */}
+            {onUse ? <ListPlus className="size-3.5" /> : <Microscope className="size-3.5" />}
             <span className="hidden sm:inline">{onUse ? useLabel : 'Analyse'}</span>
           </Button>
         </div>

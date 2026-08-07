@@ -151,11 +151,11 @@ export function AnalysisBoard() {
         </div>
         <PlayerBar side={orientation} />
       </div>
-      {/* Below lg the side column shows one pane at a time, so the panel's
-          nav row can be off-screen (Explorer tab) — and touch has neither
-          wheel nor arrow keys. This copy keeps navigation reachable there;
-          desktop uses the copy in the Moves panel. */}
-      <BoardControls className="lg:hidden" />
+      {/* Stacked layouts keep navigation under the board (the side pane may
+          be showing Explorer, and touch has neither wheel nor arrow keys).
+          EVERY side-by-side layout uses the copy in the Moves panel instead
+          (lanph3re: the under-board toolbar looked stray at medium widths). */}
+      <BoardControls className="wide:hidden" />
     </div>
   );
 }
