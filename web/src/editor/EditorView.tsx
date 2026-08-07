@@ -101,7 +101,8 @@ export function EditorView() {
   /** Hand the position to the analysis board. */
   const analyse = (): void => {
     if (!validity.legal) return;
-    useAnalysis.getState().loadFen(fen);
+    if (!useAnalysis.getState().loadFen(fen)) return;
+    useAnalysis.setState({ handoff: true });
     navigate('analysis');
   };
 

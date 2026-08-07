@@ -1,23 +1,46 @@
 import { RotateCcw, Trash2 } from 'lucide-react';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode, isOnMainline } from '@shared/tree';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { EnginePane } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
+import { useEngine } from '@/store/engine';
+import { useExplorer } from '@/store/explorer';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
-import { PositionLoader } from './PositionLoader';
+import { LoadPositionButton } from './PositionLoader';
 
-type AnalysisPane = 'moves' | 'engine' | 'explorer' | 'load';
+type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
 export function AnalysisView() {
   // Small screens show ONE pane under the board (lichess-app style); the
   // others stay mounted but hidden so the engine keeps following the board.
   const [pane, setPane] = useState<AnalysisPane>('moves');
+
+  // Stateless page (lanph3re's call): entering analysis always starts a fresh
+  // board with the engine off and the explorer at its default — UNLESS a
+  // view just handed a position over (editor, games, puzzles), marked by
+  // the handoff flag. The ref makes the decision once per real mount:
+  // StrictMode runs the effect twice, and the second run must not treat
+  // the just-consumed flag as "no handoff" and wipe the board.
+  const entered = useRef(false);
+  useEffect(() => {
+    if (entered.current) return;
+    entered.current = true;
+    const analysis = useAnalysis.getState();
+    if (analysis.handoff) {
+      useAnalysis.setState({ handoff: false });
+      return;
+    }
+    analysis.reset();
+    const engine = useEngine.getState();
+    if (engine.enabled) engine.setEnabled(false);
+    useExplorer.setState({ enabled: true });
+  }, []);
 
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
@@ -39,7 +62,6 @@ export function AnalysisView() {
             { id: 'moves', label: 'Moves' },
             { id: 'engine', label: 'Engine' },
             { id: 'explorer', label: 'Explorer' },
-            { id: 'load', label: 'Load' },
           ]}
         />
         <EnginePane
@@ -63,13 +85,18 @@ export function AnalysisView() {
           flush
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
-          <PanelHeader title="Moves" actions={<MoveActions />} />
+          <PanelHeader
+            title="Moves"
+            actions={
+              <>
+                <LoadPositionButton />
+                <MoveActions />
+              </>
+            }
+          />
           <MoveTreePane />
           <StatusBar />
         </Panel>
-        <div className={cn(pane !== 'load' && 'max-lg:hidden')}>
-          <PositionLoader />
-        </div>
       </div>
     </div>
   );

@@ -5,11 +5,12 @@ import {
   ChevronRight,
   FlipVertical2,
 } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, pathTo } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
 import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -64,10 +65,50 @@ export function AnalysisBoard() {
     return [{ orig: best.slice(0, 2) as Key, dest: best.slice(2, 4) as Key, brush: 'blue' }];
   }, [topLine?.moves]);
 
+  // Every rendered move sounds — played AND replayed — like lichess. The
+  // ref skips the mount so opening a study mid-game stays quiet.
+  const lastCursor = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastCursor.current !== null && lastCursor.current !== cursorId && node.san) {
+      playSound(soundForSan(node.san));
+    }
+    lastCursor.current = cursorId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cursorId]);
+
+  // Mouse wheel over the board steps through the game. Registered manually:
+  // React's synthetic wheel listener is passive, so it cannot stop the page
+  // from scrolling underneath.
+  const boardColumn = useRef<HTMLDivElement>(null);
+  const goBack = useAnalysis((s) => s.goBack);
+  const goForward = useAnalysis((s) => s.goForward);
+  useEffect(() => {
+    const el = boardColumn.current;
+    if (!el) return;
+    let acc = 0;
+    const onWheel = (e: WheelEvent): void => {
+      e.preventDefault();
+      // Accumulate so trackpads (many tiny deltas) step at a sane rate.
+      acc += e.deltaY;
+      if (acc > 24) {
+        goForward();
+        acc = 0;
+      } else if (acc < -24) {
+        goBack();
+        acc = 0;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [goBack, goForward]);
+
   return (
     // Top-anchored, not centred: the board must sit at the same y in every
     // view regardless of what each stacks below it.
-    <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+    <div
+      ref={boardColumn}
+      className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start"
+    >
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
       <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>

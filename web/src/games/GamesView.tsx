@@ -353,6 +353,7 @@ function ArchiveBrowser({
       const { loadPgn } = useAnalysis.getState();
       if (loadPgn(pgn)) {
         if (game.userSide) useAnalysis.setState({ orientation: game.userSide });
+        useAnalysis.setState({ handoff: true });
         navigate('analysis');
       }
     } catch {

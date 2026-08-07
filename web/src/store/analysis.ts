@@ -37,6 +37,12 @@ interface AnalysisState {
   /** Set when a load fails, so the UI can explain rather than silently no-op. */
   loadError: string | null;
   /**
+   * Set by views that hand a position to the analysis page (editor, games,
+   * puzzles) right before navigating. The analysis view consumes it on
+   * mount: present → keep the handed-off position; absent → fresh board.
+   */
+  handoff: boolean;
+  /**
    * Headers of the loaded game (players, ratings, …), kept so the board can
    * show name plates. Null for scratch analysis / FEN loads.
    */
@@ -92,6 +98,7 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
     tree: initial,
     cursorId: initial.rootId,
     orientation: 'white',
+    handoff: false,
     pendingPromotion: null,
     loadError: null,
     gameHeaders: null,
@@ -211,7 +218,14 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
 
     reset: (fen = INITIAL_FEN) => {
       const tree = createTree(fen);
-      set({ tree, cursorId: tree.rootId, pendingPromotion: null, loadError: null, gameHeaders: null });
+      set({
+        tree,
+        cursorId: tree.rootId,
+        pendingPromotion: null,
+        loadError: null,
+        gameHeaders: null,
+        orientation: 'white',
+      });
     },
 
     loadFen: (fen) => {

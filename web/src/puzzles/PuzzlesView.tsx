@@ -11,6 +11,7 @@ import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { Board } from '@/board/Board';
+import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -143,6 +144,21 @@ export function PuzzlesView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Sound per rendered position. No SAN here, so a capture is detected by
+  // the piece count dropping; a fresh puzzle (no lastMove) stays silent.
+  const prevPieces = useRef<number | null>(null);
+  useEffect(() => {
+    if (!view) {
+      prevPieces.current = null;
+      return;
+    }
+    const pieces = view.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+    const prev = prevPieces.current;
+    prevPieces.current = pieces;
+    if (prev === null || !view.lastMove) return;
+    playSound(view.check ? 'check' : pieces < prev ? 'capture' : 'move');
+  }, [view]);
+
   const finish = (p: ApiPuzzle, finalPlies: number): void => {
     setPhase('done');
     setView(positionAt(p, finalPlies));
@@ -229,7 +245,8 @@ export function PuzzlesView() {
 
   const analyse = (): void => {
     if (!view) return;
-    useAnalysis.getState().loadFen(view.fen);
+    if (!useAnalysis.getState().loadFen(view.fen)) return;
+    useAnalysis.setState({ handoff: true });
     navigate('analysis');
   };
 

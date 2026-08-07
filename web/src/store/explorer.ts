@@ -216,7 +216,9 @@ export const useExplorer = create<ExplorerState>()(
     },
     {
       name: 'chess-vault:explorer',
-      partialize: (s) => ({ enabled: s.enabled, book: s.book }),
+      // Only the book choice persists — visibility is session state, and
+      // the app aims to be stateless apart from data (lanph3re's call).
+      partialize: (s) => ({ book: s.book }),
     },
   ),
 );
