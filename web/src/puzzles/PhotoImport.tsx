@@ -47,6 +47,7 @@ export function PhotoImport({
     uncertain: string[];
   } | null>(null);
   const [pasteHint, setPasteHint] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef<number | null>(null);
 
@@ -205,9 +206,44 @@ export function PhotoImport({
     setReading({ fen, features, uncertain });
   };
 
+  // Drag-and-drop, the third way in: handlers live on the whole overlay so
+  // a file can land anywhere on the dialog, in either state.
+  const onDragOver = (e: React.DragEvent): void => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      setDragOver(true);
+    }
+  };
+  const onDragLeave = (e: React.DragEvent): void => {
+    // dragleave fires on every child hop; only leaving the overlay counts.
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(false);
+  };
+  const onDrop = (e: React.DragEvent): void => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/'));
+    if (file) pick(file);
+    else setPasteHint('That drop had no image file.');
+  };
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
-      <div className="bg-surface border-line flex max-h-full w-full max-w-[38rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4">
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      <div
+        className={cn(
+          'bg-surface border-line relative flex max-h-full w-full max-w-[38rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4',
+          dragOver && 'border-primary',
+        )}
+      >
+        {dragOver && (
+          <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-xl">
+            <p className="text-primary text-sm font-semibold">Drop the image</p>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <ImageUp className="text-subtle size-4" />
           <h2 className="text-fg flex-1 text-sm font-semibold">Position from an image</h2>
@@ -238,7 +274,7 @@ export function PhotoImport({
                 <ClipboardPaste className="size-3.5" />
                 Paste image
               </Button>
-              <span className="text-subtle text-xs">or press Ctrl+V</span>
+              <span className="text-subtle text-xs">or press Ctrl+V — dropping a file here works too</span>
             </div>
             {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
           </>
