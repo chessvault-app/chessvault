@@ -469,7 +469,9 @@ function ChapterRow({
                 e.stopPropagation();
                 onToggleFold();
               }}
-              className="hover:text-fg -m-1 shrink-0 p-1"
+              // Touch gets a ~32px hit area; the negative margin cancels
+              // the padding so the visual layout doesn't move.
+              className="hover:text-fg -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
             >
               <ChevronDown
                 className={cn('size-3 transition-transform duration-100', isFolded && '-rotate-90')}
