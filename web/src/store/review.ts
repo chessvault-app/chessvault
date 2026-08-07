@@ -9,7 +9,7 @@ import {
   type SearchUpdate,
 } from '@/engine/StockfishEngine';
 import { judgeLine, summarise, type Score, type SideSummary } from '@/engine/review';
-import { toWhitePov } from '@/engine/uci';
+import { toWhitePov, winningChances } from '@/engine/uci';
 import { useAnalysis } from './analysis';
 import { useEngine } from './engine';
 
@@ -23,12 +23,20 @@ import { useEngine } from './engine';
 
 const REVIEW_DEPTH = 14;
 
+export interface GraphPoint {
+  /** Mainline node this position belongs to (root included, index 0). */
+  id: string;
+  /** White's winning chances 0..1, for the evaluation graph. */
+  chances: number;
+}
+
 interface ReviewState {
   status: 'idle' | 'running' | 'done' | 'error';
   /** 0..1 while running. */
   progress: number;
   white: SideSummary | null;
   black: SideSummary | null;
+  points: GraphPoint[] | null;
   error: string | null;
 
   run: () => Promise<void>;
@@ -40,9 +48,11 @@ export const useReview = create<ReviewState>()((set, get) => ({
   progress: 0,
   white: null,
   black: null,
+  points: null,
   error: null,
 
-  clear: () => set({ status: 'idle', progress: 0, white: null, black: null, error: null }),
+  clear: () =>
+    set({ status: 'idle', progress: 0, white: null, black: null, points: null, error: null }),
 
   run: async () => {
     if (get().status === 'running') return;
@@ -125,6 +135,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
         progress: 1,
         white: summarise(verdicts, 'white'),
         black: summarise(verdicts, 'black'),
+        points: ids.map((id, i) => ({ id, chances: winningChances(scores[i]!) })),
       });
     } catch (error) {
       set({ status: 'error', error: (error as Error).message });

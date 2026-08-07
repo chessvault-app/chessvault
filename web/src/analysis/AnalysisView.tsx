@@ -77,7 +77,6 @@ export function AnalysisView() {
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
-          <ReviewStrip />
           <PanelHeader
             title="Moves"
             actions={
@@ -89,6 +88,7 @@ export function AnalysisView() {
             }
           />
           <MoveTreePane />
+          <ReviewStrip />
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
           <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />

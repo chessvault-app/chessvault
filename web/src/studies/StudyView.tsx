@@ -153,7 +153,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
-          <ReviewStrip />
           <PanelHeader
             title="Moves"
             actions={
@@ -164,6 +163,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             }
           />
           <MoveTreePane />
+          <ReviewStrip />
           <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />
           <AnnotationPane
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
