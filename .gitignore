@@ -14,6 +14,11 @@ vault/config.json
 vault/sources/*
 !vault/sources/.gitkeep
 
+# Book-import diagram crops: bulky jpegs, re-creatable by re-importing the
+# book's PDF. The irreplaceable parts (drafts.json, puzzles, learned font,
+# progress) stay versioned.
+vault/puzzlebooks/*/diagrams/
+
 # The rest of vault/ is deliberately NOT ignored: studies, notes and games are
 # plain text and benefit from being version-controlled.
 
