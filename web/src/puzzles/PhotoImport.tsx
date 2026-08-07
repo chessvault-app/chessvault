@@ -1,5 +1,5 @@
-import { ImageUp, ScanSearch, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ClipboardPaste, ImageUp, ScanSearch, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import {
@@ -46,16 +46,18 @@ export function PhotoImport({
     features: Uint8Array[];
     uncertain: string[];
   } | null>(null);
+  const [pasteHint, setPasteHint] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef<number | null>(null);
 
-  const pick = (file: File): void => {
+  const pick = useCallback((file: Blob): void => {
     const url = URL.createObjectURL(file);
     const image = new Image();
     image.onload = () => {
       URL.revokeObjectURL(url);
       setImg(image);
       setReading(null);
+      setPasteHint(null);
       // Default quad: centred, inset 12% — close enough to grab and drag.
       const ix = image.naturalWidth * 0.12;
       const iy = image.naturalHeight * 0.12;
@@ -67,6 +69,38 @@ export function PhotoImport({
       ]);
     };
     image.src = url;
+  }, []);
+
+  // Ctrl+V anywhere while the dialog is open loads the clipboard image —
+  // the natural flow after snipping a diagram off the screen.
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent): void => {
+      const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith('image/'));
+      const file = item?.getAsFile();
+      if (file) {
+        e.preventDefault();
+        pick(file);
+      }
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [pick]);
+
+  // Button fallback for the same thing: the paste EVENT only fires on a
+  // keyboard shortcut, so a pointer-driven flow needs the async API.
+  const pasteFromClipboard = async (): Promise<void> => {
+    try {
+      for (const item of await navigator.clipboard.read()) {
+        const type = item.types.find((t) => t.startsWith('image/'));
+        if (type) {
+          pick(await item.getType(type));
+          return;
+        }
+      }
+      setPasteHint('No image in the clipboard — copy or snip one first.');
+    } catch {
+      setPasteHint('Clipboard access was blocked — press Ctrl+V instead.');
+    }
   };
 
   // Fit the image to the modal; all pointer math converts through `scale`.
@@ -183,21 +217,31 @@ export function PhotoImport({
         </div>
 
         {!img ? (
-          <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) pick(file);
-              }}
-            />
-            <span className="text-muted text-sm">
-              Choose an image of the diagram
-              <span className="text-subtle block text-xs">a screenshot or scan works best</span>
-            </span>
-          </label>
+          <>
+            <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) pick(file);
+                }}
+              />
+              <span className="text-muted text-sm">
+                Choose an image of the diagram
+                <span className="text-subtle block text-xs">a screenshot or scan works best</span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
+                <ClipboardPaste className="size-3.5" />
+                Paste image
+              </Button>
+              <span className="text-subtle text-xs">or press Ctrl+V</span>
+            </div>
+            {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
+          </>
         ) : (
           <>
             <p className="text-subtle text-xs">
@@ -226,7 +270,14 @@ export function PhotoImport({
                 />
                 Black at the bottom
               </label>
-              <label className="text-subtle ml-auto cursor-pointer text-xs underline-offset-2 hover:underline">
+              <button
+                type="button"
+                onClick={() => void pasteFromClipboard()}
+                className="text-subtle ml-auto cursor-pointer text-xs underline-offset-2 hover:underline"
+              >
+                paste image
+              </button>
+              <label className="text-subtle cursor-pointer text-xs underline-offset-2 hover:underline">
                 <input
                   type="file"
                   accept="image/*"
@@ -239,6 +290,7 @@ export function PhotoImport({
                 different image
               </label>
             </div>
+            {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
           </>
         )}
 
