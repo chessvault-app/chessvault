@@ -58,8 +58,10 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono {
     const q = (c.req.query('q') ?? '').trim();
     const offset = Math.max(0, Number(c.req.query('offset')) || 0);
 
-    const where = q ? 'WHERE white LIKE ? OR black LIKE ?' : '';
-    const args = q ? [`%${q}%`, `%${q}%`] : [];
+    // One box searches everything a game is findable by: players, the
+    // opening name, and the ECO code (prefix match, so "B9" finds B90-B99).
+    const where = q ? 'WHERE white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?' : '';
+    const args = q ? [`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`] : [];
     const total = (
       d.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }
     ).n;

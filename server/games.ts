@@ -288,6 +288,11 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
     if (pathUser === white) game.headers.set('VaultSide', 'white');
     else if (pathUser === black) game.headers.set('VaultSide', 'black');
 
+    return c.json({ id: addToCollection(game) });
+  });
+
+  /** Write a parsed game into the collection under a readable, unique name. */
+  function addToCollection(game: Game<PgnNodeData>): string {
     const date = (game.headers.get('UTCDate') ?? game.headers.get('Date') ?? '').replaceAll('.', '-');
     const base = `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`
       .replace(/[^A-Za-z0-9 _.-]/g, '')
@@ -297,7 +302,21 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       name = `${base} (${n})`;
     }
     writeFileSync(resolve(collectionDir, `${name}.pgn`), makePgn(game));
-    return c.json({ id: name });
+    return name;
+  }
+
+  // Any PGN — an elite reference game, a paste — promoted into the
+  // collection as its own annotatable document.
+  api.post('/games/collect-pgn', async (c) => {
+    const body = await c.req.json<{ pgn?: string }>().catch(() => null);
+    if (!body?.pgn) return c.json({ error: 'need pgn' }, 400);
+    let game: Game<PgnNodeData> | null = null;
+    const parser = new PgnParser((g, err) => {
+      if (!err && !game) game = g;
+    });
+    parser.parse(body.pgn);
+    if (!game) return c.json({ error: 'that PGN could not be read' }, 400);
+    return c.json({ id: addToCollection(game) });
   });
 
   api.get('/games/bookmarks', (c) => c.json({ keys: [...readBookmarks(dir)] }));

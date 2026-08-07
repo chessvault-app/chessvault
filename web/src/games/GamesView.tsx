@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Check,
   ChevronDown,
   Download,
   ExternalLink,
@@ -148,6 +149,21 @@ function EliteBrowser() {
     }
   };
 
+  // Keeping an elite game: its PGN becomes a collection document like any
+  // promoted chess.com game — annotatable, searchable, yours.
+  const [added, setAdded] = useState<Set<number>>(new Set());
+  const collect = async (game: RefGame): Promise<void> => {
+    const res = await fetch(`/api/refgames/${game.id}/pgn`);
+    if (!res.ok) return;
+    const { pgn } = (await res.json()) as { pgn: string };
+    const posted = await fetch('/api/games/collect-pgn', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pgn }),
+    });
+    if (posted.ok) setAdded((prev) => new Set(prev).add(game.id));
+  };
+
   if (meta && !meta.ready) {
     return (
       <div className="grid h-full place-items-center p-8">
@@ -181,7 +197,7 @@ function EliteBrowser() {
         <input
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search by player name…"
+          placeholder="Search players, openings, or ECO (e.g. Najdorf, B90)…"
           spellCheck={false}
           className="text-fg placeholder:text-subtle h-9 w-full bg-transparent text-sm outline-none"
         />
@@ -191,12 +207,12 @@ function EliteBrowser() {
         <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
           {rows.map((g) => (
-            <li key={g.id}>
+            <li key={g.id} className="flex items-center pr-2">
               <button
                 type="button"
                 onClick={() => void openGame(g)}
                 title="Open on the analysis board"
-                className="hover:bg-surface-2 flex w-full items-center gap-3 px-3 py-2 text-left text-xs transition-colors duration-100"
+                className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left text-xs transition-colors duration-100"
               >
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate font-medium">
@@ -212,6 +228,19 @@ function EliteBrowser() {
                 <span className="text-muted shrink-0 font-mono">{g.result}</span>
                 <span className="text-subtle shrink-0 font-mono">{g.date ?? ''}</span>
               </button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={added.has(g.id) ? 'In your collection' : 'Add to collection'}
+                disabled={added.has(g.id)}
+                onClick={() => void collect(g)}
+              >
+                {added.has(g.id) ? (
+                  <Check className="text-good size-3.5" />
+                ) : (
+                  <Plus className="size-3.5" />
+                )}
+              </Button>
             </li>
           ))}
           {rows.length < total && (

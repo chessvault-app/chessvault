@@ -91,6 +91,25 @@ describe('games api (collection model)', () => {
     expect((await res.json()).id).toBe('lanph3re vs someone 2026-07-03 (2)');
   });
 
+  it('collects a raw PGN (elite reference game) as a document', async () => {
+    const pgn =
+      '[White "Carlsen"]\n[Black "Caruana"]\n[Date "2024.01.05"]\n[Result "1-0"]\n\n1. e4 e5 1-0\n';
+    const res = await app.request('/api/games/collect-pgn', {
+      method: 'POST',
+      body: JSON.stringify({ pgn }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect((await res.json()).id).toBe('Carlsen vs Caruana 2024-01-05');
+    expect(existsSync(join(dir, 'collection', 'Carlsen vs Caruana 2024-01-05.pgn'))).toBe(true);
+
+    const bad = await app.request('/api/games/collect-pgn', {
+      method: 'POST',
+      body: JSON.stringify({}),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(bad.status).toBe(400);
+  });
+
   it('serves single games with clock comments intact', async () => {
     const res = await app.request(
       `/api/games/pgn?file=${encodeURIComponent('chesscom/lanph3re/2026-07.pgn')}&index=0`,
