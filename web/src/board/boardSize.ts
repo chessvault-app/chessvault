@@ -20,9 +20,10 @@ export const BOARD_MAX_W =
 export const EDITOR_BOARD_MAX_W =
   // The stacked editor has no pane below — just palettes, the toolbar and
   // the nav — so its board can run essentially full-width on phones.
-  // 18rem: the measured chrome (two palettes, toolbar, gaps, page padding,
+  // 19rem: the measured chrome (two palettes, toolbar, gaps, page padding,
   // nav + iOS safe-area) sits just under 16rem, and a reserve at exactly
   // that line made phones overflow by a few px — a sliver of scroll and a
-  // toolbar flush against the nav. Tall phones stay width-bound, so the
-  // extra 2rem costs them nothing.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-18rem)))] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),48rem)]';
+  // toolbar flush against the nav. The rest is breathing room (rio-tuned
+  // on an iPad mini). Tall phones stay width-bound, so it costs them
+  // nothing.
+  'max-w-[min(100%,max(35dvh,calc(100dvh-19rem)))] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),48rem)]';
