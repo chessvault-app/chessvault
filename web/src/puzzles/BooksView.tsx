@@ -288,11 +288,11 @@ function Shelf() {
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {books.map((b) => (
-              <div key={b.slug} className="relative">
+              <div key={b.slug} className="group relative">
                 <button
                   type="button"
                   onClick={() => navigate('puzzles', 'books', b.slug)}
-                  className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex w-full items-stretch gap-3 rounded-xl border p-3 text-left transition-colors duration-100"
+                  className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 flex w-full items-stretch gap-3 rounded-xl border p-3 text-left transition-colors duration-100"
                 >
                   {b.cover ? (
                     <img
@@ -316,10 +316,11 @@ function Shelf() {
                     <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} />
                   </span>
                 </button>
+                {/* Hover-revealed on mouse; always present under a thumb. */}
                 <TwoStepConfirm
                   title="Delete this book and its progress"
-                  armedLabel="Really delete?"
-                  className="absolute right-2 top-2"
+                  armedLabel="Delete book?"
+                  className="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
                   onConfirm={() => void removeBook(b.slug)}
                 />
               </div>
@@ -452,7 +453,7 @@ function BookPage({ slug }: { slug: string }) {
           </Button>
           <TwoStepConfirm
             title="Reset all progress in this book"
-            armedLabel="Really reset progress?"
+            armedLabel="Reset progress?"
             icon={RotateCcw}
             onConfirm={() => void resetProgress()}
           />
@@ -1000,10 +1001,10 @@ function TwoStepConfirm({
   }, []);
   return (
     <Button
-      variant={armed ? 'primary' : 'ghost'}
+      variant={armed ? 'danger' : 'ghost'}
       size={armed ? 'sm' : 'icon-sm'}
       title={title}
-      className={className}
+      className={cn(className, armed && 'opacity-100')}
       onClick={() => {
         if (!armed) {
           setArmed(true);

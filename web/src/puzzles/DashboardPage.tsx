@@ -302,14 +302,14 @@ function ResetButton({ onDone }: { onDone: () => void }) {
 
   return (
     <Button
-      variant={armed ? 'primary' : 'ghost'}
+      variant={armed ? 'danger' : 'ghost'}
       size="sm"
       className={armed ? 'ml-auto' : 'text-subtle ml-auto'}
       title="Wipe attempts, history and the review pool"
       onClick={() => void click()}
     >
       <Trash2 className="size-3.5" />
-      {armed ? 'Really reset everything?' : 'Reset'}
+      {armed ? 'Wipe everything?' : 'Reset'}
     </Button>
   );
 }
