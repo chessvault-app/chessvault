@@ -1,4 +1,6 @@
 import {
+  ArrowLeft,
+  BarChart3,
   ChevronRight,
   Eye,
   Lightbulb,
@@ -12,15 +14,21 @@ import type { Color, Role } from 'chessops/types';
 import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
+import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
+import { MoveTreePane } from '@/analysis/MoveTreePane';
+import { EngineBlock } from '@/engine/EnginePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
+import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
+import { DashboardPage } from './DashboardPage';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import {
   judgeMove,
@@ -75,6 +83,7 @@ type Phase =
  */
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'themes') return <ThemesPage />;
+  if (params[0] === 'dashboard') return <DashboardPage />;
   if (params[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
   const theme = params[0] === 'theme' ? (params[1] ?? '') : '';
   return <Trainer key={theme} theme={theme} mode="fresh" />;
@@ -287,11 +296,36 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
     step();
   };
 
+  // In-place analysis (lanph3re's call: no jump to the Analysis tab): the final
+  // position loads into the shared analysis store and the trainer swaps to
+  // the real analysis board + merged engine/moves panel. Entering is an
+  // explicit "analyse" act, so the engine comes on; leaving turns it off.
+  const [analysing, setAnalysing] = useState(false);
+  const analysingRef = useRef(false);
+  analysingRef.current = analysing;
+  useEffect(
+    () => () => {
+      if (analysingRef.current) useEngine.getState().setEnabled(false);
+    },
+    [],
+  );
+
   const analyse = (): void => {
     if (!view) return;
     if (!useAnalysis.getState().loadFen(view.fen)) return;
-    useAnalysis.setState({ handoff: true });
-    navigate('analysis');
+    useAnalysis.setState({ orientation });
+    useEngine.getState().setEnabled(true);
+    setAnalysing(true);
+  };
+
+  const backToPuzzle = (): void => {
+    useEngine.getState().setEnabled(false);
+    setAnalysing(false);
+  };
+
+  const nextFromAnalysis = (): void => {
+    backToPuzzle();
+    void loadNext(theme, difficulty);
   };
 
   const orientation: Color = puzzle ? solverColor(puzzle) : 'white';
@@ -325,9 +359,33 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
     );
   }
 
-  const stats = meta
-    ? `${meta.user.wins}/${meta.user.attempts} solved${meta.user.streak > 1 ? ` · streak ${meta.user.streak}` : ''}`
-    : '';
+  if (analysing && puzzle) {
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+        <AnalysisBoard />
+        <div className="flex flex-1 flex-col gap-3 stacked:gap-2 wide:min-h-0 wide:w-[min(27rem,38%)] wide:flex-none wide:overflow-y-auto">
+          <div className="flex shrink-0 items-center gap-2">
+            <Button variant="ghost" size="icon-sm" title="Back to the puzzle" onClick={backToPuzzle}>
+              <ArrowLeft className="size-3.5" />
+            </Button>
+            <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+              Analysing #{puzzle.id}
+            </span>
+            <Button variant="primary" size="sm" onClick={nextFromAnalysis}>
+              <RotateCw className="size-3.5" />
+              Next puzzle
+            </Button>
+          </div>
+          <Panel flush className="min-h-min flex-1">
+            <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
+            <EngineBlock />
+            <MoveTreePane />
+            <StatusBar />
+          </Panel>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
@@ -378,7 +436,16 @@ function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
         <Panel flush className="shrink-0">
           <PanelHeader
             title="Training"
-            actions={<span className="text-subtle text-xs">{stats}</span>}
+            actions={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title="Dashboard"
+                onClick={() => navigate('puzzles', 'dashboard')}
+              >
+                <BarChart3 className="size-3.5" />
+              </Button>
+            }
           />
           {mode === 'failed' ? (
             <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">

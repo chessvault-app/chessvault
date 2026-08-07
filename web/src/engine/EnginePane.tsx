@@ -1,16 +1,22 @@
-import { AlertTriangle, Cpu, Settings2 } from 'lucide-react';
+import { AlertTriangle, Settings2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
-import { Panel, PanelHeader } from '@/ui/Panel';
 import { cn } from '@/lib/cn';
 import { EvalBar } from './EvalBar';
 import { formatPv } from './pv.ts';
 import { formatScore, toWhitePov, type PvLine } from './uci.ts';
 
-export function EnginePane({ className }: { className?: string }) {
+/**
+ * The engine, panel-less: a slim strip (label, depth, settings, switch)
+ * that expands into eval + lines when enabled. Docked at the top of the
+ * Moves panel in every view — merged rather than a separate panel (lanph3re's
+ * call: "looks more natural"), which also means an idle engine costs one
+ * row instead of a whole pane.
+ */
+export function EngineBlock({ className }: { className?: string }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const playSan = useAnalysis((s) => s.playSan);
@@ -39,22 +45,20 @@ export function EnginePane({ className }: { className?: string }) {
   const score = top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
 
   return (
-    <Panel flush className={className}>
-      <PanelHeader
-        title={
-          <span className="flex items-center gap-1.5">
-            Engine
-            {enabled && top && (
-              <span className="text-subtle font-mono normal-case tracking-normal">
-                depth {top.depth}
-                {top.selDepth ? `/${top.selDepth}` : ''}
-                {finished ? '' : '…'}
-              </span>
-            )}
-          </span>
-        }
-        actions={
-          <>
+    <div className={cn('border-line shrink-0 border-b', className)}>
+      <div className="flex h-9 items-center justify-between gap-2 px-3">
+        <span className="text-subtle flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          Engine
+          {enabled && top && (
+            <span className="font-mono normal-case tracking-normal">
+              depth {top.depth}
+              {top.selDepth ? `/${top.selDepth}` : ''}
+              {finished ? '' : '…'}
+            </span>
+          )}
+        </span>
+        <span className="flex items-center gap-1">
+          {enabled && (
             <Button
               variant="ghost"
               size="icon-sm"
@@ -64,39 +68,32 @@ export function EnginePane({ className }: { className?: string }) {
             >
               <Settings2 className="size-3.5" />
             </Button>
-            <EngineSwitch enabled={enabled} onToggle={toggle} />
-          </>
-        }
-      />
+          )}
+          <EngineSwitch enabled={enabled} onToggle={toggle} />
+        </span>
+      </div>
 
-      {showSettings && <EngineSettings />}
+      {enabled && showSettings && <EngineSettings />}
 
-      {error && (
+      {enabled && error && (
         <p className="text-bad flex items-start gap-1.5 px-3 py-2 text-xs">
           <AlertTriangle className="mt-px size-3.5 shrink-0" />
           {error}
         </p>
       )}
 
-      {!enabled ? (
-        <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
-          <Cpu className="text-subtle size-5" strokeWidth={1.75} />
-          <p className="text-muted text-xs leading-relaxed">
-            Engine is off. Turn it on to evaluate this position.
-          </p>
-        </div>
-      ) : (
+      {enabled && !error && (
         <>
-          <div className="flex items-center gap-2 px-3 pt-2.5">
+          <div className="flex items-center gap-2 px-3 pb-1">
             <span className="text-fg min-w-[3.75rem] font-mono text-lg font-semibold tabular-nums">
               {score ? formatScore(score) : '…'}
             </span>
             <EvalBar score={score} orientation="horizontal" className="flex-1" />
           </div>
 
-          <ul className="flex min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2">
+          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-1.5">
             {visibleLines.length === 0 ? (
-              <li className="text-subtle px-1.5 py-2 text-xs">Thinking…</li>
+              <li className="text-subtle px-1.5 py-1 text-xs">Thinking…</li>
             ) : (
               visibleLines.map((line) => (
                 <PvRow
@@ -109,16 +106,9 @@ export function EnginePane({ className }: { className?: string }) {
               ))
             )}
           </ul>
-
-          {top && (
-            <div className="border-line text-subtle flex shrink-0 items-center justify-between gap-2 border-t px-3 py-1.5 font-mono text-[0.625rem]">
-              <span>{top.nodes ? `${(top.nodes / 1e6).toFixed(1)}M nodes` : ''}</span>
-              <span>{top.nps ? `${(top.nps / 1e6).toFixed(1)}M nps` : ''}</span>
-            </div>
-          )}
         </>
       )}
-    </Panel>
+    </div>
   );
 }
 

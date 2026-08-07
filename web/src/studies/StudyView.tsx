@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
-import { EnginePane } from '@/engine/EnginePane';
+import { EngineBlock } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions } from '@/analysis/AnalysisView';
 import { MoveTreePane } from '@/analysis/MoveTreePane';
@@ -25,7 +25,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { AnnotationPane } from './AnnotationPane';
 
-type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
+type StudyPane = 'moves' | 'chapters' | 'explorer';
 
 export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' | 'game' }) {
   const openId = useStudy((s) => s.openId);
@@ -131,12 +131,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           onChange={setPane}
           tabs={[
             { id: 'moves', label: 'Moves' },
-            { id: 'engine', label: 'Engine' },
             ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters' }] : []),
             { id: 'explorer', label: 'Explorer' },
           ]}
         />
-        <EnginePane className={cn('shrink-0', pane !== 'engine' && 'max-lg:hidden')} />
         {kind === 'study' && (
           <div className={cn('contents', pane !== 'chapters' && 'max-lg:hidden')}>
             <ChaptersPanel />
@@ -152,6 +150,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
+          <EngineBlock />
           <MoveTreePane />
           <AnnotationPane
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}

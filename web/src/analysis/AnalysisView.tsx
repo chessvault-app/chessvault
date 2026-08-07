@@ -2,7 +2,7 @@ import { RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode, isOnMainline } from '@shared/tree';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
-import { EnginePane } from '@/engine/EnginePane';
+import { EngineBlock } from '@/engine/EnginePane';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
 import { copyText } from '@/lib/clipboard';
@@ -15,7 +15,7 @@ import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 
-type AnalysisPane = 'moves' | 'engine' | 'explorer';
+type AnalysisPane = 'moves' | 'explorer';
 
 export function AnalysisView() {
   // Small screens show ONE pane under the board (lichess-app style); the
@@ -61,12 +61,8 @@ export function AnalysisView() {
           onChange={setPane}
           tabs={[
             { id: 'moves', label: 'Moves' },
-            { id: 'engine', label: 'Engine' },
             { id: 'explorer', label: 'Explorer' },
           ]}
-        />
-        <EnginePane
-          className={cn('shrink-0', pane !== 'engine' && 'max-lg:hidden')}
         />
         {/* min-h-min, NOT min-h-auto: Panel's overflow-hidden disables the
             automatic content-based minimum (it computes to 0), but the
@@ -86,6 +82,7 @@ export function AnalysisView() {
               </>
             }
           />
+          <EngineBlock />
           <MoveTreePane />
           <StatusBar />
         </Panel>
