@@ -3,12 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode, isOnMainline } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
+import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
 import { copyText } from '@/lib/clipboard';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
+import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
@@ -41,6 +43,7 @@ export function AnalysisView() {
     const engine = useEngine.getState();
     if (engine.enabled) engine.setEnabled(false);
     useExplorer.setState({ enabled: false });
+    useReview.getState().clear();
   }, []);
 
   return (
@@ -74,10 +77,12 @@ export function AnalysisView() {
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
+          <ReviewStrip />
           <PanelHeader
             title="Moves"
             actions={
               <>
+                <ReviewButton />
                 <LoadPositionButton />
                 <MoveActions />
               </>

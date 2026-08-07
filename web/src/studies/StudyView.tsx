@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from 'react';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
+import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions } from '@/analysis/AnalysisView';
 import { MoveTreePane } from '@/analysis/MoveTreePane';
@@ -19,6 +20,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
+import { useReview } from '@/store/review';
 import { useStudy } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -42,6 +44,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
 
   useEffect(() => {
     let cancelled = false;
+    useReview.getState().clear();
     void open(id, base).then((ok) => {
       if (!cancelled) setFailed(!ok);
     });
@@ -150,7 +153,16 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           className={cn('min-h-min flex-1', pane !== 'moves' && 'max-lg:hidden')}
         >
           <EngineBlock />
-          <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
+          <ReviewStrip />
+          <PanelHeader
+            title="Moves"
+            actions={
+              <>
+                <ReviewButton />
+                <MoveActions allowReset={false} />
+              </>
+            }
+          />
           <MoveTreePane />
           <BoardControls className="border-line border-t max-lg:hidden" keyboard={false} />
           <AnnotationPane
