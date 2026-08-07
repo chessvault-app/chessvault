@@ -1512,6 +1512,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const reported = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const wide = useWideLayout();
 
   const puzzle = book?.puzzles.find((p) => p.id === puzzleId) ?? null;
   const index = book && puzzle ? book.puzzles.indexOf(puzzle) : -1;
@@ -1732,8 +1733,67 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const next = nextUnsolved();
   const hasMoves = getNode(tree, tree.rootId).children.length > 0;
 
+  const header = (
+    <div className="flex shrink-0 items-center gap-2">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title="Back to the book"
+        onClick={() => navigate('puzzles', 'books', slug)}
+      >
+        <ArrowLeft className="size-3.5" />
+      </Button>
+      {/* The puzzle number IS the title; the tier collapses to a dot
+          (tooltip explains). */}
+      <span className="flex min-w-0 items-center gap-2">
+        <span className="text-fg font-mono text-sm font-semibold">
+          #{puzzle.number ?? index + 1}
+        </span>
+        {puzzle.provenance && puzzle.provenance in PROVENANCE_META && (
+          <span
+            title={`${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].label} — ${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].title}`}
+            className={cn(
+              'size-2 shrink-0 cursor-help rounded-full',
+              PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].dot,
+            )}
+          />
+        )}
+      </span>
+      <span className="min-w-0 flex-1" />
+      {puzzle.evidence?.page && (
+        <span className="group relative grid size-7 shrink-0 place-items-center">
+          <Eye className="text-subtle group-hover:text-fg size-3.5 cursor-help transition-colors" />
+          {/* Hover peek: the scan next to the board — a two-second
+              "was this read right?" check without leaving the puzzle. */}
+          <span className="pointer-events-none absolute right-0 top-8 z-40 hidden group-hover:block">
+            <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
+              <SourceCrop
+                slug={slug}
+                page={puzzle.evidence.page}
+                rect={puzzle.evidence.rect}
+                width={252}
+                plain
+              />
+            </span>
+          </span>
+        </span>
+      )}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title="Correct this puzzle against the book scan"
+        onClick={() => navigate('puzzles', 'books', slug, 'fix', puzzle.id)}
+      >
+        <Pencil className="size-3.5" />
+      </Button>
+    </div>
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+      {/* Stacked: the identity bar stays glued to the top of the page,
+          above the board (lanph3re's spec) — wide keeps it in the side column. */}
+      {!wide && header}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
@@ -1786,59 +1846,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="Back to the book"
-            onClick={() => navigate('puzzles', 'books', slug)}
-          >
-            <ArrowLeft className="size-3.5" />
-          </Button>
-          {/* The puzzle number IS the title; the tier collapses to a dot
-              (tooltip explains), the goal reads as plain language. */}
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="text-fg font-mono text-sm font-semibold">
-              #{puzzle.number ?? index + 1}
-            </span>
-            {puzzle.provenance && puzzle.provenance in PROVENANCE_META && (
-              <span
-                title={`${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].label} — ${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].title}`}
-                className={cn(
-                  'size-2 shrink-0 cursor-help rounded-full',
-                  PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].dot,
-                )}
-              />
-            )}
-          </span>
-          <span className="min-w-0 flex-1" />
-          {puzzle.evidence?.page && (
-            <span className="group relative grid size-7 shrink-0 place-items-center">
-              <Eye className="text-subtle group-hover:text-fg size-3.5 cursor-help transition-colors" />
-              {/* Hover peek: the scan next to the board — a two-second
-                  "was this read right?" check without leaving the puzzle. */}
-              <span className="pointer-events-none absolute right-0 top-8 z-40 hidden group-hover:block">
-                <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
-                  <SourceCrop
-                    slug={slug}
-                    page={puzzle.evidence.page}
-                    rect={puzzle.evidence.rect}
-                    width={252}
-                    plain
-                  />
-                </span>
-              </span>
-            </span>
-          )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="Correct this puzzle against the book scan"
-            onClick={() => navigate('puzzles', 'books', slug, 'fix', puzzle.id)}
-          >
-            <Pencil className="size-3.5" />
-          </Button>
-        </div>
+        {wide && header}
 
         <AnswerPanel
           tree={tree}
