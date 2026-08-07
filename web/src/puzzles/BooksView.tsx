@@ -519,6 +519,20 @@ function BookPage({ slug }: { slug: string }) {
  * being fixed. Diagram tab = the page cropped to this puzzle's diagram;
  * Solutions tab = the solutions page covering its number.
  */
+/** JS mirror of the CSS `wide` variant (index.css): side-by-side layouts. */
+const WIDE_MQ = '(min-width: 64rem), (orientation: landscape) and (min-width: 44rem)';
+
+function useWideLayout(): boolean {
+  const [wide, setWide] = useState(() => window.matchMedia(WIDE_MQ).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(WIDE_MQ);
+    const update = (): void => setWide(mq.matches);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return wide;
+}
+
 const SOURCE_PANE_WIDTH_KEY = 'vault:panel-w:book-source';
 const SOURCE_PANE_DEFAULT_W = 340;
 
@@ -1029,6 +1043,8 @@ function PuzzleEntry({
   const [photo, setPhoto] = useState<PhotoReading | null>(null);
   const [prefill, setPrefill] = useState<string | null>(replace?.fen ?? draft?.fen ?? null);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const wide = useWideLayout();
+  const [stackedView, setStackedView] = useState<'board' | 'diagram' | 'solutions'>('board');
   useEffect(() => {
     void bookTemplates(slug).then(setTemplates);
   }, [slug]);
@@ -1077,6 +1093,23 @@ function PuzzleEntry({
   // ONE persistent layout for both phases — the evidence pane and header
   // stay put while the right side swaps editor <-> recorder (seamless).
   const evidence = replace?.evidence ?? draft?.evidence;
+  const boardContent =
+    fen === null ? (
+      <EditorView
+        key={prefill ?? 'blank'}
+        initialFen={prefill ?? undefined}
+        useLabel="Record solution"
+        onUse={confirmPosition}
+      />
+    ) : (
+      <SolutionRecorder
+        slug={slug}
+        fen={fen}
+        replaceId={replace?.id}
+        onBack={() => setFen(null)}
+        onDone={finish}
+      />
+    );
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="border-line flex h-12 shrink-0 items-center gap-2 border-b px-4">
@@ -1093,37 +1126,77 @@ function PuzzleEntry({
           </Button>
         )}
       </div>
-      <div className="flex min-h-0 flex-1">
-        {evidence?.page ? (
-          <SourcePane slug={slug} evidence={evidence} />
-        ) : draft ? (
-          <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
-            <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
-            <p className="text-subtle text-xs leading-relaxed">
-              The diagram from the book — make the board match it, then
-              record the solution.
-            </p>
-          </aside>
-        ) : null}
-        <div className="min-h-0 min-w-0 flex-1">
-          {fen === null ? (
-            <EditorView
-              key={prefill ?? 'blank'}
-              initialFen={prefill ?? undefined}
-              useLabel="Record solution"
-              onUse={confirmPosition}
-            />
-          ) : (
-            <SolutionRecorder
-              slug={slug}
-              fen={fen}
-              replaceId={replace?.id}
-              onBack={() => setFen(null)}
-              onDone={finish}
-            />
-          )}
+      {wide ? (
+        <div className="flex min-h-0 flex-1">
+          {evidence?.page ? (
+            <SourcePane slug={slug} evidence={evidence} />
+          ) : draft ? (
+            <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+              <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
+              <p className="text-subtle text-xs leading-relaxed">
+                The diagram from the book — make the board match it, then
+                record the solution.
+              </p>
+            </aside>
+          ) : null}
+          <div className="min-h-0 min-w-0 flex-1">{boardContent}</div>
         </div>
-      </div>
+      ) : (
+        // Stacked (phone): one element at a time, the BOARD first — the
+        // evidence views are one tap away instead of crowding it out.
+        <div className="flex min-h-0 flex-1 flex-col">
+          {(evidence?.page || draft) && (
+            <div className="bg-surface-inset mx-4 mt-2 flex shrink-0 gap-0.5 self-start rounded-lg p-0.5">
+              {(['board', 'diagram', 'solutions'] as const)
+                .filter(
+                  (v) =>
+                    v === 'board' ||
+                    (v === 'diagram' && (evidence?.page || draft)) ||
+                    (v === 'solutions' && evidence?.solutionPage),
+                )
+                .map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setStackedView(v)}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors',
+                      stackedView === v ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    {v}
+                  </button>
+                ))}
+            </div>
+          )}
+          <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+            {stackedView === 'board' ? (
+              boardContent
+            ) : stackedView === 'diagram' ? (
+              <div className="p-4">
+                {evidence?.page ? (
+                  <SourceCrop
+                    slug={slug}
+                    page={evidence.page}
+                    rect={evidence.rect}
+                    width={Math.min(window.innerWidth - 48, 560)}
+                  />
+                ) : draft ? (
+                  <img src={draft.imageUrl} alt="book diagram" className="border-line w-full max-w-[36rem] rounded-md border" />
+                ) : null}
+              </div>
+            ) : evidence?.solutionPage ? (
+              <div className="p-4">
+                <img
+                  src={diagramUrl(slug, evidence.solutionPage)}
+                  alt="solutions page"
+                  className="border-line w-full rounded-md border"
+                />
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
       {importing && fen === null && (
         <PhotoImport
           templates={templates}
