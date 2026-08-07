@@ -31,11 +31,13 @@ import { SideDot } from '@/ui/SideDot';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { ThemesPage, themeLabel } from './ThemesPage';
+import { AnswerPanel } from './AnswerPanel';
 import {
   judgeMove,
   positionAt,
   positionWith,
   puzzleTree,
+  sanLine,
   solverColor,
   type ApiPuzzle,
   type PuzzlePosition,
@@ -127,6 +129,9 @@ function Trainer({
     dest: string;
     color: Color;
   } | null>(null);
+  // Reviewing an earlier ply of the line (null = live), via the panel's
+  // toolbar; any machine progress snaps back to live.
+  const [review, setReview] = useState<number | null>(null);
 
   // One attempt per puzzle: recorded at the first mistake or the clean solve.
   const reported = useRef(false);
@@ -193,6 +198,7 @@ function Trainer({
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
       setPuzzle(next);
       setPlies(0);
+      setReview(null);
       setView(positionAt(next, 0));
       setPhase('setup');
       // Let the position register, then play the opponent's setup move.
@@ -222,24 +228,39 @@ function Trainer({
     void loadNext(theme, id);
   };
 
-  // Sound per rendered position. No SAN here, so a capture is detected by
-  // the piece count dropping; a fresh puzzle (no lastMove) stays silent.
+  // What the board shows: the live machine position, or a reviewed ply.
+  const displayed = review !== null && puzzle ? positionAt(puzzle, review) : view;
+  const reviewing = review !== null;
+
+  // Any machine progress snaps the board back to live.
+  useEffect(() => setReview(null), [plies, phase]);
+
+  const goToPly = (target: number): void => {
+    if (!puzzle) return;
+    const clamped = Math.max(1, Math.min(target, plies));
+    setReview(clamped >= plies ? null : clamped);
+  };
+
+  // Sound per rendered position (live or review). No SAN here, so a
+  // capture is detected by the piece count dropping; a fresh puzzle (no
+  // lastMove) stays silent.
   const prevPieces = useRef<number | null>(null);
   useEffect(() => {
-    if (!view) {
+    if (!displayed) {
       prevPieces.current = null;
       return;
     }
-    const pieces = view.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+    const pieces = displayed.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
     const prev = prevPieces.current;
     prevPieces.current = pieces;
-    if (prev === null || !view.lastMove) return;
-    playSound(view.check ? 'check' : pieces < prev ? 'capture' : 'move');
+    if (prev === null || !displayed.lastMove) return;
+    playSound(displayed.check ? 'check' : pieces < prev ? 'capture' : 'move');
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view?.fen]);
+  }, [displayed?.fen]);
 
   const finish = (p: ApiPuzzle, finalPlies: number): void => {
     setPhase('done');
+    setPlies(finalPlies);
     setView(positionAt(p, finalPlies));
     void report(p.id, !failed);
   };
@@ -287,7 +308,7 @@ function Trainer({
   };
 
   const onMove = (orig: string, dest: string): void => {
-    if (!puzzle || !view || phase !== 'solving') return;
+    if (!puzzle || !view || phase !== 'solving' || reviewing) return;
     // A pawn reaching the last rank needs the picker before it can be judged.
     const to = parseSquare(dest);
     const lastRank = view.turn === 'white' ? 7 : 0;
@@ -367,7 +388,7 @@ function Trainer({
 
   const orientation: Color = puzzle ? solverColor(puzzle) : 'white';
   const hintShapes: DrawShape[] =
-    puzzle && phase === 'solving' && hint > 0
+    puzzle && phase === 'solving' && !reviewing && hint > 0
       ? (() => {
           const uci = puzzle.moves.split(' ')[plies]!;
           const orig = uci.slice(0, 2) as DrawShape['orig'];
@@ -433,13 +454,13 @@ function Trainer({
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
           <div className="relative w-full">
-            {view ? (
+            {displayed ? (
               <Board
-                fen={view.fen}
+                fen={displayed.fen}
                 orientation={orientation}
-                dests={phase === 'solving' ? view.dests : new Map()}
-                lastMove={view.lastMove}
-                check={view.check}
+                dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
+                lastMove={displayed.lastMove}
+                check={displayed.check}
                 autoShapes={hintShapes}
                 onMove={onMove}
               />
@@ -461,8 +482,10 @@ function Trainer({
                 onCancel={() => setPendingPromotion(null)}
               />
             )}
-            {phase === 'wrong' && <MoveBadge kind="bad" view={view} orientation={orientation} />}
-            {phase === 'done' && !failed && (
+            {!reviewing && phase === 'wrong' && (
+              <MoveBadge kind="bad" view={view} orientation={orientation} />
+            )}
+            {!reviewing && phase === 'done' && !failed && (
               <MoveBadge kind="good" view={view} orientation={orientation} />
             )}
           </div>
@@ -512,6 +535,17 @@ function Trainer({
             </div>
           )}
         </Panel>
+
+        {puzzle && plies > 0 && (
+          <AnswerPanel
+            title="Moves"
+            fen={puzzle.fen}
+            sans={sanLine(puzzle, plies)}
+            current={review ?? plies}
+            emptyText=""
+            onSelect={goToPly}
+          />
+        )}
 
         <Panel flush className="shrink-0">
           <PanelHeader

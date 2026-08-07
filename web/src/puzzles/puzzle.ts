@@ -117,6 +117,15 @@ export function puzzleTree(puzzle: ApiPuzzle, plies: number): { tree: MoveTree; 
   return { tree, lastId };
 }
 
+/** SAN of the first `plies` solution moves, for the trainer's move list. */
+export function sanLine(puzzle: ApiPuzzle, plies: number): string[] {
+  const pos = Chess.fromSetup(parseFen(puzzle.fen).unwrap()).unwrap();
+  return puzzle.moves
+    .split(' ')
+    .slice(0, plies)
+    .map((uci) => makeSanAndPlay(pos, parseUci(uci)!));
+}
+
 /** SAN for the solution move at `plies`, for the solution viewer. */
 export function solutionSan(puzzle: ApiPuzzle, plies: number): string {
   const pos = positionAfter(puzzle, plies);
