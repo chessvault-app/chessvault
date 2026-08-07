@@ -2,9 +2,14 @@ import { Chessground } from '@lichess-org/chessground';
 import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
 import type { DrawShape } from '@lichess-org/chessground/draw';
-import type { Color, Dests, Key } from '@lichess-org/chessground/types';
-import { useEffect, useRef } from 'react';
+import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { cn } from '@/lib/cn';
+
+/** The underlying chessground handle, for callers that need direct calls
+    (e.g. the editor starting a spare-piece drag from its palette). */
+export type BoardApi = CgApi;
+export type BoardPiece = { role: Role; color: Color };
 
 export interface BoardProps {
   fen: string;
@@ -28,6 +33,10 @@ export interface BoardProps {
   onSelect?: (square: string) => void;
   /** Fires when the user draws or erases shapes with right-drag. */
   onShapesChange?: (shapes: DrawShape[]) => void;
+  /** Fires when a spare piece dragged in via `dragNewPiece` lands on a square. */
+  onDropNewPiece?: (piece: BoardPiece, key: string) => void;
+  /** Receives the live chessground api for imperative calls. */
+  apiRef?: MutableRefObject<BoardApi | null>;
   className?: string;
 }
 
@@ -54,6 +63,8 @@ export function Board({
   onMove,
   onSelect,
   onShapesChange,
+  onDropNewPiece,
+  apiRef,
   className,
 }: BoardProps) {
   const host = useRef<HTMLDivElement>(null);
@@ -63,10 +74,12 @@ export function Board({
   const onMoveRef = useRef(onMove);
   const onSelectRef = useRef(onSelect);
   const onShapesRef = useRef(onShapesChange);
+  const onDropNewPieceRef = useRef(onDropNewPiece);
   const freeRef = useRef(free);
   onMoveRef.current = onMove;
   onSelectRef.current = onSelect;
   onShapesRef.current = onShapesChange;
+  onDropNewPieceRef.current = onDropNewPiece;
   freeRef.current = free;
 
   // Mount once.
@@ -102,6 +115,7 @@ export function Board({
           // leaving the square highlighted as "selected" is just visual noise.
           if (freeRef.current) api.current?.selectSquare(null);
         },
+        dropNewPiece: (piece: Piece, key) => onDropNewPieceRef.current?.(piece as BoardPiece, key),
       },
       drawable: {
         enabled: true,
@@ -111,9 +125,11 @@ export function Board({
       premovable: { enabled: false },
     };
     api.current = Chessground(host.current, config);
+    if (apiRef) apiRef.current = api.current;
     return () => {
       api.current?.destroy();
       api.current = null;
+      if (apiRef) apiRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only by design
   }, []);

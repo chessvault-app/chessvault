@@ -12,12 +12,12 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { parseSquare } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
-import { Board } from '@/board/Board';
+import { Board, type BoardApi, type BoardPiece } from '@/board/Board';
 import { copyText } from '@/lib/clipboard';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -100,6 +100,18 @@ export function EditorView({
       const pieces = new Map(s.pieces);
       if (tool.kind === 'erase') pieces.delete(square);
       else pieces.set(square, { role: tool.role, color: tool.color });
+      return { ...s, pieces };
+    });
+  };
+
+  /** A palette piece dragged onto the board (chessground's dragNewPiece). */
+  const boardApi = useRef<BoardApi | null>(null);
+  const dropNewPiece = (piece: BoardPiece, dest: string): void => {
+    const square = parseSquare(dest);
+    if (square === undefined) return;
+    setState((s) => {
+      const pieces = new Map(s.pieces);
+      pieces.set(square, { role: piece.role, color: piece.color });
       return { ...s, pieces };
     });
   };
@@ -325,6 +337,7 @@ export function EditorView({
               colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
               tool={tool}
               onPick={setTool}
+              onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
             />
           </div>
           <div className="w-full wide:hidden">
@@ -332,6 +345,7 @@ export function EditorView({
               colors={[orientation === 'white' ? 'black' : 'white']}
               tool={tool}
               onPick={setTool}
+              onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
             />
           </div>
         </div>
@@ -345,6 +359,8 @@ export function EditorView({
             free={tool.kind === 'move'}
             onSelect={applyTool}
             onMove={movePiece}
+            onDropNewPiece={dropNewPiece}
+            apiRef={boardApi}
           />
         </div>
 
@@ -353,6 +369,7 @@ export function EditorView({
             colors={[orientation === 'white' ? 'white' : 'black']}
             tool={tool}
             onPick={setTool}
+            onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
           />
         </div>
 
@@ -545,10 +562,13 @@ function PiecePalette({
   colors,
   tool,
   onPick,
+  onDragStart,
 }: {
   colors: Color[];
   tool: Tool;
   onPick: (tool: Tool) => void;
+  /** Press-and-drag hands the piece to chessground as a spare-piece drag. */
+  onDragStart?: (color: Color, role: Role, event: MouseEvent | TouchEvent) => void;
 }) {
   return (
     // Phones: one comfortable touch-sized row per colour. Desktop: a single
@@ -567,11 +587,17 @@ function PiecePalette({
                 aria-label={`Place ${color} ${role}`}
                 title={`Place ${color} ${role}`}
                 onClick={() => onPick({ kind: 'piece', role, color })}
+                // A drag is chessground's from the first pixel; a clean
+                // click (no movement, so no drop) still arms the tool.
+                onMouseDown={(e) => onDragStart?.(color, role, e.nativeEvent)}
+                onTouchStart={(e) => onDragStart?.(color, role, e.nativeEvent)}
                 className={cn(
                   // A board-square backdrop: --board-light is tuned per theme
                   // to keep BOTH piece colours legible, which the page
                   // background is not (black pieces vanish on dark).
-                  'aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
+                  // touch-none: a touch on a palette piece starts a drag,
+                  // never a page scroll.
+                  'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
                   'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
                   active ? 'ring-primary ring-2' : 'opacity-75 hover:opacity-100',
                 )}
