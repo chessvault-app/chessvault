@@ -149,12 +149,7 @@ export function DashboardPage() {
 
         <Panel flush>
           <PanelHeader
-            title="Puzzles"
-            actions={
-              <span className="text-subtle text-xs">
-                {history === null ? '' : `${puzzles.length}`}
-              </span>
-            }
+            title={history === null ? 'Puzzles' : `Puzzles · ${puzzles.length}`}
           />
           {/* Filters: outcome × rating band. Click a row to replay it. */}
           <div className="border-line flex flex-wrap items-center gap-1 border-b px-3 py-2">
