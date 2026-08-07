@@ -1,4 +1,4 @@
-import { ArrowLeft, Puzzle } from 'lucide-react';
+import { ArrowLeft, Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -112,13 +112,15 @@ interface ThemeCount {
 export function ThemesPage() {
   const [themes, setThemes] = useState<ThemeCount[] | null>(null);
   const [total, setTotal] = useState(0);
+  const [failed, setFailed] = useState(0);
 
   useEffect(() => {
     void fetch('/api/puzzles/meta')
       .then((r) => r.json())
-      .then((d: { themes?: ThemeCount[]; puzzles?: number }) => {
+      .then((d: { themes?: ThemeCount[]; puzzles?: number; failed?: number }) => {
         setThemes(d.themes ?? []);
         setTotal(d.puzzles ?? 0);
+        setFailed(d.failed ?? 0);
       });
   }, []);
 
@@ -141,13 +143,24 @@ export function ThemesPage() {
           <h1 className="text-fg text-base font-semibold">Puzzle themes</h1>
         </div>
 
-        <ThemeCard
-          className="mb-5 w-full sm:w-auto"
-          label="All themes"
-          count={total}
-          highlight
-          onClick={() => navigate('puzzles')}
-        />
+        <div className="mb-5 flex flex-wrap gap-2">
+          <ThemeCard
+            className="w-full sm:w-auto"
+            label="All themes"
+            count={total}
+            highlight
+            onClick={() => navigate('puzzles')}
+          />
+          {failed > 0 && (
+            <ThemeCard
+              className="w-full sm:w-auto"
+              label="Review failed puzzles"
+              count={failed}
+              icon={RotateCcw}
+              onClick={() => navigate('puzzles', 'failed')}
+            />
+          )}
+        </div>
 
         {themes === null ? (
           <p className="text-subtle text-sm">Loading…</p>
@@ -205,12 +218,14 @@ function ThemeCard({
   onClick,
   highlight = false,
   className,
+  icon: Icon = Puzzle,
 }: {
   label: string;
   count: number;
   onClick: () => void;
   highlight?: boolean;
   className?: string;
+  icon?: typeof Puzzle;
 }) {
   return (
     <button
@@ -225,7 +240,7 @@ function ThemeCard({
         className,
       )}
     >
-      <Puzzle
+      <Icon
         className={cn(
           'size-4 shrink-0 transition-colors',
           highlight ? 'text-primary' : 'text-subtle group-hover:text-primary',

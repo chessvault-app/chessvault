@@ -104,3 +104,18 @@ export function solutionSan(puzzle: ApiPuzzle, plies: number): string {
   const pos = positionAfter(puzzle, plies);
   return makeSanAndPlay(pos, parseUci(puzzle.moves.split(' ')[plies]!)!);
 }
+
+/** SAN of the first `plies` solution moves, for the trainer's move list. */
+export function sanLine(puzzle: ApiPuzzle, plies: number): string[] {
+  const pos = Chess.fromSetup(parseFen(puzzle.fen).unwrap()).unwrap();
+  return puzzle.moves
+    .split(' ')
+    .slice(0, plies)
+    .map((uci) => makeSanAndPlay(pos, parseUci(uci)!));
+}
+
+/** Move number and side to move of the raw puzzle FEN, for numbering. */
+export function startAt(puzzle: ApiPuzzle): { moveNumber: number; blackToMove: boolean } {
+  const parts = puzzle.fen.split(' ');
+  return { moveNumber: Number(parts[5] ?? 1), blackToMove: parts[1] === 'b' };
+}

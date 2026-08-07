@@ -26,7 +26,9 @@ import {
   judgeMove,
   positionAt,
   positionWith,
+  sanLine,
   solverColor,
+  startAt,
   type ApiPuzzle,
   type PuzzlePosition,
 } from './puzzle';
@@ -66,11 +68,17 @@ interface Attempt {
  */
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
   if (params[0] === 'themes') return <ThemesPage />;
+  if (params[0] === 'failed') return <Trainer key="failed" theme="" mode="failed" />;
   const theme = params[0] === 'theme' ? (params[1] ?? '') : '';
-  return <Trainer key={theme} theme={theme} />;
+  return <Trainer key={theme} theme={theme} mode="fresh" />;
 }
 
-function Trainer({ theme }: { theme: string }) {
+/**
+ * `fresh` trains rated puzzles near the user's rating; `failed` replays
+ * puzzles whose latest attempt was a loss — unrated practice that removes
+ * a puzzle from the pool once solved cleanly.
+ */
+function Trainer({ theme, mode }: { theme: string; mode: 'fresh' | 'failed' }) {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [puzzle, setPuzzle] = useState<ApiPuzzle | null>(null);
   const [phase, setPhase] = useState<Phase>('loading');
@@ -85,6 +93,9 @@ function Trainer({ theme }: { theme: string }) {
     dest: string;
     color: Color;
   } | null>(null);
+
+  // Reviewing earlier plies of the line (null = live position).
+  const [review, setReview] = useState<number | null>(null);
 
   // One attempt per puzzle: recorded at the first mistake or the clean solve.
   const reported = useRef(false);
@@ -106,7 +117,7 @@ function Trainer({ theme }: { theme: string }) {
       const res = await fetch('/api/puzzles/attempt', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id, win }),
+        body: JSON.stringify({ id, win, rated: mode === 'fresh' }),
       });
       if (res.ok) {
         const data = (await res.json()) as { user: UserState; delta: number };
@@ -114,7 +125,7 @@ function Trainer({ theme }: { theme: string }) {
         setMeta((m) => (m ? { ...m, user: data.user } : m));
       }
     },
-    [],
+    [mode],
   );
 
   const loadNext = useCallback(
@@ -130,7 +141,12 @@ function Trainer({ theme }: { theme: string }) {
       setPendingPromotion(null);
       reported.current = false;
 
-      const query = selectedTheme ? `?theme=${encodeURIComponent(selectedTheme)}` : '';
+      const query =
+        mode === 'failed'
+          ? '?mode=failed'
+          : selectedTheme
+            ? `?theme=${encodeURIComponent(selectedTheme)}`
+            : '';
       const res = await fetch(`/api/puzzles/next${query}`);
       if (!res.ok) {
         setError(((await res.json()) as { error?: string }).error ?? `HTTP ${res.status}`);
@@ -139,6 +155,7 @@ function Trainer({ theme }: { theme: string }) {
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
       setPuzzle(next);
       setPlies(0);
+      setReview(null);
       setView(positionAt(next, 0));
       setPhase('setup');
       // Let the position register, then play the opponent's setup move.
@@ -148,7 +165,7 @@ function Trainer({ theme }: { theme: string }) {
         setPhase('solving');
       });
     },
-    [],
+    [mode],
   );
 
   // One boot per real mount: StrictMode replays effects, and without the
@@ -162,20 +179,64 @@ function Trainer({ theme }: { theme: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sound per rendered position. No SAN here, so a capture is detected by
-  // the piece count dropping; a fresh puzzle (no lastMove) stays silent.
+  // What the board actually shows: the live machine position, or an
+  // earlier ply while reviewing the move list.
+  const displayed = review !== null && puzzle ? positionAt(puzzle, review) : view;
+  const reviewing = review !== null;
+
+  // Sound per rendered position (live or review). No SAN here, so a capture
+  // is detected by the piece count dropping; a fresh puzzle stays silent.
   const prevPieces = useRef<number | null>(null);
   useEffect(() => {
-    if (!view) {
+    if (!displayed) {
       prevPieces.current = null;
       return;
     }
-    const pieces = view.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+    const pieces = displayed.fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
     const prev = prevPieces.current;
     prevPieces.current = pieces;
-    if (prev === null || !view.lastMove) return;
-    playSound(view.check ? 'check' : pieces < prev ? 'capture' : 'move');
-  }, [view]);
+    if (prev === null || !displayed.lastMove) return;
+    playSound(displayed.check ? 'check' : pieces < prev ? 'capture' : 'move');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayed?.fen]);
+
+  // Any progress of the solving machine snaps the board back to live.
+  useEffect(() => setReview(null), [plies, phase]);
+
+  /** Step the review cursor; landing on the newest ply resumes live play. */
+  const goToPly = useCallback(
+    (target: number): void => {
+      if (!puzzle) return;
+      const clamped = Math.max(1, Math.min(target, plies));
+      setReview(clamped >= plies ? null : clamped);
+    },
+    [puzzle, plies],
+  );
+
+  // Wheel over the board walks the line, like the analysis board. Manual
+  // listener: React's synthetic wheel handler is passive.
+  const boardColumn = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = boardColumn.current;
+    if (!el) return;
+    let acc = 0;
+    const onWheel = (e: WheelEvent): void => {
+      e.preventDefault();
+      acc += e.deltaY;
+      if (Math.abs(acc) < 24) return;
+      const direction = acc > 0 ? 1 : -1;
+      acc = 0;
+      setReview((current) => {
+        const at = current ?? pliesRef.current;
+        const next = Math.max(1, Math.min(at + direction, pliesRef.current));
+        return next >= pliesRef.current ? null : next;
+      });
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+  const pliesRef = useRef(plies);
+  pliesRef.current = plies;
 
   const finish = (p: ApiPuzzle, finalPlies: number): void => {
     setPhase('done');
@@ -226,7 +287,7 @@ function Trainer({ theme }: { theme: string }) {
   };
 
   const onMove = (orig: string, dest: string): void => {
-    if (!puzzle || !view || phase !== 'solving') return;
+    if (!puzzle || !view || phase !== 'solving' || reviewing) return;
     // A pawn reaching the last rank needs the picker before it can be judged.
     const to = parseSquare(dest);
     const lastRank = view.turn === 'white' ? 7 : 0;
@@ -262,15 +323,15 @@ function Trainer({ theme }: { theme: string }) {
   };
 
   const analyse = (): void => {
-    if (!view) return;
-    if (!useAnalysis.getState().loadFen(view.fen)) return;
+    if (!displayed) return;
+    if (!useAnalysis.getState().loadFen(displayed.fen)) return;
     useAnalysis.setState({ handoff: true });
     navigate('analysis');
   };
 
   const orientation: Color = puzzle ? solverColor(puzzle) : 'white';
   const hintShapes: DrawShape[] =
-    puzzle && phase === 'solving' && hint > 0
+    puzzle && phase === 'solving' && !reviewing && hint > 0
       ? (() => {
           const uci = puzzle.moves.split(' ')[plies]!;
           const orig = uci.slice(0, 2) as DrawShape['orig'];
@@ -307,13 +368,13 @@ function Trainer({ theme }: { theme: string }) {
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
           <div className="relative w-full">
-            {view ? (
+            {displayed ? (
               <Board
-                fen={view.fen}
+                fen={displayed.fen}
                 orientation={orientation}
-                dests={phase === 'solving' ? view.dests : new Map()}
-                lastMove={view.lastMove}
-                check={view.check}
+                dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
+                lastMove={displayed.lastMove}
+                check={displayed.check}
                 autoShapes={hintShapes}
                 onMove={onMove}
               />
@@ -335,12 +396,14 @@ function Trainer({ theme }: { theme: string }) {
                 onCancel={() => setPendingPromotion(null)}
               />
             )}
-            {phase === 'wrong' && <MoveBadge kind="bad" view={view} orientation={orientation} />}
-            {phase === 'done' && !failed && (
+            {!reviewing && phase === 'wrong' && (
+              <MoveBadge kind="bad" view={view} orientation={orientation} />
+            )}
+            {!reviewing && phase === 'done' && !failed && (
               <MoveBadge kind="good" view={view} orientation={orientation} />
             )}
           </div>
-          <StatusStrip phase={phase} failed={failed} orientation={orientation} />
+          <StatusStrip phase={phase} failed={failed} reviewing={reviewing} orientation={orientation} />
         </div>
       </div>
 
@@ -351,7 +414,7 @@ function Trainer({ theme }: { theme: string }) {
             <span className="text-fg font-mono text-2xl font-bold tabular-nums">
               {meta?.user.rating ?? '…'}
             </span>
-            {attempt && (
+            {attempt && mode === 'fresh' && (
               <span
                 className={cn(
                   'font-mono text-sm font-semibold tabular-nums',
@@ -362,12 +425,31 @@ function Trainer({ theme }: { theme: string }) {
                 {attempt.delta}
               </span>
             )}
+            {mode === 'failed' && (
+              <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
+                practice · unrated
+              </span>
+            )}
             <span className="text-subtle ml-auto text-xs">
               {meta ? `${meta.user.wins}/${meta.user.attempts} solved` : ''}
               {meta && meta.user.streak > 1 ? ` · streak ${meta.user.streak}` : ''}
             </span>
           </div>
         </Panel>
+
+        {puzzle && plies > 0 && (
+          <Panel flush className="shrink-0">
+            <PanelHeader title="Moves" />
+            <div className="max-h-36 overflow-y-auto px-3 py-2 text-sm leading-relaxed">
+              <MoveLine
+                puzzle={puzzle}
+                plies={plies}
+                current={review ?? plies}
+                onSelect={goToPly}
+              />
+            </div>
+          </Panel>
+        )}
 
         <Panel flush className="min-h-min flex-1">
           <PanelHeader
@@ -481,7 +563,7 @@ function Trainer({ theme }: { theme: string }) {
               Category
             </span>
             <span className="text-fg block truncate text-xs font-medium">
-              {theme ? themeLabel(theme) : 'All themes'}
+              {mode === 'failed' ? 'Failed puzzles' : theme ? themeLabel(theme) : 'All themes'}
             </span>
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />
@@ -495,14 +577,17 @@ function Trainer({ theme }: { theme: string }) {
 function StatusStrip({
   phase,
   failed,
+  reviewing,
   orientation,
 }: {
   phase: Phase;
   failed: boolean;
+  reviewing: boolean;
   orientation: Color;
 }) {
-  const text =
-    phase === 'loading'
+  const text = reviewing
+    ? 'Reviewing — scroll or click the last move to come back.'
+    : phase === 'loading'
       ? '…'
       : phase === 'setup' || phase === 'opponent'
         ? 'Opponent is moving…'
@@ -578,4 +663,52 @@ function isPawnMove(fen: string, orig: string): boolean {
     }
   }
   return false;
+}
+
+/**
+ * The played line so far, numbered from the puzzle's real move number —
+ * click any move to review that position, the newest to come back live.
+ */
+function MoveLine({
+  puzzle,
+  plies,
+  current,
+  onSelect,
+}: {
+  puzzle: ApiPuzzle;
+  plies: number;
+  current: number;
+  onSelect: (ply: number) => void;
+}) {
+  const sans = sanLine(puzzle, plies);
+  const { moveNumber, blackToMove } = startAt(puzzle);
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
+      {sans.map((san, i) => {
+        const isWhiteMove = blackToMove ? i % 2 === 1 : i % 2 === 0;
+        const number = moveNumber + Math.floor((i + (blackToMove ? 1 : 0)) / 2);
+        return (
+          <span key={i} className="flex items-baseline gap-1">
+            {i === 0 && blackToMove ? (
+              <span className="text-subtle font-mono text-xs">{number}…</span>
+            ) : isWhiteMove ? (
+              <span className="text-subtle font-mono text-xs">{number}.</span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onSelect(i + 1)}
+              className={cn(
+                'rounded px-1 font-mono text-[0.8125rem] transition-colors duration-100',
+                i + 1 === current
+                  ? 'bg-primary-soft text-primary font-semibold'
+                  : 'text-fg hover:bg-surface-2',
+              )}
+            >
+              {san}
+            </button>
+          </span>
+        );
+      })}
+    </div>
+  );
 }

@@ -1,9 +1,11 @@
 import {
   BookOpen,
   Grid2x2,
+  LayoutGrid,
   Library,
   NotebookPen,
   Puzzle,
+  RotateCcw,
   Swords,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -39,7 +41,7 @@ function Shell() {
 
   return (
     <div className="bg-app text-fg flex h-[100dvh] flex-col overflow-hidden md:flex-row">
-      <Sidebar active={section} />
+      <Sidebar active={section} params={params} />
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
         {section === 'analysis' ? (
@@ -64,7 +66,13 @@ function Shell() {
   );
 }
 
-function Sidebar({ active }: { active: Section }) {
+/** Sub-entries under Puzzles: the themes catalogue and failed-review. */
+const PUZZLE_SUBNAV = [
+  { param: 'themes', label: 'Themes', icon: LayoutGrid },
+  { param: 'failed', label: 'Review failed', icon: RotateCcw },
+] as const;
+
+function Sidebar({ active, params }: { active: Section; params: string[] }) {
   return (
     <nav
       className={cn(
@@ -107,6 +115,29 @@ function Sidebar({ active }: { active: Section }) {
                 <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />
               )}
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
+              <span className="hidden lg:block">{label}</span>
+            </button>
+          );
+        })}
+        {PUZZLE_SUBNAV.map(({ param, label, icon: Icon }) => {
+          const isActive = active === 'puzzles' && params[0] === param;
+          return (
+            <button
+              key={param}
+              type="button"
+              onClick={() => navigate('puzzles', param)}
+              title={label}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'flex h-8 items-center gap-2.5 rounded-lg text-xs font-medium',
+                'transition-colors duration-150',
+                'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
+                isActive
+                  ? 'bg-primary-soft text-primary'
+                  : 'text-subtle hover:bg-surface-2 hover:text-fg',
+              )}
+            >
+              <Icon className="size-3.5 shrink-0" />
               <span className="hidden lg:block">{label}</span>
             </button>
           );

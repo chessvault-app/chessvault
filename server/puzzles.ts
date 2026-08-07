@@ -111,6 +111,24 @@ export function puzzlesApi(
     }
   };
 
+  /**
+   * Puzzles whose LATEST attempt was a loss: solving one cleanly (in any
+   * mode) removes it from the pool, failing re-adds it.
+   */
+  const failedPool = (): string[] => {
+    try {
+      const lines = readFileSync(historyPath, 'utf-8').trimEnd().split('\n');
+      const latest = new Map<string, boolean>();
+      for (const line of lines) {
+        const entry = JSON.parse(line) as { id: string; win: boolean };
+        latest.set(entry.id, entry.win);
+      }
+      return [...latest].filter(([, win]) => !win).map(([id]) => id);
+    } catch {
+      return [];
+    }
+  };
+
   // Lazily opened read-only handle for the process lifetime. A rebuild
   // renames a fresh file over it; restart the server to pick that up.
   let handle: InstanceType<typeof Database> | null = null;
@@ -156,6 +174,7 @@ export function puzzlesApi(
       ready: true as const,
       puzzles: Number(meta.puzzles ?? 0),
       themes: themeCounts(db),
+      failed: failedPool().length,
       user,
     });
   });
@@ -168,6 +187,24 @@ export function puzzlesApi(
         503,
       );
     }
+    // Practice mode: re-serve puzzles whose latest attempt failed.
+    if (c.req.query('mode') === 'failed') {
+      const pool = failedPool();
+      const avoid = recentIds(1);
+      const candidates = pool.length > 1 ? pool.filter((id) => !avoid.has(id)) : pool;
+      if (candidates.length === 0) {
+        return c.json({ error: 'No failed puzzles to review — nothing to fix.' }, 404);
+      }
+      const id = candidates[Math.floor(Math.random() * candidates.length)]!;
+      const puzzle = db
+        .prepare(
+          'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
+        )
+        .get(id) as PuzzleRow | undefined;
+      if (!puzzle) return c.json({ error: `unknown puzzle: ${id}` }, 404);
+      return c.json({ puzzle });
+    }
+
     const theme = c.req.query('theme') || null;
     const user = readState();
     const center = Number(c.req.query('rating') || user.rating);
@@ -177,7 +214,7 @@ export function puzzlesApi(
   });
 
   api.post('/puzzles/attempt', async (c) => {
-    const body = (await c.req.json()) as { id?: string; win?: boolean };
+    const body = (await c.req.json()) as { id?: string; win?: boolean; rated?: boolean };
     if (typeof body.id !== 'string' || typeof body.win !== 'boolean') {
       return c.json({ error: 'expected { id, win }' }, 400);
     }
@@ -189,20 +226,28 @@ export function puzzlesApi(
       : undefined;
     if (!row) return c.json({ error: `unknown puzzle: ${body.id}` }, 404);
 
+    // Practice attempts (reviewing failed puzzles) never move the rating or
+    // the counters — the solver has seen the answer — but they DO update
+    // the failed pool through the history.
+    const rated = body.rated !== false;
     const state = readState();
-    const delta = eloDelta(state.rating, row.rating, body.win);
-    const next: UserState = {
-      rating: state.rating + delta,
-      attempts: state.attempts + 1,
-      wins: state.wins + (body.win ? 1 : 0),
-      streak: body.win ? state.streak + 1 : 0,
-    };
-    writeState(next);
+    const delta = rated ? eloDelta(state.rating, row.rating, body.win) : 0;
+    const next: UserState = rated
+      ? {
+          rating: state.rating + delta,
+          attempts: state.attempts + 1,
+          wins: state.wins + (body.win ? 1 : 0),
+          streak: body.win ? state.streak + 1 : 0,
+        }
+      : state;
+    if (rated) writeState(next);
+    mkdirSync(stateDir, { recursive: true });
     appendFileSync(
       historyPath,
       `${JSON.stringify({
         id: body.id,
         win: body.win,
+        rated,
         puzzleRating: row.rating,
         before: state.rating,
         after: next.rating,

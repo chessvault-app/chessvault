@@ -107,6 +107,33 @@ describe('puzzles api', () => {
     expect(attempts[0].id).toBe('bbb'); // newest first
   });
 
+  it('tracks failed puzzles and serves them for unrated review', async () => {
+    // From the previous test: aaa was won, bbb was lost → pool is [bbb].
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.failed).toBe(1);
+
+    const next = await app.request('/api/puzzles/next?mode=failed');
+    expect(next.status).toBe(200);
+    const { puzzle } = await next.json();
+    expect(puzzle.id).toBe('bbb');
+
+    // Practice solve: unrated, so the rating and counters stay put …
+    const before = (await (await app.request('/api/puzzles/meta')).json()).user;
+    const attempt = await app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'bbb', win: true, rated: false }),
+    });
+    const body = await attempt.json();
+    expect(body.delta).toBe(0);
+    expect(body.user).toEqual(before);
+
+    // … but the clean solve empties the failed pool.
+    const after = await (await app.request('/api/puzzles/meta')).json();
+    expect(after.failed).toBe(0);
+    expect((await app.request('/api/puzzles/next?mode=failed')).status).toBe(404);
+  });
+
   it('rejects malformed attempts and unknown puzzles', async () => {
     const bad = await app.request('/api/puzzles/attempt', {
       method: 'POST',
