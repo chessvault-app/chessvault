@@ -29,6 +29,13 @@ if (iOS) {
       'content',
       'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
     );
+  // The shell never window-scrolls (inner panes scroll), but the iOS
+  // keyboard shoves the window when a low input focuses, detaching the
+  // app from the top edge. Pin it back; the focused field's own
+  // scrollable pane still brings it into view.
+  window.addEventListener('scroll', () => {
+    if (window.scrollY !== 0) window.scrollTo(0, 0);
+  });
 }
 
 const container = document.getElementById('root');

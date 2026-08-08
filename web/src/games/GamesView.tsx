@@ -1042,7 +1042,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
                 size="sm"
                 variant={result === value ? 'primary' : 'secondary'}
                 title={hint}
-                className="min-w-0 flex-1 px-0 font-mono"
+                className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
                 onClick={() => setResult(value)}
               >
                 {label}
