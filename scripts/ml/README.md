@@ -13,8 +13,12 @@ detected-but-unmatched diagram (`dump-rects` over the page renders, then
 see `data/ml/recovered-numbers.json` + `all-diagram-rects.json`
 (`pages-extra/` holds renders of the 16 pages the vault lacked). Env:
 `python -m uv venv data/ml/venv -p 3.12` + `numpy pillow pymupdf`.
-Stage 2 (planned): CRNN/CTC notation reader over the solution pages with
-legality-constrained decoding, to upgrade the engine-corroborated tier.
+Stage 2 shipped (`figurine_glyphs.py`): validated entries align printed
+tokens with known SAN, labeling 1,600+ figurine glyph crops via the word
+boxes (99.7% 5-fold); reading every prefix word yields 204 prefix→piece
+hints that `autoimport-measure --glyph-hints` applies as pass 3 — +24
+validated over the text-only dialect. A full CRNN line reader remains the
+next escalation for the ~250 replay-fails that aren't ambiguity-shaped.
 
 
 Trains the cell classifier used by photo/PDF diagram reading: 32×32 grayscale

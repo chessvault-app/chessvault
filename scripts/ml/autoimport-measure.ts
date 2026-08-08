@@ -438,10 +438,10 @@ console.log(`${solutions.size} solution entries parsed from the text layer`);
 
 // Board reads are deterministic and slow (~1 s each); cache them across runs.
 const cachePath = resolve(REPO, 'data', 'ml', '1001-reads.json');
-let readCache = new Map<number, { fen: string; uncertain: number; page: number }>();
+let readCache = new Map<number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number } }>();
 try {
   readCache = new Map(
-    (JSON.parse(readFileSync(cachePath, 'utf-8')) as [number, { fen: string; uncertain: number; page: number }][]),
+    (JSON.parse(readFileSync(cachePath, 'utf-8')) as [number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number } }][]),
   );
   console.log(`read cache: ${readCache.size} boards`);
 } catch {
@@ -486,7 +486,7 @@ for (const pageInfo of textData.pages) {
     for (const [value, cached] of readCache) {
       if (cached.page !== pageInfo.page || results.has(value)) continue;
       boardsRead++;
-      results.set(value, { number: value, page: cached.page, fen: cached.fen, uncertain: cached.uncertain, status: 'read' });
+      results.set(value, { number: value, page: cached.page, fen: cached.fen, uncertain: cached.uncertain, status: 'read', rect: cached.rect });
     }
     continue;
   }
@@ -545,7 +545,7 @@ for (const pageInfo of textData.pages) {
         h: rect.h / pageGray.h,
       },
     });
-    readCache.set(label.value, { fen, uncertain, page: pageInfo.page });
+    readCache.set(label.value, { fen, uncertain, page: pageInfo.page, rect: results.get(label.value)!.rect });
     if (emitDir) {
       const out = Buffer.alloc(8 + 512 * 512);
       out.writeUInt32LE(512, 0);
@@ -604,6 +604,25 @@ for (const entry of results.values()) {
   if ((entry.status as string) === 'validated') rescued++;
 }
 console.log(`pass 2 with learned dialect rescued ${rescued} puzzles`);
+
+// Pass 3, image-derived: --glyph-hints (scripts/ml/figurine_glyphs.py reads
+// the printed figurine glyphs) covers prefixes too rare for the text-only
+// dialect. The dialect keeps priority where both know a prefix.
+const glyphAt = process.argv.indexOf('--glyph-hints');
+if (glyphAt > 0) {
+  const glyph = JSON.parse(readFileSync(process.argv[glyphAt + 1]!, 'utf-8')) as Record<
+    string,
+    Role
+  >;
+  const merged = new Map<string, Role>([...Object.entries(glyph), ...hints]);
+  let rescued3 = 0;
+  for (const entry of results.values()) {
+    if (entry.status !== 'replay-failed') continue;
+    validateEntry(entry, merged);
+    if ((entry.status as string) === 'validated') rescued3++;
+  }
+  console.log(`pass 3 with ${Object.keys(glyph).length} glyph hints rescued ${rescued3} puzzles`);
+}
 
 // --- report -------------------------------------------------------------------
 
