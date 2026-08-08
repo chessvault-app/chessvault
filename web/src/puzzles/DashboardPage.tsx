@@ -1,4 +1,4 @@
-import { ArrowLeft, BookMarked, Check, ChevronRight, Eraser, Eye, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, BookMarked, Check, ChevronRight, Eraser, Eye, LayoutGrid, Puzzle, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -148,7 +148,31 @@ export function DashboardPage() {
             <ArrowLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg text-base font-semibold">Puzzle dashboard</h1>
+          <span className="min-w-0 flex-1" />
           <ResetButton onDone={refresh} />
+        </div>
+
+        {/* Phones land HERE from the Puzzles tab (the trainer is one more
+            tap), so the three destinations get big, thumbable buttons.
+            Desktop reaches them from the sidebar already. */}
+        <div className="mb-4 grid grid-cols-3 gap-2 md:hidden">
+          {(
+            [
+              ['Train', Puzzle, () => navigate('puzzles')],
+              ['Books', BookMarked, () => navigate('puzzles', 'books')],
+              ['Themes', LayoutGrid, () => navigate('puzzles', 'themes')],
+            ] as const
+          ).map(([label, Icon, go]) => (
+            <button
+              key={label}
+              type="button"
+              onClick={go}
+              className="bg-surface border-line hover:bg-surface-2 flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors"
+            >
+              <Icon className="text-primary size-5" />
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
