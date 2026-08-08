@@ -18,11 +18,11 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { FilterChip } from '@/ui/FilterChip';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
+import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
@@ -471,18 +471,27 @@ function CollectionView() {
                 onPreview={setPreview}
                 actions={
                   <>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title="Rename this game"
-                      className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRenamingKey(gameKey(game));
-                      }}
-                    >
-                      <Pencil className="size-3.5" />
-                    </Button>
+                    <RowMenu
+                      ariaLabel="Game actions"
+                      triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+                      items={[
+                        {
+                          label: 'Rename',
+                          icon: Pencil,
+                          onSelect: () => setRenamingKey(gameKey(game)),
+                        },
+                        ...(game.link
+                          ? [{ label: 'View online', icon: ExternalLink, href: game.link }]
+                          : []),
+                        {
+                          label: 'Remove',
+                          icon: Trash2,
+                          confirm: 'Remove this game from the collection?',
+                          onSelect: () => void removeGame(game),
+                        },
+                      ]}
+                    />
+                    {/* The favourite closes the line (lanph3re's call). */}
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -504,16 +513,9 @@ function CollectionView() {
                         )}
                       />
                     </Button>
-                    <ConfirmPopover
-                      icon={Trash2}
-                      triggerTitle="Remove from the collection"
-                      triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-                      question="Remove this game from the collection?"
-                      confirmLabel="Remove"
-                      onConfirm={() => void removeGame(game)}
-                    />
                   </>
                 }
+                showLink={false}
               />
             ))}
           </ul>
@@ -823,6 +825,7 @@ function GameRow({
   customName,
   renaming = false,
   onRename,
+  showLink = true,
 }: {
   game: GameSummary;
   onOpen: () => void;
@@ -832,6 +835,8 @@ function GameRow({
   customName?: string | null;
   renaming?: boolean;
   onRename?: (to: string) => void;
+  /** Collection rows fold the external link into their row menu. */
+  showLink?: boolean;
 }) {
   // The eye pops the final position beside the row — an explicit target
   // (matching the dashboard's puzzle previews) instead of the old
@@ -926,8 +931,8 @@ function GameRow({
         </span>
       </div>
       {actions}
-      {!game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
-      {game.link && (
+      {showLink && !game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
+      {showLink && game.link && (
         <a
           href={game.link}
           target="_blank"
