@@ -68,6 +68,7 @@ import {
 } from './ocr/classify';
 import { boardFromImage, featuresFromImage, loadImage } from './ocr/browser';
 import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
+import { ChipRow } from '@/ui/ChipRow';
 import { FilterChip } from '@/ui/FilterChip';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { ProgressBar } from '@/ui/ProgressBar';
@@ -809,7 +810,7 @@ function PuzzleList({
         failed={stateCounts.failed}
         className="mb-3"
       />
-      <div className="mb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hidden sm:flex-wrap">
+      <ChipRow className="mb-2">
         {(
           [
             ['all', 'All'],
@@ -844,7 +845,7 @@ function PuzzleList({
             onClick={() => setTierFilter(tierFilter === meta.label ? 'all' : meta.label)}
           />
         ))}
-      </div>
+      </ChipRow>
       <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {visible.map((p) => {
           const state = stateOf(p);

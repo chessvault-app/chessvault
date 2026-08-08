@@ -6,6 +6,7 @@ import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { Button } from '@/ui/Button';
+import { ChipRow } from '@/ui/ChipRow';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
@@ -263,7 +264,7 @@ export function DashboardPage() {
             title={history === null ? 'Puzzles' : `Puzzles · ${puzzles.length}`}
           />
           {/* Filters: outcome × rating band. Click a row to replay it. */}
-          <div className="border-line flex items-center gap-1 overflow-x-auto border-b px-3 py-2 scrollbar-hidden sm:flex-wrap">
+          <ChipRow className="border-line border-b px-3 py-2" innerClassName="gap-1">
             {(
               [
                 ['all', 'All'],
@@ -288,7 +289,7 @@ export function DashboardPage() {
                 onClick={() => setBandFilter(b.id)}
               />
             ))}
-          </div>
+          </ChipRow>
           {history === null ? (
             <SkeletonRows rows={5} />
           ) : puzzles.length === 0 ? (

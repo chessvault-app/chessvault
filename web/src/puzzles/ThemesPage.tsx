@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { navigate } from '@/lib/router';
+import { ChipRow } from '@/ui/ChipRow';
 import { SkeletonRows } from '@/ui/Skeleton';
 
 /**
@@ -145,7 +146,7 @@ export function ThemesPage() {
           <h1 className="text-fg text-base font-semibold">Puzzle themes</h1>
         </div>
 
-        <div className="mb-5 flex gap-2 overflow-x-auto scrollbar-hidden sm:flex-wrap">
+        <ChipRow className="mb-5" innerClassName="gap-2">
           <ThemeCard
             className="w-full sm:w-auto"
             label="All themes"
@@ -162,7 +163,7 @@ export function ThemesPage() {
               onClick={() => navigate('puzzles', 'failed')}
             />
           )}
-        </div>
+        </ChipRow>
 
         {themes === null ? (
           <SkeletonRows rows={6} className="p-0" />

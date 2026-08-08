@@ -20,6 +20,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
+import { ChipRow } from '@/ui/ChipRow';
 import { FilterChip } from '@/ui/FilterChip';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
@@ -732,7 +733,7 @@ function ArchiveBrowser({
 
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (
-        <div className="border-line flex items-center gap-1.5 overflow-x-auto border-t px-3 py-2 scrollbar-hidden sm:flex-wrap">
+        <ChipRow className="border-line border-t px-3 py-2">
           <Select
             value={month}
             onChange={(m) => void loadMonth(m)}
@@ -769,7 +770,7 @@ function ArchiveBrowser({
           ).map(([id, label]) => (
             <FilterChip key={id} label={label} active={resultFilter === id} onClick={() => setResultFilter(id)} />
           ))}
-        </div>
+        </ChipRow>
       )}
       {((offline && months.length > 0) || error) && (
         <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
