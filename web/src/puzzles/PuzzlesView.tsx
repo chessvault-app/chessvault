@@ -510,7 +510,8 @@ function Trainer({
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
-        <div className="hidden h-9 shrink-0 items-center wide:flex">
+        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
+          <Puzzle className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">
             {mode === 'single'
               ? `Replay #${puzzleId}`
