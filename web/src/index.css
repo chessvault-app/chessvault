@@ -257,6 +257,17 @@
     overscroll-behavior: none;
   }
 
+  /* Wiki links in notes ([[Target]]): linky at rest, actionable with
+     Ctrl - the text itself stays literal markdown. */
+  .wiki-link {
+    color: var(--primary);
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .wiki-link:hover {
+    text-decoration: underline;
+  }
+
   /* Delegated tooltips (ui/tooltip.ts): themed replacement for the slow
      native title bubble. Fixed-position, pointer-transparent, above every
      popover layer. */

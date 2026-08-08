@@ -9,6 +9,7 @@ import {
 } from 'prosemirror-markdown';
 import type { Node as PmNode, Schema } from '@tiptap/pm/model';
 import { ChessBlock } from './ChessBlock';
+import { WikiLink } from './wikiLink';
 
 /**
  * Notes are plain markdown on disk. Boards are fenced code blocks with the
@@ -32,6 +33,7 @@ export const noteExtensions = [
     link: { openOnClick: false },
   }),
   ChessBlock,
+  WikiLink,
 ];
 
 export const noteSchema: Schema = getSchema(noteExtensions);
