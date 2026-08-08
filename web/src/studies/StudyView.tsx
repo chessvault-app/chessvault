@@ -24,6 +24,7 @@ import { useReview } from '@/store/review';
 import { useStudy } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { AnnotationPane } from './AnnotationPane';
@@ -503,18 +504,17 @@ function ChapterRow({
             <Pencil className="size-3" />
           </Button>
           {chapters.length > 1 && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={
+            <ConfirmPopover
+              icon={Trash2}
+              triggerTitle={
                 childCount > 0
                   ? 'Delete this chapter (its sub-chapters move to the top level)'
                   : 'Delete this chapter'
               }
-              onClick={() => deleteChapter(index)}
-            >
-              <Trash2 className="size-3" />
-            </Button>
+              question="Delete this chapter?"
+              confirmLabel="Delete"
+              onConfirm={() => deleteChapter(index)}
+            />
           )}
         </div>
       )}

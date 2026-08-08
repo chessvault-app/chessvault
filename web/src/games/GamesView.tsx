@@ -18,6 +18,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
@@ -252,7 +253,7 @@ function EliteBrowser() {
               <Button
                 variant={inCollection(g) ? 'ghost' : 'secondary'}
                 size="sm"
-                className="shrink-0"
+                className="w-16 shrink-0"
                 disabled={inCollection(g)}
                 onClick={() => void collect(g)}
               >
@@ -445,7 +446,14 @@ function CollectionView() {
                         )}
                       />
                     </Button>
-                    <TwoStepDelete onConfirm={() => void removeGame(game)} />
+                    <ConfirmPopover
+                      icon={Trash2}
+                      triggerTitle="Remove from the collection"
+                      triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+                      question="Remove this game from the collection?"
+                      confirmLabel="Remove"
+                      onConfirm={() => void removeGame(game)}
+                    />
                   </>
                 }
               />
@@ -468,40 +476,6 @@ function CollectionView() {
         </div>
       )}
     </div>
-  );
-}
-
-function TwoStepDelete({ onConfirm }: { onConfirm: () => void }) {
-  const [confirming, setConfirming] = useState(false);
-  if (confirming) {
-    return (
-      <Button
-        variant="danger"
-        size="sm"
-        className="shrink-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          onConfirm();
-        }}
-      >
-        Delete?
-      </Button>
-    );
-  }
-  return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      title="Remove from the collection"
-      className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-      onClick={(e) => {
-        e.stopPropagation();
-        setConfirming(true);
-        setTimeout(() => setConfirming(false), 3000);
-      }}
-    >
-      <Trash2 className="size-3.5" />
-    </Button>
   );
 }
 
@@ -679,7 +653,7 @@ function ArchiveBrowser({
                       variant={inCollection ? 'ghost' : 'secondary'}
                       size="sm"
                       disabled={inCollection}
-                      className="shrink-0"
+                      className="w-16 shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         void collect(game);
@@ -798,6 +772,7 @@ function GameRow({
         </span>
       </div>
       {actions}
+      {!game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
       {game.link && (
         <a
           href={game.link}

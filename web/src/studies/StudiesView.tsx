@@ -15,6 +15,7 @@ import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { StudyView } from './StudyView';
 
 /** Router shell for the Studies section: list, or one open study. */
@@ -305,7 +306,6 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
 function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string[] }) {
   const remove = useStudy((s) => s.remove);
   const move = useStudy((s) => s.move);
-  const [confirming, setConfirming] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [moving, setMoving] = useState(false);
   const [draft, setDraft] = useState('');
@@ -363,18 +363,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>
 
-        {confirming ? (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              void remove(study.id);
-            }}
-          >
-            Delete “{name}”?
-          </Button>
-        ) : (
+        {(
           <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
             <Button
               variant="ghost"
@@ -400,18 +389,13 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             >
               <FolderInput className="size-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Delete this study"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirming(true);
-                setTimeout(() => setConfirming(false), 3000);
-              }}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
+            <ConfirmPopover
+              icon={Trash2}
+              triggerTitle="Delete this study"
+              question={`Delete “${name}”?`}
+              confirmLabel="Delete"
+              onConfirm={() => void remove(study.id)}
+            />
           </div>
         )}
 

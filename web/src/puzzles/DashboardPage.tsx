@@ -1,4 +1,4 @@
-import { ArrowLeft, BookMarked, Check, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
+import { ArrowLeft, BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
@@ -283,7 +283,7 @@ export function DashboardPage() {
 function ResetButton({ onDone }: { onDone: () => void }) {
   return (
     <ConfirmPopover
-      icon={Trash2}
+      icon={Eraser}
       label="Reset"
       triggerTitle="Wipe attempts, history and the review pool"
       triggerClassName="text-subtle ml-auto"

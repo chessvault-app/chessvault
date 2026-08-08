@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { NoteView } from './NoteView';
@@ -263,7 +264,6 @@ function NoteCard({
   allFolders: string[];
   onChanged: () => Promise<void>;
 }) {
-  const [confirming, setConfirming] = useState(false);
   const [moving, setMoving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -304,19 +304,7 @@ function NoteCard({
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>
 
-        {confirming ? (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={async (e) => {
-              e.stopPropagation();
-              await fetch(`${API}/${encodeURIComponent(note.id)}`, { method: 'DELETE' });
-              await onChanged();
-            }}
-          >
-            Delete “{name}”?
-          </Button>
-        ) : (
+        {(
           <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
             <Button
               variant="ghost"
@@ -330,18 +318,17 @@ function NoteCard({
             >
               <FolderInput className="size-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Delete this note"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirming(true);
-                setTimeout(() => setConfirming(false), 3000);
+            <ConfirmPopover
+              icon={Trash2}
+              triggerTitle="Delete this note"
+              question={`Delete “${name}”?`}
+              confirmLabel="Delete"
+              onConfirm={() => {
+                void fetch(`${API}/${encodeURIComponent(note.id)}`, { method: 'DELETE' }).then(
+                  () => void onChanged(),
+                );
               }}
-            >
-              <Trash2 className="size-3.5" />
-            </Button>
+            />
           </div>
         )}
 

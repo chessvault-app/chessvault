@@ -505,9 +505,11 @@ function Trainer({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
-        {/* Stacked phones fold this whole panel into two icons on the
-            Puzzle panel header — vertical space is the scarce resource. */}
-        <Panel flush className={cn('shrink-0', mode === 'fresh' && 'stacked:hidden')}>
+        {/* Fresh training folds this panel into two icons on the Puzzle
+            panel header (lanph3re: same treatment on desktop as mobile); it only
+            renders for the modes that need their explanatory text. */}
+        {mode !== 'fresh' && (
+        <Panel flush className="shrink-0">
           <PanelHeader
             title="Training"
             actions={
@@ -531,10 +533,9 @@ function Trainer({
               Reviewing puzzles you failed before — not counted, and a clean solve retires the
               puzzle from this list.
             </p>
-          ) : (
-            <DifficultyRow active={difficulty} onPick={pickDifficulty} />
-          )}
+          ) : null}
         </Panel>
+        )}
 
         {answerTree && (
           <AnswerPanel
@@ -552,8 +553,8 @@ function Trainer({
                 {puzzle && phase === 'done' && (
                   <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
                 )}
-                {/* Stacked stand-ins for the hidden Training panel. */}
-                <span className="flex items-center gap-1 wide:hidden">
+                {/* Stand-ins for the folded Training panel. */}
+                <span className="flex items-center gap-1">
                   {mode === 'fresh' && (
                     <Button
                       variant="ghost"
@@ -578,7 +579,7 @@ function Trainer({
             }
           />
           {showDifficulty && mode === 'fresh' && (
-            <div className="border-line border-b wide:hidden">
+            <div className="border-line border-b">
               <DifficultyRow active={difficulty} onPick={pickDifficulty} />
             </div>
           )}
