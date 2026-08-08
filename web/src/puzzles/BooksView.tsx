@@ -42,6 +42,7 @@ import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { EditorView } from '@/editor/EditorView';
 import { cn } from '@/lib/cn';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { SkeletonRows } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -225,18 +226,6 @@ function Shelf() {
     void load();
   };
 
-  // Delete confirmation takes over the whole card instead of floating a
-  // chip over the title — nothing to collide with, nothing ambiguous.
-  const [arming, setArming] = useState<string | null>(null);
-  const armTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (armTimer.current) clearTimeout(armTimer.current);
-  }, []);
-  const arm = (slug: string | null): void => {
-    if (armTimer.current) clearTimeout(armTimer.current);
-    setArming(slug);
-    if (slug !== null) armTimer.current = setTimeout(() => setArming(null), 5000);
-  };
 
   const create = async (): Promise<void> => {
     const res = await fetch('/api/puzzlebooks', {
@@ -333,33 +322,14 @@ function Shelf() {
                   </span>
                 </button>
                 {/* Hover-revealed on mouse; always present under a thumb. */}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title="Delete this book and its progress"
-                  className="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
-                  onClick={() => arm(b.slug)}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-                {arming === b.slug && (
-                  <div className="border-bad/40 bg-surface absolute inset-0 z-10 flex flex-wrap items-center justify-center gap-2 rounded-xl border p-3">
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => {
-                        arm(null);
-                        void removeBook(b.slug);
-                      }}
-                    >
-                      <Trash2 className="size-3.5" />
-                      Delete this book?
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => arm(null)}>
-                      Cancel
-                    </Button>
-                  </div>
-                )}
+                <ConfirmPopover
+                  icon={Trash2}
+                  triggerTitle="Delete this book and its progress"
+                  triggerClassName="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
+                  question="Delete this book and its progress?"
+                  confirmLabel="Delete"
+                  onConfirm={() => void removeBook(b.slug)}
+                />
               </div>
             ))}
           </div>
@@ -488,10 +458,11 @@ function BookPage({ slug }: { slug: string }) {
             <Plus className="size-3.5" />
             <span className="hidden wide:inline">Add puzzle</span>
           </Button>
-          <TwoStepConfirm
-            title="Reset all progress in this book"
-            armedLabel="Reset progress?"
+          <ConfirmPopover
             icon={RotateCcw}
+            triggerTitle="Reset all progress in this book"
+            question="Reset all progress in this book?"
+            confirmLabel="Reset"
             onConfirm={() => void resetProgress()}
           />
         </div>
@@ -1014,55 +985,6 @@ function SourceCrop({
         </Button>
       )}
     </div>
-  );
-}
-
-/** Destructive action armed on first click, fires on the second within 4 s. */
-function TwoStepConfirm({
-  onConfirm,
-  title,
-  armedLabel,
-  icon: Icon = Trash2,
-  className,
-}: {
-  onConfirm: () => void;
-  title: string;
-  armedLabel: string;
-  icon?: typeof Trash2;
-  className?: string;
-}) {
-  const [armed, setArmed] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-  return (
-    <Button
-      variant={armed ? 'danger' : 'ghost'}
-      size={armed ? 'sm' : 'icon-sm'}
-      title={title}
-      // Armed state may float over card content: an opaque surface under
-      // the danger tint (bg colour + gradient stack on one element) keeps
-      // whatever is behind it from bleeding through.
-      className={cn(
-        className,
-        armed &&
-          'bg-surface bg-linear-to-b from-bad/12 to-bad/12 opacity-100 shadow-md hover:bg-surface hover:from-bad/20 hover:to-bad/20',
-      )}
-      onClick={() => {
-        if (!armed) {
-          setArmed(true);
-          timer.current = setTimeout(() => setArmed(false), 4000);
-          return;
-        }
-        if (timer.current) clearTimeout(timer.current);
-        setArmed(false);
-        onConfirm();
-      }}
-    >
-      <Icon className="size-3.5" />
-      {armed ? armedLabel : null}
-    </Button>
   );
 }
 

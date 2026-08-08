@@ -1,9 +1,10 @@
 import { ArrowLeft, BookMarked, Check, ChevronRight, RotateCcw, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows } from '@/ui/Skeleton';
 
@@ -277,41 +278,21 @@ export function DashboardPage() {
   );
 }
 
-/**
- * Two-step confirm instead of a browser dialog: first click arms it, the
- * second (within 4 s) wipes counters + history. Everything about past
- * attempts is gone — including the review pool — so it stays deliberate.
- */
+/** Wipes counters + history — including the review pool — behind an
+    anchored confirm, so it stays deliberate without a browser dialog. */
 function ResetButton({ onDone }: { onDone: () => void }) {
-  const [armed, setArmed] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current);
-  }, []);
-
-  const click = async (): Promise<void> => {
-    if (!armed) {
-      setArmed(true);
-      timer.current = setTimeout(() => setArmed(false), 4000);
-      return;
-    }
-    if (timer.current) clearTimeout(timer.current);
-    setArmed(false);
-    await fetch('/api/puzzles/reset', { method: 'POST' });
-    onDone();
-  };
-
   return (
-    <Button
-      variant={armed ? 'danger' : 'ghost'}
-      size="sm"
-      className={armed ? 'ml-auto' : 'text-subtle ml-auto'}
-      title="Wipe attempts, history and the review pool"
-      onClick={() => void click()}
-    >
-      <Trash2 className="size-3.5" />
-      {armed ? 'Wipe everything?' : 'Reset'}
-    </Button>
+    <ConfirmPopover
+      icon={Trash2}
+      label="Reset"
+      triggerTitle="Wipe attempts, history and the review pool"
+      triggerClassName="text-subtle ml-auto"
+      question="Wipe all attempts, history and the review pool?"
+      confirmLabel="Wipe everything"
+      onConfirm={() => {
+        void fetch('/api/puzzles/reset', { method: 'POST' }).then(onDone);
+      }}
+    />
   );
 }
 

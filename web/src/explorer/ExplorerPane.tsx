@@ -21,6 +21,7 @@ import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
+import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Switch } from '@/ui/Switch';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
@@ -552,15 +553,14 @@ function BookRow({
       >
         <Hammer className="size-3.5" />
       </Button>
-      <Button
-        variant="ghost"
-        size="icon-sm"
+      <ConfirmPopover
+        icon={Trash2}
+        triggerTitle="Delete this book (the source PGNs stay)"
+        question="Delete this opening book?"
+        confirmLabel="Delete"
         disabled={busy}
-        onClick={onDelete}
-        title="Delete this book (the source PGNs stay)"
-      >
-        <Trash2 className="size-3.5" />
-      </Button>
+        onConfirm={onDelete}
+      />
     </li>
   );
 }
