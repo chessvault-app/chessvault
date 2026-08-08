@@ -167,6 +167,7 @@ def main():
     ap.add_argument('--lr', type=float, default=3e-3)
     ap.add_argument('--npz', default='real-*.npz', help='pseudo-label glob under data/ml')
     ap.add_argument('--out', default='cellnet-best.pt')
+    ap.add_argument('--init', default=None, help='warm-start weights (fine-tune) under data/ml')
     args = ap.parse_args()
 
     torch.manual_seed(3)
@@ -181,6 +182,9 @@ def main():
     vy = torch.from_numpy(val_y).to(DEVICE)
 
     model = CellNet().to(DEVICE)
+    if args.init:
+        model.load_state_dict(torch.load(os.path.join(DATA, args.init), map_location=DEVICE))
+        print(f'warm-started from {args.init}')
     print(sum(p.numel() for p in model.parameters()), 'parameters')
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, args.epochs)
