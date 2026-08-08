@@ -256,8 +256,29 @@ interface ImportedPuzzle {
 }
 
 async function main(): Promise<void> {
-  const engine = new Engine();
-  await engine.init();
+  // --jobs N runs a pool of N engines over the entry list; every search
+  // is memoized to <report>-engine-cache.json so re-imports skip the
+  // engine entirely for unchanged positions.
+  const poolAt = process.argv.indexOf('--jobs');
+  const poolN = poolAt > 0 ? Math.max(1, Number(process.argv[poolAt + 1])) : 1;
+  const engines: Engine[] = [];
+  for (let i = 0; i < poolN; i++) {
+    const e = new Engine();
+    await e.init();
+    engines.push(e);
+  }
+  const engineCachePath = resolve(REPO, CFG.report.replace(/[.]json$/, '-engine-cache.json'));
+  const engineCache: Record<string, EngineResult> = existsSync(engineCachePath)
+    ? (JSON.parse(readFileSync(engineCachePath, 'utf-8')) as Record<string, EngineResult>)
+    : {};
+  const search = async (engine: Engine, fen: string, arg: string): Promise<EngineResult> => {
+    const key = `${fen}|${arg}`;
+    const hit = engineCache[key];
+    if (hit) return hit;
+    const result = await engine.search(fen, arg);
+    engineCache[key] = result;
+    return result;
+  };
 
   const puzzles: ImportedPuzzle[] = [];
   const leftovers: ReportEntry[] = [];
@@ -271,7 +292,7 @@ async function main(): Promise<void> {
   const now = new Date().toISOString();
 
   let processed = 0;
-  for (const entry of report.sort((a, b) => a.number - b.number)) {
+  const processEntry = async (entry: ReportEntry, engine: Engine): Promise<void> => {
     processed++;
     if (processed % 100 === 0) console.log(`${processed}/${report.length}…`);
     const evidence = {
@@ -304,13 +325,13 @@ async function main(): Promise<void> {
       const line = lineFromSans(fullFen(entry.fen!, entry.side!), entry.sans!);
       if (line) {
         push('book-parsed', entry.side!, line, []);
-        continue;
+        return;
       }
     }
     if (!entry.fen || entry.status === 'illegal-position') {
       leftovers.push(entry);
       counts.draft++;
-      continue;
+      return;
     }
 
     // Engine tiers. Side: from the text when parsed; otherwise inferred by
@@ -321,7 +342,7 @@ async function main(): Promise<void> {
       const goal = entry.mateIn ?? 0;
       // Fixed-time search; the mate score (if any) arrives in the info
       // lines. Mate-in-N is trivial for the engine inside this budget.
-      const result = await engine.search(fen, `movetime ${goal > 0 ? 800 : 500}`);
+      const result = await search(engine, fen, `movetime ${goal > 0 ? 800 : 500}`);
       if (!result.bestmove) return null;
       return { ...result, side };
     };
@@ -352,18 +373,18 @@ async function main(): Promise<void> {
     if (!solved && entry.side) {
       const fen = fullFen(entry.fen, entry.side);
       if (positionOf(fen)) {
-        const best = await engine.search(fen, 'movetime 500');
+        const best = await search(engine, fen, 'movetime 500');
         const line = best.pv.length > 0 ? lineFromPv(fen, best.pv, 6) : null;
         if (line) {
           push('engine-unverified', entry.side, line, []);
-          continue;
+          return;
         }
       }
     }
     if (!solved) {
       leftovers.push(entry);
       counts.draft++;
-      continue;
+      return;
     }
     const isMate = solved.mate !== null && solved.mate > 0;
     const plies = isMate ? solved.mate! * 2 - 1 : Math.min(solved.pv.length, 6);
@@ -371,7 +392,7 @@ async function main(): Promise<void> {
     if (!line) {
       leftovers.push(entry);
       counts.draft++;
-      continue;
+      return;
     }
     const corroborated =
       (entry.squares?.length ?? 0) >= 2 && overlap(line.uci, entry.squares!) >= 0.5;
@@ -381,8 +402,24 @@ async function main(): Promise<void> {
       line,
       isMate ? defenderWildcards(line.uci.length) : [],
     );
-  }
-  engine.quit();
+  };
+
+  const queue = report.sort((a, b) => a.number - b.number);
+  let cursor = 0;
+  await Promise.all(
+    engines.map(async (engine) => {
+      for (;;) {
+        const entry = queue[cursor++];
+        if (!entry) return;
+        await processEntry(entry, engine);
+      }
+    }),
+  );
+  // Concurrency scrambles completion order; the vault files stay sorted.
+  puzzles.sort((a, b) => (a.number ?? 0) - (b.number ?? 0));
+  leftovers.sort((a, b) => a.number - b.number);
+  writeFileSync(engineCachePath, JSON.stringify(engineCache));
+  for (const e of engines) e.quit();
 
   // --- write the vault book ---------------------------------------------------
   const diagrams = resolve(BOOK, 'diagrams');
