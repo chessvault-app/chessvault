@@ -7,7 +7,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatWhen } from '@/lib/dates';
@@ -85,6 +85,8 @@ function CreateMenu() {
   const createFolder = useStudy((s) => s.createFolder);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  // Either popover (the menu or the name form) dismisses on outside click.
+  const menuHost = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'study' | 'folder' | null>(null);
   const [name, setName] = useState('');
   const [folder, setFolder] = useState('');
@@ -108,8 +110,20 @@ function CreateMenu() {
     if (!err) navigate('studies', encodeURIComponent(id));
   };
 
+  useEffect(() => {
+    if (!menuOpen && !mode) return;
+    const onDown = (e: MouseEvent): void => {
+      if (!menuHost.current?.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setMode(null);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [menuOpen, mode]);
+
   return (
-    <div className="relative">
+    <div ref={menuHost} className="relative">
       <Button variant="primary" size="sm" onClick={() => setMenuOpen((v) => !v)}>
         <Plus className="mr-1 size-3.5" />
         Create
