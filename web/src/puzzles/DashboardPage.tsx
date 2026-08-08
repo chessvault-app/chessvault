@@ -312,11 +312,6 @@ export function DashboardPage() {
                     )}
                     <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
                     <span className="text-subtle w-14 shrink-0">{bandOf(h.puzzleRating)}</span>
-                    {toReview(h) && (
-                      <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
-                        to review
-                      </span>
-                    )}
                     <Eye
                       className="text-subtle hover:text-fg ml-auto size-3.5 shrink-0"
                       aria-label="Preview the position"

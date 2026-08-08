@@ -461,6 +461,27 @@ function Trainer({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
+      {/* Stacked layouts lead with the header, convention-style; on wide
+          the band lives in the side column so it aligns with the board. */}
+      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="md:hidden"
+          title="Back to the dashboard"
+          onClick={() => navigate('puzzles', 'dashboard')}
+        >
+          <ArrowLeft className="size-3.5" />
+        </Button>
+        <Puzzle className="text-subtle size-4" aria-hidden />
+        <h1 className="text-fg text-sm font-semibold">
+          {mode === 'single'
+            ? `Replay #${puzzleId}`
+            : mode === 'failed'
+              ? 'Review'
+              : 'Puzzles'}
+        </h1>
+      </div>
       {/* Board column, matching the shared budget so the board sits where
           every other view puts it. */}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
@@ -510,18 +531,7 @@ function Trainer({
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
-        {/* On phones the dashboard is the hub, so the trainer carries a
-            way back; the band was wide-only before. */}
-        <div className="flex h-9 shrink-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="md:hidden"
-            title="Back to the dashboard"
-            onClick={() => navigate('puzzles', 'dashboard')}
-          >
-            <ArrowLeft className="size-3.5" />
-          </Button>
+        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
           <Puzzle className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">
             {mode === 'single'
