@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Download,
   ExternalLink,
   Eye,
   Loader2,
@@ -653,7 +652,28 @@ function ArchiveBrowser({
           </span>
         }
         actions={
-          months.length > 0 ? (
+          <>
+            <Input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && username.trim()) void loadMonths();
+              }}
+              placeholder={provider === 'chesscom' ? 'chess.com username' : 'Lichess username'}
+              className="w-44 shrink font-mono"
+              inputSize="sm"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={loading !== null || !username.trim()}
+              onClick={() => void loadMonths()}
+            >
+              {loading === 'months' ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : null}
+              Browse
+            </Button>
+          {months.length > 0 ? (
             <Select
               value={month}
               onChange={(m) => void loadMonth(m)}
@@ -669,30 +689,11 @@ function ArchiveBrowser({
                 },
               ]}
             />
-          ) : null
+          ) : null}
+          </>
         }
       />
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-        <Download className="text-subtle size-4 shrink-0" />
-        <Input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && username.trim()) void loadMonths();
-          }}
-          placeholder={provider === 'chesscom' ? 'chess.com username' : 'Lichess username'}
-          className="w-48 font-mono"
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={loading !== null || !username.trim()}
-          onClick={() => void loadMonths()}
-        >
-          {loading === 'months' ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : null}
-          Browse
-        </Button>
         {offline && months.length > 0 && (
           <span className="text-warn text-xs">offline — cached months only</span>
         )}

@@ -5,6 +5,7 @@ import {
   CircleAlert,
   Loader2,
   Pencil,
+  TextCursorInput,
   PlusSquare,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -249,7 +250,7 @@ function NoteTitle({ id }: { id: string }) {
           setEditing(true);
         }}
       >
-        <Pencil className="size-3.5" />
+        <TextCursorInput className="size-3.5" />
       </Button>
     </>
   );
