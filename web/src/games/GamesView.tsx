@@ -394,9 +394,11 @@ function CollectionView() {
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
-      <header className="flex items-center justify-between gap-3">
+      {/* flex-wrap + the search field's narrow flex-1: phones drop the
+          controls onto their own full-width line instead of clipping. */}
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Games</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -411,7 +413,7 @@ function CollectionView() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search collection…"
-            className="w-56"
+            className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
           />
           <Button variant="primary" size="sm" active={importing} onClick={() => setImporting((v) => !v)}>
             <Plus className="mr-1 size-3.5" />

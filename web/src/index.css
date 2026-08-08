@@ -253,6 +253,17 @@
     height: 100%;
   }
 
+  /* Home-screen launches mis-report the dynamic viewport until the first
+     scroll, so 100dvh (and visualViewport) start too short and the native
+     window shows through below the page. Standalone mode has no browser
+     chrome, which makes the STATIC 100vh the true screen height — pin the
+     shell (h-[var(--app-h,100dvh)]) to it there. */
+  @media (display-mode: standalone) {
+    :root {
+      --app-h: 100vh;
+    }
+  }
+
   body {
     background-color: var(--app-bg);
     color: var(--text);

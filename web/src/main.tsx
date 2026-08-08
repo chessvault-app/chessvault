@@ -15,30 +15,20 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   });
 }
 
-// iOS home-screen launches size the web view short until a scroll settles
-// the viewport, leaving the native window's black showing under the page —
-// CSS can't paint outside the web view, so this needs JS. Two belts: keep
-// --app-h synced to the visual viewport (the shell prefers it over 100dvh),
-// and nudge a no-op scroll after launch to force the settle.
-const standalone =
-  matchMedia('(display-mode: standalone)').matches ||
-  (navigator as { standalone?: boolean }).standalone === true;
-if (standalone) {
-  const sync = (): void => {
-    const h = window.visualViewport?.height ?? window.innerHeight;
-    document.documentElement.style.setProperty('--app-h', `${Math.round(h)}px`);
-  };
-  sync();
-  window.visualViewport?.addEventListener('resize', sync);
-  window.addEventListener('resize', sync);
-  window.addEventListener('orientationchange', sync);
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      window.scrollTo(0, 1);
-      window.scrollTo(0, 0);
-      sync();
-    }, 60);
-  });
+// iOS zooms the whole page when a focused field's font is under 16px;
+// capping maximum-scale disables exactly that auto-zoom (iOS ignores the
+// cap for user pinch gestures, so accessibility zoom keeps working).
+// Applied only on iOS — Android neither auto-zooms nor ignores the cap.
+const iOS =
+  /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (iOS) {
+  document
+    .querySelector('meta[name="viewport"]')
+    ?.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
+    );
 }
 
 const container = document.getElementById('root');
