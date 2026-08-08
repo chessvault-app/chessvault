@@ -6,7 +6,7 @@ import {
   Eraser,
   FlipVertical2,
   FolderInput,
-  Grid2x2,
+  SquarePen,
   ImageUp,
   Microscope,
   MousePointer2,
@@ -467,7 +467,7 @@ export function EditorView({
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="flex h-9 shrink-0 items-center gap-2">
-          <Grid2x2 className="text-subtle size-4" aria-hidden />
+          <SquarePen className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">Editor</h1>
         </div>
         {positionPanels}

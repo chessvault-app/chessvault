@@ -1,9 +1,9 @@
 import {
   Grid3x3,
+  SquarePen,
   BarChart3,
   BookMarked,
   BookOpen,
-  Grid2x2,
   House,
   LayoutGrid,
   Library,
@@ -25,7 +25,7 @@ import { StudiesView } from '@/studies/StudiesView';
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'analysis', label: 'Board', icon: Grid3x3 },
-  { section: 'editor', label: 'Editor', icon: Grid2x2 },
+  { section: 'editor', label: 'Editor', icon: SquarePen },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
   { section: 'games', label: 'Games', icon: BookOpen },

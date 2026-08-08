@@ -1,10 +1,10 @@
 import {
   BookOpen,
-  Grid2x2,
+  SquarePen,
   Library,
   NotebookPen,
   Puzzle,
-  Swords,
+  Grid3x3,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { navigate, type Section } from '@/lib/router';
@@ -17,9 +17,9 @@ import { navigate, type Section } from '@/lib/router';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
-const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof Swords }[] = [
-  { section: 'analysis', label: 'Analysis', blurb: 'Free board with engine and explorer', icon: Swords },
-  { section: 'editor', label: 'Editor', blurb: 'Set up any position', icon: Grid2x2 },
+const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof Grid3x3 }[] = [
+  { section: 'analysis', label: 'Board', blurb: 'Free board with engine and explorer', icon: Grid3x3 },
+  { section: 'editor', label: 'Editor', blurb: 'Set up any position', icon: SquarePen },
   { section: 'studies', label: 'Studies', blurb: 'Openings and ideas, in chapters', icon: Library },
   { section: 'notes', label: 'Notes', blurb: 'Markdown with live boards', icon: NotebookPen },
   { section: 'games', label: 'Games', blurb: 'Your collection, annotated', icon: BookOpen },
