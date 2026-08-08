@@ -626,17 +626,12 @@ function ArchiveBrowser({
   };
 
   const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
-  const [resultFilter, setResultFilter] = useState<'any' | 'win' | 'loss' | 'draw'>('any');
-  const visibleMonthGames = monthGames.filter((g) => {
-    if (sideFilter !== 'any' && g.userSide !== sideFilter) return false;
-    if (resultFilter === 'draw') return g.result === '1/2-1/2';
-    if (resultFilter !== 'any') {
-      if (!g.userSide || g.result === '1/2-1/2') return false;
-      const won = (g.result === '1-0') === (g.userSide === 'white');
-      return resultFilter === 'win' ? won : !won;
-    }
-    return true;
-  });
+  const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
+  const visibleMonthGames = monthGames.filter(
+    (g) =>
+      (sideFilter === 'any' || g.userSide === sideFilter) &&
+      (resultFilter === 'any' || g.result === resultFilter),
+  );
 
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
     if (next === provider) return;
@@ -743,9 +738,9 @@ function ArchiveBrowser({
           <span className="bg-line mx-1 h-4 w-px" />
           {(
             [
-              ['any', 'Both'],
-              ['white', 'As white'],
-              ['black', 'As black'],
+              ['any', 'Any'],
+              ['white', 'White'],
+              ['black', 'Black'],
             ] as const
           ).map(([id, label]) => (
             <FilterChip key={id} label={label} active={sideFilter === id} onClick={() => setSideFilter(id)} />
@@ -754,21 +749,23 @@ function ArchiveBrowser({
           {(
             [
               ['any', 'All'],
-              ['win', 'Won'],
-              ['loss', 'Lost'],
-              ['draw', 'Drawn'],
+              ['1-0', '1-0'],
+              ['0-1', '0-1'],
+              ['1/2-1/2', '½-½'],
             ] as const
           ).map(([id, label]) => (
             <FilterChip key={id} label={label} active={resultFilter === id} onClick={() => setResultFilter(id)} />
           ))}
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-        {offline && months.length > 0 && (
-          <span className="text-warn text-xs">offline — cached months only</span>
-        )}
-        {error && <span className="text-bad text-xs">{error}</span>}
-      </div>
+      {((offline && months.length > 0) || error) && (
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+          {offline && months.length > 0 && (
+            <span className="text-warn text-xs">offline — cached months only</span>
+          )}
+          {error && <span className="text-bad text-xs">{error}</span>}
+        </div>
+      )}
 
       {month && (
         <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line">
