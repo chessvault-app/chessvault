@@ -462,6 +462,12 @@ export function EditorView({
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
       <div className="hidden min-h-0 flex-col gap-3 overflow-y-auto [&>section]:shrink-0 wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
+        {/* The column header band: h-9 + the column's gap-3 equals the
+            board's h-10 strip + its gap-2, so the first panel's top edge
+            aligns with the board's (lanph3re's call, matching studies/games). */}
+        <div className="flex h-9 shrink-0 items-center">
+          <h1 className="text-fg text-sm font-semibold">Editor</h1>
+        </div>
         {positionPanels}
       </div>
 

@@ -507,6 +507,18 @@ function Trainer({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+        {/* The column header band: h-9 + the column's gap-3 equals the
+            board's h-10 strip + its gap-2, so the first panel's top edge
+            aligns with the board's (lanph3re's call, matching studies/games). */}
+        <div className="hidden h-9 shrink-0 items-center wide:flex">
+          <h1 className="text-fg text-sm font-semibold">
+            {mode === 'single'
+              ? `Replay #${puzzleId}`
+              : mode === 'failed'
+                ? 'Review'
+                : 'Training'}
+          </h1>
+        </div>
         {/* Fresh training folds this panel into two icons on the Puzzle
             panel header (lanph3re: same treatment on desktop as mobile); it only
             renders for the modes that need their explanatory text. */}

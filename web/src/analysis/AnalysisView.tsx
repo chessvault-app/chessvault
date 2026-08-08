@@ -65,6 +65,12 @@ export function AnalysisView() {
           column scrolls on every layout: panels keep explicit floors and
           the move table scrolls internally. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+        {/* The column header band: h-9 + the column's gap-3 equals the
+            board's h-10 strip + its gap-2, so the first panel's top edge
+            aligns with the board's (lanph3re's call, matching studies/games). */}
+        <div className="hidden h-9 shrink-0 items-center wide:flex">
+          <h1 className="text-fg text-sm font-semibold">Analysis</h1>
+        </div>
         <PaneTabs
           className="lg:hidden"
           value={pane}

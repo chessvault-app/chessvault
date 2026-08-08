@@ -104,7 +104,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   // Rendered twice — at the page top on stacked layouts, in the side column
   // on wide ones — because CSS cannot reparent. Only one is ever visible.
   const titleRow = (className: string) => (
-    <div className={cn('flex shrink-0 items-center gap-2', className)}>
+    <div className={cn('flex shrink-0 items-center gap-2 wide:h-9', className)}>
       <Button
         variant="ghost"
         size="icon-sm"
