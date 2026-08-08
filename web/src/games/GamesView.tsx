@@ -144,6 +144,22 @@ function EliteBrowser() {
     debounce.current = setTimeout(() => void search(q, 0), 250);
   };
 
+  // Infinite scroll: a sentinel row near the list's end pulls the next
+  // page as it approaches the viewport.
+  const sentinel = useRef<HTMLLIElement>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || loading || rows.length === 0 || rows.length >= total) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) void search(query, rows.length);
+      },
+      { rootMargin: '200px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [rows.length, total, loading, query, search]);
+
   const openGame = async (game: RefGame): Promise<void> => {
     const res = await fetch(`/api/refgames/${game.id}/pgn`);
     if (!res.ok) return;
@@ -225,30 +241,34 @@ function EliteBrowser() {
         {loading && rows.length === 0 && <SkeletonRows rows={8} />}
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
           {rows.map((g) => (
-            <li key={g.id} className="flex items-center pr-2">
+            <li key={g.id} className="flex items-center gap-3 pr-2">
+              {/* Mirrors the collection's GameRow layout so the two lists
+                  read as one family. */}
               <button
                 type="button"
                 onClick={() => void openGame(g)}
                 title="Open on the analysis board"
-                className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left text-xs transition-colors duration-100"
+                className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left transition-colors duration-100"
               >
+                <ResultDot result={g.result} userSide={null} />
                 <span className="min-w-0 flex-1">
-                  <span className="text-fg block truncate font-medium">
+                  <span className="text-fg block truncate text-sm">
                     <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-                    {g.white} <span className="text-subtle font-mono">{g.white_elo}</span>
-                    <span className="text-subtle"> — </span>
+                    <span className="font-medium">{g.white}</span>{' '}
+                    <span className="text-subtle text-xs">{g.white_elo}</span>
+                    <span className="text-subtle"> vs </span>
                     <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-                    {g.black} <span className="text-subtle font-mono">{g.black_elo}</span>
+                    <span className="font-medium">{g.black}</span>{' '}
+                    <span className="text-subtle text-xs">{g.black_elo}</span>
                   </span>
-                  <span className="text-subtle block truncate">
-                    {g.eco ? `${g.eco} ` : ''}
-                    {g.opening ?? ''}
+                  <span className="text-subtle block truncate text-xs">
+                    {g.date ?? ''}
+                    {g.eco || g.opening ? ` · ${g.eco ?? ''} ${g.opening ?? ''}` : ''}
                   </span>
                 </span>
-                <span className="text-muted w-12 shrink-0 text-right font-mono">
+                <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">
                   {fmtResult(g.result)}
                 </span>
-                <span className="text-subtle shrink-0 font-mono">{g.date ?? ''}</span>
               </button>
               <Button
                 variant={inCollection(g) ? 'ghost' : 'secondary'}
@@ -269,16 +289,8 @@ function EliteBrowser() {
             </li>
           ))}
           {rows.length < total && (
-            <li className="p-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full"
-                disabled={loading}
-                onClick={() => void search(query, rows.length)}
-              >
-                {loading ? <Loader2 className="size-3.5 animate-spin" /> : 'Load more'}
-              </Button>
+            <li ref={sentinel} className="flex items-center justify-center p-3">
+              <Loader2 className="text-subtle size-4 animate-spin" />
             </li>
           )}
         </ul>

@@ -1,6 +1,7 @@
 import { ArrowLeft, BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
+import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -264,8 +265,8 @@ export function DashboardPage() {
                         to review
                       </span>
                     )}
-                    <span className="text-subtle ml-auto tabular-nums" title={h.at}>
-                      {when(h.at)}
+                    <span className="text-subtle ml-auto tabular-nums" title={formatWhen(h.at)}>
+                      {formatAgo(h.at)}
                     </span>
                   </button>
                 </li>
@@ -320,16 +321,3 @@ function StatCard({
   );
 }
 
-/** "14:03" today, "Aug 6" earlier this year, "11/2/2025" before that.
-    Locale pinned to English — the OS locale must not leak in (see lib/dates). */
-function when(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  if (d.toDateString() === now.toDateString()) {
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  }
-  if (d.getFullYear() === now.getFullYear()) {
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  }
-  return d.toLocaleDateString('en-US');
-}

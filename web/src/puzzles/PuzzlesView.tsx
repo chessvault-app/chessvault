@@ -237,7 +237,9 @@ function Trainer({
 
   // The played line as a move tree, so the panel renders exactly like the
   // analysis tab's table. Rebuilt per ply; puzzle lines are short.
-  const answerTree = useMemo(() => (puzzle && plies > 0 ? puzzleTree(puzzle, plies).tree : null), [puzzle, plies]);
+  // Built from ply 0 so the Moves panel exists (empty) from the very
+  // first frame instead of popping in after the setup move.
+  const answerTree = useMemo(() => (puzzle ? puzzleTree(puzzle, plies).tree : null), [puzzle, plies]);
   const answerIds = useMemo(
     () => (answerTree ? mainlineFrom(answerTree, answerTree.rootId) : []),
     [answerTree],
@@ -537,14 +539,6 @@ function Trainer({
         </Panel>
         )}
 
-        {answerTree && (
-          <AnswerPanel
-            tree={answerTree}
-            cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
-            onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
-          />
-        )}
-
         <Panel flush className="shrink-0">
           <PanelHeader
             title="Puzzle"
@@ -681,6 +675,20 @@ function Trainer({
             </div>
           </div>
         </Panel>
+
+
+        {answerTree ? (
+          <AnswerPanel
+            tree={answerTree}
+            cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
+            onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
+          />
+        ) : (
+          <Panel flush className="shrink-0">
+            <PanelHeader title="Moves" />
+            <p className="text-subtle px-3 py-2.5 text-xs">Finding a puzzle…</p>
+          </Panel>
+        )}
 
         {/* Category — the same panel idiom as everything else in this
             column; the whole panel is the link to the themes page. */}
