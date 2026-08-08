@@ -690,33 +690,30 @@ function Trainer({
           </Panel>
         )}
 
-        {/* Category — the same panel idiom as everything else in this
-            column; the whole panel is the link to the themes page. */}
-        <button
-          type="button"
-          onClick={() => navigate('puzzles', 'themes')}
-          className={cn(
-            'bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex shrink-0',
-            'items-center gap-2.5 rounded-xl border px-3 text-left shadow-[var(--shadow-panel)] transition-colors duration-100',
-            'h-10',
-          )}
-        >
-          <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-            Category
-          </span>
-          <span className="min-w-0 flex-1" />
-          <Puzzle className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-          <span className="text-fg truncate text-xs font-medium">
-            {mode === 'single'
-              ? `Puzzle #${puzzleId}`
-              : mode === 'failed'
-                ? 'Failed puzzles'
-                : theme
-                  ? themeLabel(theme)
-                  : 'All themes'}
-          </span>
-          <ChevronRight className="text-subtle size-3.5 shrink-0" />
-        </button>
+        {/* Theme — one word with the sidebar and the catalogue page it
+            links to. The review/replay modes explain themselves in the
+            Training panel, so the strip only shows for normal training. */}
+        {mode === 'fresh' && (
+          <button
+            type="button"
+            onClick={() => navigate('puzzles', 'themes')}
+            className={cn(
+              'bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex shrink-0',
+              'items-center gap-2.5 rounded-xl border px-3 text-left shadow-[var(--shadow-panel)] transition-colors duration-100',
+              'h-10',
+            )}
+          >
+            <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+              Theme
+            </span>
+            <span className="min-w-0 flex-1" />
+            <Puzzle className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+            <span className="text-fg truncate text-xs font-medium">
+              {theme ? themeLabel(theme) : 'All themes'}
+            </span>
+            <ChevronRight className="text-subtle size-3.5 shrink-0" />
+          </button>
+        )}
       </div>
     </div>
   );
