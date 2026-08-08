@@ -1,10 +1,19 @@
 {
   "slug": "ccw",
   "title": "The Complete Chess Workout",
-  "pages": [1, 999],
-  "solutionsAfterPage": 999,
+  "pages": [
+    7,
+    215
+  ],
+  "solutionsAfterPage": 215,
   "maxNumber": 1200,
+  "numberStyle": "paren",
+  "anchorStyle": "paren",
+  "moveMarkers": "dotless",
+  "sideMode": "label",
   "text": "data/ml/ccw-text.json",
   "cache": "data/ml/ccw-reads.json",
-  "report": "data/ml/ccw-report.json"
+  "report": "data/ml/ccw-report.json",
+  "labelX": 160,
+  "labelY": 130
 }

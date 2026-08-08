@@ -45,6 +45,17 @@ const BOOK = {
   text: 'data/ml/1001-text.json',
   cache: 'data/ml/1001-reads.json',
   report: 'data/ml/autoimport-report.json',
+  /** 'bare' = plain digits above the diagram; 'paren' = "123)". */
+  numberStyle: 'bare' as 'bare' | 'paren',
+  /** Solutions entry anchor: 'dash' = "N - 1."; 'paren' = "N) ...". */
+  anchorStyle: 'dash' as 'dash' | 'paren',
+  /** 'dotted' = "1.e4 / 1 ... e5" markers; 'dotless' = "1 e4". */
+  moveMarkers: 'dotted' as 'dotted' | 'dotless',
+  /** Where the side to move is printed: chapter header or per-puzzle label. */
+  sideMode: 'chapter' as 'chapter' | 'label',
+  /** How far (render px) a number label may sit left of / above its diagram. */
+  labelX: 20,
+  labelY: 40,
   ...(bookAt > 0
     ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
     : {}),
@@ -100,6 +111,13 @@ interface NumberBox {
 
 /** Digit words merged into numbers ("1 0 3" is three words in this scan). */
 function pageNumbers(words: { x0: number; y0: number; x1: number; y1: number; text: string }[]): NumberBox[] {
+  if (BOOK.numberStyle === 'paren') {
+    // "123)" is a single word; no digit-run merging needed.
+    return words
+      .filter((w) => /^\d{1,4}\)$/.test(w.text))
+      .map((w) => ({ value: Number(w.text.slice(0, -1)), x0: w.x0, x1: w.x1, y1: w.y1 }))
+      .filter((n) => n.value >= 1 && n.value <= BOOK.maxNumber);
+  }
   const digits = words
     .filter((w) => /^\d{1,4}$/.test(w.text))
     .sort((a, b) => (Math.abs(a.y0 - b.y0) < 3 ? a.x0 - b.x0 : a.y0 - b.y0));
@@ -167,6 +185,18 @@ function parseMainline(body: string): Mainline | null {
   let lastNumber = 0;
   let lastDots = 0;
   for (const m of clean.matchAll(scanner)) {
+    if (BOOK.moveMarkers === 'dotless' && m[3] !== undefined && /^\d{1,3}$/.test(m[3])) {
+      // Bare numbers are move markers only while they advance 1,2,3… —
+      // years and ratings in prose fail that and end the mainline.
+      const number = Number(m[3]);
+      if (number === lastNumber || number === lastNumber + 1) {
+        if (startsBlack === null) startsBlack = false;
+        lastNumber = number;
+        continue;
+      }
+      if (lastNumber > 0) break;
+      continue;
+    }
     if (m[1] !== undefined) {
       const number = Number(m[1]);
       const dots = (m[2]!.match(/\./g) ?? []).length;
@@ -188,7 +218,9 @@ function parseMainline(body: string): Mainline | null {
 /** number -> raw entry body, from the solutions pages. */
 function solutionEntries(): Map<number, string> {
   const startPage = textData.pages.findIndex(
-    (p) => p.page > BOOK.solutionsAfterPage && /\d+\s*-\s*1\s*\./.test(p.text),
+    (p) =>
+      p.page > BOOK.solutionsAfterPage &&
+      (BOOK.anchorStyle === 'paren' ? /\d{1,4}\)\s/.test(p.text) : /\d+\s*-\s*1\s*\./.test(p.text)),
   );
   const joined = textData.pages
     .slice(startPage)
@@ -197,7 +229,10 @@ function solutionEntries(): Map<number, string> {
   const out = new Map<number, string>();
   // Entry anchor: a puzzle number, a dash, then move one. The OCR detaches
   // leading digits ("103 -" scans as "1 03 -"), so digits may be spaced.
-  const anchor = /(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)/g;
+  const anchor =
+    BOOK.anchorStyle === 'paren'
+      ? /(?:^|\n)\s{0,4}(\d{1,4})\)\s/g
+      : /(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)/g;
   const hits = [...joined.matchAll(anchor)];
   for (let i = 0; i < hits.length; i++) {
     const value = Number(hits[i]![1]!.replace(/\s/g, ''));
@@ -414,6 +449,8 @@ interface PuzzleResult {
   rect?: { x: number; y: number; w: number; h: number };
   /** Set when pass 4 corrected the board read (number of cells changed). */
   repairedCells?: number;
+  /** Side printed beside THIS puzzle (sideMode 'label' books). */
+  sideStated?: 'w' | 'b';
 }
 
 const MATE_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
@@ -457,10 +494,10 @@ console.log(`${solutions.size} solution entries parsed from the text layer`);
 
 // Board reads are deterministic and slow (~1 s each); cache them across runs.
 const cachePath = resolve(REPO, BOOK.cache);
-let readCache = new Map<number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number } }>();
+let readCache = new Map<number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number }; sideStated?: 'w' | 'b' }>();
 try {
   readCache = new Map(
-    (JSON.parse(readFileSync(cachePath, 'utf-8')) as [number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number } }][]),
+    (JSON.parse(readFileSync(cachePath, 'utf-8')) as [number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number }; sideStated?: 'w' | 'b' }][]),
   );
   console.log(`read cache: ${readCache.size} boards`);
 } catch {
@@ -491,6 +528,19 @@ for (const pageInfo of textData.pages) {
     x1: n.x1 * scale,
     y1: n.y1 * scale,
   }));
+  const sideLabels: { side: 'w' | 'b'; x: number; y: number }[] = [];
+  if (BOOK.sideMode === 'label') {
+    const ws = pageInfo.words;
+    for (let i = 0; i + 2 < ws.length; i++) {
+      if (!/^(White|Black)$/i.test(ws[i]!.text)) continue;
+      if (!/^to$/i.test(ws[i + 1]!.text) || !/^play$/i.test(ws[i + 2]!.text)) continue;
+      sideLabels.push({
+        side: ws[i]!.text[0]!.toLowerCase() === 'w' ? 'w' : 'b',
+        x: ws[i]!.x0 * scale,
+        y: ws[i]!.y0 * scale,
+      });
+    }
+  }
   if (page) {
     for (const e of pageExtras) {
       numbers.push({
@@ -505,7 +555,7 @@ for (const pageInfo of textData.pages) {
     for (const [value, cached] of readCache) {
       if (cached.page !== pageInfo.page || results.has(value)) continue;
       boardsRead++;
-      results.set(value, { number: value, page: cached.page, fen: cached.fen, uncertain: cached.uncertain, status: 'read', rect: cached.rect });
+      results.set(value, { number: value, page: cached.page, fen: cached.fen, uncertain: cached.uncertain, status: 'read', rect: cached.rect, sideStated: cached.sideStated });
     }
     continue;
   }
@@ -519,8 +569,8 @@ for (const pageInfo of textData.pages) {
       .filter(
         (n) =>
           n.y1 <= rect.y + 14 &&
-          rect.y - n.y1 <= 40 &&
-          n.x1 >= rect.x - 20 &&
+          rect.y - n.y1 <= BOOK.labelY &&
+          n.x1 >= rect.x - BOOK.labelX &&
           n.x0 <= rect.x + rect.w,
       )
       .sort((a, b) => b.y1 - a.y1);
@@ -550,12 +600,23 @@ for (const pageInfo of textData.pages) {
     const uncertain = readings.filter((r) => r.confidence < 0.35).length;
     boardsRead++;
 
+    const stated =
+      BOOK.sideMode === 'label'
+        ? sideLabels
+            .filter((l) => l.x > rect.x - 60 && l.x < rect.x + rect.w + 60)
+            .sort(
+              (a, b) =>
+                Math.min(Math.abs(a.y - rect.y), Math.abs(a.y - (rect.y + rect.h))) -
+                Math.min(Math.abs(b.y - rect.y), Math.abs(b.y - (rect.y + rect.h))),
+            )[0]?.side
+        : undefined;
     results.set(label.value, {
       number: label.value,
       page: pageInfo.page,
       fen,
       uncertain,
       status: 'read',
+      ...(stated ? { sideStated: stated } : {}),
       mateIn: pageMateGoal(textData.pages.find((p) => p.page === pageInfo.page)?.text ?? ''),
       rect: {
         x: rect.x / pageGray.w,
@@ -564,7 +625,7 @@ for (const pageInfo of textData.pages) {
         h: rect.h / pageGray.h,
       },
     });
-    readCache.set(label.value, { fen, uncertain, page: pageInfo.page, rect: results.get(label.value)!.rect });
+    readCache.set(label.value, { fen, uncertain, page: pageInfo.page, rect: results.get(label.value)!.rect, sideStated: results.get(label.value)!.sideStated });
     if (emitDir) {
       const out = Buffer.alloc(8 + 512 * 512);
       out.writeUInt32LE(512, 0);
@@ -613,11 +674,15 @@ function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
     return;
   }
   entry.side = mainline.startsBlack ? 'b' : 'w';
+  if (BOOK.sideMode === 'label' && entry.sideStated) entry.side = entry.sideStated;
   const outcome = replay(entry.fen!, entry.side, mainline.tokens, hints);
   if ('fail' in outcome) {
-    // The dots-derived side may be OCR damage; the chapter's stated side
-    // gets one shot before the entry is declared failed.
-    const stated = chapterSide.get(entry.page);
+    // The dots-derived side may be OCR damage; the book's stated side
+    // (or its opposite, for label books) gets one shot before failing.
+    const stated =
+      BOOK.sideMode === 'label'
+        ? ((entry.side === 'w' ? 'b' : 'w') as 'w' | 'b')
+        : chapterSide.get(entry.page);
     if (stated && stated !== entry.side) {
       const retry = replay(entry.fen!, stated, mainline.tokens, hints);
       if (!('fail' in retry)) {
