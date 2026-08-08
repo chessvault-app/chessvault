@@ -1,6 +1,9 @@
-import { AlertCircle, ClipboardPaste, FolderInput } from 'lucide-react';
+import { AlertCircle, ClipboardPaste, FolderInput, ImagePlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAnalysis } from '@/store/analysis';
+import { builtinTemplates } from '@/puzzles/ocr/builtin';
+import type { Template } from '@/puzzles/ocr/classify';
+import { PhotoImport } from '@/puzzles/PhotoImport';
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -16,23 +19,50 @@ import { Panel, PanelHeader } from '@/ui/Panel';
  */
 export function LoadPositionButton() {
   const [open, setOpen] = useState(false);
+  // 'Load position' is the single entry point (lanph3re's call): the dialog
+  // offers text (FEN/PGN) and image import; the latter swaps to the same
+  // PhotoImport flow the editor uses.
+  const [templates, setTemplates] = useState<Template[] | null>(null);
   return (
     <>
       <Button
         variant="ghost"
         size="icon-sm"
         active={open}
-        title="Load a FEN or PGN"
+        title="Load a position — FEN, PGN, or image"
         onClick={() => setOpen(true)}
       >
         <FolderInput className="size-3.5" />
       </Button>
-      {open && <LoadDialog onClose={() => setOpen(false)} />}
+      {open && templates === null && (
+        <LoadDialog
+          onClose={() => setOpen(false)}
+          onImage={() => {
+            void builtinTemplates()
+              .then(setTemplates)
+              .catch(() => setTemplates([]));
+          }}
+        />
+      )}
+      {templates !== null && (
+        <PhotoImport
+          templates={templates}
+          onApply={(reading) => {
+            if (reading.fen) useAnalysis.getState().loadFen(reading.fen);
+            setTemplates(null);
+            setOpen(false);
+          }}
+          onClose={() => {
+            setTemplates(null);
+            setOpen(false);
+          }}
+        />
+      )}
     </>
   );
 }
 
-function LoadDialog({ onClose }: { onClose: () => void }) {
+function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: () => void }) {
   const [text, setText] = useState('');
   const textarea = useRef<HTMLTextAreaElement>(null);
   const loadFen = useAnalysis((s) => s.loadFen);
@@ -113,7 +143,12 @@ function LoadDialog({ onClose }: { onClose: () => void }) {
               </p>
             )}
 
-            <div className="flex justify-end gap-2">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={onImage} title="Read the position from a picture">
+                <ImagePlus className="mr-1 size-3.5" />
+                From image
+              </Button>
+              <span className="flex-1" />
               <Button variant="ghost" size="sm" onClick={onClose}>
                 Cancel
               </Button>

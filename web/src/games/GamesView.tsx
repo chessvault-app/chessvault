@@ -2,6 +2,8 @@ import {
   ArrowLeft,
   ExternalLink,
   Eye,
+  Globe,
+  Search,
   Loader2,
   NotebookPen,
   Pencil,
@@ -710,12 +712,19 @@ function ArchiveBrowser({
             />
             <Button
               variant="secondary"
-              size="sm"
+              size="icon-sm"
+              title="Browse this player's online archive"
               disabled={loading !== null || !username.trim()}
               onClick={() => void loadMonths()}
             >
-              {loading === 'months' ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : null}
-              Browse
+              {loading === 'months' ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <span className="relative inline-flex">
+                  <Globe className="size-3.5" />
+                  <Search className="bg-surface absolute -bottom-1 -right-1 size-2.5 rounded-full" strokeWidth={2.6} />
+                </span>
+              )}
             </Button>
           </>
         }
@@ -971,6 +980,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onCancel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onCancel]);
+
   const submit = async (): Promise<void> => {
     const withHeader = (text: string, key: string, value: string): string => {
       if (!value.trim()) return text;
@@ -1008,6 +1025,9 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   };
 
   return (
+    <>
+      <div className="bg-scrim fixed inset-0 z-40" onClick={onCancel} />
+      <div className="fixed inset-x-4 top-[8dvh] z-50 mx-auto max-h-[84dvh] max-w-lg overflow-y-auto rounded-xl">
     <Panel flush className="shrink-0">
       <PanelHeader title="Import a game" />
       <div className="flex flex-col gap-2 p-3">
@@ -1062,6 +1082,8 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         </div>
       </div>
     </Panel>
+      </div>
+    </>
   );
 }
 

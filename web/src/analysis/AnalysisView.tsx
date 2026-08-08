@@ -1,4 +1,4 @@
-import { Grid3x3, RotateCcw, Trash2 } from 'lucide-react';
+import { Check, FolderPlus, Grid3x3, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -15,7 +15,6 @@ import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
-import { ImportImageButton } from './ImageImport';
 import { LoadPositionButton } from './PositionLoader';
 
 type AnalysisPane = 'moves' | 'explorer';
@@ -100,8 +99,8 @@ export function AnalysisView() {
             actions={
               <>
                 <ReviewButton />
+                <CollectGameButton />
                 <LoadPositionButton />
-                <ImportImageButton />
                 <MoveActions />
               </>
             }
@@ -124,6 +123,52 @@ export function AnalysisView() {
         />
       </div>
     </div>
+  );
+}
+
+/**
+ * Keep the loaded game: its PGN (headers included) becomes a collection
+ * document, same endpoint the elite/archive Add buttons use. Only shown
+ * when an actual game is on the board.
+ */
+function CollectGameButton() {
+  const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
+  const [state, setState] = useState<'idle' | 'busy' | 'done' | 'failed'>('idle');
+  if (!hasGame) return null;
+  const collect = async (): Promise<void> => {
+    setState('busy');
+    const res = await fetch('/api/games/collect-pgn', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pgn: useAnalysis.getState().exportPgn() }),
+    });
+    // 409 = already collected; that is still a success for the user.
+    setState(res.ok || res.status === 409 ? 'done' : 'failed');
+    setTimeout(() => setState('idle'), 2000);
+  };
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      disabled={state === 'busy'}
+      title={
+        state === 'done'
+          ? 'In the collection'
+          : state === 'failed'
+            ? 'Could not add this game'
+            : 'Add this game to the collection'
+      }
+      className={state === 'failed' ? 'text-bad' : state === 'done' ? 'text-good' : undefined}
+      onClick={() => void collect()}
+    >
+      {state === 'busy' ? (
+        <Loader2 className="size-3.5 animate-spin" />
+      ) : state === 'done' ? (
+        <Check className="size-3.5" />
+      ) : (
+        <FolderPlus className="size-3.5" />
+      )}
+    </Button>
   );
 }
 
