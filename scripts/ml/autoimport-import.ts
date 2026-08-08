@@ -17,7 +17,7 @@
 // board/page grays from autoimport-measure, and Node-spawned Stockfish.
 // Usage: npx tsx scripts/ml/autoimport-import.ts <emit_dir>
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
