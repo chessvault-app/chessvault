@@ -733,7 +733,9 @@ function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
   const solution = solutions.get(entry.number);
   if (!solution) {
     entry.status = 'no-solution-text';
-    entry.side ??= chapterSide.get(entry.page);
+    // The per-puzzle printed label outranks the chapter fallback (lanph3re's
+    // CCW #4: label said Black, chapter carry-over said White).
+    entry.side ??= entry.sideStated ?? chapterSide.get(entry.page);
     return;
   }
   // Corroboration data for the engine-hybrid import: every square the book's
@@ -743,6 +745,7 @@ function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
   const mainline = parseMainline(solution);
   if (!mainline) {
     entry.status = 'unparseable-solution';
+    entry.side ??= entry.sideStated ?? chapterSide.get(entry.page);
     return;
   }
   entry.side = mainline.startsBlack ? 'b' : 'w';
@@ -895,24 +898,50 @@ if (process.argv.includes('--repair')) {
     ];
     const board = warpQuad({ w, h, data: cropData }, quad);
 
-    // Full class distributions for every cell.
-    const cells: { probs: Float32Array; top: number }[] = [];
+    // Full class distributions for every cell, plus test-time
+    // augmentation: the same board re-read under small shifts. Cells
+    // whose augmented votes disagree with the base label are where the
+    // classifier is actually wrong far more often than the softmax
+    // margin admits — they lead the repair search.
+    const shifted: Gray[] = [[2, 0], [-2, 0], [0, 2], [0, -2]].map(([dx, dy]) => {
+      const data = new Uint8ClampedArray(board.w * board.h).fill(255);
+      for (let y = 0; y < board.h; y++) {
+        const sy = y + dy!;
+        if (sy < 0 || sy >= board.h) continue;
+        for (let x = 0; x < board.w; x++) {
+          const sx = x + dx!;
+          if (sx >= 0 && sx < board.w) data[y * board.w + x] = board.data[sy * board.w + sx]!;
+        }
+      }
+      return { w: board.w, h: board.h, data };
+    });
+    const cells: { probs: Float32Array; top: number; votes: Map<number, number> }[] = [];
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         const probs = runCellNet(net, cellTile(board, col, row));
         let top = 0;
         for (let i = 0; i < probs.length; i++) if (probs[i]! > probs[top]!) top = i;
-        cells.push({ probs, top });
+        const votes = new Map<number, number>();
+        for (const aug of shifted) {
+          const ap = runCellNet(net, cellTile(aug, col, row));
+          let at = 0;
+          for (let i = 0; i < ap.length; i++) if (ap[i]! > ap[at]!) at = i;
+          if (at !== top) votes.set(at, (votes.get(at) ?? 0) + 1);
+        }
+        cells.push({ probs, top, votes });
       }
     }
     const labels = cells.map((c) => net.labels[c.top]!);
-    // No probability floor: a confidently-wrong cell ranks its true label
-    // low, and the uniqueness gate is what protects against inventions.
-    const alternates = (i: number, take: number): number[] =>
-      [...cells[i]!.probs.keys()]
-        .filter((k) => k !== cells[i]!.top)
-        .sort((a, b) => cells[i]!.probs[b]! - cells[i]!.probs[a]!)
-        .slice(0, take);
+    // Disagreeing TTA votes outrank probability runner-ups; no floor —
+    // the uniqueness gate protects against inventions.
+    const alternates = (i: number, take: number): number[] => {
+      const c = cells[i]!;
+      const voted = [...c.votes.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+      const byProb = [...c.probs.keys()]
+        .filter((k) => k !== c.top && !voted.includes(k))
+        .sort((a, b) => c.probs[b]! - c.probs[a]!);
+      return [...voted, ...byProb].slice(0, take);
+    };
 
     const test = (
       ls: string[],
@@ -928,14 +957,14 @@ if (process.argv.includes('--repair')) {
       return null;
     };
 
-    const wins = new Map<string, { side: 'w' | 'b'; sans: string[]; edits: number }>();
+    const wins = new Map<string, { side: 'w' | 'b'; sans: string[]; edits: number; cells: [number, number][] }>();
     // 1-cell repairs across the whole board.
     for (let i = 0; i < 64; i++) {
       for (const alt of alternates(i, 3)) {
         const ls = labels.slice();
         ls[i] = net.labels[alt]!;
         const got = test(ls);
-        if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 1 });
+        if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 1, cells: [[i, alt]] });
       }
     }
     // 2-cell repairs only among the least-confident cells, and only if no
@@ -945,7 +974,10 @@ if (process.argv.includes('--repair')) {
         const p = [...cells[i]!.probs].sort((a, b) => b - a);
         return p[0]! - p[1]!;
       };
-      const shaky = [...Array(64).keys()].sort((a, b) => margin(a) - margin(b)).slice(0, 20);
+      const disagree = (i: number): number => [...cells[i]!.votes.values()].reduce((s, v) => s + v, 0);
+      const shaky = [...Array(64).keys()]
+        .sort((a, b) => disagree(b) - disagree(a) || margin(a) - margin(b))
+        .slice(0, 20);
       for (let a = 0; a < shaky.length; a++) {
         for (let b = a + 1; b < shaky.length; b++) {
           for (const altA of alternates(shaky[a]!, 2)) {
@@ -954,13 +986,24 @@ if (process.argv.includes('--repair')) {
               ls[shaky[a]!] = net.labels[altA]!;
               ls[shaky[b]!] = net.labels[altB]!;
               const got = test(ls);
-              if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 2 });
+              if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 2, cells: [[shaky[a]!, altA], [shaky[b]!, altB]] });
             }
           }
         }
       }
     }
 
+    if (wins.size > 1) {
+      // Several positions replay the line: accept the one the augmented
+      // votes actually support, if a single winner emerges.
+      const support = (w: { cells: [number, number][] }): number =>
+        w.cells.reduce((sum, [i, alt]) => sum + (cells[i]!.votes.get(alt) ?? 0), 0);
+      const ranked = [...wins.entries()].sort((a, b) => support(b[1]) - support(a[1]));
+      if (support(ranked[0]![1]) > 0 && (ranked.length < 2 || support(ranked[0]![1]) > support(ranked[1]![1]))) {
+        wins.clear();
+        wins.set(ranked[0]![0], ranked[0]![1]);
+      }
+    }
     if (wins.size === 1) {
       const [fen, win] = [...wins.entries()][0]!;
       entry.fen = fen;

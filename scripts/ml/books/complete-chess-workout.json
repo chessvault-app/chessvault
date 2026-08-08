@@ -15,5 +15,9 @@
   "cache": "data/ml/ccw-reads.json",
   "report": "data/ml/ccw-report.json",
   "labelX": 160,
-  "labelY": 130
+  "labelY": 130,
+  "solutionPages": [
+    216,
+    322
+  ]
 }

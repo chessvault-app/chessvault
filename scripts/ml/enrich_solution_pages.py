@@ -8,28 +8,47 @@ Usage: python enrich_solution_pages.py
 import json
 import os
 import re
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, '..', '..'))
-BOOK = os.path.join(REPO, 'vault', 'puzzlebooks', '1001 Chess Exercises for Beginners')
 DATA = os.path.join(REPO, 'data', 'ml')
+
+# Optional per-book config (scripts/ml/books/*.json); default = the 1001 book.
+CFG = {
+    'title': '1001 Chess Exercises for Beginners',
+    'text': 'data/ml/1001-text.json',
+    'anchorStyle': 'dash',
+    'solutionPages': None,  # None -> data/ml/solution-pages.json
+}
+if len(sys.argv) > 1:
+    CFG.update(json.load(open(sys.argv[1], encoding='utf-8')))
+BOOK = os.path.join(REPO, 'vault', 'puzzlebooks', CFG['title'])
 
 
 def main():
-    text = json.load(open(os.path.join(DATA, '1001-text.json'), encoding='utf-8'))
-    sol_pages = json.load(open(os.path.join(DATA, 'solution-pages.json'), encoding='utf-8'))
+    text = json.load(open(os.path.join(REPO, CFG['text']), encoding='utf-8'))
+    if CFG.get('solutionPages'):
+        lo, hi = CFG['solutionPages']
+        sol_pages = list(range(lo, hi + 1))
+    else:
+        sol_pages = json.load(open(os.path.join(DATA, 'solution-pages.json'), encoding='utf-8'))
 
     # Entry anchor, same as autoimport-measure's solutionEntries(): a
     # puzzle number, a dash, then move one ("103 - 1.e4"; the OCR may
     # space the digits). Move numbers inside bodies never match it.
-    anchor = re.compile(r'(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)')
+    anchor = (
+        re.compile(r'(?:^|\n)\s{0,4}(\d{1,4})\)\s')
+        if CFG.get('anchorStyle') == 'paren'
+        else re.compile(r'(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)')
+    )
     on_page = {}
     for p in text['pages']:
         if p['page'] not in sol_pages:
             continue
         for m in anchor.finditer(p['text']):
             value = int(m.group(1).replace(' ', ''))
-            if 1 <= value <= 1001:
+            if 1 <= value <= CFG.get('maxNumber', 1001):
                 on_page.setdefault(value, p['page'])
     starts = sorted((min(v for v in on_page if on_page[v] == page), page)
                     for page in set(on_page.values()))
