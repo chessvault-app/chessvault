@@ -19,8 +19,9 @@ import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { FilterChip } from '@/ui/FilterChip';
 import { Select } from '@/ui/Select';
-import { Input, SearchInput } from '@/ui/Input';
+import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { SkeletonRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -309,6 +310,7 @@ function CollectionView() {
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [starredOnly, setStarredOnly] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const load = useCallback(async (): Promise<void> => {
     try {
@@ -395,8 +397,21 @@ function CollectionView() {
             placeholder="Search collection…"
             className="w-56"
           />
+          <Button variant="primary" size="sm" active={importing} onClick={() => setImporting((v) => !v)}>
+            <Plus className="mr-1 size-3.5" />
+            Import
+          </Button>
         </div>
       </header>
+
+      {importing && (
+        <ImportGamePanel
+          onDone={() => {
+            setImporting(false);
+            void load();
+          }}
+        />
+      )}
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
@@ -504,6 +519,8 @@ function ArchiveBrowser({
   onPreview: (p: Preview | null) => void;
 }) {
   const [username, setUsername] = useState(() => localStorage.getItem('chess-vault:chesscom-user') ?? '');
+  const [provider, setProvider] = useState<'chesscom' | 'lichess'>('chesscom');
+  const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
   const [months, setMonths] = useState<ArchiveMonth[]>([]);
   const [offline, setOffline] = useState(false);
   const [month, setMonth] = useState('');
@@ -521,7 +538,7 @@ function ArchiveBrowser({
     setMonth('');
     setMonthGames([]);
     try {
-      const res = await fetch(`/api/games/archive/months?user=${encodeURIComponent(user)}`);
+      const res = await fetch(`${apiBase}/months?user=${encodeURIComponent(user)}`);
       const body = (await res.json()) as
         | { months: ArchiveMonth[]; offline: boolean }
         | { error: string };
@@ -544,7 +561,7 @@ function ArchiveBrowser({
     setError(null);
     try {
       const res = await fetch(
-        `/api/games/archive/month?user=${encodeURIComponent(username.trim())}&month=${m}`,
+        `${apiBase}/month?user=${encodeURIComponent(username.trim())}&month=${m}`,
       );
       const body = (await res.json()) as { games: GameSummary[] } | { error: string };
       if ('error' in body) setError(body.error);
@@ -575,6 +592,15 @@ function ArchiveBrowser({
     }
   };
 
+  const switchProvider = (next: 'chesscom' | 'lichess'): void => {
+    if (next === provider) return;
+    setProvider(next);
+    setMonths([]);
+    setMonth('');
+    setMonthGames([]);
+    setError(null);
+  };
+
   const collect = async (game: GameSummary): Promise<void> => {
     const res = await fetch('/api/games/collect', {
       method: 'POST',
@@ -593,7 +619,23 @@ function ArchiveBrowser({
   return (
     <Panel flush>
       <PanelHeader
-        title="Browse chess.com"
+        title={
+          <span className="flex items-center gap-1 normal-case tracking-normal">
+            {(
+              [
+                ['chesscom', 'chess.com'],
+                ['lichess', 'Lichess'],
+              ] as const
+            ).map(([id, label]) => (
+              <FilterChip
+                key={id}
+                label={`Browse ${label}`}
+                active={provider === id}
+                onClick={() => switchProvider(id)}
+              />
+            ))}
+          </span>
+        }
         actions={
           months.length > 0 ? (
             <Select
@@ -623,7 +665,7 @@ function ArchiveBrowser({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && username.trim()) void loadMonths();
           }}
-          placeholder="chess.com username"
+          placeholder={provider === 'chesscom' ? 'chess.com username' : 'Lichess username'}
           className="w-48 font-mono"
         />
         <Button
@@ -796,6 +838,89 @@ function GameRow({
         </a>
       )}
     </li>
+  );
+}
+
+/**
+ * Manual import: paste a PGN (or bare moves) and optionally stamp the
+ * metadata headers — provided fields override what the paste carries.
+ */
+function ImportGamePanel({ onDone }: { onDone: () => void }) {
+  const [pgn, setPgn] = useState('');
+  const [white, setWhite] = useState('');
+  const [black, setBlack] = useState('');
+  const [whiteElo, setWhiteElo] = useState('');
+  const [blackElo, setBlackElo] = useState('');
+  const [date, setDate] = useState('');
+  const [event, setEvent] = useState('');
+  const [failure, setFailure] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (): Promise<void> => {
+    const withHeader = (text: string, key: string, value: string): string => {
+      if (!value.trim()) return text;
+      const line = `[${key} "${value.trim().replace(/"/g, '')}"]`;
+      const re = new RegExp(`^\\[${key}\\s+"[^"]*"\\]\\s*$`, 'm');
+      return re.test(text) ? text.replace(re, line) : `${line}\n${text}`;
+    };
+    let text = pgn.trim();
+    if (!text) return;
+    // Bare moves get a header block; a full PGN gets its headers overridden.
+    if (!text.startsWith('[')) text = `\n${text}`;
+    const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
+    text = withHeader(text, 'Event', event);
+    text = withHeader(text, 'BlackElo', blackElo);
+    text = withHeader(text, 'WhiteElo', whiteElo);
+    text = withHeader(text, 'Date', date.trim() ? date.replaceAll('-', '.') : today);
+    text = withHeader(text, 'Black', black.trim() || 'Black');
+    text = withHeader(text, 'White', white.trim() || 'White');
+
+    setBusy(true);
+    setFailure(null);
+    const res = await fetch('/api/games/collect-pgn', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pgn: text }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      onDone();
+    } else {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      setFailure(body?.error ?? 'could not import that game');
+    }
+  };
+
+  return (
+    <Panel flush>
+      <PanelHeader title="Import a game" />
+      <div className="flex flex-col gap-2 p-3">
+        <TextArea
+          autoFocus
+          value={pgn}
+          onChange={(e) => setPgn(e.target.value)}
+          rows={5}
+          spellCheck={false}
+          placeholder={'Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026'}
+          className="w-full resize-none font-mono placeholder:font-sans"
+        />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <Input value={white} onChange={(e) => setWhite(e.target.value)} placeholder="White (optional)" />
+          <Input value={black} onChange={(e) => setBlack(e.target.value)} placeholder="Black (optional)" />
+          <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder="Date, e.g. 2026-08-08" />
+          <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder="White rating" inputMode="numeric" />
+          <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder="Black rating" inputMode="numeric" />
+          <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="Event (optional)" />
+        </div>
+        {failure && <p className="text-bad text-xs">{failure}</p>}
+        <div className="flex justify-end">
+          <Button variant="primary" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
+            <Plus className="mr-1 size-3.5" />
+            Add to collection
+          </Button>
+        </div>
+      </div>
+    </Panel>
   );
 }
 

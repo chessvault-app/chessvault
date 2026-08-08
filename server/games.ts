@@ -101,7 +101,7 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
 
   // Archive files live at chesscom/<user>/<month>.pgn — the path names the
   // player, which is what lets every row know which side they played.
-  const pathUser = rel.startsWith('chesscom/') ? (rel.split('/')[1]?.toLowerCase() ?? null) : null;
+  const pathUser = /^(chesscom|lichess)\//.test(rel) ? (rel.split('/')[1]?.toLowerCase() ?? null) : null;
 
   const games: GameSummary[] = [];
   const parser = new PgnParser((game, err) => {
@@ -327,6 +327,78 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       return c.json({ error: 'already in the collection' }, 409);
     }
     return c.json({ id: addToCollection(game) });
+  });
+
+  // --- Lichess archive: the public API needs no auth. Months derive from
+  // the account's creation date; a fetched month caches exactly like a
+  // chess.com month, at vault/games/lichess/<user>/<YYYY-MM>.pgn.
+  api.get('/games/lichess/months', async (c) => {
+    const user = c.req.query('user')?.trim().toLowerCase();
+    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
+    const userDir = resolve(dir, 'lichess', user);
+    const cachedMonths = new Map<string, number>();
+    if (existsSync(userDir)) {
+      for (const file of readdirSync(userDir)) {
+        if (file.endsWith('.pgn')) {
+          cachedMonths.set(file.slice(0, -4), parseFileSummaries(dir, resolve(userDir, file)).length);
+        }
+      }
+    }
+    try {
+      const profile = await fetchJson<{ createdAt: number }>(
+        `https://lichess.org/api/user/${encodeURIComponent(user)}`,
+      );
+      const first = new Date(profile.createdAt);
+      const months: { month: string; cached: boolean; games: number | null }[] = [];
+      const now = new Date();
+      let y = now.getUTCFullYear();
+      let m = now.getUTCMonth();
+      while (months.length < 240) {
+        const month = `${y}-${String(m + 1).padStart(2, '0')}`;
+        months.push({ month, cached: cachedMonths.has(month), games: cachedMonths.get(month) ?? null });
+        if (y === first.getUTCFullYear() && m === first.getUTCMonth()) break;
+        m -= 1;
+        if (m < 0) {
+          m = 11;
+          y -= 1;
+        }
+      }
+      return c.json({ offline: false, months });
+    } catch {
+      if (cachedMonths.size === 0) return c.json({ error: 'lichess unreachable and nothing cached yet' }, 502);
+      const months = [...cachedMonths.entries()]
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([month, games]) => ({ month, cached: true, games }));
+      return c.json({ offline: true, months });
+    }
+  });
+
+  api.get('/games/lichess/month', async (c) => {
+    const user = c.req.query('user')?.trim().toLowerCase();
+    const month = c.req.query('month') ?? '';
+    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
+    if (!MONTH_RE.test(month)) return c.json({ error: 'invalid month' }, 400);
+    const path = resolve(dir, 'lichess', user, `${month}.pgn`);
+    if (!existsSync(path)) {
+      const [y, m] = month.split('-').map(Number) as [number, number];
+      const since = Date.UTC(y, m - 1, 1);
+      const until = Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 1);
+      try {
+        const res = await fetch(
+          `https://lichess.org/api/games/user/${encodeURIComponent(user)}?since=${since}&until=${until}&max=300&moves=true&tags=true`,
+          {
+            headers: { ...FETCH_HEADERS, Accept: 'application/x-chess-pgn' },
+            signal: AbortSignal.timeout(30_000),
+          },
+        );
+        if (!res.ok) return c.json({ error: `lichess replied ${res.status}` }, 502);
+        mkdirSync(resolve(dir, 'lichess', user), { recursive: true });
+        writeFileSync(path, await res.text());
+      } catch {
+        return c.json({ error: 'lichess unreachable' }, 502);
+      }
+    }
+    return c.json({ games: parseFileSummaries(dir, path) });
   });
 
   api.get('/games/bookmarks', (c) => c.json({ keys: [...readBookmarks(dir)] }));
