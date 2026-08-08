@@ -20,7 +20,9 @@ export function FilterChip({
       title={title}
       onClick={onClick}
       className={cn(
-        'shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+        // inline-flex so an icon-bearing label and the count share one
+        // centreline instead of fighting over baselines.
+        'inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
         active
           ? 'bg-primary-soft border-primary/40 text-primary'
           : 'border-line text-muted hover:border-line-strong',
