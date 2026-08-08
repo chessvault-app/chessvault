@@ -510,7 +510,18 @@ function Trainer({
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
-        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
+        {/* On phones the dashboard is the hub, so the trainer carries a
+            way back; the band was wide-only before. */}
+        <div className="flex h-9 shrink-0 items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="md:hidden"
+            title="Back to the dashboard"
+            onClick={() => navigate('puzzles', 'dashboard')}
+          >
+            <ArrowLeft className="size-3.5" />
+          </Button>
           <Puzzle className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">
             {mode === 'single'
