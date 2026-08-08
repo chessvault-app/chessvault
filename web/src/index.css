@@ -245,6 +245,12 @@
   html {
     /* Prevent iOS Safari from inflating text in landscape. */
     -webkit-text-size-adjust: 100%;
+    /* iOS standalone (home-screen) mode under-reports the viewport height
+       until the first scroll, exposing the WKWebView's own black canvas
+       below the app. Painting html in the app colour makes any such band
+       invisible on every device. */
+    background-color: var(--app-bg);
+    height: 100%;
   }
 
   body {

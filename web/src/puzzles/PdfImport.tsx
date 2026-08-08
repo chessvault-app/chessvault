@@ -1,8 +1,6 @@
 import { FileUp, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import * as pdfjs from 'pdfjs-dist';
-// Vite's ?url import has no type declaration; the runtime shape is a string.
-// @ts-expect-error -- asset import
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';

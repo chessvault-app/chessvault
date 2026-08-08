@@ -43,7 +43,15 @@ function Shell() {
   const { section, params } = useRoute();
 
   return (
-    <div className="bg-app text-fg flex h-[100dvh] flex-col overflow-hidden md:flex-row">
+    <div
+      className={cn(
+        'bg-app text-fg flex h-[100dvh] flex-col overflow-hidden md:flex-row',
+        // Standalone PWAs draw edge-to-edge: keep content clear of the
+        // dynamic island / notch (top) and the rounded corners (sides).
+        // The bottom inset lives on MobileNav, which sits on that edge.
+        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
+      )}
+    >
       <Sidebar active={section} params={params} />
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">

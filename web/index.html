@@ -9,8 +9,12 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#0284c7" />
+    <!-- Match the app background so the OS chrome (status bar area, Android
+         task switcher) blends with the page instead of flashing brand blue. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9fafb" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171a22" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Chess Vault" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <script>
       // Set the theme class before first paint so dark-theme users never see a
