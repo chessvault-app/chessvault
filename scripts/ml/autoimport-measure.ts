@@ -564,10 +564,24 @@ writeFileSync(cachePath, JSON.stringify([...readCache.entries()]));
 
 // --- validate: pass 1 (no hints), learn the figurine dialect, pass 2 ----------
 
+// Chapter pages state the side to move ("White to move and mate in two");
+// pages inherit the most recent statement. lanph3re spotted this — it beats
+// trusting the OCR's dots, which flip the side when "1 ..." loses a dot.
+const chapterSide = new Map<number, 'w' | 'b'>();
+{
+  let current: 'w' | 'b' | null = null;
+  for (const p of [...textData.pages].sort((a, b) => a.page - b.page)) {
+    const m = /(white|black)\s+to\s+(?:move|play)/i.exec(p.text);
+    if (m) current = m[1]!.toLowerCase() === 'white' ? 'w' : 'b';
+    if (current) chapterSide.set(p.page, current);
+  }
+}
+
 function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
   const solution = solutions.get(entry.number);
   if (!solution) {
     entry.status = 'no-solution-text';
+    entry.side ??= chapterSide.get(entry.page);
     return;
   }
   // Corroboration data for the engine-hybrid import: every square the book's
@@ -582,6 +596,18 @@ function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
   entry.side = mainline.startsBlack ? 'b' : 'w';
   const outcome = replay(entry.fen!, entry.side, mainline.tokens, hints);
   if ('fail' in outcome) {
+    // The dots-derived side may be OCR damage; the chapter's stated side
+    // gets one shot before the entry is declared failed.
+    const stated = chapterSide.get(entry.page);
+    if (stated && stated !== entry.side) {
+      const retry = replay(entry.fen!, stated, mainline.tokens, hints);
+      if (!('fail' in retry)) {
+        entry.side = stated;
+        entry.status = 'validated';
+        entry.sans = retry.sans;
+        return;
+      }
+    }
     entry.status = outcome.fail.startsWith('illegal-position') ? 'illegal-position' : 'replay-failed';
     entry.detail = outcome.fail;
   } else {
