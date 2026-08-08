@@ -5,6 +5,7 @@ import { Button } from '@/ui/Button';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ProgressBar } from '@/ui/ProgressBar';
+import { SkeletonRows } from '@/ui/Skeleton';
 
 /**
  * Training overview: counters, results by difficulty band, and the recent
@@ -235,7 +236,7 @@ export function DashboardPage() {
             ))}
           </div>
           {history === null ? (
-            <p className="text-subtle px-3 py-3 text-xs">Loading…</p>
+            <SkeletonRows rows={5} />
           ) : puzzles.length === 0 ? (
             <p className="text-subtle px-3 py-3 text-xs">
               {history.length === 0 ? 'No attempts yet — go solve something.' : 'Nothing matches this filter.'}

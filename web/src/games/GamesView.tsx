@@ -21,6 +21,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
+import { SkeletonRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 interface GameSummary {
@@ -220,6 +221,7 @@ function EliteBrowser() {
 
       <Panel flush className="min-h-0 flex-1">
         <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
+        {loading && rows.length === 0 && <SkeletonRows rows={8} />}
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
           {rows.map((g) => (
             <li key={g.id} className="flex items-center pr-2">

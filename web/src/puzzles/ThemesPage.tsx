@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
+import { SkeletonRows } from '@/ui/Skeleton';
 
 /**
  * Full-page theme picker — cards grouped the way lichess organises its
@@ -163,7 +164,7 @@ export function ThemesPage() {
         </div>
 
         {themes === null ? (
-          <p className="text-subtle text-sm">Loading…</p>
+          <SkeletonRows rows={6} className="p-0" />
         ) : (
           <>
             {GROUPS.map((group) => {

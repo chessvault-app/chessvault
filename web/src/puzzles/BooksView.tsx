@@ -42,6 +42,7 @@ import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { EditorView } from '@/editor/EditorView';
 import { cn } from '@/lib/cn';
+import { SkeletonRows } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
@@ -290,7 +291,7 @@ function Shelf() {
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
 
         {books === null ? (
-          <p className="text-subtle text-sm">Loading…</p>
+          <SkeletonRows rows={3} className="p-0" />
         ) : books.length === 0 && !creating ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle mx-auto mb-2 size-6" />
@@ -552,7 +553,7 @@ function BookPage({ slug }: { slug: string }) {
         )}
 
         {book === null ? (
-          <p className="text-subtle text-sm">Loading…</p>
+          <SkeletonRows rows={5} className="p-0" />
         ) : book.puzzles.length === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <p className="text-muted text-sm">
