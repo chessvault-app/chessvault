@@ -733,7 +733,7 @@ function PuzzleNavigator({
                 {p.number ?? i + 1}
                 {meta && (
                   <meta.icon
-                    className={cn('absolute right-0.5 top-0.5 size-2.5', meta.iconClass)}
+                    className={cn('absolute right-1 top-1 size-2.5', meta.iconClass)}
                     aria-hidden
                   />
                 )}
@@ -810,16 +810,19 @@ function PuzzleList({
           />
         ))}
         {tiers.size > 0 && <span className="border-line mx-1 h-4 border-l" />}
-        {[...tiers.entries()].map(([tier, count]) => (
-          <FilterChip
-            key={tier}
-            label={PROVENANCE_META[tier].label}
-            count={count}
-            title={PROVENANCE_META[tier].title}
-            active={tierFilter === tier}
-            onClick={() => setTierFilter(tierFilter === tier ? 'all' : tier)}
-          />
-        ))}
+        {/* Meta key order = confidence order, not first-seen order. */}
+        {(Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[])
+          .filter((tier) => tiers.has(tier))
+          .map((tier) => (
+            <FilterChip
+              key={tier}
+              label={PROVENANCE_META[tier].label}
+              count={tiers.get(tier)!}
+              title={PROVENANCE_META[tier].title}
+              active={tierFilter === tier}
+              onClick={() => setTierFilter(tierFilter === tier ? 'all' : tier)}
+            />
+          ))}
       </div>
       <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {visible.map((p) => {
@@ -852,7 +855,7 @@ function PuzzleList({
               {p.number ?? puzzles.indexOf(p) + 1}
               {meta && (
                 <meta.icon
-                  className={cn('absolute right-1 top-1 size-3', meta.iconClass)}
+                  className={cn('absolute right-2 top-2 size-3', meta.iconClass)}
                   aria-hidden
                 />
               )}
@@ -869,40 +872,41 @@ function PuzzleList({
 
 /**
  * Where a puzzle's solution came from, in words a stranger can read.
- * Tile markers are shape-coded icons, deliberately monochrome: coloured
- * dots read as solved/unsolved state, which the tiles already paint.
- * Only the risky tier gets the warn tint.
+ * Key order IS the confidence order — filter chips render in it. Tile
+ * markers are shape-coded icons on a hue ladder that stays clear of the
+ * solved/failed green and red: blue (trusted) → teal (corroborated) →
+ * gray (plain engine) → amber (caution).
  */
 const PROVENANCE_META = {
   'book-parsed': {
     label: 'Book solution',
     title: 'Solution parsed from the book and replay-verified',
     icon: BookOpenCheck,
-    iconClass: 'text-subtle',
+    iconClass: 'text-info',
+  },
+  corrected: {
+    label: 'Hand-checked',
+    title: 'You corrected this puzzle by hand — highest confidence',
+    icon: PenLine,
+    iconClass: 'text-info',
   },
   'engine-corroborated': {
     label: 'Engine + book',
     title: 'Engine solution, corroborated by the book text',
     icon: BadgeCheck,
-    iconClass: 'text-subtle',
+    iconClass: 'text-nag-brilliant',
   },
   'engine-only': {
     label: 'Engine solution',
     title: 'Engine solution (decisive line, no text corroboration)',
     icon: Cpu,
-    iconClass: 'text-subtle',
+    iconClass: 'text-muted',
   },
   'engine-unverified': {
     label: 'Engine guess',
     title: 'Engine best line only — nothing decisive found; check the source if it feels off',
     icon: CircleHelp,
     iconClass: 'text-warn',
-  },
-  corrected: {
-    label: 'Hand-checked',
-    title: 'You corrected this puzzle by hand — highest confidence',
-    icon: PenLine,
-    iconClass: 'text-subtle',
   },
 } as const;
 
