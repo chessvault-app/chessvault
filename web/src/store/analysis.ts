@@ -274,7 +274,7 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
       }
     },
 
-    exportPgn: () => treeToPgn(get().tree, {}),
+    exportPgn: () => treeToPgn(get().tree, get().gameHeaders ?? {}),
 
     flip: () => set({ orientation: get().orientation === 'white' ? 'black' : 'white' }),
   };

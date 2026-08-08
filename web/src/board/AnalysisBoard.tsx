@@ -27,7 +27,7 @@ import { SideDot } from '@/ui/SideDot';
  * user shapes + engine arrow, promotion picker, navigation controls. Analysis
  * and Studies render exactly this; they differ only in their side columns.
  */
-export function AnalysisBoard() {
+export function AnalysisBoard({ editablePlayers = false }: { editablePlayers?: boolean } = {}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const orientation = useAnalysis((s) => s.orientation);
@@ -120,8 +120,8 @@ export function AnalysisBoard() {
         {/* Fixed-height strip, matching the editor's palette strip: the board
             top stays put whether or not a player bar is shown. On phones the
             strip only exists when there is a player bar to show. */}
-        <div className={cn('w-full items-end wide:flex wide:h-10', hasGame ? 'flex' : 'hidden wide:flex')}>
-          <PlayerBar side={orientation === 'white' ? 'black' : 'white'} />
+        <div className={cn('w-full items-end wide:flex wide:h-10', hasGame || editablePlayers ? 'flex' : 'hidden wide:flex')}>
+          <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
         </div>
         <div className="flex w-full items-stretch gap-2">
           {engineOn && <EvalBar score={evalScore} className="shrink-0 stacked:hidden" />}
@@ -149,7 +149,7 @@ export function AnalysisBoard() {
             <NagBadge node={node} orientation={orientation} />
           </div>
         </div>
-        <PlayerBar side={orientation} />
+        <PlayerBar side={orientation} editable={editablePlayers} />
       </div>
       {/* Stacked layouts keep navigation under the board (the side pane may
           be showing Explorer, and touch has neither wheel nor arrow keys).
@@ -226,14 +226,24 @@ function formatClock(seconds: number): string {
  * it stood at the current move (from the [%clk] comments chess.com and
  * lichess write). Renders nothing for scratch analysis.
  */
-function PlayerBar({ side }: { side: 'white' | 'black' }) {
+function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editable?: boolean }) {
   const headers = useAnalysis((s) => s.gameHeaders);
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
-  if (!headers) return null;
+  if (!headers && !editable) return null;
 
-  const name = headers[side === 'white' ? 'White' : 'Black'] ?? '?';
-  const elo = headers[side === 'white' ? 'WhiteElo' : 'BlackElo'];
+  const name = headers?.[side === 'white' ? 'White' : 'Black'] ?? '?';
+  // Editable placeholders (the Board tab): typed names live in the same
+  // gameHeaders the loaded games use, so PGN export picks them up.
+  const setName = (value: string): void => {
+    const key = side === 'white' ? 'White' : 'Black';
+    const next = { ...(useAnalysis.getState().gameHeaders ?? {}) };
+    const v = value.trim();
+    if (v) next[key] = v;
+    else delete next[key];
+    useAnalysis.setState({ gameHeaders: Object.keys(next).length > 0 ? next : null });
+  };
+  const elo = headers?.[side === 'white' ? 'WhiteElo' : 'BlackElo'];
 
   // The side's clock after its most recent move at or before the cursor.
   let clock: number | undefined;
@@ -249,7 +259,23 @@ function PlayerBar({ side }: { side: 'white' | 'black' }) {
   return (
     <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
-      <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>
+      {editable ? (
+        <input
+          key={name}
+          type="text"
+          defaultValue={name === '?' ? '' : name}
+          placeholder={side === 'white' ? 'White' : 'Black'}
+          spellCheck={false}
+          onClick={(e) => e.stopPropagation()}
+          onBlur={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+          }}
+          className="text-fg placeholder:text-subtle min-w-0 flex-1 truncate bg-transparent text-sm font-medium outline-none"
+        />
+      ) : (
+        <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>
+      )}
       {elo && <span className="text-subtle text-xs">{elo}</span>}
       {clock !== undefined && (
         <span

@@ -15,6 +15,7 @@ import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
+import { ImportImageButton } from './ImageImport';
 import { LoadPositionButton } from './PositionLoader';
 
 type AnalysisPane = 'moves' | 'explorer';
@@ -58,7 +59,7 @@ export function AnalysisView() {
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
-      <AnalysisBoard />
+      <AnalysisBoard editablePlayers />
 
       {/* Side column. Desktop shows every pane; small screens switch, with
           the active pane flexing into the space left under the board. The
@@ -100,6 +101,7 @@ export function AnalysisView() {
               <>
                 <ReviewButton />
                 <LoadPositionButton />
+                <ImportImageButton />
                 <MoveActions />
               </>
             }
