@@ -1,0 +1,81 @@
+# Design principles
+
+Decisions that recur across the app, with the reasoning that produced
+them. When in doubt, these win over novelty.
+
+## Language and tone
+
+- **Sentence case everywhere** ("Add puzzle", "Book solution"). No
+  Title Case labels.
+- **Plain words over jargon**: fidelity tiers are "Book solution /
+  Engine + book / Engine solution / Engine guess", not
+  "book-parsed/engine-corroborated". A stranger should understand a
+  label without the tooltip; the tooltip carries the precision.
+- **No user-facing ratings.** Puzzle ratings exist only as curation
+  data; the UI shows bands (Easy/Medium/Hard/Expert) as text labels.
+  Difficulty is ordinal, so if it ever needs more visual weight it gets
+  a strength meter, not colors.
+
+## The color grammar
+
+Color carries meaning, and each hue has exactly one job:
+
+| Hue | Meaning | Examples |
+| --- | --- | --- |
+| green / red | outcome: solved/failed, won/lost | dashboard ✓/✗, book tiles, winner digit in game lists |
+| amber (warn) | caution | Engine guess tier, offline notices |
+| blue (info) | trusted/informational | Book solution tier, annotated-game pen |
+| teal / purple | fidelity ladder middle rungs | Engine + book, Engine solution |
+| cyan (primary) | interactive/active | active nav, chips, buttons |
+
+Corollaries that were learned the hard way: a green dot on a tile grid
+reads as "solved" no matter what you meant (the fidelity marks became
+shape-coded icons for this reason), and the difficulty ramp
+(green→red) is forbidden because it would collide with outcome colors
+in the same rows. Signals should never be color-only — the winning
+digit is also bold, tier marks also differ by icon shape.
+
+## Layout rules
+
+- Column header bands are `h-9`; with the column's `gap-3` this equals
+  the board's `h-10` strip + `gap-2`, so panel tops align with the
+  board across Studies/Games/Board/Puzzles.
+- `wide` / `stacked` are orientation-based custom variants: side-by-side
+  when the viewport is wide, single column otherwise. Stacked layouts
+  lead with a page header (convention: header at top), wide layouts put
+  the header in the side column where it aligns with the board.
+- Phones (`md:hidden` world): the bottom nav is the navigation, the
+  puzzle dashboard is the hub (Puzzles tab lands there; trainer, books,
+  themes carry back-arrows to it). Desktop navigates by sidebar and has
+  no back arrows on top-level pages.
+- Filter rows are single-line and scroll sideways at every width
+  (`ChipRow`): touch pans, fine pointers get chevron nudges and
+  wheel-to-horizontal scrolling. No wrapping chip rows.
+- Touch has no hover: anything hover-revealed must also work by tap
+  (preview eyes toggle on tap; `pointer-coarse:` sizes tap targets up).
+
+## Dialog policy
+
+One dialog per concept, shared everywhere. "Load position" (FEN, PGN,
+or image via the corner-adjust photo flow) is a single component used
+by the Board, studies/games, and the editor — only the destination
+differs. Modals use the same scrim + panel pattern, close on Escape and
+scrim-click.
+
+## iOS keyboard: do not fight it
+
+Three attempts to outsmart the keyboard (scroll-pinning, focus
+pre-scrolling, shell resizing) each produced a worse artifact than the
+native behavior. Settled rule: do nothing while the keyboard is up;
+reset window scroll only on the viewport resize that signals it closed.
+Any change here requires an on-device test loop — desktop cannot
+reproduce it.
+
+## Process conventions
+
+- Verify in the browser (hard reload — plain F5 can serve stale
+  modules), run the test suite, then commit per feature. Vault data
+  changes go in separate commits from code.
+- Comments state constraints the code can't show, often with the
+  decision's owner ("lanph3re's call") so future refactors know what is
+  deliberate.
