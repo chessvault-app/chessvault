@@ -29,22 +29,18 @@ if (iOS) {
       'content',
       'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
     );
-  // Keyboard handling. Scripted scrolling while iOS animates its own
-  // keyboard avoidance just fights it (it looked like an earthquake).
-  // Instead the shell RESIZES to the visual viewport while the keyboard
-  // is up — the layout then fits the visible area, iOS has nothing to
-  // shove, and the whole thing reverts when the keyboard closes.
+  // Keyboard handling, after three failed attempts to outsmart it
+  // (scroll-pin: visible snap; pane pre-scroll: fought iOS's animation;
+  // shell resize: parked the navbar on the keyboard): let iOS do its
+  // native shove while typing — Safari does the same on every site —
+  // and only put the window back once the keyboard has closed, where
+  // the correction is invisible.
   const vv = window.visualViewport;
   if (vv) {
-    const apply = (): void => {
+    vv.addEventListener('resize', () => {
       const keyboardUp = window.innerHeight - vv.height > 120;
-      document.documentElement.style.setProperty(
-        '--app-h',
-        keyboardUp ? `${Math.round(vv.height)}px` : '',
-      );
       if (!keyboardUp && window.scrollY !== 0) window.scrollTo(0, 0);
-    };
-    vv.addEventListener('resize', apply);
+    });
   }
 }
 
