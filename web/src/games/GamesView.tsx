@@ -281,7 +281,7 @@ function EliteBrowser() {
                   'Added'
                 ) : (
                   <>
-                    <Plus className="mr-1 size-3.5" />
+                    <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
                     Add
                   </>
                 )}
@@ -419,7 +419,7 @@ function CollectionView() {
             className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
           />
           <Button variant="primary" size="sm" active={importing} onClick={() => setImporting((v) => !v)}>
-            <Plus className="mr-1 size-3.5" />
+            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
             Import
           </Button>
         </div>
@@ -813,7 +813,7 @@ function ArchiveBrowser({
                         'Added'
                       ) : (
                         <>
-                          <Plus className="mr-1 size-3.5" />
+                          <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
                           Add
                         </>
                       )}
@@ -850,12 +850,14 @@ function GameRow({
   /** Collection rows fold the external link into their row menu. */
   showLink?: boolean;
 }) {
-  // The eye pops the final position beside the row — an explicit target
-  // (matching the dashboard's puzzle previews) instead of the old
-  // whole-row hover. Touch devices have no hover, so nothing fires there.
-  const showPreview = (e: React.MouseEvent<Element>): void => {
+  // The eye pops the final position beside the row. Fine pointers hover
+  // it; coarse pointers TAP it (tap again to dismiss) — hover previews
+  // simply don't exist on touch.
+  const [tapped, setTapped] = useState(false);
+  const coarse = (): boolean => window.matchMedia('(pointer: coarse)').matches;
+  const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
     if (!game.finalFen) return;
-    if (window.matchMedia('(pointer: coarse)').matches) return;
+    if (!viaTap && coarse()) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
     onPreview({
@@ -938,10 +940,21 @@ function GameRow({
         {game.finalFen ? (
           <span className="grid size-7 shrink-0 place-items-center">
             <Eye
-              className="text-subtle hover:text-fg size-3.5"
+              className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-4.5"
               aria-label="Preview the final position"
-              onMouseEnter={showPreview}
+              onMouseEnter={(e) => showPreview(e)}
               onMouseLeave={hidePreview}
+              onClick={(e) => {
+                if (!coarse()) return;
+                e.stopPropagation();
+                if (tapped) {
+                  hidePreview();
+                  setTapped(false);
+                } else {
+                  showPreview(e, true);
+                  setTapped(true);
+                }
+              }}
             />
           </span>
         ) : (
@@ -1078,7 +1091,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             Cancel
           </Button>
           <Button variant="primary" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
-            <Plus className="mr-1 size-3.5" />
+            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
             Add to collection
           </Button>
         </div>

@@ -116,7 +116,19 @@ export function DashboardPage() {
   };
   const hidePreview = (): void => {
     previewSeq.current += 1;
+    previewFor.current = null;
     setPreview(null);
+  };
+  // Coarse pointers can't hover: the eye TAPS the preview open and a
+  // second tap (or another row's) dismisses it.
+  const previewFor = useRef<string | null>(null);
+  const togglePreview = (id: string, anchor: Element): void => {
+    if (previewFor.current === id) {
+      hidePreview();
+    } else {
+      previewFor.current = id;
+      void showPreview(id, anchor);
+    }
   };
   const latestById = new Map<string, HistoryEntry>();
   const trained = new Set<string>();
@@ -316,8 +328,18 @@ export function DashboardPage() {
                     <Eye
                       className="text-subtle hover:text-fg ml-auto size-3.5 shrink-0"
                       aria-label="Preview the position"
-                      onMouseEnter={(e) => void showPreview(h.id, e.currentTarget)}
-                      onMouseLeave={hidePreview}
+                      onMouseEnter={(e) => {
+                        if (!window.matchMedia('(pointer: coarse)').matches)
+                          void showPreview(h.id, e.currentTarget);
+                      }}
+                      onMouseLeave={() => {
+                        if (!window.matchMedia('(pointer: coarse)').matches) hidePreview();
+                      }}
+                      onClick={(e) => {
+                        if (!window.matchMedia('(pointer: coarse)').matches) return;
+                        e.stopPropagation();
+                        togglePreview(h.id, e.currentTarget);
+                      }}
                     />
                     <span
                       className="text-subtle w-16 shrink-0 text-right tabular-nums"
