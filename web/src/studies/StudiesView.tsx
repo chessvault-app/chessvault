@@ -10,7 +10,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
-import { formatWhen } from '@/lib/dates';
+import { formatAgo, formatWhen } from '@/lib/dates';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
@@ -370,9 +370,9 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
           ) : (
             <p className="text-fg truncate text-sm font-semibold">{name}</p>
           )}
-          <p className="text-subtle text-xs">
-            {study.chapters} chapter{study.chapters === 1 ? '' : 's'} ·{' '}
-            {formatWhen(study.updatedAt)}
+          <p className="text-subtle text-xs" title={formatWhen(study.updatedAt)}>
+            {study.chapters} chapter{study.chapters === 1 ? '' : 's'} · edited{' '}
+            {formatAgo(study.updatedAt)}
           </p>
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>

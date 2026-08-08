@@ -294,8 +294,8 @@ export function DashboardPage() {
                     ) : (
                       <X className="text-bad size-3.5 shrink-0" aria-label="failed" />
                     )}
-                    <span className="text-fg font-mono">#{h.id}</span>
-                    <span className="text-subtle">{bandOf(h.puzzleRating)}</span>
+                    <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
+                    <span className="text-subtle w-14 shrink-0">{bandOf(h.puzzleRating)}</span>
                     {toReview(h) && (
                       <span className="bg-surface-2 text-subtle rounded px-1.5 py-0.5 text-[0.625rem]">
                         to review
@@ -307,7 +307,10 @@ export function DashboardPage() {
                       onMouseEnter={(e) => void showPreview(h.id, e.currentTarget)}
                       onMouseLeave={hidePreview}
                     />
-                    <span className="text-subtle tabular-nums" title={formatWhen(h.at)}>
+                    <span
+                      className="text-subtle w-16 shrink-0 text-right tabular-nums"
+                      title={formatWhen(h.at)}
+                    >
                       {formatAgo(h.at)}
                     </span>
                   </button>

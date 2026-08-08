@@ -9,7 +9,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
-import { formatWhen } from '@/lib/dates';
+import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Select } from '@/ui/Select';
@@ -312,8 +312,8 @@ function NoteCard({
       >
         <div className="min-w-0 flex-1">
           <p className="text-fg truncate text-sm font-semibold">{name}</p>
-          <p className="text-subtle text-xs">
-            {(note.bytes / 1024).toFixed(1)} KB · {formatWhen(note.updatedAt)}
+          <p className="text-subtle text-xs" title={formatWhen(note.updatedAt)}>
+            {(note.bytes / 1024).toFixed(1)} KB · edited {formatAgo(note.updatedAt)}
           </p>
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>

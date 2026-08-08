@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   Download,
   ExternalLink,
+  Eye,
   Loader2,
   NotebookPen,
   Plus,
@@ -702,29 +703,23 @@ function GameRow({
   /** A user-chosen document name (in-game rename), shown instead of the matchup. */
   customName?: string | null;
 }) {
-  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // The preview triggers from the row's text area only — hovering the action
-  // buttons (star, delete, add) must not pop a board over them. Touch devices
-  // have no hover; there a tap would fire mouseenter right before the click
-  // and flash a board over the row, so previews are desktop-only.
-  const showPreview = (e: React.MouseEvent<HTMLElement>): void => {
+  // The eye pops the final position beside the row — an explicit target
+  // (matching the dashboard's puzzle previews) instead of the old
+  // whole-row hover. Touch devices have no hover, so nothing fires there.
+  const showPreview = (e: React.MouseEvent<Element>): void => {
     if (!game.finalFen) return;
     if (window.matchMedia('(pointer: coarse)').matches) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const fen = game.finalFen;
-    const orientation = game.userSide ?? 'white';
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    hoverTimer.current = setTimeout(() => {
-      const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
-      onPreview({ fen, orientation, top, left: Math.max(rect.right - 96, 8) });
-    }, 250);
+    const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
+    onPreview({
+      fen: game.finalFen,
+      orientation: game.userSide ?? 'white',
+      top,
+      left: Math.max(rect.left - 192, 8),
+    });
   };
 
-  const hidePreview = (): void => {
-    if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    onPreview(null);
-  };
+  const hidePreview = (): void => onPreview(null);
 
   const openingLabel = game.opening
     ? `${game.opening.eco} ${game.opening.name}`
@@ -735,11 +730,7 @@ function GameRow({
       onClick={onOpen}
       className="group hover:bg-surface-2 flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors duration-100"
     >
-      <div
-        onMouseEnter={showPreview}
-        onMouseLeave={hidePreview}
-        className="flex min-w-0 flex-1 items-center gap-3"
-      >
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <ResultDot result={game.result} userSide={game.userSide} />
         <div className="min-w-0 flex-1">
           {customName ? (
@@ -776,6 +767,16 @@ function GameRow({
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
           </p>
         </div>
+        {game.finalFen ? (
+          <Eye
+            className="text-subtle hover:text-fg size-3.5 shrink-0"
+            aria-label="Preview the final position"
+            onMouseEnter={showPreview}
+            onMouseLeave={hidePreview}
+          />
+        ) : (
+          <span className="w-3.5 shrink-0" aria-hidden />
+        )}
         <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">
           {fmtResult(game.result)}
         </span>
