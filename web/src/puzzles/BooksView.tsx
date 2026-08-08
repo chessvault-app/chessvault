@@ -888,7 +888,7 @@ function PuzzleList({
  * Key order IS the confidence order — filter chips render in it. Tile
  * markers are shape-coded icons on a hue ladder that stays clear of the
  * solved/failed green and red: blue (trusted) → teal (corroborated) →
- * gray (plain engine) → amber (caution).
+ * purple (plain engine) → amber (caution).
  *
  * 'book-parsed' and 'corrected' share one tier: both are the book's
  * exact solution, one read by the importer and one entered by a human
@@ -914,7 +914,7 @@ const PROVENANCE_META = {
     label: 'Engine solution',
     title: 'Engine solution (decisive line, no text corroboration)',
     icon: Cpu,
-    iconClass: 'text-muted',
+    iconClass: 'text-nag-interesting',
   },
   'engine-unverified': {
     label: 'Engine guess',
