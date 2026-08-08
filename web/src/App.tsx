@@ -1,4 +1,5 @@
 import {
+  Grid3x3,
   BarChart3,
   BookMarked,
   BookOpen,
@@ -23,7 +24,7 @@ import { HomePage } from '@/home/HomePage';
 import { StudiesView } from '@/studies/StudiesView';
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
-  { section: 'analysis', label: 'Analysis', icon: Swords },
+  { section: 'analysis', label: 'Board', icon: Grid3x3 },
   { section: 'editor', label: 'Editor', icon: Grid2x2 },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },

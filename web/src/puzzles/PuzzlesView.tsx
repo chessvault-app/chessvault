@@ -517,7 +517,7 @@ function Trainer({
               ? `Replay #${puzzleId}`
               : mode === 'failed'
                 ? 'Review'
-                : 'Training'}
+                : 'Puzzles'}
           </h1>
         </div>
         {/* Fresh training folds this panel into two icons on the Puzzle
