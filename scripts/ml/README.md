@@ -1,5 +1,22 @@
 # Diagram-OCR model pipeline
 
+## Text-side models (stage 1: number labels — `digit_labels.py`)
+
+The PDF text layer loses 83 of the 1001 puzzle numbers (and its OCR of the
+solutions is figurine garbage), so text is learned from the book itself:
+the 858 already-matched puzzles provide exact digit crops via the text
+layer's word boxes (`harvest`, ~2,770 samples, 99.86% 5-fold), and a
+nearest-centroid model + component segmentation reads the printed number
+above any diagram rect (`selftest`: 855/858 end-to-end). Feeding it every
+detected-but-unmatched diagram (`dump-rects` over the page renders, then
+`read`) recovered 125 of the 143 lost numbers, all sequence-consistent —
+see `data/ml/recovered-numbers.json` + `all-diagram-rects.json`
+(`pages-extra/` holds renders of the 16 pages the vault lacked). Env:
+`python -m uv venv data/ml/venv -p 3.12` + `numpy pillow pymupdf`.
+Stage 2 (planned): CRNN/CTC notation reader over the solution pages with
+legality-constrained decoding, to upgrade the engine-corroborated tier.
+
+
 Trains the cell classifier used by photo/PDF diagram reading: 32×32 grayscale
 tile → 13 classes (`1RNBQKPrnbqkp`, linrock-compatible order). Everything here
 is a DEV-TIME tool — only the exported weights ship, inference runs in the
