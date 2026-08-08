@@ -45,6 +45,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
@@ -266,8 +267,9 @@ function Shelf() {
 
         {creating && (
           <div className="bg-surface border-line mb-4 flex items-center gap-2 rounded-xl border p-3">
-            <input
+            <Input
               autoFocus
+              inputSize="lg"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -275,7 +277,7 @@ function Shelf() {
                 if (e.key === 'Escape') setCreating(false);
               }}
               placeholder="Book title, e.g. “1001 Winning Chess Sacrifices”"
-              className="bg-surface-inset border-line text-fg h-9 min-w-0 flex-1 rounded-md border px-3 text-sm outline-none focus:border-primary/50"
+              className="flex-1"
             />
             <Button variant="primary" size="sm" disabled={!title.trim()} onClick={() => void create()}>
               Create

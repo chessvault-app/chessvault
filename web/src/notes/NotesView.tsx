@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { NoteView } from './NoteView';
 
 interface NoteMeta {
@@ -60,15 +61,12 @@ function NoteList() {
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Notes</h1>
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search notes…"
-            className={cn(
-              'bg-surface border-line text-fg h-8 w-48 rounded-md border px-2.5 text-sm',
-              'outline-none focus:border-line-strong',
-            )}
+            className="w-48"
           />
           <CreateMenu folders={folders} onDone={refresh} />
         </div>
@@ -183,7 +181,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
               ))}
             </select>
           )}
-          <input
+          <Input
             autoFocus
             type="text"
             value={name}
@@ -193,7 +191,6 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
               if (e.key === 'Escape') setMode(null);
             }}
             placeholder={mode === 'note' ? 'Note name' : 'Collection name'}
-            className="bg-surface-inset border-line text-fg h-8 rounded-md border px-2.5 text-sm outline-none focus:border-line-strong"
           />
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">

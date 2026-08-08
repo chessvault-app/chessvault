@@ -5,6 +5,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
+import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { EvalBar } from './EvalBar';
 import { formatPv } from './pv.ts';
@@ -80,7 +81,12 @@ export function EngineBlock({ className }: { className?: string }) {
             >
               <Settings2 className="size-3.5" />
             </Button>
-            <EngineSwitch enabled={enabled} onToggle={toggle} />
+            <Switch
+              checked={enabled}
+              onToggle={toggle}
+              label="Engine on/off"
+              title={enabled ? 'Turn the engine off' : 'Turn the engine on'}
+            />
           </>
         }
       />
@@ -173,32 +179,6 @@ function PvRow({
         <span className="text-muted min-w-0 flex-1 truncate text-xs">{pv.text}</span>
       </button>
     </li>
-  );
-}
-
-function EngineSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      aria-label="Engine on/off"
-      onClick={onToggle}
-      title={enabled ? 'Turn the engine off' : 'Turn the engine on'}
-      className={cn(
-        'relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200',
-        enabled ? 'bg-primary' : 'bg-surface-3',
-      )}
-    >
-      {/* left-0 is load-bearing: without it the absolute knob's static
-          position is not the pill's left edge and the translate overshoots. */}
-      <span
-        className={cn(
-          'bg-knob absolute left-0 top-0.5 size-4 rounded-full shadow transition-transform duration-200',
-          enabled ? 'translate-x-[1.125rem]' : 'translate-x-0.5',
-        )}
-      />
-    </button>
   );
 }
 

@@ -13,6 +13,7 @@ import { navigate } from '@/lib/router';
 import { formatWhen } from '@/lib/dates';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { StudyView } from './StudyView';
 
 /** Router shell for the Studies section: list, or one open study. */
@@ -44,15 +45,12 @@ function StudyList() {
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Studies</h1>
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search studies…"
-            className={cn(
-              'bg-surface border-line text-fg h-8 w-48 rounded-md border px-2.5 text-sm',
-              'outline-none focus:border-line-strong',
-            )}
+            className="w-48"
           />
           <CreateMenu />
         </div>
@@ -176,7 +174,7 @@ function CreateMenu() {
               ))}
             </select>
           )}
-          <input
+          <Input
             autoFocus
             type="text"
             value={name}
@@ -186,10 +184,6 @@ function CreateMenu() {
               if (e.key === 'Escape') setMode(null);
             }}
             placeholder={mode === 'study' ? 'Study name' : 'Collection name'}
-            className={cn(
-              'bg-surface-inset border-line text-fg h-8 rounded-md border px-2.5 text-sm',
-              'outline-none focus:border-line-strong',
-            )}
           />
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">
@@ -250,8 +244,9 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
     <div className="group/folder flex h-6 items-center gap-1.5">
       <FolderIcon className="text-subtle size-3.5 shrink-0" />
       {renaming ? (
-        <input
+        <Input
           autoFocus
+          inputSize="sm"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={async () => {
@@ -264,10 +259,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
             if (e.key === 'Escape') setRenaming(false);
           }}
-          className={cn(
-            'bg-surface-inset border-line text-fg h-6 w-48 rounded-md border px-2 text-xs',
-            'outline-none focus:border-line-strong',
-          )}
+          className="w-48"
         />
       ) : (
         <button
@@ -347,8 +339,9 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
       >
         <div className="min-w-0 flex-1">
           {renaming ? (
-            <input
+            <Input
               autoFocus
+              inputSize="sm"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onClick={(e) => e.stopPropagation()}
@@ -358,10 +351,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                 if (e.key === 'Escape') setRenaming(false);
               }}
-              className={cn(
-                'bg-surface-inset border-line text-fg h-7 w-full max-w-sm rounded-md border px-2',
-                'text-sm outline-none focus:border-line-strong',
-              )}
+              className="w-full max-w-sm text-sm"
             />
           ) : (
             <p className="text-fg truncate text-sm font-semibold">{name}</p>

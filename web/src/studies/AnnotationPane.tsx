@@ -1,3 +1,4 @@
+import { TextArea } from '@/ui/Input';
 import { useEffect, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/MoveTreePane';
@@ -73,7 +74,7 @@ export function AnnotationPane({
           ))}
         </div>
       )}
-      <textarea
+      <TextArea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => {
@@ -81,10 +82,7 @@ export function AnnotationPane({
         }}
         placeholder={atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`}
         rows={2}
-        className={cn(
-          'bg-surface-inset border-line text-fg w-full resize-none rounded-md border px-2 py-1.5',
-          'text-xs leading-relaxed outline-none focus:border-line-strong',
-        )}
+        className="w-full resize-none leading-relaxed"
       />
     </div>
   );

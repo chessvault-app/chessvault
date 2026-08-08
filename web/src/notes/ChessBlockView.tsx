@@ -26,6 +26,7 @@ import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
+import { TextArea } from '@/ui/Input';
 
 interface BlockState {
   tree: MoveTree;
@@ -193,15 +194,12 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected }:
 
         {pasteOpen && (
           <div className="flex flex-col gap-1.5">
-            <textarea
+            <TextArea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
               placeholder="Paste a FEN or PGN…"
               rows={3}
-              className={cn(
-                'bg-surface border-line text-fg w-full resize-none rounded-md border px-2 py-1.5',
-                'font-mono text-xs outline-none focus:border-line-strong',
-              )}
+              className="w-full resize-none font-mono"
             />
             <div className="flex justify-end">
               <Button variant="primary" size="sm" disabled={!pasteText.trim()} onClick={loadPasted}>

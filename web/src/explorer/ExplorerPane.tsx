@@ -17,8 +17,10 @@ import {
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
+import { Switch } from '@/ui/Switch';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -133,7 +135,12 @@ export function ExplorerPane({
                 <BookOpen className="size-3.5" />
               </Button>
             )}
-            <ExplorerSwitch enabled={enabled} onToggle={toggle} />
+            <Switch
+              checked={enabled}
+              onToggle={toggle}
+              label="Explorer on/off"
+              title={enabled ? 'Hide the explorer' : 'Show the explorer'}
+            />
           </>
         }
       />
@@ -367,30 +374,6 @@ function EmptyBooks({ onOpenManager }: { onOpenManager: () => void }) {
   );
 }
 
-function ExplorerSwitch({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      aria-label="Explorer on/off"
-      onClick={onToggle}
-      title={enabled ? 'Hide the explorer' : 'Show the explorer'}
-      className={cn(
-        'relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200',
-        enabled ? 'bg-primary' : 'bg-surface-3',
-      )}
-    >
-      <span
-        className={cn(
-          'bg-knob absolute left-0 top-0.5 size-4 rounded-full shadow transition-transform duration-200',
-          enabled ? 'translate-x-[1.125rem]' : 'translate-x-0.5',
-        )}
-      />
-    </button>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Book manager: list/build/delete books over the /api/books endpoints.
 
@@ -496,15 +479,13 @@ function BooksManager({ onClose }: { onClose: () => void }) {
               </label>
             ))}
             <div className="mt-1 flex items-center gap-2">
-              <input
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="book name"
-                className={cn(
-                  'bg-surface border-line text-fg h-7 min-w-0 flex-1 rounded-md border px-2',
-                  'font-mono text-xs outline-none focus:border-line-strong',
-                )}
+                inputSize="sm"
+                className="flex-1 font-mono"
               />
               <Button
                 variant="primary"

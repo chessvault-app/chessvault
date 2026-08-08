@@ -2,8 +2,8 @@ import { AlertCircle, ClipboardPaste, FolderInput } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { TextArea } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { cn } from '@/lib/cn';
 
 /**
  * Load a position from FEN or PGN — a small header button opening a modal,
@@ -88,7 +88,7 @@ function LoadDialog({ onClose }: { onClose: () => void }) {
             }
           />
           <div className="flex flex-col gap-2 p-3">
-            <textarea
+            <TextArea
               ref={textarea}
               autoFocus
               value={text}
@@ -103,12 +103,7 @@ function LoadDialog({ onClose }: { onClose: () => void }) {
               rows={5}
               spellCheck={false}
               placeholder="Paste a FEN or PGN, then press Enter"
-              className={cn(
-                'bg-surface-inset border-line w-full resize-none rounded-lg border px-2.5 py-2',
-                'font-mono text-xs leading-relaxed',
-                'placeholder:text-subtle placeholder:font-sans',
-                'focus:border-primary/50 outline-none',
-              )}
+              className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
             />
 
             {loadError && (

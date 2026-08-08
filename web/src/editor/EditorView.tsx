@@ -22,6 +22,7 @@ import { copyText } from '@/lib/clipboard';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { Input, TextArea } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
@@ -479,7 +480,7 @@ export function EditorView({
             <Panel flush>
               <PanelHeader title="Load position" />
               <div className="flex flex-col gap-2 p-3">
-                <textarea
+                <TextArea
                   autoFocus
                   value={fenInput}
                   onChange={(e) => setFenInput(e.target.value)}
@@ -494,11 +495,7 @@ export function EditorView({
                   rows={5}
                   spellCheck={false}
                   placeholder="Paste a FEN, or a PGN to edit its final position"
-                  className={cn(
-                    'bg-surface-inset border-line w-full resize-none rounded-md border px-2.5 py-2',
-                    'font-mono text-xs leading-relaxed outline-none',
-                    'placeholder:text-subtle placeholder:font-sans focus:border-primary/50',
-                  )}
+                  className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
                 />
                 {fenError && <p className="text-bad text-xs">{fenError}</p>}
                 <div className="flex justify-end gap-2">
@@ -544,15 +541,12 @@ function NumberInput({
   onChange: (value: number) => void;
 }) {
   return (
-    <input
+    <Input
       type="number"
       min={min}
       value={value}
       onChange={(e) => onChange(Math.max(min, Number(e.target.value) || min))}
-      className={cn(
-        'bg-surface-inset border-line h-8 w-full rounded-md border px-2',
-        'font-mono text-xs outline-none focus:border-primary/50',
-      )}
+      className="w-full font-mono"
     />
   );
 }

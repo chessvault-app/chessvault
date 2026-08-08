@@ -20,6 +20,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
@@ -346,15 +347,12 @@ function CollectionView() {
           >
             <Star className={cn('size-3.5', starredOnly && 'fill-current')} />
           </Button>
-          <input
+          <Input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search collection…"
-            className={cn(
-              'bg-surface border-line text-fg h-8 w-56 rounded-md border px-2.5 text-sm',
-              'outline-none focus:border-line-strong',
-            )}
+            className="w-56"
           />
         </div>
       </header>
@@ -607,7 +605,7 @@ function ArchiveBrowser({
       />
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
         <Download className="text-subtle size-4 shrink-0" />
-        <input
+        <Input
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -615,10 +613,7 @@ function ArchiveBrowser({
             if (e.key === 'Enter' && username.trim()) void loadMonths();
           }}
           placeholder="chess.com username"
-          className={cn(
-            'bg-surface-inset border-line text-fg h-8 w-48 rounded-md border px-2.5',
-            'font-mono text-xs outline-none focus:border-line-strong',
-          )}
+          className="w-48 font-mono"
         />
         <Button
           variant="secondary"

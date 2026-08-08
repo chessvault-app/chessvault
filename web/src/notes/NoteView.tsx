@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
@@ -192,8 +193,9 @@ function NoteTitle({ id }: { id: string }) {
 
   if (editing) {
     return (
-      <input
+      <Input
         autoFocus
+        inputSize="sm"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => void submit()}
@@ -201,10 +203,7 @@ function NoteTitle({ id }: { id: string }) {
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           if (e.key === 'Escape') setEditing(false);
         }}
-        className={cn(
-          'bg-surface-inset border-line text-fg h-7 min-w-0 flex-1 rounded-md border px-2',
-          'text-sm font-semibold outline-none focus:border-line-strong',
-        )}
+        className="flex-1 text-sm font-semibold"
       />
     );
   }

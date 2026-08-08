@@ -1,7 +1,7 @@
 import { Lock } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 
 /**
  * Wraps the app when the server has an appPassword configured (public
@@ -64,8 +64,9 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <p className="text-subtle text-xs">This vault is locked.</p>
           </div>
         </div>
-        <input
+        <Input
           autoFocus
+          inputSize="lg"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -73,10 +74,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             if (e.key === 'Enter') void submit();
           }}
           placeholder="Password"
-          className={cn(
-            'bg-surface-inset border-line text-fg mb-2 h-9 w-full rounded-md border px-3',
-            'text-sm outline-none focus:border-primary/50',
-          )}
+          className="mb-2 w-full"
         />
         {error && <p className="text-bad mb-2 text-xs">{error}</p>}
         <Button
