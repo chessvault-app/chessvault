@@ -20,5 +20,11 @@
   "report": "data/ml/wood-report.json",
   "labelX": 160,
   "labelY": 130,
-  "labelDrop": 70
+  "labelDrop": 70,
+  "cropTrim": [
+    0.08,
+    0.0,
+    0.0,
+    0.1
+  ]
 }

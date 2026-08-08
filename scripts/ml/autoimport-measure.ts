@@ -60,6 +60,10 @@ const BOOK = {
   /** How far BELOW the diagram top a label's baseline may sit (margin
    *  labels print beside the top corner, not above it). */
   labelDrop: 14,
+  /** Fractions of the detected rect to trim before READING the board
+   *  (left, top, right, bottom) — for books that print coordinates in a
+   *  gutter outside the frame, which would warp into the cells. */
+  cropTrim: [0, 0, 0, 0] as [number, number, number, number],
   ...(bookAt > 0
     ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
     : {}),
@@ -338,6 +342,42 @@ function tokenPrefix(token: string): string | null {
   return prefix;
 }
 
+/** Reading rect: the detect rect minus the configured coordinate gutter. */
+function readRect(rect: { x: number; y: number; w: number; h: number }): { x: number; y: number; w: number; h: number } {
+  const [l, t, r, b] = BOOK.cropTrim;
+  return {
+    x: Math.round(rect.x + rect.w * l),
+    y: Math.round(rect.y + rect.h * t),
+    w: Math.round(rect.w * (1 - l - r)),
+    h: Math.round(rect.h * (1 - t - b)),
+  };
+}
+
+/**
+ * Piece-count plausibility: replay can succeed with an inert phantom
+ * piece parked off the action (Woodpecker's digit gutter read as a rook
+ * column proved it), so a "validated" position must also be REACHABLE:
+ * per side, max 8 pawns, 16 pieces, and no more extra majors/minors
+ * than missing pawns can explain.
+ */
+function saneCounts(placement: string): boolean {
+  const counts = new Map<string, number>();
+  for (const ch of placement) {
+    if (/[a-zA-Z]/.test(ch)) counts.set(ch, (counts.get(ch) ?? 0) + 1);
+  }
+  for (const side of ['w', 'b'] as const) {
+    const at = (c: string): number => counts.get(side === 'w' ? c.toUpperCase() : c) ?? 0;
+    const pawns = at('p');
+    const total = ['p', 'n', 'b', 'r', 'q', 'k'].reduce((sum, c) => sum + at(c), 0);
+    if (pawns > 8 || total > 16) return false;
+    const base: Record<string, number> = { n: 2, b: 2, r: 2, q: 1 };
+    let extra = 0;
+    for (const c of ['n', 'b', 'r', 'q']) extra += Math.max(0, at(c) - base[c]!);
+    if (extra > 8 - pawns) return false;
+  }
+  return true;
+}
+
 /** In SAN a completely bare destination ("g2", "d6+!") is a PAWN move. */
 function isBarePawnToken(token: string, dest: string): boolean {
   return token.replace(/[x!?+#\s]/g, '').replace(dest, '') === '';
@@ -513,6 +553,7 @@ function replay(
   tokens: string[],
   hints?: Map<string, Role>,
 ): { sans: string[] } | { fail: string } {
+  if (!saneCounts(fen)) return { fail: 'implausible-piece-counts' };
   const fullFen = `${fen} ${side} ${castlingRights(fen)} - 0 1`;
   const setup = parseFen(fullFen);
   if (setup.isErr) return { fail: 'bad-fen' };
@@ -652,11 +693,12 @@ for (const pageInfo of textData.pages) {
     if (!label) continue;
     // Numbers are unique in the book; the first (earliest-page) claim wins.
     if (results.has(label.value)) continue;
-    const m = Math.round(Math.min(rect.w, rect.h) * 0.04);
-    const x0 = Math.max(0, rect.x - m);
-    const y0 = Math.max(0, rect.y - m);
-    const w = Math.min(pageGray.w - x0, rect.w + 2 * m);
-    const h = Math.min(pageGray.h - y0, rect.h + 2 * m);
+    const rr = readRect(rect);
+    const m = Math.round(Math.min(rr.w, rr.h) * 0.04);
+    const x0 = Math.max(0, Math.round(rr.x) - m);
+    const y0 = Math.max(0, Math.round(rr.y) - m);
+    const w = Math.min(pageGray.w - x0, Math.round(rr.w) + 2 * m);
+    const h = Math.min(pageGray.h - y0, Math.round(rr.h) + 2 * m);
     const cropData = new Uint8ClampedArray(w * h);
     for (let y = 0; y < h; y++) {
       cropData.set(pageGray.data.subarray((y0 + y) * pageGray.w + x0, (y0 + y) * pageGray.w + x0 + w), y * w);
@@ -884,12 +926,12 @@ if (process.argv.includes('--repair')) {
 
     const page = loadPageR(entry.page);
     if (!page) continue;
-    const rect = {
+    const rect = readRect({
       x: Math.round(entry.rect.x * page.w),
       y: Math.round(entry.rect.y * page.h),
       w: Math.round(entry.rect.w * page.w),
       h: Math.round(entry.rect.h * page.h),
-    };
+    });
     const m = Math.round(Math.min(rect.w, rect.h) * 0.04);
     const x0 = Math.max(0, rect.x - m);
     const y0 = Math.max(0, rect.y - m);

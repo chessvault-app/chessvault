@@ -729,7 +729,7 @@ function PuzzleNavigator({
                   .filter(Boolean)
                   .join('\n')}
                 className={cn(
-                  'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-[0.6875rem] font-semibold transition-colors duration-100',
+                  'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-[0.6875rem] font-semibold transition-colors duration-100 [content-visibility:auto]',
                   current && 'ring-primary/60 ring-2',
                   last === 'win'
                     ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
@@ -866,7 +866,9 @@ function PuzzleList({
                 .filter(Boolean)
                 .join('\n')}
               className={cn(
-                'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-sm font-semibold transition-colors duration-100',
+                // content-visibility: ~1,000 offscreen tiles skip render
+                // work entirely — phones feel it.
+                'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-sm font-semibold transition-colors duration-100 [content-visibility:auto]',
                 state === 'solved'
                   ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
                   : state === 'failed'
