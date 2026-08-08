@@ -876,6 +876,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   const [blackElo, setBlackElo] = useState('');
   const [date, setDate] = useState('');
   const [event, setEvent] = useState('');
+  const [result, setResult] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -891,6 +892,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
     // Bare moves get a header block; a full PGN gets its headers overridden.
     if (!text.startsWith('[')) text = `\n${text}`;
     const today = new Date().toISOString().slice(0, 10).replaceAll('-', '.');
+    text = withHeader(text, 'Result', result);
     text = withHeader(text, 'Event', event);
     text = withHeader(text, 'BlackElo', blackElo);
     text = withHeader(text, 'WhiteElo', whiteElo);
@@ -934,6 +936,22 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder="White rating" inputMode="numeric" />
           <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder="Black rating" inputMode="numeric" />
           <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="Event / tournament (optional)" />
+          <Select
+            value={result}
+            onChange={setResult}
+            ariaLabel="Result"
+            inset
+            groups={[
+              {
+                options: [
+                  { value: '', label: 'Result — from the moves' },
+                  { value: '1-0', label: '1-0 · White won' },
+                  { value: '0-1', label: '0-1 · Black won' },
+                  { value: '1/2-1/2', label: '½-½ · Draw' },
+                ],
+              },
+            ]}
+          />
         </div>
         {failure && <p className="text-bad text-xs">{failure}</p>}
         <div className="flex justify-end gap-2">
