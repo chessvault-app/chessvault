@@ -389,6 +389,15 @@ async function main(): Promise<void> {
   rmSync(diagrams, { recursive: true, force: true });
   mkdirSync(diagrams, { recursive: true });
 
+  // First import of a new book: the server only lists books that have a
+  // book.json — create one, but never overwrite lanph3re's own edits.
+  if (!existsSync(resolve(BOOK, 'book.json'))) {
+    mkdirSync(BOOK, { recursive: true });
+    writeFileSync(
+      resolve(BOOK, 'book.json'),
+      `${JSON.stringify({ title: CFG.title, createdAt: now }, null, 1)}\n`,
+    );
+  }
   writeFileSync(resolve(BOOK, 'puzzles.json'), `${JSON.stringify(puzzles, null, 1)}\n`);
   const drafts = leftovers.map((entry) => ({
     id: `d${entry.number}`,
