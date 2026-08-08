@@ -251,9 +251,6 @@ function Shelf() {
     <div className="h-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-3xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
-          <Button variant="ghost" size="icon-sm" title="Back to training" onClick={() => navigate('puzzles')}>
-            <ArrowLeft className="size-3.5" />
-          </Button>
           <h1 className="text-fg flex-1 text-base font-semibold">Puzzle books</h1>
           <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
             <Plus className="size-3.5" />

@@ -1,8 +1,7 @@
-import { ArrowLeft, Puzzle, RotateCcw } from 'lucide-react';
+import { Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
-import { Button } from '@/ui/Button';
 import { SkeletonRows } from '@/ui/Skeleton';
 
 /**
@@ -133,14 +132,6 @@ export function ThemesPage() {
     <div className="h-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-4xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title="Back to training"
-            onClick={() => navigate('puzzles')}
-          >
-            <ArrowLeft className="size-3.5" />
-          </Button>
           <h1 className="text-fg text-base font-semibold">Puzzle themes</h1>
         </div>
 
