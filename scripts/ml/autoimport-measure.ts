@@ -49,7 +49,7 @@ const BOOK = {
   /** 'bare' = plain digits above the diagram; 'paren' = "123)". */
   numberStyle: 'bare' as 'bare' | 'paren',
   /** Solutions entry anchor: 'dash' = "N - 1."; 'paren' = "N) ...". */
-  anchorStyle: 'dash' as 'dash' | 'paren',
+  anchorStyle: 'dash' as 'dash' | 'paren' | 'dot',
   /** 'dotted' = "1.e4 / 1 ... e5" markers; 'dotless' = "1 e4". */
   moveMarkers: 'dotted' as 'dotted' | 'dotless',
   /** Where the side to move is printed: chapter header or per-puzzle label. */
@@ -57,6 +57,9 @@ const BOOK = {
   /** How far (render px) a number label may sit left of / above its diagram. */
   labelX: 20,
   labelY: 40,
+  /** How far BELOW the diagram top a label's baseline may sit (margin
+   *  labels print beside the top corner, not above it). */
+  labelDrop: 14,
   ...(bookAt > 0
     ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
     : {}),
@@ -255,7 +258,11 @@ function solutionEntries(): Map<number, string> {
   const startPage = textData.pages.findIndex(
     (p) =>
       p.page > BOOK.solutionsAfterPage &&
-      (BOOK.anchorStyle === 'paren' ? /\d{1,4}\)\s/.test(p.text) : /\d+\s*-\s*1\s*\./.test(p.text)),
+      (BOOK.anchorStyle === 'paren'
+        ? /\d{1,4}\)\s/.test(p.text)
+        : BOOK.anchorStyle === 'dot'
+          ? /(?:^|\n)\s{0,3}\d{1,4}\.\s+[A-Z]/.test(p.text)
+          : /\d+\s*-\s*1\s*\./.test(p.text)),
   );
   const joined = textData.pages
     .slice(startPage)
@@ -267,7 +274,9 @@ function solutionEntries(): Map<number, string> {
   const anchor =
     BOOK.anchorStyle === 'paren'
       ? /(?:^|\n)\s{0,4}(\d{1,4})\)\s/g
-      : /(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)/g;
+      : BOOK.anchorStyle === 'dot'
+        ? /(?:^|\n)\s{0,3}(\d{1,4})\.\s+(?=[A-Z])/g
+        : /(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)/g;
   const hits = [...joined.matchAll(anchor)];
   for (let i = 0; i < hits.length; i++) {
     const value = Number(hits[i]![1]!.replace(/\s/g, ''));
@@ -633,7 +642,7 @@ for (const pageInfo of textData.pages) {
     const candidates = numbers
       .filter(
         (n) =>
-          n.y1 <= rect.y + 14 &&
+          n.y1 <= rect.y + BOOK.labelDrop &&
           rect.y - n.y1 <= BOOK.labelY &&
           n.x1 >= rect.x - BOOK.labelX &&
           n.x0 <= rect.x + rect.w,

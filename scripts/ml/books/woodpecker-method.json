@@ -1,0 +1,24 @@
+{
+  "slug": "wood",
+  "title": "The Woodpecker Method",
+  "pages": [
+    33,
+    222
+  ],
+  "solutionsAfterPage": 223,
+  "solutionPages": [
+    225,
+    379
+  ],
+  "maxNumber": 1128,
+  "numberStyle": "bare",
+  "anchorStyle": "dot",
+  "moveMarkers": "dotted",
+  "sideMode": "chapter",
+  "text": "data/ml/wood-text.json",
+  "cache": "data/ml/wood-reads.json",
+  "report": "data/ml/wood-report.json",
+  "labelX": 160,
+  "labelY": 130,
+  "labelDrop": 70
+}

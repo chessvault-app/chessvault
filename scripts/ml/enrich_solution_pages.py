@@ -37,9 +37,12 @@ def main():
     # Entry anchor, same as autoimport-measure's solutionEntries(): a
     # puzzle number, a dash, then move one ("103 - 1.e4"; the OCR may
     # space the digits). Move numbers inside bodies never match it.
+    style = CFG.get('anchorStyle', 'dash')
     anchor = (
         re.compile(r'(?:^|\n)\s{0,4}(\d{1,4})\)\s')
-        if CFG.get('anchorStyle') == 'paren'
+        if style == 'paren'
+        else re.compile(r'(?:^|\n)\s{0,3}(\d{1,4})\.\s+(?=[A-Z])')
+        if style == 'dot'
         else re.compile(r'(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)')
     )
     on_page = {}
