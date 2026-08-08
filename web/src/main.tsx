@@ -29,34 +29,23 @@ if (iOS) {
       'content',
       'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
     );
-  // iOS window-shoves the page when the keyboard would cover a focused
-  // field, and reactively pinning the scroll back is visibly jarring.
-  // Prevent the shove instead: on focus, scroll the field's own pane so
-  // the field sits in the upper third — iOS finds it clear of the
-  // keyboard and leaves the window alone. Any shove that still happens
-  // is undone only once the keyboard has closed, where it's invisible.
-  const scrollPane = (el: HTMLElement | null): HTMLElement | null => {
-    for (let n = el; n; n = n.parentElement) {
-      const s = getComputedStyle(n);
-      if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight) return n;
-    }
-    return null;
-  };
-  window.addEventListener('focusin', (e) => {
-    const el = e.target as HTMLElement;
-    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
-    const pane = scrollPane(el);
-    if (!pane) return;
-    const comfortable = (window.visualViewport?.height ?? window.innerHeight) * 0.3;
-    const top = el.getBoundingClientRect().top;
-    if (top > comfortable) pane.scrollBy({ top: top - comfortable, behavior: 'smooth' });
-  });
-  window.visualViewport?.addEventListener('resize', () => {
-    const vv = window.visualViewport;
-    if (vv && vv.height > window.innerHeight * 0.7 && window.scrollY !== 0) {
-      window.scrollTo(0, 0);
-    }
-  });
+  // Keyboard handling. Scripted scrolling while iOS animates its own
+  // keyboard avoidance just fights it (it looked like an earthquake).
+  // Instead the shell RESIZES to the visual viewport while the keyboard
+  // is up — the layout then fits the visible area, iOS has nothing to
+  // shove, and the whole thing reverts when the keyboard closes.
+  const vv = window.visualViewport;
+  if (vv) {
+    const apply = (): void => {
+      const keyboardUp = window.innerHeight - vv.height > 120;
+      document.documentElement.style.setProperty(
+        '--app-h',
+        keyboardUp ? `${Math.round(vv.height)}px` : '',
+      );
+      if (!keyboardUp && window.scrollY !== 0) window.scrollTo(0, 0);
+    };
+    vv.addEventListener('resize', apply);
+  }
 }
 
 const container = document.getElementById('root');
