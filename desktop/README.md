@@ -19,17 +19,26 @@ exposes APIs to the app (the chooser's IPC is shell config, not app
 surface). This keeps the desktop build droppable and the web deployment
 canonical.
 
-## Packaging (later)
+## Packaging
 
-Dev mode leans on the repo + system Node. A distributable Windows build
-(then macOS) needs, roughly:
+`npm run desktop:package` → `release/installer/Chess Vault Setup <v>.exe`
+(NSIS one-click; macOS dmg target is pre-configured for later). Pipeline:
 
-1. esbuild-bundle `server/index.ts` to plain JS (tsx not shipped).
-2. Ship better-sqlite3 prebuilt for the runtime that executes the server
-   (system-node child today; if switched to `ELECTRON_RUN_AS_NODE`, use
-   electron-rebuild).
-3. `electron-builder` with an NSIS target (`dmg` when macOS lands);
-   bundle `dist/`, the server bundle, and the engine/model assets from
-   `web/public`.
-4. Default `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA` into `app.getPath('userData')`,
-   with a first-run vault-location picker.
+1. `desktop/build-server.mjs`: esbuild-bundles the server to
+   `release/server/index.mjs`, copies better-sqlite3 beside it (v13 ships
+   Node-API prebuilds — ABI-stable under Electron, no rebuild), renders
+   `icon.ico`.
+2. `npm run build`: the SPA (with engine/model assets) into `dist/`.
+3. `electron-builder`: ships `desktop/` in the asar; the server bundle
+   and `dist/` ride as extraResources, so the server's `./dist` static
+   root and `REPO_ROOT` both resolve to `resources/`.
+
+The packaged local mode runs the bundled server on Electron's own Node
+(`ELECTRON_RUN_AS_NODE`), with `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA`
+pointed at `%APPDATA%/Chess Vault/{vault,data}` — a fresh vault per
+machine profile.
+
+Known limits of packaged local mode: opening-book / puzzle-db /
+refgames builds are repo activities (the server's build jobs spawn repo
+scripts that are not shipped); bring built `data/` artefacts along if
+wanted.

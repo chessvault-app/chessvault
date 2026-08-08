@@ -31,7 +31,8 @@ const LOCAL_PORT = 8788; // away from the dev server's 8787
 const settingsPath = () => join(app.getPath('userData'), 'desktop.json');
 const readSettings = () => {
   try {
-    return JSON.parse(readFileSync(settingsPath(), 'utf-8'));
+    // BOM-tolerant: hand-edited or PowerShell-written files carry one.
+    return JSON.parse(readFileSync(settingsPath(), 'utf-8').replace(/^﻿/, ''));
   } catch {
     return {};
   }
@@ -43,11 +44,31 @@ let serverProc = null;
 
 function startLocalServer() {
   if (serverProc) return;
-  serverProc = spawn('node', ['--import', 'tsx', 'server/index.ts'], {
-    cwd: repoRoot,
-    env: { ...process.env, PORT: String(LOCAL_PORT) },
-    stdio: 'inherit',
-  });
+  if (app.isPackaged) {
+    // Shipped shape: the bundled server runs on Electron's own Node
+    // (ELECTRON_RUN_AS_NODE), reading/writing the user's profile.
+    const serverEntry = join(process.resourcesPath, 'server', 'index.mjs');
+    serverProc = spawn(process.execPath, [serverEntry], {
+      // serveStatic('./dist') is cwd-relative: resources/ holds dist/.
+      cwd: process.resourcesPath,
+      env: {
+        ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
+        PORT: String(LOCAL_PORT),
+        CHESS_VAULT_DIR: join(app.getPath('userData'), 'vault'),
+        CHESS_VAULT_DATA: join(app.getPath('userData'), 'data'),
+      },
+      stdio: 'ignore',
+    });
+  } else {
+    // Dev shape: the repo's server on the system Node, exactly like
+    // `npm start` — repo vault, no Electron-ABI native rebuilds.
+    serverProc = spawn('node', ['--import', 'tsx', 'server/index.ts'], {
+      cwd: repoRoot,
+      env: { ...process.env, PORT: String(LOCAL_PORT) },
+      stdio: 'inherit',
+    });
+  }
   serverProc.on('exit', (code) => {
     console.log(`[desktop] local server exited (${code})`);
     serverProc = null;

@@ -34,3 +34,4 @@ vault/.history.git/
 web/public/pdfjs-wasm/
 
 __pycache__/
+release/
