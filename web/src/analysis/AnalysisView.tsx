@@ -1,4 +1,4 @@
-import { Check, FolderPlus, Grid3x3, Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, FolderPlus, Grid3x3, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -58,6 +58,9 @@ export function AnalysisView() {
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
+      {/* Stacked layouts lead with a header like every other page; games
+          opened here from elite/archives get a way back on phones. */}
+      <BoardPageHeader />
       <AnalysisBoard editablePlayers />
 
       {/* Side column. Desktop shows every pane; small screens switch, with
@@ -169,6 +172,29 @@ function CollectGameButton() {
         <FolderPlus className="size-3.5" />
       )}
     </Button>
+  );
+}
+
+function BoardPageHeader() {
+  const headers = useAnalysis((s) => s.gameHeaders);
+  const title =
+    headers && (headers['White'] ?? '?') !== '?'
+      ? `${headers['White']} – ${headers['Black'] ?? '?'}`
+      : 'Board';
+  return (
+    <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="md:hidden"
+        title="Back"
+        onClick={() => window.history.back()}
+      >
+        <ArrowLeft className="size-3.5" />
+      </Button>
+      <Grid3x3 className="text-subtle size-4" aria-hidden />
+      <h1 className="text-fg min-w-0 truncate text-sm font-semibold">{title}</h1>
+    </div>
   );
 }
 

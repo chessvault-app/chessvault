@@ -226,6 +226,7 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
         {summary.acpl} acpl
       </span>
       <span className="text-subtle ml-auto flex gap-2 font-mono text-[0.6875rem] tabular-nums">
+        <Judged count={summary.brilliancies} glyph="!!" className="text-nag-brilliant" />
         <Judged count={summary.inaccuracies} glyph="?!" className="text-nag-dubious" />
         <Judged count={summary.mistakes} glyph="?" className="text-nag-mistake" />
         <Judged count={summary.blunders} glyph="??" className="text-nag-blunder" />

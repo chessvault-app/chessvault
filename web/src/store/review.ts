@@ -119,7 +119,27 @@ export const useReview = create<ReviewState>()((set, get) => ({
 
       const rootTurn: 'white' | 'black' =
         getNode(tree, tree.rootId).fen.split(' ')[1] === 'b' ? 'black' : 'white';
-      const verdicts = judgeLine(scores, rootTurn);
+      // Sacrifice detection for brilliancies: the mover's material after
+      // the OPPONENT'S reply, compared with before the move — a piece
+      // given and instantly regained is no sacrifice.
+      const VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9 };
+      const balance = (fen: string, side: 'white' | 'black'): number => {
+        let bal = 0;
+        for (const ch of fen.split(' ')[0]!) {
+          const v = VALUE[ch.toLowerCase()];
+          if (!v) continue;
+          bal += (ch === ch.toUpperCase()) === (side === 'white') ? v : -v;
+        }
+        return bal;
+      };
+      const fens = [getNode(tree, tree.rootId).fen, ...line.map((id) => getNode(tree, id).fen)];
+      const sacrifices = line.map((_, i) => {
+        const mover: 'white' | 'black' =
+          i % 2 === 0 ? rootTurn : rootTurn === 'white' ? 'black' : 'white';
+        const settled = fens[Math.min(i + 2, fens.length - 1)]!;
+        return balance(settled, mover) <= balance(fens[i]!, mover) - 2;
+      });
+      const verdicts = judgeLine(scores, rootTurn, sacrifices);
 
       // The review owns quality NAGs (1..6) on the mainline, like lichess
       // server analysis: judged moves get theirs, unjudged moves lose any

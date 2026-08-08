@@ -7,9 +7,11 @@ import { winningChances } from './uci.ts';
  * thresholds are 0.1/0.2/0.3 on a −1..1 scale; `winningChances` here is
  * normalised to 0..1, so they halve.
  *
- * Chess.com-style praise (Brilliant/Great) is deliberately absent: those
- * criteria are proprietary and rating-adjusted — anything here would be
- * a guess wearing a costume.
+ * Brilliancy (!!, NAG 3) is NOT a chess.com imitation — their criteria
+ * are proprietary and rating-adjusted. This one is a rule you can say
+ * out loud: the played move held the evaluation (≤2% chance drop), it
+ * sacrificed real material (two pawns' worth still ungained after the
+ * opponent's reply), and the game wasn't already decided either way.
  */
 
 export interface Score {
@@ -56,6 +58,7 @@ export interface SideSummary {
   inaccuracies: number;
   mistakes: number;
   blunders: number;
+  brilliancies: number;
 }
 
 export interface MoveVerdict {
@@ -71,7 +74,12 @@ export interface MoveVerdict {
  * Judge every move of a line given white-POV scores for each position
  * (scores.length = moves.length + 1; scores[0] is before the first move).
  */
-export function judgeLine(scores: Score[], firstMover: 'white' | 'black'): MoveVerdict[] {
+export function judgeLine(
+  scores: Score[],
+  firstMover: 'white' | 'black',
+  /** Per-move flag: material sacrificed and not immediately recouped. */
+  sacrifices?: boolean[],
+): MoveVerdict[] {
   const verdicts: MoveVerdict[] = [];
   for (let i = 1; i < scores.length; i++) {
     const mover: 'white' | 'black' =
@@ -81,10 +89,12 @@ export function judgeLine(scores: Score[], firstMover: 'white' | 'black'): MoveV
     const drop = Math.max(0, before - after);
     const cpBefore = cpOf(scores[i - 1]!) * (mover === 'white' ? 1 : -1);
     const cpAfter = cpOf(scores[i]!) * (mover === 'white' ? 1 : -1);
+    const brilliant =
+      sacrifices?.[i - 1] === true && drop <= 0.02 && before > 0.35 && before < 0.9;
     verdicts.push({
       ply: i - 1,
       mover,
-      nag: judgeNag(drop),
+      nag: brilliant ? 3 : judgeNag(drop),
       accuracy: moveAccuracy(before * 100, after * 100),
       cpLoss: Math.min(1000, Math.max(0, cpBefore - cpAfter)),
     });
@@ -103,5 +113,6 @@ export function summarise(verdicts: MoveVerdict[], side: 'white' | 'black'): Sid
     inaccuracies: own.filter((v) => v.nag === 6).length,
     mistakes: own.filter((v) => v.nag === 2).length,
     blunders: own.filter((v) => v.nag === 4).length,
+    brilliancies: own.filter((v) => v.nag === 3).length,
   };
 }
