@@ -31,7 +31,24 @@ const RENDER_WIDTH = 1400;
 // --- inputs -------------------------------------------------------------------
 
 const pagesDir = process.argv[2];
-if (!pagesDir) throw new Error('usage: autoimport-measure <pages_dir> [--limit N] [--emit <dir>]');
+if (!pagesDir) throw new Error('usage: autoimport-measure <pages_dir> [--book <config.json>] [--limit N] [--emit <dir>]');
+
+// --book <config>: every book-specific fact lives in scripts/ml/books/*.json.
+// Defaults preserve the original 1001 behaviour (and its artifact names).
+const bookAt = process.argv.indexOf('--book');
+const BOOK = {
+  slug: '1001',
+  title: '1001 Chess Exercises for Beginners',
+  pages: [5, 105] as [number, number],
+  solutionsAfterPage: 100,
+  maxNumber: 1001,
+  text: 'data/ml/1001-text.json',
+  cache: 'data/ml/1001-reads.json',
+  report: 'data/ml/autoimport-report.json',
+  ...(bookAt > 0
+    ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
+    : {}),
+};
 const limitAt = process.argv.indexOf('--limit');
 const limit = limitAt > 0 ? Number(process.argv[limitAt + 1]) : Infinity;
 // --emit dumps per-puzzle board grays + per-page grays for the import step's
@@ -55,7 +72,7 @@ const net = parseCellNet(
   readFileSync(resolve(REPO, 'web', 'public', 'models', 'cellnet-v1.bin')).buffer.slice(0) as ArrayBuffer,
 );
 const textData = JSON.parse(
-  readFileSync(resolve(REPO, 'data', 'ml', '1001-text.json'), 'utf-8'),
+  readFileSync(resolve(REPO, BOOK.text), 'utf-8'),
 ) as {
   pages: {
     page: number;
@@ -92,7 +109,7 @@ function pageNumbers(words: { x0: number; y0: number; x1: number; y1: number; te
     if (run.length === 0) return;
     const text = run.map((w) => w.text).join('');
     const value = Number(text);
-    if (value >= 1 && value <= 1001 && text.length <= 4) {
+    if (value >= 1 && value <= BOOK.maxNumber && text.length <= 4) {
       out.push({ value, x0: run[0]!.x0, x1: run[run.length - 1]!.x1, y1: run[run.length - 1]!.y1 });
     }
     run = [];
@@ -171,7 +188,7 @@ function parseMainline(body: string): Mainline | null {
 /** number -> raw entry body, from the solutions pages. */
 function solutionEntries(): Map<number, string> {
   const startPage = textData.pages.findIndex(
-    (p) => p.page > 100 && /\d+\s*-\s*1\s*\./.test(p.text),
+    (p) => p.page > BOOK.solutionsAfterPage && /\d+\s*-\s*1\s*\./.test(p.text),
   );
   const joined = textData.pages
     .slice(startPage)
@@ -184,7 +201,7 @@ function solutionEntries(): Map<number, string> {
   const hits = [...joined.matchAll(anchor)];
   for (let i = 0; i < hits.length; i++) {
     const value = Number(hits[i]![1]!.replace(/\s/g, ''));
-    if (value < 1 || value > 1001) continue;
+    if (value < 1 || value > BOOK.maxNumber) continue;
     const from = hits[i]!.index! + hits[i]![0].length;
     const to = i + 1 < hits.length ? hits[i + 1]!.index! : joined.length;
     if (!out.has(value)) out.set(value, joined.slice(from, to));
@@ -439,7 +456,7 @@ const solutions = solutionEntries();
 console.log(`${solutions.size} solution entries parsed from the text layer`);
 
 // Board reads are deterministic and slow (~1 s each); cache them across runs.
-const cachePath = resolve(REPO, 'data', 'ml', '1001-reads.json');
+const cachePath = resolve(REPO, BOOK.cache);
 let readCache = new Map<number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number } }>();
 try {
   readCache = new Map(
@@ -453,7 +470,7 @@ try {
 let boardsRead = 0;
 for (const pageInfo of textData.pages) {
   if (boardsRead >= limit) break;
-  if (pageInfo.page < 5 || pageInfo.page > 105) continue;
+  if (pageInfo.page < BOOK.pages[0] || pageInfo.page > BOOK.pages[1]) continue;
   let page: Gray | null = null;
   const pageExtras = extraLabels.filter((e) => e.page === pageInfo.page);
   const needsPage =
@@ -801,7 +818,7 @@ const byStatus = new Map<string, number>();
 for (const r of results.values()) byStatus.set(r.status, (byStatus.get(r.status) ?? 0) + 1);
 const validated = [...results.values()].filter((r) => r.status === 'validated');
 
-console.log('\n=== auto-import measurement: 1001 Chess Exercises ===');
+console.log(`\n=== auto-import measurement: ${BOOK.title} ===`);
 console.log(`diagrams matched to puzzle numbers: ${results.size}`);
 for (const [status, count] of [...byStatus.entries()].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${status}: ${count}`);
@@ -820,7 +837,7 @@ for (const v of validated.slice(0, 6)) {
 }
 
 writeFileSync(
-  resolve(REPO, 'data', 'ml', 'autoimport-report.json'),
+  resolve(REPO, BOOK.report),
   JSON.stringify([...results.values()], null, 1),
 );
-console.log('\nfull report -> data/ml/autoimport-report.json');
+console.log(`\nfull report -> ${BOOK.report}`);

@@ -25,7 +25,16 @@ import { makeSanAndPlay, parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 
 const REPO = resolve(import.meta.dirname, '..', '..');
-const BOOK = resolve(REPO, 'vault', 'puzzlebooks', '1001 Chess Exercises for Beginners');
+// --book <config> mirrors autoimport-measure; defaults = the 1001 book.
+const bookAt = process.argv.indexOf('--book');
+const CFG = {
+  title: '1001 Chess Exercises for Beginners',
+  report: 'data/ml/autoimport-report.json',
+  ...(bookAt > 0
+    ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
+    : {}),
+};
+const BOOK = resolve(REPO, 'vault', 'puzzlebooks', CFG.title);
 const emitDirArg = process.argv[2];
 if (!emitDirArg) throw new Error('usage: autoimport-import <emit_dir>');
 const emitDir: string = emitDirArg;
@@ -44,7 +53,7 @@ interface ReportEntry {
 }
 
 const report = JSON.parse(
-  readFileSync(resolve(REPO, 'data', 'ml', 'autoimport-report.json'), 'utf-8'),
+  readFileSync(resolve(REPO, CFG.report), 'utf-8'),
 ) as ReportEntry[];
 
 // --- engine -------------------------------------------------------------------

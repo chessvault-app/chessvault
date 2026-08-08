@@ -1,0 +1,10 @@
+{
+  "slug": "ccw",
+  "title": "The Complete Chess Workout",
+  "pages": [1, 999],
+  "solutionsAfterPage": 999,
+  "maxNumber": 1200,
+  "text": "data/ml/ccw-text.json",
+  "cache": "data/ml/ccw-reads.json",
+  "report": "data/ml/ccw-report.json"
+}
