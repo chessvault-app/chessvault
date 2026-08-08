@@ -803,7 +803,7 @@ function PuzzleList({
         failed={stateCounts.failed}
         className="mb-3"
       />
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+      <div className="mb-2 flex items-center gap-1.5 overflow-x-auto scrollbar-hidden sm:flex-wrap">
         {(
           [
             ['all', 'All'],

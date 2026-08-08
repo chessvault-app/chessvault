@@ -35,10 +35,13 @@ export function PhotoImport({
   templates,
   onApply,
   onClose,
+  initialFile,
 }: {
   templates: Template[];
   onApply: (reading: PhotoReading) => void;
   onClose: () => void;
+  /** Skip the chooser: a file already picked by the caller's own UI. */
+  initialFile?: Blob;
 }) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);
@@ -75,6 +78,11 @@ export function PhotoImport({
       );
     };
     image.src = url;
+  }, []);
+
+  useEffect(() => {
+    if (initialFile) pick(initialFile);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
   }, []);
 
   // Ctrl+V anywhere while the dialog is open loads the clipboard image —

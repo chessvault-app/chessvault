@@ -395,7 +395,7 @@ function CollectionView() {
   });
 
   return (
-    <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
+    <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden lg:p-6">
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -732,7 +732,7 @@ function ArchiveBrowser({
 
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (
-        <div className="border-line flex flex-wrap items-center gap-1.5 border-t px-3 py-2">
+        <div className="border-line flex items-center gap-1.5 overflow-x-auto border-t px-3 py-2 scrollbar-hidden sm:flex-wrap">
           <Select
             value={month}
             onChange={(m) => void loadMonth(m)}

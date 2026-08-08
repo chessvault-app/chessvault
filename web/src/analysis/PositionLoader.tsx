@@ -23,6 +23,7 @@ export function LoadPositionButton() {
   // offers text (FEN/PGN) and image import; the latter swaps to the same
   // PhotoImport flow the editor uses.
   const [templates, setTemplates] = useState<Template[] | null>(null);
+  const [imageFile, setImageFile] = useState<Blob | null>(null);
   return (
     <>
       <Button
@@ -37,7 +38,8 @@ export function LoadPositionButton() {
       {open && templates === null && (
         <LoadDialog
           onClose={() => setOpen(false)}
-          onImage={() => {
+          onImage={(file) => {
+            setImageFile(file);
             void builtinTemplates()
               .then(setTemplates)
               .catch(() => setTemplates([]));
@@ -47,6 +49,7 @@ export function LoadPositionButton() {
       {templates !== null && (
         <PhotoImport
           templates={templates}
+          initialFile={imageFile ?? undefined}
           onApply={(reading) => {
             if (reading.fen) useAnalysis.getState().loadFen(reading.fen);
             setTemplates(null);
@@ -62,7 +65,7 @@ export function LoadPositionButton() {
   );
 }
 
-function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: () => void }) {
+function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: (file: Blob | null) => void }) {
   const [text, setText] = useState('');
   const textarea = useRef<HTMLTextAreaElement>(null);
   const loadFen = useAnalysis((s) => s.loadFen);
@@ -73,9 +76,21 @@ function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: () => 
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
     };
+    const onPaste = (e: ClipboardEvent): void => {
+      const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith('image/'));
+      const file = item?.getAsFile();
+      if (file) {
+        e.preventDefault();
+        onImage(file);
+      }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    window.addEventListener('paste', onPaste);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('paste', onPaste);
+    };
+  }, [onClose, onImage]);
 
   const looksLikePgn = (value: string): boolean =>
     /^\s*\[/.test(value) || /\b1\s*\.\s*[A-Za-z]/.test(value);
@@ -143,12 +158,32 @@ function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: () => 
               </p>
             )}
 
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onImage} title="Read the position from a picture">
-                <ImagePlus className="mr-1 size-3.5" />
-                From image
-              </Button>
-              <span className="flex-1" />
+            {/* The photo half of the ONE load dialog (lanph3re's call): click,
+                drop, or paste an image; the corner-adjust flow takes over. */}
+            <label
+              className="border-line hover:border-line-strong text-subtle flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-xs transition-colors"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/'));
+                if (file) onImage(file);
+              }}
+            >
+              <ImagePlus className="size-4" />
+              …or read the position from a picture
+              <span className="text-[0.6875rem]">click to choose, drop a file, or paste an image</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = '';
+                  if (file) onImage(file);
+                }}
+              />
+            </label>
+            <div className="flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={onClose}>
                 Cancel
               </Button>
