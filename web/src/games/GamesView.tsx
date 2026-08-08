@@ -14,6 +14,8 @@ import {
   Trophy,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getNode, mainlineFrom } from '@shared/tree';
+import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -201,6 +203,46 @@ function EliteBrowser() {
     if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(game.id));
   };
 
+  // Preview eye, matching the collection rows: the DB stores movetext,
+  // not positions, so the final fen is derived lazily from the game's
+  // PGN (cached per id). Coarse pointers tap it open, fine ones hover.
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const fenCache = useRef<Map<number, string>>(new Map());
+  const previewSeq = useRef(0);
+  const previewFor = useRef<number | null>(null);
+  const showPreview = async (game: RefGame, anchor: Element): Promise<void> => {
+    const seq = ++previewSeq.current;
+    let fen = fenCache.current.get(game.id);
+    if (!fen) {
+      const res = await fetch(`/api/refgames/${game.id}/pgn`);
+      if (!res.ok) return;
+      const { pgn } = (await res.json()) as { pgn: string };
+      try {
+        const first = pgnToChapters(pgn)[0];
+        if (!first) return;
+        const lastId = mainlineFrom(first.tree, first.tree.rootId).at(-1) ?? first.tree.rootId;
+        fen = getNode(first.tree, lastId).fen;
+      } catch {
+        return;
+      }
+      fenCache.current.set(game.id, fen);
+    }
+    if (seq !== previewSeq.current) return;
+    const rect = anchor.getBoundingClientRect();
+    setPreview({
+      fen,
+      orientation: 'white',
+      top: Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200),
+      left: Math.max(rect.left - 192, 8),
+    });
+  };
+  const hidePreview = (): void => {
+    previewSeq.current += 1;
+    previewFor.current = null;
+    setPreview(null);
+  };
+  const coarse = (): boolean => window.matchMedia('(pointer: coarse)').matches;
+
   if (meta && !meta.ready) {
     return (
       <div className="grid h-full place-items-center p-8">
@@ -268,6 +310,28 @@ function EliteBrowser() {
                     {g.eco || g.opening ? ` · ${g.eco ?? ''} ${g.opening ?? ''}` : ''}
                   </span>
                 </span>
+                <span className="grid size-7 shrink-0 place-items-center">
+                  <Eye
+                    className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-4.5"
+                    aria-label="Preview the final position"
+                    onMouseEnter={(e) => {
+                      if (!coarse()) void showPreview(g, e.currentTarget);
+                    }}
+                    onMouseLeave={() => {
+                      if (!coarse()) hidePreview();
+                    }}
+                    onClick={(e) => {
+                      if (!coarse()) return;
+                      e.stopPropagation();
+                      if (previewFor.current === g.id) {
+                        hidePreview();
+                      } else {
+                        previewFor.current = g.id;
+                        void showPreview(g, e.currentTarget);
+                      }
+                    }}
+                  />
+                </span>
                 <ResultScore result={g.result} userSide={null} />
               </button>
               <Button
@@ -295,6 +359,17 @@ function EliteBrowser() {
           )}
         </ul>
       </Panel>
+      {preview && (
+        <div
+          style={{ top: preview.top, left: preview.left }}
+          className={cn(
+            'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
+            'shadow-[var(--shadow-pop)]',
+          )}
+        >
+          <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded" />
+        </div>
+      )}
     </div>
   );
 }
