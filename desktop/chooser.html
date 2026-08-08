@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Chess Vault</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0b0e14;
+        color: #dbe1ec;
+        font-family: system-ui, sans-serif;
+      }
+      .card {
+        width: min(26rem, 90vw);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 1.1rem;
+        margin: 0 0 0.25rem;
+      }
+      p {
+        margin: 0;
+        color: #8b94a7;
+        font-size: 0.85rem;
+      }
+      button {
+        padding: 0.7rem 1rem;
+        border-radius: 0.6rem;
+        border: 1px solid #2a3242;
+        background: #151a24;
+        color: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #1c2330;
+      }
+      button.primary {
+        background: #0284c7;
+        border-color: #0284c7;
+        color: #fff;
+      }
+      input {
+        padding: 0.6rem 0.8rem;
+        border-radius: 0.6rem;
+        border: 1px solid #2a3242;
+        background: #10141d;
+        color: inherit;
+        font-size: 0.85rem;
+      }
+      .error {
+        color: #e5484d;
+        font-size: 0.8rem;
+      }
+      form {
+        display: none;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Chess Vault</h1>
+      <p>Where does your vault live?</p>
+      <p class="error" id="error"></p>
+      <button class="primary" id="local">On this computer</button>
+      <button id="remote">On my server…</button>
+      <form id="urlForm">
+        <input id="url" type="url" placeholder="https://vault.example.com" required />
+        <button class="primary" type="submit">Connect</button>
+      </form>
+    </div>
+    <script>
+      if (new URLSearchParams(location.search).get('error') === 'server') {
+        document.getElementById('error').textContent =
+          'The local server did not start — check the terminal output.';
+      }
+      document.getElementById('local').onclick = () => window.vaultShell.choose('local');
+      document.getElementById('remote').onclick = () => {
+        document.getElementById('urlForm').style.display = 'flex';
+        document.getElementById('url').focus();
+      };
+      document.getElementById('urlForm').onsubmit = (e) => {
+        e.preventDefault();
+        window.vaultShell.choose('remote', document.getElementById('url').value.trim());
+      };
+    </script>
+  </body>
+</html>

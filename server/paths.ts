@@ -6,8 +6,15 @@ const here = dirname(fileURLToPath(import.meta.url));
 /** Repo root, resolved from this file so it works regardless of cwd. */
 export const REPO_ROOT = resolve(here, '..');
 
+/** Env override, for deployments where the data lives outside the repo
+    (the desktop app's local mode, a cloud volume). Empty means unset. */
+const fromEnv = (key: string): string | undefined => {
+  const value = process.env[key]?.trim();
+  return value ? resolve(value) : undefined;
+};
+
 /** The user's irreplaceable data. Plain files, intentionally git-friendly. */
-export const VAULT = resolve(REPO_ROOT, 'vault');
+export const VAULT = fromEnv('CHESS_VAULT_DIR') ?? resolve(REPO_ROOT, 'vault');
 export const VAULT_STUDIES = resolve(VAULT, 'studies');
 export const VAULT_NOTES = resolve(VAULT, 'notes');
 export const VAULT_GAMES = resolve(VAULT, 'games');
@@ -16,7 +23,7 @@ export const VAULT_SOURCES = resolve(VAULT, 'sources');
 export const VAULT_CONFIG = resolve(VAULT, 'config.json');
 
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
-export const DATA = resolve(REPO_ROOT, 'data');
+export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_BOOKS = resolve(DATA, 'books');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 export const DATA_OPENINGS = resolve(DATA, 'openings.json');
