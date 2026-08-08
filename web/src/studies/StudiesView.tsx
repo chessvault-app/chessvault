@@ -13,6 +13,7 @@ import { navigate } from '@/lib/router';
 import { formatWhen } from '@/lib/dates';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
+import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { StudyView } from './StudyView';
 
@@ -159,20 +160,19 @@ function CreateMenu() {
             {mode === 'study' ? 'New study' : 'New collection'}
           </p>
           {mode === 'study' && folders.length > 0 && (
-            <select
+            <Select
               value={folder}
-              onChange={(e) => setFolder(e.target.value)}
-              className={cn(
-                'bg-surface-2 text-fg border-line h-8 rounded-md border px-2 text-xs outline-none',
-              )}
-            >
-              <option value="">(no collection)</option>
-              {folders.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+              onChange={setFolder}
+              ariaLabel="Collection"
+              groups={[
+                {
+                  options: [
+                    { value: '', label: '(no collection)' },
+                    ...folders.map((f) => ({ value: f, label: f })),
+                  ],
+                },
+              ]}
+            />
           )}
           <Input
             autoFocus

@@ -17,6 +17,7 @@ import {
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
+import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
@@ -99,30 +100,21 @@ export function ExplorerPane({
         actions={
           <>
             {enabled && (books.length > 0 || isRemoteDb(book)) && (
-              <select
+              <Select
                 value={book ?? ''}
-                onChange={(e) => selectBook(e.target.value)}
-                aria-label="Opening book"
-                className={cn(
-                  'bg-surface-2 text-fg border-line h-6 min-w-0 max-w-[8rem] shrink truncate rounded-md border',
-                  'px-1.5 text-xs outline-none',
-                )}
-              >
-                <optgroup label="Local books">
-                  {books.map((b) => (
-                    <option key={b.name} value={b.name}>
-                      {b.name}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Online (via proxy)">
-                  {REMOTE_DBS.map((db) => (
-                    <option key={db.id} value={db.id}>
-                      {db.label}
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
+                onChange={selectBook}
+                ariaLabel="Opening book"
+                size="sm"
+                align="end"
+                className="max-w-[8rem]"
+                groups={[
+                  { label: 'Local books', options: books.map((b) => ({ value: b.name, label: b.name })) },
+                  {
+                    label: 'Online (via proxy)',
+                    options: REMOTE_DBS.map((db) => ({ value: db.id, label: db.label })),
+                  },
+                ]}
+              />
             )}
             {enabled && (
               <Button

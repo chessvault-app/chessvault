@@ -1,7 +1,6 @@
 import {
   ArrowLeft,
   Check,
-  ChevronDown,
   Download,
   ExternalLink,
   Loader2,
@@ -20,6 +19,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
+import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -581,25 +581,21 @@ function ArchiveBrowser({
         title="Browse chess.com"
         actions={
           months.length > 0 ? (
-            <div className="relative">
-              <select
-                value={month}
-                onChange={(e) => void loadMonth(e.target.value)}
-                aria-label="Archive month"
-                className={cn(
-                  'bg-surface-2 text-fg border-line h-7 appearance-none rounded-md border',
-                  'pl-2 pr-7 text-xs outline-none',
-                )}
-              >
-                {months.map((m) => (
-                  <option key={m.month} value={m.month}>
-                    {m.month}
-                    {m.cached ? ` · ${m.games} ✓` : offline ? ' · needs internet' : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="text-subtle pointer-events-none absolute right-1.5 top-1.5 size-3.5" />
-            </div>
+            <Select
+              value={month}
+              onChange={(m) => void loadMonth(m)}
+              ariaLabel="Archive month"
+              size="sm"
+              align="end"
+              groups={[
+                {
+                  options: months.map((m) => ({
+                    value: m.month,
+                    label: `${m.month}${m.cached ? ` · ${m.games} ✓` : offline ? ' · needs internet' : ''}`,
+                  })),
+                },
+              ]}
+            />
           ) : null
         }
       />

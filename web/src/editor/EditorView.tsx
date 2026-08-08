@@ -22,6 +22,7 @@ import { copyText } from '@/lib/clipboard';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { Select } from '@/ui/Select';
 import { Input, TextArea } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
@@ -232,21 +233,22 @@ export function EditorView({
             </Field>
 
             <Field label="En passant target">
-              <select
+              <Select
                 value={state.epSquare ?? ''}
-                onChange={(e) => patch({ epSquare: e.target.value || null })}
-                className={cn(
-                  'bg-surface-inset border-line h-8 w-full rounded-md border px-2',
-                  'font-mono text-xs outline-none focus:border-primary/50',
-                )}
-              >
-                <option value="">none</option>
-                {epOptions.map((square) => (
-                  <option key={square} value={square}>
-                    {square}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => patch({ epSquare: v || null })}
+                ariaLabel="En passant target"
+                inset
+                mono
+                className="w-full"
+                groups={[
+                  {
+                    options: [
+                      { value: '', label: 'none' },
+                      ...epOptions.map((square) => ({ value: square, label: square })),
+                    ],
+                  },
+                ]}
+              />
             </Field>
 
             <div className="grid grid-cols-2 gap-2">

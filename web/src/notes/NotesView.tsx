@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
+import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { NoteView } from './NoteView';
 
@@ -168,18 +169,19 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
             {mode === 'note' ? 'New note' : 'New collection'}
           </p>
           {mode === 'note' && folders.length > 0 && (
-            <select
+            <Select
               value={folder}
-              onChange={(e) => setFolder(e.target.value)}
-              className="bg-surface-2 text-fg border-line h-8 rounded-md border px-2 text-xs outline-none"
-            >
-              <option value="">(no collection)</option>
-              {folders.map((f) => (
-                <option key={f} value={f}>
-                  {f}
-                </option>
-              ))}
-            </select>
+              onChange={setFolder}
+              ariaLabel="Collection"
+              groups={[
+                {
+                  options: [
+                    { value: '', label: '(no collection)' },
+                    ...folders.map((f) => ({ value: f, label: f })),
+                  ],
+                },
+              ]}
+            />
           )}
           <Input
             autoFocus

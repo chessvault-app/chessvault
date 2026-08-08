@@ -1,0 +1,194 @@
+import { Check, ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { cn } from '@/lib/cn';
+
+/**
+ * A themed replacement for `<select>`: native controls styled fine, but
+ * their *opened* list is OS chrome — the one popup in the app the theme
+ * could not reach (and lanph3re's standing verdict on bare selects: "plain and
+ * not aesthetically good"). The trigger reads like an input; the list is
+ * a fixed-position popover, so it escapes overflow-hidden panels.
+ */
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+export interface SelectGroup {
+  label?: string;
+  options: SelectOption[];
+}
+
+const triggerSizes = {
+  sm: 'h-7 px-2 text-xs',
+  md: 'h-8 px-2.5 text-xs',
+} as const;
+
+export function Select({
+  value,
+  onChange,
+  groups,
+  ariaLabel,
+  size = 'md',
+  align = 'start',
+  inset = false,
+  mono = false,
+  className,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  groups: SelectGroup[];
+  ariaLabel: string;
+  size?: keyof typeof triggerSizes;
+  /** Which trigger edge the popover hugs. */
+  align?: 'start' | 'end';
+  /** Input-like trigger for form contexts (matches ui/Input's backdrop). */
+  inset?: boolean;
+  mono?: boolean;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  const flat = useMemo(() => groups.flatMap((g) => g.options), [groups]);
+  const selected = flat.find((o) => o.value === value) ?? null;
+
+  const show = (): void => {
+    setRect(trigger.current?.getBoundingClientRect() ?? null);
+    setActive(Math.max(0, flat.findIndex((o) => o.value === value)));
+    setOpen(true);
+  };
+
+  const pick = (v: string): void => {
+    setOpen(false);
+    if (v !== value) onChange(v);
+  };
+
+  // The popover is position-fixed off a measured rect: any scroll or
+  // resize invalidates it, and a click elsewhere dismisses it.
+  useEffect(() => {
+    if (!open) return;
+    const close = (): void => setOpen(false);
+    const onDown = (e: MouseEvent): void => {
+      const t = e.target as Node;
+      if (!trigger.current?.contains(t) && !list.current?.contains(t)) close();
+    };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+    };
+  }, [open]);
+
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    if (!open) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        show();
+      }
+      return;
+    }
+    if (e.key === 'Escape') setOpen(false);
+    else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(flat.length - 1, i + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(0, i - 1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const opt = flat[active];
+      if (opt) pick(opt.value);
+    } else if (e.key === 'Tab') {
+      setOpen(false);
+    }
+  };
+
+  let index = -1;
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        aria-label={ariaLabel}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => (open ? setOpen(false) : show())}
+        onKeyDown={onKeyDown}
+        className={cn(
+          'border-line text-fg flex min-w-0 shrink items-center gap-1 rounded-md border',
+          'transition-colors duration-100',
+          inset ? 'bg-surface-inset focus:border-primary/50' : 'bg-surface-2 hover:bg-surface-3',
+          triggerSizes[size],
+          mono && 'font-mono',
+          className,
+        )}
+      >
+        <span className="min-w-0 flex-1 truncate text-left">{selected?.label ?? '—'}</span>
+        <ChevronDown className="text-subtle size-3 shrink-0" />
+      </button>
+
+      {open && rect && (
+        <div
+          ref={list}
+          role="listbox"
+          aria-label={ariaLabel}
+          style={{
+            position: 'fixed',
+            top: rect.bottom + 4,
+            ...(align === 'end'
+              ? { right: window.innerWidth - rect.right }
+              : { left: rect.left }),
+            minWidth: rect.width,
+            maxHeight: Math.max(120, window.innerHeight - rect.bottom - 16),
+          }}
+          className={cn(
+            'border-line bg-surface z-50 w-max max-w-72 overflow-y-auto rounded-lg border p-1',
+            'shadow-[var(--shadow-pop)]',
+          )}
+        >
+          {groups.map((group, gi) => (
+            <div key={gi}>
+              {group.label && (
+                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+                  {group.label}
+                </p>
+              )}
+              {group.options.map((option) => {
+                index += 1;
+                const i = index;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="option"
+                    aria-selected={option.value === value}
+                    onMouseEnter={() => setActive(i)}
+                    onClick={() => pick(option.value)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                      'transition-colors duration-100',
+                      i === active && 'bg-surface-2',
+                      option.value === value ? 'text-primary font-medium' : 'text-fg',
+                      mono && 'font-mono',
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    {option.value === value && <Check className="size-3 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
