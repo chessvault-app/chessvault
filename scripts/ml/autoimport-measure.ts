@@ -40,6 +40,17 @@ const emitAt = process.argv.indexOf('--emit');
 const emitDir = emitAt > 0 ? process.argv[emitAt + 1]! : null;
 if (emitDir) mkdirSync(emitDir, { recursive: true });
 
+// --extra-labels: numbers recovered by the image-side digit reader
+// (scripts/ml/digit_labels.py) for diagrams whose printed number the PDF
+// text layer lost. Each { page, rect (page fractions), read } becomes a
+// synthetic label box just above its diagram, so the normal matching,
+// reading and validation flow picks the diagram up like any other.
+const extraAt = process.argv.indexOf('--extra-labels');
+const extraLabels: { page: number; rect: { x: number; y: number; w: number; h: number }; read: number }[] =
+  extraAt > 0
+    ? (JSON.parse(readFileSync(process.argv[extraAt + 1]!, 'utf-8')) as typeof extraLabels)
+    : [];
+
 const net = parseCellNet(
   readFileSync(resolve(REPO, 'web', 'public', 'models', 'cellnet-v1.bin')).buffer.slice(0) as ArrayBuffer,
 );
@@ -442,7 +453,11 @@ for (const pageInfo of textData.pages) {
   if (boardsRead >= limit) break;
   if (pageInfo.page < 5 || pageInfo.page > 105) continue;
   let page: Gray | null = null;
-  const needsPage = emitDir !== null || ![...readCache.values()].some((c) => c.page === pageInfo.page);
+  const pageExtras = extraLabels.filter((e) => e.page === pageInfo.page);
+  const needsPage =
+    emitDir !== null ||
+    pageExtras.length > 0 ||
+    ![...readCache.values()].some((c) => c.page === pageInfo.page);
   if (needsPage) {
     try {
       page = loadGray(resolve(pagesDir, `page-${String(pageInfo.page).padStart(3, '0')}.gray`));
@@ -457,6 +472,16 @@ for (const pageInfo of textData.pages) {
     x1: n.x1 * scale,
     y1: n.y1 * scale,
   }));
+  if (page) {
+    for (const e of pageExtras) {
+      numbers.push({
+        value: e.read,
+        x0: e.rect.x * page.w,
+        x1: (e.rect.x + 0.03) * page.w,
+        y1: e.rect.y * page.h - 2,
+      });
+    }
+  }
   if (!needsPage) {
     for (const [value, cached] of readCache) {
       if (cached.page !== pageInfo.page || results.has(value)) continue;
