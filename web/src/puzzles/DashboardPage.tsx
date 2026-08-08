@@ -176,8 +176,8 @@ export function DashboardPage() {
           />
           <StatCard label="Win rate" value={winRate === null ? '—' : `${winRate}%`} />
           <StatCard
-            label="To review"
-            title="Distinct puzzles whose LATEST attempt failed — review-session results included"
+            label="Failed"
+            title="Distinct puzzles whose latest attempt failed — always the review pool"
             value={String(failed)}
             action={
               failed > 0 ? (
@@ -263,12 +263,12 @@ export function DashboardPage() {
             title={history === null ? 'Puzzles' : `Puzzles · ${puzzles.length}`}
           />
           {/* Filters: outcome × rating band. Click a row to replay it. */}
-          <div className="border-line flex flex-wrap items-center gap-1 border-b px-3 py-2">
+          <div className="border-line flex items-center gap-1 overflow-x-auto border-b px-3 py-2 scrollbar-hidden sm:flex-wrap">
             {(
               [
                 ['all', 'All'],
                 ['solved', 'Solved'],
-                ['review', 'To review'],
+                ['review', 'Failed'],
               ] as [ResultFilter, string][]
             ).map(([id, label]) => (
               <FilterChip

@@ -135,7 +135,7 @@ export function ThemesPage() {
           <h1 className="text-fg text-base font-semibold">Puzzle themes</h1>
         </div>
 
-        <div className="mb-5 flex flex-wrap gap-2">
+        <div className="mb-5 flex gap-2 overflow-x-auto scrollbar-hidden sm:flex-wrap">
           <ThemeCard
             className="w-full sm:w-auto"
             label="All themes"
