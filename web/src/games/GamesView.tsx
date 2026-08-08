@@ -4,6 +4,7 @@ import {
   Eye,
   Loader2,
   NotebookPen,
+  Pencil,
   Plus,
   Star,
   Swords,
@@ -346,6 +347,24 @@ function CollectionView() {
     });
   };
 
+  // Inline rename, like notes/studies: the doc id IS the file name.
+  const [renamingKey, setRenamingKey] = useState<string | null>(null);
+  const renameGame = async (game: GameSummary, to: string): Promise<void> => {
+    setRenamingKey(null);
+    const from = game.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+    const next = to.trim();
+    if (!next || next === from) return;
+    const res = await fetch('/api/games/docs/move', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ from, to: next }),
+    });
+    if (!res.ok) {
+      setError(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'rename failed');
+    }
+    void load();
+  };
+
   const removeGame = async (game: GameSummary): Promise<void> => {
     const id = game.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
     await fetch(`/api/games/docs/${encodeURIComponent(id)}`, { method: 'DELETE' });
@@ -446,10 +465,24 @@ function CollectionView() {
                 key={gameKey(game)}
                 game={game}
                 customName={customName(game)}
+                renaming={renamingKey === gameKey(game)}
+                onRename={(to) => void renameGame(game, to)}
                 onOpen={() => openGame(game)}
                 onPreview={setPreview}
                 actions={
                   <>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      title="Rename this game"
+                      className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRenamingKey(gameKey(game));
+                      }}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -592,6 +625,19 @@ function ArchiveBrowser({
     }
   };
 
+  const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
+  const [resultFilter, setResultFilter] = useState<'any' | 'win' | 'loss' | 'draw'>('any');
+  const visibleMonthGames = monthGames.filter((g) => {
+    if (sideFilter !== 'any' && g.userSide !== sideFilter) return false;
+    if (resultFilter === 'draw') return g.result === '1/2-1/2';
+    if (resultFilter !== 'any') {
+      if (!g.userSide || g.result === '1/2-1/2') return false;
+      const won = (g.result === '1-0') === (g.userSide === 'white');
+      return resultFilter === 'win' ? won : !won;
+    }
+    return true;
+  });
+
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
     if (next === provider) return;
     setProvider(next);
@@ -673,32 +719,50 @@ function ArchiveBrowser({
               {loading === 'months' ? <Loader2 className="mr-1 size-3.5 animate-spin" /> : null}
               Browse
             </Button>
-          {months.length > 0 ? (
-            <Select
-              value={month}
-              onChange={(m) => void loadMonth(m)}
-              ariaLabel="Archive month"
-              size="sm"
-              align="end"
-              className="w-[9.5rem]"
-              groups={[
-                {
-                  options: months.map((m) => ({
-                    value: m.month,
-                    label: `${m.month}${m.cached ? ` · ${m.games} saved` : offline ? ' · needs internet' : ''}`,
-                  })),
-                },
-              ]}
-            />
-          ) : (
-            /* Reserved slot: the picker appearing must not reflow the row. */
-            <div className="border-line bg-surface-2 text-subtle flex h-7 w-[9.5rem] items-center rounded-md border px-2 text-xs opacity-50">
-              Month
-            </div>
-          )}
           </>
         }
       />
+
+      {/* Second row, only once an archive is loaded: month + quick filters. */}
+      {months.length > 0 && (
+        <div className="border-line flex flex-wrap items-center gap-1.5 border-t px-3 py-2">
+          <Select
+            value={month}
+            onChange={(m) => void loadMonth(m)}
+            ariaLabel="Archive month"
+            size="sm"
+            groups={[
+              {
+                options: months.map((m) => ({
+                  value: m.month,
+                  label: `${m.month}${m.cached ? ` · ${m.games} saved` : offline ? ' · needs internet' : ''}`,
+                })),
+              },
+            ]}
+          />
+          <span className="bg-line mx-1 h-4 w-px" />
+          {(
+            [
+              ['any', 'Both'],
+              ['white', 'As white'],
+              ['black', 'As black'],
+            ] as const
+          ).map(([id, label]) => (
+            <FilterChip key={id} label={label} active={sideFilter === id} onClick={() => setSideFilter(id)} />
+          ))}
+          <span className="bg-line mx-1 h-4 w-px" />
+          {(
+            [
+              ['any', 'All'],
+              ['win', 'Won'],
+              ['loss', 'Lost'],
+              ['draw', 'Drawn'],
+            ] as const
+          ).map(([id, label]) => (
+            <FilterChip key={id} label={label} active={resultFilter === id} onClick={() => setResultFilter(id)} />
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
         {offline && months.length > 0 && (
           <span className="text-warn text-xs">offline — cached months only</span>
@@ -713,7 +777,7 @@ function ArchiveBrowser({
               <Loader2 className="size-3.5 animate-spin" /> fetching {month}…
             </li>
           ) : (
-            monthGames.map((game) => {
+            visibleMonthGames.map((game) => {
               const inCollection =
                 added.has(gameKey(game)) ||
                 collectionKeys.has(`${game.white}|${game.black}|${game.date}`);
@@ -760,6 +824,8 @@ function GameRow({
   onPreview,
   actions,
   customName,
+  renaming = false,
+  onRename,
 }: {
   game: GameSummary;
   onOpen: () => void;
@@ -767,6 +833,8 @@ function GameRow({
   actions: React.ReactNode;
   /** A user-chosen document name (in-game rename), shown instead of the matchup. */
   customName?: string | null;
+  renaming?: boolean;
+  onRename?: (to: string) => void;
 }) {
   // The eye pops the final position beside the row — an explicit target
   // (matching the dashboard's puzzle previews) instead of the old
@@ -798,7 +866,21 @@ function GameRow({
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <ResultDot result={game.result} userSide={game.userSide} />
         <div className="min-w-0 flex-1">
-          {customName ? (
+          {renaming ? (
+            <Input
+              autoFocus
+              inputSize="sm"
+              defaultValue={customName ?? game.file.replace(/^collection\//, '').replace(/\.pgn$/, '')}
+              onClick={(e) => e.stopPropagation()}
+              onBlur={(e) => onRename?.(e.target.value)}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') onRename?.('');
+              }}
+              className="w-full max-w-sm text-sm"
+            />
+          ) : customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
             <p className="text-fg truncate text-sm font-medium">
@@ -936,22 +1018,28 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder="White rating" inputMode="numeric" />
           <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder="Black rating" inputMode="numeric" />
           <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="Event / tournament (optional)" />
-          <Select
-            value={result}
-            onChange={setResult}
-            ariaLabel="Result"
-            inset
-            groups={[
-              {
-                options: [
-                  { value: '', label: 'Result — from the moves' },
-                  { value: '1-0', label: '1-0 · White won' },
-                  { value: '0-1', label: '0-1 · Black won' },
-                  { value: '1/2-1/2', label: '½-½ · Draw' },
-                ],
-              },
-            ]}
-          />
+          {/* Segmented, not a dropdown: four states, all visible at once. */}
+          <div className="flex gap-1" role="radiogroup" aria-label="Result">
+            {(
+              [
+                ['', 'Auto', 'Result from the pasted moves'],
+                ['1-0', '1-0', 'White won'],
+                ['0-1', '0-1', 'Black won'],
+                ['1/2-1/2', '½-½', 'Draw'],
+              ] as const
+            ).map(([value, label, hint]) => (
+              <Button
+                key={value}
+                size="sm"
+                variant={result === value ? 'primary' : 'secondary'}
+                title={hint}
+                className="min-w-0 flex-1 px-0 font-mono"
+                onClick={() => setResult(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
         {failure && <p className="text-bad text-xs">{failure}</p>}
         <div className="flex justify-end gap-2">
