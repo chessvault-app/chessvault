@@ -24,8 +24,24 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.normpath(os.path.join(HERE, '..', '..'))
-BOOK = os.path.join(REPO, 'vault', 'puzzlebooks', '1001 Chess Exercises for Beginners', 'diagrams')
 DATA = os.path.join(REPO, 'data', 'ml')
+
+# Optional per-book config (scripts/ml/books/*.json); default = the 1001 book.
+CFG = {
+    'slug': '1001',
+    'title': '1001 Chess Exercises for Beginners',
+    'text': 'data/ml/1001-text.json',
+    'report': 'data/ml/autoimport-report.json',
+}
+if '--book' in sys.argv:
+    _at = sys.argv.index('--book')
+    CFG.update(json.load(open(sys.argv[_at + 1], encoding='utf-8')))
+    del sys.argv[_at:_at + 2]
+BOOK = os.path.join(REPO, 'vault', 'puzzlebooks', CFG['title'], 'diagrams')
+
+def _artifact(default_name):
+    return os.path.join(
+        DATA, default_name if CFG['slug'] == '1001' else f"{CFG['slug']}-{default_name}")
 CROP_W, CROP_H = 16, 24
 
 
@@ -114,8 +130,8 @@ def harvest():
     positions, labels from the word text. No segmentation guessing; the
     text layer is unreliable about EXISTENCE (83 numbers missing) but
     where a digit word exists its box is trustworthy."""
-    text = json.load(open(os.path.join(DATA, '1001-text.json'), encoding='utf-8'))
-    rep = json.load(open(os.path.join(DATA, 'autoimport-report.json'), encoding='utf-8'))
+    text = json.load(open(os.path.join(REPO, CFG['text']), encoding='utf-8'))
+    rep = json.load(open(os.path.join(REPO, CFG['report']), encoding='utf-8'))
     puzzle_pages = {e['page'] for e in rep}
     samples, labels, skipped = [], [], 0
     for p in text['pages']:
@@ -144,7 +160,7 @@ def harvest():
                 labels.append(int(ch))
     X = np.stack(samples)
     y = np.array(labels)
-    np.savez_compressed(os.path.join(DATA, 'digit-samples.npz'), X=X, y=y)
+    np.savez_compressed(_artifact('digit-samples.npz'), X=X, y=y)
     print(f'harvested {len(y)} digits ({skipped} digit-words skipped on segmentation)')
     per = {d: int((y == d).sum()) for d in range(10)}
     print('per digit:', per)
@@ -181,7 +197,7 @@ def evaluate(X, y):
     acc = 1 - wrong / len(y)
     print(f'5-fold accuracy: {acc:.4%} ({wrong} wrong of {len(y)})')
     cent = fit(X, y)
-    np.savez_compressed(os.path.join(DATA, 'digit-model.npz'), centroids=cent)
+    np.savez_compressed(_artifact('digit-model.npz'), centroids=cent)
     print('model -> data/ml/digit-model.npz')
 
 
@@ -236,8 +252,8 @@ def read_number(model, im, rect, min_conf=0.6):
 
 def selftest():
     """End-to-end check against the 858 ground-truth labels."""
-    model = np.load(os.path.join(DATA, 'digit-model.npz'))['centroids']
-    rep = json.load(open(os.path.join(DATA, 'autoimport-report.json'), encoding='utf-8'))
+    model = np.load(_artifact('digit-model.npz'))['centroids']
+    rep = json.load(open(os.path.join(REPO, CFG['report']), encoding='utf-8'))
     pages = {}
     right = wrong = none = 0
     misses = []
@@ -259,7 +275,7 @@ def selftest():
 
 def read(rects_path):
     """Label diagram rects (page + fractional rect) with a read number."""
-    model = np.load(os.path.join(DATA, 'digit-model.npz'))['centroids']
+    model = np.load(_artifact('digit-model.npz'))['centroids']
     entries = json.load(open(rects_path, encoding='utf-8'))
     out = []
     pages = {}
@@ -269,7 +285,7 @@ def read(rects_path):
         out.append({**e,
                     'read': got[0] if got else None,
                     'confidence': round(got[1], 4) if got else 0})
-    dest = os.path.join(DATA, 'recovered-numbers.json')
+    dest = _artifact('recovered-numbers.json')
     json.dump(out, open(dest, 'w', encoding='utf-8'), indent=1)
     ok = sum(1 for o in out if o['read'] is not None)
     print(f'read {ok}/{len(out)} labels -> {dest}')

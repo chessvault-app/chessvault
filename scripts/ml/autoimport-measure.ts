@@ -533,6 +533,9 @@ interface PuzzleResult {
   rect?: { x: number; y: number; w: number; h: number };
   /** Set when pass 4 corrected the board read (number of cells changed). */
   repairedCells?: number;
+  /** Multiple repairs replayed the line and TTA could not break the tie;
+   *  the import settles these with the engine + book-square overlap. */
+  repairCandidates?: { fen: string; side: 'w' | 'b'; sans: string[]; edits: number }[];
   /** Side printed beside THIS puzzle (sideMode 'label' books). */
   sideStated?: 'w' | 'b';
 }
@@ -876,13 +879,11 @@ if (process.argv.includes('--repair')) {
     for (let i = 0; i < jobs; i++) {
       const shardPath = `${resolve(REPO, BOOK.report)}.repairs${i}`;
       if (!existsSync(shardPath)) continue;
-      for (const r of JSON.parse(readFileSync(shardPath, 'utf-8')) as {
-        number: number;
-        fen: string;
-        side: 'w' | 'b';
-        sans: string[];
-        repairedCells: number;
-      }[]) {
+      const shard = JSON.parse(readFileSync(shardPath, 'utf-8')) as {
+        repairs: { number: number; fen: string; side: 'w' | 'b'; sans: string[]; repairedCells: number }[];
+        candidates: { number: number; candidates: NonNullable<PuzzleResult['repairCandidates']> }[];
+      };
+      for (const r of shard.repairs) {
         const entry = results.get(r.number);
         if (!entry) continue;
         entry.fen = r.fen;
@@ -893,10 +894,15 @@ if (process.argv.includes('--repair')) {
         delete entry.detail;
         applied++;
       }
+      for (const c of shard.candidates) {
+        const entry = results.get(c.number);
+        if (entry) entry.repairCandidates = c.candidates;
+      }
     }
     console.log(`pass 4 board repair (parallel x${jobs}): ${applied} rescued`);
   } else {
   const repairsOut: { number: number; fen: string; side: 'w' | 'b'; sans: string[]; repairedCells: number }[] = [];
+  const candidatesOut: { number: number; candidates: NonNullable<PuzzleResult['repairCandidates']> }[] = [];
   const pageCacheR = new Map<number, Gray | null>();
   const loadPageR = (page: number): Gray | null => {
     if (!pageCacheR.has(page)) {
@@ -1068,13 +1074,20 @@ if (process.argv.includes('--repair')) {
       byEdits.set(win.edits, (byEdits.get(win.edits) ?? 0) + 1);
     } else if (wins.size > 1) {
       ambiguous++;
+      entry.repairCandidates = [...wins.entries()]
+        .slice(0, 4)
+        .map(([fen, w]) => ({ fen, side: w.side, sans: w.sans, edits: w.edits }));
+      candidatesOut.push({ number: entry.number, candidates: entry.repairCandidates });
     }
   }
   console.log(
     `pass 4 board repair: ${repaired} rescued (${byEdits.get(1) ?? 0} one-cell, ${byEdits.get(2) ?? 0} two-cell), ${ambiguous} ambiguous left alone`,
   );
   if (repairShard) {
-    writeFileSync(`${resolve(REPO, BOOK.report)}.repairs${repairShard[0]}`, JSON.stringify(repairsOut));
+    writeFileSync(
+      `${resolve(REPO, BOOK.report)}.repairs${repairShard[0]}`,
+      JSON.stringify({ repairs: repairsOut, candidates: candidatesOut }),
+    );
     process.exit(0);
   }
   }

@@ -50,6 +50,7 @@ interface ReportEntry {
   mateIn?: number;
   squares?: string[];
   rect?: { x: number; y: number; w: number; h: number };
+  repairCandidates?: { fen: string; side: 'w' | 'b'; sans: string[]; edits: number }[];
 }
 
 const report = JSON.parse(
@@ -290,6 +291,7 @@ async function main(): Promise<void> {
     draft: 0,
   };
   const now = new Date().toISOString();
+  let settledAmbiguous = 0;
 
   let processed = 0;
   const processEntry = async (entry: ReportEntry, engine: Engine): Promise<void> => {
@@ -319,6 +321,34 @@ async function main(): Promise<void> {
         ...(entry.mateIn ? { mateIn: entry.mateIn } : {}),
       });
     };
+
+    // Tie-broken repairs: several board readings replayed the book's
+    // line; the engine settles which position is REAL — a decisive line
+    // overlapping the squares the book's entry mentions. Exactly one
+    // winner imports as a book solution (line replayed + engine agreed);
+    // anything else falls through to the normal tiers.
+    if (entry.status === 'replay-failed' && entry.repairCandidates?.length) {
+      const passing: { fen: string; side: 'w' | 'b'; sans: string[] }[] = [];
+      for (const cand of entry.repairCandidates) {
+        const fen = fullFen(cand.fen, cand.side);
+        if (!positionOf(fen)) continue;
+        const result = await search(engine, fen, 'movetime 500');
+        const decisiveCand =
+          !!result.bestmove && ((result.mate !== null && result.mate > 0) || (result.cp !== null && result.cp >= 150));
+        const corroborated =
+          (entry.squares?.length ?? 0) < 2 || overlap(result.pv.slice(0, 6), entry.squares!) >= 0.5;
+        if (decisiveCand && corroborated) passing.push(cand);
+      }
+      if (passing.length === 1) {
+        const line = lineFromSans(fullFen(passing[0]!.fen, passing[0]!.side), passing[0]!.sans);
+        if (line) {
+          entry.fen = passing[0]!.fen;
+          settledAmbiguous++;
+          push('book-parsed', passing[0]!.side, line, []);
+          return;
+        }
+      }
+    }
 
     // Tier 1: the book's own line already replayed.
     if (entry.status === 'validated') {
@@ -463,7 +493,7 @@ async function main(): Promise<void> {
   );
 
   console.log('\n=== import complete ===');
-  console.log(`book-parsed:         ${counts['book-parsed']}`);
+  console.log(`book-parsed:         ${counts['book-parsed']} (${settledAmbiguous} ambiguity settled by engine)`);
   console.log(`engine-corroborated: ${counts['engine-corroborated']}`);
   console.log(`engine-only:         ${counts['engine-only']}`);
   console.log(`engine-unverified:   ${counts['engine-unverified']}`);
