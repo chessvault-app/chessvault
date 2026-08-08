@@ -730,7 +730,7 @@ function ArchiveBrowser({
               {
                 options: months.map((m) => ({
                   value: m.month,
-                  label: `${m.month}${m.cached ? ` · ${m.games} saved` : offline ? ' · needs internet' : ''}`,
+                  label: `${m.month}${m.cached ? ` · ${m.games} games` : offline ? ' · needs internet' : ''}`,
                 })),
               },
             ]}
