@@ -1,12 +1,17 @@
 import {
   ArrowLeft,
+  BadgeCheck,
   BookMarked,
+  BookOpenCheck,
   ChevronLeft,
   ChevronRight,
   FileUp,
+  CircleHelp,
+  Cpu,
   Maximize2,
   Minimize2,
   Pencil,
+  PenLine,
   ScanSearch,
   Check,
   Eye,
@@ -692,7 +697,7 @@ function PuzzleNavigator({
       />
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {/* Same card language as the book page, at panel scale: state
-            colours the tile, the corner dot is the fidelity tier, and the
+            colours the tile, the corner icon is the fidelity tier, and the
             current puzzle wears the primary ring. */}
         <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(2.5rem,1fr))]">
           {puzzles.map((p, i) => {
@@ -727,7 +732,10 @@ function PuzzleNavigator({
               >
                 {p.number ?? i + 1}
                 {meta && (
-                  <span className={cn('absolute right-1 top-1 size-1.5 rounded-full', meta.dot)} />
+                  <meta.icon
+                    className={cn('absolute right-0.5 top-0.5 size-2.5', meta.iconClass)}
+                    aria-hidden
+                  />
                 )}
               </button>
             );
@@ -843,7 +851,10 @@ function PuzzleList({
             >
               {p.number ?? puzzles.indexOf(p) + 1}
               {meta && (
-                <span className={cn('absolute right-1.5 top-1.5 size-1.5 rounded-full', meta.dot)} />
+                <meta.icon
+                  className={cn('absolute right-1 top-1 size-3', meta.iconClass)}
+                  aria-hidden
+                />
               )}
             </button>
           );
@@ -856,36 +867,42 @@ function PuzzleList({
   );
 }
 
+/**
+ * Where a puzzle's solution came from, in words a stranger can read.
+ * Tile markers are shape-coded icons, deliberately monochrome: coloured
+ * dots read as solved/unsolved state, which the tiles already paint.
+ * Only the risky tier gets the warn tint.
+ */
 const PROVENANCE_META = {
   'book-parsed': {
-    label: 'book',
+    label: 'Book solution',
     title: 'Solution parsed from the book and replay-verified',
-    className: 'border-good/40 text-good',
-    dot: 'bg-good',
+    icon: BookOpenCheck,
+    iconClass: 'text-subtle',
   },
   'engine-corroborated': {
-    label: 'engine+text',
+    label: 'Engine + book',
     title: 'Engine solution, corroborated by the book text',
-    className: 'border-primary/40 text-primary',
-    dot: 'bg-primary',
+    icon: BadgeCheck,
+    iconClass: 'text-subtle',
   },
   'engine-only': {
-    label: 'engine',
+    label: 'Engine solution',
     title: 'Engine solution (decisive line, no text corroboration)',
-    className: 'border-line-strong text-muted',
-    dot: 'bg-line-strong',
+    icon: Cpu,
+    iconClass: 'text-subtle',
   },
   'engine-unverified': {
-    label: 'unverified',
+    label: 'Engine guess',
     title: 'Engine best line only — nothing decisive found; check the source if it feels off',
-    className: 'border-warn/50 text-warn',
-    dot: 'bg-warn',
+    icon: CircleHelp,
+    iconClass: 'text-warn',
   },
   corrected: {
-    label: 'corrected',
+    label: 'Hand-checked',
     title: 'You corrected this puzzle by hand — highest confidence',
-    className: 'border-good/40 text-good',
-    dot: 'bg-good',
+    icon: PenLine,
+    iconClass: 'text-subtle',
   },
 } as const;
 
@@ -1680,21 +1697,22 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       >
         <ArrowLeft className="size-3.5" />
       </Button>
-      {/* The puzzle number IS the title; the tier collapses to a dot
+      {/* The puzzle number IS the title; the tier collapses to its icon
           (tooltip explains). */}
       <span className="flex min-w-0 items-center gap-2">
         <span className="text-fg font-mono text-sm font-semibold">
           #{puzzle.number ?? index + 1}
         </span>
-        {puzzle.provenance && puzzle.provenance in PROVENANCE_META && (
-          <span
-            title={`${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].label} — ${PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].title}`}
-            className={cn(
-              'size-2 shrink-0 cursor-help rounded-full',
-              PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META].dot,
-            )}
-          />
-        )}
+        {puzzle.provenance &&
+          puzzle.provenance in PROVENANCE_META &&
+          (() => {
+            const meta = PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META];
+            return (
+              <span title={`${meta.label} — ${meta.title}`} className="shrink-0 cursor-help">
+                <meta.icon className={cn('size-3.5', meta.iconClass)} aria-hidden />
+              </span>
+            );
+          })()}
       </span>
       <span className="min-w-0 flex-1" />
       {puzzle.evidence?.page && (
