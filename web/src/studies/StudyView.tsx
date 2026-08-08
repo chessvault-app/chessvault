@@ -15,6 +15,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions } from '@/analysis/AnalysisView';
+import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -157,6 +158,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             actions={
               <>
                 <ReviewButton />
+                <LoadPositionButton />
                 <MoveActions allowReset={false} />
               </>
             }

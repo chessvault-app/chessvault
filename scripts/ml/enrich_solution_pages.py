@@ -65,18 +65,22 @@ def main():
                 break
         return f'page{chosen:03d}.jpg'
 
-    path = os.path.join(BOOK, 'puzzles.json')
-    puzzles = json.load(open(path, encoding='utf-8'))
-    stamped = 0
-    for p in puzzles:
-        if p.get('number') and 'evidence' in p:
-            p['evidence']['solutionPage'] = page_for(p['number'])
-            stamped += 1
-    with open(path, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(puzzles, f, indent=1)
-        f.write('\n')
-    print(f'stamped solutionPage on {stamped}/{len(puzzles)} puzzles '
-          f'({len(starts)} solution pages)')
+    # Drafts carry evidence too — they need the solutions page most,
+    # since a human enters their solution while looking at it.
+    for name in ('puzzles.json', 'drafts.json'):
+        path = os.path.join(BOOK, name)
+        if not os.path.exists(path):
+            continue
+        items = json.load(open(path, encoding='utf-8'))
+        stamped = 0
+        for p in items:
+            if p.get('number') and 'evidence' in p:
+                p['evidence']['solutionPage'] = page_for(p['number'])
+                stamped += 1
+        with open(path, 'w', encoding='utf-8', newline='\n') as f:
+            json.dump(items, f, indent=1)
+            f.write('\n')
+        print(f'{name}: stamped {stamped}/{len(items)} ({len(starts)} solution pages)')
 
 
 if __name__ == '__main__':
