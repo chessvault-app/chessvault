@@ -72,8 +72,13 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
-    backgroundColor: '#0b0e14',
+    // Below this the app's stacked (phone) layout takes over anyway;
+    // the floor keeps the window out of degenerate shapes.
+    minWidth: 480,
+    minHeight: 560,
+    backgroundColor: '#14161d',
     autoHideMenuBar: true,
+    icon: join(here, 'icon.png'),
     webPreferences: { preload: join(here, 'preload.cjs') },
   });
   // Links to lichess/chess.com open in the real browser, not a new shell.

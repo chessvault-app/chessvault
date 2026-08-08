@@ -4,80 +4,171 @@
     <meta charset="utf-8" />
     <title>Chess Vault</title>
     <style>
+      /* Mirrors the app's dark theme tokens (web/src/index.css .dark) so the
+         chooser reads as page one of the same product. */
       :root {
         color-scheme: dark;
+        --app-bg: oklch(17.5% 0.014 266);
+        --surface: oklch(21.5% 0.017 266);
+        --surface-2: oklch(25% 0.018 266);
+        --border: oklch(31% 0.02 266);
+        --border-strong: oklch(40% 0.024 266);
+        --text: oklch(96% 0.005 266);
+        --text-muted: oklch(70% 0.016 266);
+        --text-subtle: oklch(57% 0.017 266);
+        --primary: oklch(73% 0.135 235);
+        --primary-fg: oklch(16% 0.025 235);
+        --bad: oklch(68% 0.19 25);
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
         margin: 0;
         min-height: 100vh;
         display: grid;
         place-items: center;
-        background: #0b0e14;
-        color: #dbe1ec;
-        font-family: system-ui, sans-serif;
+        background: var(--app-bg);
+        color: var(--text);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 14px;
       }
       .card {
-        width: min(26rem, 90vw);
+        width: min(23rem, 90vw);
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
-        text-align: center;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .logo {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 1rem;
+        background: var(--primary);
+        color: var(--primary-fg);
+        display: grid;
+        place-items: center;
+        margin-bottom: 0.25rem;
+      }
+      .logo svg {
+        width: 2.2rem;
+        height: 2.2rem;
       }
       h1 {
-        font-size: 1.1rem;
-        margin: 0 0 0.25rem;
-      }
-      p {
+        font-size: 1.15rem;
+        letter-spacing: -0.01em;
         margin: 0;
-        color: #8b94a7;
+      }
+      .sub {
+        margin: 0 0 0.75rem;
+        color: var(--text-subtle);
         font-size: 0.85rem;
       }
-      button {
-        padding: 0.7rem 1rem;
-        border-radius: 0.6rem;
-        border: 1px solid #2a3242;
-        background: #151a24;
+      .option {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.8rem 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--border);
+        background: var(--surface);
         color: inherit;
-        font-size: 0.9rem;
+        text-align: left;
+        font: inherit;
         cursor: pointer;
+        transition: background 0.1s, border-color 0.1s;
       }
-      button:hover {
-        background: #1c2330;
+      .option:hover {
+        background: var(--surface-2);
+        border-color: var(--border-strong);
       }
-      button.primary {
-        background: #0284c7;
-        border-color: #0284c7;
-        color: #fff;
+      .option .title {
+        font-weight: 600;
+        display: block;
       }
-      input {
-        padding: 0.6rem 0.8rem;
-        border-radius: 0.6rem;
-        border: 1px solid #2a3242;
-        background: #10141d;
-        color: inherit;
-        font-size: 0.85rem;
-      }
-      .error {
-        color: #e5484d;
+      .option .desc {
+        color: var(--text-subtle);
         font-size: 0.8rem;
       }
+      .option svg {
+        width: 1.1rem;
+        height: 1.1rem;
+        flex: none;
+        color: var(--text-subtle);
+      }
       form {
+        width: 100%;
         display: none;
-        flex-direction: column;
         gap: 0.5rem;
+      }
+      input {
+        flex: 1;
+        min-width: 0;
+        padding: 0.6rem 0.8rem;
+        border-radius: 0.6rem;
+        border: 1px solid var(--border);
+        background: oklch(19% 0.016 266);
+        color: inherit;
+        font: inherit;
+        font-size: 0.85rem;
+        outline: none;
+      }
+      input:focus {
+        border-color: var(--primary);
+      }
+      .connect {
+        padding: 0.6rem 1rem;
+        border-radius: 0.6rem;
+        border: none;
+        background: var(--primary);
+        color: var(--primary-fg);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .error {
+        color: var(--bad);
+        font-size: 0.8rem;
+        margin: 0;
       }
     </style>
   </head>
   <body>
     <div class="card">
+      <div class="logo">
+        <!-- The cburnett knight — same mark as the app. -->
+        <svg viewBox="4.5 5 36 36" fill="currentColor" aria-hidden>
+          <path d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 Z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 Z" />
+        </svg>
+      </div>
       <h1>Chess Vault</h1>
-      <p>Where does your vault live?</p>
+      <p class="sub">Where does your vault live?</p>
       <p class="error" id="error"></p>
-      <button class="primary" id="local">On this computer</button>
-      <button id="remote">On my server…</button>
+
+      <button class="option" id="local">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <rect width="14" height="8" x="5" y="2" rx="2" /><rect width="20" height="8" x="2" y="14" rx="2" /><path d="M6 18h2" /><path d="M12 18h6" />
+        </svg>
+        <span>
+          <span class="title">On this computer</span>
+          <span class="desc">Self-hosted — everything runs and stays locally</span>
+        </span>
+      </button>
+
+      <button class="option" id="remote">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" />
+        </svg>
+        <span>
+          <span class="title">On my server</span>
+          <span class="desc">Connect to a Chess Vault server you host</span>
+        </span>
+      </button>
+
       <form id="urlForm">
-        <input id="url" type="url" placeholder="https://vault.example.com" required />
-        <button class="primary" type="submit">Connect</button>
+        <input id="url" type="url" placeholder="https://vault.example.com" required spellcheck="false" />
+        <button class="connect" type="submit">Connect</button>
       </form>
     </div>
     <script>

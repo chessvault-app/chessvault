@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@hono/node-server": "^1.13.7",
+    "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/vite": "^4.3.3",
     "@types/better-sqlite3": "^7.6.11",
     "@types/markdown-it": "^14.1.2",
