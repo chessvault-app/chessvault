@@ -20,6 +20,7 @@ hints that `autoimport-measure --glyph-hints` applies as pass 3 — +24
 validated over the text-only dialect. A full CRNN line reader remains the
 next escalation for the ~250 replay-fails that aren't ambiguity-shaped.
 
+## Diagram-side model (CellNet)
 
 Trains the cell classifier used by photo/PDF diagram reading: 32×32 grayscale
 tile → 13 classes (`1RNBQKPrnbqkp`, linrock-compatible order). Everything here
