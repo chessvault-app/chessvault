@@ -45,7 +45,9 @@ function Shell() {
   return (
     <div
       className={cn(
-        'bg-app text-fg flex h-[100dvh] flex-col overflow-hidden md:flex-row',
+        // --app-h is set (and kept fresh) in standalone PWA mode, where
+        // 100dvh can be stale on launch; browsers fall back to 100dvh.
+        'bg-app text-fg flex h-[var(--app-h,100dvh)] flex-col overflow-hidden md:flex-row',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
