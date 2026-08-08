@@ -106,7 +106,10 @@ export function Panel({ children, className, flush = false, resizeKey, defaultHe
             drag.current = null;
           }}
           className={cn(
-            'border-line/60 hover:bg-surface-2 hidden h-2.5 shrink-0 touch-none',
+            // mt-auto pins the grip to the panel's bottom edge even when a
+            // dragged height leaves the panel taller than its content —
+            // otherwise it floats mid-panel right under the last row.
+            'border-line/60 hover:bg-surface-2 mt-auto hidden h-2.5 shrink-0 touch-none',
             'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
           )}
         >
