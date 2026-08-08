@@ -34,7 +34,7 @@ def fold_bn(conv, bn):
 
 def main():
     model = CellNet()
-    model.load_state_dict(torch.load(os.path.join(DATA, 'cellnet-best.pt'), map_location='cpu'))
+    model.load_state_dict(torch.load(os.path.join(DATA, sys.argv[1] if len(sys.argv) > 1 else 'cellnet-best.pt'), map_location='cpu'))
     model.eval()
 
     f = model.features
