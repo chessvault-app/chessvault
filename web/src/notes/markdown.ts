@@ -136,5 +136,7 @@ const serializer = new MarkdownSerializer(
 );
 
 export function docToMarkdown(doc: PmNode): string {
-  return `${serializer.serialize(doc).trimEnd()}\n`;
+  // prosemirror-markdown escapes [ ] defensively; wiki links must stay
+  // literal [[...]] on disk (backlinks scan them, Obsidian reads them).
+  return `${serializer.serialize(doc).trimEnd()}\n`.replace(/\\\[\\\[([^[\]]+)\\\]\\\]/g, '[[$1]]');
 }

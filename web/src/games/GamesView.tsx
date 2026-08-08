@@ -661,7 +661,7 @@ function ArchiveBrowser({
                 if (e.key === 'Enter' && username.trim()) void loadMonths();
               }}
               placeholder={provider === 'chesscom' ? 'chess.com username' : 'Lichess username'}
-              className="w-44 shrink font-mono"
+              className="w-40 shrink-0 font-mono"
               inputSize="sm"
             />
             <Button
@@ -680,6 +680,7 @@ function ArchiveBrowser({
               ariaLabel="Archive month"
               size="sm"
               align="end"
+              className="max-w-[9.5rem]"
               groups={[
                 {
                   options: months.map((m) => ({

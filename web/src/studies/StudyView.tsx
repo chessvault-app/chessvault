@@ -23,6 +23,7 @@ import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { useStudy } from '@/store/study';
 import { Button } from '@/ui/Button';
+import { Backlinks } from '@/ui/Backlinks';
 import { Input } from '@/ui/Input';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -128,6 +129,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           viewport scrolls the column by the shortfall. */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {titleRow('stacked:hidden')}
+        <Backlinks target={id} className="shrink-0 px-1" />
 
         <PaneTabs
           className="lg:hidden"

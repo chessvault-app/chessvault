@@ -5,12 +5,12 @@ import {
   CircleAlert,
   Loader2,
   Pencil,
-  TextCursorInput,
   PlusSquare,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
+import { Backlinks } from '@/ui/Backlinks';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
@@ -182,6 +182,7 @@ function NoteEditor({
       </header>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+      <Backlinks target={id} className="border-line shrink-0 border-t pt-3" />
     </div>
   );
 }
@@ -241,17 +242,6 @@ function NoteTitle({ id }: { id: string }) {
         {folder && <span className="text-subtle">{folder} / </span>}
         {name}
       </h1>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title="Rename"
-        onClick={() => {
-          setDraft(name);
-          setEditing(true);
-        }}
-      >
-        <TextCursorInput className="size-3.5" />
-      </Button>
     </>
   );
 }

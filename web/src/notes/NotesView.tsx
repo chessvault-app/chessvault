@@ -3,6 +3,7 @@ import {
   Folder as FolderIcon,
   FolderInput,
   NotebookPen,
+  Pencil,
   Plus,
   Trash2,
 } from 'lucide-react';
@@ -279,10 +280,27 @@ function NoteCard({
   onChanged: () => Promise<void>;
 }) {
   const [moving, setMoving] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
 
   const name = note.id.split('/').at(-1)!;
   const folder = note.id.includes('/') ? note.id.slice(0, note.id.lastIndexOf('/')) : '';
+
+  const rename = async (): Promise<void> => {
+    setRenaming(false);
+    const next = draft.trim();
+    if (!next || next === name) return;
+    const res = await fetch(`${API}/move`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ from: note.id, to: folder ? `${folder}/${next}` : next }),
+    });
+    if (!res.ok) {
+      setFailure(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+    }
+    await onChanged();
+  };
 
   const move = async (to: string): Promise<void> => {
     const res = await fetch(`${API}/move`, {
@@ -311,7 +329,24 @@ function NoteCard({
         )}
       >
         <div className="min-w-0 flex-1">
+          {renaming ? (
+            <Input
+              autoFocus
+              inputSize="sm"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onBlur={() => void rename()}
+              onKeyDown={(e) => {
+                e.stopPropagation();
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setRenaming(false);
+              }}
+              className="w-full max-w-sm text-sm"
+            />
+          ) : (
           <p className="text-fg truncate text-sm font-semibold">{name}</p>
+          )}
           <p className="text-subtle text-xs" title={formatWhen(note.updatedAt)}>
             {(note.bytes / 1024).toFixed(1)} KB · edited {formatAgo(note.updatedAt)}
           </p>
@@ -320,6 +355,18 @@ function NoteCard({
 
         {(
           <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title="Rename this note"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDraft(name);
+                setRenaming(true);
+              }}
+            >
+              <Pencil className="size-3.5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon-sm"

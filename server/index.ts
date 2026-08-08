@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
+import { backlinksApi } from './backlinks.ts';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi } from './lichess.ts';
@@ -54,6 +55,7 @@ app.get('/api/health', (c) =>
 app.route('/api', authApi());
 app.use('/api/*', requireAuth());
 
+app.route('/api', backlinksApi());
 app.route('/api', booksApi());
 app.route('/api', lichessExplorerApi());
 app.route('/api', studiesApi());

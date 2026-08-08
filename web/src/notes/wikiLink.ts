@@ -122,6 +122,7 @@ export const WikiLink = Extension.create({
         },
         view: () => ({
           update: (view) => {
+            
             if (!view.editable || !view.state.selection.empty) return suggest.hide();
             const { $from } = view.state.selection;
             const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '\ufffc');
