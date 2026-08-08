@@ -29,12 +29,33 @@ if (iOS) {
       'content',
       'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
     );
-  // The shell never window-scrolls (inner panes scroll), but the iOS
-  // keyboard shoves the window when a low input focuses, detaching the
-  // app from the top edge. Pin it back; the focused field's own
-  // scrollable pane still brings it into view.
-  window.addEventListener('scroll', () => {
-    if (window.scrollY !== 0) window.scrollTo(0, 0);
+  // iOS window-shoves the page when the keyboard would cover a focused
+  // field, and reactively pinning the scroll back is visibly jarring.
+  // Prevent the shove instead: on focus, scroll the field's own pane so
+  // the field sits in the upper third — iOS finds it clear of the
+  // keyboard and leaves the window alone. Any shove that still happens
+  // is undone only once the keyboard has closed, where it's invisible.
+  const scrollPane = (el: HTMLElement | null): HTMLElement | null => {
+    for (let n = el; n; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight) return n;
+    }
+    return null;
+  };
+  window.addEventListener('focusin', (e) => {
+    const el = e.target as HTMLElement;
+    if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+    const pane = scrollPane(el);
+    if (!pane) return;
+    const comfortable = (window.visualViewport?.height ?? window.innerHeight) * 0.3;
+    const top = el.getBoundingClientRect().top;
+    if (top > comfortable) pane.scrollBy({ top: top - comfortable, behavior: 'smooth' });
+  });
+  window.visualViewport?.addEventListener('resize', () => {
+    const vv = window.visualViewport;
+    if (vv && vv.height > window.innerHeight * 0.7 && window.scrollY !== 0) {
+      window.scrollTo(0, 0);
+    }
   });
 }
 
