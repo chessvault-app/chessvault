@@ -1,33 +1,18 @@
 import { FileUp, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
-import { grayFromCanvas, cropDiagram } from './ocr/browser';
-import { detectDiagrams } from './ocr/detect';
-import { classifyBoard, labelsToFen, type CellReading, type Template } from './ocr/classify';
-import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
-
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-
-/** Pages render at this width; detection wants real pixels to chew on. */
-const RENDER_WIDTH = 1400;
-
-interface Found {
-  page: number;
-  dataUrl: string;
-  fen: string | null;
-  uncertain: number;
-  selected: boolean;
-}
+import { useImportJob } from './importJob';
+import type { Template } from './ocr/classify';
 
 /**
- * Whole-book import (lanph3re's original ask): pick the book's PDF, every page
- * is rendered and scanned for diagrams, and the crops land on the book as
- * DRAFTS — each waiting for its solution. When the book's font is already
- * learned the positions come pre-read; otherwise confirming the first
- * draft teaches it and "Read diagrams" fills in the rest.
+ * Whole-book import (lanph3re's original ask): pick the book's PDF, every
+ * page is rendered and scanned for diagrams, and the crops land on the book
+ * as DRAFTS — each waiting for its solution.
+ *
+ * The scan itself is a BACKGROUND JOB (importJob.ts): closing this dialog
+ * or browsing elsewhere doesn't stop it, classification runs in a worker,
+ * and the book page shows live progress with a way back here.
  */
 export function PdfImport({
   slug,
@@ -40,60 +25,12 @@ export function PdfImport({
   onDone: () => void;
   onClose: () => void;
 }) {
-  const [progress, setProgress] = useState<string | null>(null);
-  const [found, setFound] = useState<Found[]>([]);
+  const job = useImportJob();
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const scan = async (file: File): Promise<void> => {
-    setError(null);
-    setFound([]);
-    try {
-      const pdf = await pdfjs.getDocument({
-        data: await file.arrayBuffer(),
-        // Scanned books embed JBIG2/JPX images. npm's pdfjs-dist ships only
-        // the JS fallback decoders (no .wasm), staged by setup-engine — so
-        // skip the doomed wasm fetch and load the fallbacks directly.
-        useWasm: false,
-        wasmUrl: `${window.location.origin}/pdfjs-wasm/`,
-      }).promise;
-      const results: Found[] = [];
-      for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
-        setProgress(`page ${pageNo}/${pdf.numPages} — ${results.length} diagrams so far`);
-        const page = await pdf.getPage(pageNo);
-        const base = page.getViewport({ scale: 1 });
-        const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(viewport.width);
-        canvas.height = Math.round(viewport.height);
-        await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
-
-        const net = await loadCellNet();
-        for (const rect of detectDiagrams(grayFromCanvas(canvas))) {
-          const { dataUrl, board, features } = cropDiagram(canvas, rect);
-          let cells: CellReading[] | null = null;
-          if (net) cells = classifyBoardNet(net, board);
-          else if (templates.length > 0) cells = classifyBoard(features, templates);
-          let fen: string | null = null;
-          let uncertain = 0;
-          if (cells) {
-            fen = labelsToFen(
-              cells.map((c) => c.label),
-              false,
-            );
-            uncertain = cells.filter((c) => c.confidence < 0.35).length;
-          }
-          results.push({ page: pageNo, dataUrl, fen, uncertain, selected: true });
-        }
-      }
-      setFound(results);
-      setProgress(null);
-      if (results.length === 0) setError('No diagrams found in that PDF.');
-    } catch (e) {
-      setProgress(null);
-      setError(`Could not read the PDF: ${(e as Error).message}`);
-    }
-  };
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const mine = job.slug === slug;
+  const found = mine ? job.found : [];
+  const scanning = mine && job.status === 'scanning';
 
   const save = async (): Promise<void> => {
     const chosen = found.filter((f) => f.selected);
@@ -112,9 +49,10 @@ export function PdfImport({
         });
         if (!res.ok) throw new Error(`save failed (${res.status})`);
       }
+      job.clear();
       onDone();
     } catch (e) {
-      setError((e as Error).message);
+      setSaveError((e as Error).message);
       setSaving(false);
     }
   };
@@ -127,12 +65,17 @@ export function PdfImport({
         <div className="flex items-center gap-2">
           <FileUp className="text-subtle size-4" />
           <h2 className="text-fg flex-1 text-sm font-semibold">Import a book PDF</h2>
-          <Button variant="ghost" size="icon-sm" title="Close" onClick={onClose}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={scanning ? 'Close — the scan keeps running' : 'Close'}
+            onClick={onClose}
+          >
             <X className="size-3.5" />
           </Button>
         </div>
 
-        {found.length === 0 && !progress && (
+        {!mine && (
           <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
             <input
               type="file"
@@ -140,25 +83,27 @@ export function PdfImport({
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) void scan(file);
+                if (file) job.start(slug, file, templates);
               }}
             />
             <span className="text-muted text-sm">
               Choose the book&rsquo;s PDF
               <span className="text-subtle block text-xs">
-                every page is scanned for diagrams; nothing leaves this machine
+                every page is scanned for diagrams; nothing leaves this machine — and you can
+                keep using the app while it runs
               </span>
             </span>
           </label>
         )}
 
-        {progress && (
+        {scanning && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
-            {progress}
+            page {job.page}/{job.pages || '…'} — {found.length} diagrams so far
           </p>
         )}
-        {error && <p className="text-bad text-xs">{error}</p>}
+        {mine && job.error && <p className="text-bad text-xs">{job.error}</p>}
+        {saveError && <p className="text-bad text-xs">{saveError}</p>}
 
         {found.length > 0 && (
           <>
@@ -173,13 +118,9 @@ export function PdfImport({
                 <button
                   key={i}
                   type="button"
-                  onClick={() =>
-                    setFound((prev) =>
-                      prev.map((p, pi) => (pi === i ? { ...p, selected: !p.selected } : p)),
-                    )
-                  }
+                  onClick={() => job.toggle(i)}
                   className={cn(
-                    'relative rounded-lg border p-1 transition-colors',
+                    'relative rounded-lg border p-1 transition-colors [content-visibility:auto]',
                     f.selected ? 'border-primary/60' : 'border-line opacity-40',
                   )}
                 >
@@ -187,22 +128,29 @@ export function PdfImport({
                   <span className="text-subtle block pt-0.5 text-[0.625rem]">
                     p.{f.page}
                     {f.fen !== null && (
-                      <span className={f.uncertain > 0 ? 'text-nag-dubious' : 'text-good'}>
-                        {' '}
-                        · {f.uncertain > 0 ? `${f.uncertain} unsure` : 'read'}
+                      <span className={cn('ml-1', f.uncertain > 0 ? 'text-warn' : 'text-good')}>
+                        {f.uncertain > 0 ? `${f.uncertain} unsure` : 'read'}
                       </span>
                     )}
                   </span>
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="primary" size="sm" disabled={saving || selectedCount === 0} onClick={() => void save()}>
-                {saving && <Loader2 className="size-3.5 animate-spin" />}
-                Add {selectedCount} draft{selectedCount === 1 ? '' : 's'}
-              </Button>
+            <div className="flex items-center justify-end gap-2">
+              <span className="text-subtle mr-auto text-xs">
+                {selectedCount} selected{scanning ? ' — still scanning' : ''}
+              </span>
               <Button variant="ghost" size="sm" onClick={onClose}>
-                Cancel
+                {scanning ? 'Hide' : 'Cancel'}
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={saving || scanning || selectedCount === 0}
+                onClick={() => void save()}
+              >
+                {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
+                Add {selectedCount} as drafts
               </Button>
             </div>
           </>

@@ -61,6 +61,7 @@ import { type PhotoReading } from './PhotoImport';
 import { Suspense, lazy } from 'react';
 
 const PdfImport = lazy(() => import('./PdfImport').then((m) => ({ default: m.PdfImport })));
+import { useImportJob } from './importJob';
 import {
   classifyBoard,
   harvestTemplates,
@@ -362,6 +363,7 @@ function BookPage({ slug }: { slug: string }) {
   const [adding, setAdding] = useState(false);
   const [missing, setMissing] = useState(false);
   const [importing, setImporting] = useState(false);
+  const importJob = useImportJob();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [draft, setDraft] = useState<BookDraft | null>(null);
   const [rereading, setRereading] = useState(false);
@@ -463,6 +465,24 @@ function BookPage({ slug }: { slug: string }) {
           <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
             {book?.title ?? slug}
           </h1>
+          {/* A background scan for THIS book announces itself here; the
+              chip reopens the dialog with the live results. */}
+          {!importing && importJob.slug === slug && importJob.status !== 'idle' && (
+            <button
+              type="button"
+              onClick={() => setImporting(true)}
+              className="bg-primary-soft text-primary border-primary/40 flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
+            >
+              {importJob.status === 'scanning' ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <FileUp className="size-3" />
+              )}
+              {importJob.status === 'scanning'
+                ? `p.${importJob.page}/${importJob.pages || '…'} · ${importJob.found.length}`
+                : `${importJob.found.length} found`}
+            </button>
+          )}
           {/* Stacked headers drop the button labels — five labelled
               controls in a phone-width row read as clutter. */}
           <Button variant="secondary" size="sm" title="Import a book PDF" onClick={() => setImporting(true)}>
