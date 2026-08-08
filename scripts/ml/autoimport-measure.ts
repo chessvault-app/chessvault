@@ -14,6 +14,7 @@
 //
 // Usage: npx tsx scripts/ml/autoimport-measure.ts <pages_dir> [--limit N]
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
@@ -73,6 +74,40 @@ if (emitDir) mkdirSync(emitDir, { recursive: true });
 // text layer lost. Each { page, rect (page fractions), read } becomes a
 // synthetic label box just above its diagram, so the normal matching,
 // reading and validation flow picks the diagram up like any other.
+// --jobs N: page reads and the repair search shard across N child
+// processes of this same script (--read-shard / --repair-shard are the
+// child modes). Reads land in per-shard cache files the parent merges;
+// repairs come back as JSON the parent applies before reporting.
+const jobsAt = process.argv.indexOf('--jobs');
+const jobs = jobsAt > 0 ? Math.max(1, Number(process.argv[jobsAt + 1])) : 1;
+const readShardAt = process.argv.indexOf('--read-shard');
+const readShard = readShardAt > 0 ? [Number(process.argv[readShardAt + 1]), Number(process.argv[readShardAt + 2])] : null;
+const repairShardAt = process.argv.indexOf('--repair-shard');
+const repairShard = repairShardAt > 0 ? [Number(process.argv[repairShardAt + 1]), Number(process.argv[repairShardAt + 2])] : null;
+
+async function runShards(mode: string, n: number, strip: string[] = []): Promise<void> {
+  const drop = new Set<number>();
+  for (const flag of ['--jobs', ...strip]) {
+    const at = process.argv.indexOf(flag);
+    if (at > 0) {
+      drop.add(at); // the flag itself…
+      drop.add(at + 1); // …and its value
+    }
+  }
+  const base = process.argv.slice(1).filter((_, i) => !drop.has(i + 1));
+  await Promise.all(
+    [...Array(n).keys()].map(
+      (i) =>
+        new Promise<void>((done, fail) => {
+          const child = spawn(process.execPath, [...process.execArgv, ...base, mode, String(i), String(n)], {
+            stdio: 'inherit',
+          });
+          child.on('exit', (code) => (code === 0 ? done() : fail(new Error(`${mode} ${i} exited ${code}`))));
+        }),
+    ),
+  );
+}
+
 const extraAt = process.argv.indexOf('--extra-labels');
 const extraLabels: { page: number; rect: { x: number; y: number; w: number; h: number }; read: number }[] =
   extraAt > 0
@@ -494,18 +529,48 @@ console.log(`${solutions.size} solution entries parsed from the text layer`);
 
 // Board reads are deterministic and slow (~1 s each); cache them across runs.
 const cachePath = resolve(REPO, BOOK.cache);
-let readCache = new Map<number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number }; sideStated?: 'w' | 'b' }>();
+type CachedRead = {
+  fen: string;
+  uncertain: number;
+  page: number;
+  rect?: { x: number; y: number; w: number; h: number };
+  sideStated?: 'w' | 'b';
+};
+let readCache = new Map<number, CachedRead>();
 try {
   readCache = new Map(
-    (JSON.parse(readFileSync(cachePath, 'utf-8')) as [number, { fen: string; uncertain: number; page: number; rect?: { x: number; y: number; w: number; h: number }; sideStated?: 'w' | 'b' }][]),
+    (JSON.parse(readFileSync(cachePath, 'utf-8')) as [number, CachedRead][]),
   );
   console.log(`read cache: ${readCache.size} boards`);
 } catch {
   // first run
 }
 
+// Parent with --jobs: farm the pixel reads out, merge shard caches, and
+// let the normal loop below find everything already cached.
+if (jobs > 1 && !readShard && !repairShard) {
+  await runShards('--read-shard', jobs);
+  for (let i = 0; i < jobs; i++) {
+    const shardPath = `${cachePath}.shard${i}`;
+    if (!existsSync(shardPath)) continue;
+    for (const [value, cached] of JSON.parse(readFileSync(shardPath, 'utf-8')) as [number, CachedRead][]) {
+      readCache.set(value, cached);
+    }
+  }
+  writeFileSync(cachePath, JSON.stringify([...readCache.entries()]));
+}
+
 let boardsRead = 0;
+let pageIndex = -1;
 for (const pageInfo of textData.pages) {
+  pageIndex++;
+  if (readShard && pageIndex % readShard[1]! !== readShard[0]!) continue;
+  if (readShard) {
+    // Shard mode reads pixels regardless of the shared cache.
+    for (const c of [...readCache.keys()]) {
+      if (readCache.get(c)!.page === pageInfo.page) readCache.delete(c);
+    }
+  }
   if (boardsRead >= limit) break;
   if (pageInfo.page < BOOK.pages[0] || pageInfo.page > BOOK.pages[1]) continue;
   let page: Gray | null = null;
@@ -640,6 +705,13 @@ for (const pageInfo of textData.pages) {
   }
   if (pageInfo.page % 20 === 0) console.log(`page ${pageInfo.page}: ${results.size} puzzles so far`);
 }
+if (readShard) {
+  const mine = [...readCache.entries()].filter(([, c]) =>
+    textData.pages.some((p, i) => p.page === c.page && i % readShard[1]! === readShard[0]!),
+  );
+  writeFileSync(`${cachePath}.shard${readShard[0]}`, JSON.stringify(mine));
+  process.exit(0);
+}
 writeFileSync(cachePath, JSON.stringify([...readCache.entries()]));
 
 // --- validate: pass 1 (no hints), learn the figurine dialect, pass 2 ----------
@@ -741,6 +813,36 @@ if (glyphAt > 0) {
 // when EXACTLY ONE candidate position makes the whole solution replay
 // (and any claimed mate check out).
 if (process.argv.includes('--repair')) {
+  if (jobs > 1 && !repairShard) {
+    // Children re-derive validation identically from the shared cache
+    // (no pixels except their own failing boards), repair their slice of
+    // the numbers, and hand the fixes back.
+    await runShards('--repair-shard', jobs, ['--emit']);
+    let applied = 0;
+    for (let i = 0; i < jobs; i++) {
+      const shardPath = `${resolve(REPO, BOOK.report)}.repairs${i}`;
+      if (!existsSync(shardPath)) continue;
+      for (const r of JSON.parse(readFileSync(shardPath, 'utf-8')) as {
+        number: number;
+        fen: string;
+        side: 'w' | 'b';
+        sans: string[];
+        repairedCells: number;
+      }[]) {
+        const entry = results.get(r.number);
+        if (!entry) continue;
+        entry.fen = r.fen;
+        entry.side = r.side;
+        entry.sans = r.sans;
+        entry.status = 'validated';
+        entry.repairedCells = r.repairedCells;
+        delete entry.detail;
+        applied++;
+      }
+    }
+    console.log(`pass 4 board repair (parallel x${jobs}): ${applied} rescued`);
+  } else {
+  const repairsOut: { number: number; fen: string; side: 'w' | 'b'; sans: string[]; repairedCells: number }[] = [];
   const pageCacheR = new Map<number, Gray | null>();
   const loadPageR = (page: number): Gray | null => {
     if (!pageCacheR.has(page)) {
@@ -758,6 +860,7 @@ if (process.argv.includes('--repair')) {
   const byEdits = new Map<number, number>();
   for (const entry of results.values()) {
     if (entry.status !== 'replay-failed' && entry.status !== 'illegal-position') continue;
+    if (repairShard && entry.number % repairShard[1]! !== repairShard[0]!) continue;
     if (!entry.rect) continue;
     const solution = solutions.get(entry.number);
     if (!solution) continue;
@@ -866,6 +969,7 @@ if (process.argv.includes('--repair')) {
       entry.status = 'validated';
       entry.repairedCells = win.edits;
       delete entry.detail;
+      repairsOut.push({ number: entry.number, fen, side: win.side, sans: win.sans, repairedCells: win.edits });
       repaired++;
       byEdits.set(win.edits, (byEdits.get(win.edits) ?? 0) + 1);
     } else if (wins.size > 1) {
@@ -875,6 +979,11 @@ if (process.argv.includes('--repair')) {
   console.log(
     `pass 4 board repair: ${repaired} rescued (${byEdits.get(1) ?? 0} one-cell, ${byEdits.get(2) ?? 0} two-cell), ${ambiguous} ambiguous left alone`,
   );
+  if (repairShard) {
+    writeFileSync(`${resolve(REPO, BOOK.report)}.repairs${repairShard[0]}`, JSON.stringify(repairsOut));
+    process.exit(0);
+  }
+  }
 }
 
 // --- report -------------------------------------------------------------------
