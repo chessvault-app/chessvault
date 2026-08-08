@@ -33,6 +33,8 @@ interface BookPuzzle {
   /** Ply indices where any legal move is accepted (defender don't-cares). */
   wildcards?: number[];
   added: string;
+  /** Solution origin tier; 'corrected' = entered or fixed by a human. */
+  provenance?: string;
 }
 
 interface PuzzleProgress {
@@ -189,6 +191,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       san: body.san,
       ...(wildcards.length > 0 ? { wildcards } : {}),
       added: new Date().toISOString(),
+      // A human typed this in from the book — top of the fidelity ladder,
+      // same tier the correction flow stamps.
+      provenance: 'corrected',
     };
     puzzles.push(puzzle);
     writeJson(puzzlesPath(slug), puzzles);

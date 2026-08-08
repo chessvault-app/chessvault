@@ -11,7 +11,6 @@ import {
   Maximize2,
   Minimize2,
   Pencil,
-  PenLine,
   ScanSearch,
   Check,
   Eye,
@@ -763,17 +762,27 @@ function PuzzleList({
   solvedCount: number;
 }) {
   const [stateFilter, setStateFilter] = useState<'all' | 'new' | 'failed' | 'solved'>('all');
-  const [tierFilter, setTierFilter] = useState<'all' | keyof typeof PROVENANCE_META>('all');
+  // Tier filtering groups by label, so provenances sharing a tier
+  // ('book-parsed' + 'corrected') count and filter as one chip.
+  const [tierFilter, setTierFilter] = useState<'all' | string>('all');
 
   const stateOf = (p: BookPuzzle): 'new' | 'failed' | 'solved' => {
     const last = progress[p.id]?.last;
     return last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new';
   };
-  const tiers = new Map<keyof typeof PROVENANCE_META, number>();
-  for (const p of puzzles) {
-    if (p.provenance && p.provenance in PROVENANCE_META) {
-      tiers.set(p.provenance, (tiers.get(p.provenance) ?? 0) + 1);
-    }
+  const metaOf = (p: BookPuzzle) =>
+    p.provenance && p.provenance in PROVENANCE_META
+      ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
+      : null;
+  type TierMeta = (typeof PROVENANCE_META)[keyof typeof PROVENANCE_META];
+  const tiers = new Map<string, { meta: TierMeta; count: number }>();
+  for (const key of Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[]) {
+    const count = puzzles.filter((p) => p.provenance === key).length;
+    if (count === 0) continue;
+    const meta = PROVENANCE_META[key];
+    const entry = tiers.get(meta.label);
+    if (entry) entry.count += count;
+    else tiers.set(meta.label, { meta, count });
   }
   const stateCounts = { all: puzzles.length, new: 0, failed: 0, solved: 0 };
   for (const p of puzzles) stateCounts[stateOf(p)]++;
@@ -781,7 +790,7 @@ function PuzzleList({
   const visible = puzzles.filter(
     (p) =>
       (stateFilter === 'all' || stateOf(p) === stateFilter) &&
-      (tierFilter === 'all' || p.provenance === tierFilter),
+      (tierFilter === 'all' || metaOf(p)?.label === tierFilter),
   );
 
   return (
@@ -810,19 +819,23 @@ function PuzzleList({
           />
         ))}
         {tiers.size > 0 && <span className="border-line mx-1 h-4 border-l" />}
-        {/* Meta key order = confidence order, not first-seen order. */}
-        {(Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[])
-          .filter((tier) => tiers.has(tier))
-          .map((tier) => (
-            <FilterChip
-              key={tier}
-              label={PROVENANCE_META[tier].label}
-              count={tiers.get(tier)!}
-              title={PROVENANCE_META[tier].title}
-              active={tierFilter === tier}
-              onClick={() => setTierFilter(tierFilter === tier ? 'all' : tier)}
-            />
-          ))}
+        {/* Map insertion follows meta-key order = confidence order. Each
+            chip wears its tier icon so tile marks are matchable to names. */}
+        {[...tiers.values()].map(({ meta, count }) => (
+          <FilterChip
+            key={meta.label}
+            label={
+              <span className="inline-flex items-center gap-1">
+                <meta.icon className={cn('size-3', meta.iconClass)} aria-hidden />
+                {meta.label}
+              </span>
+            }
+            count={count}
+            title={meta.title}
+            active={tierFilter === meta.label}
+            onClick={() => setTierFilter(tierFilter === meta.label ? 'all' : meta.label)}
+          />
+        ))}
       </div>
       <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {visible.map((p) => {
@@ -876,20 +889,21 @@ function PuzzleList({
  * markers are shape-coded icons on a hue ladder that stays clear of the
  * solved/failed green and red: blue (trusted) → teal (corroborated) →
  * gray (plain engine) → amber (caution).
+ *
+ * 'book-parsed' and 'corrected' share one tier: both are the book's
+ * exact solution, one read by the importer and one entered by a human
+ * (lanph3re's call — same guarantee, same tag).
  */
+const BOOK_TIER = {
+  label: 'Book solution',
+  title: "The book's exact solution — parsed and verified, or entered by hand",
+  icon: BookOpenCheck,
+  iconClass: 'text-info',
+} as const;
+
 const PROVENANCE_META = {
-  'book-parsed': {
-    label: 'Book solution',
-    title: 'Solution parsed from the book and replay-verified',
-    icon: BookOpenCheck,
-    iconClass: 'text-info',
-  },
-  corrected: {
-    label: 'Hand-checked',
-    title: 'You corrected this puzzle by hand — highest confidence',
-    icon: PenLine,
-    iconClass: 'text-info',
-  },
+  'book-parsed': BOOK_TIER,
+  corrected: BOOK_TIER,
   'engine-corroborated': {
     label: 'Engine + book',
     title: 'Engine solution, corroborated by the book text',
