@@ -222,7 +222,7 @@ function EliteBrowser() {
           <ArrowLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-          Elite games{meta?.games ? ` · ${meta.games.toLocaleString()}` : ''}
+          Elite games{meta?.games ? ` (${meta.games.toLocaleString()} games)` : ''}
         </h1>
       </div>
 
@@ -249,7 +249,6 @@ function EliteBrowser() {
                 title="Open on the analysis board"
                 className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left transition-colors duration-100"
               >
-                <ResultDot result={g.result} userSide={null} />
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate text-sm">
                     <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
@@ -266,9 +265,7 @@ function EliteBrowser() {
                     {g.eco || g.opening ? ` · ${g.eco ?? ''} ${g.opening ?? ''}` : ''}
                   </span>
                 </span>
-                <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">
-                  {fmtResult(g.result)}
-                </span>
+                <ResultScore result={g.result} userSide={null} />
               </button>
               <Button
                 variant={inCollection(g) ? 'ghost' : 'secondary'}
@@ -870,7 +867,6 @@ function GameRow({
       className="group hover:bg-surface-2 flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors duration-100"
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
-        <ResultDot result={game.result} userSide={game.userSide} />
         <div className="min-w-0 flex-1">
           {renaming ? (
             <Input
@@ -925,6 +921,7 @@ function GameRow({
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
           </p>
         </div>
+        <ResultScore result={game.result} userSide={game.userSide} />
         {game.finalFen ? (
           <Eye
             className="text-subtle hover:text-fg size-3.5 shrink-0"
@@ -935,9 +932,6 @@ function GameRow({
         ) : (
           <span className="w-3.5 shrink-0" aria-hidden />
         )}
-        <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">
-          {fmtResult(game.result)}
-        </span>
       </div>
       {actions}
       {showLink && !game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
@@ -1067,32 +1061,39 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   );
 }
 
-function ResultDot({
+/**
+ * The result stacked one score per line, mirroring the player lines it
+ * sits beside. The winner's digit carries the outcome colour from the
+ * user's perspective (green won, red lost) and is bold either way, so
+ * the signal isn't colour-only; games without a known side just
+ * brighten the winner. This replaced the old leading result dot — same
+ * information, no extra column.
+ */
+function ResultScore({
   result,
   userSide,
 }: {
   result: string;
   userSide: 'white' | 'black' | null;
 }) {
-  // From the user's perspective when known: green won, red lost, gray draw.
-  if (userSide) {
-    const won =
-      (result === '1-0' && userSide === 'white') || (result === '0-1' && userSide === 'black');
-    const lost =
-      (result === '1-0' && userSide === 'black') || (result === '0-1' && userSide === 'white');
+  const parts = result.split('-');
+  if (parts.length !== 2) {
     return (
-      <span
-        title={result}
-        className={cn(
-          'size-2 shrink-0 rounded-full',
-          won ? 'bg-good' : lost ? 'bg-bad' : 'bg-surface-3',
-        )}
-      />
+      <span title={result} className="text-muted w-6 shrink-0 text-center font-mono text-xs">
+        {result}
+      </span>
     );
   }
-  // Otherwise the dot shows which side won, in the pieces' own colours.
-  if (result === '1-0' || result === '0-1') {
-    return <SideDot side={result === '1-0' ? 'white' : 'black'} shape="circle" title={result} />;
-  }
-  return <span title={result} className="bg-surface-3 size-2 shrink-0 rounded-full" />;
+  const winner = result === '1-0' ? 'white' : result === '0-1' ? 'black' : null;
+  const cls = (side: 'white' | 'black'): string => {
+    if (side !== winner) return 'text-muted';
+    if (!userSide) return 'text-fg font-semibold';
+    return cn('font-semibold', userSide === winner ? 'text-good' : 'text-bad');
+  };
+  return (
+    <span title={fmtResult(result)} className="w-6 shrink-0 text-center font-mono text-xs leading-5">
+      <span className={cn('block', cls('white'))}>{fmtResult(parts[0]!)}</span>
+      <span className={cn('block', cls('black'))}>{fmtResult(parts[1]!)}</span>
+    </span>
+  );
 }
