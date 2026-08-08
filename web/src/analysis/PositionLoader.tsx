@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useAnalysis } from '@/store/analysis';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
 import type { Template } from '@/puzzles/ocr/classify';
-import { PhotoImport } from '@/puzzles/PhotoImport';
+import { Suspense, lazy } from 'react';
+
+const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -66,6 +68,7 @@ export function LoadPositionButton({
         />
       )}
       {templates !== null && (
+        <Suspense fallback={null}>
         <PhotoImport
           templates={templates}
           initialFile={imageFile ?? undefined}
@@ -82,6 +85,7 @@ export function LoadPositionButton({
             setOpen(false);
           }}
         />
+        </Suspense>
       )}
     </>
   );

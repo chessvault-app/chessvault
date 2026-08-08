@@ -58,7 +58,9 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
 import { type PhotoReading } from './PhotoImport';
-import { PdfImport } from './PdfImport';
+import { Suspense, lazy } from 'react';
+
+const PdfImport = lazy(() => import('./PdfImport').then((m) => ({ default: m.PdfImport })));
 import {
   classifyBoard,
   harvestTemplates,
@@ -525,7 +527,8 @@ function BookPage({ slug }: { slug: string }) {
         )}
 
         {importing && (
-          <PdfImport
+          <Suspense fallback={null}>
+        <PdfImport
             slug={slug}
             templates={templates}
             onDone={() => {
@@ -534,6 +537,7 @@ function BookPage({ slug }: { slug: string }) {
             }}
             onClose={() => setImporting(false)}
           />
+        </Suspense>
         )}
 
         {book === null ? (

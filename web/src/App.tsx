@@ -11,17 +11,22 @@ import {
   Puzzle,
   Swords,
 } from 'lucide-react';
+import { Suspense, lazy } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { AnalysisView } from '@/analysis/AnalysisView';
-import { EditorView } from '@/editor/EditorView';
-import { GamesView } from '@/games/GamesView';
-import { NotesView } from '@/notes/NotesView';
-import { PuzzlesView } from '@/puzzles/PuzzlesView';
-import { HomePage } from '@/home/HomePage';
-import { StudiesView } from '@/studies/StudiesView';
+
+// Route-level code splitting: iOS relaunches the PWA from scratch after
+// backgrounding, so the landing chunk must stay lean — heavy sections
+// (pdf/ocr machinery, TipTap, the study editor) load on first visit.
+const EditorView = lazy(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
+const GamesView = lazy(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
+const NotesView = lazy(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
+const PuzzlesView = lazy(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
+const HomePage = lazy(() => import('@/home/HomePage').then((m) => ({ default: m.HomePage })));
+const StudiesView = lazy(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'analysis', label: 'Board', icon: Grid3x3 },
@@ -58,6 +63,7 @@ function Shell() {
       <Sidebar active={section} params={params} />
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        <Suspense fallback={<div className="h-full" />}>
         {section === 'home' ? (
           <HomePage />
         ) : section === 'analysis' ? (
@@ -75,6 +81,7 @@ function Shell() {
         ) : (
           <Placeholder section={section} />
         )}
+        </Suspense>
       </main>
 
       <MobileNav active={section} />
