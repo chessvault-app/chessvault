@@ -473,11 +473,7 @@ function CollectionView() {
                       variant="ghost"
                       size="icon-sm"
                       title={bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark'}
-                      className={cn(
-                        'shrink-0',
-                        !bookmarks.has(gameKey(game)) &&
-                          'opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100',
-                      )}
+                      className="shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         void toggleBookmark(game);
@@ -922,15 +918,19 @@ function GameRow({
           </p>
         </div>
         <ResultScore result={game.result} userSide={game.userSide} />
+        {/* The eye borrows the icon-sm footprint so the gaps to the star
+            and … buttons read evenly. */}
         {game.finalFen ? (
-          <Eye
-            className="text-subtle hover:text-fg size-3.5 shrink-0"
-            aria-label="Preview the final position"
-            onMouseEnter={showPreview}
-            onMouseLeave={hidePreview}
-          />
+          <span className="grid size-7 shrink-0 place-items-center">
+            <Eye
+              className="text-subtle hover:text-fg size-3.5"
+              aria-label="Preview the final position"
+              onMouseEnter={showPreview}
+              onMouseLeave={hidePreview}
+            />
+          </span>
         ) : (
-          <span className="w-3.5 shrink-0" aria-hidden />
+          <span className="size-7 shrink-0" aria-hidden />
         )}
       </div>
       {actions}
