@@ -20,6 +20,8 @@ import {
   RotateCw,
   Trash2,
   Undo2,
+  ZoomIn,
+  ZoomOut,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -993,6 +995,33 @@ function SourceCrop({
 }) {
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [full, setFull] = useState(false);
+  // Zoom scales the working width; the surrounding pane scrolls.
+  const [zoom, setZoom] = useState(1);
+  const zoomed = Math.round(width * zoom);
+  const zoomButtons = !plain && (
+    <span className="absolute left-1.5 top-1.5 flex gap-1">
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        title="Zoom out"
+        disabled={zoom <= 0.75}
+        onClick={() => setZoom((z) => Math.max(0.75, z / 1.25))}
+        className="shadow-md"
+      >
+        <ZoomOut className="size-3.5" />
+      </Button>
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        title="Zoom in"
+        disabled={zoom >= 3}
+        onClick={() => setZoom((z) => Math.min(3, z * 1.25))}
+        className="shadow-md"
+      >
+        <ZoomIn className="size-3.5" />
+      </Button>
+    </span>
+  );
   const src = diagramUrl(slug, page);
   const r = rect ?? { x: 0, y: 0, w: 1, h: 1 };
   const margin = 0.035;
@@ -1005,7 +1034,7 @@ function SourceCrop({
     // Whole page at the pane's own width: the surrounding pane scrolls
     // vertically, nothing gets clipped, and widening the pane zooms in.
     return (
-      <div className="relative" style={{ width }}>
+      <div className="relative" style={{ width: zoomed }}>
         <img src={src} alt="book page" className="border-line w-full rounded-md border" />
         <div
           className="border-primary pointer-events-none absolute rounded-sm border-2"
@@ -1016,6 +1045,7 @@ function SourceCrop({
             height: `${r.h * 100}%`,
           }}
         />
+        {zoomButtons}
         <Button
           variant="secondary"
           size="icon-sm"
@@ -1029,12 +1059,13 @@ function SourceCrop({
     );
   }
 
-  const scale = natural ? width / (cw * natural.w) : 1;
+  const scale = natural ? zoomed / (cw * natural.w) : 1;
   return (
-    <div className="relative" style={{ width }}>
+    <div className="relative" style={{ width: zoomed }}>
+      {zoomButtons}
       <div
         className="border-line overflow-hidden rounded-md border"
-        style={{ width, height: natural ? ch * natural.h * scale : width }}
+        style={{ width: zoomed, height: natural ? ch * natural.h * scale : zoomed }}
       >
         <img
           src={src}
