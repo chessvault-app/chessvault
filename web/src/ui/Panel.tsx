@@ -138,7 +138,7 @@ export function PanelHeader({ title, actions, className }: PanelHeaderProps) {
       <h2 className="text-subtle min-w-0 shrink truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {title}
       </h2>
-      {actions ? <div className="flex min-w-0 items-center gap-1">{actions}</div> : null}
+      {actions ? <div className="flex min-w-0 grow items-center justify-end gap-1">{actions}</div> : null}
     </header>
   );
 }

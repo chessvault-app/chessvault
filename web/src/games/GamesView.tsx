@@ -255,7 +255,8 @@ function EliteBrowser() {
                     <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
                     <span className="font-medium">{g.white}</span>{' '}
                     <span className="text-subtle text-xs">{g.white_elo}</span>
-                    <span className="text-subtle"> vs </span>
+                  </span>
+                  <span className="text-fg block truncate text-sm">
                     <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
                     <span className="font-medium">{g.black}</span>{' '}
                     <span className="text-subtle text-xs">{g.black_elo}</span>
@@ -471,27 +472,6 @@ function CollectionView() {
                 onPreview={setPreview}
                 actions={
                   <>
-                    <RowMenu
-                      ariaLabel="Game actions"
-                      triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-                      items={[
-                        {
-                          label: 'Rename',
-                          icon: Pencil,
-                          onSelect: () => setRenamingKey(gameKey(game)),
-                        },
-                        ...(game.link
-                          ? [{ label: 'View online', icon: ExternalLink, href: game.link }]
-                          : []),
-                        {
-                          label: 'Remove',
-                          icon: Trash2,
-                          confirm: 'Remove this game from the collection?',
-                          onSelect: () => void removeGame(game),
-                        },
-                      ]}
-                    />
-                    {/* The favourite closes the line (lanph3re's call). */}
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -513,6 +493,27 @@ function CollectionView() {
                         )}
                       />
                     </Button>
+                    {/* The … menu closes the line (lanph3re's call). */}
+                    <RowMenu
+                      ariaLabel="Game actions"
+                      triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+                      items={[
+                        {
+                          label: 'Rename',
+                          icon: Pencil,
+                          onSelect: () => setRenamingKey(gameKey(game)),
+                        },
+                        ...(game.link
+                          ? [{ label: 'View online', icon: ExternalLink, href: game.link }]
+                          : []),
+                        {
+                          label: 'Remove',
+                          icon: Trash2,
+                          confirm: 'Remove this game from the collection?',
+                          onSelect: () => void removeGame(game),
+                        },
+                      ]}
+                    />
                   </>
                 }
                 showLink={false}
@@ -661,7 +662,10 @@ function ArchiveBrowser({
 
   return (
     <Panel flush>
+      {/* Narrow screens can't fit tabs + username + Browse on one line;
+          the band relaxes its fixed height and lets the actions wrap. */}
       <PanelHeader
+        className="max-[560px]:h-auto max-[560px]:min-h-10 max-[560px]:flex-wrap max-[560px]:py-1.5"
         title={
           <span className="flex items-center gap-1 normal-case tracking-normal">
             {(
@@ -704,7 +708,7 @@ function ArchiveBrowser({
                 if (e.key === 'Enter' && username.trim()) void loadMonths();
               }}
               placeholder={provider === 'chesscom' ? 'chess.com username' : 'Lichess username'}
-              className="w-40 shrink-0 font-mono"
+              className="w-40 shrink-0 font-mono max-[560px]:w-auto max-[560px]:flex-1"
               inputSize="sm"
             />
             <Button
@@ -892,22 +896,27 @@ function GameRow({
               )}
             </p>
           ) : (
-            <p className="text-fg truncate text-sm">
-              <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-              <span className={cn('font-medium', game.userSide === 'white' && 'text-primary')}>
-                {game.white}
-              </span>
-              {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
-              <span className="text-subtle"> vs </span>
-              <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-              <span className={cn('font-medium', game.userSide === 'black' && 'text-primary')}>
-                {game.black}
-              </span>
-              {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
-              {game.annotated && (
-                <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
-              )}
-            </p>
+            // One line per player: names never fight each other for width,
+            // so narrow screens truncate each side independently.
+            <>
+              <p className="text-fg truncate text-sm">
+                <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
+                <span className={cn('font-medium', game.userSide === 'white' && 'text-primary')}>
+                  {game.white}
+                </span>
+                {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
+                {game.annotated && (
+                  <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
+                )}
+              </p>
+              <p className="text-fg truncate text-sm">
+                <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
+                <span className={cn('font-medium', game.userSide === 'black' && 'text-primary')}>
+                  {game.black}
+                </span>
+                {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
+              </p>
+            </>
           )}
           <p className="text-subtle truncate text-xs" title={openingLabel}>
             {customName ? `${game.white} vs ${game.black} · ` : ''}
