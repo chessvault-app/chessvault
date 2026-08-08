@@ -10,7 +10,6 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
-import { Backlinks } from '@/ui/Backlinks';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
@@ -182,7 +181,6 @@ function NoteEditor({
       </header>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
-      <Backlinks target={id} className="border-line shrink-0 border-t pt-3" />
     </div>
   );
 }

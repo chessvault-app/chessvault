@@ -680,7 +680,7 @@ function ArchiveBrowser({
               ariaLabel="Archive month"
               size="sm"
               align="end"
-              className="max-w-[9.5rem]"
+              className="w-[9.5rem]"
               groups={[
                 {
                   options: months.map((m) => ({
@@ -690,7 +690,12 @@ function ArchiveBrowser({
                 },
               ]}
             />
-          ) : null}
+          ) : (
+            /* Reserved slot: the picker appearing must not reflow the row. */
+            <div className="border-line bg-surface-2 text-subtle flex h-7 w-[9.5rem] items-center rounded-md border px-2 text-xs opacity-50">
+              Month
+            </div>
+          )}
           </>
         }
       />
