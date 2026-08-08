@@ -8,7 +8,7 @@ export function FilterChip({
   title,
   onClick,
 }: {
-  label: string;
+  label: React.ReactNode;
   count?: number;
   active: boolean;
   title?: string;

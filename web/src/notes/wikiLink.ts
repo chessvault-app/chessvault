@@ -80,8 +80,9 @@ export const WikiLink = Extension.create({
           decorations(state) {
             return this.getState(state);
           },
-          handleClick(_view, _pos, event) {
-            if (!event.ctrlKey && !event.metaKey) return false;
+          handleClick(view, _pos, event) {
+            // Reading mode: plain click follows. Editing: Ctrl/Cmd+click.
+            if (view.editable && !event.ctrlKey && !event.metaKey) return false;
             const el = (event.target as HTMLElement).closest?.('.wiki-link');
             if (!(el instanceof HTMLElement) || !el.dataset.target) return false;
             void resolveAndOpen(el.dataset.target);

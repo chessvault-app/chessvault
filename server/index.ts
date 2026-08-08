@@ -14,9 +14,16 @@ import { puzzleBooksApi } from './puzzlebooks.ts';
 import { refGamesApi } from './refgames.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup } from './vaultBackup.ts';
-import { REPO_ROOT, VAULT_GAMES, VAULT_NOTES } from './paths.ts';
+import { DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
+
+// Opening an empty folder as a vault must Just Work: create the skeleton
+// up front so every listing endpoint finds its directory.
+import { mkdirSync } from 'node:fs';
+for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) {
+  mkdirSync(d, { recursive: true });
+}
 
 const app = new Hono();
 app.use('*', logger());

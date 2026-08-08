@@ -100,9 +100,13 @@ function NoteEditor({
   setSaveState: (s: SaveState) => void;
   saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
 }) {
+  // Notes open read-only (wiki-links follow on plain click); the header's
+  // Edit button switches the TipTap editor live.
+  const [editable, setEditable] = useState(false);
   const editor = useEditor({
     extensions: noteExtensions,
     content: initialDoc,
+    editable: false,
     editorProps: {
       attributes: { class: 'note-editor focus:outline-none' },
     },
@@ -142,6 +146,10 @@ function NoteEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  useEffect(() => {
+    editor?.setEditable(editable);
+  }, [editor, editable]);
+
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto p-4 lg:p-6">
       <header className="flex shrink-0 items-center gap-2">
@@ -149,6 +157,16 @@ function NoteEditor({
           <ArrowLeft className="size-3.5" />
         </Button>
         <NoteTitle id={id} />
+        <Button
+          variant={editable ? 'primary' : 'secondary'}
+          size="sm"
+          title={editable ? 'Back to reading' : 'Edit this note'}
+          onClick={() => setEditable((v) => !v)}
+        >
+          <Pencil className="mr-1 size-3.5" />
+          {editable ? 'Done' : 'Edit'}
+        </Button>
+        {editable && (
         <Button
           variant="secondary"
           size="sm"
@@ -158,6 +176,7 @@ function NoteEditor({
           <PlusSquare className="mr-1 size-3.5" />
           Board
         </Button>
+        )}
         <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc))} />
       </header>
 
