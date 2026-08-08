@@ -226,6 +226,40 @@
         <button class="connect" type="submit">Connect</button>
       </form>
     </div>
+
+    <div class="card" id="stepLocal" hidden>
+      <button class="back" id="backLocal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
+        </svg>
+        Back
+      </button>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <rect width="14" height="8" x="5" y="2" rx="2" /><rect width="20" height="8" x="2" y="14" rx="2" /><path d="M6 18h2" /><path d="M12 18h6" />
+        </svg>
+      </div>
+      <h1>Open your vault</h1>
+      <p class="sub">A vault is just a folder of plain files — pick one, or start fresh with an app-managed folder</p>
+      <button class="option" id="pickFolder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+        </svg>
+        <span>
+          <span class="title">Open a folder…</span>
+          <span class="desc">Use an existing vault, or any folder to become one</span>
+        </span>
+      </button>
+      <button class="option" id="defaultVault">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+        </svg>
+        <span>
+          <span class="title">App-managed vault</span>
+          <span class="desc">Kept in your user profile; you can move later</span>
+        </span>
+      </button>
+    </div>
     <script>
       if (new URLSearchParams(location.search).get('error') === 'server') {
         document.getElementById('error').textContent =
@@ -233,6 +267,7 @@
       }
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
+      const stepLocal = document.getElementById('stepLocal');
       const show = (el, other) => {
         other.hidden = true;
         el.hidden = false;
@@ -241,14 +276,22 @@
         void el.offsetHeight;
         el.style.animation = '';
       };
-      document.getElementById('local').onclick = () => window.vaultShell.choose('local');
+      document.getElementById('local').onclick = () => show(stepLocal, step1);
+      document.getElementById('backLocal').onclick = () => show(step1, stepLocal);
+      document.getElementById('defaultVault').onclick = () => window.vaultShell.choose('local');
+      document.getElementById('pickFolder').onclick = async () => {
+        const dir = await window.vaultShell.pickFolder();
+        if (dir) window.vaultShell.choose('local', null, dir);
+      };
       document.getElementById('remote').onclick = () => {
         show(step2, step1);
         document.getElementById('url').focus();
       };
       document.getElementById('back').onclick = () => show(step1, step2);
       addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !step2.hidden) show(step1, step2);
+        if (e.key !== 'Escape') return;
+        if (!step2.hidden) show(step1, step2);
+        else if (!stepLocal.hidden) show(step1, stepLocal);
       });
       document.getElementById('urlForm').onsubmit = (e) => {
         e.preventDefault();

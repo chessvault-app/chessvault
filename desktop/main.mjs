@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -44,6 +44,12 @@ let serverProc = null;
 
 function startLocalServer() {
   if (serverProc) return;
+  // An explicitly opened vault folder (Obsidian-style) wins everywhere;
+  // its derived data rides inside it, so the folder travels whole.
+  const chosen = readSettings().vaultDir;
+  const vaultEnv = chosen
+    ? { CHESS_VAULT_DIR: chosen, CHESS_VAULT_DATA: join(chosen, '.data') }
+    : {};
   if (app.isPackaged) {
     // Shipped shape: the bundled server runs on Electron's own Node
     // (ELECTRON_RUN_AS_NODE), reading/writing the user's profile.
@@ -58,6 +64,7 @@ function startLocalServer() {
         PORT: String(LOCAL_PORT),
         CHESS_VAULT_DIR: join(app.getPath('userData'), 'vault'),
         CHESS_VAULT_DATA: join(app.getPath('userData'), 'data'),
+        ...vaultEnv,
       },
       stdio: 'ignore',
     });
@@ -68,7 +75,7 @@ function startLocalServer() {
       cwd: repoRoot,
       // A GUI process spawning a console app would pop a terminal window.
       windowsHide: true,
-      env: { ...process.env, PORT: String(LOCAL_PORT) },
+      env: { ...process.env, PORT: String(LOCAL_PORT), ...vaultEnv },
       stdio: 'inherit',
     });
   }
@@ -132,9 +139,19 @@ async function openApp(win) {
 app.whenReady().then(async () => {
   const win = createWindow();
 
-  ipcMain.handle('vault:choose', async (_e, mode, url) => {
-    writeSettings({ mode, url: url ?? null });
+  ipcMain.handle('vault:choose', async (_e, mode, url, vaultDir) => {
+    writeSettings({ mode, url: url ?? null, vaultDir: vaultDir ?? null });
+    // A different vault means a different server environment.
+    serverProc?.kill();
+    serverProc = null;
     await openApp(win);
+  });
+  ipcMain.handle('vault:pick-folder', async () => {
+    const picked = await dialog.showOpenDialog(win, {
+      title: 'Open vault folder',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    return picked.canceled ? null : (picked.filePaths[0] ?? null);
   });
 
   Menu.setApplicationMenu(
