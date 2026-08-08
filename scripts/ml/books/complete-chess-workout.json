@@ -3,9 +3,9 @@
   "title": "The Complete Chess Workout",
   "pages": [
     7,
-    215
+    212
   ],
-  "solutionsAfterPage": 215,
+  "solutionsAfterPage": 212,
   "maxNumber": 1200,
   "numberStyle": "paren",
   "anchorStyle": "paren",
@@ -17,7 +17,7 @@
   "labelX": 160,
   "labelY": 130,
   "solutionPages": [
-    216,
+    213,
     322
   ]
 }
