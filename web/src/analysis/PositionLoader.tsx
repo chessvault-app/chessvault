@@ -17,7 +17,25 @@ import { Panel, PanelHeader } from '@/ui/Panel';
  * PGN, otherwise it's treated as a FEN. Guessing is safe because both
  * loaders validate and report failure rather than throwing.
  */
-export function LoadPositionButton() {
+const looksLikePgn = (value: string): boolean =>
+  /^\s*\[/.test(value) || /\b1\s*\.\s*[A-Za-z]/.test(value);
+
+/** The analysis-board default: FEN and PGN both land on the move tree. */
+function loadIntoAnalysis(value: string): string | null {
+  const s = useAnalysis.getState();
+  const ok = looksLikePgn(value) ? s.loadPgn(value) : s.loadFen(value);
+  return ok ? null : (useAnalysis.getState().loadError ?? 'Could not load that.');
+}
+
+export function LoadPositionButton({
+  loadText = loadIntoAnalysis,
+  applyImageFen,
+}: {
+  /** Consume pasted text; return an error message, or null on success. */
+  loadText?: (value: string) => string | null;
+  /** Consume a position read from an image (defaults to the analysis board). */
+  applyImageFen?: (fen: string) => void;
+} = {}) {
   const [open, setOpen] = useState(false);
   // 'Load position' is the single entry point (lanph3re's call): the dialog
   // offers text (FEN/PGN) and image import; the latter swaps to the same
@@ -37,6 +55,7 @@ export function LoadPositionButton() {
       </Button>
       {open && templates === null && (
         <LoadDialog
+          loadText={loadText}
           onClose={() => setOpen(false)}
           onImage={(file) => {
             setImageFile(file);
@@ -51,7 +70,10 @@ export function LoadPositionButton() {
           templates={templates}
           initialFile={imageFile ?? undefined}
           onApply={(reading) => {
-            if (reading.fen) useAnalysis.getState().loadFen(reading.fen);
+            if (reading.fen) {
+              if (applyImageFen) applyImageFen(reading.fen);
+              else useAnalysis.getState().loadFen(reading.fen);
+            }
             setTemplates(null);
             setOpen(false);
           }}
@@ -65,12 +87,18 @@ export function LoadPositionButton() {
   );
 }
 
-function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: (file: Blob | null) => void }) {
+function LoadDialog({
+  loadText,
+  onClose,
+  onImage,
+}: {
+  loadText: (value: string) => string | null;
+  onClose: () => void;
+  onImage: (file: Blob | null) => void;
+}) {
   const [text, setText] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const loadFen = useAnalysis((s) => s.loadFen);
-  const loadPgn = useAnalysis((s) => s.loadPgn);
-  const loadError = useAnalysis((s) => s.loadError);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -92,14 +120,12 @@ function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: (file:
     };
   }, [onClose, onImage]);
 
-  const looksLikePgn = (value: string): boolean =>
-    /^\s*\[/.test(value) || /\b1\s*\.\s*[A-Za-z]/.test(value);
-
   const submit = (): void => {
     const value = text.trim();
     if (!value) return;
-    const ok = looksLikePgn(value) ? loadPgn(value) : loadFen(value);
-    if (ok) onClose();
+    const failure = loadText(value);
+    if (failure === null) onClose();
+    else setError(failure);
   };
 
   const pasteFromClipboard = async (): Promise<void> => {
@@ -151,10 +177,10 @@ function LoadDialog({ onClose, onImage }: { onClose: () => void; onImage: (file:
               className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
             />
 
-            {loadError && (
+            {error && (
               <p className="text-bad flex items-start gap-1.5 text-xs">
                 <AlertCircle className="mt-px size-3.5 shrink-0" />
-                {loadError}
+                {error}
               </p>
             )}
 

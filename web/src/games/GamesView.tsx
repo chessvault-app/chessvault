@@ -738,6 +738,7 @@ function ArchiveBrowser({
             onChange={(m) => void loadMonth(m)}
             ariaLabel="Archive month"
             size="sm"
+            className="shrink-0"
             groups={[
               {
                 options: months.map((m) => ({

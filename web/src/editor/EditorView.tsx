@@ -5,9 +5,7 @@ import {
   CheckCircle2,
   Eraser,
   FlipVertical2,
-  FolderInput,
   SquarePen,
-  ImageUp,
   Microscope,
   MousePointer2,
   RotateCcw,
@@ -24,13 +22,11 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { Input, TextArea } from '@/ui/Input';
+import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
-import { PhotoImport } from '@/puzzles/PhotoImport';
-import { builtinTemplates } from '@/puzzles/ocr/builtin';
-import type { Template } from '@/puzzles/ocr/classify';
+import { LoadPositionButton } from '@/analysis/PositionLoader';
 import {
   defaultEditorState,
   emptyEditorState,
@@ -73,19 +69,36 @@ export function EditorView({
   );
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
-  const [fenInput, setFenInput] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
   // Image import runs against the app's built-in piece templates, so a
   // screenshot of any lichess/chessground-style board reads with no setup.
-  const [imageTemplates, setImageTemplates] = useState<Template[] | null>(null);
 
-  const openImageImport = (): void => {
-    void builtinTemplates()
-      .then(setImageTemplates)
-      .catch(() => setImageTemplates([]));
+  // Shared Load-position handlers: text lands on the editor (PGN loads
+  // its final position), image readings likewise.
+  const loadText = (value: string): string | null => {
+    const looksLikePgn = /^\s*\[/.test(value) || /1\s*\.\s*[A-Za-z]/.test(value);
+    let fenToLoad = value;
+    if (looksLikePgn) {
+      try {
+        const first = pgnToChapters(value)[0];
+        if (!first) throw new Error('no games');
+        const tree = first.tree;
+        const lastId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
+        fenToLoad = getNode(tree, lastId).fen;
+      } catch {
+        return 'That PGN could not be read.';
+      }
+    }
+    const next = fromFen(fenToLoad);
+    if (!next) return 'That FEN could not be read.';
+    setState(next);
+    return null;
   };
-  const [loadOpen, setLoadOpen] = useState(false);
-  const [fenError, setFenError] = useState<string | null>(null);
+  const applyImageFen = (fen: string): void => {
+    const next = fromFen(fen);
+    if (next) setState(next);
+  };
+
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
 
   const fen = useMemo(() => toFen(state), [state]);
@@ -138,33 +151,6 @@ export function EditorView({
    * FEN loads as-is; a PGN loads the END of its main line — the position
    * the game arrived at is what a position editor can meaningfully edit.
    */
-  const loadInput = (): void => {
-    const value = fenInput.trim();
-    if (!value) return;
-    const looksLikePgn = /^\s*\[/.test(value) || /\b1\s*\.\s*[A-Za-z]/.test(value);
-    let fenToLoad = value;
-    if (looksLikePgn) {
-      try {
-        const first = pgnToChapters(value)[0];
-        if (!first) throw new Error('no games');
-        const tree = first.tree;
-        const lastId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
-        fenToLoad = getNode(tree, lastId).fen;
-      } catch {
-        setFenError('That PGN could not be read.');
-        return;
-      }
-    }
-    const next = fromFen(fenToLoad);
-    if (!next) {
-      setFenError(looksLikePgn ? 'That PGN could not be read.' : 'That FEN could not be read.');
-      return;
-    }
-    setFenError(null);
-    setState(next);
-    setFenInput('');
-    setLoadOpen(false);
-  };
 
   const copyFen = async (): Promise<void> => {
     setCopied((await copyText(fen)) ? 'ok' : 'failed');
@@ -292,37 +278,11 @@ export function EditorView({
             <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
               {copied === 'ok' ? 'Copied' : copied === 'failed' ? 'Failed' : 'Copy'}
             </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Read the position from an image"
-              onClick={openImageImport}
-            >
-              <ImageUp className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Load a FEN or PGN to edit"
-              onClick={() => setLoadOpen(true)}
-            >
-              <FolderInput className="size-3.5" />
-            </Button>
+            {/* Same Load-position dialog as the Board tab (lanph3re: one
+                dialog everywhere); here it lands on the editor state. */}
+            <LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />
           </div>
         </Panel>
-      {imageTemplates !== null && (
-        <PhotoImport
-          templates={imageTemplates}
-          onApply={(reading) => {
-            if (reading.fen) {
-              const next = fromFen(reading.fen);
-              if (next) setState(next);
-            }
-            setImageTemplates(null);
-          }}
-          onClose={() => setImageTemplates(null)}
-        />
-      )}
     </>
   );
 
@@ -485,50 +445,6 @@ export function EditorView({
         </div>
       )}
 
-      {/* Load-a-FEN modal, same pattern as the analysis loader. */}
-      {loadOpen && (
-        <>
-          <div className="bg-scrim fixed inset-0 z-40" onClick={() => setLoadOpen(false)} />
-          <div className="fixed inset-x-4 top-[15dvh] z-50 mx-auto max-w-md">
-            <Panel flush>
-              <PanelHeader title="Load position" />
-              <div className="flex flex-col gap-2 p-3">
-                <TextArea
-                  autoFocus
-                  value={fenInput}
-                  onChange={(e) => setFenInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    // Enter submits; Shift+Enter keeps a newline for PGN.
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      loadInput();
-                    }
-                    if (e.key === 'Escape') setLoadOpen(false);
-                  }}
-                  rows={5}
-                  spellCheck={false}
-                  placeholder="Paste a FEN, or a PGN to edit its final position"
-                  className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
-                />
-                {fenError && <p className="text-bad text-xs">{fenError}</p>}
-                <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setLoadOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={loadInput}
-                    disabled={!fenInput.trim()}
-                  >
-                    Load
-                  </Button>
-                </div>
-              </div>
-            </Panel>
-          </div>
-        </>
-      )}
     </div>
   );
 }
