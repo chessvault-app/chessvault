@@ -1,6 +1,5 @@
 import {
   ArrowLeft,
-  Check,
   Download,
   ExternalLink,
   Loader2,
@@ -49,6 +48,9 @@ interface ArchiveMonth {
 }
 
 const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
+
+/** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
+const fmtResult = (result: string): string => result.replaceAll('1/2', '½');
 
 interface Preview {
   fen: string;
@@ -151,8 +153,19 @@ function EliteBrowser() {
   };
 
   // Keeping an elite game: its PGN becomes a collection document like any
-  // promoted chess.com game — annotatable, searchable, yours.
+  // promoted chess.com game — annotatable, searchable, yours. The
+  // collection keys make already-kept games read 'Added' across reloads,
+  // and the server refuses duplicates besides.
   const [added, setAdded] = useState<Set<number>>(new Set());
+  const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    void fetch('/api/games')
+      .then((r) => r.json() as Promise<{ games: GameSummary[] }>)
+      .then((d) => setCollectionKeys(new Set(d.games.map((g) => `${g.white}|${g.black}|${g.date}`))))
+      .catch(() => {});
+  }, []);
+  const inCollection = (g: RefGame): boolean =>
+    added.has(g.id) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
   const collect = async (game: RefGame): Promise<void> => {
     const res = await fetch(`/api/refgames/${game.id}/pgn`);
     if (!res.ok) return;
@@ -162,7 +175,8 @@ function EliteBrowser() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ pgn }),
     });
-    if (posted.ok) setAdded((prev) => new Set(prev).add(game.id));
+    // 409 = already there; either way this game is now in the collection.
+    if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(game.id));
   };
 
   if (meta && !meta.ready) {
@@ -228,20 +242,25 @@ function EliteBrowser() {
                     {g.opening ?? ''}
                   </span>
                 </span>
-                <span className="text-muted shrink-0 font-mono">{g.result}</span>
+                <span className="text-muted w-12 shrink-0 text-right font-mono">
+                  {fmtResult(g.result)}
+                </span>
                 <span className="text-subtle shrink-0 font-mono">{g.date ?? ''}</span>
               </button>
               <Button
-                variant="ghost"
-                size="icon-sm"
-                title={added.has(g.id) ? 'In your collection' : 'Add to collection'}
-                disabled={added.has(g.id)}
+                variant={inCollection(g) ? 'ghost' : 'secondary'}
+                size="sm"
+                className="shrink-0"
+                disabled={inCollection(g)}
                 onClick={() => void collect(g)}
               >
-                {added.has(g.id) ? (
-                  <Check className="text-good size-3.5" />
+                {inCollection(g) ? (
+                  'Added'
                 ) : (
-                  <Plus className="size-3.5" />
+                  <>
+                    <Plus className="mr-1 size-3.5" />
+                    Add
+                  </>
                 )}
               </Button>
             </li>
@@ -324,11 +343,20 @@ function CollectionView() {
     navigate('games', encodeURIComponent(id));
   };
 
+  // A rename in the open-game view changes the document's file name; when
+  // it no longer matches the auto "White vs Black date" pattern, that name
+  // IS the title the user chose — lead with it.
+  const customName = (g: GameSummary): string | null => {
+    const name = g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+    const autoPrefix = `${g.white} vs ${g.black}`.replace(/[^A-Za-z0-9 _.-]/g, '').trim();
+    return name.startsWith(autoPrefix) ? null : name;
+  };
+
   const needle = query.trim().toLowerCase();
   const visible = games.filter((g) => {
     if (starredOnly && !bookmarks.has(gameKey(g))) return false;
     if (!needle) return true;
-    return `${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
+    return `${customName(g) ?? ''} ${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
       .toLowerCase()
       .includes(needle);
   });
@@ -389,6 +417,7 @@ function CollectionView() {
               <GameRow
                 key={gameKey(game)}
                 game={game}
+                customName={customName(game)}
                 onOpen={() => openGame(game)}
                 onPreview={setPreview}
                 actions={
@@ -591,7 +620,7 @@ function ArchiveBrowser({
                 {
                   options: months.map((m) => ({
                     value: m.month,
-                    label: `${m.month}${m.cached ? ` · ${m.games} ✓` : offline ? ' · needs internet' : ''}`,
+                    label: `${m.month}${m.cached ? ` · ${m.games} saved` : offline ? ' · needs internet' : ''}`,
                   })),
                 },
               ]}
@@ -679,11 +708,14 @@ function GameRow({
   onOpen,
   onPreview,
   actions,
+  customName,
 }: {
   game: GameSummary;
   onOpen: () => void;
   onPreview: (preview: Preview | null) => void;
   actions: React.ReactNode;
+  /** A user-chosen document name (in-game rename), shown instead of the matchup. */
+  customName?: string | null;
 }) {
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -725,29 +757,43 @@ function GameRow({
       >
         <ResultDot result={game.result} userSide={game.userSide} />
         <div className="min-w-0 flex-1">
-          <p className="text-fg truncate text-sm">
-            <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-            <span className={cn('font-medium', game.userSide === 'white' && 'text-primary')}>
-              {game.white}
-            </span>
-            {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
-            <span className="text-subtle"> vs </span>
-            <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-            <span className={cn('font-medium', game.userSide === 'black' && 'text-primary')}>
-              {game.black}
-            </span>
-            {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
-            {game.annotated && (
-              <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
-            )}
-          </p>
+          {customName ? (
+            // A renamed game leads with its given name; the matchup joins
+            // the detail line so nothing is lost.
+            <p className="text-fg truncate text-sm font-medium">
+              {customName}
+              {game.annotated && (
+                <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
+              )}
+            </p>
+          ) : (
+            <p className="text-fg truncate text-sm">
+              <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
+              <span className={cn('font-medium', game.userSide === 'white' && 'text-primary')}>
+                {game.white}
+              </span>
+              {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
+              <span className="text-subtle"> vs </span>
+              <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
+              <span className={cn('font-medium', game.userSide === 'black' && 'text-primary')}>
+                {game.black}
+              </span>
+              {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
+              {game.annotated && (
+                <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
+              )}
+            </p>
+          )}
           <p className="text-subtle truncate text-xs" title={openingLabel}>
+            {customName ? `${game.white} vs ${game.black} · ` : ''}
             {game.date}
             {openingLabel ? ` · ${openingLabel}` : ''}
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
           </p>
         </div>
-        <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">{game.result}</span>
+        <span className="text-muted w-12 shrink-0 text-right font-mono text-xs">
+          {fmtResult(game.result)}
+        </span>
       </div>
       {actions}
       {game.link && (

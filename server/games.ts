@@ -291,12 +291,17 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
     return c.json({ id: addToCollection(game) });
   });
 
-  /** Write a parsed game into the collection under a readable, unique name. */
-  function addToCollection(game: Game<PgnNodeData>): string {
+  /** The default document name for a game: "White vs Black YYYY-MM-DD". */
+  function collectionBaseName(game: Game<PgnNodeData>): string {
     const date = (game.headers.get('UTCDate') ?? game.headers.get('Date') ?? '').replaceAll('.', '-');
-    const base = `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`
+    return `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`
       .replace(/[^A-Za-z0-9 _.-]/g, '')
       .trim();
+  }
+
+  /** Write a parsed game into the collection under a readable, unique name. */
+  function addToCollection(game: Game<PgnNodeData>): string {
+    const base = collectionBaseName(game);
     let name = base;
     for (let n = 2; existsSync(resolve(collectionDir, `${name}.pgn`)); n += 1) {
       name = `${base} (${n})`;
@@ -316,6 +321,11 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
     });
     parser.parse(body.pgn);
     if (!game) return c.json({ error: 'that PGN could not be read' }, 400);
+    // Same players + same date = same game: a reference game must not pile
+    // up copies (unlike /collect, whose client already dedupes by key).
+    if (existsSync(resolve(collectionDir, `${collectionBaseName(game)}.pgn`))) {
+      return c.json({ error: 'already in the collection' }, 409);
+    }
     return c.json({ id: addToCollection(game) });
   });
 

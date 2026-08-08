@@ -102,6 +102,14 @@ describe('games api (collection model)', () => {
     expect((await res.json()).id).toBe('Carlsen vs Caruana 2024-01-05');
     expect(existsSync(join(dir, 'collection', 'Carlsen vs Caruana 2024-01-05.pgn'))).toBe(true);
 
+    // The same reference game must not pile up copies.
+    const dupe = await app.request('/api/games/collect-pgn', {
+      method: 'POST',
+      body: JSON.stringify({ pgn }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(dupe.status).toBe(409);
+
     const bad = await app.request('/api/games/collect-pgn', {
       method: 'POST',
       body: JSON.stringify({}),
