@@ -5,7 +5,6 @@ import {
   Loader2,
   NotebookPen,
   Plus,
-  Search,
   Star,
   Swords,
   Trash2,
@@ -20,7 +19,7 @@ import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Select } from '@/ui/Select';
-import { Input } from '@/ui/Input';
+import { Input, SearchInput } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { SkeletonRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -225,16 +224,14 @@ function EliteBrowser() {
         </h1>
       </div>
 
-      <label className="bg-surface-inset border-line focus-within:border-primary/50 flex shrink-0 items-center gap-2 rounded-lg border px-3">
-        <Search className="text-subtle size-3.5 shrink-0" />
-        <input
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder="Search players, openings, or ECO (e.g. Najdorf, B90)…"
-          spellCheck={false}
-          className="text-fg placeholder:text-subtle h-9 w-full bg-transparent text-sm outline-none"
-        />
-      </label>
+      <SearchInput
+        inputSize="lg"
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        placeholder="Search players, openings, or ECO (e.g. Najdorf, B90)…"
+        spellCheck={false}
+        className="w-full shrink-0"
+      />
 
       <Panel flush className="min-h-0 flex-1">
         <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
@@ -390,7 +387,7 @@ function CollectionView() {
           >
             <Star className={cn('size-3.5', starredOnly && 'fill-current')} />
           </Button>
-          <Input
+          <SearchInput
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

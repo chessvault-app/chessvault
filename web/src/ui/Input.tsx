@@ -1,4 +1,5 @@
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 /**
@@ -41,5 +42,19 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
 ) {
   return (
     <textarea ref={ref} className={cn(base, 'px-2.5 py-2 text-xs', className)} {...props} />
+  );
+});
+
+/** An Input with the magnifier badge every search field carries. Width
+    classes go on the wrapper; the input fills it. */
+export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function SearchInput(
+  { className, inputSize = 'md', ...props },
+  ref,
+) {
+  return (
+    <span className={cn('relative inline-flex', className)}>
+      <Search className="text-subtle pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2" />
+      <Input ref={ref} inputSize={inputSize} className="w-full pl-7" {...props} />
+    </span>
   );
 });

@@ -1,7 +1,10 @@
-import { ArrowLeft, BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowLeft, BookMarked, Check, ChevronRight, Eraser, Eye, RotateCcw, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
+import { Board } from '@/board/Board';
+import { cn } from '@/lib/cn';
+import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { Button } from '@/ui/Button';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -81,6 +84,39 @@ export function DashboardPage() {
   // (history arrives newest-first). Filters cut by outcome and rating band.
   const [resultFilter, setResultFilter] = useState<ResultFilter>('all');
   const [bandFilter, setBandFilter] = useState<BandFilter>('any');
+
+  // Hovering a row's eye pops the puzzle's starting position (after the
+  // setup move, from the solver's side). Fetched lazily, cached by id.
+  const [preview, setPreview] = useState<{
+    fen: string;
+    orientation: 'white' | 'black';
+    top: number;
+    left: number;
+  } | null>(null);
+  const puzzleCache = useRef<Map<string, ApiPuzzle>>(new Map());
+  const previewSeq = useRef(0);
+  const showPreview = async (id: string, anchor: Element): Promise<void> => {
+    const seq = ++previewSeq.current;
+    let cached = puzzleCache.current.get(id);
+    if (!cached) {
+      const res = await fetch(`/api/puzzles/by-id/${encodeURIComponent(id)}`);
+      if (!res.ok) return;
+      cached = ((await res.json()) as { puzzle: ApiPuzzle }).puzzle;
+      puzzleCache.current.set(id, cached);
+    }
+    if (seq !== previewSeq.current) return; // pointer moved on
+    const rect = anchor.getBoundingClientRect();
+    setPreview({
+      fen: positionAt(cached, 1).fen,
+      orientation: solverColor(cached),
+      top: Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200),
+      left: Math.max(rect.left - 192, 8),
+    });
+  };
+  const hidePreview = (): void => {
+    previewSeq.current += 1;
+    setPreview(null);
+  };
   const latestById = new Map<string, HistoryEntry>();
   const trained = new Set<string>();
   for (const h of history ?? []) {
@@ -265,7 +301,13 @@ export function DashboardPage() {
                         to review
                       </span>
                     )}
-                    <span className="text-subtle ml-auto tabular-nums" title={formatWhen(h.at)}>
+                    <Eye
+                      className="text-subtle hover:text-fg ml-auto size-3.5 shrink-0"
+                      aria-label="Preview the position"
+                      onMouseEnter={(e) => void showPreview(h.id, e.currentTarget)}
+                      onMouseLeave={hidePreview}
+                    />
+                    <span className="text-subtle tabular-nums" title={formatWhen(h.at)}>
                       {formatAgo(h.at)}
                     </span>
                   </button>
@@ -275,6 +317,24 @@ export function DashboardPage() {
           )}
         </Panel>
       </div>
+
+      {preview && (
+        <div
+          style={{ top: preview.top, left: preview.left }}
+          className={cn(
+            'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
+            'shadow-[var(--shadow-pop)]',
+          )}
+        >
+          <Board
+            fen={preview.fen}
+            orientation={preview.orientation}
+            viewOnly
+            coordinates={false}
+            className="rounded"
+          />
+        </div>
+      )}
     </div>
   );
 }

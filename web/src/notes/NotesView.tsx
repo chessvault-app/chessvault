@@ -13,7 +13,7 @@ import { formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Select } from '@/ui/Select';
-import { Input } from '@/ui/Input';
+import { Input, SearchInput } from '@/ui/Input';
 import { NoteView } from './NoteView';
 
 interface NoteMeta {
@@ -63,7 +63,7 @@ function NoteList() {
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Notes</h1>
         <div className="flex items-center gap-2">
-          <Input
+          <SearchInput
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

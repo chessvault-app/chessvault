@@ -295,7 +295,7 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
   function collectionBaseName(game: Game<PgnNodeData>): string {
     const date = (game.headers.get('UTCDate') ?? game.headers.get('Date') ?? '').replaceAll('.', '-');
     return `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`
-      .replace(/[^A-Za-z0-9 _.-]/g, '')
+      .replace(/[^A-Za-z0-9 ()_.-]/g, '')
       .trim();
   }
 

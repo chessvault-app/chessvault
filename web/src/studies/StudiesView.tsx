@@ -14,7 +14,7 @@ import { formatWhen } from '@/lib/dates';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { Input } from '@/ui/Input';
+import { Input, SearchInput } from '@/ui/Input';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { StudyView } from './StudyView';
 
@@ -47,7 +47,7 @@ function StudyList() {
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">Studies</h1>
         <div className="flex items-center gap-2">
-          <Input
+          <SearchInput
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

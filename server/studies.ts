@@ -27,7 +27,10 @@ import { VAULT_STUDIES } from './paths.ts';
  * segment must be a plain name — no leading dots, no empty segments — which
  * rules out traversal by construction.
  */
-const SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9 _.-]*$/;
+// Parentheses are in the set because the games collection generates
+// "White vs Black date (2)" names for duplicates — documents must be
+// addressable under the names the app itself writes.
+const SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9 ()_.-]*$/;
 const MAX_DEPTH = 4;
 const MAX_PGN_BYTES = 20 * 1024 * 1024;
 
