@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   BarChart3,
   ChevronRight,
+  Settings2,
   Eye,
   Lightbulb,
   Loader2,
@@ -124,6 +125,8 @@ function Trainer({
     const stored = localStorage.getItem(DIFFICULTY_KEY);
     return DIFFICULTIES.some((d) => d.id === stored) ? (stored as DifficultyId) : 'any';
   });
+  // Stacked: the difficulty row hides behind the Puzzle panel's gear.
+  const [showDifficulty, setShowDifficulty] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
@@ -502,7 +505,9 @@ function Trainer({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
-        <Panel flush className="shrink-0">
+        {/* Stacked phones fold this whole panel into two icons on the
+            Puzzle panel header — vertical space is the scarce resource. */}
+        <Panel flush className={cn('shrink-0', mode === 'fresh' && 'stacked:hidden')}>
           <PanelHeader
             title="Training"
             actions={
@@ -527,20 +532,7 @@ function Trainer({
               puzzle from this list.
             </p>
           ) : (
-            <div className="flex gap-1 p-2.5">
-              {DIFFICULTIES.map((d) => (
-                <Button
-                  key={d.id}
-                  size="sm"
-                  variant={difficulty === d.id ? 'primary' : 'secondary'}
-                  className="min-w-0 flex-1 px-0"
-                  title={'hint' in d ? `Difficulty ${d.hint}` : 'Any difficulty'}
-                  onClick={() => pickDifficulty(d.id)}
-                >
-                  {d.label}
-                </Button>
-              ))}
-            </div>
+            <DifficultyRow active={difficulty} onPick={pickDifficulty} />
           )}
         </Panel>
 
@@ -556,12 +548,40 @@ function Trainer({
           <PanelHeader
             title="Puzzle"
             actions={
-              puzzle &&
-              phase === 'done' && (
-                <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
-              )
+              <>
+                {puzzle && phase === 'done' && (
+                  <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
+                )}
+                {/* Stacked stand-ins for the hidden Training panel. */}
+                <span className="flex items-center gap-1 wide:hidden">
+                  {mode === 'fresh' && (
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      active={showDifficulty}
+                      title="Difficulty"
+                      onClick={() => setShowDifficulty((v) => !v)}
+                    >
+                      <Settings2 className="size-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Dashboard"
+                    onClick={() => navigate('puzzles', 'dashboard')}
+                  >
+                    <BarChart3 className="size-3.5" />
+                  </Button>
+                </span>
+              </>
             }
           />
+          {showDifficulty && mode === 'fresh' && (
+            <div className="border-line border-b wide:hidden">
+              <DifficultyRow active={difficulty} onPick={pickDifficulty} />
+            </div>
+          )}
           <div className="flex flex-col gap-3 p-3">
             {phase === 'done' && puzzle ? (
               <>
@@ -694,6 +714,33 @@ function Trainer({
 }
 
 /** Fixed-height strip under the board: whose move, and how it's going. */
+/** The four difficulty chips — shared by the Training panel (wide) and
+    the Puzzle panel's gear reveal (stacked). */
+function DifficultyRow({
+  active,
+  onPick,
+}: {
+  active: DifficultyId;
+  onPick: (id: DifficultyId) => void;
+}) {
+  return (
+    <div className="flex gap-1 p-2.5">
+      {DIFFICULTIES.map((d) => (
+        <Button
+          key={d.id}
+          size="sm"
+          variant={active === d.id ? 'primary' : 'secondary'}
+          className="min-w-0 flex-1 px-0"
+          title={'hint' in d ? `Difficulty ${d.hint}` : 'Any difficulty'}
+          onClick={() => onPick(d.id)}
+        >
+          {d.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
 function StatusStrip({
   phase,
   failed,
