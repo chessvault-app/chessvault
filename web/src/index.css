@@ -293,6 +293,15 @@
     color: var(--text);
   }
 
+  /* Scrolls without showing a bar — for panel columns whose panels make
+     their own scroll affordances (lanph3re: hide it, don't disable it). */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Slim, theme-aware scrollbars. */
   * {
     scrollbar-width: thin;

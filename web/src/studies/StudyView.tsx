@@ -126,7 +126,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       {/* The column is the scroll container on every layout: panels keep
           explicit floors, the move table scrolls internally, and a squat
           viewport scrolls the column by the shortfall. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {titleRow('stacked:hidden')}
 
         <PaneTabs

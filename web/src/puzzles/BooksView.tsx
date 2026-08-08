@@ -1304,7 +1304,7 @@ function SolutionRecorder({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="flex shrink-0 items-center gap-2">
           <Button variant="ghost" size="icon-sm" title="Back to the position" onClick={onBack}>
             <ArrowLeft className="size-3.5" />
@@ -1782,7 +1782,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {wide && header}
 
         <AnswerPanel

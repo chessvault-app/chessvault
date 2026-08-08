@@ -434,7 +434,7 @@ function Trainer({
     return (
       <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
         <AnalysisBoard />
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
           <div className="flex shrink-0 items-center gap-2">
             <Button variant="ghost" size="icon-sm" title="Back to the puzzle" onClick={backToPuzzle}>
               <ArrowLeft className="size-3.5" />
@@ -506,7 +506,7 @@ function Trainer({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto [scrollbar-gutter:stable] stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {/* Fresh training folds this panel into two icons on the Puzzle
             panel header (lanph3re: same treatment on desktop as mobile); it only
             renders for the modes that need their explanatory text. */}
