@@ -503,7 +503,7 @@ function BookPage({ slug }: { slug: string }) {
                     d.fen ? 'border-good/50' : 'border-line hover:border-line-strong',
                   )}
                 >
-                  <img src={diagramUrl(slug, d.image)} alt="diagram" className="w-full" />
+                  <DraftThumb slug={slug} draft={d} />
                   {d.number !== undefined && (
                     <span className="text-subtle block py-0.5 text-center font-mono text-[0.625rem]">
                       #{d.number}
@@ -923,6 +923,52 @@ const PROVENANCE_META = {
     iconClass: 'text-warn',
   },
 } as const;
+
+/**
+ * A draft's shelf thumbnail: the raw page scan cropped to the diagram's
+ * rect. Never the warped board image the reader aligned — drafts are
+ * exactly the cases where that alignment failed, so its picture is the
+ * least faithful one available (#230 came out sheared). Pure percent
+ * math keeps it fluid inside the grid cell.
+ */
+function DraftThumb({ slug, draft }: { slug: string; draft: BookDraft }) {
+  const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
+  const ev = draft.evidence;
+  if (!ev?.page || !ev.rect) {
+    return <img src={diagramUrl(slug, draft.image)} alt="diagram" className="w-full" />;
+  }
+  const m = 0.015;
+  const cx = Math.max(0, ev.rect.x - m);
+  const cy = Math.max(0, ev.rect.y - m);
+  const cw = Math.min(1 - cx, ev.rect.w + 2 * m);
+  const ch = Math.min(1 - cy, ev.rect.h + 2 * m);
+  return (
+    <div
+      className="w-full overflow-hidden"
+      style={{ aspectRatio: nat ? `${cw * nat.w} / ${ch * nat.h}` : '1 / 1' }}
+    >
+      <img
+        src={diagramUrl(slug, ev.page)}
+        alt="diagram"
+        onLoad={(e) =>
+          setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+        }
+        className="max-w-none"
+        style={
+          nat
+            ? {
+                width: `${(1 / cw) * 100}%`,
+                // Top offset is a % of the container WIDTH per CSS rules,
+                // hence the aspect correction.
+                marginLeft: `-${(cx / cw) * 100}%`,
+                marginTop: `-${((cy * nat.h) / (cw * nat.w)) * 100}%`,
+              }
+            : { width: '100%', visibility: 'hidden' }
+        }
+      />
+    </div>
+  );
+}
 
 /**
  * The correction aid: the scanned source page, cropped to THIS diagram
