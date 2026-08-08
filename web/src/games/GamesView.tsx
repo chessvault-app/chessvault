@@ -442,7 +442,9 @@ function CollectionView() {
           </p>
         </div>
       ) : (
-        <Panel flush>
+        // shrink-0: loading an archive month below must not squeeze this
+        // panel — the page column scrolls instead.
+        <Panel flush className="shrink-0">
           <PanelHeader
             title={`Collection · ${visible.length}`}
             actions={
@@ -654,7 +656,7 @@ function ArchiveBrowser({
   };
 
   return (
-    <Panel flush>
+    <Panel flush className="shrink-0">
       {/* Narrow screens can't fit tabs + username + Browse on one line;
           the band relaxes its fixed height and lets the actions wrap. */}
       <PanelHeader
