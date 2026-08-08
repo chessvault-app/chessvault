@@ -22,7 +22,7 @@ import { squareRank } from 'chessops/util';
 import type { Move, NormalMove } from 'chessops/types';
 import { detectBoardQuad, detectDiagrams } from '../../web/src/puzzles/ocr/detect';
 import { warpQuad, type Gray } from '../../web/src/puzzles/ocr/image';
-import { classifyBoardNet, parseCellNet } from '../../web/src/puzzles/ocr/cellnet';
+import { cellTile, classifyBoardNet, parseCellNet, runCellNet } from '../../web/src/puzzles/ocr/cellnet';
 import { labelsToFen } from '../../web/src/puzzles/ocr/classify';
 
 const REPO = resolve(import.meta.dirname, '..', '..');
@@ -395,6 +395,8 @@ interface PuzzleResult {
   /** Diagram bounds as FRACTIONS of the page — resolution-independent, the
    *  UI draws the highlight over the page image with these. */
   rect?: { x: number; y: number; w: number; h: number };
+  /** Set when pass 4 corrected the board read (number of cells changed). */
+  repairedCells?: number;
 }
 
 const MATE_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
@@ -635,19 +637,162 @@ console.log(`pass 2 with learned dialect rescued ${rescued} puzzles`);
 // the printed figurine glyphs) covers prefixes too rare for the text-only
 // dialect. The dialect keeps priority where both know a prefix.
 const glyphAt = process.argv.indexOf('--glyph-hints');
+const glyph: Record<string, Role> =
+  glyphAt > 0 ? (JSON.parse(readFileSync(process.argv[glyphAt + 1]!, 'utf-8')) as Record<string, Role>) : {};
+const mergedHints = new Map<string, Role>([...Object.entries(glyph), ...hints]);
 if (glyphAt > 0) {
-  const glyph = JSON.parse(readFileSync(process.argv[glyphAt + 1]!, 'utf-8')) as Record<
-    string,
-    Role
-  >;
-  const merged = new Map<string, Role>([...Object.entries(glyph), ...hints]);
   let rescued3 = 0;
   for (const entry of results.values()) {
     if (entry.status !== 'replay-failed') continue;
-    validateEntry(entry, merged);
+    validateEntry(entry, mergedHints);
     if ((entry.status as string) === 'validated') rescued3++;
   }
   console.log(`pass 3 with ${Object.keys(glyph).length} glyph hints rescued ${rescued3} puzzles`);
+}
+
+// --- pass 4: solution-constrained board repair --------------------------------
+//
+// ~99.4% per-cell accuracy means only ~0.994^64 ≈ 68% of boards read
+// perfectly; most failures are one or two wrong cells. The book's own
+// mainline is a checksum strong enough to find them: try the classifier's
+// runner-up labels on its least-confident cells and accept a repair only
+// when EXACTLY ONE candidate position makes the whole solution replay
+// (and any claimed mate check out).
+if (process.argv.includes('--repair')) {
+  const pageCacheR = new Map<number, Gray | null>();
+  const loadPageR = (page: number): Gray | null => {
+    if (!pageCacheR.has(page)) {
+      try {
+        pageCacheR.set(page, loadGray(resolve(pagesDir, `page-${String(page).padStart(3, '0')}.gray`)));
+      } catch {
+        pageCacheR.set(page, null);
+      }
+    }
+    return pageCacheR.get(page)!;
+  };
+
+  let repaired = 0;
+  let ambiguous = 0;
+  const byEdits = new Map<number, number>();
+  for (const entry of results.values()) {
+    if (entry.status !== 'replay-failed' && entry.status !== 'illegal-position') continue;
+    if (!entry.rect) continue;
+    const solution = solutions.get(entry.number);
+    if (!solution) continue;
+    const mainline = parseMainline(solution);
+    if (!mainline) continue;
+    const sides: ('w' | 'b')[] = [mainline.startsBlack ? 'b' : 'w'];
+    const stated = chapterSide.get(entry.page);
+    if (stated && !sides.includes(stated)) sides.push(stated);
+
+    const page = loadPageR(entry.page);
+    if (!page) continue;
+    const rect = {
+      x: Math.round(entry.rect.x * page.w),
+      y: Math.round(entry.rect.y * page.h),
+      w: Math.round(entry.rect.w * page.w),
+      h: Math.round(entry.rect.h * page.h),
+    };
+    const m = Math.round(Math.min(rect.w, rect.h) * 0.04);
+    const x0 = Math.max(0, rect.x - m);
+    const y0 = Math.max(0, rect.y - m);
+    const w = Math.min(page.w - x0, rect.w + 2 * m);
+    const h = Math.min(page.h - y0, rect.h + 2 * m);
+    const cropData = new Uint8ClampedArray(w * h);
+    for (let y = 0; y < h; y++) {
+      cropData.set(page.data.subarray((y0 + y) * page.w + x0, (y0 + y) * page.w + x0 + w), y * w);
+    }
+    const quad = detectBoardQuad({ w, h, data: cropData }) ?? [
+      { x: 0, y: 0 },
+      { x: w, y: 0 },
+      { x: w, y: h },
+      { x: 0, y: h },
+    ];
+    const board = warpQuad({ w, h, data: cropData }, quad);
+
+    // Full class distributions for every cell.
+    const cells: { probs: Float32Array; top: number }[] = [];
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const probs = runCellNet(net, cellTile(board, col, row));
+        let top = 0;
+        for (let i = 0; i < probs.length; i++) if (probs[i]! > probs[top]!) top = i;
+        cells.push({ probs, top });
+      }
+    }
+    const labels = cells.map((c) => net.labels[c.top]!);
+    // No probability floor: a confidently-wrong cell ranks its true label
+    // low, and the uniqueness gate is what protects against inventions.
+    const alternates = (i: number, take: number): number[] =>
+      [...cells[i]!.probs.keys()]
+        .filter((k) => k !== cells[i]!.top)
+        .sort((a, b) => cells[i]!.probs[b]! - cells[i]!.probs[a]!)
+        .slice(0, take);
+
+    const test = (
+      ls: string[],
+    ): { fen: string; side: 'w' | 'b'; sans: string[] } | null => {
+      const fen = labelsToFen(
+        ls.map((ch) => (ch === '1' ? 'empty' : ch)) as Parameters<typeof labelsToFen>[0],
+        false,
+      ).split(' ')[0]!;
+      for (const side of sides) {
+        const outcome = replay(fen, side, mainline.tokens, mergedHints);
+        if (!('fail' in outcome)) return { fen, side, sans: outcome.sans };
+      }
+      return null;
+    };
+
+    const wins = new Map<string, { side: 'w' | 'b'; sans: string[]; edits: number }>();
+    // 1-cell repairs across the whole board.
+    for (let i = 0; i < 64; i++) {
+      for (const alt of alternates(i, 3)) {
+        const ls = labels.slice();
+        ls[i] = net.labels[alt]!;
+        const got = test(ls);
+        if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 1 });
+      }
+    }
+    // 2-cell repairs only among the least-confident cells, and only if no
+    // single edit worked — a wider net would start inventing positions.
+    if (wins.size === 0) {
+      const margin = (i: number): number => {
+        const p = [...cells[i]!.probs].sort((a, b) => b - a);
+        return p[0]! - p[1]!;
+      };
+      const shaky = [...Array(64).keys()].sort((a, b) => margin(a) - margin(b)).slice(0, 20);
+      for (let a = 0; a < shaky.length; a++) {
+        for (let b = a + 1; b < shaky.length; b++) {
+          for (const altA of alternates(shaky[a]!, 2)) {
+            for (const altB of alternates(shaky[b]!, 2)) {
+              const ls = labels.slice();
+              ls[shaky[a]!] = net.labels[altA]!;
+              ls[shaky[b]!] = net.labels[altB]!;
+              const got = test(ls);
+              if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 2 });
+            }
+          }
+        }
+      }
+    }
+
+    if (wins.size === 1) {
+      const [fen, win] = [...wins.entries()][0]!;
+      entry.fen = fen;
+      entry.side = win.side;
+      entry.sans = win.sans;
+      entry.status = 'validated';
+      entry.repairedCells = win.edits;
+      delete entry.detail;
+      repaired++;
+      byEdits.set(win.edits, (byEdits.get(win.edits) ?? 0) + 1);
+    } else if (wins.size > 1) {
+      ambiguous++;
+    }
+  }
+  console.log(
+    `pass 4 board repair: ${repaired} rescued (${byEdits.get(1) ?? 0} one-cell, ${byEdits.get(2) ?? 0} two-cell), ${ambiguous} ambiguous left alone`,
+  );
 }
 
 // --- report -------------------------------------------------------------------

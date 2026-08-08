@@ -161,7 +161,7 @@ export function runCellNet(net: CellNet, tile: Float32Array): Float32Array {
 }
 
 /** Bilinear-resize one board cell (64² of a 512² board) to the 32² input. */
-function cellTile(board: Gray, col: number, row: number): Float32Array {
+export function cellTile(board: Gray, col: number, row: number): Float32Array {
   const cell = board.w / 8;
   const scale = cell / 32;
   const out = new Float32Array(32 * 32);

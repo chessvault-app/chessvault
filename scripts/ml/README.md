@@ -17,8 +17,12 @@ Stage 2 shipped (`figurine_glyphs.py`): validated entries align printed
 tokens with known SAN, labeling 1,600+ figurine glyph crops via the word
 boxes (99.7% 5-fold); reading every prefix word yields 204 prefix→piece
 hints that `autoimport-measure --glyph-hints` applies as pass 3 — +24
-validated over the text-only dialect. A full CRNN line reader remains the
-next escalation for the ~250 replay-fails that aren't ambiguity-shaped.
+validated over the text-only dialect. Stage 3 (`--repair` on the
+measure): solution-constrained board repair — ~99.4% per-cell accuracy
+leaves ~1/3 of boards with a wrong cell or two, so failed replays retry
+with the classifier's runner-up labels (1-cell anywhere, 2-cell among the
+20 shakiest), accepting only a UNIQUE position that replays the book's
+whole line; +30 more validated, multi-candidate cases left alone.
 
 ## Diagram-side model (CellNet)
 
