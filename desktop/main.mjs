@@ -51,6 +51,7 @@ function startLocalServer() {
     serverProc = spawn(process.execPath, [serverEntry], {
       // serveStatic('./dist') is cwd-relative: resources/ holds dist/.
       cwd: process.resourcesPath,
+      windowsHide: true,
       env: {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
@@ -65,6 +66,8 @@ function startLocalServer() {
     // `npm start` — repo vault, no Electron-ABI native rebuilds.
     serverProc = spawn('node', ['--import', 'tsx', 'server/index.ts'], {
       cwd: repoRoot,
+      // A GUI process spawning a console app would pop a terminal window.
+      windowsHide: true,
       env: { ...process.env, PORT: String(LOCAL_PORT) },
       stdio: 'inherit',
     });

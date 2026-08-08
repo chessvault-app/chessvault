@@ -23,6 +23,9 @@
       * {
         box-sizing: border-box;
       }
+      [hidden] {
+        display: none !important;
+      }
       body {
         margin: 0;
         min-height: 100vh;
@@ -99,8 +102,45 @@
       }
       form {
         width: 100%;
-        display: none;
+        display: flex;
+        flex-direction: column;
         gap: 0.5rem;
+      }
+      .back {
+        align-self: flex-start;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-bottom: 0.5rem;
+        padding: 0.35rem 0.6rem 0.35rem 0.45rem;
+        border: none;
+        background: none;
+        color: var(--text-subtle);
+        font: inherit;
+        font-size: 0.85rem;
+        cursor: pointer;
+        border-radius: 0.5rem;
+      }
+      .back svg {
+        width: 0.9rem;
+        height: 0.9rem;
+      }
+      .back:hover {
+        color: var(--text);
+        background: var(--surface);
+      }
+      .card {
+        animation: rise 0.15s ease-out;
+      }
+      @keyframes rise {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
       }
       input {
         flex: 1;
@@ -135,7 +175,7 @@
     </style>
   </head>
   <body>
-    <div class="card">
+    <div class="card" id="step1">
       <div class="logo">
         <!-- The cburnett knight — same mark as the app. -->
         <svg viewBox="4.5 5 36 36" fill="currentColor" aria-hidden>
@@ -165,7 +205,22 @@
           <span class="desc">Connect to a Chess Vault server you host</span>
         </span>
       </button>
+    </div>
 
+    <div class="card" id="step2" hidden>
+      <button class="back" id="back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
+        </svg>
+        Back
+      </button>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden>
+          <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" />
+        </svg>
+      </div>
+      <h1>Connect to your server</h1>
+      <p class="sub">The address of the Chess Vault server you host</p>
       <form id="urlForm">
         <input id="url" type="url" placeholder="https://vault.example.com" required spellcheck="false" />
         <button class="connect" type="submit">Connect</button>
@@ -176,11 +231,25 @@
         document.getElementById('error').textContent =
           'The local server did not start — check the terminal output.';
       }
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const show = (el, other) => {
+        other.hidden = true;
+        el.hidden = false;
+        // retrigger the entrance animation
+        el.style.animation = 'none';
+        void el.offsetHeight;
+        el.style.animation = '';
+      };
       document.getElementById('local').onclick = () => window.vaultShell.choose('local');
       document.getElementById('remote').onclick = () => {
-        document.getElementById('urlForm').style.display = 'flex';
+        show(step2, step1);
         document.getElementById('url').focus();
       };
+      document.getElementById('back').onclick = () => show(step1, step2);
+      addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !step2.hidden) show(step1, step2);
+      });
       document.getElementById('urlForm').onsubmit = (e) => {
         e.preventDefault();
         window.vaultShell.choose('remote', document.getElementById('url').value.trim());
