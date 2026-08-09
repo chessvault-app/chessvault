@@ -18,9 +18,14 @@ const ASSESSMENT_NAGS = [14, 16, 18, 10, 13, 15, 17, 19];
 export function AnnotationPane({
   className,
   rootPlaceholder = 'Chapter introduction…',
+  editing = true,
 }: {
   className?: string;
   rootPlaceholder?: string;
+  /** Reading mode hides the NAG toolbar and the textarea, showing any
+      existing comment as plain text — reclaims the space when you are just
+      stepping through a study rather than annotating it. */
+  editing?: boolean;
 }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -50,6 +55,17 @@ export function AnnotationPane({
     const rest = node.nags.filter((n) => !group.includes(n));
     setNags(cursorId, has ? rest : [...rest, nag]);
   };
+
+  // Reading mode: no toolbar, no textarea. Show the comment as text if
+  // there is one; otherwise render nothing so the panel stays compact.
+  if (!editing) {
+    if (!node.comment) return null;
+    return (
+      <div className={cn('border-line text-fg shrink-0 border-t px-3 py-2 text-xs leading-relaxed', className)}>
+        {node.comment}
+      </div>
+    );
+  }
 
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>

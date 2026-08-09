@@ -46,6 +46,8 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const [failed, setFailed] = useState(false);
   // Small screens show one pane at a time under the board.
   const [pane, setPane] = useState<StudyPane>('moves');
+  // Reading vs annotating: reading hides the NAG toolbar and comment boxes.
+  const [editing, setEditing] = useState(false);
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
@@ -162,9 +164,18 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             title="Moves"
             actions={
               <>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  active={editing}
+                  title={editing ? 'Done editing' : 'Annotate (NAGs & comments)'}
+                  onClick={() => setEditing((v) => !v)}
+                >
+                  <Pencil className="size-3.5" />
+                </Button>
                 <ReviewButton />
-                <LoadPositionButton />
-                <MoveActions allowReset={false} />
+                {editing && <LoadPositionButton />}
+                {editing && <MoveActions allowReset={false} />}
               </>
             }
           />
@@ -172,6 +183,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           <ReviewStrip />
           <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
           <AnnotationPane
+            editing={editing}
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
           />
         </Panel>
