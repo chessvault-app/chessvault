@@ -13,8 +13,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
-import type { Color, Role } from 'chessops/types';
+import type { Color, Piece, Role, Square } from 'chessops/types';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import { Board, type BoardApi, type BoardPiece } from '@/board/Board';
@@ -129,6 +130,26 @@ export function EditorView({
     setState((s) => {
       const pieces = new Map(s.pieces);
       pieces.set(square, { role: piece.role, color: piece.color });
+      return { ...s, pieces };
+    });
+  };
+
+  /** Dragging a piece off the board deletes it INSIDE chessground — no
+      per-piece callback reports which one. Mirror the board's own state
+      back into ours whenever it changes; for ordinary moves and drops this
+      is an idempotent second write of what their handlers already set. */
+  const syncFromBoard = (): void => {
+    const boardFen = boardApi.current?.getFen();
+    if (!boardFen) return;
+    const parsed = parseBoardFen(boardFen);
+    if (parsed.isErr) return;
+    const board = parsed.unwrap();
+    setState((s) => {
+      const pieces = new Map<Square, Piece>();
+      for (const square of board.occupied) {
+        const piece = board.get(square);
+        if (piece) pieces.set(square, piece);
+      }
       return { ...s, pieces };
     });
   };
@@ -341,9 +362,11 @@ export function EditorView({
             // Dragging is only enabled in move mode, so a drag can never race
             // with the tool being applied on mousedown.
             free={tool.kind === 'move'}
+            deleteOnDropOff
             onSelect={applyTool}
             onMove={movePiece}
             onDropNewPiece={dropNewPiece}
+            onBoardChange={syncFromBoard}
             apiRef={boardApi}
           />
         </div>

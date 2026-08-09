@@ -28,7 +28,12 @@ export interface BoardProps {
   coordinates?: boolean;
   /** Editor mode: any piece may go to any square, ignoring the rules. */
   free?: boolean;
+  /** Editor mode: dragging a piece off the board removes it. */
+  deleteOnDropOff?: boolean;
   onMove?: (orig: string, dest: string) => void;
+  /** Fires after ANY user change to the position — including a drop-off
+      delete, which no other callback reports. */
+  onBoardChange?: () => void;
   /** Fires on a click/tap of a square. Used by the editor's piece palette. */
   onSelect?: (square: string) => void;
   /** Fires when the user draws or erases shapes with right-drag. */
@@ -60,10 +65,12 @@ export function Board({
   viewOnly = false,
   coordinates = true,
   free = false,
+  deleteOnDropOff = false,
   onMove,
   onSelect,
   onShapesChange,
   onDropNewPiece,
+  onBoardChange,
   apiRef,
   className,
 }: BoardProps) {
@@ -75,11 +82,13 @@ export function Board({
   const onSelectRef = useRef(onSelect);
   const onShapesRef = useRef(onShapesChange);
   const onDropNewPieceRef = useRef(onDropNewPiece);
+  const onBoardChangeRef = useRef(onBoardChange);
   const freeRef = useRef(free);
   onMoveRef.current = onMove;
   onSelectRef.current = onSelect;
   onShapesRef.current = onShapesChange;
   onDropNewPieceRef.current = onDropNewPiece;
+  onBoardChangeRef.current = onBoardChange;
   freeRef.current = free;
 
   // Mount once.
@@ -106,9 +115,10 @@ export function Board({
           after: (orig, dest) => onMoveRef.current?.(orig, dest),
         },
       },
-      draggable: { enabled: !viewOnly, showGhost: true },
+      draggable: { enabled: !viewOnly, showGhost: true, deleteOnDropOff },
       selectable: { enabled: true },
       events: {
+        change: () => onBoardChangeRef.current?.(),
         select: (key) => {
           onSelectRef.current?.(key);
           // In editor mode a click means "apply the current tool here", so
@@ -158,7 +168,7 @@ export function Board({
         dests: (dests as Dests | undefined) ?? new Map<Key, Key[]>(),
         showDests: !free,
       },
-      draggable: { enabled: !viewOnly, showGhost: true },
+      draggable: { enabled: !viewOnly, showGhost: true, deleteOnDropOff },
     });
   }, [
     fen,
@@ -171,6 +181,7 @@ export function Board({
     viewOnly,
     coordinates,
     free,
+    deleteOnDropOff,
   ]);
 
   // User-owned shapes (arrows/circles saved into the study).
