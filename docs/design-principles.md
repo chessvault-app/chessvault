@@ -44,10 +44,17 @@ digit is also bold, tier marks also differ by icon shape.
   when the viewport is wide, single column otherwise. Stacked layouts
   lead with a page header (convention: header at top), wide layouts put
   the header in the side column where it aligns with the board.
-- Phones (`md:hidden` world): the bottom nav is the navigation, the
-  puzzle dashboard is the hub (Puzzles tab lands there; trainer, books,
-  themes carry back-arrows to it). Desktop navigates by sidebar and has
-  no back arrows on top-level pages.
+- Phones (`md:hidden` world): the bottom bar is the navigation on hub
+  pages, but a **leaf page claims it** — board, study, puzzle and
+  repertoire replace the global tabs with their own controls (move
+  navigation, puzzle actions) via `MobileActionBar`, and you leave by the
+  back chevron, chess.com/Lichess-style. The puzzle dashboard is the hub
+  (Puzzles tab lands there). Desktop navigates by sidebar, no back arrows
+  on top-level pages.
+- Board and piece appearance are user-chosen (Settings → Appearance):
+  board-colour presets ride the same OKLCH tokens, and piece sets are
+  vendored from lila. This is orthogonal to the semantic colour grammar
+  below — the hues there dress the UI, not the board.
 - Filter rows are single-line and scroll sideways at every width
   (`ChipRow`): touch pans, fine pointers get chevron nudges and
   wheel-to-horizontal scrolling. No wrapping chip rows.

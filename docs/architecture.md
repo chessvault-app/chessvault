@@ -9,6 +9,7 @@ person's tool, built to outlive any one machine.
 
 ```
 vault/
+  config.json         app password + TOTP secret + Lichess token, mode 0600
   studies/            *.pgn        (chapters = games in one file)
   notes/              *.md         (markdown + ```chess fenced boards)
   games/
@@ -20,6 +21,7 @@ vault/
     diagrams/  *.jpg          (evidence scans, cover)
   puzzles/            history.jsonl  state.json
   sources/            reference PGN dumps (input to refgames index)
+  .history.git        auto-commit history repo (fine-grained undo; excludes config.json)
 ```
 
 Everything a person would grieve losing is a file another tool can read.
@@ -32,8 +34,12 @@ engine caches, ML artifacts under `data/`) is always rebuildable.
 
 ## Processes
 
-- **Server** (`server/`, Hono on Node): thin HTTP API over the vault
-  files, plus static serving of the built web app. Sets COOP/COEP so the
+- **Server** (`server/`, Hono on Node): HTTP API over the vault files,
+  plus static serving of the built web app. Beyond plain vault I/O it
+  owns the optional auth gate (password + authenticator 2FA/TOTP,
+  `server/auth.ts` + `server/totp.ts`), the settings API
+  (`server/settings.ts`), and outbound proxies to the Lichess explorer
+  and study-export endpoints (`server/lichess.ts`). Sets COOP/COEP so the
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
   override the vault/data locations; the server creates the vault
   skeleton on boot, so pointing it at an empty folder works.
@@ -41,7 +47,9 @@ engine caches, ML artifacts under `data/`) is always rebuildable.
   the user touches. Chess logic via `chessops`, boards via chessground,
   notes via TipTap, engine via stockfish.js (WASM, threads). Talks to the
   server over HTTP **only** — this is a hard rule that keeps every
-  frontier (desktop, PWA, future mobile) a thin client.
+  frontier (desktop, PWA, phone) a thin client. On phones a contextual
+  bottom bar (`web/src/ui/MobileActionBar.tsx`) hands the open page its
+  own controls in place of the global tabs.
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,
@@ -57,6 +65,13 @@ Target: a small Linux box (cloud) running the server; every device —
 desktop app in remote mode, phone PWA — is a client. The current Windows
 dev box is temporary; nothing may depend on it. Cross-platform paths and
 LF endings are policy.
+
+Ship with `scripts/deploy.sh` (git-bundle push → `npm ci` → build →
+`systemctl restart chess-vault`). SSH runs over a Tailscale tailnet with
+public port 22 closed at the firewall; only 80/443 face the internet, and
+the app sits behind Caddy for HTTPS. Backups are layered:
+`vault/.history.git` (per-change undo), host snapshots, and
+`scripts/backup-vault.sh` for an off-cloud pull.
 
 ## Shared code
 

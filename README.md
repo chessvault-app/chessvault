@@ -17,9 +17,12 @@ stored as PGN, markdown and JSON in one folder you own.
 - **Editor** — set up any position; drag pieces from the palette, or
   import from an image.
 - **Studies** — PGN chapter studies with variations, per-move comments,
-  NAGs and drawn arrows; autosave with atomic writes. Saving is a codec
-  round-trip, and `shared/pgn.test.ts` asserts it is lossless *and*
-  idempotent — a lossy codec would quietly erode a vault.
+  NAGs and drawn arrows; a reading/annotating toggle keeps the board
+  uncluttered when you're just stepping through. Import a PGN file, paste
+  one, or pull studies straight from a Lichess account. Autosave with
+  atomic writes; saving is a codec round-trip, and `shared/pgn.test.ts`
+  asserts it is lossless *and* idempotent — a lossy codec would quietly
+  erode a vault.
 - **Notes** — markdown notes with embedded interactive boards
   (```` ```chess ```` fences) and Obsidian-style `[[wiki-links]]`
   across notes, studies and games. Files stay Obsidian-readable.
@@ -35,14 +38,24 @@ stored as PGN, markdown and JSON in one folder you own.
   scanned tactics book PDF and an ML pipeline reads the diagrams,
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
-  original page scan. Three books and ~3,100 puzzles imported so far.
+  original page scan. Three books and ~3,150 puzzles imported so far.
 
   ![Puzzle dashboard](docs/screenshots/dashboard.png)
 
+- **Tools** — the interactive boards, grouped: the analysis **Board**,
+  the position **Editor**, a shortcut into the opening **Explorer**, and
+  a **Repertoire** trainer that spars an opening against the Lichess
+  database (weighted-random replies filtered to a rating band, seamless
+  hand-off to the engine when the line leaves book).
+- **Settings** — change the app password, turn on authenticator 2FA,
+  set your display name and platform usernames, pick a board theme and
+  piece set, manage the Lichess token, or wipe the vault — all in the
+  app, no shell needed.
 - **Everywhere** — responsive down to phones, installable as a PWA
   (home-screen icon, splash screens, offline shell), and a desktop app
   (Windows installer) that runs self-hosted or as a client to your
-  server.
+  server. On a phone the bottom bar turns into the open page's controls
+  (move navigation, puzzle actions), chess.com/Lichess-style.
 
 ## Quick start (development)
 
@@ -58,7 +71,7 @@ First run downloads the Stockfish engine assets (7 MB lite build;
 
 ```
 shared/     pure TS: move tree + PGN codec (the core everything reuses)
-server/     Hono server: vault I/O, COOP/COEP headers, explorer proxy
+server/     Hono server: vault I/O, auth gate + 2FA, settings, proxies
 web/        Vite + React UI
 desktop/    Electron shell (remote-client or self-hosted)
 scripts/    builders: engine setup, opening book, refgames index, ML pipeline
@@ -84,13 +97,21 @@ CHESS_VAULT_DIR=/srv/chess-vault npm run start
 One port serves both the built app and the HTTP API. Put a reverse
 proxy with HTTPS in front — the PWA install and Stockfish's threads
 (SharedArrayBuffer needs a cross-origin-isolated, secure page) both
-want it. Then:
+want it. For a public deployment, set `appPassword` in
+`vault/config.json` (or from the Settings page) to turn on the lock
+screen; add authenticator 2FA there too. Then:
 
 - **Phone**: open the URL, Add to Home Screen — full PWA with offline
   shell and splash screens.
 - **Desktop**: install the app (`npm run desktop:package` builds the
   Windows installer) and choose *remote* mode with your server URL — or
   *local* mode to self-host against any folder on that machine.
+
+Keep SSH off the public internet: the reference deployment runs the box
+on a [Tailscale](https://tailscale.com) tailnet with port 22 closed at
+the firewall, and `scripts/deploy.sh` (bundle → push → rebuild →
+restart) reaches it over the tailnet. Override the host with
+`CHESS_VAULT_HOST`.
 
 Backups are layered: the server auto-commits every vault change to
 `vault/.history.git` (fine-grained undo), your host's snapshots guard
@@ -122,14 +143,20 @@ the [Lichess Elite Database](https://database.nikonoel.fr/).
 
 ## Lichess token (optional)
 
-Only needed for the *online* explorer augmentation. Create one at
+Powers the *online* explorer augmentation, the Repertoire trainer, and
+importing studies from a Lichess account. Create one at
 [lichess.org/account/oauth/token/create](https://lichess.org/account/oauth/token/create)
-with **no scopes ticked**; add `puzzle:read` only for Lichess puzzle
-history import. Put it in `vault/config.json` (gitignored):
+with **no scopes ticked** (add `study:read` for private studies,
+`puzzle:read` for Lichess puzzle-history import). Paste it into the
+Settings page, or put it in `vault/config.json` (gitignored):
 
 ```json
 { "lichessToken": "lip_..." }
 ```
+
+`config.json` also holds `appPassword` and the 2FA `totpSecret` when the
+lock screen is on — the Settings page manages all three, and the vault's
+history repo deliberately excludes the file so secrets never enter it.
 
 ## Commands
 

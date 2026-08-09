@@ -409,27 +409,18 @@ function MobileNav({ active }: { active: Section }) {
   );
 }
 
+/** Unreachable in practice — every section is routed above, and the router
+    resolves anything unknown to the board. Kept as a defensive fallback so a
+    future section without a handler degrades gracefully instead of blanking. */
 function Placeholder({ section }: { section: Section }) {
-  const phase: Record<string, string> = {
-    editor: 'Phase 1 — board editor',
-    studies: 'Phase 3 — board-as-main studies',
-    notes: 'Phase 4 — markdown notes with embedded boards',
-    games: 'Phase 5 — games explorer',
-    puzzles: 'Phase 6 — puzzle trainer',
-  };
-  const meta = NAV.find((n) => n.section === section);
-  const Icon = meta?.icon ?? Swords;
-
   return (
     <div className="grid h-full place-items-center p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
         <div className="bg-surface-2 text-subtle grid size-14 place-items-center rounded-2xl">
-          <Icon className="size-6" strokeWidth={1.75} />
+          <Swords className="size-6" strokeWidth={1.75} />
         </div>
-        <h1 className="text-lg font-semibold tracking-tight">{meta?.label}</h1>
-        <p className="text-muted text-sm leading-relaxed">
-          Not built yet — {phase[section] ?? 'coming soon'}.
-        </p>
+        <h1 className="text-lg font-semibold tracking-tight capitalize">{section}</h1>
+        <p className="text-muted text-sm leading-relaxed">This page isn't available.</p>
       </div>
     </div>
   );

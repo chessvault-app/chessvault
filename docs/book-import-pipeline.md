@@ -89,9 +89,14 @@ cache and only validation reruns.
 
 | Book | Imported | Book solutions | Drafts |
 | --- | --- | --- | --- |
-| 1001 Chess Exercises for Beginners | 969 / 1001 | 732 | 11 |
-| The Complete Chess Workout | 1,144 / 1,200 | 522 | 1 |
-| The Woodpecker Method | 1,042 / 1,128 | 640 | 82 |
+| 1001 Chess Exercises for Beginners | 970 / 1001 | 739 | 10 |
+| The Complete Chess Workout | 1,145 / 1,200 | 530 | 0 |
+| The Woodpecker Method | 1,043 / 1,128 | 619 | 81 |
+
+(Latest round: re-measured with the fine-tuned CellNet and the 3-cell
+repair search. Progress survives a re-import because puzzle ids are
+`n<number>`, so the vault can be updated in place as the pipeline
+improves.)
 
 The plan of record: when bootstrapping ends, every book is re-imported
 from scratch with the then-current model and pipeline.
