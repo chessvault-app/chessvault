@@ -101,7 +101,7 @@ validation reruns.
 | The Complete Chess Workout | 1,145 / 1,200 | 530 | 0 |
 | The Woodpecker Method | 1,043 / 1,128 | 619 | 81 |
 | The Ultimate Chess Puzzle Book | 659 / 1001 | 191 | 119 |
-| 5334 Problems, Combinations and Games | 4,878 / 5,334 | 4,878 | 455 |
+| 5334 Problems, Combinations and Games | 4,878 / 5,334 | 4,878 | — |
 
 The Ultimate Chess Puzzle Book is the weakest of the scans: 778 of its
 1001 diagrams found a printed number (a dozen of its pages are scanned
@@ -121,6 +121,11 @@ and every solution is plain algebraic. Nothing is recognised; it is read.
 Every entry is still replayed with chessops before it is imported, which
 is what catches a misread entry and what locates the printed position
 inside the 600 miniature games, whose answer is the whole game score.
+
+It writes no drafts: a draft exists so a human can re-read a board the
+importer could not, and here the boards are exact — it is 456 SOLUTIONS
+that still fail to parse. Those numbers are printed by the run and a
+better parser picks them up in place, since ids are `n<number>`.
 
 The lesson generalises: **check the text layer for diagram glyphs before
 reaching for CellNet.** It costs one `pdftotext` and can turn a week of

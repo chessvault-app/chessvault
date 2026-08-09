@@ -257,7 +257,14 @@ function fromWholeGame(board: string, moves: string[]): Line | null {
 
 const added = new Date().toISOString();
 const puzzles: Puzzle[] = [];
-const drafts: { id: string; fen: string; added: string; number: number; evidence?: { solutionPage: string } }[] = [];
+/**
+ * This book writes no drafts. A draft exists so a human can re-read a
+ * board the importer could not — but here every position is exact and it
+ * is only some SOLUTIONS that fail to parse, which no amount of looking at
+ * the diagram fixes. Those entries are reported instead, and a later run
+ * of a better parser picks them up in place: ids are `n<number>`.
+ */
+const unresolved: number[] = [];
 const reasons = new Map<string, number>();
 const note = (why: string): void => {
   reasons.set(why, (reasons.get(why) ?? 0) + 1);
@@ -286,7 +293,7 @@ for (const diagram of diagrams) {
   }
   if (!solution) {
     note('no printed solution');
-    drafts.push({ id: `d${diagram.number}`, fen, added, number: diagram.number });
+    unresolved.push(diagram.number);
     continue;
   }
 
@@ -312,14 +319,14 @@ for (const diagram of diagrams) {
     fromWholeGame(diagram.board, solution.full);
   if (!line) {
     note('solution does not replay');
-    drafts.push({ id: `d${diagram.number}`, fen, added, number: diagram.number, evidence });
+    unresolved.push(diagram.number);
     continue;
   }
   // A printed mate must really be mate — the strongest check available, and
   // most of this book is mates.
   if (line.san.at(-1)!.endsWith('#') && !line.end.isCheckmate()) {
     note('claimed mate is not mate');
-    drafts.push({ id: `d${diagram.number}`, fen, added, number: diagram.number, evidence });
+    unresolved.push(diagram.number);
     continue;
   }
   puzzles.push({
@@ -335,17 +342,20 @@ for (const diagram of diagrams) {
 }
 
 puzzles.sort((a, b) => a.number - b.number);
-drafts.sort((a, b) => a.number - b.number);
+unresolved.sort((a, b) => a - b);
 
 const dir = resolve(VAULT, 'puzzlebooks', TITLE);
 mkdirSync(resolve(dir, 'diagrams'), { recursive: true });
 const write = (name: string, value: unknown): void =>
   writeFileSync(resolve(dir, name), `${JSON.stringify(value, null, 1)}\n`);
 write('puzzles.json', puzzles);
-write('drafts.json', drafts);
+write('drafts.json', []);
 write('book.json', { title: TITLE, createdAt: added });
 
-console.log(`\nimported ${puzzles.length} puzzles, ${drafts.length} drafts -> ${dir}`);
+console.log(`\nimported ${puzzles.length} of ${diagrams.length} puzzles -> ${dir}`);
+if (unresolved.length > 0) {
+  console.log(`  ${unresolved.length} left out; their numbers: ${unresolved.join(' ')}`);
+}
 for (const [why, count] of [...reasons].sort((a, b) => b[1] - a[1])) {
   console.log(`  ${count.toString().padStart(5)}  ${why}`);
 }
