@@ -65,7 +65,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
       {/* Stacked layouts lead with a header like every other page; games
           opened here from elite/archives get a way back on phones. */}
-      <BoardPageHeader />
+      <BoardPageHeader explorer={wantExplorer} />
       <AnalysisBoard editablePlayers />
 
       {/* Side column. Desktop shows every pane and scrolls the column; on
@@ -77,8 +77,12 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
-          <Grid3x3 className="text-subtle size-4" aria-hidden />
-          <h1 className="text-fg text-sm font-semibold">Board</h1>
+          {wantExplorer ? (
+            <Compass className="text-subtle size-4" aria-hidden />
+          ) : (
+            <Grid3x3 className="text-subtle size-4" aria-hidden />
+          )}
+          <h1 className="text-fg text-sm font-semibold">{wantExplorer ? 'Explorer' : 'Board'}</h1>
         </div>
         <PaneTabs
           className="lg:hidden"
@@ -193,12 +197,15 @@ function CollectGameButton() {
   );
 }
 
-function BoardPageHeader() {
+function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
   const headers = useAnalysis((s) => s.gameHeaders);
   const title =
     headers && (headers['White'] ?? '?') !== '?'
       ? `${headers['White']} – ${headers['Black'] ?? '?'}`
-      : 'Board';
+      : explorer
+        ? 'Explorer'
+        : 'Board';
+  const Icon = explorer ? Compass : Grid3x3;
   return (
     <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
       <Button
@@ -210,7 +217,7 @@ function BoardPageHeader() {
       >
         <ChevronLeft className="size-3.5" />
       </Button>
-      <Grid3x3 className="text-subtle size-4" aria-hidden />
+      <Icon className="text-subtle size-4" aria-hidden />
       <h1 className="text-fg min-w-0 truncate text-sm font-semibold">{title}</h1>
     </div>
   );

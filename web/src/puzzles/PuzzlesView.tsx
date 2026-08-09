@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   BarChart3,
   ChevronRight,
+  FlipVertical2,
   Settings2,
   Eye,
   Lightbulb,
@@ -137,6 +138,9 @@ function Trainer({
   // Reviewing an earlier ply of the line (null = live), via the panel's
   // toolbar; any machine progress snaps back to live.
   const [review, setReview] = useState<number | null>(null);
+  // Manual board flip (the bottom bar's flip button); resets per puzzle so
+  // each starts oriented to the side you play.
+  const [flipped, setFlipped] = useState(false);
 
   // One attempt per puzzle: recorded at the first mistake or the clean solve.
   const reported = useRef(false);
@@ -204,6 +208,7 @@ function Trainer({
       setPuzzle(next);
       setPlies(0);
       setReview(null);
+      setFlipped(false);
       setView(positionAt(next, 0));
       setPhase('setup');
       // Let the position register, then play the opponent's setup move.
@@ -401,7 +406,8 @@ function Trainer({
     void loadNext(theme, difficulty);
   };
 
-  const orientation: Color = puzzle ? solverColor(puzzle) : 'white';
+  const solverSide: Color = puzzle ? solverColor(puzzle) : 'white';
+  const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
   const hintShapes: DrawShape[] =
     puzzle && phase === 'solving' && !reviewing && hint > 0
       ? (() => {
@@ -529,7 +535,7 @@ function Trainer({
               <MoveBadge kind="good" view={view} orientation={orientation} />
             )}
           </div>
-          <StatusStrip phase={phase} failed={failed} orientation={orientation} />
+          <StatusStrip phase={phase} failed={failed} />
         </div>
       </div>
 
@@ -589,6 +595,14 @@ function Trainer({
                 )}
                 {/* Stand-ins for the folded Training panel. */}
                 <span className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title="Flip board"
+                    onClick={() => setFlipped((f) => !f)}
+                  >
+                    <FlipVertical2 className="size-3.5" />
+                  </Button>
                   {mode === 'fresh' && (
                     <Button
                       variant="ghost"
@@ -652,13 +666,20 @@ function Trainer({
                 )}
               </>
             ) : (
-              <p className="text-muted text-xs leading-relaxed">
-                {phase === 'loading'
-                  ? 'Finding a puzzle…'
-                  : failed
-                    ? 'Keep looking — find the best move.'
-                    : 'Find the best move. The rating and themes stay hidden until you finish.'}
-              </p>
+              <>
+                {puzzle && phase !== 'loading' && (
+                  <p className="text-fg text-xl font-bold tracking-tight">
+                    {solverSide === 'white' ? 'White' : 'Black'} to play
+                  </p>
+                )}
+                <p className="text-muted text-xs leading-relaxed">
+                  {phase === 'loading'
+                    ? 'Finding a puzzle…'
+                    : failed
+                      ? 'Keep looking — find the best move.'
+                      : 'Find the best move. The rating and themes stay hidden until you finish.'}
+                </p>
+              </>
             )}
 
             <div className="flex flex-wrap gap-2">
@@ -773,6 +794,9 @@ function Trainer({
           <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title="Latest">
             <ChevronLast className="size-[1.1rem]" />
           </Button>
+          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title="Flip board">
+            <FlipVertical2 className="size-[1.1rem]" />
+          </Button>
         </div>
       </MobileActionBar>
     </div>
@@ -810,12 +834,12 @@ function DifficultyRow({
 function StatusStrip({
   phase,
   failed,
-  orientation,
 }: {
   phase: Phase;
   failed: boolean;
-  orientation: Color;
 }) {
+  // The side to move now lives big in the Puzzle panel, so the strip only
+  // carries transient status; during plain solving it stays empty.
   const text =
     phase === 'loading'
       ? '…'
@@ -827,7 +851,7 @@ function StatusStrip({
             ? failed
               ? 'Done. On to the next one.'
               : 'Well played.'
-            : `${orientation === 'white' ? 'White' : 'Black'} to play`;
+            : '';
   return (
     <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
       <span

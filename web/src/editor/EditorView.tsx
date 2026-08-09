@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  ChevronLeft,
   Settings2,
   ListPlus,
   CheckCircle2,
@@ -288,6 +289,22 @@ export function EditorView({
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
+      {/* Phones lead with a header like every other page (the Editor title
+          otherwise lives only in the wide-only side column). */}
+      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="md:hidden"
+          title="Back"
+          onClick={() => window.history.back()}
+        >
+          <ChevronLeft className="size-3.5" />
+        </Button>
+        <SquarePen className="text-subtle size-4" aria-hidden />
+        <h1 className="text-fg text-sm font-semibold">Editor</h1>
+      </div>
+
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
