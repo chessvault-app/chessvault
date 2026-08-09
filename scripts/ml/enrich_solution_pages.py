@@ -28,7 +28,10 @@ BOOK = os.path.join(REPO, 'vault', 'puzzlebooks', CFG['title'])
 
 def main():
     text = json.load(open(os.path.join(REPO, CFG['text']), encoding='utf-8'))
-    if CFG.get('solutionPages'):
+    if CFG.get('solutionRanges'):
+        # Books that put an answers section after every chapter.
+        sol_pages = [p for lo, hi in CFG['solutionRanges'] for p in range(lo, hi + 1)]
+    elif CFG.get('solutionPages'):
         lo, hi = CFG['solutionPages']
         sol_pages = list(range(lo, hi + 1))
     else:
@@ -39,7 +42,7 @@ def main():
     # space the digits). Move numbers inside bodies never match it.
     style = CFG.get('anchorStyle', 'dash')
     anchor = (
-        re.compile(r'(?:^|\n)\s{0,4}(\d{1,4})\)\s')
+        re.compile(r'(?:^|\n)\s{0,4}(\d(?:\s?\d){0,3})\s*\)\s')
         if style == 'paren'
         else re.compile(r'(?:^|\n)\s{0,3}(\d{1,4})\.\s+(?=[A-Z])')
         if style == 'dot'

@@ -1,0 +1,74 @@
+{
+  "slug": "ucpb",
+  "title": "The Ultimate Chess Puzzle Book",
+  "pdf": "the-ultimate-chess-puzzle-book.pdf",
+  "coverPage": 1,
+  "pages": [
+    13,
+    224
+  ],
+  "solutionsAfterPage": 27,
+  "solutionRanges": [
+    [
+      28,
+      33
+    ],
+    [
+      45,
+      48
+    ],
+    [
+      88,
+      107
+    ],
+    [
+      119,
+      126
+    ],
+    [
+      140,
+      145
+    ],
+    [
+      152,
+      155
+    ],
+    [
+      167,
+      173
+    ],
+    [
+      186,
+      191
+    ],
+    [
+      203,
+      209
+    ],
+    [
+      225,
+      240
+    ]
+  ],
+  "solutionPages": [
+    28,
+    240
+  ],
+  "maxNumber": 1001,
+  "numberStyle": "bare",
+  "anchorStyle": "paren",
+  "moveMarkers": "dotless",
+  "sideMode": "letter",
+  "text": "data/ml/ucpb-text.json",
+  "cache": "data/ml/ucpb-reads.json",
+  "report": "data/ml/ucpb-report.json",
+  "labelX": 100,
+  "labelY": 130,
+  "labelDrop": 160,
+  "cropTrim": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ]
+}

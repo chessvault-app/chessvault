@@ -42,6 +42,10 @@ const BOOK = {
   title: '1001 Chess Exercises for Beginners',
   pages: [5, 105] as [number, number],
   solutionsAfterPage: 100,
+  /** Books whose answers are interleaved (one section per chapter) list the
+   *  page spans here; it replaces the "everything after solutionsAfterPage"
+   *  rule, which would swallow the puzzle pages in between. */
+  solutionRanges: null as [number, number][] | null,
   maxNumber: 1001,
   text: 'data/ml/1001-text.json',
   cache: 'data/ml/1001-reads.json',
@@ -52,8 +56,9 @@ const BOOK = {
   anchorStyle: 'dash' as 'dash' | 'paren' | 'dot',
   /** 'dotted' = "1.e4 / 1 ... e5" markers; 'dotless' = "1 e4". */
   moveMarkers: 'dotted' as 'dotted' | 'dotless',
-  /** Where the side to move is printed: chapter header or per-puzzle label. */
-  sideMode: 'chapter' as 'chapter' | 'label',
+  /** Where the side to move is printed: a chapter header, a per-puzzle
+   *  "White to play" label, or a bare 'W'/'B' letter under the number. */
+  sideMode: 'chapter' as 'chapter' | 'label' | 'letter',
   /** How far (render px) a number label may sit left of / above its diagram. */
   labelX: 20,
   labelY: 40,
@@ -68,6 +73,14 @@ const BOOK = {
     ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
     : {}),
 };
+/** True when the book prints the side beside each puzzle, however it does
+ *  it — those books trust their own label over the chapter carry-over. */
+const SIDE_IS_PRINTED = BOOK.sideMode === 'label' || BOOK.sideMode === 'letter';
+/** How far a side label may sit outside the diagram horizontally. Margin
+ *  layouts print it further out than in-frame ones, and that distance is
+ *  already described by labelX. */
+const SIDE_LABEL_X = Math.max(60, BOOK.labelX);
+
 const limitAt = process.argv.indexOf('--limit');
 const limit = limitAt > 0 ? Number(process.argv[limitAt + 1]) : Infinity;
 // --emit dumps per-puzzle board grays + per-page grays for the import step's
@@ -205,8 +218,15 @@ interface Mainline {
   tokens: string[];
 }
 
-/** A token is move-shaped when it holds a square or a castling pattern. */
+/**
+ * A token is move-shaped when it holds a square or a castling pattern —
+ * but prose talks about squares too ("the f7-pawn", "the a1-h8 diagonal"),
+ * and swallowing those as moves is how a solution that parsed fine ends up
+ * replaying into nothing. A square followed by a hyphen and letters is
+ * English, not notation.
+ */
 function isMoveish(token: string): boolean {
+  if (/[a-h][1-8]\s*-\s*[a-z]/i.test(token)) return false;
   if (/[a-h][1-8]/.test(token)) return true;
   const castleish = token.replace(/[^0Oo-]/g, '');
   return /^[0Oo]-[0Oo](-[0Oo])?$/.test(castleish);
@@ -259,25 +279,34 @@ function parseMainline(body: string): Mainline | null {
 
 /** number -> raw entry body, from the solutions pages. */
 function solutionEntries(): Map<number, string> {
-  const startPage = textData.pages.findIndex(
-    (p) =>
-      p.page > BOOK.solutionsAfterPage &&
-      (BOOK.anchorStyle === 'paren'
-        ? /\d{1,4}\)\s/.test(p.text)
-        : BOOK.anchorStyle === 'dot'
-          ? /(?:^|\n)\s{0,3}\d{1,4}\.\s+[A-Z]/.test(p.text)
-          : /\d+\s*-\s*1\s*\./.test(p.text)),
-  );
-  const joined = textData.pages
-    .slice(startPage)
-    .map((p) => p.text)
-    .join('\n');
+  // Interleaved books name their answer spans; the rest take everything
+  // from the first page that looks like an answers page onwards.
+  let solutionPages: typeof textData.pages;
+  if (BOOK.solutionRanges) {
+    const inRange = (page: number): boolean =>
+      BOOK.solutionRanges!.some(([lo, hi]) => page >= lo && page <= hi);
+    solutionPages = textData.pages.filter((p) => inRange(p.page));
+  } else {
+    const startPage = textData.pages.findIndex(
+      (p) =>
+        p.page > BOOK.solutionsAfterPage &&
+        (BOOK.anchorStyle === 'paren'
+          ? /\d{1,4}\)\s/.test(p.text)
+          : BOOK.anchorStyle === 'dot'
+            ? /(?:^|\n)\s{0,3}\d{1,4}\.\s+[A-Z]/.test(p.text)
+            : /\d+\s*-\s*1\s*\./.test(p.text)),
+    );
+    solutionPages = textData.pages.slice(startPage);
+  }
+  const joined = solutionPages.map((p) => p.text).join('\n');
   const out = new Map<number, string>();
   // Entry anchor: a puzzle number, a dash, then move one. The OCR detaches
   // leading digits ("103 -" scans as "1 03 -"), so digits may be spaced.
   const anchor =
     BOOK.anchorStyle === 'paren'
-      ? /(?:^|\n)\s{0,4}(\d{1,4})\)\s/g
+      ? // Digits detach in these scans ("11)" reads as "1 1 )"), so the
+        // number may be spaced and the bracket may drift off it.
+        /(?:^|\n)\s{0,4}(\d(?:\s?\d){0,3})\s*\)\s/g
       : BOOK.anchorStyle === 'dot'
         ? /(?:^|\n)\s{0,3}(\d{1,4})\.\s+(?=[A-Z])/g
         : /(?:^|\s)(\d(?:\s?\d){0,3})\s*-\s*(?=1\s*\.)/g;
@@ -647,6 +676,7 @@ for (const pageInfo of textData.pages) {
     y1: n.y1 * scale,
   }));
   const sideLabels: { side: 'w' | 'b'; x: number; y: number }[] = [];
+  const letterSides = new Map<number, 'w' | 'b'>();
   if (BOOK.sideMode === 'label') {
     const ws = pageInfo.words;
     for (let i = 0; i + 2 < ws.length; i++) {
@@ -657,6 +687,19 @@ for (const pageInfo of textData.pages) {
         x: ws[i]!.x0 * scale,
         y: ws[i]!.y0 * scale,
       });
+    }
+  } else if (BOOK.sideMode === 'letter') {
+    // A lone 'W' or 'B' printed directly under the puzzle number. Prose is
+    // full of stray capitals, so the letter only counts when it sits under
+    // a number box — and that binding is exact, so the side attaches to the
+    // NUMBER rather than being matched to a diagram by geometry. Two puzzle
+    // columns per page would otherwise be within reach of each other.
+    for (const w of pageInfo.words) {
+      if (!/^[WB]$/.test(w.text)) continue;
+      const under = pageNumbers(pageInfo.words).find(
+        (n) => Math.abs(n.x0 - w.x0) < 6 && w.y0 >= n.y1 - 2 && w.y0 - n.y1 < 8,
+      );
+      if (under) letterSides.set(under.value, w.text === 'W' ? 'w' : 'b');
     }
   }
   if (page) {
@@ -720,15 +763,17 @@ for (const pageInfo of textData.pages) {
     boardsRead++;
 
     const stated =
-      BOOK.sideMode === 'label'
-        ? sideLabels
-            .filter((l) => l.x > rect.x - 60 && l.x < rect.x + rect.w + 60)
-            .sort(
-              (a, b) =>
-                Math.min(Math.abs(a.y - rect.y), Math.abs(a.y - (rect.y + rect.h))) -
-                Math.min(Math.abs(b.y - rect.y), Math.abs(b.y - (rect.y + rect.h))),
-            )[0]?.side
-        : undefined;
+      BOOK.sideMode === 'letter'
+        ? letterSides.get(label.value)
+        : BOOK.sideMode === 'label'
+          ? sideLabels
+              .filter((l) => l.x > rect.x - SIDE_LABEL_X && l.x < rect.x + rect.w + SIDE_LABEL_X)
+              .sort(
+                (a, b) =>
+                  Math.min(Math.abs(a.y - rect.y), Math.abs(a.y - (rect.y + rect.h))) -
+                  Math.min(Math.abs(b.y - rect.y), Math.abs(b.y - (rect.y + rect.h))),
+              )[0]?.side
+          : undefined;
     results.set(label.value, {
       number: label.value,
       page: pageInfo.page,
@@ -803,15 +848,14 @@ function validateEntry(entry: PuzzleResult, hints?: Map<string, Role>): void {
     return;
   }
   entry.side = mainline.startsBlack ? 'b' : 'w';
-  if (BOOK.sideMode === 'label' && entry.sideStated) entry.side = entry.sideStated;
+  if (SIDE_IS_PRINTED && entry.sideStated) entry.side = entry.sideStated;
   const outcome = replay(entry.fen!, entry.side, mainline.tokens, hints);
   if ('fail' in outcome) {
     // The dots-derived side may be OCR damage; the book's stated side
     // (or its opposite, for label books) gets one shot before failing.
-    const stated =
-      BOOK.sideMode === 'label'
-        ? ((entry.side === 'w' ? 'b' : 'w') as 'w' | 'b')
-        : chapterSide.get(entry.page);
+    const stated = SIDE_IS_PRINTED
+      ? ((entry.side === 'w' ? 'b' : 'w') as 'w' | 'b')
+      : chapterSide.get(entry.page);
     if (stated && stated !== entry.side) {
       const retry = replay(entry.fen!, stated, mainline.tokens, hints);
       if (!('fail' in retry)) {

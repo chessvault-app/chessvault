@@ -62,28 +62,36 @@ Self-supervised text helpers (both take `--book`):
 Every book-specific fact is data: page ranges, artifact paths, number
 style (`bare` digits vs `123)`), solutions anchor (`N - 1.` / `N) Name`
 / `N. Name`), move markers (dotted vs dotless), where the side to move
-is printed (chapter header vs per-puzzle label), label-matching window,
-and `cropTrim` for books that print coordinates in a gutter outside the
+is printed (`chapter` header, per-puzzle `label` "White to play", or a
+bare `letter` W/B under the number), label-matching window, and
+`cropTrim` for books that print coordinates in a gutter outside the
 frame. The 1001 book's config encodes the original defaults.
+
+Books that put an answers section after **every chapter** instead of one
+at the back list their spans in `solutionRanges` (`[[28,33],[45,48],…]`),
+which replaces the "everything after `solutionsAfterPage`" rule — that
+rule would swallow the puzzle pages sitting between the sections. Add
+`pdf` and `coverPage` so `render_book_pages.py` can find the source.
 
 ## Runbook (per book)
 
 ```
 # once: extract text, write the config, render pages
 python extract_1001_text.py book.pdf data/ml/<slug>-text.json
-<render pages P0..P1 at 1400px as page-NNN.gray>          # pymupdf
+python harvest_pdfs.py book.pdf data/ml/<slug>-pages          # page-NNN.gray
 npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
 npx tsx autoimport-import.ts  <emit>    --book cfg.json --jobs 6
 python evidence_jpegs.py
-<render cover + solution pages into vault diagrams/>       # pymupdf
+python render_book_pages.py cfg.json                          # cover + answers
 python enrich_solution_pages.py cfg.json
 ```
 
 Caveats: a re-import wipes `diagrams/` — cover and solution-page jpgs
-must be restored after `evidence_jpegs.py`. Progress survives because
-puzzle ids are `n<number>`. To re-read boards (e.g. after a model
-update) delete `<slug>-reads.json` first; otherwise reads come from
-cache and only validation reruns.
+must be restored after `evidence_jpegs.py`, which is what
+`render_book_pages.py` is for. Progress survives because puzzle ids are
+`n<number>`. To re-read boards (e.g. after a model update) delete
+`<slug>-reads.json` first; otherwise reads come from cache and only
+validation reruns.
 
 ## Results so far (bootstrap phase)
 
