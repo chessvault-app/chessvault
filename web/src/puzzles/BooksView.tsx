@@ -1,5 +1,6 @@
 import {
   BadgeCheck,
+  BarChart3,
   BookMarked,
   BookOpenCheck,
   ChevronFirst,
@@ -1925,6 +1926,14 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                   onClick={() => setShowNav((v) => !v)}
                 >
                   <LayoutGrid className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Dashboard"
+                  onClick={() => navigate('puzzles', 'dashboard')}
+                >
+                  <BarChart3 className="size-3.5" />
                 </Button>
               </>
             }

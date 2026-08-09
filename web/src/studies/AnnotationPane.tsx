@@ -56,16 +56,9 @@ export function AnnotationPane({
     setNags(cursorId, has ? rest : [...rest, nag]);
   };
 
-  // Reading mode: no toolbar, no textarea. Show the comment as text if
-  // there is one; otherwise render nothing so the panel stays compact.
-  if (!editing) {
-    if (!node.comment) return null;
-    return (
-      <div className={cn('border-line text-fg shrink-0 border-t px-3 py-2 text-xs leading-relaxed', className)}>
-        {node.comment}
-      </div>
-    );
-  }
+  // Reading mode: nothing at all. Comments already read inline in the move
+  // tree, and the bottom box looked like a dead input (lanph3re's report).
+  if (!editing) return null;
 
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>

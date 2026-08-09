@@ -6,6 +6,7 @@ import type { MoveTree, NodeId } from '@shared/types';
 import { treeToPgn } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
@@ -97,6 +98,12 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
  * Opening picker: the curated spread when idle, the ENTIRE ECO catalogue
  * (served from the vendored lichess chess-openings set) as soon as you type.
  * A combobox rather than a Select — 3,800 openings need a filter, not a list.
+ *
+ * Touch gets a different shape: an inline input under the board sits exactly
+ * where the keyboard lands, so tapping it hid everything (lanph3re's report).
+ * On coarse pointers the trigger is a plain button and the search opens as a
+ * sheet pinned to the TOP of the viewport — visible above any keyboard, and
+ * nothing on the page is scripted to scroll while it animates.
  */
 function OpeningPicker({
   value,
@@ -108,6 +115,7 @@ function OpeningPicker({
   const [all, setAll] = useState<Template[] | null>(null);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +140,91 @@ function OpeningPicker({
     ).slice(0, 50);
   }, [query, all]);
 
+  const pick = (o: Template): void => {
+    onChange(o);
+    setOpen(false);
+    (document.activeElement as HTMLElement | null)?.blur();
+  };
+
+  const list = (
+    <ul
+      className={cn(
+        'border-line bg-surface overflow-y-auto overscroll-contain rounded-lg border p-1',
+        coarse ? 'max-h-[45dvh]' : 'max-h-44',
+      )}
+    >
+      {matches.length === 0 ? (
+        <li className="text-subtle px-2 py-1.5 text-xs">
+          {all === null ? 'Loading the catalogue…' : 'No opening matches that.'}
+        </li>
+      ) : (
+        matches.map((o, i) => (
+          <li key={`${o.eco}-${o.name}-${i}`}>
+            <button
+              type="button"
+              // mousedown, not click: it fires before the input's blur
+              // closes the list.
+              onMouseDown={(e) => {
+                e.preventDefault();
+                pick(o);
+              }}
+              className={cn(
+                'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                'hover:bg-surface-2 transition-colors duration-100',
+                'pointer-coarse:py-2.5',
+                o.name === value.name && o.eco === value.eco ? 'text-primary font-medium' : 'text-fg',
+              )}
+            >
+              {o.eco && <span className="text-subtle w-7 shrink-0 font-mono text-[0.625rem]">{o.eco}</span>}
+              <span className="min-w-0 flex-1 truncate">{o.name}</span>
+            </button>
+          </li>
+        ))
+      )}
+    </ul>
+  );
+
+  if (coarse) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            setQuery('');
+            setOpen(true);
+          }}
+          className={cn(
+            'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border px-2.5 text-left text-xs',
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate">
+            {value.eco ? `${value.eco}  ${value.name}` : value.name}
+          </span>
+        </button>
+        {open && (
+          <div
+            className="fixed inset-0 z-50 bg-black/50"
+            onClick={() => setOpen(false)}
+          >
+            <div
+              className="bg-surface border-line absolute inset-x-3 top-3 flex flex-col gap-2 rounded-xl border p-2 shadow-[var(--shadow-pop)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Input
+                autoFocus
+                inputSize="sm"
+                value={query}
+                placeholder="Search any opening or ECO code…"
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {list}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <Input
@@ -148,39 +241,7 @@ function OpeningPicker({
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
         }}
       />
-      {open && (
-        <ul className="border-line bg-surface max-h-44 overflow-y-auto overscroll-contain rounded-lg border p-1">
-          {matches.length === 0 ? (
-            <li className="text-subtle px-2 py-1.5 text-xs">
-              {all === null ? 'Loading the catalogue…' : 'No opening matches that.'}
-            </li>
-          ) : (
-            matches.map((o, i) => (
-              <li key={`${o.eco}-${o.name}-${i}`}>
-                <button
-                  type="button"
-                  // mousedown, not click: it fires before the input's blur
-                  // closes the list.
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onChange(o);
-                    setOpen(false);
-                    (document.activeElement as HTMLElement | null)?.blur();
-                  }}
-                  className={cn(
-                    'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
-                    'hover:bg-surface-2 transition-colors duration-100',
-                    o.name === value.name && o.eco === value.eco ? 'text-primary font-medium' : 'text-fg',
-                  )}
-                >
-                  {o.eco && <span className="text-subtle w-7 shrink-0 font-mono text-[0.625rem]">{o.eco}</span>}
-                  <span className="min-w-0 flex-1 truncate">{o.name}</span>
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
-      )}
+      {open && list}
     </div>
   );
 }
@@ -198,6 +259,30 @@ export function RepertoireView() {
   const [error, setError] = useState<string | null>(null);
   // Guards against a stale reply landing after a new game.
   const runId = useRef(0);
+
+  // Seed a tree with the template's line — used both for the idle preview
+  // (picking an opening shows its position at once) and for starting a game.
+  const seedTree = (tpl: Template): { t: MoveTree; id: NodeId } => {
+    let t = createTree();
+    let id = t.rootId;
+    for (const san of tpl.sans) {
+      const added = addSan(t, id, san);
+      if (!added) break;
+      t = added.tree;
+      id = added.nodeId;
+    }
+    return { t, id };
+  };
+
+  // Idle previews the chosen opening immediately, last move highlighted.
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    const { t, id } = seedTree(template);
+    setTree(t);
+    setTipId(id);
+    setCursorId(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template, phase]);
 
   const node = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
@@ -274,14 +359,7 @@ export function RepertoireView() {
 
   const startGame = (): void => {
     runId.current += 1;
-    let t = createTree();
-    let id = t.rootId;
-    for (const san of template.sans) {
-      const added = addSan(t, id, san);
-      if (!added) break;
-      t = added.tree;
-      id = added.nodeId;
-    }
+    const { t, id } = seedTree(template);
     setTree(t);
     setTipId(id);
     setCursorId(id);
@@ -289,6 +367,19 @@ export function RepertoireView() {
     setError(null);
     if (positionAt(t, id).turn === userColor) setPhase('playing');
     else void reply(t, id, band);
+  };
+
+  const newGame = (): void => {
+    // Back to setup, board reset to the chosen opening's preview. The runId
+    // bump drops any in-flight reply.
+    runId.current += 1;
+    const { t, id } = seedTree(template);
+    setTree(t);
+    setTipId(id);
+    setCursorId(id);
+    setFlipped(false);
+    setError(null);
+    setPhase('idle');
   };
 
   const goTo = (targetIndex: number): void => {
@@ -381,66 +472,50 @@ export function RepertoireView() {
             </div>
           </Panel>
         ) : (
-          <Panel flush className="flex-1 max-lg:min-h-0 lg:min-h-[16rem]">
-            <PanelHeader
-              title="Moves"
-              actions={
-                <Button variant="ghost" size="sm" onClick={() => setPhase('idle')} title="Set up a new game">
-                  <RotateCcw className="size-3.5" />
-                  New game
-                </Button>
-              }
-            />
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-              {line.length <= 1 ? (
-                <p className="text-subtle text-xs">Make your first move on the board.</p>
-              ) : (
-                <p className="text-sm leading-relaxed">
-                  {line.slice(1).map((id, i) => {
-                    const n = getNode(tree, id);
-                    const isCursor = id === cursorId;
-                    return (
-                      <span key={id}>
-                        {i % 2 === 0 && <span className="text-subtle mr-0.5">{i / 2 + 1}.</span>}
-                        <button
-                          type="button"
-                          onClick={() => setCursorId(id)}
-                          className={cn(
-                            'mr-1 rounded px-1 font-mono transition-colors',
-                            isCursor ? 'bg-primary-soft text-primary' : 'text-fg hover:bg-surface-2',
-                          )}
-                        >
-                          {n.san}
-                        </button>
-                      </span>
-                    );
-                  })}
+          <>
+            {/* Game panel in the trainers' shape: status and the game's own
+                actions live here; the moves panel below is the same one every
+                other board page uses. */}
+            <Panel flush className="shrink-0">
+              <PanelHeader
+                title="Game"
+                actions={
+                  <Button variant="ghost" size="sm" onClick={newGame} title="Set up a new game">
+                    <RotateCcw className="size-3.5" />
+                    New game
+                  </Button>
+                }
+              />
+              <div className="flex flex-col gap-3 p-3">
+                <p className="text-muted text-xs leading-relaxed">
+                  {phase === 'ended'
+                    ? 'This line has run past the database — you are on your own now. Analyse it to see how the position stands.'
+                    : error
+                      ? error
+                      : phase === 'thinking'
+                        ? 'Your opponent is replying…'
+                        : pos.turn === userColor && atTip
+                          ? 'Your move.'
+                          : 'Reviewing an earlier move — step to the end to keep playing.'}
                 </p>
-              )}
-            </div>
-            <div className="border-line flex flex-col gap-2 border-t p-3">
-              <p className="text-muted text-xs leading-relaxed">
-                {phase === 'ended'
-                  ? 'This line has run past the database — you are on your own now. Analyse it to see how the position stands.'
-                  : error
-                    ? error
-                    : phase === 'thinking'
-                      ? 'Your opponent is replying…'
-                      : pos.turn === userColor && atTip
-                        ? 'Your move.'
-                        : 'Reviewing an earlier move — step to the end to keep playing.'}
-              </p>
-              <Button
-                variant={phase === 'ended' ? 'primary' : 'secondary'}
-                size="sm"
-                className="self-start"
-                onClick={analyse}
-              >
-                <Compass className="size-3.5" />
-                Analyse this line
-              </Button>
-            </div>
-          </Panel>
+                <Button
+                  variant={phase === 'ended' ? 'primary' : 'secondary'}
+                  size="sm"
+                  className="self-start"
+                  onClick={analyse}
+                >
+                  <Compass className="size-3.5" />
+                  Analyse this line
+                </Button>
+              </div>
+            </Panel>
+            <AnswerPanel
+              tree={tree}
+              cursorId={cursorId}
+              onSelect={setCursorId}
+              emptyText="Make your first move on the board."
+            />
+          </>
         )}
       </div>
 
