@@ -535,7 +535,7 @@ function CollectionView() {
   });
 
   return (
-    <div className="mx-auto flex h-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden lg:p-6">
+    <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:p-6">
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -582,7 +582,7 @@ function CollectionView() {
       {
         // shrink-0: loading an archive month below must not squeeze this
         // panel — the page column scrolls instead.
-        <Panel flush className="shrink-0">
+        <Panel flush className="shrink-0 sm:min-h-0">
           <PanelHeader
             title={`Collection · ${visible.length}`}
             actions={
@@ -607,7 +607,7 @@ function CollectionView() {
               </p>
             </div>
           ) : (
-          <ul className="divide-line min-h-0 divide-y overflow-y-auto">
+          <ul className="divide-line min-h-0 divide-y overflow-y-auto sm:max-h-[38dvh]">
             {visible.map((game) => (
               <GameRow
                 key={gameKey(game)}
@@ -810,7 +810,7 @@ function ArchiveBrowser({
   };
 
   return (
-    <Panel flush className="shrink-0">
+    <Panel flush className="shrink-0 sm:min-h-0 sm:flex-1">
       {/* Narrow screens can't fit tabs + username + Browse on one line;
           the band relaxes its fixed height and lets the actions wrap. */}
       <PanelHeader
@@ -928,7 +928,7 @@ function ArchiveBrowser({
       )}
 
       {month && (
-        <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line">
+        <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
           {loading === 'games' ? (
             <li className="text-subtle flex items-center gap-2 px-3 py-3 text-xs">
               <Loader2 className="size-3.5 animate-spin" /> fetching {month}…

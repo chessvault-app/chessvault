@@ -1023,6 +1023,26 @@ function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?:
   );
 }
 
+/** Live width of a rendered element (ResizeObserver) — the stacked
+    evidence views size to their actual container, not a guess from
+    window.innerWidth that left dead space beside the box. A CALLBACK ref:
+    the measured pane mounts only when its tab is active, so a static ref
+    bound once on mount would never see it. */
+function useElementWidth(): [(el: HTMLDivElement | null) => void, number] {
+  const [width, setWidth] = useState(0);
+  const ro = useRef<ResizeObserver | null>(null);
+  const attach = useCallback((el: HTMLDivElement | null) => {
+    ro.current?.disconnect();
+    ro.current = null;
+    if (!el) return;
+    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
+    observer.observe(el);
+    setWidth(el.clientWidth);
+    ro.current = observer;
+  }, []);
+  return [attach, width];
+}
+
 const ZOOM_MIN = 0.75;
 const ZOOM_MAX = 3;
 
@@ -1034,6 +1054,9 @@ const ZOOM_MAX = 3;
 function usePinchZoom(
   ref: React.RefObject<HTMLDivElement | null>,
   apply: (factor: number) => void,
+  /** Include anything that swaps the DOM node under the ref (e.g. the
+      crop/full-page toggle) — the listeners must move to the new element. */
+  rebind?: unknown,
 ): void {
   const applyRef = useRef(apply);
   applyRef.current = apply;
@@ -1066,7 +1089,8 @@ function usePinchZoom(
       el.removeEventListener('touchend', onEnd);
       el.removeEventListener('touchcancel', onEnd);
     };
-  }, [ref]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, rebind]);
 }
 
 /**
@@ -1092,7 +1116,7 @@ function ZoomablePage({ src, alt, width }: { src: string; alt: string; width: nu
       </span>
       <div
         ref={viewport}
-        className="border-line overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+        className="border-line max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
       >
         <img src={src} alt={alt} className="max-w-none" style={{ width: Math.round(width * zoom) }} />
       </div>
@@ -1122,7 +1146,7 @@ function SourceCrop({
   const viewport = useRef<HTMLDivElement>(null);
   const bump = (f: number): void =>
     setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
-  usePinchZoom(viewport, bump);
+  usePinchZoom(viewport, bump, full);
   const zoomButtons = !plain && (
     <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
       <Button
@@ -1161,7 +1185,7 @@ function SourceCrop({
       <div className="relative" style={{ width }}>
         <div
           ref={viewport}
-          className="border-line overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+          className="border-line max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
         >
           <div className="relative" style={{ width: Math.round(width * zoom) }}>
             <img src={src} alt="book page" className="w-full" />
@@ -1268,6 +1292,8 @@ function PuzzleEntry({
   const [prefill] = useState<string | null>(replace?.fen ?? draft?.fen ?? null);
   const wide = useWideLayout();
   const [stackedView, setStackedView] = useState<'board' | 'diagram' | 'solutions'>('board');
+  // The evidence views span the ACTUAL pane width (measured), not a guess.
+  const [stackedPane, stackedPaneW] = useElementWidth();
 
   const confirmPosition = (confirmed: string): void => {
     // Fire-and-forget: template learning must never block puzzle entry.
@@ -1374,25 +1400,27 @@ function PuzzleEntry({
             {stackedView === 'board' ? (
               boardContent
             ) : stackedView === 'diagram' ? (
-              <div className="p-4">
-                {evidence?.page ? (
+              <div ref={stackedPane} className="p-4">
+                {evidence?.page && stackedPaneW > 0 ? (
                   <SourceCrop
                     slug={slug}
                     page={evidence.page}
                     rect={evidence.rect}
-                    width={Math.min(window.innerWidth - 48, 560)}
+                    width={stackedPaneW - 32}
                   />
                 ) : draft ? (
-                  <img src={draft.imageUrl} alt="book diagram" className="border-line w-full max-w-[36rem] rounded-md border" />
+                  <img src={draft.imageUrl} alt="book diagram" className="border-line w-full rounded-md border" />
                 ) : null}
               </div>
             ) : evidence?.solutionPage ? (
-              <div className="p-4">
-                <ZoomablePage
-                  src={diagramUrl(slug, evidence.solutionPage)}
-                  alt="solutions page"
-                  width={Math.min(window.innerWidth - 48, 560)}
-                />
+              <div ref={stackedPane} className="p-4">
+                {stackedPaneW > 0 && (
+                  <ZoomablePage
+                    src={diagramUrl(slug, evidence.solutionPage)}
+                    alt="solutions page"
+                    width={stackedPaneW - 32}
+                  />
+                )}
               </div>
             ) : null}
           </div>

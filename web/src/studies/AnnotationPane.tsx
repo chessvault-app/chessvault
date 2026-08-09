@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { ChipRow } from '@/ui/ChipRow';
 
 /** Move-quality NAGs — one of these at most, like Lichess. */
 const QUALITY_NAGS = [1, 2, 3, 4, 5, 6];
@@ -72,9 +73,9 @@ export function AnnotationPane({
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
       {!atRoot && (
-        // One line that scrolls sideways (the ChipRow idiom) — wrapping made
-        // the palette tall on phones.
-        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hidden">
+        // One line that scrolls sideways, with the filter rows' desktop
+        // scroll affordances — wrapping made the palette tall on phones.
+        <ChipRow innerClassName="gap-1">
           {QUALITY_NAGS.map((nag) => (
             <NagButton
               key={nag}
@@ -92,7 +93,7 @@ export function AnnotationPane({
               onClick={() => toggleNag(nag, ASSESSMENT_NAGS)}
             />
           ))}
-        </div>
+        </ChipRow>
       )}
       {coarse ? (
         // Touch: the inline textarea sits exactly where the keyboard (and

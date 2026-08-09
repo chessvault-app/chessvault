@@ -33,6 +33,7 @@ import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { AnnotationPane } from './AnnotationPane';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
@@ -463,9 +464,27 @@ function ChapterRow({
     setRenaming(null);
   };
 
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
   return (
     <li className={cn('group flex items-center', sub && 'pl-5')}>
-      {renaming === index ? (
+      {renaming === index && coarse ? (
+        // Touch: the inline input sits where the keyboard lands — rename in
+        // a top-pinned sheet instead (the annotation/opening-search idiom).
+        <>
+          <span className="text-muted flex h-8 min-w-0 flex-1 items-center truncate px-1.5 text-xs">
+            {ownName}
+          </span>
+          <PromptSheet
+            label="Rename this chapter"
+            initial={ownName}
+            onSubmit={(value) => {
+              const segment = value.replace(/\//g, '-').trim();
+              if (segment) renameChapter(index, `${prefix}${segment}`);
+            }}
+            onClose={() => setRenaming(null)}
+          />
+        </>
+      ) : renaming === index ? (
         <Input
           autoFocus
           inputSize="sm"

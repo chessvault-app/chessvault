@@ -15,7 +15,12 @@ export const BOARD_MAX_W =
   // The 18rem wide/lg floor: on short-landscape viewports (a phone held
   // sideways) the height term collapses — measured 48px at a 209px-high
   // viewport — so the board keeps a usable minimum and the page scrolls.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)))] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),48rem)]';
+  // The 56dvh cap bites only on tall-AND-wide stacked viewports (tablet
+  // portrait): an iPad mini otherwise gave the board its full 744px width
+  // and left the moves panel a sliver — a smaller board that leaves the
+  // panels readable is the better trade there (lanph3re's call). Phones
+  // are width-bound long before 56dvh, so they are untouched.
+  'max-w-[min(100%,max(35dvh,calc(100dvh-20rem)),56dvh)] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),48rem)]';
 
 export const EDITOR_BOARD_MAX_W =
   // The stacked editor has no pane below — just palettes, the toolbar and
@@ -26,4 +31,4 @@ export const EDITOR_BOARD_MAX_W =
   // toolbar flush against the nav. The rest is breathing room (rio-tuned
   // on an iPad mini). Tall phones stay width-bound, so it costs them
   // nothing.
-  'max-w-[min(100%,max(35dvh,calc(100dvh-19rem)))] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),48rem)]';
+  'max-w-[min(100%,max(35dvh,calc(100dvh-19rem)),56dvh)] wide:max-w-[min(100%,max(18rem,calc(100dvh-10rem)))] lg:max-w-[min(100%,max(18rem,calc(100dvh-10rem)),48rem)]';
