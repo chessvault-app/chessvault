@@ -1094,8 +1094,14 @@ function GameRow({
             <Eye
               className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-5"
               aria-label="Preview the final position"
-              onMouseEnter={(e) => showPreview(e)}
-              onMouseLeave={hidePreview}
+              // Guarded like the other preview eyes: an unguarded mouseenter
+              // trips iOS's sticky-hover heuristic (first tap hovers only).
+              onMouseEnter={(e) => {
+                if (!coarse()) showPreview(e);
+              }}
+              onMouseLeave={() => {
+                if (!coarse()) hidePreview();
+              }}
               onClick={(e) => {
                 if (!coarse()) return;
                 // Touch: open the centred overlay; its scrim dismisses it.

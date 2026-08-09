@@ -1,6 +1,7 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { suppressNextClick } from '@/lib/suppressNextClick';
 
 /**
  * A themed replacement for `<select>`: native controls styled fine, but
@@ -84,7 +85,12 @@ export function Select({
     // the touch listener a tap outside could not close the list on a phone.
     const onDown = (e: MouseEvent | TouchEvent): void => {
       const t = e.target as Node;
-      if (!trigger.current?.contains(t) && !list.current?.contains(t)) close();
+      if (!trigger.current?.contains(t) && !list.current?.contains(t)) {
+        close();
+        // A dismissing TAP must only dismiss — swallow its synthesized
+        // click so it can't also press whatever it landed on.
+        if (e.type === 'touchstart') suppressNextClick();
+      }
     };
     // Scrolling the LIST is fine (ignore). A scroll of the page behind must
     // NOT dismiss — that's what closed a short, non-scrollable dropdown on a
@@ -201,7 +207,13 @@ export function Select({
                     type="button"
                     role="option"
                     aria-selected={option.value === value}
-                    onMouseEnter={() => setActive(i)}
+                    // Hover-tracking only where hover exists: iOS treats a
+                    // first tap on an element whose mouseenter MUTATES
+                    // content as hover alone (sticky-hover heuristic), which
+                    // demanded a second tap to actually pick an option.
+                    onMouseEnter={() => {
+                      if (window.matchMedia('(hover: hover)').matches) setActive(i);
+                    }}
                     onClick={() => pick(option.value)}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs',

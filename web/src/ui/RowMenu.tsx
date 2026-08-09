@@ -2,6 +2,7 @@ import { MoreHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
 
 export interface RowMenuItem {
@@ -55,7 +56,11 @@ export function RowMenu({
     // document-level listeners, so touch alone could not close the menu.
     const onDown = (e: MouseEvent | TouchEvent): void => {
       const t = e.target as Node;
-      if (!trigger.current?.contains(t) && !pop.current?.contains(t)) close();
+      if (!trigger.current?.contains(t) && !pop.current?.contains(t)) {
+        close();
+        // A dismissing tap must only dismiss, not press what's underneath.
+        if (e.type === 'touchstart') suppressNextClick();
+      }
     };
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') close();

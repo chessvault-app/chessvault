@@ -52,6 +52,7 @@ import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { EditorView } from '@/editor/EditorView';
 import { cn } from '@/lib/cn';
+import { suppressNextClick } from '@/lib/suppressNextClick';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { SkeletonRows } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
@@ -961,7 +962,11 @@ function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?:
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent | TouchEvent): void => {
-      if (!(e.target as HTMLElement).closest('[data-peek]')) setOpen(false);
+      if (!(e.target as HTMLElement).closest('[data-peek]')) {
+        setOpen(false);
+        // A dismissing tap must only dismiss, not press what's underneath.
+        if (e.type === 'touchstart') suppressNextClick();
+      }
     };
     // touchstart too: iOS taps on dead space never synthesize click for
     // document-level listeners, so touch alone could not close the peek.

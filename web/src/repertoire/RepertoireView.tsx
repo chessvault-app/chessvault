@@ -10,6 +10,7 @@ import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
+import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
@@ -206,8 +207,13 @@ function OpeningPicker({
             className="fixed inset-0 z-50 bg-black/50"
             // pointerdown, not click: iOS does not reliably synthesize click
             // on a plain backdrop div, which left selecting an opening as the
-            // ONLY way to close the sheet (lanph3re's report).
-            onPointerDown={() => setOpen(false)}
+            // ONLY way to close the sheet. The dismissing tap's synthesized
+            // click is swallowed — it must not press what's behind the
+            // backdrop (it reached the colour buttons, lanph3re's report).
+            onPointerDown={() => {
+              setOpen(false);
+              suppressNextClick();
+            }}
           >
             <div
               // The safe-area term keeps the sheet below the notch/status bar
