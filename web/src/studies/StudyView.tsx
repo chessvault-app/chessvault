@@ -1,5 +1,5 @@
 import {
-  ArrowLeft,
+  ChevronLeft,
   Check,
   ChevronDown,
   CircleAlert,
@@ -86,7 +86,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted text-sm">{error ?? `Could not open “${id}”.`}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
-            <ArrowLeft className="mr-1 size-3.5" />
+            <ChevronLeft className="mr-1 size-3.5" />
             {kind === 'game' ? 'All games' : 'All studies'}
           </Button>
         </div>
@@ -112,7 +112,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         title={kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)'}
         onClick={() => navigate(backSection)}
       >
-        <ArrowLeft className="size-3.5" />
+        <ChevronLeft className="size-3.5" />
       </Button>
       <TitleEditor id={id} backSection={backSection} />
       <SaveIndicator state={saveState} error={error} />

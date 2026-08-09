@@ -1,5 +1,5 @@
 import {
-  ArrowLeft,
+  ChevronLeft,
   BarChart3,
   ChevronRight,
   Settings2,
@@ -437,7 +437,7 @@ function Trainer({
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
           <div className="flex shrink-0 items-center gap-2">
             <Button variant="ghost" size="icon-sm" title="Back to the puzzle" onClick={backToPuzzle}>
-              <ArrowLeft className="size-3.5" />
+              <ChevronLeft className="size-3.5" />
             </Button>
             <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
               Analysing #{puzzle.id}
@@ -471,7 +471,7 @@ function Trainer({
           title="Back to the dashboard"
           onClick={() => navigate('puzzles', 'dashboard')}
         >
-          <ArrowLeft className="size-3.5" />
+          <ChevronLeft className="size-3.5" />
         </Button>
         <Puzzle className="text-subtle size-4" aria-hidden />
         <h1 className="text-fg text-sm font-semibold">

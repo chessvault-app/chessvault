@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import {
-  ArrowLeft,
+  ChevronLeft,
   Check,
   CircleAlert,
   Loader2,
@@ -59,7 +59,7 @@ export function NoteView({ id }: { id: string }) {
         <div className="flex flex-col items-center gap-3 text-center">
           <p className="text-muted text-sm">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
-            <ArrowLeft className="mr-1 size-3.5" />
+            <ChevronLeft className="mr-1 size-3.5" />
             All notes
           </Button>
         </div>
@@ -154,7 +154,7 @@ function NoteEditor({
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto p-4 lg:p-6">
       <header className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title="All notes" onClick={() => navigate('notes')}>
-          <ArrowLeft className="size-3.5" />
+          <ChevronLeft className="size-3.5" />
         </Button>
         <NoteTitle id={id} />
         <Button

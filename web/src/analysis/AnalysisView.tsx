@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, FolderPlus, Grid3x3, Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, FolderPlus, Grid3x3, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -197,7 +197,7 @@ function BoardPageHeader() {
         title="Back"
         onClick={() => window.history.back()}
       >
-        <ArrowLeft className="size-3.5" />
+        <ChevronLeft className="size-3.5" />
       </Button>
       <Grid3x3 className="text-subtle size-4" aria-hidden />
       <h1 className="text-fg min-w-0 truncate text-sm font-semibold">{title}</h1>

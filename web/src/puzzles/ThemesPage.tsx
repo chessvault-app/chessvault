@@ -1,4 +1,4 @@
-import { ArrowLeft, Puzzle, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
@@ -141,7 +141,7 @@ export function ThemesPage() {
             title="Back to the dashboard"
             onClick={() => navigate('puzzles', 'dashboard')}
           >
-            <ArrowLeft className="size-3.5" />
+            <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg text-base font-semibold">Puzzle themes</h1>
         </div>

@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   BadgeCheck,
   BookMarked,
   BookOpenCheck,
@@ -262,7 +261,7 @@ function Shelf() {
             title="Back to the dashboard"
             onClick={() => navigate('puzzles', 'dashboard')}
           >
-            <ArrowLeft className="size-3.5" />
+            <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg flex-1 text-base font-semibold">Puzzle books</h1>
           <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
@@ -460,7 +459,7 @@ function BookPage({ slug }: { slug: string }) {
             title="All books"
             onClick={() => navigate('puzzles', 'books')}
           >
-            <ArrowLeft className="size-3.5" />
+            <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
             {book?.title ?? slug}
@@ -1225,7 +1224,7 @@ function PuzzleEntry({
           the editor's own Position panel, not up here. */}
       <div className="flex h-12 shrink-0 items-center gap-2 px-4">
         <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
-          <ArrowLeft className="size-3.5" />
+          <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
           {replace ? 'Fix' : 'Add'} <span className="font-mono">#{number}</span>
@@ -1452,7 +1451,7 @@ function SolutionRecorder({
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="flex shrink-0 items-center gap-2">
           <Button variant="ghost" size="icon-sm" title="Back to the position" onClick={onBack}>
-            <ArrowLeft className="size-3.5" />
+            <ChevronLeft className="size-3.5" />
           </Button>
           <span className="text-muted min-w-0 flex-1 truncate text-sm">
             Record the solution — every move, both sides.
@@ -1823,7 +1822,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
         title="Back to the book"
         onClick={() => navigate('puzzles', 'books', slug)}
       >
-        <ArrowLeft className="size-3.5" />
+        <ChevronLeft className="size-3.5" />
       </Button>
       {/* The puzzle number IS the title; the tier collapses to its icon
           (tooltip explains). */}

@@ -1,5 +1,5 @@
 import {
-  ArrowLeft,
+  ChevronLeft,
   ExternalLink,
   Eye,
   Globe,
@@ -291,7 +291,7 @@ function EliteBrowser() {
     <div className="mx-auto flex h-full min-h-0 max-w-3xl flex-col gap-3 p-4">
       <div className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title="Back to games" onClick={() => navigate('games')}>
-          <ArrowLeft className="size-3.5" />
+          <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
           Elite games{meta?.games ? ` (${meta.games.toLocaleString()} games)` : ''}
