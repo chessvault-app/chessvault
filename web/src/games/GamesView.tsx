@@ -9,7 +9,7 @@ import {
   Pencil,
   Plus,
   Star,
-  Swords,
+  BookOpen,
   Trash2,
   Trophy,
 } from 'lucide-react';
@@ -531,7 +531,7 @@ function CollectionView() {
 
       {loaded && games.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <Swords className="text-subtle size-6" strokeWidth={1.5} />
+          <BookOpen className="text-subtle size-6" strokeWidth={1.5} />
           <p className="text-muted max-w-md text-sm leading-relaxed">
             Your collection is empty. It's meant to hold the games worth keeping — each one
             annotatable like a study. Browse your chess.com history below and add the ones

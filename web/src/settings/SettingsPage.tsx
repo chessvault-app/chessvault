@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ChevronLeft, KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
@@ -46,8 +46,19 @@ export function SettingsPage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
-        <header className="flex items-baseline justify-between">
-          <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
+        <header className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="md:hidden"
+              title="Back"
+              onClick={() => window.history.back()}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
+          </div>
           <span className="text-subtle text-xs">Chess Vault {settings.version}</span>
         </header>
 

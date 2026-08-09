@@ -595,14 +595,6 @@ function Trainer({
                 )}
                 {/* Stand-ins for the folded Training panel. */}
                 <span className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title="Flip board"
-                    onClick={() => setFlipped((f) => !f)}
-                  >
-                    <FlipVertical2 className="size-3.5" />
-                  </Button>
                   {mode === 'fresh' && (
                     <Button
                       variant="ghost"
@@ -666,7 +658,7 @@ function Trainer({
                 )}
               </>
             ) : (
-              <>
+              <div className="flex flex-col gap-0.5">
                 {puzzle && phase !== 'loading' && (
                   <p className="text-fg text-xl font-bold tracking-tight">
                     {solverSide === 'white' ? 'White' : 'Black'} to play
@@ -679,7 +671,7 @@ function Trainer({
                       ? 'Keep looking — find the best move.'
                       : 'Find the best move. The rating and themes stay hidden until you finish.'}
                 </p>
-              </>
+              </div>
             )}
 
             <div className="flex flex-wrap gap-2">
@@ -852,6 +844,9 @@ function StatusStrip({
               ? 'Done. On to the next one.'
               : 'Well played.'
             : '';
+  // Empty during plain solving — render nothing so the board sits flush
+  // against the panel (the side-to-move is in the panel now).
+  if (!text) return null;
   return (
     <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
       <span
