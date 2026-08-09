@@ -30,7 +30,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { AnnotationPane } from './AnnotationPane';
 
-type StudyPane = 'moves' | 'chapters' | 'explorer';
+type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
 export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' | 'game' }) {
   const openId = useStudy((s) => s.openId);
@@ -120,14 +120,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
       {titleRow('wide:hidden')}
       <AnalysisBoard />
 
-      {/* The column is the scroll container on every layout: panels keep
-          explicit floors, the move table scrolls internally, and a squat
-          viewport scrolls the column by the shortfall. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      {/* Desktop scrolls the column; phones show one pane that fills the
+          height under the board and scrolls internally (see AnalysisView). */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {titleRow('stacked:hidden')}
 
         <PaneTabs
@@ -136,6 +135,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           onChange={setPane}
           tabs={[
             { id: 'moves', label: 'Moves' },
+            { id: 'engine', label: 'Engine' },
             ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters' }] : []),
             { id: 'explorer', label: 'Explorer' },
           ]}
@@ -145,14 +145,14 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             <ChaptersPanel />
           </div>
         )}
-        {/* An explicit floor, not min-h-min: intrinsic sizing counts the
-            move table's full content, so a content floor grows with the
-            game. See AnalysisView. */}
+        {/* Desktop keeps a floor and scrolls the column; phones drop it so
+            the panel fills the slot and the move table scrolls inside. */}
         <Panel
           flush
-          className={cn('min-h-[22rem] flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn('flex-1 max-lg:min-h-0 lg:min-h-[22rem]', pane !== 'moves' && 'max-lg:hidden')}
         >
-          <EngineBlock />
+          {/* Docked on desktop; its own tab on phones (below). */}
+          <EngineBlock className="max-lg:hidden" />
           <PanelHeader
             title="Moves"
             actions={
@@ -170,10 +170,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
           />
         </Panel>
+        <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
+          <EngineBlock />
+        </Panel>
         <ExplorerPane
           resizeKey="study-explorer"
           className={cn(
-            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-min lg:max-h-[35%]',
+            'max-lg:min-h-0 max-lg:flex-1 lg:min-h-min lg:max-h-[35%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
@@ -350,7 +353,13 @@ function ChaptersPanel() {
   };
 
   return (
-    <Panel flush className="max-h-48 shrink-0" resizeKey="study-chapters">
+    // Desktop: a compact, resizable 12rem list. Phones: the Chapters tab
+    // owns the column, so fill it and scroll rather than leaving dead space.
+    <Panel
+      flush
+      className="lg:max-h-48 lg:shrink-0 max-lg:flex-1 max-lg:min-h-0"
+      resizeKey="study-chapters"
+    >
       <PanelHeader
         title={`Chapters · ${chapters.length}`}
         actions={

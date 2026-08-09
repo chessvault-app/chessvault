@@ -17,7 +17,7 @@ import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 
-type AnalysisPane = 'moves' | 'explorer';
+type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
 export function AnalysisView() {
   // Small screens show ONE pane under the board (lichess-app style); the
@@ -57,17 +57,17 @@ export function AnalysisView() {
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
       {/* Stacked layouts lead with a header like every other page; games
           opened here from elite/archives get a way back on phones. */}
       <BoardPageHeader />
       <AnalysisBoard editablePlayers />
 
-      {/* Side column. Desktop shows every pane; small screens switch, with
-          the active pane flexing into the space left under the board. The
-          column scrolls on every layout: panels keep explicit floors and
-          the move table scrolls internally. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      {/* Side column. Desktop shows every pane and scrolls the column; on
+          phones exactly one pane shows, fills the height left under the
+          board, and scrolls INTERNALLY (its move table / list own the
+          scroll, with a visible scrollbar) — the page itself never scrolls. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
@@ -81,22 +81,24 @@ export function AnalysisView() {
           onChange={setPane}
           tabs={[
             { id: 'moves', label: 'Moves' },
+            { id: 'engine', label: 'Engine' },
             { id: 'explorer', label: 'Explorer' },
           ]}
         />
-        {/* An EXPLICIT floor, not min-h-min: intrinsic sizing counts the
-            move table's full content (overflow is ignored), so a content
-            floor grows with the game. The fixed floor keeps the panel
-            bounded — the table scrolls inside — while the column scrolls
-            when the viewport can't fit the floor. */}
+        {/* Desktop keeps an explicit floor (the column scrolls when the
+            viewport can't fit it); phones drop the floor so the panel
+            shrinks into the slot and the move table scrolls inside. */}
         <Panel
           flush
-          // The engine block lives inside this panel, so its eval bar and PV
-          // lines (~7rem) would otherwise eat the move table's rows — the
-          // floor grows with it and the column scrolls instead.
-          className={cn(engineOn ? 'min-h-[28rem]' : 'min-h-[22rem]', 'flex-1', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn(
+            'flex-1 max-lg:min-h-0',
+            engineOn ? 'lg:min-h-[28rem]' : 'lg:min-h-[22rem]',
+            pane !== 'moves' && 'max-lg:hidden',
+          )}
         >
-          <EngineBlock />
+          {/* Engine docks in the Moves panel on desktop; on phones it is its
+              own tab (below), so hide the docked copy there. */}
+          <EngineBlock className="max-lg:hidden" />
           <PanelHeader
             title="Moves"
             actions={
@@ -115,12 +117,17 @@ export function AnalysisView() {
           <BoardControls className="border-line border-t stacked:hidden" keyboard={false} />
           <StatusBar />
         </Panel>
+        {/* Engine as its own phone tab — desktop shows it docked above, so
+            this whole pane is lg:hidden. */}
+        <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
+          <EngineBlock />
+        </Panel>
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}
         <ExplorerPane
           resizeKey="analysis-explorer"
           className={cn(
-            'max-lg:min-h-[8rem] max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
+            'max-lg:min-h-0 max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />

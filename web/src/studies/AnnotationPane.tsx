@@ -102,7 +102,10 @@ function NagButton({
       type="button"
       onClick={onClick}
       className={cn(
+        // Coarse pointers get a thumb-sized target (these annotate on a
+        // phone too); a mouse keeps the compact glyph row.
         'h-6 min-w-6 rounded px-1 font-mono text-xs font-semibold transition-colors duration-100',
+        'pointer-coarse:h-8 pointer-coarse:min-w-8',
         active
           ? 'bg-primary-soft text-primary'
           : 'text-muted hover:bg-surface-2 hover:text-fg',

@@ -37,7 +37,9 @@ export function PaneTabs<T extends string>({
           aria-selected={tab.id === value}
           onClick={() => onChange(tab.id)}
           className={cn(
-            'h-7 flex-1 rounded-md text-xs font-medium transition-colors duration-100',
+            // Coarse pointers get a taller target — this is the only way to
+            // switch panes on a phone, so it must clear the thumb minimum.
+            'h-7 flex-1 rounded-md text-xs font-medium transition-colors duration-100 pointer-coarse:h-9',
             tab.id === value
               ? 'bg-surface text-fg shadow-sm'
               : 'text-muted hover:text-fg',
