@@ -53,6 +53,8 @@ export function Select({
   const [active, setActive] = useState(0);
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  // Where the current touch started, to tell a tap from a list scroll.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
   // Open upward when the trigger sits below mid-screen, so a long list has
   // room instead of being crushed into the gap under a low field.
@@ -215,6 +217,25 @@ export function Select({
                       if (window.matchMedia('(hover: hover)').matches) setActive(i);
                     }}
                     onClick={() => pick(option.value)}
+                    // Touch picks natively on touchend — iOS click synthesis
+                    // has proven too fickle to carry the ONE action this
+                    // control exists for. A moved finger is a scroll, not a
+                    // pick; preventDefault stops the synthesized click from
+                    // double-firing after we picked.
+                    onTouchStart={(e) => {
+                      const t = e.touches[0]!;
+                      touchStart.current = { x: t.clientX, y: t.clientY };
+                    }}
+                    onTouchEnd={(e) => {
+                      const start = touchStart.current;
+                      touchStart.current = null;
+                      const t = e.changedTouches[0];
+                      if (!start || !t) return;
+                      if (Math.abs(t.clientX - start.x) < 12 && Math.abs(t.clientY - start.y) < 12) {
+                        e.preventDefault();
+                        pick(option.value);
+                      }
+                    }}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs',
                       'transition-colors duration-100',
