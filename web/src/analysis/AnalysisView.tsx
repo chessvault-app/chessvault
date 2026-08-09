@@ -101,7 +101,13 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           flush
           className={cn(
             'flex-1 max-lg:min-h-0',
-            engineOn ? 'lg:min-h-[28rem]' : 'lg:min-h-[22rem]',
+            // Explorer landing: on desktop the explorer is the star, so the
+            // Moves panel steps down to a secondary, capped block below it.
+            wantExplorer
+              ? 'lg:flex-none lg:max-h-[32%]'
+              : engineOn
+                ? 'lg:min-h-[28rem]'
+                : 'lg:min-h-[22rem]',
             pane !== 'moves' && 'max-lg:hidden',
           )}
         >
@@ -136,7 +142,10 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
         <ExplorerPane
           resizeKey="analysis-explorer"
           className={cn(
-            'max-lg:min-h-0 max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
+            'max-lg:min-h-0 max-lg:flex-1',
+            // Prominent and first on the Explorer landing; a capped panel
+            // beneath the move list otherwise.
+            wantExplorer ? 'lg:order-first lg:flex-1' : 'lg:min-h-min lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />
