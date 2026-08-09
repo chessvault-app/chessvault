@@ -3,7 +3,6 @@ import {
   ExternalLink,
   Eye,
   Globe,
-  Search,
   Loader2,
   NotebookPen,
   Pencil,
@@ -71,14 +70,25 @@ interface Preview {
 }
 
 /** The final-position preview. A hover popover on fine pointers; a centred,
-    dismissable overlay when tapped open on touch. Shared by both game lists. */
+    dismissable overlay when tapped open on touch. Shared by both game lists.
+    Any click outside the preview dismisses it (in either mode). */
 function GamePreview({ preview, onClose }: { preview: Preview | null; onClose: () => void }) {
+  const card = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!preview) return;
+    const onDown = (e: MouseEvent): void => {
+      if (!card.current?.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [preview, onClose]);
+
   if (!preview) return null;
   if (preview.pinned) {
     return (
-      <div className="fixed inset-0 z-50 grid place-items-center p-8" onClick={onClose}>
+      <div className="fixed inset-0 z-50 grid place-items-center p-8">
         <div className="bg-scrim absolute inset-0" />
-        <div className="border-line bg-surface relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-[var(--shadow-pop)]">
+        <div ref={card} className="border-line bg-surface relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-[var(--shadow-pop)]">
           <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
         </div>
       </div>
@@ -86,6 +96,7 @@ function GamePreview({ preview, onClose }: { preview: Preview | null; onClose: (
   }
   return (
     <div
+      ref={card}
       style={{ top: preview.top, left: preview.left }}
       className="border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-[var(--shadow-pop)]"
     >
@@ -814,10 +825,7 @@ function ArchiveBrowser({
               {loading === 'months' ? (
                 <Loader2 className="size-3.5 animate-spin" />
               ) : (
-                <span className="relative inline-flex">
-                  <Globe className="size-3.5" />
-                  <Search className="bg-surface absolute -bottom-1 -right-1 size-2.5 rounded-full" strokeWidth={2.6} />
-                </span>
+                <Globe className="size-3.5" />
               )}
             </Button>
           </>

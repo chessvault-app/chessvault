@@ -1,5 +1,5 @@
 import { ChevronLeft, Check, Compass, Cpu, FolderPlus, Grid3x3, ListOrdered, Loader2, RotateCcw, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -36,7 +36,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   // StrictMode runs the effect twice, and the second run must not treat
   // the just-consumed flag as "no handoff" and wipe the board.
   const entered = useRef(false);
-  useEffect(() => {
+  // useLayoutEffect, not useEffect: reset BEFORE the browser paints, so a
+  // stale board handed over by a previous page never flashes on screen.
+  useLayoutEffect(() => {
     if (entered.current) return;
     entered.current = true;
     const analysis = useAnalysis.getState();

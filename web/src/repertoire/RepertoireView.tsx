@@ -211,7 +211,7 @@ export function RepertoireView() {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
         <Button
           variant="ghost"
@@ -238,7 +238,7 @@ export function RepertoireView() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {phase === 'idle' ? (

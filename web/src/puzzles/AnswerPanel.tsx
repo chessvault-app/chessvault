@@ -51,8 +51,9 @@ export function AnswerPanel({
         </div>
       )}
       {onPromote && <PromoteStrip tree={tree} cursorId={cursorId} onPromote={onPromote} />}
-      {/* The same navigation toolbar every board in the app has. */}
-      <div className="border-line flex w-full shrink-0 items-center justify-center gap-1 border-t py-1">
+      {/* The navigation toolbar — hidden on phones, where the bottom action
+          bar owns move navigation (no duplicate). */}
+      <div className="border-line flex w-full shrink-0 items-center justify-center gap-1 border-t py-1 max-md:hidden">
         <Button
           variant="ghost"
           size="icon"

@@ -53,12 +53,17 @@ export function Select({
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // Open upward when the trigger sits below mid-screen, so a long list has
+  // room instead of being crushed into the gap under a low field.
+  const [dropUp, setDropUp] = useState(false);
 
   const flat = useMemo(() => groups.flatMap((g) => g.options), [groups]);
   const selected = flat.find((o) => o.value === value) ?? null;
 
   const show = (): void => {
-    setRect(trigger.current?.getBoundingClientRect() ?? null);
+    const r = trigger.current?.getBoundingClientRect() ?? null;
+    setRect(r);
+    setDropUp(r ? r.bottom > window.innerHeight * 0.55 : false);
     setActive(Math.max(0, flat.findIndex((o) => o.value === value)));
     setOpen(true);
   };
@@ -146,12 +151,16 @@ export function Select({
           aria-label={ariaLabel}
           style={{
             position: 'fixed',
-            top: rect.bottom + 4,
+            ...(dropUp
+              ? { bottom: window.innerHeight - rect.top + 4 }
+              : { top: rect.bottom + 4 }),
             ...(align === 'end'
               ? { right: window.innerWidth - rect.right }
               : { left: rect.left }),
             minWidth: rect.width,
-            maxHeight: Math.max(120, window.innerHeight - rect.bottom - 16),
+            maxHeight: dropUp
+              ? Math.max(140, rect.top - 16)
+              : Math.max(140, window.innerHeight - rect.bottom - 16),
           }}
           className={cn(
             'border-line bg-surface z-50 w-max max-w-72 overflow-y-auto rounded-lg border p-1',
