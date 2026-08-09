@@ -33,7 +33,7 @@ interface StudyState {
   error: string | null;
 
   refresh: () => Promise<void>;
-  create: (name: string) => Promise<string | null>;
+  create: (name: string, pgn?: string) => Promise<string | null>;
   createFolder: (name: string) => Promise<string | null>;
   /** Rename and move are one operation — the id is the path. */
   move: (from: string, to: string) => Promise<string | null>;
@@ -204,11 +204,11 @@ export const useStudy = create<StudyState>()((set, get) => {
       return res.ok ? null : (body?.error ?? 'could not delete the collection');
     },
 
-    create: async (name) => {
+    create: async (name, pgn) => {
       const res = await fetch('/api/studies', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, ...(pgn && { pgn }) }),
       });
       const body = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
       if (!res.ok) return body?.error ?? 'could not create study';

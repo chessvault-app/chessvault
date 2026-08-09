@@ -1,5 +1,6 @@
 import {
   ChevronDown,
+  FileUp,
   Folder as FolderIcon,
   FolderInput,
   Library,
@@ -11,6 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
+import { pgnToChapters } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
@@ -87,10 +89,15 @@ function CreateMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
   // Either popover (the menu or the name form) dismisses on outside click.
   const menuHost = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<'study' | 'folder' | null>(null);
+  const [mode, setMode] = useState<'study' | 'folder' | 'import' | null>(null);
   const [name, setName] = useState('');
   const [folder, setFolder] = useState('');
+  const [pgnText, setPgnText] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
+  const filePick = useRef<HTMLInputElement>(null);
+
+  // Import feedback: how many chapters the pasted/chosen PGN parses into.
+  const chapterCount = mode === 'import' && pgnText.trim() ? pgnToChapters(pgnText).length : 0;
 
   const submit = async (): Promise<void> => {
     const trimmed = name.trim();
@@ -104,10 +111,20 @@ function CreateMenu() {
       }
       return;
     }
+    if (mode === 'import' && chapterCount === 0) {
+      setFailure('that PGN parses into zero chapters');
+      return;
+    }
     const id = folder ? `${folder}/${trimmed}` : trimmed;
-    const err = await create(id);
+    const err = await create(id, mode === 'import' ? pgnText : undefined);
     setFailure(err);
     if (!err) navigate('studies', encodeURIComponent(id));
+  };
+
+  const pickFile = async (file: File | undefined): Promise<void> => {
+    if (!file) return;
+    setPgnText(await file.text());
+    if (!name.trim()) setName(file.name.replace(/\.pgn$/i, ''));
   };
 
   useEffect(() => {
@@ -141,6 +158,7 @@ function CreateMenu() {
             [
               ['study', 'New study', Library],
               ['folder', 'New collection', FolderIcon],
+              ['import', 'Import PGN', FileUp],
             ] as const
           ).map(([kind, label, Icon]) => (
             <button
@@ -172,9 +190,9 @@ function CreateMenu() {
           )}
         >
           <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-            {mode === 'study' ? 'New study' : 'New collection'}
+            {mode === 'study' ? 'New study' : mode === 'import' ? 'Import PGN as study' : 'New collection'}
           </p>
-          {mode === 'study' && folders.length > 0 && (
+          {mode !== 'folder' && folders.length > 0 && (
             <Select
               value={folder}
               onChange={setFolder}
@@ -198,15 +216,54 @@ function CreateMenu() {
               if (e.key === 'Enter') void submit();
               if (e.key === 'Escape') setMode(null);
             }}
-            placeholder={mode === 'study' ? 'Study name' : 'Collection name'}
+            placeholder={mode === 'folder' ? 'Collection name' : 'Study name'}
           />
+          {mode === 'import' && (
+            <>
+              <textarea
+                value={pgnText}
+                onChange={(e) => setPgnText(e.target.value)}
+                placeholder="Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows."
+                spellCheck={false}
+                className={cn(
+                  'bg-surface-inset border-line text-fg placeholder:text-subtle h-28 w-full resize-none',
+                  'rounded-md border p-2 font-mono text-xs outline-none focus:border-primary/50',
+                )}
+              />
+              <div className="flex items-center justify-between gap-2">
+                <Button variant="secondary" size="sm" onClick={() => filePick.current?.click()}>
+                  <FileUp className="mr-1 size-3.5" />
+                  Choose file
+                </Button>
+                {pgnText.trim() && (
+                  <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
+                    {chapterCount > 0
+                      ? `${chapterCount} chapter${chapterCount === 1 ? '' : 's'}`
+                      : 'not parseable'}
+                  </span>
+                )}
+              </div>
+              <input
+                ref={filePick}
+                type="file"
+                accept=".pgn,application/x-chess-pgn,text/plain"
+                className="hidden"
+                onChange={(e) => void pickFile(e.target.files?.[0])}
+              />
+            </>
+          )}
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
               Cancel
             </Button>
-            <Button variant="primary" size="sm" disabled={!name.trim()} onClick={() => void submit()}>
-              Create
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={!name.trim() || (mode === 'import' && chapterCount === 0)}
+              onClick={() => void submit()}
+            >
+              {mode === 'import' ? 'Import' : 'Create'}
             </Button>
           </div>
         </div>

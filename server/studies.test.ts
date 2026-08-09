@@ -41,6 +41,23 @@ describe('studies api', () => {
     expect(chapters[0]!.name).toBe('Chapter 1');
   });
 
+  it('creates a study from imported PGN content (Lichess export shape)', async () => {
+    const lichessExport = [
+      '[Event "My Study: Chapter 1"]\n[Result "*"]\n\n1. e4 e5 { [%cal Ge2e4] } *',
+      '[Event "My Study: Chapter 2"]\n[FEN "8/8/8/8/8/4K3/8/4k3 w - - 0 1"]\n[SetUp "1"]\n\n*',
+    ].join('\n\n');
+    const res = await app.request('/api/studies', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Imported', pgn: lichessExport }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(res.status).toBe(200);
+    const stored = readFileSync(join(dir, 'Imported.pgn'), 'utf-8');
+    expect(pgnToChapters(stored)).toHaveLength(2);
+    // Later cases assert on the study count — leave the vault as found.
+    await app.request('/api/studies/Imported', { method: 'DELETE' });
+  });
+
   it('refuses duplicates and bad names', async () => {
     const post = (name: string) =>
       app.request('/api/studies', {

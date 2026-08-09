@@ -148,7 +148,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
   });
 
   api.post(`/${base}`, async (c) => {
-    const body = await c.req.json<{ name?: string }>().catch(() => null);
+    const body = await c.req.json<{ name?: string; pgn?: string }>().catch(() => null);
     const name = body?.name?.trim();
     if (!name || !validId(name)) {
       return c.json(
@@ -156,16 +156,23 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
         400,
       );
     }
+    if (typeof body?.pgn === 'string' && body.pgn.length > MAX_PGN_BYTES) {
+      return c.json({ error: 'study too large' }, 413);
+    }
     const path = pathOf(name);
     if (existsSync(path)) return c.json({ error: 'a study with that name exists' }, 409);
     mkdirSync(resolve(path, '..'), { recursive: true });
     const title = name.split('/').at(-1)!;
+    // Optional initial content — the import path (e.g. a Lichess study
+    // export). The client validates it parses; the server only caps size.
     // A fresh study is one empty chapter; a fresh note is a heading.
     writeFileSync(
       path,
-      ext === '.md'
-        ? `# ${title}\n\n`
-        : `[Event "${title}: Chapter 1"]\n[ChapterName "Chapter 1"]\n[Result "*"]\n\n*\n`,
+      body?.pgn?.trim()
+        ? body.pgn
+        : ext === '.md'
+          ? `# ${title}\n\n`
+          : `[Event "${title}: Chapter 1"]\n[ChapterName "Chapter 1"]\n[Result "*"]\n\n*\n`,
     );
     return c.json({ id: name });
   });
