@@ -70,7 +70,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
           </svg>
         </div>
         <h1 className="text-fg text-xl font-semibold tracking-tight">Chess Vault</h1>
-        <p className="text-subtle mb-6 mt-1 text-sm">Your chess, on your disk.</p>
+        <p className="text-subtle mb-6 mt-1 text-sm">Your chess, in plain files.</p>
 
         <form
           className="bg-surface border-line w-full rounded-2xl border p-5 shadow-[var(--shadow-panel)]"

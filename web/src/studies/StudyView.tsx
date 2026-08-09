@@ -129,7 +129,9 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
       {titleRow('wide:hidden')}
-      <AnalysisBoard />
+      {/* Reading locks the pieces: studies and games open as documents to
+          step through; the pencil switches to annotating/recording. */}
+      <AnalysisBoard locked={!editing} />
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}
@@ -168,7 +170,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
                   variant="ghost"
                   size="icon-sm"
                   active={editing}
-                  title={editing ? 'Done editing' : 'Annotate (NAGs & comments)'}
+                  title={editing ? 'Done — back to reading' : 'Edit (moves, NAGs & comments)'}
                   onClick={() => setEditing((v) => !v)}
                 >
                   <Pencil className="size-3.5" />

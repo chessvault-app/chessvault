@@ -570,16 +570,10 @@ function CollectionView() {
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
-      {loaded && games.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
-          <BookOpen className="text-subtle size-6" strokeWidth={1.5} />
-          <p className="text-muted max-w-md text-sm leading-relaxed">
-            Your collection is empty. It's meant to hold the games worth keeping — each one
-            annotatable like a study. Browse your chess.com history below and add the ones
-            you want to study.
-          </p>
-        </div>
-      ) : (
+      {/* The collection panel is ALWAYS there — an empty collection shows its
+          placeholder inside the box, the same way the browser box below holds
+          its own idle prompt. */}
+      {
         // shrink-0: loading an archive month below must not squeeze this
         // panel — the page column scrolls instead.
         <Panel flush className="shrink-0">
@@ -597,6 +591,16 @@ function CollectionView() {
               </Button>
             }
           />
+          {loaded && games.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              <BookOpen className="text-subtle size-6" strokeWidth={1.5} />
+              <p className="text-muted max-w-md text-sm leading-relaxed">
+                Your collection is empty. It's meant to hold the games worth keeping — each one
+                annotatable like a study. Browse your chess.com history below and add the ones
+                you want to study.
+              </p>
+            </div>
+          ) : (
           <ul className="divide-line min-h-0 divide-y overflow-y-auto">
             {visible.map((game) => (
               <GameRow
@@ -653,8 +657,9 @@ function CollectionView() {
               />
             ))}
           </ul>
+          )}
         </Panel>
-      )}
+      }
 
       <ArchiveBrowser collectionKeys={new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))} onCollected={() => void load()} onPreview={setPreview} />
 

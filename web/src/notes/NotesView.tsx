@@ -236,7 +236,10 @@ function GroupedNotes({
 }) {
   const groups = new Map<string, NoteMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
-  for (const note of notes) {
+  // The server lists by last-modified, which reshuffles the shelf every time
+  // a note is touched. A shelf should be STABLE — sort by name instead.
+  const stable = [...notes].sort((a, b) => a.id.localeCompare(b.id, undefined, { sensitivity: 'base' }));
+  for (const note of stable) {
     const slash = note.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : note.id.slice(0, slash);
     const list = groups.get(folder);

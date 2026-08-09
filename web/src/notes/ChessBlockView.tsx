@@ -6,7 +6,7 @@ import {
   FlipVertical2,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseSquare, squareRank } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
@@ -62,8 +62,18 @@ function cleanBlockPgn(pgn: string): string {
  * Every change is written back to the node's `pgn` attribute, which is what
  * the autosave serialises into the ```chess fence.
  */
-export function ChessBlockView({ node, updateAttributes, deleteNode, selected }: NodeViewProps) {
+export function ChessBlockView({ node, updateAttributes, deleteNode, selected, editor }: NodeViewProps) {
   const initial = useMemo(() => parseBlock(String(node.attrs.pgn ?? '*')), []);
+  // Reading mode follows the note's Edit toggle: replay stays live, but the
+  // position can't be changed and the board can't be deleted or reloaded.
+  const [editable, setEditable] = useState(editor.isEditable);
+  useEffect(() => {
+    const sync = (): void => setEditable(editor.isEditable);
+    editor.on('update', sync);
+    return () => {
+      editor.off('update', sync);
+    };
+  }, [editor]);
   const [tree, setTree] = useState<MoveTree>(initial.tree);
   // A note board opens at the END of its line — the position the note is
   // talking about — not at the start; step back to replay.
@@ -149,7 +159,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected }:
         <Board
           fen={current.fen}
           orientation={orientation}
-          dests={dests}
+          dests={editable ? dests : new Map()}
           lastMove={lastMove}
           check={positionAt(tree, cursorId).isCheck()}
           coordinates={false}
@@ -177,22 +187,26 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected }:
           <Button variant="ghost" size="icon-sm" title="Flip board" onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
             <FlipVertical2 className="size-3.5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            active={pasteOpen}
-            title="Load a FEN or PGN into this board"
-            onClick={() => setPasteOpen((v) => !v)}
-          >
-            <ClipboardPaste className="size-3.5" />
-          </Button>
+          {editable && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={pasteOpen}
+              title="Load a FEN or PGN into this board"
+              onClick={() => setPasteOpen((v) => !v)}
+            >
+              <ClipboardPaste className="size-3.5" />
+            </Button>
+          )}
           <span className="flex-1" />
-          <Button variant="ghost" size="icon-sm" title="Remove this board" onClick={deleteNode}>
-            <Trash2 className="size-3.5" />
-          </Button>
+          {editable && (
+            <Button variant="ghost" size="icon-sm" title="Remove this board" onClick={deleteNode}>
+              <Trash2 className="size-3.5" />
+            </Button>
+          )}
         </div>
 
-        {pasteOpen && (
+        {pasteOpen && editable && (
           <div className="flex flex-col gap-1.5">
             <TextArea
               value={pasteText}

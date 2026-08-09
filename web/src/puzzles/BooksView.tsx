@@ -2,8 +2,12 @@ import {
   BadgeCheck,
   BookMarked,
   BookOpenCheck,
+  ChevronFirst,
+  ChevronLast,
   ChevronLeft,
   ChevronRight,
+  FlipVertical2,
+  LayoutGrid,
   FileUp,
   CircleHelp,
   Cpu,
@@ -650,12 +654,12 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
 }
 
 /**
- * Problem navigator, in the same idiom as the explorer panels: a proper
- * list panel under the moves pane. Rows show number, tier and state; the
- * current problem is highlighted and kept in view. Height is draggable
- * and remembered (Panel resizeKey), like the other side panels.
+ * The book's puzzle grid, revealed from the Puzzle panel's header the way
+ * the lichess trainer reveals its difficulty row — a jump pad, not a
+ * permanent panel. Cards show number, tier and state; the current puzzle
+ * is highlighted and scrolled into view.
  */
-function PuzzleNavigator({
+function PuzzleGrid({
   slug,
   puzzles,
   progress,
@@ -666,7 +670,6 @@ function PuzzleNavigator({
   progress: Record<string, PuzzleProgress>;
   currentId: string;
 }) {
-  const at = puzzles.findIndex((p) => p.id === currentId);
   const currentRef = useRef<HTMLButtonElement>(null);
   // puzzles.length in the deps: the book loads async, so the row to scroll
   // to may not exist on the first run.
@@ -678,29 +681,7 @@ function PuzzleNavigator({
     if (target) navigate('puzzles', 'books', slug, target.id);
   };
   return (
-    // stacked:order-last — on phones the Submit row must sit right under
-    // the moves panel, with the (tall) jump grid after it.
-    <Panel flush resizeKey="book-problems" defaultHeight={260} className="min-h-[8rem] stacked:order-last">
-      <PanelHeader
-        title="Puzzles"
-        actions={
-          <>
-            <Button variant="ghost" size="icon-sm" title="Previous puzzle" disabled={at <= 0} onClick={() => go(at - 1)}>
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title="Next puzzle"
-              disabled={at < 0 || at >= puzzles.length - 1}
-              onClick={() => go(at + 1)}
-            >
-              <ChevronRight className="size-3.5" />
-            </Button>
-          </>
-        }
-      />
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+    <div className="max-h-60 overflow-y-auto overscroll-contain p-2">
         {/* Same card language as the book page, at panel scale: state
             colours the tile, the corner icon is the fidelity tier, and the
             current puzzle wears the primary ring. */}
@@ -746,8 +727,7 @@ function PuzzleNavigator({
             );
           })}
         </div>
-      </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -1588,6 +1568,10 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [helped, setHelped] = useState(false);
   const [wrong, setWrong] = useState(false);
   const [engineApproved, setEngineApproved] = useState(false);
+  const [flipped, setFlipped] = useState(false);
+  // The puzzle grid reveals from the Puzzle panel header, like the lichess
+  // trainer's difficulty row.
+  const [showNav, setShowNav] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
@@ -1621,6 +1605,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setHelped(false);
     setWrong(false);
     setEngineApproved(false);
+    setFlipped(false);
     reported.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book, puzzleId]);
@@ -1813,9 +1798,16 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     );
   }
 
-  const orientation = parseFen(puzzle.fen).unwrap().turn;
+  const solverSide = parseFen(puzzle.fen).unwrap().turn;
+  const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
   const next = nextUnsolved();
   const hasMoves = getNode(tree, tree.rootId).children.length > 0;
+  // Bottom-band navigation over the entered line (view-only stepping).
+  const tipId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
+  const atRoot = cursorId === tree.rootId;
+  const goTo = (id: NodeId | undefined): void => {
+    if (id) setCursorId(id);
+  };
 
   const header = (
     <div className="flex shrink-0 items-center gap-2">
@@ -1886,37 +1878,155 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
               />
             )}
           </div>
-          <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
-            <SideDot side={pos.turn} />
-            <span
-              className={cn(
-                phase === 'done' && won
-                  ? 'text-good'
-                  : phase === 'done' && !helped
-                    ? 'text-bad'
-                    : 'text-muted',
-              )}
-            >
-              {phase === 'checking'
-                ? 'Checking your answer…'
-                : phase === 'done'
-                  ? helped
-                    ? 'That is the book line. Retry it clean later.'
-                    : won
-                      ? engineApproved
-                        ? 'Off the book at the end — but the engine approves. Solved.'
-                        : 'Exactly as the book has it.'
-                      : wrong
-                        ? 'Not quite — the marked move is where it goes wrong.'
-                        : 'Correct so far, but the book line goes further.'
-                  : 'Explore freely — only the mainline is judged on submit.'}
-            </span>
-          </div>
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {wide && header}
+
+        {/* The Puzzle panel, in the lichess trainer's shape: status and the
+            solver's own actions live HERE (Submit is the book trainer's
+            grading moment), and the puzzle grid reveals from the header the
+            way the trainer reveals its difficulty row. */}
+        <Panel flush className="shrink-0">
+          <PanelHeader
+            title="Puzzle"
+            actions={
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Previous puzzle"
+                  disabled={index <= 0}
+                  onClick={() => {
+                    const target = book.puzzles[index - 1];
+                    if (target) navigate('puzzles', 'books', slug, target.id);
+                  }}
+                >
+                  <ChevronLeft className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title="Next puzzle"
+                  disabled={index < 0 || index >= book.puzzles.length - 1}
+                  onClick={() => {
+                    const target = book.puzzles[index + 1];
+                    if (target) navigate('puzzles', 'books', slug, target.id);
+                  }}
+                >
+                  <ChevronRight className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  active={showNav}
+                  title="All puzzles in this book"
+                  onClick={() => setShowNav((v) => !v)}
+                >
+                  <LayoutGrid className="size-3.5" />
+                </Button>
+              </>
+            }
+          />
+          {showNav && (
+            <div className="border-line border-b">
+              <PuzzleGrid slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
+            </div>
+          )}
+          <div className="flex flex-col gap-3 p-3">
+            <div className="flex flex-col gap-0.5">
+              {phase === 'done' ? (
+                <p className={cn('text-sm font-semibold', won ? 'text-good' : 'text-bad')}>
+                  {won ? 'Solved!' : helped ? 'Solved with help.' : 'Not this time.'}
+                </p>
+              ) : (
+                <p className="text-fg text-xl font-bold tracking-tight">
+                  {solverSide === 'white' ? 'White' : 'Black'} to play
+                </p>
+              )}
+              <p className="text-muted text-xs leading-relaxed">
+                {phase === 'checking'
+                  ? 'Checking your answer…'
+                  : phase === 'done'
+                    ? helped
+                      ? 'That is the book line. Retry it clean later.'
+                      : won
+                        ? engineApproved
+                          ? 'Off the book at the end — but the engine approves. Solved.'
+                          : 'Exactly as the book has it.'
+                        : wrong
+                          ? 'Not quite — the marked move is where it goes wrong.'
+                          : 'Correct so far, but the book line goes further.'
+                    : 'Explore freely — only the mainline is judged on submit.'}
+              </p>
+            </div>
+
+            {/* The primary action stretches to fill the row (lanph3re: a
+                left-biased cluster looks unbalanced, centring is worse) —
+                secondaries sit compactly at its right. */}
+            <div className="flex flex-wrap gap-2">
+              {phase === 'done' ? (
+                <>
+                  {next && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => navigate('puzzles', 'books', slug, next)}
+                    >
+                      <RotateCw className="size-3.5" />
+                      Next unsolved
+                    </Button>
+                  )}
+                  <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
+                    <RotateCcw className="size-3.5" />
+                    Retry
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={analyse}>
+                    Analyse
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                    disabled={phase !== 'solving' || !hasMoves}
+                    title="Grade the mainline — this is the only judged moment"
+                    onClick={() => void submit()}
+                  >
+                    {phase === 'checking' ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Check className="size-3.5" />
+                    )}
+                    Submit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={phase !== 'solving'}
+                    onClick={showSolution}
+                    title="Counts as a failed attempt"
+                  >
+                    <Eye className="size-3.5" />
+                    Solution
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate('puzzles', 'books', slug)}
+                  >
+                    <X className="size-3.5" />
+                    Skip
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </Panel>
 
         <AnswerPanel
           tree={tree}
@@ -1927,120 +2037,28 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           }
           emptyText="Nothing entered yet — find the first move on the board."
         />
-
-        <PuzzleNavigator slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
-
-        {/* The primary action stretches to fill the row (lanph3re: a left-biased
-            cluster looks unbalanced, centring is worse) — secondaries sit
-            compactly at its right. */}
-        <div className="flex shrink-0 gap-2">
-          {phase === 'done' ? (
-            <>
-              {next && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => navigate('puzzles', 'books', slug, next)}
-                >
-                  <RotateCw className="size-3.5" />
-                  Next unsolved
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
-                <RotateCcw className="size-3.5" />
-                Retry
-              </Button>
-              <Button variant="secondary" size="sm" onClick={analyse}>
-                Analyse
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="primary"
-                size="sm"
-                className="flex-1"
-                disabled={phase !== 'solving' || !hasMoves}
-                title="Grade the mainline — this is the only judged moment"
-                onClick={() => void submit()}
-              >
-                {phase === 'checking' ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Check className="size-3.5" />
-                )}
-                Submit
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={phase !== 'solving'}
-                onClick={showSolution}
-                title="Counts as a failed attempt"
-              >
-                <Eye className="size-3.5" />
-                Solution
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('puzzles', 'books', slug)}
-              >
-                <X className="size-3.5" />
-                Skip
-              </Button>
-            </>
-          )}
-        </div>
       </div>
 
-      {/* Phones: the solver's primary actions in the bottom bar. */}
+      {/* Phones: the bottom band navigates the entered line, like every
+          other board page. The solver's actions (Submit, Solution, Skip)
+          live in the Puzzle panel above — no duplicates here. */}
       <MobileActionBar>
-        <div className="flex flex-1 items-center gap-2 px-3 py-1.5">
-          {phase === 'done' ? (
-            <>
-              {next && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => navigate('puzzles', 'books', slug, next)}
-                >
-                  <RotateCw className="size-3.5" />
-                  Next
-                </Button>
-              )}
-              <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
-                <RotateCcw className="size-3.5" />
-                Retry
-              </Button>
-              <Button variant="secondary" size="sm" onClick={analyse}>
-                Analyse
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="primary"
-                size="sm"
-                className="flex-1"
-                disabled={phase !== 'solving' || !hasMoves}
-                onClick={() => void submit()}
-              >
-                {phase === 'checking' ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Check className="size-3.5" />
-                )}
-                Submit
-              </Button>
-              <Button variant="secondary" size="sm" disabled={phase !== 'solving'} onClick={showSolution}>
-                <Eye className="size-3.5" />
-                Solution
-              </Button>
-            </>
-          )}
+        <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
+          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(tree.rootId)} title="Start">
+            <ChevronFirst className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(node.parentId ?? undefined)} title="Back">
+            <ChevronLeft className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={node.children.length === 0} onClick={() => goTo(node.children[0])} title="Forward">
+            <ChevronRight className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={cursorId === tipId} onClick={() => goTo(tipId)} title="Latest">
+            <ChevronLast className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title="Flip board">
+            <FlipVertical2 className="size-[1.1rem]" />
+          </Button>
         </div>
       </MobileActionBar>
     </div>

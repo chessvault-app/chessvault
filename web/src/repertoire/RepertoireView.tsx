@@ -1,6 +1,6 @@
 import { parseSquare } from 'chessops/util';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Compass, FlipVertical2, Play, RotateCcw, SwatchBook } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { treeToPgn } from '@shared/pgn';
@@ -13,6 +13,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
+import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Select } from '@/ui/Select';
 
@@ -92,10 +93,102 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
   return piece?.role === 'pawn' && lastRank ? `${orig}${dest}q` : `${orig}${dest}`;
 }
 
+/**
+ * Opening picker: the curated spread when idle, the ENTIRE ECO catalogue
+ * (served from the vendored lichess chess-openings set) as soon as you type.
+ * A combobox rather than a Select — 3,800 openings need a filter, not a list.
+ */
+function OpeningPicker({
+  value,
+  onChange,
+}: {
+  value: Template;
+  onChange: (t: Template) => void;
+}) {
+  const [all, setAll] = useState<Template[] | null>(null);
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/openings')
+      .then((r) => r.json())
+      .then((body: { openings?: Template[] }) => {
+        if (!cancelled) setAll(body.openings ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setAll([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return TEMPLATES;
+    return (all ?? []).filter(
+      (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
+    ).slice(0, 50);
+  }, [query, all]);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Input
+        inputSize="sm"
+        value={open ? query : value.eco ? `${value.eco}  ${value.name}` : value.name}
+        placeholder="Search any opening or ECO code…"
+        onFocus={() => {
+          setOpen(true);
+          setQuery('');
+        }}
+        onBlur={() => setOpen(false)}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
+        }}
+      />
+      {open && (
+        <ul className="border-line bg-surface max-h-44 overflow-y-auto overscroll-contain rounded-lg border p-1">
+          {matches.length === 0 ? (
+            <li className="text-subtle px-2 py-1.5 text-xs">
+              {all === null ? 'Loading the catalogue…' : 'No opening matches that.'}
+            </li>
+          ) : (
+            matches.map((o, i) => (
+              <li key={`${o.eco}-${o.name}-${i}`}>
+                <button
+                  type="button"
+                  // mousedown, not click: it fires before the input's blur
+                  // closes the list.
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    onChange(o);
+                    setOpen(false);
+                    (document.activeElement as HTMLElement | null)?.blur();
+                  }}
+                  className={cn(
+                    'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                    'hover:bg-surface-2 transition-colors duration-100',
+                    o.name === value.name && o.eco === value.eco ? 'text-primary font-medium' : 'text-fg',
+                  )}
+                >
+                  {o.eco && <span className="text-subtle w-7 shrink-0 font-mono text-[0.625rem]">{o.eco}</span>}
+                  <span className="min-w-0 flex-1 truncate">{o.name}</span>
+                </button>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function RepertoireView() {
   const [userColor, setUserColor] = useState<'white' | 'black'>('white');
   const [band, setBand] = useState(RATING_BANDS[1]!.ratings);
-  const [templateName, setTemplateName] = useState(TEMPLATES[0]!.name);
+  const [template, setTemplate] = useState<Template>(TEMPLATES[0]!);
 
   const [tree, setTree] = useState<MoveTree>(() => createTree());
   const [tipId, setTipId] = useState<NodeId>(tree.rootId);
@@ -108,7 +201,10 @@ export function RepertoireView() {
 
   const node = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
-  const line = useMemo(() => mainlineFrom(tree, tree.rootId), [tree]);
+  // mainlineFrom EXCLUDES its starting node — prepend the root so index 0 is
+  // the start position. Without it the first move fell off the moves panel
+  // (slice(1) skipped a MOVE) and "First move" could never reach the start.
+  const line = useMemo(() => [tree.rootId, ...mainlineFrom(tree, tree.rootId)], [tree]);
   const atTip = cursorId === tipId;
   const orientation = flipped ? (userColor === 'white' ? 'black' : 'white') : userColor;
 
@@ -178,7 +274,6 @@ export function RepertoireView() {
 
   const startGame = (): void => {
     runId.current += 1;
-    const template = TEMPLATES.find((t) => t.name === templateName) ?? TEMPLATES[0]!;
     let t = createTree();
     let id = t.rootId;
     for (const san of template.sans) {
@@ -277,19 +372,7 @@ export function RepertoireView() {
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-muted text-xs font-medium">Opening</span>
-                <Select
-                  value={templateName}
-                  onChange={setTemplateName}
-                  ariaLabel="Opening"
-                  groups={[
-                    {
-                      options: TEMPLATES.map((t) => ({
-                        value: t.name,
-                        label: t.eco ? `${t.eco}  ${t.name}` : t.name,
-                      })),
-                    },
-                  ]}
-                />
+                <OpeningPicker value={template} onChange={setTemplate} />
               </label>
               <Button variant="primary" size="sm" className="self-start" onClick={startGame}>
                 <Play className="size-3.5" />

@@ -27,7 +27,15 @@ import { SideDot } from '@/ui/SideDot';
  * user shapes + engine arrow, promotion picker, navigation controls. Analysis
  * and Studies render exactly this; they differ only in their side columns.
  */
-export function AnalysisBoard({ editablePlayers = false }: { editablePlayers?: boolean } = {}) {
+export function AnalysisBoard({
+  editablePlayers = false,
+  locked = false,
+}: {
+  editablePlayers?: boolean;
+  /** Reading mode: navigation still works, but pieces can't be moved and
+   *  drawn shapes aren't persisted — the document is not being edited. */
+  locked?: boolean;
+} = {}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const orientation = useAnalysis((s) => s.orientation);
@@ -127,13 +135,13 @@ export function AnalysisBoard({ editablePlayers = false }: { editablePlayers?: b
             <Board
               fen={node.fen}
               orientation={orientation}
-              dests={dests}
+              dests={locked ? new Map() : dests}
               lastMove={lastMove}
               check={isCheck}
               shapes={toDrawShapes(node.shapes)}
               autoShapes={engineArrow}
               onMove={playMove}
-              onShapesChange={(next) => setShapes(cursorId, fromDrawShapes(next))}
+              onShapesChange={locked ? undefined : (next) => setShapes(cursorId, fromDrawShapes(next))}
             />
             {pendingPromotion && (
               <PromotionPicker

@@ -10,6 +10,7 @@ import { authApi, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
+import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { refGamesApi } from './refgames.ts';
@@ -63,6 +64,7 @@ app.route('/api', authApi());
 app.use('/api/*', requireAuth());
 
 app.route('/api', booksApi());
+app.route('/api', openingsApi());
 app.route('/api', lichessExplorerApi());
 app.route('/api', studiesApi());
 // The games collection speaks the same document API as studies: an annotated
