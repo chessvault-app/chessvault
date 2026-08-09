@@ -155,7 +155,9 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
       )}
       data-chess-block
     >
-      <div className="relative w-full max-w-[19rem] shrink-0" contentEditable={false}>
+      {/* Narrow: the board takes the note's full width with the moves
+          underneath; the side-by-side split only from sm up. */}
+      <div className="relative w-full shrink-0 sm:max-w-[19rem]" contentEditable={false}>
         <Board
           fen={current.fen}
           orientation={orientation}

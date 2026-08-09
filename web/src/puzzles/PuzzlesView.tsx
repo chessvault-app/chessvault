@@ -13,6 +13,7 @@ import {
   Puzzle,
   RotateCw,
   Swords,
+  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Color, Role } from 'chessops/types';
@@ -746,6 +747,7 @@ function Trainer({
                       size="sm"
                       onClick={() => void loadNext(theme, difficulty)}
                     >
+                      <X className="size-3.5" />
                       Skip
                     </Button>
                   )}

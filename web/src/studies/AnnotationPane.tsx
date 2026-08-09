@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
+import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useAnalysis } from '@/store/analysis';
+import { Button } from '@/ui/Button';
 
 /** Move-quality NAGs — one of these at most, like Lichess. */
 const QUALITY_NAGS = [1, 2, 3, 4, 5, 6];
@@ -36,6 +38,8 @@ export function AnnotationPane({
   const atRoot = node.parentId === null;
 
   const [draft, setDraft] = useState(node.comment ?? '');
+  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
+  const [sheet, setSheet] = useState(false);
 
   // Keep the draft in step when the cursor moves to another node.
   useEffect(() => {
@@ -60,6 +64,11 @@ export function AnnotationPane({
   // tree, and the bottom box looked like a dead input (lanph3re's report).
   if (!editing) return null;
 
+  const placeholder = atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`;
+  const flush = (): void => {
+    if (draft !== (node.comment ?? '')) setComment(cursorId, draft);
+  };
+
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
       {!atRoot && (
@@ -83,16 +92,67 @@ export function AnnotationPane({
           ))}
         </div>
       )}
-      <TextArea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          if (draft !== (node.comment ?? '')) setComment(cursorId, draft);
-        }}
-        placeholder={atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`}
-        rows={2}
-        className="w-full resize-none leading-relaxed"
-      />
+      {coarse ? (
+        // Touch: the inline textarea sits exactly where the keyboard (and
+        // the bottom bar riding above it) land, so typing into it was a
+        // mash. Tapping opens a sheet pinned to the TOP of the viewport —
+        // the same idiom as the opening search.
+        <button
+          type="button"
+          onClick={() => setSheet(true)}
+          className="border-line bg-surface-inset min-h-9 w-full rounded-md border px-2.5 py-2 text-left text-xs leading-relaxed"
+        >
+          {draft ? (
+            <span className="text-fg line-clamp-2 whitespace-pre-wrap">{draft}</span>
+          ) : (
+            <span className="text-subtle">{placeholder}</span>
+          )}
+        </button>
+      ) : (
+        <TextArea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={flush}
+          placeholder={placeholder}
+          rows={2}
+          className="w-full resize-none leading-relaxed"
+        />
+      )}
+      {sheet && coarse && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50"
+          onPointerDown={() => {
+            setSheet(false);
+            flush();
+            suppressNextClick();
+          }}
+        >
+          <div
+            className="bg-surface border-line absolute inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] flex flex-col gap-2 rounded-xl border p-3 shadow-[var(--shadow-pop)]"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <p className="text-subtle text-xs">{placeholder}</p>
+            <TextArea
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={4}
+              className="w-full resize-none leading-relaxed"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              className="self-end"
+              onClick={() => {
+                setSheet(false);
+                flush();
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
