@@ -12,6 +12,7 @@ import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
+import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
@@ -132,6 +133,12 @@ export function AnalysisView() {
           )}
         />
       </div>
+
+      {/* Phones: move navigation lives in the bottom bar, replacing the
+          global tabs while the board is open. */}
+      <MobileActionBar>
+        <BoardControls keyboard={false} className="py-1.5" />
+      </MobileActionBar>
     </div>
   );
 }

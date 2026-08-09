@@ -52,6 +52,7 @@ import { SkeletonRows } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
@@ -2006,6 +2007,55 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           )}
         </div>
       </div>
+
+      {/* Phones: the solver's primary actions in the bottom bar. */}
+      <MobileActionBar>
+        <div className="flex flex-1 items-center gap-2 px-3 py-1.5">
+          {phase === 'done' ? (
+            <>
+              {next && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate('puzzles', 'books', slug, next)}
+                >
+                  <RotateCw className="size-3.5" />
+                  Next
+                </Button>
+              )}
+              <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
+                <RotateCcw className="size-3.5" />
+                Retry
+              </Button>
+              <Button variant="secondary" size="sm" onClick={analyse}>
+                Analyse
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="primary"
+                size="sm"
+                className="flex-1"
+                disabled={phase !== 'solving' || !hasMoves}
+                onClick={() => void submit()}
+              >
+                {phase === 'checking' ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Check className="size-3.5" />
+                )}
+                Submit
+              </Button>
+              <Button variant="secondary" size="sm" disabled={phase !== 'solving'} onClick={showSolution}>
+                <Eye className="size-3.5" />
+                Solution
+              </Button>
+            </>
+          )}
+        </div>
+      </MobileActionBar>
     </div>
   );
 }

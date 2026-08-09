@@ -18,6 +18,7 @@ import { Suspense, lazy } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
+import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { AnalysisView } from '@/analysis/AnalysisView';
 
@@ -101,8 +102,28 @@ function Shell() {
         </Suspense>
       </main>
 
-      <MobileNav active={section} />
+      <MobileBottom active={section} />
     </div>
+  );
+}
+
+/** The phone bottom row: global tabs, or a page's contextual action bar
+    when one is claimed (see MobileActionBar). The slot is always mounted so
+    a page's portal has a target; it only shows while claimed. */
+function MobileBottom({ active }: { active: Section }) {
+  const claimed = useMobileBarClaimed();
+  return (
+    <>
+      <div
+        id={MOBILE_BAR_SLOT_ID}
+        className={cn(
+          'bg-surface/85 border-line flex items-stretch border-t backdrop-blur-xl md:hidden',
+          'pb-[env(safe-area-inset-bottom)]',
+          !claimed && 'hidden',
+        )}
+      />
+      {!claimed && <MobileNav active={active} />}
+    </>
   );
 }
 

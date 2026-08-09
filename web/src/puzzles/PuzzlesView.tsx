@@ -28,6 +28,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
+import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { BooksView } from './BooksView';
@@ -455,6 +456,10 @@ function Trainer({
             <StatusBar />
           </Panel>
         </div>
+        {/* Phones: move nav in the bottom bar while analysing. */}
+        <MobileActionBar>
+          <BoardControls keyboard={false} className="py-1.5" />
+        </MobileActionBar>
       </div>
     );
   }
@@ -749,6 +754,60 @@ function Trainer({
           </button>
         )}
       </div>
+
+      {/* Phones: the puzzle's primary actions live in the bottom bar,
+          phase-aware — hint/solution while solving, next/analyse when done. */}
+      <MobileActionBar>
+        <div className="flex flex-1 items-center gap-2 px-3 py-1.5">
+          {phase === 'done' ? (
+            <>
+              <Button
+                variant="primary"
+                size="sm"
+                className="flex-1"
+                onClick={() =>
+                  mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
+                }
+              >
+                <RotateCw className="size-3.5" />
+                {mode === 'single' ? 'Dashboard' : 'Next'}
+              </Button>
+              <Button variant="secondary" size="sm" className="flex-1" onClick={analyse}>
+                <Swords className="size-3.5" />
+                Analyse
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1"
+                disabled={phase !== 'solving'}
+                onClick={() => setHint((h) => Math.min(h + 1, 2))}
+              >
+                <Lightbulb className="size-3.5" />
+                Hint
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex-1"
+                disabled={phase !== 'solving'}
+                onClick={viewSolution}
+              >
+                <Eye className="size-3.5" />
+                Solution
+              </Button>
+              {mode !== 'single' && (
+                <Button variant="ghost" size="sm" onClick={() => void loadNext(theme, difficulty)}>
+                  Skip
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </MobileActionBar>
     </div>
   );
 }

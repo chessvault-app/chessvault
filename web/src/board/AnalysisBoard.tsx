@@ -149,11 +149,11 @@ export function AnalysisBoard({ editablePlayers = false }: { editablePlayers?: b
         </div>
         <PlayerBar side={orientation} editable={editablePlayers} />
       </div>
-      {/* Stacked layouts keep navigation under the board (the side pane may
-          be showing Explorer, and touch has neither wheel nor arrow keys).
-          EVERY side-by-side layout uses the copy in the Moves panel instead
-          (lanph3re: the under-board toolbar looked stray at medium widths). */}
-      <BoardControls className="wide:hidden" />
+      {/* Navigation under the board — but on phones it moves to the
+          contextual bottom bar (MobileActionBar), so hide it below md to
+          reclaim the row. Kept for md-portrait tablets (no bottom bar) and
+          hidden on wide, where the Moves-panel copy takes over. */}
+      <BoardControls className="max-md:hidden wide:hidden" />
     </div>
   );
 }
