@@ -6,32 +6,16 @@ dist/
 data/
 web/public/engine/
 
-# Holds the Lichess API token — never commit this.
-vault/config.json
-
-# The vault is USER DATA — games, notes, studies, imported books. It is
-# never committed: the server creates the skeleton on boot, and book
-# content extracted from commercial PDFs must not be redistributed.
+# The vault is USER DATA — games, notes, studies, config (holds API
+# tokens), imported books. It is never committed: the server creates the
+# skeleton on boot, and book content extracted from commercial PDFs must
+# not be redistributed. Its fine-grained history lives inside it as
+# .history.git (auto-committed by server/vaultBackup.ts).
 vault/*
 !vault/.gitkeep
 
-# Large PGN collections the user drops in to be indexed. The books built from
-# them live in data/, so neither needs version control.
-vault/sources/*
-!vault/sources/.gitkeep
-
-# Book-import diagram crops: bulky jpegs, re-creatable by re-importing the
-# book's PDF. The irreplaceable parts (drafts.json, puzzles, learned font,
-# progress) stay versioned.
-vault/puzzlebooks/*/diagrams/
-
-# The rest of vault/ is deliberately NOT ignored: studies, notes and games are
-# plain text and benefit from being version-controlled.
-
-# The vault's own fine-grained history (auto-committed by the server on every
-# change — see server/vaultBackup.ts). Browse it with:
-#   git --git-dir=vault/.history.git log --stat
-vault/.history.git/
+# Local copies pulled from the server by scripts/backup-vault.sh.
+vault-backups/
 
 .DS_Store
 *.log

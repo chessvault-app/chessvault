@@ -92,6 +92,11 @@ want it. Then:
   Windows installer) and choose *remote* mode with your server URL — or
   *local* mode to self-host against any folder on that machine.
 
+Backups are layered: the server auto-commits every vault change to
+`vault/.history.git` (fine-grained undo), your host's snapshots guard
+against instance loss, and `scripts/backup-vault.sh` pulls the whole
+vault — history included — down to any machine for an off-cloud copy.
+
 ## Everything works offline
 
 No runtime CDN calls: fonts, icons, WASM and CSS are all bundled. The
