@@ -85,6 +85,26 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   clear: () => set({ slug: null, status: 'idle', page: 0, pages: 0, found: [], error: null }),
 }));
 
+/** Downscale the first-page canvas to a shelf-sized JPEG and save it as the
+    book cover. Fire-and-forget: a failed cover must not fail the import. */
+async function uploadCover(slug: string, page: HTMLCanvasElement): Promise<void> {
+  try {
+    const w = 480;
+    const h = Math.round((page.height / page.width) * w);
+    const thumb = document.createElement('canvas');
+    thumb.width = w;
+    thumb.height = h;
+    thumb.getContext('2d')!.drawImage(page, 0, 0, w, h);
+    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/cover`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ image: thumb.toDataURL('image/jpeg', 0.82) }),
+    });
+  } catch {
+    /* cover is a nicety; ignore failures */
+  }
+}
+
 async function scan(
   file: File,
   templates: Template[],
@@ -114,6 +134,13 @@ async function scan(
       canvas.width = Math.round(viewport.width);
       canvas.height = Math.round(viewport.height);
       await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+
+      // The first page becomes the book's shelf cover — generated here from
+      // the PDF, so a book gets a thumbnail with no offline render step.
+      if (pageNo === 1) {
+        const slug = get().slug;
+        if (slug) void uploadCover(slug, canvas);
+      }
 
       for (const rect of detectDiagrams(grayFromCanvas(canvas))) {
         const { dataUrl, board, features } = cropDiagram(canvas, rect);

@@ -253,6 +253,21 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     added: string;
   }
 
+  // Book cover, written by the in-app importer straight from the PDF's first
+  // page — so a book gets a shelf thumbnail with no offline render step.
+  api.put('/puzzlebooks/:slug/cover', async (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as { image?: string };
+    const match = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(body.image ?? '');
+    if (!match) return c.json({ error: 'expected a jpeg/png data URL' }, 400);
+    const bytes = Buffer.from(match[2]!, 'base64');
+    if (bytes.length > 2_000_000) return c.json({ error: 'cover too large' }, 400);
+    mkdirSync(diagramsDir(slug), { recursive: true });
+    writeFileSync(resolve(diagramsDir(slug), 'cover.jpg'), bytes);
+    return c.json({ ok: true });
+  });
+
   api.post('/puzzlebooks/:slug/drafts', async (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
