@@ -370,14 +370,34 @@ export function RepertoireView() {
 
   const startGame = (): void => {
     runId.current += 1;
+    const token = runId.current;
     const { t, id } = seedTree(template);
     setTree(t);
     setTipId(id);
-    setCursorId(id);
     setFlipped(false);
     setError(null);
-    if (positionAt(t, id).turn === userColor) setPhase('playing');
-    else void reply(t, id, band);
+    const last = getNode(t, id);
+    if (positionAt(t, id).turn === userColor) {
+      // The line ends on the OPPONENT'S move and no reply will follow, so
+      // nothing would ever animate (the idle preview already sits on the
+      // final position). Start one move back and play it in a beat later —
+      // the opponent visibly makes the move you are answering.
+      if (last.parentId) {
+        setCursorId(last.parentId);
+        setTimeout(() => {
+          if (runId.current !== token) return;
+          setCursorId(id);
+          playSound(last.san?.includes('x') ? 'capture' : 'move');
+        }, 400);
+      } else {
+        setCursorId(id);
+      }
+      setPhase('playing');
+    } else {
+      // The bot moves first; its reply animates on its own.
+      setCursorId(id);
+      void reply(t, id, band);
+    }
   };
 
   const newGame = (): void => {
