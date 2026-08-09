@@ -129,7 +129,33 @@ export class StockfishEngine {
     }
   }
 
+  /**
+   * Intermediate `info` updates are coalesced onto a ~90 ms timer: the
+   * engine emits dozens a second and each one was a store write, hence a
+   * React commit in every subscriber (and a chessground redraw). The
+   * FINAL update (bestmove) always flushes immediately, so the settled
+   * state is byte-identical — only the intermediate frames are dropped.
+   */
+  private emitTimer: ReturnType<typeof setTimeout> | null = null;
+
   private emit(finished: boolean, bestMove?: string): void {
+    if (!this.currentFen) return;
+    if (!finished) {
+      if (this.emitTimer !== null) return;
+      this.emitTimer = setTimeout(() => {
+        this.emitTimer = null;
+        this.flush(false);
+      }, 90);
+      return;
+    }
+    if (this.emitTimer !== null) {
+      clearTimeout(this.emitTimer);
+      this.emitTimer = null;
+    }
+    this.flush(true, bestMove);
+  }
+
+  private flush(finished: boolean, bestMove?: string): void {
     if (!this.currentFen) return;
     const lines = [...this.lines.values()].sort((a, b) => a.multipv - b.multipv);
     this.onUpdate({
@@ -190,6 +216,12 @@ export class StockfishEngine {
       return;
     }
 
+    // Drop any coalesced frame from the previous position — it would
+    // publish the new fen with the old (now cleared) lines.
+    if (this.emitTimer !== null) {
+      clearTimeout(this.emitTimer);
+      this.emitTimer = null;
+    }
     this.lines.clear();
     this.currentFen = fen;
     this.searching = true;
@@ -208,6 +240,10 @@ export class StockfishEngine {
 
   /** Shut the engine down completely and release its memory. */
   terminate(): void {
+    if (this.emitTimer !== null) {
+      clearTimeout(this.emitTimer);
+      this.emitTimer = null;
+    }
     this.queued = null;
     this.searching = false;
     this.pendingStop = false;

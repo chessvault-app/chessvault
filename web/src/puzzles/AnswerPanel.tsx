@@ -32,7 +32,7 @@ export function AnswerPanel({
   useEffect(() => {
     scroller.current
       ?.querySelector('[data-active="true"]')
-      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      ?.scrollIntoView({ block: 'nearest' });
   }, [cursorId]);
 
   const node = getNode(tree, cursorId);

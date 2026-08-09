@@ -41,6 +41,16 @@ const DEFAULT_STATE: UserState = { attempts: 0, wins: 0, streak: 0 };
  * dodges already-attempted puzzles, and if everything drawn is attempted
  * (tiny pools) the last draw is served anyway — a repeat beats a dead end.
  */
+/**
+ * COUNT(*) over the rating index walks every matching row — measured at
+ * ~158 ms across the full 6.1M-puzzle table, paid on EVERY "next puzzle".
+ * The database is opened read-only and is never rewritten in-process (a
+ * rebuild renames a fresh file over it and needs a restart, see the handle
+ * comment below), so the count for a given filter cannot change: cache it
+ * for the process lifetime, exactly like themesCache.
+ */
+const countCache = new Map<string, number>();
+
 function pickPuzzle(
   db: InstanceType<typeof Database>,
   min: number,
@@ -52,7 +62,12 @@ function pickPuzzle(
     ? 'FROM themes WHERE theme = ? AND rating BETWEEN ? AND ?'
     : 'FROM puzzles WHERE rating BETWEEN ? AND ?';
   const args = theme ? [theme, min, max] : [min, max];
-  const count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
+  const cacheKey = `${theme ?? ''}|${min}|${max}`;
+  let count = countCache.get(cacheKey);
+  if (count === undefined) {
+    count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
+    countCache.set(cacheKey, count);
+  }
   if (count === 0) return null;
 
   const byId = db.prepare(

@@ -145,13 +145,19 @@ export const useReview = create<ReviewState>()((set, get) => ({
       // The review owns quality NAGs (1..6) on the mainline, like lichess
       // server analysis: judged moves get theirs, unjudged moves lose any
       // stale one. Positional NAGs and variations are untouched.
+      // ONE tree commit, not one per judged move: setNags copies the whole
+      // node record each call, so a 200-ply review was 200 copies of a
+      // 200-key map (and 200 store writes, each waking the autosave).
       const current = useAnalysis.getState();
+      const nodes = { ...current.tree.nodes };
       for (const verdict of verdicts) {
         const id = line[verdict.ply]!;
-        const node = getNode(current.tree, id);
+        const node = nodes[id];
+        if (!node) continue;
         const rest = node.nags.filter((n) => n < 1 || n > 6);
-        current.setNags(id, verdict.nag === null ? rest : [...rest, verdict.nag]);
+        nodes[id] = { ...node, nags: verdict.nag === null ? rest : [...rest, verdict.nag] };
       }
+      useAnalysis.setState({ tree: { ...current.tree, nodes } });
 
       set({
         status: 'done',

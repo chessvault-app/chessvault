@@ -282,9 +282,16 @@ export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fe
           failed.push({ name, reason: pgn.trim() ? 'too large' : 'empty export' });
           continue;
         }
-        let base = sanitizeName(name);
+        // The disambiguated name is what got WRITTEN, so it is also what
+        // must be reported — reporting the bare name pointed the client at
+        // the previously imported study of the same name.
+        const wanted = sanitizeName(name);
+        let base = wanted;
         let file = resolve(dir, `${base}.pgn`);
-        for (let n = 2; existsSync(file); n++) file = resolve(dir, `${base} (${n}).pgn`);
+        for (let n = 2; existsSync(file); n++) {
+          base = `${wanted} (${n})`;
+          file = resolve(dir, `${base}.pgn`);
+        }
         writeFileSync(file, pgn);
         imported.push(folder ? `${folder}/${base}` : base);
       } catch {

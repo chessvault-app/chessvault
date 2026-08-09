@@ -284,7 +284,7 @@ function EliteBrowser() {
   const fenCache = useRef<Map<number, string>>(new Map());
   const previewSeq = useRef(0);
   const previewFor = useRef<number | null>(null);
-  const showPreview = async (game: RefGame, anchor: Element): Promise<void> => {
+  const showPreview = async (game: RefGame, anchor: Element, viaTap = false): Promise<void> => {
     const seq = ++previewSeq.current;
     let fen = fenCache.current.get(game.id);
     if (!fen) {
@@ -308,6 +308,10 @@ function EliteBrowser() {
       orientation: 'white',
       top: Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200),
       left: Math.max(rect.left - 192, 8),
+      // Touch opens the centred overlay (its scrim dismisses it), exactly
+      // like the collection rows — a beside-row popover on a phone is
+      // pointer-events-none AND covers the row it describes.
+      ...(viaTap ? { pinned: true } : {}),
     });
   };
   const hidePreview = (): void => {
@@ -401,7 +405,7 @@ function EliteBrowser() {
                         hidePreview();
                       } else {
                         previewFor.current = g.id;
-                        void showPreview(g, e.currentTarget);
+                        void showPreview(g, e.currentTarget, true);
                       }
                     }}
                   />
@@ -433,7 +437,7 @@ function EliteBrowser() {
           )}
         </ul>
       </Panel>
-      <GamePreview preview={preview} onClose={() => setPreview(null)} />
+      <GamePreview preview={preview} onClose={hidePreview} />
     </div>
   );
 }

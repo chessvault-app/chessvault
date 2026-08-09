@@ -5,6 +5,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -67,6 +68,53 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   const validBook = (slug: string): boolean =>
     SLUG_RE.test(slug) && existsSync(resolve(bookDir(slug), 'book.json'));
 
+  /**
+   * puzzles.json is 500-600 KB per book and was re-read + re-parsed on the
+   * shelf listing AND on every attempt POST (which only needs to know an
+   * id exists). Both derive from file bytes, so an mtime key is exact —
+   * the same pattern as the studies chapter cache. A missing file yields
+   * mtime 0, which invalidates as soon as one appears.
+   */
+  const mtimeOf = (path: string): number => {
+    try {
+      return statSync(path).mtimeMs;
+    } catch {
+      return 0;
+    }
+  };
+  const idsCache = new Map<string, { mtimeMs: number; ids: Set<string> }>();
+  const puzzleIds = (slug: string): Set<string> => {
+    const path = puzzlesPath(slug);
+    const mtimeMs = mtimeOf(path);
+    const hit = idsCache.get(slug);
+    if (hit && hit.mtimeMs === mtimeMs) return hit.ids;
+    const ids = new Set(readJson<BookPuzzle[]>(path, []).map((p) => p.id));
+    idsCache.set(slug, { mtimeMs, ids });
+    return ids;
+  };
+  const tallyCache = new Map<
+    string,
+    { puzzlesMs: number; progressMs: number; tally: { puzzles: number; solved: number; failed: number } }
+  >();
+  const bookTally = (slug: string): { puzzles: number; solved: number; failed: number } => {
+    const puzzlesMs = mtimeOf(puzzlesPath(slug));
+    const progressMs = mtimeOf(progressPath(slug));
+    const hit = tallyCache.get(slug);
+    if (hit && hit.puzzlesMs === puzzlesMs && hit.progressMs === progressMs) return hit.tally;
+    const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
+    const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
+    let solved = 0;
+    let failed = 0;
+    for (const p of puzzles) {
+      const last = progress[p.id]?.last;
+      if (last === 'win') solved++;
+      else if (last === 'loss') failed++;
+    }
+    const tally = { puzzles: puzzles.length, solved, failed };
+    tallyCache.set(slug, { puzzlesMs, progressMs, tally });
+    return tally;
+  };
+
   const api = new Hono();
 
   api.get('/puzzlebooks', (c) => {
@@ -79,22 +127,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
           resolve(bookDir(slug), 'book.json'),
           {},
         );
-        const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
-        const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
-        let solved = 0;
-        let failed = 0;
-        for (const p of puzzles) {
-          const last = progress[p.id]?.last;
-          if (last === 'win') solved++;
-          else if (last === 'loss') failed++;
-        }
+        const tally = bookTally(slug);
         return {
           slug,
           title: book.title ?? slug,
           createdAt: book.createdAt ?? null,
-          puzzles: puzzles.length,
-          solved,
-          failed,
+          puzzles: tally.puzzles,
+          solved: tally.solved,
+          failed: tally.failed,
           // Cover scan (diagrams/cover.jpg), written by the book importer.
           cover: existsSync(resolve(diagramsDir(slug), 'cover.jpg')),
         };
@@ -368,8 +408,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     if (typeof body.id !== 'string' || typeof body.win !== 'boolean') {
       return c.json({ error: 'expected { id, win }' }, 400);
     }
-    const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
-    if (!puzzles.some((p) => p.id === body.id)) return c.json({ error: 'unknown puzzle' }, 404);
+    if (!puzzleIds(slug).has(body.id)) return c.json({ error: 'unknown puzzle' }, 404);
     const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
     const prev = progress[body.id];
     progress[body.id] = {

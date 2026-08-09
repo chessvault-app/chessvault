@@ -58,9 +58,18 @@ export function AnalysisBoard({
   const isCheck = pos.isCheck();
   const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
 
-  const lastMove = node.uci
-    ? ([node.uci.slice(0, 2), node.uci.slice(2, 4)] as [string, string])
-    : undefined;
+  // Board props are memoized on their VALUES: this component re-renders on
+  // every engine info line, and a fresh array/Map each time made chessground
+  // re-run set()/setShapes()/setAutoShapes() — three full board redraws per
+  // tick for a position that never changed.
+  const lastMove = useMemo(
+    () =>
+      node.uci
+        ? ([node.uci.slice(0, 2), node.uci.slice(2, 4)] as [string, string])
+        : undefined,
+    [node.uci],
+  );
+  const shapes = useMemo(() => toDrawShapes(node.shapes), [node.shapes]);
 
   const engineOn = useEngine((s) => s.enabled);
   const engineLines = useEngine((s) => s.lines);
@@ -73,12 +82,14 @@ export function AnalysisBoard({
   const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
   const evalScore = topLine ? toWhitePov({ cp: topLine.cp, mate: topLine.mate }, turn) : null;
 
+  // Keyed on the best move STRING: topLine.moves is a fresh array per info
+  // line, so an identity-keyed memo never hit.
+  const best = topLine?.moves[0];
   const engineArrow = useMemo((): DrawShape[] => {
-    const best = topLine?.moves[0];
     if (!best || best.length < 4) return [];
     // An auto-shape, so drawing your own arrows never clobbers it.
     return [{ orig: best.slice(0, 2) as Key, dest: best.slice(2, 4) as Key, brush: 'blue' }];
-  }, [topLine?.moves]);
+  }, [best]);
 
   // Every rendered move sounds — played AND replayed — like lichess. The
   // ref skips the mount so opening a study mid-game stays quiet.
@@ -145,7 +156,7 @@ export function AnalysisBoard({
               dests={dests}
               lastMove={lastMove}
               check={isCheck}
-              shapes={toDrawShapes(node.shapes)}
+              shapes={shapes}
               autoShapes={engineArrow}
               onMove={playMove}
               onShapesChange={locked ? undefined : (next) => setShapes(cursorId, fromDrawShapes(next))}
@@ -243,6 +254,21 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
   const headers = useAnalysis((s) => s.gameHeaders);
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
+
+  // The side's clock after its most recent move at or before the cursor.
+  // Memoized: this bar re-renders with AnalysisBoard on every engine info
+  // line, and the scan walks every ancestor of the cursor. Declared BEFORE
+  // the early return below — hooks must run in the same order every render.
+  const clock = useMemo(() => {
+    let found: number | undefined;
+    for (const id of pathTo(tree, cursorId)) {
+      const n = getNode(tree, id);
+      // Odd plies are White's moves.
+      if (n.clock !== undefined && (n.ply % 2 === 1) === (side === 'white')) found = n.clock;
+    }
+    return found;
+  }, [tree, cursorId, side]);
+
   if (!headers && !editable) return null;
 
   const name = headers?.[side === 'white' ? 'White' : 'Black'] ?? '?';
@@ -257,14 +283,6 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
     useAnalysis.setState({ gameHeaders: Object.keys(next).length > 0 ? next : null });
   };
   const elo = headers?.[side === 'white' ? 'WhiteElo' : 'BlackElo'];
-
-  // The side's clock after its most recent move at or before the cursor.
-  let clock: number | undefined;
-  for (const id of pathTo(tree, cursorId)) {
-    const n = getNode(tree, id);
-    // Odd plies are White's moves.
-    if (n.clock !== undefined && (n.ply % 2 === 1) === (side === 'white')) clock = n.clock;
-  }
 
   const turn = getNode(tree, cursorId).fen.split(' ')[1] === 'b' ? 'black' : 'white';
   const toMove = turn === side;

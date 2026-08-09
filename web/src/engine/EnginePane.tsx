@@ -152,8 +152,11 @@ function PvRow({
   const score = toWhitePov({ cp: line.cp, mate: line.mate }, turn);
 
   // Replaying the line to get SAN is not free, and `info` updates arrive many
-  // times a second, so memoise on the inputs that actually change it.
-  const pv = useMemo(() => formatPv(fen, line.moves), [fen, line.moves]);
+  // times a second — so memoise on the line's VALUE, not the array identity.
+  // parseInfo allocates a fresh moves array per info line, which made the
+  // old identity-keyed memo miss every single time.
+  const pvKey = line.moves.join(' ');
+  const pv = useMemo(() => formatPv(fen, pvKey ? pvKey.split(' ') : []), [fen, pvKey]);
   const advantage = score.mate ?? score.cp ?? 0;
 
   return (

@@ -65,7 +65,7 @@ export function MoveTreePane({ className }: { className?: string }) {
   useEffect(() => {
     scroller.current
       ?.querySelector('[data-active="true"]')
-      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      ?.scrollIntoView({ block: 'nearest' });
   }, [cursorId]);
 
   const root = getNode(tree, tree.rootId);
