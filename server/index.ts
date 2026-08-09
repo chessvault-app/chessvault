@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { logger } from 'hono/logger';
 import { existsSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
@@ -8,7 +9,7 @@ import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
-import { lichessExplorerApi } from './lichess.ts';
+import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { refGamesApi } from './refgames.ts';
@@ -50,6 +51,12 @@ app.get('/api/health', (c) =>
   }),
 );
 
+// Cap request bodies before any handler buffers them: the vault-write
+// routes (studies, notes, draft images) otherwise accept unbounded input.
+// 32 MB clears the largest legitimate case (a book's draft batch) with room
+// to spare; the per-route byte checks refine it.
+app.use('/api/*', bodyLimit({ maxSize: 32 * 1024 * 1024 }));
+
 // Auth first: its own routes stay reachable while everything /api after
 // this point requires the session (no-op unless appPassword is set).
 app.route('/api', authApi());
@@ -68,6 +75,7 @@ app.route('/api', puzzlesApi());
 app.route('/api', refGamesApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', settingsApi());
+app.route('/api', lichessStudiesApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;

@@ -68,6 +68,47 @@ describe('auth gate', () => {
     expect((await login(app, 'hunter2', '8.8.8.8')).status).toBe(200);
   });
 
+  it('keys the throttle on the LAST forwarded-for hop, not a spoofable prefix', async () => {
+    const app = makeApp('hunter2');
+    // Attacker rotates the first XFF element; the trusted proxy (last hop)
+    // stays constant, so the bucket is shared and still locks out.
+    for (let i = 0; i < 10; i++) {
+      const r = await app.request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': `${i}.${i}.${i}.${i}, 5.5.5.5` },
+        body: JSON.stringify({ password: 'wrong' }),
+      });
+      expect(r.status).toBe(401);
+    }
+    const blocked = await app.request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': 'fresh.spoof, 5.5.5.5' },
+      body: JSON.stringify({ password: 'hunter2' }),
+    });
+    expect(blocked.status).toBe(429);
+  });
+
+  it('a successful login does not consume the failure budget', async () => {
+    const app = makeApp('hunter2');
+    for (let i = 0; i < 9; i++) expect((await login(app, 'wrong', '4.4.4.4')).status).toBe(401);
+    // Success in the middle must not tip the bucket over.
+    expect((await login(app, 'hunter2', '4.4.4.4')).status).toBe(200);
+    expect((await login(app, 'hunter2', '4.4.4.4')).status).toBe(200);
+  });
+
+  it('denies (does not fail open) when the config is unreadable', async () => {
+    // A password fn that throws models a corrupt/unreadable config; the real
+    // configPassword returns the UNREADABLE sentinel, which no input equals.
+    const app = new Hono();
+    const sentinel = '\0unreadable\0';
+    app.route('/api', authApi(() => sentinel, () => null));
+    app.use('/api/*', requireAuth(() => sentinel, () => null));
+    app.get('/api/secret', (c) => c.json({ ok: true }));
+    expect((await app.request('/api/secret')).status).toBe(401);
+    // And the sentinel itself is not a submittable password — login errors.
+    expect((await login(app, sentinel, '1.1.1.1')).status).toBe(503);
+  });
+
   it('demands a live authenticator code when 2FA is on', async () => {
     const secret = 'JBSWY3DPEHPK3PXP';
     const app = makeApp('hunter2', secret);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export const SECTIONS = ['home', 'analysis', 'editor', 'studies', 'notes', 'games', 'puzzles', 'settings'] as const;
+export const SECTIONS = ['home', 'analysis', 'editor', 'studies', 'notes', 'games', 'puzzles', 'settings', 'more'] as const;
 export type Section = (typeof SECTIONS)[number];
 
 const isSection = (v: string): v is Section => (SECTIONS as readonly string[]).includes(v);

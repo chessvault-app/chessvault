@@ -112,10 +112,24 @@ function createWindow() {
     icon: join(here, 'icon.png'),
     webPreferences: { preload: join(here, 'preload.cjs') },
   });
-  // Links to lichess/chess.com open in the real browser, not a new shell.
+  // Links to lichess/chess.com open in the real browser, not a new shell —
+  // but only http(s), so a hostile page can't hand the OS an arbitrary URI
+  // scheme (file:, smb:, ms-msdt:, …) to launch.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url);
+    if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
     return { action: 'deny' };
+  });
+  // The window carries the preload bridge (window.vaultShell). Never let an
+  // in-page link navigate it to an arbitrary origin that would then inherit
+  // that bridge — remote mode loads its server once, and that's the only
+  // top-level navigation allowed.
+  win.webContents.on('will-navigate', (event, url) => {
+    const settings = readSettings();
+    const allowed =
+      url.startsWith(`http://127.0.0.1:${LOCAL_PORT}`) ||
+      (settings.mode === 'remote' && settings.url && url.startsWith(settings.url)) ||
+      url.startsWith('file://');
+    if (!allowed) event.preventDefault();
   });
   return win;
 }
@@ -140,6 +154,12 @@ app.whenReady().then(async () => {
   const win = createWindow();
 
   ipcMain.handle('vault:choose', async (_e, mode, url, vaultDir) => {
+    // Remote mode loads this URL as a top-level page that inherits the
+    // preload bridge — force https so a plaintext or exotic-scheme server
+    // can never receive the session cookie or the bridge.
+    if (mode === 'remote' && !/^https:\/\//i.test(url ?? '')) {
+      return { error: 'the server URL must start with https://' };
+    }
     writeSettings({ mode, url: url ?? null, vaultDir: vaultDir ?? null });
     // A different vault means a different server environment.
     serverProc?.kill();

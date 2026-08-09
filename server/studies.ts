@@ -59,24 +59,36 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
 
   api.get(`/${base}`, (c) => {
     const entries = readdirSync(dir, { recursive: true, encoding: 'utf-8' });
-    const studies = entries
-      .filter((f) => f.endsWith(ext))
-      .map((file) => {
+    // A directory whose name ends in the document extension (e.g. a folder
+    // literally called "Foo.pgn") must not be read as a document — statSync
+    // it once and treat only real files as studies. A missing entry (removed
+    // between readdir and stat by the fs watcher) is simply skipped.
+    const stated: { file: string; isFile: boolean; isDir: boolean; size: number; mtime: Date }[] = [];
+    for (const file of entries) {
+      try {
+        const s = statSync(resolve(dir, file));
+        stated.push({ file, isFile: s.isFile(), isDir: s.isDirectory(), size: s.size, mtime: s.mtime });
+      } catch {
+        /* removed between readdir and stat by the fs watcher — skip */
+      }
+    }
+    const studies = stated
+      .filter(({ file, isFile }) => isFile && file.endsWith(ext))
+      .map(({ file, size, mtime }) => {
         const path = resolve(dir, file);
-        const stat = statSync(path);
         return {
           // Ids always use forward slashes, whatever the OS separator is.
           id: file.slice(0, -ext.length).split(sep).join('/'),
           chapters: ext === '.pgn' ? countChapters(readFileSync(path, 'utf-8')) : 1,
-          bytes: stat.size,
-          updatedAt: stat.mtime.toISOString(),
+          bytes: size,
+          updatedAt: mtime.toISOString(),
         };
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     // Folders listed explicitly so empty ones still show as collections.
-    const folders = entries
-      .filter((f) => statSync(resolve(dir, f)).isDirectory())
-      .map((f) => f.split(sep).join('/'))
+    const folders = stated
+      .filter(({ isDir }) => isDir)
+      .map(({ file }) => file.split(sep).join('/'))
       .sort();
     return c.json({ studies, folders });
   });
@@ -156,7 +168,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
         400,
       );
     }
-    if (typeof body?.pgn === 'string' && body.pgn.length > MAX_PGN_BYTES) {
+    if (typeof body?.pgn === "string" && Buffer.byteLength(body.pgn) > MAX_PGN_BYTES) {
       return c.json({ error: 'study too large' }, 413);
     }
     const path = pathOf(name);
@@ -182,7 +194,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
     const body = await c.req.json<{ pgn?: string }>().catch(() => null);
     if (typeof body?.pgn !== 'string') return c.json({ error: 'missing pgn' }, 400);
-    if (body.pgn.length > MAX_PGN_BYTES) return c.json({ error: 'study too large' }, 413);
+    if (Buffer.byteLength(body.pgn) > MAX_PGN_BYTES) return c.json({ error: "study too large" }, 413);
     if (!existsSync(pathOf(id))) return c.json({ error: 'no such study' }, 404);
 
     const path = pathOf(id);

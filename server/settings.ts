@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
@@ -47,8 +48,17 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     const config = readConfig();
     mutate(config);
     const tmp = `${configPath}.tmp`;
-    writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`);
+    // 0600: config.json holds the password, TOTP secret and Lichess token —
+    // keep it owner-only on multi-user hosts.
+    writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
     renameSync(tmp, configPath);
+  };
+
+  /** Constant-time string compare — same reason auth.ts uses one. */
+  const secretEqual = (a: string, b: string): boolean => {
+    const ba = Buffer.from(a);
+    const bb = Buffer.from(b);
+    return ba.length === bb.length && timingSafeEqual(ba, bb);
   };
 
   const api = new Hono();
@@ -94,7 +104,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     const body = (await c.req.json().catch(() => ({}))) as { current?: string; next?: string };
     const config = readConfig();
     const current = config.appPassword?.trim() || null;
-    if (current && body.current !== current) return c.json({ error: 'current password is wrong' }, 403);
+    if (current && !secretEqual(body.current ?? '', current)) {
+      return c.json({ error: 'current password is wrong' }, 403);
+    }
     const next = body.next?.trim() ?? '';
     if (next.length < 8) return c.json({ error: 'new password must be at least 8 characters' }, 400);
     writeConfig((cfg) => {
@@ -139,7 +151,17 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   });
 
   api.post('/settings/2fa/enable', async (c) => {
-    const body = (await c.req.json().catch(() => ({}))) as { secret?: string; code?: string };
+    const body = (await c.req.json().catch(() => ({}))) as {
+      secret?: string;
+      code?: string;
+      currentCode?: string;
+    };
+    // Re-enrolment must not be a way around disable's code check: if 2FA is
+    // already on, prove possession of the current authenticator first.
+    const existing = readConfig().totpSecret?.trim();
+    if (existing && !verifyTotp(existing, body.currentCode ?? '')) {
+      return c.json({ error: 'enter a code from your current authenticator first' }, 403);
+    }
     const secret = body.secret?.trim() ?? '';
     if (!/^[A-Z2-7]{16,}$/.test(secret)) return c.json({ error: 'invalid secret' }, 400);
     if (!verifyTotp(secret, body.code ?? '')) {
@@ -168,9 +190,16 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   // --- The red button ------------------------------------------------------
 
   api.post('/settings/wipe', async (c) => {
-    const body = (await c.req.json().catch(() => ({}))) as { confirm?: string };
+    const body = (await c.req.json().catch(() => ({}))) as { confirm?: string; password?: string };
     if (body.confirm !== 'wipe everything') {
       return c.json({ error: 'confirmation phrase mismatch' }, 400);
+    }
+    // On a gated vault, re-enter the password: this both blocks a stolen
+    // session or CSRF drive-by from destroying data, and is a deliberate
+    // friction on an irreversible action. Ungated (local) vaults skip it.
+    const gate = readConfig().appPassword?.trim();
+    if (gate && !secretEqual(body.password ?? '', gate)) {
+      return c.json({ error: 'password required to wipe' }, 403);
     }
     // Everything in the vault goes — games, studies, notes, puzzles, books,
     // sources, the fine-grained history repo — except config.json, which

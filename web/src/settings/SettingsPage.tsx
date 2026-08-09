@@ -55,7 +55,7 @@ export function SettingsPage() {
         <AppearanceCard />
         <SecurityCard settings={settings} onChanged={refresh} />
         <LichessCard settings={settings} onChanged={refresh} />
-        <DangerCard />
+        <DangerCard gate={settings.gate} />
 
         <p className="text-subtle text-xs leading-relaxed">
           Vault: <span className="font-mono">{settings.vaultPath}</span> — every game, study and
@@ -478,14 +478,19 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
 
 const WIPE_PHRASE = 'wipe everything';
 
-function DangerCard() {
+function DangerCard({ gate }: { gate: boolean }) {
   const [phrase, setPhrase] = useState('');
+  const [password, setPassword] = useState('');
   const [note, setNote] = useState<Note>(null);
 
   const wipe = async (): Promise<void> => {
-    const res = await json('POST', '/api/settings/wipe', { confirm: phrase });
+    const res = await json('POST', '/api/settings/wipe', {
+      confirm: phrase,
+      ...(gate && { password }),
+    });
     if (!res.ok) {
-      setNote({ kind: 'error', text: 'The confirmation phrase did not match.' });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      setNote({ kind: 'error', text: body.error ?? 'The confirmation did not match.' });
       return;
     }
     setNote({ kind: 'ok', text: 'Vault wiped — reloading…' });
@@ -499,17 +504,34 @@ function DangerCard() {
         change history. The app password, 2FA and tokens survive. There is no undo; if the vault
         matters, back it up first.
       </p>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2">
         <Input
           inputSize="lg"
           placeholder={`Type “${WIPE_PHRASE}” to arm`}
-          className="flex-1"
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}
         />
-        <Button variant="danger" disabled={phrase !== WIPE_PHRASE} onClick={() => void wipe()}>
-          Wipe all data
-        </Button>
+        <div className="flex items-center gap-2">
+          {gate && (
+            <Input
+              inputSize="lg"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Confirm your password"
+              className="flex-1"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          )}
+          <Button
+            variant="danger"
+            disabled={phrase !== WIPE_PHRASE || (gate && password === '')}
+            onClick={() => void wipe()}
+            className={gate ? '' : 'ml-auto'}
+          >
+            Wipe all data
+          </Button>
+        </div>
       </div>
       <Feedback note={note} />
     </Card>

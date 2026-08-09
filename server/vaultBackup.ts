@@ -78,7 +78,17 @@ export async function startVaultBackup(
     // magic name like `.git`, so `add -A` would track it and every commit
     // would dirty the next), and the giant source PGN dumps are rebuild
     // inputs, not documents.
-    writeFileSync(resolve(gitDir, 'info', 'exclude'), `${HISTORY_DIR_NAME}/\nsources/\n`);
+    // config.json holds the app password, TOTP secret and Lichess token —
+    // secrets must never enter the history repo (it is pulled off-box by
+    // scripts/backup-vault.sh, and git would retain every past value).
+    writeFileSync(
+      resolve(gitDir, 'info', 'exclude'),
+      `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\n`,
+    );
+    // If an earlier version already tracked it, stop — leaves worktree intact.
+    await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', 'config.json']).catch(
+      () => undefined,
+    );
   }
 
   let timer: ReturnType<typeof setTimeout> | null = null;

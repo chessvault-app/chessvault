@@ -1,5 +1,6 @@
 import {
   ChevronDown,
+  CloudDownload,
   FileUp,
   Folder as FolderIcon,
   FolderInput,
@@ -89,7 +90,7 @@ function CreateMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
   // Either popover (the menu or the name form) dismisses on outside click.
   const menuHost = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<'study' | 'folder' | 'import' | null>(null);
+  const [mode, setMode] = useState<'study' | 'folder' | 'import' | 'lichess' | null>(null);
   const [name, setName] = useState('');
   const [folder, setFolder] = useState('');
   const [pgnText, setPgnText] = useState('');
@@ -159,6 +160,7 @@ function CreateMenu() {
               ['study', 'New study', Library],
               ['folder', 'New collection', FolderIcon],
               ['import', 'Import PGN', FileUp],
+              ['lichess', 'From Lichess', CloudDownload],
             ] as const
           ).map(([kind, label, Icon]) => (
             <button
@@ -182,7 +184,18 @@ function CreateMenu() {
         </div>
       )}
 
-      {mode && (
+      {mode === 'lichess' && (
+        <div
+          className={cn(
+            'border-line bg-surface absolute right-0 top-9 z-40 flex w-80 flex-col gap-2 rounded-lg',
+            'border p-3 shadow-[var(--shadow-pop)]',
+          )}
+        >
+          <LichessImportForm folders={folders} onClose={() => setMode(null)} />
+        </div>
+      )}
+
+      {mode && mode !== 'lichess' && (
         <div
           className={cn(
             'border-line bg-surface absolute right-0 top-9 z-40 flex w-72 flex-col gap-2 rounded-lg',
@@ -269,6 +282,154 @@ function CreateMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+/** List a Lichess user's studies, tick the wanted ones, import server-side.
+    The token (Settings) stays on the server; without one, public studies
+    only. */
+function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: () => void }) {
+  const refresh = useStudy((s) => s.refresh);
+  const [user, setUser] = useState('');
+  const [folder, setFolder] = useState('');
+  const [list, setList] = useState<{ id: string; name: string }[] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  // Prefill the username from the profile once.
+  useEffect(() => {
+    void fetch('/api/settings')
+      .then((r) => (r.ok ? (r.json() as Promise<{ profile?: { lichess?: string } }>) : null))
+      .then((s) => {
+        if (s?.profile?.lichess) setUser((u) => u || s.profile!.lichess!);
+      });
+  }, []);
+
+  const load = async (): Promise<void> => {
+    setBusy(true);
+    setFailure(null);
+    const res = await fetch(`/api/lichess/studies?user=${encodeURIComponent(user.trim())}`);
+    const body = (await res.json().catch(() => null)) as
+      | { studies?: { id: string; name: string }[]; note?: string | null; error?: string }
+      | null;
+    setBusy(false);
+    if (!res.ok || !body?.studies) {
+      setFailure(body?.error ?? 'could not reach Lichess');
+      return;
+    }
+    setList(body.studies);
+    setNote(body.note ?? null);
+    setChecked(new Set());
+  };
+
+  const importChecked = async (): Promise<void> => {
+    if (!list) return;
+    setBusy(true);
+    setFailure(null);
+    const studies = list.filter((s) => checked.has(s.id));
+    const res = await fetch('/api/lichess/studies/import', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ studies, ...(folder && { folder }) }),
+    });
+    const body = (await res.json().catch(() => null)) as
+      | { imported?: string[]; failed?: { name: string; reason: string }[]; error?: string }
+      | null;
+    setBusy(false);
+    if (!res.ok || !body?.imported) {
+      setFailure(body?.error ?? 'import failed');
+      return;
+    }
+    await refresh();
+    if (body.failed?.length) {
+      setFailure(`imported ${body.imported.length}; failed: ${body.failed.map((f) => f.name).join(', ')}`);
+      return;
+    }
+    onClose();
+  };
+
+  return (
+    <>
+      <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
+        Import from Lichess
+      </p>
+      <div className="flex gap-2">
+        <Input
+          autoFocus
+          type="text"
+          value={user}
+          onChange={(e) => setUser(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && user.trim()) void load();
+            if (e.key === 'Escape') onClose();
+          }}
+          placeholder="Lichess username"
+          className="flex-1"
+        />
+        <Button variant="secondary" size="sm" disabled={!user.trim() || busy} onClick={() => void load()}>
+          List
+        </Button>
+      </div>
+      {note && <p className="text-subtle text-xs">{note}</p>}
+      {list && list.length === 0 && <p className="text-subtle text-xs">No studies found.</p>}
+      {list && list.length > 0 && (
+        <>
+          <div className="border-line max-h-52 overflow-y-auto rounded-md border">
+            {list.map(({ id, name }) => (
+              <label
+                key={id}
+                className="hover:bg-surface-2 flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked.has(id)}
+                  onChange={(e) => {
+                    const next = new Set(checked);
+                    if (e.target.checked) next.add(id);
+                    else next.delete(id);
+                    setChecked(next);
+                  }}
+                />
+                <span className="truncate">{name}</span>
+              </label>
+            ))}
+          </div>
+          {folders.length > 0 && (
+            <Select
+              value={folder}
+              onChange={setFolder}
+              ariaLabel="Collection"
+              groups={[
+                {
+                  options: [
+                    { value: '', label: '(no collection)' },
+                    ...folders.map((f) => ({ value: f, label: f })),
+                  ],
+                },
+              ]}
+            />
+          )}
+        </>
+      )}
+      {failure && <p className="text-bad text-xs">{failure}</p>}
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          Cancel
+        </Button>
+        {list && list.length > 0 && (
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={checked.size === 0 || busy}
+            onClick={() => void importChecked()}
+          >
+            {busy ? 'Importing…' : `Import ${checked.size || ''}`}
+          </Button>
+        )}
+      </div>
+    </>
   );
 }
 

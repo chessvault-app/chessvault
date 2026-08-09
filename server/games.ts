@@ -25,7 +25,9 @@ import { VAULT_GAMES } from './paths.ts';
  * afterwards), and individual games are promoted into the collection.
  */
 
-const USER_RE = /^[A-Za-z0-9_.-]{1,60}$/;
+// Leading char must be alphanumeric so a username can never be `..` (which
+// would steer the resolved path one level up out of the provider subdir).
+const USER_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,59}$/;
 const MONTH_RE = /^\d{4}-\d{2}$/;
 // chess.com asks bots to identify themselves; a UA with contact beats a 403.
 const FETCH_HEADERS = { 'User-Agent': 'chess-vault (personal offline study app)' };

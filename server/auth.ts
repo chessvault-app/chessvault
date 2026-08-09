@@ -23,12 +23,28 @@ const COOKIE = 'vault_session';
 const ATTEMPT_LIMIT = 10;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
 
+/**
+ * A sentinel password that no user input can equal (safeEqual compares raw
+ * bytes, and a real password is a plain string). Returned when config.json
+ * exists but cannot be read or parsed: the gate then DENIES rather than
+ * fails open. Only a genuinely absent file means "no gate" (local default).
+ */
+const UNREADABLE = '\0unreadable\0';
+
 function configPassword(): string | null {
+  let raw: string;
   try {
-    const config = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as { appPassword?: string };
-    return config.appPassword?.trim() || null;
+    raw = readFileSync(VAULT_CONFIG, 'utf-8');
+  } catch (err) {
+    // ENOENT: no config at all → local, ungated. Anything else (EACCES,
+    // a directory, a transient FS error) must not open the vault.
+    return (err as NodeJS.ErrnoException).code === 'ENOENT' ? null : UNREADABLE;
+  }
+  try {
+    return (JSON.parse(raw) as { appPassword?: string }).appPassword?.trim() || null;
   } catch {
-    return null;
+    // Present but corrupt — deny, don't admit.
+    return UNREADABLE;
   }
 }
 
@@ -39,6 +55,18 @@ function configTotp(): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The rate-limit key. X-Forwarded-For is a comma list the client can prepend
+ * to; behind exactly one trusted proxy (Caddy) the real client IP is the
+ * LAST entry, which the proxy appends and the client cannot forge. No header
+ * (direct/dev) falls back to a constant — acceptable for a single-user vault.
+ */
+function clientIp(xff: string | undefined): string {
+  if (!xff) return 'local';
+  const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+  return parts.at(-1) ?? 'local';
 }
 
 /** The token binds password AND totp secret: rotating either one (or
@@ -91,17 +119,20 @@ export function authApi(
   const api = new Hono();
 
   // Per-IP login throttle. In-memory is fine: a restart resetting the
-  // window is acceptable for a single-user vault.
+  // window is acceptable for a single-user vault. Counts only failed
+  // attempts (the caller records on failure), and sweeps expired buckets
+  // so a spoofed-key flood cannot grow the map without bound.
   const attempts = new Map<string, { n: number; resetAt: number }>();
-  const throttled = (ip: string): boolean => {
-    const now = Date.now();
+  const isThrottled = (ip: string): boolean => {
     const entry = attempts.get(ip);
-    if (!entry || now > entry.resetAt) {
-      attempts.set(ip, { n: 1, resetAt: now + ATTEMPT_WINDOW_MS });
-      return false;
-    }
-    entry.n++;
-    return entry.n > ATTEMPT_LIMIT;
+    return entry !== undefined && Date.now() <= entry.resetAt && entry.n >= ATTEMPT_LIMIT;
+  };
+  const recordFailure = (ip: string): void => {
+    const now = Date.now();
+    for (const [key, e] of attempts) if (now > e.resetAt) attempts.delete(key);
+    const entry = attempts.get(ip);
+    if (!entry || now > entry.resetAt) attempts.set(ip, { n: 1, resetAt: now + ATTEMPT_WINDOW_MS });
+    else entry.n++;
   };
 
   api.get('/auth/status', (c) => {
@@ -116,16 +147,21 @@ export function authApi(
   api.post('/auth/login', async (c) => {
     const configured = password();
     if (!configured) return c.json({ ok: true }); // nothing to log into
+    // Config present but unreadable: never authenticate (and never let the
+    // sentinel itself be a submittable password).
+    if (configured === UNREADABLE) return c.json({ error: 'vault configuration error' }, 503);
 
-    const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
-    if (throttled(ip)) return c.json({ error: 'too many attempts — try again later' }, 429);
+    const ip = clientIp(c.req.header('x-forwarded-for'));
+    if (isThrottled(ip)) return c.json({ error: 'too many attempts — try again later' }, 429);
 
     const body = (await c.req.json().catch(() => ({}))) as { password?: string; code?: string };
     if (typeof body.password !== 'string' || !safeEqual(body.password, configured)) {
+      recordFailure(ip);
       return c.json({ error: 'wrong password' }, 401);
     }
     const totpSecret = totp();
     if (totpSecret && !verifyTotp(totpSecret, body.code ?? '')) {
+      recordFailure(ip);
       return c.json({ error: 'wrong authenticator code' }, 401);
     }
 

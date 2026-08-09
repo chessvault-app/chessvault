@@ -1,10 +1,10 @@
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
 import { makeFen, parseFen } from 'chessops/fen';
-import { DATA_EXPLORER_CACHE, VAULT_CONFIG } from './paths.ts';
+import { DATA_EXPLORER_CACHE, VAULT_CONFIG, VAULT_STUDIES } from './paths.ts';
 
 /**
  * Proxy for the Lichess opening explorer.
@@ -176,6 +176,107 @@ export function lichessExplorerApi(): Hono {
       },
       502,
     );
+  });
+
+  return api;
+}
+
+// --- Lichess study import ----------------------------------------------------
+// The vault studies ARE the Lichess export format, so importing is: list the
+// user's studies, fetch each chosen one's PGN, write it into vault/studies.
+// The token stays server-side; private studies need it to carry study:read.
+
+const USERNAME_RE = /^[A-Za-z0-9_-]{2,30}$/;
+const STUDY_ID_RE = /^[A-Za-z0-9]{8}$/;
+const FOLDER_RE = /^[A-Za-z0-9][A-Za-z0-9 ()_.-]*$/;
+const MAX_IMPORTS = 50;
+const MAX_STUDY_BYTES = 20 * 1024 * 1024;
+
+/** Flatten a Lichess study name into a legal vault document segment. */
+function sanitizeName(name: string): string {
+  const cleaned = name.replace(/[^A-Za-z0-9 ()_.-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+  return /^[A-Za-z0-9]/.test(cleaned) ? cleaned : `Study ${cleaned}`.trim();
+}
+
+export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fetch = fetch): Hono {
+  const api = new Hono();
+
+  api.get('/lichess/studies', async (c) => {
+    const user = c.req.query('user') ?? '';
+    if (!USERNAME_RE.test(user)) return c.json({ error: 'invalid Lichess username' }, 400);
+    const token = readToken();
+    try {
+      const res = await fetcher(`https://lichess.org/api/study/by/${user}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) {
+        return c.json({ error: res.status === 404 ? 'no such Lichess user' : `Lichess answered ${res.status}` }, 502);
+      }
+      const studies = (await res.text())
+        .split('\n')
+        .filter((line) => line.trim())
+        .slice(0, 200)
+        .map((line) => JSON.parse(line) as { id: string; name: string; updatedAt?: number })
+        .map(({ id, name, updatedAt }) => ({ id, name, updatedAt: updatedAt ?? null }));
+      return c.json({
+        studies,
+        note: token
+          ? null
+          : 'No Lichess token configured — only public studies are listed. Add a token with study:read in Settings to see private ones.',
+      });
+    } catch {
+      return c.json({ error: 'Lichess is unreachable' }, 502);
+    }
+  });
+
+  api.post('/lichess/studies/import', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as {
+      studies?: { id: string; name: string }[];
+      folder?: string;
+    } | null;
+    const wanted = body?.studies ?? [];
+    if (wanted.length === 0 || wanted.length > MAX_IMPORTS) {
+      return c.json({ error: `pick between 1 and ${MAX_IMPORTS} studies` }, 400);
+    }
+    const folder = body?.folder?.trim() ?? '';
+    if (folder && !FOLDER_RE.test(folder)) return c.json({ error: 'invalid collection name' }, 400);
+
+    const token = readToken();
+    const dir = folder ? resolve(studiesDir, folder) : studiesDir;
+    mkdirSync(dir, { recursive: true });
+
+    const imported: string[] = [];
+    const failed: { name: string; reason: string }[] = [];
+    for (const { id, name } of wanted) {
+      if (!STUDY_ID_RE.test(id)) {
+        failed.push({ name, reason: 'bad study id' });
+        continue;
+      }
+      try {
+        const res = await fetcher(`https://lichess.org/api/study/${id}.pgn`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (!res.ok) {
+          failed.push({ name, reason: `Lichess answered ${res.status}` });
+          continue;
+        }
+        const pgn = await res.text();
+        if (!pgn.trim() || pgn.length > MAX_STUDY_BYTES) {
+          failed.push({ name, reason: pgn.trim() ? 'too large' : 'empty export' });
+          continue;
+        }
+        let base = sanitizeName(name);
+        let file = resolve(dir, `${base}.pgn`);
+        for (let n = 2; existsSync(file); n++) file = resolve(dir, `${base} (${n}).pgn`);
+        writeFileSync(file, pgn);
+        imported.push(folder ? `${folder}/${base}` : base);
+      } catch {
+        failed.push({ name, reason: 'unreachable' });
+      }
+    }
+    return c.json({ imported, failed });
   });
 
   return api;

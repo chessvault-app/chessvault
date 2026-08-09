@@ -113,19 +113,33 @@ describe('2fa', () => {
 });
 
 describe('wipe', () => {
-  it('demands the phrase, empties the vault, keeps config', async () => {
+  it('demands the phrase and the password on a gated vault', async () => {
     mkdirSync(join(vault, 'studies'), { recursive: true });
     writeFileSync(join(vault, 'studies', 'a.pgn'), '*');
     mkdirSync(join(vault, 'puzzlebooks', 'x'), { recursive: true });
 
+    // wrong phrase
     expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe' })).status).toBe(400);
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
+    // right phrase, missing/wrong password (gate is on)
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' })).status).toBe(403);
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' })).status).toBe(403);
+    expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
 
-    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' })).status).toBe(200);
+    const ok = await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'hunter22' });
+    expect(ok.status).toBe(200);
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(false);
     expect(existsSync(join(vault, 'puzzlebooks'))).toBe(false);
     expect(existsSync(join(vault, 'studies'))).toBe(true); // skeleton back
     expect(config().appPassword).toBe('hunter22');
+  });
+
+  it('skips the password check on an ungated vault', async () => {
+    writeFileSync(join(vault, 'config.json'), JSON.stringify({}));
+    mkdirSync(join(vault, 'studies'), { recursive: true });
+    writeFileSync(join(vault, 'studies', 'a.pgn'), '*');
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' })).status).toBe(200);
+    expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(false);
   });
 });
 
