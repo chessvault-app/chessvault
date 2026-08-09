@@ -189,14 +189,52 @@ export function BooksView({ params }: { params: string[] }) {
   return <Shelf />;
 }
 
+/**
+ * One book detail per slug, shared by the shelf page, the solver and the
+ * corrector. Stepping between puzzles remounts the trainer (it is keyed on
+ * the puzzle id), which used to re-download the WHOLE book — every puzzle's
+ * position, solution and evidence — just to show the next one.
+ *
+ * Integrity: the only field that changes while a book is open is progress,
+ * and the attempt route returns the updated entry, so it is patched in
+ * exactly rather than guessed. Anything that rewrites puzzles or drafts
+ * (import, re-read, a correction, a delete) calls forgetBook, so the next
+ * read is fresh. A reload starts empty.
+ */
+const bookCache = new Map<string, BookDetail>();
+
+function forgetBook(slug?: string): void {
+  if (slug === undefined) bookCache.clear();
+  else bookCache.delete(slug);
+}
+
+async function loadBook(slug: string, force = false): Promise<BookDetail | null> {
+  if (!force) {
+    const hit = bookCache.get(slug);
+    if (hit) return hit;
+  }
+  const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
+  if (!res.ok) return null;
+  const detail = (await res.json()) as BookDetail;
+  bookCache.set(slug, detail);
+  return detail;
+}
+
+/** Fold a recorded attempt into the cached book, so the grid and
+    "next unsolved" stay correct without a refetch. */
+function patchProgress(slug: string, id: string, progress: PuzzleProgress): BookDetail | null {
+  const hit = bookCache.get(slug);
+  if (!hit) return null;
+  const next = { ...hit, progress: { ...hit.progress, [id]: progress } };
+  bookCache.set(slug, next);
+  return next;
+}
+
 /** Load the puzzle, then reuse the standard entry flow to replace it. */
 function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
   useEffect(() => {
-    void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('missing'))))
-      .then((d: BookDetail) => setBook(d))
-      .catch(() => setBook(null));
+    void loadBook(slug).then(setBook);
   }, [slug]);
   const puzzle = book?.puzzles.find((p) => p.id === puzzleId);
   if (!book) {
@@ -237,6 +275,7 @@ function Shelf() {
 
   const removeBook = async (slug: string): Promise<void> => {
     await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    forgetBook(slug);
     void load();
   };
 
@@ -399,6 +438,7 @@ function BookPage({ slug }: { slug: string }) {
           ),
         });
       }
+      forgetBook(slug);
       await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
@@ -410,18 +450,21 @@ function BookPage({ slug }: { slug: string }) {
     }
   };
 
+  // The shelf page always re-reads: it is where imports, re-reads and
+  // deletes land, and it is entered rarely.
   const load = useCallback(async () => {
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
-    if (!res.ok) {
+    const detail = await loadBook(slug, true);
+    if (!detail) {
       setMissing(true);
       return;
     }
-    setBook((await res.json()) as BookDetail);
+    setBook(detail);
   }, [slug]);
   useEffect(() => void load(), [load]);
 
   const resetProgress = async (): Promise<void> => {
     await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/progress`, { method: 'DELETE' });
+    forgetBook(slug);
     void load();
   };
 
@@ -1323,6 +1366,7 @@ function PuzzleEntry({
   const finish = (): void => {
     // The saved puzzle replaces its draft.
     if (draft) {
+      forgetBook(slug);
       void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts/${draft.id}`, {
         method: 'DELETE',
       }).finally(onDone);
@@ -1529,6 +1573,7 @@ function SolutionRecorder({
 
   const save = async (): Promise<void> => {
     setSaving(true);
+    forgetBook(slug);
     const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -1741,10 +1786,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     : null;
 
   useEffect(() => {
-    void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('missing'))))
-      .then((d: BookDetail) => setBook(d))
-      .catch(() => setBook(null));
+    void loadBook(slug).then(setBook);
   }, [slug]);
 
   useEffect(() => {
@@ -1773,11 +1815,20 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const report = async (win: boolean): Promise<void> => {
     if (reported.current || !puzzle) return;
     reported.current = true;
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`, {
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id: puzzle.id, win }),
     });
+    // Fold the server's own new entry into the cache, so the grid and
+    // "next unsolved" are right on the next puzzle without a refetch.
+    if (res.ok) {
+      const body = (await res.json().catch(() => null)) as { progress?: PuzzleProgress } | null;
+      if (body?.progress) {
+        const next = patchProgress(slug, puzzle.id, body.progress);
+        if (next) setBook(next);
+      }
+    }
   };
 
   /**
