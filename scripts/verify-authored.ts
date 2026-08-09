@@ -9,8 +9,7 @@ import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';
 import { pgnToChapters } from '../shared/pgn.ts';
 import { getNode, mainlineFrom } from '../shared/tree.ts';
-
-const REPO = '.';
+import { REPO_ROOT as REPO } from '../server/paths.ts';
 
 // --- the ECO reference, straight from the vendored TSVs -------------------
 const eco = new Map<string, { eco: string; name: string }>();
