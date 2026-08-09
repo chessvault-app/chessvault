@@ -536,7 +536,6 @@ function Trainer({
               <MoveBadge kind="good" view={view} orientation={orientation} />
             )}
           </div>
-          <StatusStrip phase={phase} failed={failed} />
         </div>
       </div>
 
@@ -687,8 +686,12 @@ function Trainer({
                     {solverSide === 'white' ? 'White' : 'Black'} to play
                   </p>
                 )}
-                <p className="text-muted text-xs leading-relaxed">
-                  {phase === 'loading'
+                <p className={cn('text-xs leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
+                  {phase === 'wrong'
+                    ? 'That is not it — it rolls back, try again.'
+                    : phase === 'setup' || phase === 'opponent'
+                    ? 'Opponent is moving…'
+                    : phase === 'loading'
                     ? 'Finding a puzzle…'
                     : failed
                       ? 'Keep looking — find the best move.'
@@ -818,43 +821,6 @@ function DifficultyRow({
           {d.label}
         </Button>
       ))}
-    </div>
-  );
-}
-
-function StatusStrip({
-  phase,
-  failed,
-}: {
-  phase: Phase;
-  failed: boolean;
-}) {
-  // The side to move now lives big in the Puzzle panel, so the strip only
-  // carries transient status; during plain solving it stays empty.
-  const text =
-    phase === 'loading'
-      ? '…'
-      : phase === 'setup' || phase === 'opponent'
-        ? ''
-        : phase === 'wrong'
-          ? 'That is not it — it rolls back, try again.'
-          : phase === 'done'
-            ? failed
-              ? 'Done. On to the next one.'
-              : 'Well played.'
-            : '';
-  // Empty during plain solving — render nothing so the board sits flush
-  // against the panel (the side-to-move is in the panel now).
-  if (!text) return null;
-  return (
-    <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
-      <span
-        className={cn(
-          phase === 'wrong' ? 'text-bad' : phase === 'done' && !failed ? 'text-good' : 'text-muted',
-        )}
-      >
-        {text}
-      </span>
     </div>
   );
 }
