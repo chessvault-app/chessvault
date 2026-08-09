@@ -73,19 +73,23 @@ export async function startVaultBackup(
     });
     // A bare git-dir plus --work-tree is only accepted with bare=false.
     await git(gitDir, dir, ['config', 'core.bare', 'false']);
-    // Repo-side excludes (never a file in the vault itself): the history
-    // repo must not swallow its own git-dir (`.history.git` is not a
-    // magic name like `.git`, so `add -A` would track it and every commit
-    // would dirty the next), and the giant source PGN dumps are rebuild
-    // inputs, not documents.
-    // config.json holds the app password, TOTP secret and Lichess token —
-    // secrets must never enter the history repo (it is pulled off-box by
-    // scripts/backup-vault.sh, and git would retain every past value).
+  }
+
+  // Run on EVERY startup, not just first init, so a repo created before a
+  // given exclude existed is repaired on the next boot. Repo-side excludes
+  // (never a file in the vault): the history repo must not swallow its own
+  // git-dir (`.history.git` is not a magic name like `.git`, so `add -A`
+  // would track it), the giant source PGN dumps are rebuild inputs, and —
+  // critically — config.json holds the app password, TOTP secret and
+  // Lichess token, which must never enter a repo that scripts/backup-vault.sh
+  // pulls off-box (git would retain every past value).
+  if (existsSync(gitDir)) {
     writeFileSync(
       resolve(gitDir, 'info', 'exclude'),
       `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\n`,
     );
-    // If an earlier version already tracked it, stop — leaves worktree intact.
+    // Untrack config.json if an earlier version committed it; --ignore-unmatch
+    // makes this a no-op once clean. Leaves the working file intact.
     await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', 'config.json']).catch(
       () => undefined,
     );
