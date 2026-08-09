@@ -835,7 +835,7 @@ function StatusStrip({
     phase === 'loading'
       ? '…'
       : phase === 'setup' || phase === 'opponent'
-        ? 'Opponent is moving…'
+        ? ''
         : phase === 'wrong'
           ? 'That is not it — it rolls back, try again.'
           : phase === 'done'

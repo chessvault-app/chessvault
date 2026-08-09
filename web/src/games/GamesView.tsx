@@ -13,6 +13,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { create } from 'zustand';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
@@ -53,6 +54,28 @@ interface ArchiveMonth {
   cached: boolean;
   games: number | null;
 }
+
+/**
+ * The archive browse state lives OUTSIDE the component (a module store), so
+ * opening a game and swiping back doesn't wipe the loaded month — the browser
+ * remounts GamesView, and local state would reset. This keeps the last browse.
+ */
+interface ArchiveBrowseState {
+  provider: 'chesscom' | 'lichess';
+  username: string;
+  months: ArchiveMonth[];
+  offline: boolean;
+  month: string;
+  monthGames: GameSummary[];
+}
+const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
+  provider: 'chesscom',
+  username: localStorage.getItem('chess-vault:chesscom-user') ?? '',
+  months: [],
+  offline: false,
+  month: '',
+  monthGames: [],
+}));
 
 const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
 
@@ -647,8 +670,16 @@ function ArchiveBrowser({
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
 }) {
-  const [username, setUsername] = useState(() => localStorage.getItem('chess-vault:chesscom-user') ?? '');
-  const [provider, setProvider] = useState<'chesscom' | 'lichess'>('chesscom');
+  // Browse state persists across remounts (see useArchiveBrowse); setters
+  // mirror the useState API so the call sites below are unchanged.
+  const { provider, username, months, offline, month, monthGames } = useArchiveBrowse();
+  const setUsername = (v: string | ((p: string) => string)): void =>
+    useArchiveBrowse.setState((s) => ({ username: typeof v === 'function' ? v(s.username) : v }));
+  const setProvider = (v: 'chesscom' | 'lichess'): void => useArchiveBrowse.setState({ provider: v });
+  const setMonths = (v: ArchiveMonth[]): void => useArchiveBrowse.setState({ months: v });
+  const setOffline = (v: boolean): void => useArchiveBrowse.setState({ offline: v });
+  const setMonth = (v: string): void => useArchiveBrowse.setState({ month: v });
+  const setMonthGames = (v: GameSummary[]): void => useArchiveBrowse.setState({ monthGames: v });
   // First run on a device: fall back to the profile usernames from Settings.
   useEffect(() => {
     if (username.trim()) return;
@@ -661,10 +692,6 @@ function ArchiveBrowser({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
   const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
-  const [months, setMonths] = useState<ArchiveMonth[]>([]);
-  const [offline, setOffline] = useState(false);
-  const [month, setMonth] = useState('');
-  const [monthGames, setMonthGames] = useState<GameSummary[]>([]);
   const [loading, setLoading] = useState<'months' | 'games' | null>(null);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);

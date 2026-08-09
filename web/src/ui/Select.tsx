@@ -163,7 +163,10 @@ export function Select({
               : Math.max(140, window.innerHeight - rect.bottom - 16),
           }}
           className={cn(
-            'border-line bg-surface z-50 w-max max-w-72 overflow-y-auto rounded-lg border p-1',
+            // overscroll-contain: scrolling the list must not chain to the
+            // page — a page scroll is what the dismiss handler listens for,
+            // so without this a touch-scroll of the list closed the dropdown.
+            'border-line bg-surface z-50 w-max max-w-72 overflow-y-auto overscroll-contain rounded-lg border p-1',
             'shadow-[var(--shadow-pop)]',
           )}
         >

@@ -319,6 +319,8 @@ function Shelf() {
                     <img
                       src={diagramUrl(b.slug, 'cover.jpg')}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
                     />
                   ) : (
@@ -970,7 +972,7 @@ function DraftThumb({ slug, draft }: { slug: string; draft: BookDraft }) {
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
   const ev = draft.evidence;
   if (!ev?.page || !ev.rect) {
-    return <img src={diagramUrl(slug, draft.image)} alt="diagram" className="w-full" />;
+    return <img src={diagramUrl(slug, draft.image)} alt="diagram" loading="lazy" decoding="async" className="w-full" />;
   }
   const m = 0.015;
   const cx = Math.max(0, ev.rect.x - m);
@@ -985,6 +987,8 @@ function DraftThumb({ slug, draft }: { slug: string; draft: BookDraft }) {
       <img
         src={diagramUrl(slug, ev.page)}
         alt="diagram"
+        loading="lazy"
+        decoding="async"
         onLoad={(e) =>
           setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
         }

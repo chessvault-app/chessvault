@@ -342,9 +342,17 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     }
     const path = resolve(diagramsDir(slug), file);
     if (!existsSync(path)) return c.json({ error: 'unknown diagram' }, 404);
+    // Diagram/evidence files are content-addressed (draft ids, page numbers),
+    // so cache them hard — this was `no-store`, which re-fetched every
+    // thumbnail on every view. cover.jpg can change on re-import, so it gets
+    // a short TTL instead of immutable.
+    const cache =
+      file === 'cover.jpg'
+        ? 'private, max-age=3600'
+        : 'private, max-age=31536000, immutable';
     return c.body(new Uint8Array(readFileSync(path)), 200, {
       'content-type': file.endsWith('.png') ? 'image/png' : 'image/jpeg',
-      'cache-control': 'no-store',
+      'cache-control': cache,
     });
   });
 
