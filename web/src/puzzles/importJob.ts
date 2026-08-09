@@ -161,8 +161,10 @@ async function scan(
       // Yield so navigation and rendering stay smooth between pages.
       await new Promise((r) => setTimeout(r, 0));
     }
-    set({ status: 'done' });
+    // One publish: a transient 'done' before the empty-result check was
+    // observable by subscribers.
     if (results.length === 0) set({ error: 'No diagrams found in that PDF.', status: 'failed' });
+    else set({ status: 'done' });
   } catch (e) {
     set({ status: 'failed', error: `Could not read the PDF: ${(e as Error).message}` });
   }

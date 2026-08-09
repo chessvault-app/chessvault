@@ -11,11 +11,6 @@ let counter = 0;
 /** Monotonic ids; unique per process, which is all a local vault needs. */
 const nextId = (): NodeId => `n${(++counter).toString(36)}`;
 
-/** Reset the id counter. Tests only — keeps ids stable across cases. */
-export function resetIds(): void {
-  counter = 0;
-}
-
 export function createTree(initialFen: string = INITIAL_FEN): MoveTree {
   const rootId = nextId();
   const root: MoveNode = {

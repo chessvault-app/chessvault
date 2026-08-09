@@ -57,6 +57,18 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
   const api = new Hono();
   const pathOf = (id: string): string => resolve(dir, `${id}${ext}`);
 
+  // Chapter counts parsed per file and cached by mtime, the same pattern as
+  // the games list cache — a listing must not re-read every study body.
+  const chapterCache = new Map<string, { mtimeMs: number; chapters: number }>();
+
+  const countChaptersCached = (path: string, mtimeMs: number): number => {
+    const hit = chapterCache.get(path);
+    if (hit && hit.mtimeMs === mtimeMs) return hit.chapters;
+    const chapters = countChapters(readFileSync(path, 'utf-8'));
+    chapterCache.set(path, { mtimeMs, chapters });
+    return chapters;
+  };
+
   api.get(`/${base}`, (c) => {
     const entries = readdirSync(dir, { recursive: true, encoding: 'utf-8' });
     // A directory whose name ends in the document extension (e.g. a folder
@@ -79,7 +91,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
         return {
           // Ids always use forward slashes, whatever the OS separator is.
           id: file.slice(0, -ext.length).split(sep).join('/'),
-          chapters: ext === '.pgn' ? countChapters(readFileSync(path, 'utf-8')) : 1,
+          chapters: ext === '.pgn' ? countChaptersCached(path, mtime.getTime()) : 1,
           bytes: size,
           updatedAt: mtime.toISOString(),
         };

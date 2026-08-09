@@ -72,7 +72,9 @@ export function AnnotationPane({
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
       {!atRoot && (
-        <div className="flex flex-wrap items-center gap-1">
+        // One line that scrolls sideways (the ChipRow idiom) — wrapping made
+        // the palette tall on phones.
+        <div className="flex items-center gap-1 overflow-x-auto scrollbar-hidden">
           {QUALITY_NAGS.map((nag) => (
             <NagButton
               key={nag}

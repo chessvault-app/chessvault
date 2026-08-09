@@ -13,7 +13,7 @@ import { DATA } from './paths.ts';
 const DB_PATH = resolve(DATA, 'refgames.sqlite');
 const PAGE = 50;
 
-export interface RefGameRow {
+interface RefGameRow {
   id: number;
   white: string;
   black: string;

@@ -15,7 +15,7 @@ import { DATA_PUZZLES, VAULT } from './paths.ts';
  *  - puzzles whose latest attempt failed form the review pool.
  */
 
-export interface PuzzleRow {
+interface PuzzleRow {
   id: string;
   fen: string;
   moves: string;
@@ -58,12 +58,11 @@ function pickPuzzle(
   const byId = db.prepare(
     'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
   );
+  const byOffset = db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`);
   let fallback: string | null = null;
   for (let attempt = 0; attempt < 12; attempt++) {
     const offset = Math.floor(Math.random() * count);
-    const id = (
-      db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`).get(...args, offset) as { id: string }
-    ).id;
+    const id = (byOffset.get(...args, offset) as { id: string }).id;
     if (!exclude.has(id)) return byId.get(id) as PuzzleRow;
     fallback = id;
   }
@@ -114,10 +113,10 @@ export function puzzlesApi(
    * re-add a trained puzzle but never introduce a new one, which keeps
    * the dashboard invariant attempts >= review pool.
    */
-  const failedPool = (): string[] => {
+  const failedPool = (lines = historyLines()): string[] => {
     const latest = new Map<string, boolean>();
     const trained = new Set<string>();
-    for (const line of historyLines()) {
+    for (const line of lines) {
       const entry = JSON.parse(line) as { id: string; win: boolean; counted?: boolean };
       latest.set(entry.id, entry.win);
       if (entry.counted !== false) trained.add(entry.id);
@@ -194,8 +193,10 @@ export function puzzlesApi(
 
     // Practice mode: re-serve puzzles whose latest attempt failed.
     if (c.req.query('mode') === 'failed') {
-      const pool = failedPool();
-      const last = historyLines().at(-1);
+      // One read of the history log serves both the pool and the last id.
+      const lines = historyLines();
+      const pool = failedPool(lines);
+      const last = lines.at(-1);
       const lastId = last ? (JSON.parse(last) as { id: string }).id : null;
       const candidates = pool.length > 1 ? pool.filter((id) => id !== lastId) : pool;
       if (candidates.length === 0) {

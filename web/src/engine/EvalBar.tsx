@@ -6,8 +6,6 @@ interface EvalBarProps {
   score: { cp?: number; mate?: number } | null;
   /** Vertical bar beside the board, or horizontal above a pane. */
   orientation?: 'vertical' | 'horizontal';
-  /** Print the score inside the bar. Off by default — usually shown alongside. */
-  showLabel?: boolean;
   className?: string;
 }
 
@@ -18,16 +16,10 @@ interface EvalBarProps {
  * is the convention every chess site uses — flipping it with the board would
  * make the same position appear to change evaluation.
  */
-export function EvalBar({
-  score,
-  orientation = 'vertical',
-  showLabel = false,
-  className,
-}: EvalBarProps) {
+export function EvalBar({ score, orientation = 'vertical', className }: EvalBarProps) {
   const fraction = score ? winningChances(score) : 0.5;
   const percent = `${(fraction * 100).toFixed(1)}%`;
   const label = score ? formatScore(score) : '—';
-  const whiteAhead = fraction >= 0.5;
 
   return (
     <div
@@ -60,16 +52,6 @@ export function EvalBar({
           orientation === 'vertical' ? 'left-0 right-0 h-px top-1/2' : 'top-0 bottom-0 w-px left-1/2',
         )}
       />
-      {showLabel && orientation === 'horizontal' && (
-        <span
-          className={cn(
-            'absolute inset-0 flex items-center px-1.5 font-mono text-[0.5625rem] font-semibold',
-            whiteAhead ? 'text-on-eval-white justify-start' : 'text-on-eval-black justify-end',
-          )}
-        >
-          {label}
-        </span>
-      )}
     </div>
   );
 }

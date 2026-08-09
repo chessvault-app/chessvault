@@ -218,9 +218,6 @@ export class StockfishEngine {
     this.worker = null;
   }
 
-  get isRunning(): boolean {
-    return this.worker !== null;
-  }
 
   private send(command: string): void {
     this.worker?.postMessage(command);

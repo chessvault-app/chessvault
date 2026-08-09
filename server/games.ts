@@ -12,7 +12,7 @@ import {
 } from 'chessops/pgn';
 import { parseSan } from 'chessops/san';
 import { hashSetup } from '../shared/zobrist.ts';
-import { openingForKey, type Opening } from './openings.ts';
+import { openingsIndex, type Opening } from './openings.ts';
 import { VAULT_GAMES } from './paths.ts';
 
 /**
@@ -38,7 +38,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export interface GameSummary {
+interface GameSummary {
   file: string;
   index: number;
   white: string;
@@ -78,14 +78,17 @@ function replaySummary(game: Game<PgnNodeData>): {
   const pos = Chess.default();
   let opening: Opening | null = null;
   let ply = 0;
+  // The index is fetched ONCE per game, not once per ply — openingForKey
+  // stats the openings file on every call.
+  const index = openingsIndex();
   for (const data of game.moves.mainline()) {
     const move = parseSan(pos, data.san);
     if (!move) break;
     pos.play(move);
     ply += 1;
-    if (ply <= 40) {
-      const named = openingForKey(hashSetup(pos.toSetup()).toString(16));
-      if (named) opening = named;
+    if (ply <= 40 && index) {
+      const entry = index[hashSetup(pos.toSetup()).toString(16)];
+      if (entry) opening = { eco: entry[0], name: entry[1] };
     }
   }
   return { opening, finalFen: makeFen(pos.toSetup()), annotated };

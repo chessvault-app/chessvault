@@ -91,6 +91,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   const [pasteText, setPasteText] = useState('');
 
   const current = getNode(tree, cursorId);
+  const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
   const dests = useMemo(() => legalDests(tree, cursorId), [tree, cursorId]);
   const lastMove = current.uci
     ? ([current.uci.slice(0, 2), current.uci.slice(2, 4)] as [string, string])
@@ -103,7 +104,6 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   };
 
   const playMove = (orig: string, dest: string): void => {
-    const pos = positionAt(tree, cursorId);
     const from = parseSquare(orig);
     const to = parseSquare(dest);
     if (from === undefined || to === undefined) return;
@@ -163,7 +163,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           orientation={orientation}
           dests={editable ? dests : new Map()}
           lastMove={lastMove}
-          check={positionAt(tree, cursorId).isCheck()}
+          check={pos.isCheck()}
           coordinates={false}
           onMove={playMove}
         />
@@ -245,7 +245,7 @@ function MoveStrip({
   const path = new Set(pathTo(tree, cursorId));
   const blackFirst = blackToMoveAtRoot(tree);
 
-  const renderLine = (startId: NodeId, depth: number): void => {
+  const renderLine = (startId: NodeId): void => {
     let nodeId: NodeId | undefined = startId;
     let needNumber = true;
     while (nodeId) {
@@ -279,7 +279,7 @@ function MoveStrip({
             (
           </span>,
         );
-        renderLine(variation, depth + 1);
+        renderLine(variation);
         chips.push(
           <span key={`${variation}-close`} className="text-subtle text-xs">
             )
@@ -295,7 +295,7 @@ function MoveStrip({
   if (root.children.length === 0) {
     return <p className="text-subtle px-1 text-xs">Play moves on the board, or paste a FEN/PGN.</p>;
   }
-  renderLine(root.children[0]!, 0);
+  renderLine(root.children[0]!);
   // Variations off the root come after the mainline rendering handles them —
   // the loop above only follows children[0], so emit root alternatives too.
   const rootAlternatives = root.children.slice(1);
@@ -305,7 +305,7 @@ function MoveStrip({
         (
       </span>,
     );
-    renderLine(alt, 1);
+    renderLine(alt);
     chips.push(
       <span key={`${alt}-close`} className="text-subtle text-xs">
         )

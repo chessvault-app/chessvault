@@ -132,7 +132,8 @@ export const useReview = create<ReviewState>()((set, get) => ({
         }
         return bal;
       };
-      const fens = [getNode(tree, tree.rootId).fen, ...line.map((id) => getNode(tree, id).fen)];
+      // ids is [root, ...line], so this is one lookup per node, not two walks.
+      const fens = ids.map((id) => getNode(tree, id).fen);
       const sacrifices = line.map((_, i) => {
         const mover: 'white' | 'black' =
           i % 2 === 0 ? rootTurn : rootTurn === 'white' ? 'black' : 'white';

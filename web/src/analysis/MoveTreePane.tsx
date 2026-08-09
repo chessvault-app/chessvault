@@ -177,7 +177,6 @@ export function MainlineTable({
               startId={variationId}
               cursorId={cursorId}
               onSelect={onSelect}
-              depth={1}
             />
           </div>,
         );
@@ -233,7 +232,6 @@ interface LineProps {
   fromId: NodeId;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  depth: number;
   /** True when the caller already rendered the move this line continues. */
   continued?: boolean;
 }
@@ -271,7 +269,7 @@ export function PromoteStrip({
  * child continues inline, and every further child becomes a parenthesised
  * variation rendered as a nested block.
  */
-function Line({ tree, fromId, cursorId, onSelect, depth, continued = false }: LineProps) {
+function Line({ tree, fromId, cursorId, onSelect, continued = false }: LineProps) {
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
   const blackFirst = blackToMoveAtRoot(tree);
@@ -331,7 +329,6 @@ function Line({ tree, fromId, cursorId, onSelect, depth, continued = false }: Li
             startId={variationId}
             cursorId={cursorId}
             onSelect={onSelect}
-            depth={depth + 1}
           />
         </div>,
       );
@@ -350,13 +347,11 @@ function VariationBranch({
   startId,
   cursorId,
   onSelect,
-  depth,
 }: {
   tree: MoveTree;
   startId: NodeId;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
-  depth: number;
 }) {
   const node = getNode(tree, startId);
   return (
@@ -381,7 +376,6 @@ function VariationBranch({
         fromId={startId}
         cursorId={cursorId}
         onSelect={onSelect}
-        depth={depth}
         continued={!node.comment}
       />
     </>

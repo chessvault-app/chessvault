@@ -20,7 +20,7 @@ let cache: { mtimeMs: number; byKey: OpeningsFile['byKey'] } | null = null;
  * `npm run build:openings`; returns null when the file is missing or the
  * position has no name. The file is reloaded if it changes on disk.
  */
-export function openingForKey(hexKey: string): Opening | null {
+export function openingsIndex(): OpeningsFile['byKey'] | null {
   let mtimeMs: number;
   try {
     mtimeMs = statSync(DATA_OPENINGS).mtimeMs;
@@ -31,7 +31,11 @@ export function openingForKey(hexKey: string): Opening | null {
     const parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as OpeningsFile;
     cache = { mtimeMs, byKey: parsed.byKey };
   }
-  const entry = cache.byKey[hexKey];
+  return cache.byKey;
+}
+
+export function openingForKey(hexKey: string): Opening | null {
+  const entry = openingsIndex()?.[hexKey];
   return entry ? { eco: entry[0], name: entry[1] } : null;
 }
 

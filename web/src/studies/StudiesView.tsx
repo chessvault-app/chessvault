@@ -9,7 +9,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -99,7 +99,12 @@ function CreateMenu() {
   const filePick = useRef<HTMLInputElement>(null);
 
   // Import feedback: how many chapters the pasted/chosen PGN parses into.
-  const chapterCount = mode === 'import' && pgnText.trim() ? pgnToChapters(pgnText).length : 0;
+  // Memoized — a Lichess export can be huge, and this component re-renders
+  // on every keystroke of the NAME field.
+  const chapterCount = useMemo(
+    () => (mode === 'import' && pgnText.trim() ? pgnToChapters(pgnText).length : 0),
+    [mode, pgnText],
+  );
 
   const submit = async (): Promise<void> => {
     const trimmed = name.trim();

@@ -16,14 +16,14 @@ type Brush = (typeof BRUSHES)[number];
 const isBrush = (value: string | undefined): value is Brush =>
   BRUSHES.includes(value as Brush);
 
-export function toDrawShape(shape: CommentShape): DrawShape {
+function toDrawShape(shape: CommentShape): DrawShape {
   const orig = makeSquare(shape.from);
   return shape.from === shape.to
     ? { orig, brush: shape.color }
     : { orig, dest: makeSquare(shape.to), brush: shape.color };
 }
 
-export function fromDrawShape(shape: DrawShape): CommentShape | undefined {
+function fromDrawShape(shape: DrawShape): CommentShape | undefined {
   const from = parseSquare(shape.orig);
   if (from === undefined) return undefined;
   const to = shape.dest ? parseSquare(shape.dest) : from;

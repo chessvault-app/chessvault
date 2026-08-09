@@ -81,8 +81,13 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
         );
         const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []);
         const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
-        const solved = puzzles.filter((p) => progress[p.id]?.last === 'win').length;
-        const failed = puzzles.filter((p) => progress[p.id]?.last === 'loss').length;
+        let solved = 0;
+        let failed = 0;
+        for (const p of puzzles) {
+          const last = progress[p.id]?.last;
+          if (last === 'win') solved++;
+          else if (last === 'loss') failed++;
+        }
         return {
           slug,
           title: book.title ?? slug,

@@ -7,13 +7,10 @@ import { cn } from '@/lib/cn';
  */
 export function SideDot({
   side,
-  shape = 'square',
   className,
   title,
 }: {
   side: 'white' | 'black';
-  /** Squares mark players; circles mark results. */
-  shape?: 'square' | 'circle';
   className?: string;
   title?: string;
 }) {
@@ -21,8 +18,7 @@ export function SideDot({
     <span
       title={title}
       className={cn(
-        'shrink-0 border',
-        shape === 'square' ? 'size-2.5 rounded-[3px]' : 'size-2 rounded-full',
+        'size-2.5 shrink-0 rounded-[3px] border',
         side === 'white'
           ? 'bg-side-white border-side-white-line'
           : 'bg-side-black border-side-black-line',

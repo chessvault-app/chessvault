@@ -28,7 +28,6 @@ interface EngineState {
   /** FEN the current results belong to; guards against stale updates. */
   resultFen: string | null;
   lines: PvLine[];
-  bestMove: string | null;
   finished: boolean;
   error: string | null;
   threadsAvailable: boolean;
@@ -39,7 +38,6 @@ interface EngineState {
   /** Analyse a position, or clear results if the engine is off. */
   analyse: (fen: string) => void;
   stop: () => void;
-  clearResults: () => void;
 }
 
 /**
@@ -62,7 +60,6 @@ export const useEngine = create<EngineState>()(
         set({
           resultFen: update.fen,
           lines: update.lines,
-          bestMove: update.bestMove ?? null,
           finished: update.finished,
         });
       };
@@ -96,7 +93,6 @@ export const useEngine = create<EngineState>()(
 
         resultFen: null,
         lines: [],
-        bestMove: null,
         finished: false,
         error: null,
         threadsAvailable: true,
@@ -107,7 +103,7 @@ export const useEngine = create<EngineState>()(
             engine?.terminate();
             engine = null;
             pendingFen = null;
-            set({ enabled: false, lines: [], bestMove: null, resultFen: null, finished: false });
+            set({ enabled: false, lines: [], resultFen: null, finished: false });
             return;
           }
           set({ enabled: true, error: null, threadsAvailable: supportsThreads() });
@@ -131,14 +127,11 @@ export const useEngine = create<EngineState>()(
           pendingFen = fen;
           if (!get().enabled) return;
           // Clear straight away so the pane never shows another position's eval.
-          set({ lines: [], bestMove: null, finished: false, resultFen: null });
+          set({ lines: [], finished: false, resultFen: null });
           void ensureEngine().analyse(fen, get().depth);
         },
 
         stop: () => engine?.stop(),
-
-        clearResults: () =>
-          set({ lines: [], bestMove: null, resultFen: null, finished: false }),
       };
     },
     {

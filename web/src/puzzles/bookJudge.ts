@@ -1,9 +1,7 @@
 import { Chess } from 'chessops/chess';
-import { chessgroundDests } from 'chessops/compat';
 import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
 import { parseUci } from 'chessops/util';
-import type { Color } from 'chessops/types';
 import { hashSetup } from '@shared/zobrist';
 
 /**
@@ -45,40 +43,13 @@ export type BookVerdict =
   | { kind: 'wrong'; move: PlayedMove }
   | { kind: 'engine'; move: PlayedMove; cursor: number };
 
-/** Board-facing view of a FEN. */
-export function boardStateOf(
-  fen: string,
-  lastUci?: string,
-): {
-  fen: string;
-  dests: Map<string, string[]>;
-  check: boolean;
-  turn: Color;
-  lastMove?: [string, string];
-} {
-  const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
-  return {
-    fen,
-    dests: chessgroundDests(pos),
-    check: pos.isCheck(),
-    turn: pos.turn,
-    lastMove: lastUci ? [lastUci.slice(0, 2), lastUci.slice(2, 4)] : undefined,
-  };
-}
-
-/** FEN after `plies` scripted moves (clamped at the first illegality). */
-export function scriptedFen(solution: BookSolution, plies: number): string {
-  const pos = Chess.fromSetup(parseFen(solution.fen).unwrap()).unwrap();
-  for (const uci of solution.uci.slice(0, plies)) {
-    const move = parseUci(uci);
-    if (!move || !pos.isLegal(move)) break;
-    pos.play(move);
-  }
-  return makeFen(pos.toSetup());
-}
-
-/** Zobrist hashes of every position along the scripted line (0..n plies). */
+/** Zobrist hashes of every position along the scripted line (0..n plies).
+    Cached per solution object: grading calls judgeBookMove once per entered
+    ply, and replaying the whole script each time made grading O(n^2). */
+const hashCache = new WeakMap<BookSolution, bigint[]>();
 function scriptedHashes(solution: BookSolution): bigint[] {
+  const hit = hashCache.get(solution);
+  if (hit) return hit;
   const pos = Chess.fromSetup(parseFen(solution.fen).unwrap()).unwrap();
   const hashes = [hashSetup(pos.toSetup())];
   for (const uci of solution.uci) {
@@ -87,6 +58,7 @@ function scriptedHashes(solution: BookSolution): bigint[] {
     pos.play(move);
     hashes.push(hashSetup(pos.toSetup()));
   }
+  hashCache.set(solution, hashes);
   return hashes;
 }
 

@@ -11,7 +11,7 @@ const DIGITS = 6;
 const B32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 /** RFC 4648 base32, no padding — the key format authenticator apps import. */
-export function base32Encode(bytes: Uint8Array): string {
+function base32Encode(bytes: Uint8Array): string {
   let bits = 0;
   let value = 0;
   let out = '';
@@ -27,7 +27,7 @@ export function base32Encode(bytes: Uint8Array): string {
   return out;
 }
 
-export function base32Decode(s: string): Uint8Array | null {
+function base32Decode(s: string): Uint8Array | null {
   let bits = 0;
   let value = 0;
   const out: number[] = [];

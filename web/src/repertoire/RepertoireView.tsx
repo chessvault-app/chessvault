@@ -401,13 +401,9 @@ export function RepertoireView() {
   };
 
   const newGame = (): void => {
-    // Back to setup, board reset to the chosen opening's preview. The runId
-    // bump drops any in-flight reply.
+    // Back to setup. The runId bump drops any in-flight reply; the idle
+    // effect above reseeds the board to the chosen opening's preview.
     runId.current += 1;
-    const { t, id } = seedTree(template);
-    setTree(t);
-    setTipId(id);
-    setCursorId(id);
     setFlipped(false);
     setError(null);
     setPhase('idle');

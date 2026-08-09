@@ -493,7 +493,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      {(running || status?.log?.length) && (
+      {(running || (status?.log?.length ?? 0) > 0) && (
         <div className="flex flex-col gap-1">
           <p className="text-subtle flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
             {running && <Loader2 className="size-3 animate-spin" />}

@@ -3,7 +3,7 @@ import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { logger } from 'hono/logger';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
@@ -23,7 +23,6 @@ const PORT = Number(process.env.PORT ?? 8787);
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
 // up front so every listing endpoint finds its directory.
-import { mkdirSync } from 'node:fs';
 for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) {
   mkdirSync(d, { recursive: true });
 }
@@ -101,4 +100,3 @@ serve({ fetch: app.fetch, port: PORT }, (info) => {
   if (lan) console.log(`  on your phone:      http://${lan.address}:5173`);
 });
 
-export { app };

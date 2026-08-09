@@ -28,7 +28,7 @@ import {
   ZoomOut,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
 import { makeFen, parseFen } from 'chessops/fen';
@@ -63,7 +63,6 @@ import { Input } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
-import { type PhotoReading } from './PhotoImport';
 import { Suspense, lazy } from 'react';
 
 const PdfImport = lazy(() => import('./PdfImport').then((m) => ({ default: m.PdfImport })));
@@ -761,20 +760,6 @@ function PuzzleList({
   // Drafts live in the same list, as their own 'Draft' tier — rendered as
   // pseudo-puzzles so one grid/filter machinery serves both. A click on a
   // draft routes to the editor (see onClick), not the solver.
-  const draftIds = new Set(drafts.map((d) => d.id));
-  const items: BookPuzzle[] = [
-    ...puzzles,
-    ...drafts.map((d) => ({
-      id: d.id,
-      number: d.number,
-      fen: d.fen ?? '',
-      uci: [],
-      san: [],
-      provenance: 'draft' as const,
-      evidence: d.evidence,
-    })),
-  ].sort((a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
-
   const stateOf = (p: BookPuzzle): 'new' | 'failed' | 'solved' => {
     const last = progress[p.id]?.last;
     return last === 'win' ? 'solved' : last === 'loss' ? 'failed' : 'new';
@@ -784,17 +769,49 @@ function PuzzleList({
       ? PROVENANCE_META[p.provenance as keyof typeof PROVENANCE_META]
       : null;
   type TierMeta = (typeof PROVENANCE_META)[keyof typeof PROVENANCE_META];
-  const tiers = new Map<string, { meta: TierMeta; count: number }>();
-  for (const key of Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[]) {
-    const count = items.filter((p) => p.provenance === key).length;
-    if (count === 0) continue;
-    const meta = PROVENANCE_META[key];
-    const entry = tiers.get(meta.label);
-    if (entry) entry.count += count;
-    else tiers.set(meta.label, { meta, count });
-  }
-  const stateCounts = { all: items.length, new: 0, failed: 0, solved: 0 };
-  for (const p of items) stateCounts[stateOf(p)]++;
+
+  // One pass builds the merged list AND its tier/state tallies — this list
+  // can be ~1,000 entries, and the old shape scanned it once per tier plus
+  // once per tile for numbering.
+  const draftIds = useMemo(() => new Set(drafts.map((d) => d.id)), [drafts]);
+  const { items, tiers, stateCounts } = useMemo(() => {
+    const merged: BookPuzzle[] = [
+      ...puzzles,
+      ...drafts.map((d) => ({
+        id: d.id,
+        number: d.number,
+        fen: d.fen ?? '',
+        uci: [],
+        san: [],
+        provenance: 'draft' as const,
+        evidence: d.evidence,
+      })),
+    ].sort((a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
+
+    const tierTally = new Map<string, { meta: TierMeta; count: number }>();
+    const states = { all: merged.length, new: 0, failed: 0, solved: 0 };
+    for (const p of merged) {
+      states[stateOf(p)]++;
+      const meta = metaOf(p);
+      if (!meta) continue;
+      const entry = tierTally.get(meta.label);
+      if (entry) entry.count += 1;
+      else tierTally.set(meta.label, { meta, count: 1 });
+    }
+    // Tier chips render in PROVENANCE_META's key order (confidence order),
+    // exactly as the per-key scans produced before.
+    const ordered = new Map<string, { meta: TierMeta; count: number }>();
+    for (const key of Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[]) {
+      const label = PROVENANCE_META[key].label;
+      const entry = tierTally.get(label);
+      if (entry && !ordered.has(label)) ordered.set(label, entry);
+    }
+    return { items: merged, tiers: ordered, stateCounts: states };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [puzzles, drafts, progress]);
+  // Unnumbered entries fall back to their list ordinal; a Map beats an
+  // indexOf per rendered tile.
+  const ordinalOf = useMemo(() => new Map(items.map((p, i) => [p.id, i + 1])), [items]);
 
   const visible = items.filter(
     (p) =>
@@ -880,7 +897,7 @@ function PuzzleList({
                     : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
               )}
             >
-              {p.number ?? items.indexOf(p) + 1}
+              {p.number ?? ordinalOf.get(p.id)}
               {meta && (
                 <meta.icon
                   className={cn('absolute right-2 top-2 size-3', meta.iconClass)}
@@ -1256,13 +1273,10 @@ function PuzzleEntry({
     // Fire-and-forget: template learning must never block puzzle entry.
     void (async () => {
       try {
-        let source: PhotoReading | null = null;
-        if (draft) {
-          // A draft confirmation teaches the font from its stored crop.
-          const img = await loadImage(draft.imageUrl);
-          source = { fen: null, features: featuresFromImage(img), blackAtBottom: false };
-        }
-        if (!source) return;
+        if (!draft) return;
+        // A draft confirmation teaches the font from its stored crop.
+        const img = await loadImage(draft.imageUrl);
+        const source = { features: featuresFromImage(img), blackAtBottom: false };
         const existing = await bookTemplates(slug);
         const next = harvestTemplates(
           source.features,
@@ -1471,8 +1485,8 @@ function SolutionRecorder({
     setVerifying(true);
     const notes: string[] = [];
     for (let i = 0; i < line.length; i++) {
-      const mover: Color = i % 2 === 0 ? solverSide : solverSide === 'white' ? 'black' : 'white';
-      if (mover !== solverSide) continue;
+      // Odd plies are the defender's replies — only the solver's moves are judged.
+      if (i % 2 === 1) continue;
       const score = await evaluateWhitePov(line[i]!.fen);
       const pov = solverSide === 'white' ? 1 : -1;
       const cp = score.mate !== undefined ? (score.mate * pov > 0 ? 10000 : -10000) : (score.cp ?? 0) * pov;
@@ -1613,7 +1627,7 @@ function SolutionRecorder({
               })
             )}
           </div>
-          {line.some((_, i) => i % 2 === 1) && (
+          {line.length > 1 && (
             <p className="text-subtle border-line border-t px-3 py-1.5 text-[0.6875rem]">
               Tip: click an opponent move to mark it “any move” (the book's ~).
             </p>
@@ -1694,8 +1708,8 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const wide = useWideLayout();
 
-  const puzzle = book?.puzzles.find((p) => p.id === puzzleId) ?? null;
-  const index = book && puzzle ? book.puzzles.indexOf(puzzle) : -1;
+  const index = book?.puzzles.findIndex((p) => p.id === puzzleId) ?? -1;
+  const puzzle = index >= 0 ? book!.puzzles[index]! : null;
   const solution: BookSolution | null = puzzle
     ? { fen: puzzle.fen, uci: puzzle.uci, ...(puzzle.wildcards ? { wildcards: puzzle.wildcards } : {}) }
     : null;
@@ -1723,7 +1737,12 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   }, [book, puzzleId]);
 
   const node = tree ? getNode(tree, cursorId) : null;
-  const pos = tree ? positionAt(tree, cursorId) : null;
+  // One position replay per cursor move, not one per render.
+  const pos = useMemo(() => (tree ? positionAt(tree, cursorId) : null), [tree, cursorId]);
+  const dests = useMemo(
+    () => (tree && phase === 'solving' ? legalDests(tree, cursorId) : new Map<string, string[]>()),
+    [tree, cursorId, phase],
+  );
 
   const report = async (win: boolean): Promise<void> => {
     if (reported.current || !puzzle) return;
@@ -1869,10 +1888,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       setTree(replay);
       setCursorId(at);
       if (i < solution.uci.length) timers.current.push(setTimeout(step, 650));
-      else {
-        setWon(false);
-        setPhase('done');
-      }
+      else setPhase('done');
     };
     timers.current.push(setTimeout(step, 400));
   };
@@ -1975,7 +1991,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             <Board
               fen={node.fen}
               orientation={orientation}
-              dests={phase === 'solving' ? legalDests(tree, cursorId) : new Map()}
+              dests={dests}
               lastMove={node.uci ? [node.uci.slice(0, 2), node.uci.slice(2, 4)] : undefined}
               check={pos.isCheck()}
               onMove={onMove}

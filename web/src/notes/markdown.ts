@@ -36,7 +36,7 @@ export const noteExtensions = [
   WikiLink,
 ];
 
-export const noteSchema: Schema = getSchema(noteExtensions);
+const noteSchema: Schema = getSchema(noteExtensions);
 
 // --- markdown -> ProseMirror -------------------------------------------------
 

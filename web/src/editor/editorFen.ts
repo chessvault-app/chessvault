@@ -20,8 +20,6 @@ export interface EditorState {
   fullmoves: number;
 }
 
-export const EMPTY_BOARD_FEN = '8/8/8/8/8/8/8/8 w - - 0 1';
-
 export function emptyEditorState(): EditorState {
   return {
     pieces: new Map(),
@@ -117,7 +115,7 @@ export interface Validity {
  * The editor deliberately allows illegal arrangements while you build them, so
  * this is what gates handing the position to the analysis board.
  */
-export function validate(state: EditorState): Validity {
+export function validate(state: EditorState, fen = toFen(state)): Validity {
   const whiteKings = [...state.pieces.values()].filter(
     (p) => p.role === 'king' && p.color === 'white',
   ).length;
@@ -140,7 +138,7 @@ export function validate(state: EditorState): Validity {
     }
   }
 
-  const parsed = parseFen(toFen(state));
+  const parsed = parseFen(fen);
   if (parsed.isErr) return { legal: false, reason: parsed.error.message };
   const position = Chess.fromSetup(parsed.unwrap());
   if (position.isErr) {

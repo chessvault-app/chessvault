@@ -10,8 +10,6 @@ import {
   deleteSubtree,
   getNode,
   INITIAL_FEN,
-  isOnMainline,
-  legalDests,
   mainlineFrom,
   pathTo,
   positionAt,
@@ -20,7 +18,7 @@ import {
   updateNode,
 } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
-import type { CommentShape, Headers, MoveNode, MoveTree, NodeEval, NodeId } from '@shared/types';
+import type { CommentShape, Headers, MoveTree, NodeEval, NodeId } from '@shared/types';
 
 /** A move awaiting the user's choice of promotion piece. */
 export interface PendingPromotion {
@@ -47,12 +45,6 @@ interface AnalysisState {
    * show name plates. Null for scratch analysis / FEN loads.
    */
   gameHeaders: Headers | null;
-
-  // -- derived helpers (recomputed on read; the tree is small) --
-  current: () => MoveNode;
-  dests: () => Map<string, string[]>;
-  isCheck: () => boolean;
-  mainlinePath: () => NodeId[];
 
   // -- navigation --
   setCursor: (id: NodeId) => void;
@@ -82,15 +74,6 @@ interface AnalysisState {
   flip: () => void;
 }
 
-const roleChar: Record<Role, string> = {
-  pawn: 'p',
-  knight: 'n',
-  bishop: 'b',
-  rook: 'r',
-  queen: 'q',
-  king: 'k',
-};
-
 export const useAnalysis = create<AnalysisState>()((set, get) => {
   const initial = createTree(INITIAL_FEN);
 
@@ -102,14 +85,6 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
     pendingPromotion: null,
     loadError: null,
     gameHeaders: null,
-
-    current: () => getNode(get().tree, get().cursorId),
-    dests: () => legalDests(get().tree, get().cursorId),
-    isCheck: () => positionAt(get().tree, get().cursorId).isCheck(),
-    mainlinePath: () => {
-      const { tree } = get();
-      return mainlineFrom(tree, tree.rootId);
-    },
 
     setCursor: (id) => set({ cursorId: id }),
 
@@ -280,12 +255,3 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
   };
 });
 
-/** UCI string for a promotion choice, for engine and book lookups. */
-export function promotionUci(orig: string, dest: string, role: Role): string {
-  return `${orig}${dest}${roleChar[role]}`;
-}
-
-/** Convenience selector: is the cursor node off the mainline? */
-export function useIsVariation(): boolean {
-  return useAnalysis((s) => !isOnMainline(s.tree, s.cursorId));
-}

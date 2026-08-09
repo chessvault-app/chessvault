@@ -409,6 +409,8 @@ function Trainer({
   };
 
   const solverSide: Color = puzzle ? solverColor(puzzle) : 'white';
+  const title =
+    mode === 'single' ? `Replay #${puzzleId}` : mode === 'failed' ? 'Review' : 'Puzzles';
   const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
   const hintShapes: DrawShape[] =
     puzzle && phase === 'solving' && !reviewing && hint > 0
@@ -488,12 +490,7 @@ function Trainer({
           <ChevronLeft className="size-3.5" />
         </Button>
         <Puzzle className="text-subtle size-4" aria-hidden />
-        <h1 className="text-fg text-sm font-semibold">
-          {mode === 'single'
-            ? `Replay #${puzzleId}`
-            : mode === 'failed'
-              ? 'Review'
-              : 'Puzzles'}
+        <h1 className="text-fg text-sm font-semibold">{title}
         </h1>
       </div>
       {/* Board column, matching the shared budget so the board sits where
@@ -546,12 +543,7 @@ function Trainer({
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
           <Puzzle className="text-subtle size-4" aria-hidden />
-          <h1 className="text-fg text-sm font-semibold">
-            {mode === 'single'
-              ? `Replay #${puzzleId}`
-              : mode === 'failed'
-                ? 'Review'
-                : 'Puzzles'}
+          <h1 className="text-fg text-sm font-semibold">{title}
           </h1>
         </div>
         {/* Fresh training folds this panel into two icons on the Puzzle

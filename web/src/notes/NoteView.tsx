@@ -24,8 +24,6 @@ export function NoteView({ id }: { id: string }) {
   const [failed, setFailed] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const currentId = useRef(id);
-  currentId.current = id;
 
   useEffect(() => {
     let cancelled = false;

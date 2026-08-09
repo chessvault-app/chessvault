@@ -8,7 +8,7 @@ import {
 import { useEffect, useMemo, useRef } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
-import { getNode, pathTo } from '@shared/tree';
+import { getNode, legalDests, pathTo, positionAt } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
@@ -47,8 +47,15 @@ export function AnalysisBoard({
   const setShapes = useAnalysis((s) => s.setShapes);
 
   const node = getNode(tree, cursorId);
-  const dests = useAnalysis((s) => s.dests)();
-  const isCheck = useAnalysis((s) => s.isCheck)();
+  // Position replay is the expensive part of a render — memoized so engine
+  // ticks and hover state don't replay the game, and skipped entirely when
+  // the board is locked (reading mode never needs legal moves).
+  const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
+  const dests = useMemo(
+    () => (locked ? new Map<string, string[]>() : legalDests(tree, cursorId)),
+    [locked, tree, cursorId],
+  );
+  const isCheck = pos.isCheck();
   const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
 
   const lastMove = node.uci
@@ -135,7 +142,7 @@ export function AnalysisBoard({
             <Board
               fen={node.fen}
               orientation={orientation}
-              dests={locked ? new Map() : dests}
+              dests={dests}
               lastMove={lastMove}
               check={isCheck}
               shapes={toDrawShapes(node.shapes)}

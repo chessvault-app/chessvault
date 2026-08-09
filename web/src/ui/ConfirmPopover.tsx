@@ -16,7 +16,6 @@ export function ConfirmPopover({
   icon: Icon,
   label,
   triggerTitle,
-  triggerVariant = 'ghost',
   triggerClassName,
   question,
   confirmLabel,
@@ -27,7 +26,6 @@ export function ConfirmPopover({
   /** Optional trigger text next to the icon (icon-only when omitted). */
   label?: string;
   triggerTitle: string;
-  triggerVariant?: 'ghost' | 'secondary';
   triggerClassName?: string;
   question: string;
   confirmLabel: string;
@@ -87,7 +85,7 @@ export function ConfirmPopover({
     <>
       <Button
         ref={trigger}
-        variant={triggerVariant}
+        variant="ghost"
         size={label ? 'sm' : 'icon-sm'}
         title={triggerTitle}
         aria-haspopup="dialog"

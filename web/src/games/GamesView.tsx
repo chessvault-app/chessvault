@@ -79,6 +79,12 @@ const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
 
 const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
 
+/** Collection file -> document id (the path the studies-style API speaks). */
+const docId = (g: Pick<GameSummary, 'file'>): string =>
+  g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+
+const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coarse)').matches;
+
 /** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
 const fmtResult = (result: string): string => result.replaceAll('1/2', '½');
 
@@ -309,7 +315,7 @@ function EliteBrowser() {
     previewFor.current = null;
     setPreview(null);
   };
-  const coarse = (): boolean => window.matchMedia('(pointer: coarse)').matches;
+  const coarse = isCoarsePointer;
 
   if (meta && !meta.ready) {
     return (
@@ -485,7 +491,7 @@ function CollectionView() {
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
   const renameGame = async (game: GameSummary, to: string): Promise<void> => {
     setRenamingKey(null);
-    const from = game.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+    const from = docId(game);
     const next = to.trim();
     if (!next || next === from) return;
     const res = await fetch('/api/games/docs/move', {
@@ -500,13 +506,13 @@ function CollectionView() {
   };
 
   const removeGame = async (game: GameSummary): Promise<void> => {
-    const id = game.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+    const id = docId(game);
     await fetch(`/api/games/docs/${encodeURIComponent(id)}`, { method: 'DELETE' });
     void load();
   };
 
   const openGame = (game: GameSummary): void => {
-    const id = game.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+    const id = docId(game);
     navigate('games', encodeURIComponent(id));
   };
 
@@ -514,7 +520,7 @@ function CollectionView() {
   // it no longer matches the auto "White vs Black date" pattern, that name
   // IS the title the user chose — lead with it.
   const customName = (g: GameSummary): string | null => {
-    const name = g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
+    const name = docId(g);
     const autoPrefix = `${g.white} vs ${g.black}`.replace(/[^A-Za-z0-9 _.-]/g, '').trim();
     return name.startsWith(autoPrefix) ? null : name;
   };
@@ -1005,7 +1011,7 @@ function GameRow({
   // The eye pops the final position. Fine pointers hover a popover beside
   // the row; coarse pointers TAP for a centred overlay (dismissed by its
   // scrim) — a beside-row popover on a phone would cover the row itself.
-  const coarse = (): boolean => window.matchMedia('(pointer: coarse)').matches;
+  const coarse = isCoarsePointer;
   const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
     if (!game.finalFen) return;
     if (!viaTap && coarse()) return;
@@ -1037,7 +1043,7 @@ function GameRow({
             <Input
               autoFocus
               inputSize="sm"
-              defaultValue={customName ?? game.file.replace(/^collection\//, '').replace(/\.pgn$/, '')}
+              defaultValue={customName ?? docId(game)}
               onClick={(e) => e.stopPropagation()}
               onBlur={(e) => onRename?.(e.target.value)}
               onKeyDown={(e) => {

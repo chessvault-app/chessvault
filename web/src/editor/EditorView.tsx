@@ -104,7 +104,8 @@ export function EditorView({
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
 
   const fen = useMemo(() => toFen(state), [state]);
-  const validity = useMemo(() => validate(state), [state]);
+  // Reuses the fen memo above — validate would otherwise serialize again.
+  const validity = useMemo(() => validate(state, fen), [state, fen]);
   const epOptions = useMemo(() => epCandidates(state), [state]);
 
   const patch = (next: Partial<EditorState>): void => setState((s) => ({ ...s, ...next }));
