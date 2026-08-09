@@ -68,8 +68,9 @@ export function Select({
     if (v !== value) onChange(v);
   };
 
-  // The popover is position-fixed off a measured rect: any scroll or
-  // resize invalidates it, and a click elsewhere dismisses it.
+  // The popover is position-fixed off a measured rect: a scroll of the PAGE
+  // invalidates it, so dismiss — but scrolling INSIDE the list (a long
+  // options list scrolls) must not close it. A click elsewhere dismisses too.
   useEffect(() => {
     if (!open) return;
     const close = (): void => setOpen(false);
@@ -77,12 +78,15 @@ export function Select({
       const t = e.target as Node;
       if (!trigger.current?.contains(t) && !list.current?.contains(t)) close();
     };
+    const onScroll = (e: Event): void => {
+      if (!list.current?.contains(e.target as Node)) close();
+    };
     document.addEventListener('mousedown', onDown);
-    window.addEventListener('scroll', close, true);
+    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', onDown);
-      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
     };
   }, [open]);

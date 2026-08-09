@@ -422,13 +422,13 @@ function Trainer({
 
   if (meta && !meta.ready) {
     return (
-      <div className="grid h-full place-items-center p-8">
-        <div className="max-w-md text-center">
+      <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
+        <div className="w-full max-w-md text-center">
           <p className="text-fg mb-2 text-sm font-semibold">No puzzle database yet</p>
           <p className="text-muted text-xs leading-relaxed">
             Download the Lichess dump and build it once:
           </p>
-          <code className="bg-surface-inset border-line text-subtle mt-3 block rounded-md border p-3 text-left font-mono text-[0.6875rem] leading-relaxed">
+          <code className="bg-surface-inset border-line text-subtle mt-3 block overflow-x-auto rounded-md border p-3 text-left font-mono text-[0.6875rem] leading-relaxed">
             curl -L -o data/lichess_db_puzzle.csv.zst \<br />
             &nbsp;&nbsp;https://database.lichess.org/lichess_db_puzzle.csv.zst
             <br />

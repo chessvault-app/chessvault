@@ -141,6 +141,25 @@ lookups. Recommended sources (both free):
 [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite" and
 the [Lichess Elite Database](https://database.nikonoel.fr/).
 
+## Reference data (all optional, all free)
+
+The app runs with an empty `data/` — these datasets just light up
+specific features, and everything under `data/` is rebuildable and
+gitignored, so it never ships in the repo; build or fetch it per machine.
+
+- **Puzzle trainer** — the [Lichess puzzle database](https://database.lichess.org/#puzzles)
+  (CC0). Download and build once:
+  ```bash
+  curl -L -o data/lichess_db_puzzle.csv.zst \
+    https://database.lichess.org/lichess_db_puzzle.csv.zst
+  npm run build:puzzles          # -> data/puzzles.sqlite
+  ```
+- **Elite game browser** — index PGN dumps (the Lumbra / Lichess Elite
+  sources above) with `npm run build:refgames` → `data/refgames.sqlite`.
+- **Opening explorer (local)** — `npm run build:book` over PGNs you drop
+  in `vault/sources/`; `npm run build:openings` compiles ECO names from
+  vendored TSVs (fully offline).
+
 ## Lichess token (optional)
 
 Powers the *online* explorer augmentation, the Repertoire trainer, and

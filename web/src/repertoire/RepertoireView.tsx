@@ -35,7 +35,7 @@ interface Template {
 // A spread of the major openings, each seeded to the point where it earns its
 // name. "Free" starts at move one. ECO codes are the opening's root.
 const TEMPLATES: Template[] = [
-  { eco: '', name: 'Free (start position)', sans: [] },
+  { eco: '', name: 'Start position', sans: [] },
   { eco: 'B20', name: 'Sicilian Defence', sans: ['e4', 'c5'] },
   { eco: 'C00', name: 'French Defence', sans: ['e4', 'e6'] },
   { eco: 'B10', name: 'Caro-Kann Defence', sans: ['e4', 'c6'] },
@@ -212,7 +212,18 @@ export function RepertoireView() {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
-      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">{header}</div>
+      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="md:hidden"
+          title="Back"
+          onClick={() => window.history.back()}
+        >
+          <ChevronLeft className="size-3.5" />
+        </Button>
+        {header}
+      </div>
 
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
@@ -234,24 +245,21 @@ export function RepertoireView() {
           <Panel flush className="shrink-0">
             <PanelHeader title="New game" />
             <div className="flex flex-col gap-3 p-3">
+              <div className="flex gap-1">
+                {(['white', 'black'] as const).map((c) => (
+                  <Button
+                    key={c}
+                    size="sm"
+                    variant={userColor === c ? 'primary' : 'secondary'}
+                    className="flex-1 capitalize"
+                    onClick={() => setUserColor(c)}
+                  >
+                    {c}
+                  </Button>
+                ))}
+              </div>
               <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">You play</span>
-                <div className="flex gap-1">
-                  {(['white', 'black'] as const).map((c) => (
-                    <Button
-                      key={c}
-                      size="sm"
-                      variant={userColor === c ? 'primary' : 'secondary'}
-                      className="flex-1 capitalize"
-                      onClick={() => setUserColor(c)}
-                    >
-                      {c}
-                    </Button>
-                  ))}
-                </div>
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">Opponent strength</span>
+                <span className="text-muted text-xs font-medium">Rating</span>
                 <Select
                   value={band}
                   onChange={setBand}

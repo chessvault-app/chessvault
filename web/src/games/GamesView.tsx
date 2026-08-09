@@ -918,6 +918,18 @@ function ArchiveBrowser({
           )}
         </ul>
       )}
+
+      {/* Nothing browsed yet: fill the panel with a prompt instead of
+          leaving a bare bar over blank space. */}
+      {!month && loading !== 'months' && (
+        <div className="border-line flex flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
+          <Globe className="text-subtle size-8" strokeWidth={1.5} />
+          <p className="text-muted max-w-xs text-sm leading-relaxed">
+            Browse your games. Type your {provider === 'chesscom' ? 'chess.com' : 'Lichess'} username
+            above and pick a month — then add the ones worth keeping to your collection.
+          </p>
+        </div>
+      )}
     </Panel>
   );
 }
