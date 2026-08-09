@@ -164,11 +164,16 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           flush
           className={cn(
             'flex-1 max-lg:min-h-0 lg:min-h-[22rem]',
-            // Last resort on very short viewports: once the move table has
-            // shrunk to nothing and the header + editor still do not fit,
-            // let the panel itself scroll rather than clip the editor away
-            // (Panel is overflow-hidden by default).
-            'max-lg:overflow-y-auto max-lg:scrollbar-hidden',
+            // Every child of this panel except the move table is shrink-0 —
+            // engine block, header, review strip, board controls, editor —
+            // so once they add up to more than the panel is tall, Panel's
+            // own overflow-hidden clips the LAST of them away: the
+            // annotation editor. Scrolling here is inert while things fit
+            // and is the only thing that saves the editor when they do not.
+            // It has to apply at every width: a short landscape viewport is
+            // above lg and hits this harder than a phone, because the
+            // engine block is only rendered there.
+            'overflow-y-auto scrollbar-hidden',
             pane !== 'moves' && 'max-lg:hidden',
           )}
         >
