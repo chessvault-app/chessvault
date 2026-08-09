@@ -100,6 +100,31 @@ validation reruns.
 | 1001 Chess Exercises for Beginners | 970 / 1001 | 739 | 10 |
 | The Complete Chess Workout | 1,145 / 1,200 | 530 | 0 |
 | The Woodpecker Method | 1,043 / 1,128 | 619 | 81 |
+| The Ultimate Chess Puzzle Book | 659 / 1001 | 191 | 119 |
+| 5334 Problems, Combinations and Games | 4,878 / 5,334 | 4,878 | 455 |
+
+The Ultimate Chess Puzzle Book is the weakest of the scans: 778 of its
+1001 diagrams found a printed number (a dozen of its pages are scanned
+upside down, so their numbers are unreadable), and its answers are prose
+with the moves embedded in sentences, which the mainline parser handles
+badly. It is usable but has the most room left in it.
+
+**5334 did not use this pipeline at all** — see below.
+
+## The exception: a book that needs no OCR
+
+`scripts/import-polgar-5334.ts` imports Polgár's *5334 Problems* from the
+PDF's text layer alone. That book was typeset in LaTeX with a diagram
+font, so every position is already in the text as one character per
+square (two glyphs per piece, one for light squares and one for dark),
+and every solution is plain algebraic. Nothing is recognised; it is read.
+Every entry is still replayed with chessops before it is imported, which
+is what catches a misread entry and what locates the printed position
+inside the 600 miniature games, whose answer is the whole game score.
+
+The lesson generalises: **check the text layer for diagram glyphs before
+reaching for CellNet.** It costs one `pdftotext` and can turn a week of
+model work into an afternoon.
 
 (Latest round: re-measured with the fine-tuned CellNet and the 3-cell
 repair search. Progress survives a re-import because puzzle ids are

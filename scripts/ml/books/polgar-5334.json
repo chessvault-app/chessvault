@@ -1,0 +1,12 @@
+{
+  "slug": "polgar",
+  "title": "5334 Problems, Combinations and Games",
+  "pdf": "polgar.pdf",
+  "coverPage": 1,
+  "solutionPages": [
+    974,
+    1181
+  ],
+  "text": "data/ml/polgar-text.json",
+  "note": "Text-layer import — see scripts/import-polgar-5334.ts. The measure/import ML pipeline is not used for this book; this config only feeds render_book_pages.py."
+}
