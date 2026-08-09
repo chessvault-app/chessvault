@@ -252,8 +252,10 @@ interface ImportedPuzzle {
    *  make opportunistic review cheap. */
   provenance: 'book-parsed' | 'engine-corroborated' | 'engine-only' | 'engine-unverified';
   /** One source-page image; rect = the diagram's bounds as page fractions,
-   *  so the UI highlights exactly where this puzzle came from. */
-  evidence: { page: string; rect: { x: number; y: number; w: number; h: number } };
+   *  so the UI highlights exactly where this puzzle came from. solutionPage
+   *  is stamped later by enrich_solution_pages.py — this step only carries
+   *  an existing stamp across (see the vault-write section). */
+  evidence: { page: string; rect: { x: number; y: number; w: number; h: number }; solutionPage?: string };
 }
 
 async function main(): Promise<void> {
@@ -452,9 +454,39 @@ async function main(): Promise<void> {
   for (const e of engines) e.quit();
 
   // --- write the vault book ---------------------------------------------------
+  // The solutions-chapter enrichment (enrich_solution_pages.py) lives in the
+  // very files this section rebuilds: puzzles/drafts carry the stamp, the
+  // diagrams dir holds the rendered solution pages. Carry both across, or
+  // every re-import silently kills the Solutions pane (it did, once).
+  const oldSolutionPage = new Map<number, string>();
+  for (const file of ['puzzles.json', 'drafts.json']) {
+    const path = resolve(BOOK, file);
+    if (!existsSync(path)) continue;
+    const old = JSON.parse(readFileSync(path, 'utf-8')) as {
+      number?: number;
+      evidence?: { solutionPage?: string };
+    }[];
+    for (const p of old) {
+      if (p.number != null && p.evidence?.solutionPage) {
+        oldSolutionPage.set(p.number, p.evidence.solutionPage);
+      }
+    }
+  }
+
   const diagrams = resolve(BOOK, 'diagrams');
+  const stashedPages = new Map<string, Buffer>();
+  for (const img of new Set(oldSolutionPage.values())) {
+    const path = resolve(diagrams, img);
+    if (existsSync(path)) stashedPages.set(img, readFileSync(path));
+  }
   rmSync(diagrams, { recursive: true, force: true });
   mkdirSync(diagrams, { recursive: true });
+  for (const [img, bytes] of stashedPages) writeFileSync(resolve(diagrams, img), bytes);
+
+  for (const p of puzzles) {
+    const sp = oldSolutionPage.get(p.number);
+    if (sp) p.evidence.solutionPage = sp;
+  }
 
   // First import of a new book: the server only lists books that have a
   // book.json — create one, but never overwrite lanph3re's own edits.
@@ -475,6 +507,9 @@ async function main(): Promise<void> {
     evidence: {
       page: `page${String(entry.page).padStart(3, '0')}.jpg`,
       rect: entry.rect ?? { x: 0, y: 0, w: 1, h: 1 },
+      ...(oldSolutionPage.has(entry.number)
+        ? { solutionPage: oldSolutionPage.get(entry.number) }
+        : {}),
     },
   }));
   writeFileSync(resolve(BOOK, 'drafts.json'), `${JSON.stringify(drafts, null, 1)}\n`);
