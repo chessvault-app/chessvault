@@ -30,7 +30,15 @@ import { VAULT_STUDIES } from './paths.ts';
 // Parentheses are in the set because the games collection generates
 // "White vs Black date (2)" names for duplicates — documents must be
 // addressable under the names the app itself writes.
-const SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9 ()_.-]*$/;
+//
+// Apostrophes, commas, ampersands and dashes are in the set because chess
+// names are full of them ("Queen's Gambit", "King's Indian", "Reti - Move
+// by Move"), and a study you cannot open is worse than one with a plain
+// name. Every character Windows forbids in a filename (\ / : * ? " < > |)
+// stays out, as does anything that could form a traversal: the segment is
+// split on / before this test, must START alphanumeric, and cannot end in
+// a dot, so ".." and hidden files remain unreachable.
+const SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9 (),'’&+_.–—-]*$/;
 const MAX_DEPTH = 4;
 const MAX_PGN_BYTES = 20 * 1024 * 1024;
 

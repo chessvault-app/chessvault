@@ -136,7 +136,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {titleRow('stacked:hidden')}
 
         <PaneTabs
@@ -157,6 +157,9 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         )}
         {/* Desktop keeps a floor and scrolls the column; phones drop it so
             the panel fills the slot and the move table scrolls inside. */}
+        {/* max-lg:min-h-0 lets the move table shrink so the annotation
+            editor below it is never squeezed out of the panel; the column
+            scrolls (above) if even that is not enough. */}
         <Panel
           flush
           className={cn('flex-1 max-lg:min-h-0 lg:min-h-[22rem]', pane !== 'moves' && 'max-lg:hidden')}

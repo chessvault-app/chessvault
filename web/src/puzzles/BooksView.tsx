@@ -113,8 +113,6 @@ interface BookPuzzle {
    *  source page (with the diagram's bounds as page fractions) so the
    *  original context is one click away. */
   number?: number;
-  /** Section goal, e.g. 2 = "Mate in two". */
-  mateIn?: number;
   provenance?:
     | 'book-parsed'
     | 'engine-corroborated'

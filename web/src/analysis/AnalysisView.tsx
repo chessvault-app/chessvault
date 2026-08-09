@@ -74,7 +74,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           phones exactly one pane shows, fills the height left under the
           board, and scrolls INTERNALLY (its move table / list own the
           scroll, with a visible scrollbar) — the page itself never scrolls. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}

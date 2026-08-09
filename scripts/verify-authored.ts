@@ -3,7 +3,7 @@
  * be legal (chessops replay), and each named line is cross-checked against
  * the vendored lichess chess-openings database for its ECO/name.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';

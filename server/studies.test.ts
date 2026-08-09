@@ -102,6 +102,26 @@ describe('studies api', () => {
     ).toBe(404);
   });
 
+  it('accepts apostrophes and dashes, still rejects unsafe names', async () => {
+    // Chess names need these; a study you cannot open is worse than one
+    // with a plain name.
+    const make = (name: string) =>
+      app.request('/api/studies', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+        headers: { 'content-type': 'application/json' },
+      });
+    expect((await make("London System - Black's Answer")).status).toBe(200);
+    expect((await make('Reti — Move by Move')).status).toBe(200);
+    expect((await app.request(`/api/studies/${encodeURIComponent("London System - Black's Answer")}`)).status).toBe(200);
+    // Windows-illegal and traversal-shaped names stay out.
+    for (const bad of ['a:b', 'a?b', 'a*b', 'a<b', 'a|b', '..', '.hidden', 'trailing.']) {
+      expect((await make(bad)).status, bad).toBe(400);
+    }
+    // Surrounding whitespace is trimmed before validation, not rejected.
+    expect((await make('  spaced  ')).status).toBe(200);
+  });
+
   it('deletes a study', async () => {
     expect((await app.request('/api/studies/Ruy%20Lopez', { method: 'DELETE' })).status).toBe(200);
     expect(existsSync(join(dir, 'Ruy Lopez.pgn'))).toBe(false);
