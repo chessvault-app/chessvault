@@ -102,14 +102,17 @@ export function EngineBlock({ className }: { className?: string }) {
 
       {enabled && !error && (
         <>
-          <div className="flex items-center gap-2 px-3 pt-2.5">
+          {/* The horizontal eval bar is redundant on phones — the board's
+              vertical eval bar is always visible there — so hide it and give
+              the room to the PV lines (three of them, multiPv=3). */}
+          <div className="flex items-center gap-2 px-3 pt-2.5 max-lg:hidden">
             <span className="text-fg min-w-[3.75rem] font-mono text-lg font-semibold tabular-nums">
               {score ? formatScore(score) : '…'}
             </span>
             <EvalBar score={score} orientation="horizontal" className="flex-1" />
           </div>
 
-          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2">
+          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2 max-lg:max-h-none">
             {visibleLines.length === 0 ? (
               <li className="text-subtle px-1.5 py-1 text-xs">Thinking…</li>
             ) : (

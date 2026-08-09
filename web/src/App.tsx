@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
+  Compass,
   Ellipsis,
   House,
   LayoutGrid,
@@ -43,11 +44,19 @@ const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'puzzles', label: 'Puzzles', icon: Puzzle },
 ];
 
-// The Tools group: interactive boards that aren't a "collection". Its
-// entries are real sections; Tools itself just points at the first one.
-const TOOLS_SUBNAV: { section: Section; label: string; icon: typeof Swords }[] = [
-  { section: 'analysis', label: 'Board', icon: Grid3x3 },
-  { section: 'editor', label: 'Editor', icon: SquarePen },
+// The Tools group: interactive boards that aren't a "collection". Explorer
+// is not a page of its own — it is the Board opened straight to its opening
+// explorer (navigate('analysis', 'explorer')), so it reuses everything.
+const TOOLS_SUBNAV: {
+  key: string;
+  label: string;
+  icon: typeof Swords;
+  nav: [Section, ...string[]];
+  active: (section: Section, params: string[]) => boolean;
+}[] = [
+  { key: 'board', label: 'Board', icon: Grid3x3, nav: ['analysis'], active: (s, p) => s === 'analysis' && p[0] !== 'explorer' },
+  { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
+  { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
 ];
 const inTools = (s: Section): boolean => s === 'analysis' || s === 'editor';
 
@@ -81,7 +90,7 @@ function Shell() {
         {section === 'home' ? (
           <HomePage />
         ) : section === 'analysis' ? (
-          <AnalysisView />
+          <AnalysisView params={params} />
         ) : section === 'editor' ? (
           <EditorView />
         ) : section === 'studies' ? (
@@ -243,13 +252,13 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <Wrench className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
           <span className="hidden lg:block">Tools</span>
         </button>
-        {TOOLS_SUBNAV.map(({ section, label, icon: Icon }) => (
+        {TOOLS_SUBNAV.map(({ key, label, icon: Icon, nav, active: isActive }) => (
           <SubNavItem
-            key={section}
+            key={key}
             label={label}
             icon={Icon}
-            active={active === section}
-            onClick={() => navigate(section)}
+            active={isActive(active, params)}
+            onClick={() => navigate(...nav)}
           />
         ))}
       </div>
@@ -283,13 +292,14 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
     a phone (the chess.com/Lichess pattern), so they live here. */
 const MORE_GROUPS: {
   heading: string;
-  items: { section: Section; label: string; icon: typeof Swords; blurb: string }[];
+  items: { section: Section; param?: string; label: string; icon: typeof Swords; blurb: string }[];
 }[] = [
   {
     heading: 'Tools',
     items: [
       { section: 'analysis', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
+      { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
     ],
   },
   {
@@ -312,11 +322,11 @@ function MorePage() {
             <h2 className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
               {heading}
             </h2>
-            {items.map(({ section, label, icon: Icon, blurb }) => (
+            {items.map(({ section, param, label, icon: Icon, blurb }) => (
               <button
-                key={section}
+                key={label}
                 type="button"
-                onClick={() => navigate(section)}
+                onClick={() => (param ? navigate(section, param) : navigate(section))}
                 className={cn(
                   'bg-surface border-line flex items-center gap-3 rounded-xl border p-3.5 text-left',
                   'active:bg-surface-2 transition-colors duration-100',

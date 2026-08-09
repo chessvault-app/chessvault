@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, FolderPlus, Grid3x3, Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Cpu, FolderPlus, Grid3x3, ListOrdered, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -20,10 +20,13 @@ import { LoadPositionButton } from './PositionLoader';
 
 type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
-export function AnalysisView() {
+export function AnalysisView({ params = [] }: { params?: string[] }) {
+  // Reached as Tools > Explorer (navigate('analysis', 'explorer')): open
+  // straight to the opening explorer instead of the move list.
+  const wantExplorer = params[0] === 'explorer';
   // Small screens show ONE pane under the board (lichess-app style); the
   // others stay mounted but hidden so the engine keeps following the board.
-  const [pane, setPane] = useState<AnalysisPane>('moves');
+  const [pane, setPane] = useState<AnalysisPane>(wantExplorer ? 'explorer' : 'moves');
   const engineOn = useEngine((s) => s.enabled);
 
   // Stateless page (lanph3re's call): entering analysis always starts a fresh
@@ -44,7 +47,8 @@ export function AnalysisView() {
     analysis.reset();
     const engine = useEngine.getState();
     if (engine.enabled) engine.setEnabled(false);
-    useExplorer.setState({ enabled: false });
+    // Tools > Explorer opens with the explorer already on; otherwise off.
+    useExplorer.setState({ enabled: wantExplorer });
     useReview.getState().clear();
   }, []);
 
@@ -81,9 +85,9 @@ export function AnalysisView() {
           value={pane}
           onChange={setPane}
           tabs={[
-            { id: 'moves', label: 'Moves' },
-            { id: 'engine', label: 'Engine' },
-            { id: 'explorer', label: 'Explorer' },
+            { id: 'moves', label: 'Moves', icon: ListOrdered },
+            { id: 'engine', label: 'Engine', icon: Cpu },
+            { id: 'explorer', label: 'Explorer', icon: Compass },
           ]}
         />
         {/* Desktop keeps an explicit floor (the column scrolls when the

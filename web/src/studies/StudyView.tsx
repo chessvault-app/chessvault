@@ -3,6 +3,10 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
+  Compass,
+  Cpu,
+  Files,
+  ListOrdered,
   ListTree,
   Loader2,
   Pencil,
@@ -135,10 +139,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           value={pane}
           onChange={setPane}
           tabs={[
-            { id: 'moves', label: 'Moves' },
-            { id: 'engine', label: 'Engine' },
-            ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters' }] : []),
-            { id: 'explorer', label: 'Explorer' },
+            { id: 'moves', label: 'Moves', icon: ListOrdered },
+            { id: 'engine', label: 'Engine', icon: Cpu },
+            ...(kind === 'study' ? [{ id: 'chapters' as const, label: 'Chapters', icon: Files }] : []),
+            { id: 'explorer', label: 'Explorer', icon: Compass },
           ]}
         />
         {kind === 'study' && (

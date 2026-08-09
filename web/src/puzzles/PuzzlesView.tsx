@@ -1,4 +1,6 @@
 import {
+  ChevronFirst,
+  ChevronLast,
   ChevronLeft,
   BarChart3,
   ChevronRight,
@@ -30,7 +32,6 @@ import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { SideDot } from '@/ui/SideDot';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { ThemesPage, themeLabel } from './ThemesPage';
@@ -755,57 +756,23 @@ function Trainer({
         )}
       </div>
 
-      {/* Phones: the puzzle's primary actions live in the bottom bar,
-          phase-aware — hint/solution while solving, next/analyse when done. */}
+      {/* Phones: the bottom bar steps through the moves played so far, like
+          every other board page. The puzzle's own actions (hint, solution,
+          skip, next) live in the panel above — no duplicates here. */}
       <MobileActionBar>
-        <div className="flex flex-1 items-center gap-2 px-3 py-1.5">
-          {phase === 'done' ? (
-            <>
-              <Button
-                variant="primary"
-                size="sm"
-                className="flex-1"
-                onClick={() =>
-                  mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
-                }
-              >
-                <RotateCw className="size-3.5" />
-                {mode === 'single' ? 'Dashboard' : 'Next'}
-              </Button>
-              <Button variant="secondary" size="sm" className="flex-1" onClick={analyse}>
-                <Swords className="size-3.5" />
-                Analyse
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="flex-1"
-                disabled={phase !== 'solving'}
-                onClick={() => setHint((h) => Math.min(h + 1, 2))}
-              >
-                <Lightbulb className="size-3.5" />
-                Hint
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="flex-1"
-                disabled={phase !== 'solving'}
-                onClick={viewSolution}
-              >
-                <Eye className="size-3.5" />
-                Solution
-              </Button>
-              {mode !== 'single' && (
-                <Button variant="ghost" size="sm" onClick={() => void loadNext(theme, difficulty)}>
-                  Skip
-                </Button>
-              )}
-            </>
-          )}
+        <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
+          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(1)} title="First move">
+            <ChevronFirst className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly((review ?? plies) - 1)} title="Back">
+            <ChevronLeft className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly((review ?? plies) + 1)} title="Forward">
+            <ChevronRight className="size-[1.1rem]" />
+          </Button>
+          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title="Latest">
+            <ChevronLast className="size-[1.1rem]" />
+          </Button>
         </div>
       </MobileActionBar>
     </div>
@@ -860,10 +827,9 @@ function StatusStrip({
             ? failed
               ? 'Done. On to the next one.'
               : 'Well played.'
-            : `Your move — you play ${orientation}.`;
+            : `${orientation === 'white' ? 'White' : 'Black'} to play`;
   return (
     <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
-      <SideDot side={orientation} />
       <span
         className={cn(
           phase === 'wrong' ? 'text-bad' : phase === 'done' && !failed ? 'text-good' : 'text-muted',
