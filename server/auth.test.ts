@@ -121,7 +121,14 @@ describe('auth gate', () => {
         headers: { 'content-type': 'application/json', 'x-forwarded-for': '7.7.7.7' },
         body: JSON.stringify({ password: 'hunter2', code }),
       });
-    expect((await request()).status).toBe(401);
+    // Two-stage sign-in: the password alone is ACCEPTED as stage one and
+    // answers needTotp — but it must not hand out a session.
+    const stageOne = await request();
+    expect(stageOne.status).toBe(200);
+    expect(await stageOne.clone().json()).toEqual({ needTotp: true });
+    expect(stageOne.headers.get('set-cookie')).toBeNull();
+    expect((await app.request('/api/secret')).status).toBe(401);
+    // A code that is present but wrong is still a failed attempt.
     expect((await request('000000')).status).toBe(401);
     const good = await request(totpAt(secret, Date.now())!);
     expect(good.status).toBe(200);

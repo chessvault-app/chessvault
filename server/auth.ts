@@ -160,9 +160,18 @@ export function authApi(
       return c.json({ error: 'wrong password' }, 401);
     }
     const totpSecret = totp();
-    if (totpSecret && !verifyTotp(totpSecret, body.code ?? '')) {
-      recordFailure(ip);
-      return c.json({ error: 'wrong authenticator code' }, 401);
+    if (totpSecret) {
+      // Two-stage sign-in: a correct password with NO code supplied is the
+      // first stage, not a failure — answer "now the code" without burning
+      // a throttle attempt (the password was right). A code that is present
+      // but wrong is still a failed attempt.
+      if (body.code === undefined || body.code === '') {
+        return c.json({ needTotp: true });
+      }
+      if (!verifyTotp(totpSecret, body.code)) {
+        recordFailure(ip);
+        return c.json({ error: 'wrong authenticator code' }, 401);
+      }
     }
 
     const secure = c.req.header('x-forwarded-proto') === 'https' ? '; Secure' : '';

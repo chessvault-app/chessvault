@@ -65,6 +65,37 @@ export function AnnotationPane({
   // tree, and the bottom box looked like a dead input (lanph3re's report).
   if (!editing) return null;
 
+  // Desktop: one line with the filter rows' scroll affordances (arrows).
+  // Touch: WRAP instead — the 14 thumb-sized glyphs are ~510px wide, so a
+  // narrow panel (a tablet in landscape) cut the row off with no arrows to
+  // reveal the rest, which read as a clipped editor.
+  const glyphs = (
+    <>
+      {QUALITY_NAGS.map((nag) => (
+        <NagButton
+          key={nag}
+          glyph={NAG_GLYPH[nag]!}
+          active={node.nags.includes(nag)}
+          onClick={() => toggleNag(nag, QUALITY_NAGS)}
+        />
+      ))}
+      <span className="bg-line mx-1 h-4 w-px" />
+      {ASSESSMENT_NAGS.map((nag) => (
+        <NagButton
+          key={nag}
+          glyph={NAG_GLYPH[nag]!}
+          active={node.nags.includes(nag)}
+          onClick={() => toggleNag(nag, ASSESSMENT_NAGS)}
+        />
+      ))}
+    </>
+  );
+  const palette = coarse ? (
+    <div className="flex flex-wrap items-center gap-1">{glyphs}</div>
+  ) : (
+    <ChipRow innerClassName="gap-1">{glyphs}</ChipRow>
+  );
+
   const placeholder = atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`;
   const flush = (): void => {
     if (draft !== (node.comment ?? '')) setComment(cursorId, draft);
@@ -72,29 +103,7 @@ export function AnnotationPane({
 
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
-      {!atRoot && (
-        // One line that scrolls sideways, with the filter rows' desktop
-        // scroll affordances — wrapping made the palette tall on phones.
-        <ChipRow innerClassName="gap-1">
-          {QUALITY_NAGS.map((nag) => (
-            <NagButton
-              key={nag}
-              glyph={NAG_GLYPH[nag]!}
-              active={node.nags.includes(nag)}
-              onClick={() => toggleNag(nag, QUALITY_NAGS)}
-            />
-          ))}
-          <span className="bg-line mx-1 h-4 w-px" />
-          {ASSESSMENT_NAGS.map((nag) => (
-            <NagButton
-              key={nag}
-              glyph={NAG_GLYPH[nag]!}
-              active={node.nags.includes(nag)}
-              onClick={() => toggleNag(nag, ASSESSMENT_NAGS)}
-            />
-          ))}
-        </ChipRow>
-      )}
+      {!atRoot && palette}
       {coarse ? (
         // Touch: the inline textarea sits exactly where the keyboard (and
         // the bottom bar riding above it) land, so typing into it was a
