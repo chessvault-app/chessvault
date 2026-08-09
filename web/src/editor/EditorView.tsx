@@ -393,17 +393,21 @@ export function EditorView({
           >
             <Trash2 className="size-3.5" />
           </Button>
+          </div>
+          {/* Position details (side to move, castling, FEN) — a LABELLED
+              button on phones, where the side column is hidden, so the FEN
+              is never buried behind an anonymous gear. */}
           <Button
-            variant="ghost"
-            size="icon-sm"
+            variant="secondary"
+            size="sm"
             active={sheetOpen}
-            className="size-8 wide:hidden"
+            className="h-8 wide:hidden"
             onClick={() => setSheetOpen((v) => !v)}
             title="Position details (side to move, castling, FEN)"
           >
             <Settings2 className="size-3.5" />
+            <span>Position</span>
           </Button>
-          </div>
           <Button
             variant="primary"
             size="sm"

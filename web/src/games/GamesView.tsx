@@ -65,6 +65,33 @@ interface Preview {
   orientation: 'white' | 'black';
   top: number;
   left: number;
+  /** Tapped open on a touch device: show a centred overlay with a scrim
+      instead of a popover beside the row (which would cover the row). */
+  pinned?: boolean;
+}
+
+/** The final-position preview. A hover popover on fine pointers; a centred,
+    dismissable overlay when tapped open on touch. Shared by both game lists. */
+function GamePreview({ preview, onClose }: { preview: Preview | null; onClose: () => void }) {
+  if (!preview) return null;
+  if (preview.pinned) {
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center p-8" onClick={onClose}>
+        <div className="bg-scrim absolute inset-0" />
+        <div className="border-line bg-surface relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-[var(--shadow-pop)]">
+          <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      style={{ top: preview.top, left: preview.left }}
+      className="border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-[var(--shadow-pop)]"
+    >
+      <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded" />
+    </div>
+  );
 }
 
 /**
@@ -359,17 +386,7 @@ function EliteBrowser() {
           )}
         </ul>
       </Panel>
-      {preview && (
-        <div
-          style={{ top: preview.top, left: preview.left }}
-          className={cn(
-            'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
-            'shadow-[var(--shadow-pop)]',
-          )}
-        >
-          <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded" />
-        </div>
-      )}
+      <GamePreview preview={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
@@ -600,17 +617,7 @@ function CollectionView() {
 
       <ArchiveBrowser collectionKeys={new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))} onCollected={() => void load()} onPreview={setPreview} />
 
-      {preview && (
-        <div
-          style={{ top: preview.top, left: preview.left }}
-          className={cn(
-            'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
-            'shadow-[var(--shadow-pop)]',
-          )}
-        >
-          <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded" />
-        </div>
-      )}
+      <GamePreview preview={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
@@ -936,10 +943,9 @@ function GameRow({
   /** Collection rows fold the external link into their row menu. */
   showLink?: boolean;
 }) {
-  // The eye pops the final position beside the row. Fine pointers hover
-  // it; coarse pointers TAP it (tap again to dismiss) — hover previews
-  // simply don't exist on touch.
-  const [tapped, setTapped] = useState(false);
+  // The eye pops the final position. Fine pointers hover a popover beside
+  // the row; coarse pointers TAP for a centred overlay (dismissed by its
+  // scrim) — a beside-row popover on a phone would cover the row itself.
   const coarse = (): boolean => window.matchMedia('(pointer: coarse)').matches;
   const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
     if (!game.finalFen) return;
@@ -951,6 +957,7 @@ function GameRow({
       orientation: game.userSide ?? 'white',
       top,
       left: Math.max(rect.left - 192, 8),
+      pinned: viaTap,
     });
   };
 
@@ -1024,27 +1031,22 @@ function GameRow({
         {/* The eye borrows the icon-sm footprint so the gaps to the star
             and … buttons read evenly. */}
         {game.finalFen ? (
-          <span className="grid size-7 shrink-0 place-items-center">
+          <span className="grid size-7 shrink-0 place-items-center pointer-coarse:size-9">
             <Eye
-              className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-4.5"
+              className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-5"
               aria-label="Preview the final position"
               onMouseEnter={(e) => showPreview(e)}
               onMouseLeave={hidePreview}
               onClick={(e) => {
                 if (!coarse()) return;
+                // Touch: open the centred overlay; its scrim dismisses it.
                 e.stopPropagation();
-                if (tapped) {
-                  hidePreview();
-                  setTapped(false);
-                } else {
-                  showPreview(e, true);
-                  setTapped(true);
-                }
+                showPreview(e, true);
               }}
             />
           </span>
         ) : (
-          <span className="size-7 shrink-0" aria-hidden />
+          <span className="size-7 shrink-0 pointer-coarse:size-9" aria-hidden />
         )}
       </div>
       {actions}

@@ -112,11 +112,6 @@ export function AnalysisBoard({ editablePlayers = false }: { editablePlayers?: b
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
       <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-        {/* Small screens: the eval bar lies flat above the board instead of
-            stealing width beside it — the board is the scarce resource. */}
-        {engineOn && (
-          <EvalBar score={evalScore} orientation="horizontal" className="shrink-0 wide:hidden" />
-        )}
         {/* Fixed-height strip, matching the editor's palette strip: the board
             top stays put whether or not a player bar is shown. On phones the
             strip only exists when there is a player bar to show. */}
@@ -124,7 +119,10 @@ export function AnalysisBoard({ editablePlayers = false }: { editablePlayers?: b
           <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
         </div>
         <div className="flex w-full items-stretch gap-2">
-          {engineOn && <EvalBar score={evalScore} className="shrink-0 stacked:hidden" />}
+          {/* The eval bar sits beside the board in every layout (lanph3re's
+              call): on phones it costs a sliver of board width but stays a
+              persistent eval readout even when the Engine tab isn't open. */}
+          {engineOn && <EvalBar score={evalScore} className="shrink-0" />}
           <div className="relative min-w-0 flex-1">
             <Board
               fen={node.fen}
