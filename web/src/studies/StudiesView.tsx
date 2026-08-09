@@ -19,6 +19,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
 
 /** Router shell for the Studies section: list, or one open study. */
@@ -542,6 +543,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
   const [moving, setMoving] = useState(false);
   const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
+  const moveTrigger = useRef<HTMLButtonElement>(null);
 
   const name = study.id.split('/').at(-1)!;
   const folder = study.id.includes('/') ? study.id.slice(0, study.id.lastIndexOf('/')) : '';
@@ -610,6 +612,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
               <Pencil className="size-3.5" />
             </Button>
             <Button
+              ref={moveTrigger}
               variant="ghost"
               size="icon-sm"
               title="Move to a collection"
@@ -632,36 +635,16 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
         )}
 
         {moving && (
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className={cn(
-              'border-line bg-surface absolute right-3 top-full z-40 mt-1 w-56 rounded-lg border p-1',
-              'shadow-[var(--shadow-pop)]',
-            )}
-          >
-            <p className="text-subtle px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-              Move to
-            </p>
-            {['', ...allFolders.filter((f) => f !== folder)].map((target) =>
-              target === folder ? null : (
-                <button
-                  key={target || '(root)'}
-                  type="button"
-                  onClick={async () => {
-                    setMoving(false);
-                    setFailure(await move(study.id, target ? `${target}/${name}` : name));
-                  }}
-                  className={cn(
-                    'hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5',
-                    'text-left text-xs transition-colors duration-100',
-                  )}
-                >
-                  <FolderIcon className="text-subtle size-3" />
-                  {target || '(no collection)'}
-                </button>
-              ),
-            )}
-          </div>
+          <MoveToPopover
+            currentFolder={folder}
+            folders={allFolders}
+            triggerRef={moveTrigger}
+            onPick={(target) => {
+              setMoving(false);
+              void move(study.id, target ? `${target}/${name}` : name).then(setFailure);
+            }}
+            onClose={() => setMoving(false)}
+          />
         )}
       </div>
     </li>

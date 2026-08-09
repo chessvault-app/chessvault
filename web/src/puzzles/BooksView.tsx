@@ -616,10 +616,10 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
           </p>
         </>
       ) : tab === 'solutions' && evidence.solutionPage ? (
-        <img
+        <ZoomablePage
           src={diagramUrl(slug, evidence.solutionPage)}
           alt="solutions page"
-          className="border-line w-full rounded-md border"
+          width={width - 32}
         />
       ) : null}
       </aside>
@@ -1006,6 +1006,83 @@ function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?:
   );
 }
 
+const ZOOM_MIN = 0.75;
+const ZOOM_MAX = 3;
+
+/**
+ * Two-finger pinch on `ref` multiplies the zoom. A NATIVE non-passive
+ * touchmove listener: React's own is passive, so preventDefault would be
+ * ignored and the page would scroll/zoom underneath the gesture.
+ */
+function usePinchZoom(
+  ref: React.RefObject<HTMLDivElement | null>,
+  apply: (factor: number) => void,
+): void {
+  const applyRef = useRef(apply);
+  applyRef.current = apply;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let last: number | null = null;
+    const dist = (t: TouchList): number =>
+      Math.hypot(t[0]!.clientX - t[1]!.clientX, t[0]!.clientY - t[1]!.clientY);
+    const onStart = (e: TouchEvent): void => {
+      if (e.touches.length === 2) last = dist(e.touches);
+    };
+    const onMove = (e: TouchEvent): void => {
+      if (e.touches.length !== 2 || last === null) return;
+      e.preventDefault();
+      const d = dist(e.touches);
+      if (d > 0 && last > 0) applyRef.current(d / last);
+      last = d;
+    };
+    const onEnd = (): void => {
+      last = null;
+    };
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: false });
+    el.addEventListener('touchend', onEnd);
+    el.addEventListener('touchcancel', onEnd);
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onEnd);
+    };
+  }, [ref]);
+}
+
+/**
+ * A whole scan page in a fixed-width viewport: the buttons and a pinch
+ * zoom the IMAGE inside, panning by scroll — the box itself never grows
+ * (the old zoom inflated the element, shoving the layout around).
+ */
+function ZoomablePage({ src, alt, width }: { src: string; alt: string; width: number }) {
+  const [zoom, setZoom] = useState(1);
+  const viewport = useRef<HTMLDivElement>(null);
+  const bump = (f: number): void =>
+    setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
+  usePinchZoom(viewport, bump);
+  return (
+    <div className="relative" style={{ width }}>
+      <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
+        <Button variant="secondary" size="icon-sm" title="Zoom out" disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-md">
+          <ZoomOut className="size-3.5" />
+        </Button>
+        <Button variant="secondary" size="icon-sm" title="Zoom in" disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-md">
+          <ZoomIn className="size-3.5" />
+        </Button>
+      </span>
+      <div
+        ref={viewport}
+        className="border-line overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+      >
+        <img src={src} alt={alt} className="max-w-none" style={{ width: Math.round(width * zoom) }} />
+      </div>
+    </div>
+  );
+}
+
 function SourceCrop({
   slug,
   page,
@@ -1022,17 +1099,21 @@ function SourceCrop({
 }) {
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [full, setFull] = useState(false);
-  // Zoom scales the working width; the surrounding pane scrolls.
+  // Zoom scales the image INSIDE a fixed viewport (buttons or a pinch);
+  // pan by scrolling. The element itself never changes size.
   const [zoom, setZoom] = useState(1);
-  const zoomed = Math.round(width * zoom);
+  const viewport = useRef<HTMLDivElement>(null);
+  const bump = (f: number): void =>
+    setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
+  usePinchZoom(viewport, bump);
   const zoomButtons = !plain && (
-    <span className="absolute left-1.5 top-1.5 flex gap-1">
+    <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
       <Button
         variant="secondary"
         size="icon-sm"
         title="Zoom out"
-        disabled={zoom <= 0.75}
-        onClick={() => setZoom((z) => Math.max(0.75, z / 1.25))}
+        disabled={zoom <= ZOOM_MIN}
+        onClick={() => bump(1 / 1.25)}
         className="shadow-md"
       >
         <ZoomOut className="size-3.5" />
@@ -1041,8 +1122,8 @@ function SourceCrop({
         variant="secondary"
         size="icon-sm"
         title="Zoom in"
-        disabled={zoom >= 3}
-        onClick={() => setZoom((z) => Math.min(3, z * 1.25))}
+        disabled={zoom >= ZOOM_MAX}
+        onClick={() => bump(1.25)}
         className="shadow-md"
       >
         <ZoomIn className="size-3.5" />
@@ -1058,20 +1139,26 @@ function SourceCrop({
   const ch = Math.min(1 - cy, r.h + 2 * margin);
 
   if (full) {
-    // Whole page at the pane's own width: the surrounding pane scrolls
-    // vertically, nothing gets clipped, and widening the pane zooms in.
+    // Whole page fitted to the pane width; zoom scrolls within.
     return (
-      <div className="relative" style={{ width: zoomed }}>
-        <img src={src} alt="book page" className="border-line w-full rounded-md border" />
+      <div className="relative" style={{ width }}>
         <div
-          className="border-primary pointer-events-none absolute rounded-sm border-2"
-          style={{
-            left: `${r.x * 100}%`,
-            top: `${r.y * 100}%`,
-            width: `${r.w * 100}%`,
-            height: `${r.h * 100}%`,
-          }}
-        />
+          ref={viewport}
+          className="border-line overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+        >
+          <div className="relative" style={{ width: Math.round(width * zoom) }}>
+            <img src={src} alt="book page" className="w-full" />
+            <div
+              className="border-primary pointer-events-none absolute rounded-sm border-2"
+              style={{
+                left: `${r.x * 100}%`,
+                top: `${r.y * 100}%`,
+                width: `${r.w * 100}%`,
+                height: `${r.h * 100}%`,
+              }}
+            />
+          </div>
+        </div>
         {zoomButtons}
         <Button
           variant="secondary"
@@ -1086,31 +1173,44 @@ function SourceCrop({
     );
   }
 
-  const scale = natural ? zoomed / (cw * natural.w) : 1;
+  // The crop fills the viewport at zoom 1; the viewport KEEPS that size as
+  // the content inside scales, scrolling to pan.
+  const fit = natural ? width / (cw * natural.w) : 1;
+  const scale = fit * zoom;
   return (
-    <div className="relative" style={{ width: zoomed }}>
+    <div className="relative" style={{ width }}>
       {zoomButtons}
       <div
-        className="border-line overflow-hidden rounded-md border"
-        style={{ width: zoomed, height: natural ? ch * natural.h * scale : zoomed }}
+        ref={viewport}
+        className="border-line overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+        style={{ width, height: natural ? Math.round(ch * natural.h * fit) : width }}
       >
-        <img
-          src={src}
-          alt="book diagram in its page"
-          onLoad={(e) =>
-            setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
-          }
-          className="max-w-none"
+        <div
+          className="overflow-hidden"
           style={
             natural
-              ? {
-                  width: natural.w * scale,
-                  marginLeft: -cx * natural.w * scale,
-                  marginTop: -cy * natural.h * scale,
-                }
+              ? { width: cw * natural.w * scale, height: ch * natural.h * scale }
               : undefined
           }
-        />
+        >
+          <img
+            src={src}
+            alt="book diagram in its page"
+            onLoad={(e) =>
+              setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
+            }
+            className="max-w-none"
+            style={
+              natural
+                ? {
+                    width: natural.w * scale,
+                    marginLeft: -cx * natural.w * scale,
+                    marginTop: -cy * natural.h * scale,
+                  }
+                : undefined
+            }
+          />
+        </div>
       </div>
       {!plain && (
         <Button
@@ -1274,10 +1374,10 @@ function PuzzleEntry({
               </div>
             ) : evidence?.solutionPage ? (
               <div className="p-4">
-                <img
+                <ZoomablePage
                   src={diagramUrl(slug, evidence.solutionPage)}
                   alt="solutions page"
-                  className="border-line w-full rounded-md border"
+                  width={Math.min(window.innerWidth - 48, 560)}
                 />
               </div>
             ) : null}
