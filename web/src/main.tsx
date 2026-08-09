@@ -2,11 +2,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { initTheme, watchSystemTheme } from './store/theme';
+import { initPrefs } from './store/prefs';
 import { installTooltips } from './ui/tooltip';
 import './index.css';
 
 initTheme();
 watchSystemTheme();
+initPrefs();
 
 // PWA shell: production only — a worker in dev would fight Vite's HMR.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

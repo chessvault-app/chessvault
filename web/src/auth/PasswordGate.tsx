@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react';
+import { Lock, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
@@ -13,15 +13,18 @@ import { Input } from '@/ui/Input';
 export function PasswordGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<'checking' | 'locked' | 'open'>('checking');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [totp, setTotp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void fetch('/api/auth/status')
       .then((r) => r.json())
-      .then((d: { required: boolean; authed: boolean }) =>
-        setState(d.required && !d.authed ? 'locked' : 'open'),
-      )
+      .then((d: { required: boolean; authed: boolean; totp?: boolean }) => {
+        setTotp(!!d.totp);
+        setState(d.required && !d.authed ? 'locked' : 'open');
+      })
       // If the server is unreachable the app shows its own errors; don't
       // trap the user on a lock screen for that.
       .catch(() => setState('open'));
@@ -37,19 +40,23 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password, ...(totp && { code }) }),
     });
     setBusy(false);
     if (res.ok) {
       setState('open');
       return;
     }
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
     setError(
       res.status === 429
         ? 'Too many attempts — wait a few minutes.'
-        : 'Wrong password.',
+        : body.error === 'wrong authenticator code'
+          ? 'Wrong authenticator code.'
+          : 'Wrong password.',
     );
-    setPassword('');
+    if (body.error !== 'wrong authenticator code') setPassword('');
+    setCode('');
   };
 
   return (
@@ -86,6 +93,23 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             autoComplete="current-password"
             className="mb-3 w-full"
           />
+          {totp && (
+            <>
+              <label className="text-subtle mb-1.5 flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                <ShieldCheck className="size-3" />
+                Authenticator code
+              </label>
+              <Input
+                inputSize="lg"
+                inputMode="numeric"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="123 456"
+                autoComplete="one-time-code"
+                className="mb-3 w-full"
+              />
+            </>
+          )}
           {error && (
             <p className="text-bad mb-3 text-xs" role="alert">
               {error}
@@ -95,7 +119,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             type="submit"
             variant="primary"
             size="md"
-            disabled={busy || !password}
+            disabled={busy || !password || (totp && code.trim().length < 6)}
             className="w-full justify-center"
           >
             {busy ? 'Unlocking…' : 'Unlock'}

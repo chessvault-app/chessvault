@@ -2,6 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { VAULT_CONFIG } from './paths.ts';
+import { verifyTotp } from './totp.ts';
 
 /**
  * App-level password gate for public deployments.
@@ -31,8 +32,23 @@ function configPassword(): string | null {
   }
 }
 
-function sessionToken(password: string): string {
-  const key = createHash('sha256').update(password).digest();
+function configTotp(): string | null {
+  try {
+    const config = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as { totpSecret?: string };
+    return config.totpSecret?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/** The token binds password AND totp secret: rotating either one (or
+    enabling/disabling 2FA) invalidates every session at once. */
+function sessionToken(password: string, totpSecret: string | null): string {
+  const key = createHash('sha256')
+    .update(password)
+    .update('\n')
+    .update(totpSecret ?? '')
+    .digest();
   return createHmac('sha256', key).update('chess-vault-session-v1').digest('hex');
 }
 
@@ -47,23 +63,31 @@ function cookieToken(header: string | undefined): string | null {
   return match?.[1] ?? null;
 }
 
-function authed(cookieHeader: string | undefined, password: string): boolean {
+function authed(cookieHeader: string | undefined, password: string, totpSecret: string | null): boolean {
   const token = cookieToken(cookieHeader);
-  return token !== null && safeEqual(token, sessionToken(password));
+  return token !== null && safeEqual(token, sessionToken(password, totpSecret));
 }
 
 /** Everything registered after this middleware requires the session. */
-export function requireAuth(passwordOverride?: () => string | null): MiddlewareHandler {
+export function requireAuth(
+  passwordOverride?: () => string | null,
+  totpOverride?: () => string | null,
+): MiddlewareHandler {
   const password = passwordOverride ?? configPassword;
+  const totp = totpOverride ?? configTotp;
   return async (c, next) => {
     const configured = password();
-    if (!configured || authed(c.req.header('cookie'), configured)) return next();
+    if (!configured || authed(c.req.header('cookie'), configured, totp())) return next();
     return c.json({ error: 'authentication required' }, 401);
   };
 }
 
-export function authApi(passwordOverride?: () => string | null): Hono {
+export function authApi(
+  passwordOverride?: () => string | null,
+  totpOverride?: () => string | null,
+): Hono {
   const password = passwordOverride ?? configPassword;
+  const totp = totpOverride ?? configTotp;
   const api = new Hono();
 
   // Per-IP login throttle. In-memory is fine: a restart resetting the
@@ -84,7 +108,8 @@ export function authApi(passwordOverride?: () => string | null): Hono {
     const configured = password();
     return c.json({
       required: configured !== null,
-      authed: configured === null || authed(c.req.header('cookie'), configured),
+      authed: configured === null || authed(c.req.header('cookie'), configured, totp()),
+      totp: configured !== null && totp() !== null,
     });
   });
 
@@ -95,15 +120,19 @@ export function authApi(passwordOverride?: () => string | null): Hono {
     const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'local';
     if (throttled(ip)) return c.json({ error: 'too many attempts — try again later' }, 429);
 
-    const body = (await c.req.json().catch(() => ({}))) as { password?: string };
+    const body = (await c.req.json().catch(() => ({}))) as { password?: string; code?: string };
     if (typeof body.password !== 'string' || !safeEqual(body.password, configured)) {
       return c.json({ error: 'wrong password' }, 401);
+    }
+    const totpSecret = totp();
+    if (totpSecret && !verifyTotp(totpSecret, body.code ?? '')) {
+      return c.json({ error: 'wrong authenticator code' }, 401);
     }
 
     const secure = c.req.header('x-forwarded-proto') === 'https' ? '; Secure' : '';
     c.header(
       'Set-Cookie',
-      `${COOKIE}=${sessionToken(configured)}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax${secure}`,
+      `${COOKIE}=${sessionToken(configured, totpSecret)}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax${secure}`,
     );
     return c.json({ ok: true });
   });

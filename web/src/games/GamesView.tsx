@@ -631,6 +631,17 @@ function ArchiveBrowser({
 }) {
   const [username, setUsername] = useState(() => localStorage.getItem('chess-vault:chesscom-user') ?? '');
   const [provider, setProvider] = useState<'chesscom' | 'lichess'>('chesscom');
+  // First run on a device: fall back to the profile usernames from Settings.
+  useEffect(() => {
+    if (username.trim()) return;
+    void fetch('/api/settings')
+      .then((r) => (r.ok ? (r.json() as Promise<{ profile?: { chesscom?: string; lichess?: string } }>) : null))
+      .then((s) => {
+        const fromProfile = provider === 'chesscom' ? s?.profile?.chesscom : s?.profile?.lichess;
+        if (fromProfile) setUsername((current) => (current.trim() ? current : fromProfile));
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider]);
   const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
   const [months, setMonths] = useState<ArchiveMonth[]>([]);
   const [offline, setOffline] = useState(false);

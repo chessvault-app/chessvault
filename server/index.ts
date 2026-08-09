@@ -12,6 +12,7 @@ import { lichessExplorerApi } from './lichess.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { refGamesApi } from './refgames.ts';
+import { settingsApi } from './settings.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
@@ -66,6 +67,7 @@ app.route('/api', gamesApi());
 app.route('/api', puzzlesApi());
 app.route('/api', refGamesApi());
 app.route('/api', puzzleBooksApi());
+app.route('/api', settingsApi());
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;

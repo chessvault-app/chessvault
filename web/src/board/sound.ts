@@ -1,11 +1,14 @@
 /**
  * Move sounds. Move and capture are the lichess standard samples
- * (web/public/sound, from lila's public/sound/standard — AGPL, fine for
- * this personal, non-distributed vault). Lichess has no distinct check
- * sound, so check plays the move sample plus a short synthesised accent.
+ * (web/public/sound, vendored from lila's public/sound/standard —
+ * AGPL-3.0, compatible with this GPL-3.0 project). Lichess has no
+ * distinct check sound, so check plays the move sample plus a short
+ * synthesised accent.
  * Everything is decoded once into WebAudio buffers: no play latency, and
  * overlapping sounds mix instead of cutting each other off.
  */
+
+import { usePrefs } from '@/store/prefs';
 
 export type SoundKind = 'move' | 'capture' | 'check';
 
@@ -76,6 +79,7 @@ function playAccent(ac: AudioContext): void {
 }
 
 export function playSound(kind: SoundKind): void {
+  if (!usePrefs.getState().sound) return;
   const ac = audio();
   if (!ac) return;
   switch (kind) {

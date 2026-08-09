@@ -23,6 +23,9 @@
    into the `chessground` layer declared above. */
 @import '@lichess-org/chessground/assets/chessground.base.css' layer(chessground);
 @import '@lichess-org/chessground/assets/chessground.cburnett.css' layer(chessground);
+/* Extra piece sets (merida/chessnut/pirouetti), vendored from lila by
+   scripts/setup-pieces.mjs and switched with <html data-pieces>. */
+@import './piece-sets.css' layer(chessground);
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -618,4 +621,31 @@ cg-board square.check {
 
 .cg-wrap piece.ghost {
   opacity: 0.28;
+}
+
+/* ---------------------------------------------------------------------------
+   Board colour themes (Settings > Appearance). The default cream/walnut
+   above adapts to light/dark; a chosen preset is a deliberate fixed
+   palette, so it overrides both modes (`:root[data-board]` outranks the
+   `.dark` token block).
+   --------------------------------------------------------------------------- */
+
+:root[data-board='green'] {
+  --board-light: oklch(95% 0.045 105);
+  --board-dark: oklch(65% 0.095 135);
+}
+
+:root[data-board='brown'] {
+  --board-light: oklch(89% 0.045 85);
+  --board-dark: oklch(66% 0.065 65);
+}
+
+:root[data-board='blue'] {
+  --board-light: oklch(92% 0.018 240);
+  --board-dark: oklch(62% 0.065 245);
+}
+
+:root[data-board='slate'] {
+  --board-light: oklch(87% 0.006 260);
+  --board-dark: oklch(55% 0.018 260);
 }

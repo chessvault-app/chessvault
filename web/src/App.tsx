@@ -4,14 +4,16 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
+  Ellipsis,
   House,
   LayoutGrid,
   Library,
   NotebookPen,
   Puzzle,
+  Settings,
   Swords,
 } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
@@ -27,6 +29,7 @@ const NotesView = lazy(() => import('@/notes/NotesView').then((m) => ({ default:
 const PuzzlesView = lazy(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
 const HomePage = lazy(() => import('@/home/HomePage').then((m) => ({ default: m.HomePage })));
 const StudiesView = lazy(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
+const SettingsPage = lazy(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'analysis', label: 'Board', icon: Grid3x3 },
@@ -78,6 +81,8 @@ function Shell() {
           <NotesView params={params} />
         ) : section === 'puzzles' ? (
           <PuzzlesView params={params} />
+        ) : section === 'settings' ? (
+          <SettingsPage />
         ) : (
           <Placeholder section={section} />
         )}
@@ -174,48 +179,128 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         })}
       </div>
 
-      <div className="border-line flex items-center justify-center border-t p-2 lg:justify-between lg:px-3">
+      <div className="border-line flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
         <span className="text-subtle hidden text-xs lg:block">Offline · local</span>
-        <ThemeToggle />
+        <div className="flex flex-col items-center gap-1 lg:flex-row">
+          <button
+            type="button"
+            onClick={() => navigate('settings')}
+            title="Settings"
+            aria-current={active === 'settings' ? 'page' : undefined}
+            className={cn(
+              'grid size-9 place-items-center rounded-lg transition-colors duration-100',
+              active === 'settings'
+                ? 'bg-primary-soft text-primary'
+                : 'text-muted hover:bg-surface-2 hover:text-fg',
+            )}
+          >
+            <Settings className="size-[1.15rem]" strokeWidth={2} />
+          </button>
+          <ThemeToggle />
+        </div>
       </div>
     </nav>
   );
 }
 
+/** Lower-traffic destinations fold behind the ⋯ tab: seven labeled tabs
+    plus Settings stopped fitting a phone, and Editor/Notes are reached
+    rarely enough that one extra tap is the right trade. */
+const MORE_SECTIONS: { section: Section; label: string; icon: typeof Swords }[] = [
+  { section: 'editor', label: 'Editor', icon: SquarePen },
+  { section: 'notes', label: 'Notes', icon: NotebookPen },
+  { section: 'settings', label: 'Settings', icon: Settings },
+];
+
 function MobileNav({ active }: { active: Section }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const inMore = MORE_SECTIONS.some((m) => m.section === active);
   // Desktop reaches home through the sidebar's logo; the bottom bar needs
   // its own entry or a phone can never get back to the landing page.
-  const tabs = [{ section: 'home' as Section, label: 'Home', icon: House }, ...NAV];
+  const tabs = [
+    { section: 'home' as Section, label: 'Home', icon: House },
+    ...NAV.filter(({ section }) => !MORE_SECTIONS.some((m) => m.section === section)),
+  ];
+  useEffect(() => setMoreOpen(false), [active]);
+
   return (
-    <nav
-      className={cn(
-        'bg-surface/85 border-line flex shrink-0 items-stretch border-t backdrop-blur-xl md:hidden',
-        // Clear the iOS home indicator.
-        'pb-[env(safe-area-inset-bottom)]',
-      )}
-    >
-      {tabs.map(({ section, label, icon: Icon }) => {
-        const isActive = section === active;
-        return (
+    <div className="relative shrink-0 md:hidden">
+      {moreOpen && (
+        <>
           <button
-            key={section}
             type="button"
-            // Phones: the Puzzles tab lands on the dashboard, the hub with
-            // big Train/Books/Themes buttons — the trainer is one tap away.
-            onClick={() => (section === 'puzzles' ? navigate('puzzles', 'dashboard') : navigate(section))}
-            aria-current={isActive ? 'page' : undefined}
-            className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-2 text-[0.625rem] font-medium',
-              'transition-colors duration-150',
-              isActive ? 'text-primary' : 'text-subtle',
-            )}
-          >
-            <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
-            {label}
-          </button>
-        );
-      })}
-    </nav>
+            aria-label="Close menu"
+            className="fixed inset-0 z-10"
+            onClick={() => setMoreOpen(false)}
+          />
+          <div className="bg-surface border-line absolute inset-x-2 bottom-full z-20 mb-2 overflow-hidden rounded-xl border shadow-lg">
+            {MORE_SECTIONS.map(({ section, label, icon: Icon }) => {
+              const isActive = section === active;
+              return (
+                <button
+                  key={section}
+                  type="button"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    navigate(section);
+                  }}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={cn(
+                    'flex h-12 w-full items-center gap-3 px-4 text-sm font-medium',
+                    isActive ? 'text-primary bg-primary-soft' : 'text-fg active:bg-surface-2',
+                  )}
+                >
+                  <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
+      <nav
+        className={cn(
+          'bg-surface/85 border-line flex items-stretch border-t backdrop-blur-xl',
+          // Clear the iOS home indicator.
+          'pb-[env(safe-area-inset-bottom)]',
+        )}
+      >
+        {tabs.map(({ section, label, icon: Icon }) => {
+          const isActive = section === active;
+          return (
+            <button
+              key={section}
+              type="button"
+              // Phones: the Puzzles tab lands on the dashboard, the hub with
+              // big Train/Books/Themes buttons — the trainer is one tap away.
+              onClick={() => (section === 'puzzles' ? navigate('puzzles', 'dashboard') : navigate(section))}
+              aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'flex flex-1 flex-col items-center gap-1 py-2 text-[0.625rem] font-medium',
+                'transition-colors duration-150',
+                isActive ? 'text-primary' : 'text-subtle',
+              )}
+            >
+              <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
+              {label}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+          className={cn(
+            'flex flex-1 flex-col items-center gap-1 py-2 text-[0.625rem] font-medium',
+            'transition-colors duration-150',
+            inMore || moreOpen ? 'text-primary' : 'text-subtle',
+          )}
+        >
+          <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
+          More
+        </button>
+      </nav>
+    </div>
   );
 }
 
