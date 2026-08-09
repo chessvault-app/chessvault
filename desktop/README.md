@@ -42,3 +42,17 @@ Known limits of packaged local mode: opening-book / puzzle-db /
 refgames builds are repo activities (the server's build jobs spawn repo
 scripts that are not shipped); bring built `data/` artefacts along if
 wanted.
+
+## Auto-update
+
+The shell auto-updates from GitHub releases via `electron-updater`
+(`build.publish` in the root `package.json` points at the repo). On
+launch a packaged build checks for a newer release, downloads it in the
+background, and offers to restart — otherwise it installs on next quit.
+Dev runs and unsigned builds no-op.
+
+Cut a release: bump `version` in `package.json`, then with a GitHub token
+in `GH_TOKEN` run `npm run desktop:release` (packages + uploads the
+installer and `latest.yml`). Clients pick it up on their next launch.
+Requires the repo to be public (or a token baked in) for clients to read
+releases.

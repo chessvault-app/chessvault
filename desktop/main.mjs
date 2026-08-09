@@ -204,7 +204,42 @@ app.whenReady().then(async () => {
   );
 
   await openApp(win);
+  void checkForUpdates(win);
 });
+
+/**
+ * Auto-update the shell from GitHub releases (electron-updater reads the
+ * `build.publish` config). Silent by design: download in the background and
+ * install on the next quit, so it never interrupts. Dev runs and unsigned
+ * builds simply no-op. Publish a release with `npm run desktop:release`.
+ */
+async function checkForUpdates(win) {
+  if (!app.isPackaged) return;
+  try {
+    const { autoUpdater } = await import('electron-updater');
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+    autoUpdater.on('update-downloaded', (info) => {
+      // Let the user finish now instead of waiting for a quit, if they want.
+      void dialog
+        .showMessageBox(win, {
+          type: 'info',
+          buttons: ['Restart now', 'Later'],
+          defaultId: 0,
+          title: 'Update ready',
+          message: `Chess Vault ${info.version} is ready to install.`,
+          detail: 'It will install automatically when you quit, or restart now.',
+        })
+        .then((r) => {
+          if (r.response === 0) autoUpdater.quitAndInstall();
+        });
+    });
+    autoUpdater.on('error', (err) => console.error('[updater]', err?.message ?? err));
+    await autoUpdater.checkForUpdates();
+  } catch (err) {
+    console.error('[updater] disabled:', err?.message ?? err);
+  }
+}
 
 app.on('window-all-closed', () => {
   serverProc?.kill();
