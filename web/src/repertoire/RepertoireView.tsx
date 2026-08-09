@@ -207,7 +207,9 @@ function OpeningPicker({
             onClick={() => setOpen(false)}
           >
             <div
-              className="bg-surface border-line absolute inset-x-3 top-3 flex flex-col gap-2 rounded-xl border p-2 shadow-[var(--shadow-pop)]"
+              // The safe-area term keeps the sheet below the notch/status bar
+              // when installed as a PWA (standalone covers the whole screen).
+              className="bg-surface border-line absolute inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] flex flex-col gap-2 rounded-xl border p-2 shadow-[var(--shadow-pop)]"
               onClick={(e) => e.stopPropagation()}
             >
               <Input
