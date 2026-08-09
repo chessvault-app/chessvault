@@ -12,6 +12,7 @@ import {
   Puzzle,
   Settings,
   Swords,
+  Wrench,
 } from 'lucide-react';
 import { Suspense, lazy } from 'react';
 import { cn } from '@/lib/cn';
@@ -31,14 +32,23 @@ const HomePage = lazy(() => import('@/home/HomePage').then((m) => ({ default: m.
 const StudiesView = lazy(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazy(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
+// Top-level destinations, in the reading order lanph3re set. Board and
+// Editor are not here — they live under Tools (a group, below), the way
+// chess.com/Lichess keep the analysis board out of primary nav.
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
-  { section: 'analysis', label: 'Board', icon: Grid3x3 },
-  { section: 'editor', label: 'Editor', icon: SquarePen },
+  { section: 'games', label: 'Games', icon: BookOpen },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
-  { section: 'games', label: 'Games', icon: BookOpen },
   { section: 'puzzles', label: 'Puzzles', icon: Puzzle },
 ];
+
+// The Tools group: interactive boards that aren't a "collection". Its
+// entries are real sections; Tools itself just points at the first one.
+const TOOLS_SUBNAV: { section: Section; label: string; icon: typeof Swords }[] = [
+  { section: 'analysis', label: 'Board', icon: Grid3x3 },
+  { section: 'editor', label: 'Editor', icon: SquarePen },
+];
+const inTools = (s: Section): boolean => s === 'analysis' || s === 'editor';
 
 export function App() {
   return (
@@ -104,6 +114,36 @@ const PUZZLE_SUBNAV = [
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
 ] as const;
 
+/** An indented child row under a top-level sidebar entry. */
+function SubNavItem({
+  label,
+  icon: Icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: typeof Swords;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'flex h-8 items-center gap-2.5 rounded-lg text-xs font-medium transition-colors duration-150',
+        'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
+        active ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-surface-2 hover:text-fg',
+      )}
+    >
+      <Icon className="size-3.5 shrink-0" />
+      <span className="hidden lg:block">{label}</span>
+    </button>
+  );
+}
+
 function Sidebar({ active, params }: { active: Section; params: string[] }) {
   return (
     <nav
@@ -156,29 +196,41 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             </button>
           );
         })}
-        {PUZZLE_SUBNAV.map(({ param, label, icon: Icon }) => {
-          const isActive = active === 'puzzles' && params[0] === param;
-          return (
-            <button
-              key={param}
-              type="button"
-              onClick={() => navigate('puzzles', param)}
-              title={label}
-              aria-current={isActive ? 'page' : undefined}
-              className={cn(
-                'flex h-8 items-center gap-2.5 rounded-lg text-xs font-medium',
-                'transition-colors duration-150',
-                'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
-                isActive
-                  ? 'bg-primary-soft text-primary'
-                  : 'text-subtle hover:bg-surface-2 hover:text-fg',
-              )}
-            >
-              <Icon className="size-3.5 shrink-0" />
-              <span className="hidden lg:block">{label}</span>
-            </button>
-          );
-        })}
+        {PUZZLE_SUBNAV.map(({ param, label, icon: Icon }) => (
+          <SubNavItem
+            key={param}
+            label={label}
+            icon={Icon}
+            active={active === 'puzzles' && params[0] === param}
+            onClick={() => navigate('puzzles', param)}
+          />
+        ))}
+
+        {/* Tools: a top-level group whose row points at its first entry. */}
+        <button
+          type="button"
+          onClick={() => navigate('analysis')}
+          title="Tools"
+          aria-current={inTools(active) ? 'page' : undefined}
+          className={cn(
+            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
+            'transition-colors duration-150 justify-center lg:justify-start',
+            inTools(active) ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
+          )}
+        >
+          {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
+          <Wrench className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
+          <span className="hidden lg:block">Tools</span>
+        </button>
+        {TOOLS_SUBNAV.map(({ section, label, icon: Icon }) => (
+          <SubNavItem
+            key={section}
+            label={label}
+            icon={Icon}
+            active={active === section}
+            onClick={() => navigate(section)}
+          />
+        ))}
       </div>
 
       <div className="border-line flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
@@ -205,40 +257,60 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
   );
 }
 
-/** Lower-traffic destinations live on the More page: seven labeled tabs
-    plus Settings stopped fitting a phone. Studies keeps its tab over
-    Notes/Editor as the most on-the-go chess content — lanph3re can
-    reorder this list any time. */
-const MORE_SECTIONS: { section: Section; label: string; icon: typeof Swords; blurb: string }[] = [
-  { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
-  { section: 'notes', label: 'Notes', icon: NotebookPen, blurb: 'Markdown notes with live boards' },
-  { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
+/** The More page groups the destinations the bottom bar doesn't carry:
+    the Tools boards, and Settings. Board and Editor are not primary nav on
+    a phone (the chess.com/Lichess pattern), so they live here. */
+const MORE_GROUPS: {
+  heading: string;
+  items: { section: Section; label: string; icon: typeof Swords; blurb: string }[];
+}[] = [
+  {
+    heading: 'Tools',
+    items: [
+      { section: 'analysis', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
+      { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
+    ],
+  },
+  {
+    heading: 'App',
+    items: [
+      { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
+    ],
+  },
 ];
+const MORE_SECTIONS = MORE_GROUPS.flatMap((g) => g.items);
 
 /** A plain page, not a popover — lanph3re's call after trying the sheet. */
 function MorePage() {
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-md flex-col gap-2 p-4">
-        <h1 className="mb-1 px-1 text-lg font-semibold tracking-tight">More</h1>
-        {MORE_SECTIONS.map(({ section, label, icon: Icon, blurb }) => (
-          <button
-            key={section}
-            type="button"
-            onClick={() => navigate(section)}
-            className={cn(
-              'bg-surface border-line flex items-center gap-3 rounded-xl border p-3.5 text-left',
-              'active:bg-surface-2 transition-colors duration-100',
-            )}
-          >
-            <div className="bg-surface-2 text-muted grid size-10 shrink-0 place-items-center rounded-lg">
-              <Icon className="size-5" strokeWidth={2} />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{label}</div>
-              <div className="text-subtle text-xs">{blurb}</div>
-            </div>
-          </button>
+      <div className="mx-auto flex max-w-md flex-col gap-4 p-4">
+        <h1 className="px-1 text-lg font-semibold tracking-tight">More</h1>
+        {MORE_GROUPS.map(({ heading, items }) => (
+          <div key={heading} className="flex flex-col gap-2">
+            <h2 className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
+              {heading}
+            </h2>
+            {items.map(({ section, label, icon: Icon, blurb }) => (
+              <button
+                key={section}
+                type="button"
+                onClick={() => navigate(section)}
+                className={cn(
+                  'bg-surface border-line flex items-center gap-3 rounded-xl border p-3.5 text-left',
+                  'active:bg-surface-2 transition-colors duration-100',
+                )}
+              >
+                <div className="bg-surface-2 text-muted grid size-10 shrink-0 place-items-center rounded-lg">
+                  <Icon className="size-5" strokeWidth={2} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">{label}</div>
+                  <div className="text-subtle text-xs">{blurb}</div>
+                </div>
+              </button>
+            ))}
+          </div>
         ))}
       </div>
     </div>

@@ -229,7 +229,7 @@ export function DashboardPage() {
           </div>
         </Panel>
 
-        {books !== null && books.length > 0 && (
+        {books !== null && (
           <Panel flush className="mb-4">
             <PanelHeader
               title="Books"
@@ -245,6 +245,19 @@ export function DashboardPage() {
                 </Button>
               }
             />
+            {books.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+                <BookMarked className="text-subtle size-6" strokeWidth={1.5} />
+                <p className="text-muted max-w-xs text-xs leading-relaxed">
+                  No puzzle books yet. Import a scanned tactics book and its diagrams become a
+                  solvable, progress-tracked set.
+                </p>
+                <Button variant="primary" size="sm" onClick={() => navigate('puzzles', 'books')}>
+                  <BookMarked className="size-3.5" />
+                  Import a book
+                </Button>
+              </div>
+            ) : (
             <ul>
               {books.map((b) => (
                 <li key={b.slug} className="border-line border-b last:border-b-0">
@@ -268,6 +281,7 @@ export function DashboardPage() {
                 </li>
               ))}
             </ul>
+            )}
           </Panel>
         )}
 
