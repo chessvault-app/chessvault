@@ -25,3 +25,6 @@ web/public/pdfjs-wasm/
 
 __pycache__/
 release/
+
+# Personal deploy target (host, key) — never committed.
+scripts/deploy.env
