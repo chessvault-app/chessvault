@@ -204,6 +204,7 @@ end · `f` flip board.
 - [Book import pipeline](docs/book-import-pipeline.md) — how PDFs
   become verified puzzle books, with a runbook.
 - [ML history](docs/ml-history.md) — how the book reader got good.
+- [Update log](docs/update-log.md) — what changed, newest first.
 
 ## Licensing
 
