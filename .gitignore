@@ -9,6 +9,12 @@ web/public/engine/
 # Holds the Lichess API token — never commit this.
 vault/config.json
 
+# The vault is USER DATA — games, notes, studies, imported books. It is
+# never committed: the server creates the skeleton on boot, and book
+# content extracted from commercial PDFs must not be redistributed.
+vault/*
+!vault/.gitkeep
+
 # Large PGN collections the user drops in to be indexed. The books built from
 # them live in data/, so neither needs version control.
 vault/sources/*

@@ -38,7 +38,6 @@ stored as PGN, markdown and JSON in one folder you own.
   original page scan. Three books and ~3,100 puzzles imported so far.
 
   ![Puzzle dashboard](docs/screenshots/dashboard.png)
-  ![A book](docs/screenshots/book.png)
 
 - **Everywhere** — responsive down to phones, installable as a PWA
   (home-screen icon, splash screens, offline shell), and a desktop app
