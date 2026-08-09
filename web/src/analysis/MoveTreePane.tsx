@@ -78,7 +78,15 @@ export function MoveTreePane({ className }: { className?: string }) {
         // The floor keeps a few lines of moves visible even when the whole
         // panel is squeezed by a short viewport; the panel's minimum height
         // follows it, pushing its column into scroll instead of clipping.
-        className={cn('min-h-24 flex-1 overflow-y-auto text-sm leading-relaxed', className)}
+        className={cn(
+          // min-h-0 below lg, NOT a fixed floor: the move table must be able
+          // to yield space to the annotation editor beneath it. Panel clips
+          // its overflow, so a floor here pushed the editor out of the panel
+          // entirely — visible on game pages, which spend ~56px more than a
+          // study on the two player bars.
+          'min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed lg:min-h-24',
+          className,
+        )}
       >
         {isEmpty ? (
           <p className="text-subtle px-2 py-6 text-center text-xs">

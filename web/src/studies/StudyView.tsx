@@ -162,7 +162,15 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             scrolls (above) if even that is not enough. */}
         <Panel
           flush
-          className={cn('flex-1 max-lg:min-h-0 lg:min-h-[22rem]', pane !== 'moves' && 'max-lg:hidden')}
+          className={cn(
+            'flex-1 max-lg:min-h-0 lg:min-h-[22rem]',
+            // Last resort on very short viewports: once the move table has
+            // shrunk to nothing and the header + editor still do not fit,
+            // let the panel itself scroll rather than clip the editor away
+            // (Panel is overflow-hidden by default).
+            'max-lg:overflow-y-auto max-lg:scrollbar-hidden',
+            pane !== 'moves' && 'max-lg:hidden',
+          )}
         >
           {/* Docked on desktop; its own tab on phones (below). */}
           <EngineBlock className="max-lg:hidden" />
