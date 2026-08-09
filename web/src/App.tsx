@@ -13,6 +13,7 @@ import {
   Puzzle,
   Settings,
   Swords,
+  SwatchBook,
   Wrench,
 } from 'lucide-react';
 import { Suspense, lazy } from 'react';
@@ -58,7 +59,7 @@ const TOOLS_SUBNAV: {
   { key: 'board', label: 'Board', icon: Grid3x3, nav: ['analysis'], active: (s, p) => s === 'analysis' && p[0] !== 'explorer' },
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
-  { key: 'repertoire', label: 'Repertoire', icon: Swords, nav: ['repertoire'], active: (s) => s === 'repertoire' },
+  { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
 const inTools = (s: Section): boolean => s === 'analysis' || s === 'editor' || s === 'repertoire';
 
@@ -304,7 +305,7 @@ const MORE_GROUPS: {
       { section: 'analysis', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
-      { section: 'repertoire', label: 'Repertoire', icon: Swords, blurb: 'Spar an opening against the database' },
+      { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
     ],
   },
   {
