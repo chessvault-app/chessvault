@@ -96,8 +96,19 @@ function readToken(): string | null {
   }
 }
 
-function cachePath(db: ExplorerDb, epd: string): string {
-  const key = createHash('sha256').update(`${db}\n${epd}`).digest('hex').slice(0, 32);
+// Lichess groups ratings into fixed buckets; the repertoire trainer sends a
+// subset to bias replies toward a playing strength. Anything else is dropped
+// so a bad param can never reach Lichess or fragment the cache.
+const RATING_BUCKETS = new Set(['400', '1000', '1200', '1400', '1600', '1800', '2000', '2200', '2500']);
+
+function normalizeRatings(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const picked = raw.split(',').map((s) => s.trim()).filter((b) => RATING_BUCKETS.has(b));
+  return picked.length ? picked.sort((a, b) => Number(a) - Number(b)).join(',') : null;
+}
+
+function cachePath(db: ExplorerDb, epd: string, ratings: string | null): string {
+  const key = createHash('sha256').update(`${db}\n${epd}\n${ratings ?? ''}`).digest('hex').slice(0, 32);
   return resolve(DATA_EXPLORER_CACHE, db, `${key}.json`);
 }
 
@@ -129,7 +140,9 @@ export function lichessExplorerApi(): Hono {
       return c.json({ error: 'invalid FEN' }, 400);
     }
 
-    const path = cachePath(db, epd);
+    // Master games have no rating filter; only the lichess db honours it.
+    const ratings = db === 'lichess' ? normalizeRatings(c.req.query('ratings')) : null;
+    const path = cachePath(db, epd, ratings);
     const cached = readCache(path);
     if (cached && cached.ageMs < TTL_MS[db]) {
       return c.body(cached.body, 200, { 'content-type': 'application/json' });
@@ -138,7 +151,9 @@ export function lichessExplorerApi(): Hono {
     const token = readToken();
     if (token) {
       try {
-        const url = `${EXPLORER_HOST}/${db}?fen=${encodeURIComponent(epd)}&topGames=4`;
+        const url =
+          `${EXPLORER_HOST}/${db}?fen=${encodeURIComponent(epd)}&topGames=4` +
+          (ratings ? `&ratings=${ratings}` : '');
         const res = await fetch(url, {
           headers: { Authorization: `Bearer ${token}` },
           signal: AbortSignal.timeout(12_000),

@@ -7,6 +7,7 @@ import {
   FlipVertical2,
   Settings2,
   Eye,
+  LayoutGrid,
   Lightbulb,
   Loader2,
   Puzzle,
@@ -622,20 +623,27 @@ function Trainer({
             <div className="border-line border-b">
               <DifficultyRow active={difficulty} onPick={pickDifficulty} />
               {/* Theme picker folded in beside difficulty — both answer
-                  "which puzzles", so they share the one reveal. */}
-              <button
-                type="button"
-                onClick={() => navigate('puzzles', 'themes')}
-                className="hover:bg-surface-2 flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors duration-100"
-              >
-                <span className="text-subtle shrink-0 font-semibold uppercase tracking-[0.08em]">
-                  Theme
-                </span>
-                <span className="text-fg ml-auto truncate font-medium">
-                  {theme ? themeLabel(theme) : 'All themes'}
-                </span>
-                <ChevronRight className="text-subtle size-3.5 shrink-0" />
-              </button>
+                  "which puzzles", so they share the one reveal. Styled as a
+                  chip button to match the difficulty row above it. */}
+              <div className="px-2.5 pb-2.5">
+                <button
+                  type="button"
+                  onClick={() => navigate('puzzles', 'themes')}
+                  className={cn(
+                    'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+                    'border-line border px-2.5 py-2 text-left transition-colors duration-100',
+                  )}
+                >
+                  <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+                  <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                    Theme
+                  </span>
+                  <span className="text-fg ml-auto truncate text-xs font-medium">
+                    {theme ? themeLabel(theme) : 'All themes'}
+                  </span>
+                  <ChevronRight className="text-subtle size-3.5 shrink-0" />
+                </button>
+              </div>
             </div>
           )}
           <div className="flex flex-col gap-3 p-3">

@@ -33,6 +33,7 @@ const PuzzlesView = lazy(() => import('@/puzzles/PuzzlesView').then((m) => ({ de
 const HomePage = lazy(() => import('@/home/HomePage').then((m) => ({ default: m.HomePage })));
 const StudiesView = lazy(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazy(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const RepertoireView = lazy(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
@@ -57,8 +58,9 @@ const TOOLS_SUBNAV: {
   { key: 'board', label: 'Board', icon: Grid3x3, nav: ['analysis'], active: (s, p) => s === 'analysis' && p[0] !== 'explorer' },
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
+  { key: 'repertoire', label: 'Repertoire', icon: Swords, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
-const inTools = (s: Section): boolean => s === 'analysis' || s === 'editor';
+const inTools = (s: Section): boolean => s === 'analysis' || s === 'editor' || s === 'repertoire';
 
 export function App() {
   return (
@@ -101,6 +103,8 @@ function Shell() {
           <NotesView params={params} />
         ) : section === 'puzzles' ? (
           <PuzzlesView params={params} />
+        ) : section === 'repertoire' ? (
+          <RepertoireView />
         ) : section === 'settings' ? (
           <SettingsPage />
         ) : section === 'more' ? (
@@ -300,6 +304,7 @@ const MORE_GROUPS: {
       { section: 'analysis', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
+      { section: 'repertoire', label: 'Repertoire', icon: Swords, blurb: 'Spar an opening against the database' },
     ],
   },
   {
