@@ -972,6 +972,48 @@ const PROVENANCE_META = {
  * used, never in a lookup popup. Rects are page fractions; the crop is
  * plain pixel math once the image's natural size is known.
  */
+/** The book-scan peek beside a puzzle: hovers open on a mouse, and TAPS open
+    on touch (the hover-only version did nothing on a phone). Tap the eye again
+    or anywhere else to close. */
+function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?: SourceRect }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent): void => {
+      if (!(e.target as HTMLElement).closest('[data-peek]')) setOpen(false);
+    };
+    document.addEventListener('click', onDown, true);
+    return () => document.removeEventListener('click', onDown, true);
+  }, [open]);
+  return (
+    <span data-peek className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9">
+      <button
+        type="button"
+        title="Peek at the book scan"
+        onClick={(e) => {
+          if (window.matchMedia('(pointer: coarse)').matches) {
+            e.stopPropagation();
+            setOpen((v) => !v);
+          }
+        }}
+        className="grid size-full place-items-center"
+      >
+        <Eye className="text-subtle group-hover:text-fg size-3.5 transition-colors pointer-coarse:size-4.5" />
+      </button>
+      <span
+        className={cn(
+          'pointer-events-none absolute right-0 top-8 z-40 group-hover:block',
+          open ? 'block' : 'hidden',
+        )}
+      >
+        <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
+          <SourceCrop slug={slug} page={page} rect={rect} width={252} plain />
+        </span>
+      </span>
+    </span>
+  );
+}
+
 function SourceCrop({
   slug,
   page,
@@ -1804,22 +1846,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       </span>
       <span className="min-w-0 flex-1" />
       {puzzle.evidence?.page && (
-        <span className="group relative grid size-7 shrink-0 place-items-center">
-          <Eye className="text-subtle group-hover:text-fg size-3.5 cursor-help transition-colors" />
-          {/* Hover peek: the scan next to the board — a two-second
-              "was this read right?" check without leaving the puzzle. */}
-          <span className="pointer-events-none absolute right-0 top-8 z-40 hidden group-hover:block">
-            <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
-              <SourceCrop
-                slug={slug}
-                page={puzzle.evidence.page}
-                rect={puzzle.evidence.rect}
-                width={252}
-                plain
-              />
-            </span>
-          </span>
-        </span>
+        <EvidencePeek slug={slug} page={puzzle.evidence.page} rect={puzzle.evidence.rect} />
       )}
       <Button
         variant="ghost"

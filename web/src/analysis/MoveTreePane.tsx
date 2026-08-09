@@ -9,10 +9,12 @@ import { useAnalysis } from '@/store/analysis';
 export const NAG_GLYPH: Record<number, string> = {
   1: '!',
   2: '?',
-  3: '‼',
-  4: '⁇',
-  5: '⁉',
-  6: '⁈',
+  // Standard ASCII pairs, matching the board badges (BOARD_NAGS) so a move's
+  // mark reads identically in the tree and on the board.
+  3: '!!',
+  4: '??',
+  5: '!?',
+  6: '?!',
   7: '□',
   10: '=',
   13: '∞',

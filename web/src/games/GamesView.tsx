@@ -99,11 +99,18 @@ function GamePreview({ preview, onClose }: { preview: Preview | null; onClose: (
   const card = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!preview) return;
-    const onDown = (e: MouseEvent): void => {
-      if (!card.current?.contains(e.target as Node)) onClose();
+    // Capture-phase click: fires BEFORE the game row's own onClick, so a
+    // click outside the preview dismisses it AND is swallowed — otherwise
+    // the click behind the preview also opened the game.
+    const onClick = (e: MouseEvent): void => {
+      if (!card.current?.contains(e.target as Node)) {
+        e.stopPropagation();
+        e.preventDefault();
+        onClose();
+      }
     };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
   }, [preview, onClose]);
 
   if (!preview) return null;

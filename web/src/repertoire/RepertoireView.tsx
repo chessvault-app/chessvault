@@ -122,6 +122,11 @@ export function RepertoireView() {
       const token = runId.current;
       setPhase('thinking');
       setError(null);
+      // A steady minimum "thinking" time: the DB fetch is instant when the
+      // position is cached and slow when it isn't, which felt jarringly
+      // random. Waiting out the rest of MIN_THINK makes the reply land at a
+      // consistent, deliberate pace.
+      const started = Date.now();
       try {
         const fen = getNode(curTree, curId).fen;
         const res = await fetch(`/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`);
@@ -137,6 +142,9 @@ export function RepertoireView() {
           setPhase('ended');
           return;
         }
+        const wait = 550 - (Date.now() - started);
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        if (token !== runId.current) return;
         const added = addUci(curTree, curId, choice.uci);
         if (!added || token !== runId.current) {
           if (!added) setPhase('ended');

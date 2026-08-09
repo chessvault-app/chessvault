@@ -83,8 +83,18 @@ export function Select({
       const t = e.target as Node;
       if (!trigger.current?.contains(t) && !list.current?.contains(t)) close();
     };
+    // Scrolling the LIST is fine (ignore). A scroll of the page behind must
+    // NOT dismiss — that's what closed a short, non-scrollable dropdown on a
+    // touch drag. Instead follow the trigger; only close if it scrolls away.
     const onScroll = (e: Event): void => {
-      if (!list.current?.contains(e.target as Node)) close();
+      if (list.current?.contains(e.target as Node)) return;
+      const r = trigger.current?.getBoundingClientRect();
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) {
+        close();
+        return;
+      }
+      setRect(r);
+      setDropUp(r.bottom > window.innerHeight * 0.55);
     };
     document.addEventListener('mousedown', onDown);
     window.addEventListener('scroll', onScroll, true);
