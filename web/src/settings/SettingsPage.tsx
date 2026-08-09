@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { ChevronLeft, KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff, KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
@@ -414,6 +414,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
 
 function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: () => Promise<void> }) {
   const [token, setToken] = useState('');
+  const [show, setShow] = useState(false);
   const [note, setNote] = useState<Note>(null);
 
   const save = async (): Promise<void> => {
@@ -455,15 +456,27 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
         </p>
       )}
       <div className="flex items-center gap-2">
-        <Input
-          inputSize="lg"
-          type="password"
-          autoComplete="off"
-          placeholder="lip_…"
-          className="flex-1"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-        />
+        {/* A token is a secret, so it stays masked by default — but you
+            paste it here, so an eye toggle lets you check it before saving. */}
+        <div className="relative flex-1">
+          <Input
+            inputSize="lg"
+            type={show ? 'text' : 'password'}
+            autoComplete="off"
+            placeholder="lip_…"
+            className="w-full pr-9"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => setShow((v) => !v)}
+            title={show ? 'Hide token' : 'Show token'}
+            className="text-subtle hover:text-fg absolute inset-y-0 right-0 grid w-9 place-items-center"
+          >
+            {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         <Button variant="primary" disabled={token.trim() === ''} onClick={() => void save()}>Save</Button>
         {settings.lichess.configured && (
           <Button variant="danger" onClick={() => void clear()}>Remove</Button>
@@ -480,22 +493,7 @@ const WIPE_PHRASE = 'wipe everything';
 
 function DangerCard({ gate }: { gate: boolean }) {
   const [phrase, setPhrase] = useState('');
-  const [password, setPassword] = useState('');
-  const [note, setNote] = useState<Note>(null);
-
-  const wipe = async (): Promise<void> => {
-    const res = await json('POST', '/api/settings/wipe', {
-      confirm: phrase,
-      ...(gate && { password }),
-    });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      setNote({ kind: 'error', text: body.error ?? 'The confirmation did not match.' });
-      return;
-    }
-    setNote({ kind: 'ok', text: 'Vault wiped — reloading…' });
-    setTimeout(() => window.location.reload(), 900);
-  };
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <Card icon={Trash2} title="Danger zone">
@@ -504,36 +502,86 @@ function DangerCard({ gate }: { gate: boolean }) {
         change history. The app password, 2FA and tokens survive. There is no undo; if the vault
         matters, back it up first.
       </p>
-      <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
         <Input
           inputSize="lg"
           placeholder={`Type “${WIPE_PHRASE}” to arm`}
+          className="flex-1"
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}
         />
-        <div className="flex items-center gap-2">
-          {gate && (
+        <Button variant="danger" disabled={phrase !== WIPE_PHRASE} onClick={() => setConfirming(true)}>
+          Wipe all data
+        </Button>
+      </div>
+      {confirming && <WipeConfirmDialog gate={gate} onClose={() => setConfirming(false)} />}
+    </Card>
+  );
+}
+
+/** The last gate before an irreversible wipe: a modal that (on a gated
+    vault) re-asks for the password. Kept separate from the card so the
+    password field only exists for the moment it's needed. */
+function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => void }) {
+  const [password, setPassword] = useState('');
+  const [note, setNote] = useState<Note>(null);
+  const [busy, setBusy] = useState(false);
+
+  const wipe = async (): Promise<void> => {
+    setBusy(true);
+    const res = await json('POST', '/api/settings/wipe', {
+      confirm: WIPE_PHRASE,
+      ...(gate && { password }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      setNote({ kind: 'error', text: body.error ?? 'That did not match.' });
+      setBusy(false);
+      return;
+    }
+    setNote({ kind: 'ok', text: 'Vault wiped — reloading…' });
+    setTimeout(() => window.location.reload(), 900);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-6" onClick={onClose}>
+      <div className="bg-scrim absolute inset-0" />
+      <div
+        className="bg-surface border-line relative w-full max-w-sm rounded-2xl border p-5 shadow-[var(--shadow-pop)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center gap-2">
+          <div className="bg-bad/12 text-bad grid size-9 place-items-center rounded-lg">
+            <Trash2 className="size-4" />
+          </div>
+          <h2 className="text-sm font-semibold">Wipe the entire vault?</h2>
+        </div>
+        <p className="text-muted mb-4 text-xs leading-relaxed">
+          This permanently deletes every game, study, note, puzzle and book, and their history.
+          There is no undo.
+        </p>
+        {gate && (
+          <label className="mb-3 flex flex-col gap-1">
+            <span className="text-muted text-xs font-medium">Confirm your app password</span>
             <Input
+              autoFocus
               inputSize="lg"
               type="password"
               autoComplete="current-password"
-              placeholder="Confirm your password"
-              className="flex-1"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !busy && password !== '' && void wipe()}
             />
-          )}
-          <Button
-            variant="danger"
-            disabled={phrase !== WIPE_PHRASE || (gate && password === '')}
-            onClick={() => void wipe()}
-            className={gate ? '' : 'ml-auto'}
-          >
-            Wipe all data
+          </label>
+        )}
+        <Feedback note={note} />
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="danger" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
+            {busy ? 'Wiping…' : 'Wipe everything'}
           </Button>
         </div>
       </div>
-      <Feedback note={note} />
-    </Card>
+    </div>
   );
 }
