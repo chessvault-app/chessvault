@@ -459,7 +459,7 @@ function Trainer({
             <EngineBlock />
             <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
             <MoveTreePane />
-            <BoardControls className="border-line border-t stacked:hidden" keyboard={false} />
+            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
             <StatusBar />
           </Panel>
         </div>
@@ -621,6 +621,21 @@ function Trainer({
           {showDifficulty && mode === 'fresh' && (
             <div className="border-line border-b">
               <DifficultyRow active={difficulty} onPick={pickDifficulty} />
+              {/* Theme picker folded in beside difficulty — both answer
+                  "which puzzles", so they share the one reveal. */}
+              <button
+                type="button"
+                onClick={() => navigate('puzzles', 'themes')}
+                className="hover:bg-surface-2 flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition-colors duration-100"
+              >
+                <span className="text-subtle shrink-0 font-semibold uppercase tracking-[0.08em]">
+                  Theme
+                </span>
+                <span className="text-fg ml-auto truncate font-medium">
+                  {theme ? themeLabel(theme) : 'All themes'}
+                </span>
+                <ChevronRight className="text-subtle size-3.5 shrink-0" />
+              </button>
             </div>
           )}
           <div className="flex flex-col gap-3 p-3">
@@ -743,30 +758,6 @@ function Trainer({
           </Panel>
         )}
 
-        {/* Theme — one word with the sidebar and the catalogue page it
-            links to. The review/replay modes explain themselves in the
-            Training panel, so the strip only shows for normal training. */}
-        {mode === 'fresh' && (
-          <button
-            type="button"
-            onClick={() => navigate('puzzles', 'themes')}
-            className={cn(
-              'bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex shrink-0',
-              'items-center gap-2.5 rounded-xl border px-3 text-left shadow-[var(--shadow-panel)] transition-colors duration-100',
-              'h-10',
-            )}
-          >
-            <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-              Theme
-            </span>
-            <span className="min-w-0 flex-1" />
-            <Puzzle className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-            <span className="text-fg truncate text-xs font-medium">
-              {theme ? themeLabel(theme) : 'All themes'}
-            </span>
-            <ChevronRight className="text-subtle size-3.5 shrink-0" />
-          </button>
-        )}
       </div>
 
       {/* Phones: the bottom bar steps through the moves played so far, like

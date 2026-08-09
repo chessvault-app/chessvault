@@ -129,7 +129,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           <ReviewStrip />
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
-          <BoardControls className="border-line border-t stacked:hidden" keyboard={false} />
+          <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
           <StatusBar />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
