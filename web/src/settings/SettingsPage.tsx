@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { Check, KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
+import { KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
@@ -127,10 +127,10 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="chess.com username">
-          <Input inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} autoCapitalize="none" />
+          <Input inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder="your chess.com handle" autoCapitalize="none" />
         </Field>
         <Field label="Lichess username">
-          <Input inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} autoCapitalize="none" />
+          <Input inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder="your Lichess handle" autoCapitalize="none" />
         </Field>
       </div>
       <p className="text-subtle text-xs">Usernames pre-fill the archive browser on the Games page.</p>
@@ -164,12 +164,18 @@ function AppearanceCard() {
         />
       </Field>
 
-      <span className="text-muted text-xs font-medium">Board</span>
-      <div className="flex flex-wrap gap-2">
-        {BOARD_THEMES.map(({ id, label }) => (
-          <BoardSwatch key={id} id={id} label={label} active={boardTheme === id} onPick={() => setBoardTheme(id)} />
-        ))}
-      </div>
+      <Field label="Board">
+        <div className="flex items-center gap-3">
+          <BoardPreview theme={boardTheme} />
+          <Select
+            value={boardTheme}
+            onChange={(v) => setBoardTheme(v as BoardTheme)}
+            ariaLabel="Board theme"
+            className="flex-1"
+            groups={[{ options: BOARD_THEMES.map(({ id, label }) => ({ value: id, label })) }]}
+          />
+        </div>
+      </Field>
 
       <Field label="Pieces">
         <Select
@@ -188,43 +194,23 @@ function AppearanceCard() {
   );
 }
 
-/** The swatch paints with the same tokens the real board uses, by scoping
-    the preset attribute to itself — an honest preview, not a copy of the
-    palette. */
-function BoardSwatch({
-  id,
-  label,
-  active,
-  onPick,
-}: {
-  id: BoardTheme;
-  label: string;
-  active: boolean;
-  onPick: () => void;
-}) {
+/** A 2×2 checker painted with the live board tokens. The theme presets are
+    defined on `:root[data-board=…]`, and selecting one applies it to the
+    root immediately, so reading the plain vars here mirrors exactly what the
+    real board shows — no hand-copied palette to drift. */
+function BoardPreview({ theme }: { theme: BoardTheme }) {
+  // `theme` is only a re-render trigger; the colours come from :root.
+  void theme;
   return (
-    <button
-      type="button"
-      onClick={onPick}
-      aria-pressed={active}
-      className={
-        'flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-colors ' +
-        (active ? 'border-primary bg-primary-soft' : 'border-line hover:bg-surface-2')
-      }
-      {...(id !== 'default' && { 'data-board': id })}
-    >
-      <span
-        aria-hidden
-        className="block size-10 rounded-sm"
-        style={{
-          backgroundColor: 'var(--board-light)',
-          backgroundImage: 'repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
-          backgroundSize: '50% 50%',
-        }}
-      />
-      <span className="text-subtle max-w-20 text-center text-[0.625rem] leading-tight">{label}</span>
-      {active && <Check className="text-primary size-3" />}
-    </button>
+    <span
+      aria-hidden
+      className="border-line block size-9 shrink-0 rounded-md border"
+      style={{
+        backgroundColor: 'var(--board-light)',
+        backgroundImage: 'repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
+        backgroundSize: '50% 50%',
+      }}
+    />
   );
 }
 
