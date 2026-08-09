@@ -14,6 +14,7 @@ import { createReadStream, existsSync, readdirSync, renameSync, rmSync } from 'n
 import { basename, isAbsolute, resolve } from 'node:path';
 import { PgnParser, type Game, type PgnNodeData } from 'chessops/pgn';
 import { DATA, VAULT_SOURCES } from '../server/paths.ts';
+import { REFGAMES_INDEXES } from './lib/db-tuning.ts';
 
 const OUT = resolve(DATA, 'refgames.sqlite');
 
@@ -122,6 +123,9 @@ for (const source of sources) {
 }
 parser.parse(''); // finish the stream
 db.exec('COMMIT');
+
+console.log('indexing…');
+db.exec(REFGAMES_INDEXES);
 
 const setMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
 setMeta.run('games', String(games));

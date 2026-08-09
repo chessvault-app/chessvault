@@ -26,13 +26,37 @@ interface RefGameRow {
   opening: string | null;
 }
 
-export function refGamesApi(dbPath: string = DB_PATH): Hono {
+export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => void } {
   let handle: InstanceType<typeof Database> | null = null;
   const db = (): InstanceType<typeof Database> | null => {
     if (handle) return handle;
     if (!existsSync(dbPath)) return null;
     handle = new Database(dbPath, { readonly: true, fileMustExist: true });
     return handle;
+  };
+
+  // Windows can't delete an open database file, so tests need this.
+  const closeDb = (): void => {
+    handle?.close();
+    handle = null;
+  };
+
+  /**
+   * Rows in `games`, from the build's own tally — the file is read-only for
+   * the process lifetime, so one read is enough. Older databases without the
+   * meta row pay a single COUNT(*).
+   */
+  let cachedCount: number | null = null;
+  const tableCount = (d: InstanceType<typeof Database>): number => {
+    if (cachedCount === null) {
+      const meta = d.prepare("SELECT value FROM meta WHERE key = 'games'").get() as
+        | { value: string }
+        | undefined;
+      cachedCount =
+        Number(meta?.value) ||
+        (d.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+    }
+    return cachedCount;
   };
 
   const api = new Hono();
@@ -62,9 +86,18 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono {
     // opening name, and the ECO code (prefix match, so "B9" finds B90-B99).
     const where = q ? 'WHERE white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?' : '';
     const args = q ? [`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`] : [];
-    const total = (
-      d.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }
-    ).n;
+
+    // COUNT(*) here scans; the leading-wildcard LIKEs are not seekable, so
+    // no index can turn that into a lookup. Infinite scroll asks for the
+    // same query over and over, so pay it once on the first page and send
+    // null afterwards — the client keeps the total it already has. The
+    // empty query is free: it is the whole table, which meta already knows.
+    const total =
+      q === ''
+        ? tableCount(d)
+        : offset === 0
+          ? (d.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }).n
+          : null;
     const rows = d
       .prepare(
         `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening
@@ -118,5 +151,5 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono {
     return c.json({ pgn });
   });
 
-  return api;
+  return Object.assign(api, { closeDb });
 }

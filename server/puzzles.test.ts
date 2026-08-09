@@ -153,3 +153,81 @@ describe('puzzles api', () => {
     expect((await unknown).status).toBe(404);
   });
 });
+
+/**
+ * The fast draw path. Databases built since the rating_counts tables exist
+ * resolve a random offset through them instead of walking the index; this
+ * must be indistinguishable from the walk — same rows in, same rows out,
+ * every one of them reachable. Two puzzles share rating 1500 so the offset
+ * *inside* a bucket is exercised too.
+ */
+describe('puzzles api (rating_counts fast path)', () => {
+  let dir: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzles-buckets-'));
+    const dbPath = join(dir, 'puzzles.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE puzzles (
+        id TEXT PRIMARY KEY, fen TEXT NOT NULL, moves TEXT NOT NULL,
+        rating INTEGER NOT NULL, rd INTEGER NOT NULL, popularity INTEGER NOT NULL,
+        plays INTEGER NOT NULL, themes TEXT NOT NULL, game_url TEXT, opening_tags TEXT
+      );
+      CREATE TABLE themes (theme TEXT NOT NULL, rating INTEGER NOT NULL, id TEXT NOT NULL);
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('puzzles', '4');
+      INSERT INTO puzzles VALUES
+        ('aaa', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1500, 80, 90, 10, 'endgame short', NULL, NULL),
+        ('aab', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1500, 80, 90, 10, 'endgame short', NULL, NULL),
+        ('bbb', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1520, 80, 90, 10, 'fork short', NULL, NULL),
+        ('ccc', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 2400, 80, 90, 10, 'endgame long', NULL, NULL);
+      INSERT INTO themes VALUES
+        ('endgame', 1500, 'aaa'), ('short', 1500, 'aaa'),
+        ('endgame', 1500, 'aab'), ('short', 1500, 'aab'),
+        ('fork', 1520, 'bbb'), ('short', 1520, 'bbb'),
+        ('endgame', 2400, 'ccc'), ('long', 2400, 'ccc');
+      CREATE TABLE rating_counts AS
+        SELECT rating, COUNT(*) AS n FROM puzzles GROUP BY rating;
+      CREATE TABLE theme_rating_counts AS
+        SELECT theme, rating, COUNT(*) AS n FROM themes GROUP BY theme, rating;
+    `);
+    db.close();
+    puzzles = puzzlesApi(dbPath, join(dir, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterAll(() => {
+    puzzles.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const drawMany = async (query: string, n = 60): Promise<Set<string>> => {
+    const seen = new Set<string>();
+    for (let i = 0; i < n; i++) {
+      const res = await app.request(`/api/puzzles/next${query}`);
+      expect(res.status).toBe(200);
+      seen.add((await res.json()).puzzle.id);
+    }
+    return seen;
+  };
+
+  it('honours the rating range, including inside a shared rating', async () => {
+    expect(await drawMany('?max=1600')).toEqual(new Set(['aaa', 'aab', 'bbb']));
+    expect(await drawMany('?min=2000')).toEqual(new Set(['ccc']));
+    expect(await drawMany('?min=1500&max=1500')).toEqual(new Set(['aaa', 'aab']));
+  });
+
+  it('honours the theme filter', async () => {
+    expect(await drawMany('?theme=short')).toEqual(new Set(['aaa', 'aab', 'bbb']));
+    expect(await drawMany('?theme=fork')).toEqual(new Set(['bbb']));
+    expect(await drawMany('?theme=endgame&min=2000')).toEqual(new Set(['ccc']));
+  });
+
+  it('404s on a filter that matches nothing', async () => {
+    expect((await app.request('/api/puzzles/next?theme=nosuchtheme')).status).toBe(404);
+    expect((await app.request('/api/puzzles/next?min=3000')).status).toBe(404);
+  });
+});

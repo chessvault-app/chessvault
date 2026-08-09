@@ -33,6 +33,10 @@ ssh "${SSH_KEY[@]}" "$HOST" 'set -e
   git reset --hard FETCH_HEAD
   npm ci --no-audit --no-fund >/dev/null
   rm -rf dist && tar xzf /tmp/deploy-dist.tar.gz && rm /tmp/deploy-dist.tar.gz
+  # Derived tables and indexes the API relies on. Idempotent and a no-op in
+  # milliseconds once applied, so it is cheaper to run every deploy than to
+  # remember which databases predate which optimisation.
+  npx tsx scripts/tune-dbs.ts
   sudo systemctl restart chess-vault
   sleep 3
   systemctl is-active chess-vault'

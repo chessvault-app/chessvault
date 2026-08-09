@@ -36,12 +36,6 @@ interface UserState {
 const DEFAULT_STATE: UserState = { attempts: 0, wins: 0, streak: 0 };
 
 /**
- * A random puzzle in the rating range, optionally within a theme.
- * Count + random offset over the covering index; a handful of retries
- * dodges already-attempted puzzles, and if everything drawn is attempted
- * (tiny pools) the last draw is served anyway — a repeat beats a dead end.
- */
-/**
  * COUNT(*) over the rating index walks every matching row — measured at
  * ~158 ms across the full 6.1M-puzzle table, paid on EVERY "next puzzle".
  * The database is opened read-only and is never rewritten in-process (a
@@ -51,6 +45,95 @@ const DEFAULT_STATE: UserState = { attempts: 0, wins: 0, streak: 0 };
  */
 const countCache = new Map<string, number>();
 
+/**
+ * Per-rating row counts for one filter, with a running total, so a random
+ * offset can be resolved to a rating without walking the index.
+ * `total === 0` means the filter matches nothing.
+ */
+interface Buckets {
+  ratings: number[];
+  /** cum[i] = rows at ratings[0..i] inclusive; cum.at(-1) is the total. */
+  cum: number[];
+  total: number;
+}
+
+/** Filter -> buckets, or null when the database predates the count tables. */
+const bucketCache = new Map<string, Buckets | null>();
+
+const hasTable = (db: InstanceType<typeof Database>, name: string): boolean =>
+  db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name) !== undefined;
+
+/**
+ * `LIMIT 1 OFFSET n` cannot jump: SQLite walks and discards n index entries
+ * first, so a mid-table draw over 6.1 M puzzles burned ~90 ms doing nothing
+ * else. Databases built since this comment carry per-rating row counts
+ * (`rating_counts` / `theme_rating_counts`, see scripts/build-puzzles.ts),
+ * which turn one huge offset into a rating lookup plus a tiny offset inside
+ * that rating — a couple of thousand rows at most.
+ *
+ * The distribution is unchanged: the buckets ARE the order the old query
+ * walked (both indexes lead with `rating`), so picking a uniform offset over
+ * the total and mapping it through the cumulative sums lands on exactly the
+ * row the walk would have reached.
+ *
+ * Returns null for databases without the tables — the caller falls back.
+ */
+function loadBuckets(
+  db: InstanceType<typeof Database>,
+  min: number,
+  max: number,
+  theme: string | null,
+  cacheKey: string,
+): Buckets | null {
+  const cached = bucketCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const table = theme ? 'theme_rating_counts' : 'rating_counts';
+  let buckets: Buckets | null = null;
+  if (hasTable(db, table)) {
+    const rows = (
+      theme
+        ? db
+            .prepare(
+              'SELECT rating, n FROM theme_rating_counts WHERE theme = ? AND rating BETWEEN ? AND ? ORDER BY rating',
+            )
+            .all(theme, min, max)
+        : db
+            .prepare('SELECT rating, n FROM rating_counts WHERE rating BETWEEN ? AND ? ORDER BY rating')
+            .all(min, max)
+    ) as { rating: number; n: number }[];
+    const ratings: number[] = [];
+    const cum: number[] = [];
+    let total = 0;
+    for (const row of rows) {
+      total += row.n;
+      ratings.push(row.rating);
+      cum.push(total);
+    }
+    buckets = { ratings, cum, total };
+  }
+  bucketCache.set(cacheKey, buckets);
+  return buckets;
+}
+
+/** Index of the first bucket whose cumulative count exceeds `target`. */
+function bucketOf(cum: number[], target: number): number {
+  let lo = 0;
+  let hi = cum.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cum[mid]! > target) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+}
+
+/**
+ * A random puzzle in the rating range, optionally within a theme.
+ * A handful of retries dodges already-attempted puzzles, and if everything
+ * drawn is attempted (tiny pools) the last draw is served anyway — a repeat
+ * beats a dead end.
+ */
 function pickPuzzle(
   db: InstanceType<typeof Database>,
   min: number,
@@ -58,26 +141,49 @@ function pickPuzzle(
   theme: string | null,
   exclude: Set<string>,
 ): PuzzleRow | null {
-  const where = theme
-    ? 'FROM themes WHERE theme = ? AND rating BETWEEN ? AND ?'
-    : 'FROM puzzles WHERE rating BETWEEN ? AND ?';
-  const args = theme ? [theme, min, max] : [min, max];
-  const cacheKey = `${theme ?? ''}|${min}|${max}`;
-  let count = countCache.get(cacheKey);
-  if (count === undefined) {
-    count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
-    countCache.set(cacheKey, count);
+  // Keyed by file as well as filter: tests open several databases in one
+  // process, and a count from one of them must never answer for another.
+  const cacheKey = `${db.name}|${theme ?? ''}|${min}|${max}`;
+  const buckets = loadBuckets(db, min, max, theme, cacheKey);
+
+  let drawId: () => string;
+  if (buckets) {
+    if (buckets.total === 0) return null;
+    const byBucket = db.prepare(
+      theme
+        ? 'SELECT id FROM themes WHERE theme = ? AND rating = ? LIMIT 1 OFFSET ?'
+        : 'SELECT id FROM puzzles WHERE rating = ? LIMIT 1 OFFSET ?',
+    );
+    drawId = () => {
+      const target = Math.floor(Math.random() * buckets.total);
+      const i = bucketOf(buckets.cum, target);
+      const offset = target - (i > 0 ? buckets.cum[i - 1]! : 0);
+      const rating = buckets.ratings[i]!;
+      const row = theme ? byBucket.get(theme, rating, offset) : byBucket.get(rating, offset);
+      return (row as { id: string }).id;
+    };
+  } else {
+    const where = theme
+      ? 'FROM themes WHERE theme = ? AND rating BETWEEN ? AND ?'
+      : 'FROM puzzles WHERE rating BETWEEN ? AND ?';
+    const args = theme ? [theme, min, max] : [min, max];
+    let count = countCache.get(cacheKey);
+    if (count === undefined) {
+      count = (db.prepare(`SELECT COUNT(*) AS n ${where}`).get(...args) as { n: number }).n;
+      countCache.set(cacheKey, count);
+    }
+    if (count === 0) return null;
+    const byOffset = db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`);
+    drawId = () =>
+      (byOffset.get(...args, Math.floor(Math.random() * count!)) as { id: string }).id;
   }
-  if (count === 0) return null;
 
   const byId = db.prepare(
     'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
   );
-  const byOffset = db.prepare(`SELECT id ${where} LIMIT 1 OFFSET ?`);
   let fallback: string | null = null;
   for (let attempt = 0; attempt < 12; attempt++) {
-    const offset = Math.floor(Math.random() * count);
-    const id = (byOffset.get(...args, offset) as { id: string }).id;
+    const id = drawId();
     if (!exclude.has(id)) return byId.get(id) as PuzzleRow;
     fallback = id;
   }

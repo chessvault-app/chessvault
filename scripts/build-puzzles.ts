@@ -22,6 +22,7 @@ import { createInterface } from 'node:readline';
 import { existsSync, renameSync, rmSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import { DATA, DATA_PUZZLES } from '../server/paths.ts';
+import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
 import { resolve } from 'node:path';
 
 export const PUZZLE_SCHEMA_VERSION = 1;
@@ -139,6 +140,11 @@ db.exec(`
 // Precomputed: GROUP BY over ~28 M theme rows costs ~1 s, far too slow to
 // run per /puzzles/meta request.
 db.exec('CREATE TABLE theme_counts AS SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme');
+// Per-rating row counts, so serving a puzzle never walks a huge OFFSET —
+// see the loadBuckets comment in server/puzzles.ts. Both tables are small
+// (a few thousand / a few hundred thousand rows) and mirror the leading
+// column of the indexes above.
+db.exec(PUZZLE_COUNT_TABLES);
 
 const setMeta = db.prepare('INSERT INTO meta (key, value) VALUES (?, ?)');
 setMeta.run('schema_version', String(PUZZLE_SCHEMA_VERSION));

@@ -22,6 +22,7 @@
     "build:book": "tsx scripts/build-book.ts",
     "build:puzzles": "tsx scripts/build-puzzles.ts",
     "build:refgames": "tsx scripts/build-refgames.ts",
+    "tune:dbs": "tsx scripts/tune-dbs.ts",
     "desktop": "electron desktop/main.mjs",
     "desktop:package": "node desktop/build-server.mjs && npm run build && electron-builder --win nsis",
     "desktop:release": "node desktop/build-server.mjs && npm run build && electron-builder --win nsis --publish always"

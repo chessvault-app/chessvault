@@ -202,8 +202,10 @@ function EliteBrowser() {
       `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}`,
     );
     if (res.ok) {
-      const data = (await res.json()) as { total: number; rows: RefGame[] };
-      setTotal(data.total);
+      const data = (await res.json()) as { total: number | null; rows: RefGame[] };
+      // Only the first page of a search carries a total — counting matches
+      // means scanning, and every later page would count the same thing.
+      if (data.total !== null) setTotal(data.total);
       setRows((prev) => (offset === 0 ? data.rows : [...prev, ...data.rows]));
     }
     setLoading(false);
