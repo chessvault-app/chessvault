@@ -79,7 +79,10 @@ export function Select({
   useEffect(() => {
     if (!open) return;
     const close = (): void => setOpen(false);
-    const onDown = (e: MouseEvent): void => {
+    // Both mousedown AND touchstart: iOS never synthesizes mouse events for
+    // document-level listeners when the tap lands on dead space, so without
+    // the touch listener a tap outside could not close the list on a phone.
+    const onDown = (e: MouseEvent | TouchEvent): void => {
       const t = e.target as Node;
       if (!trigger.current?.contains(t) && !list.current?.contains(t)) close();
     };
@@ -97,10 +100,12 @@ export function Select({
       setDropUp(r.bottom > window.innerHeight * 0.55);
     };
     document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
     window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
     };

@@ -960,11 +960,17 @@ function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?:
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
-    const onDown = (e: MouseEvent): void => {
+    const onDown = (e: MouseEvent | TouchEvent): void => {
       if (!(e.target as HTMLElement).closest('[data-peek]')) setOpen(false);
     };
+    // touchstart too: iOS taps on dead space never synthesize click for
+    // document-level listeners, so touch alone could not close the peek.
     document.addEventListener('click', onDown, true);
-    return () => document.removeEventListener('click', onDown, true);
+    document.addEventListener('touchstart', onDown, true);
+    return () => {
+      document.removeEventListener('click', onDown, true);
+      document.removeEventListener('touchstart', onDown, true);
+    };
   }, [open]);
   return (
     <span data-peek className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9">

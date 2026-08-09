@@ -55,7 +55,9 @@ export function ConfirmPopover({
   useEffect(() => {
     if (!open) return;
     const close = (): void => setOpen(false);
-    const onDown = (e: MouseEvent): void => {
+    // touchstart too: iOS taps on dead space never synthesize mousedown for
+    // document-level listeners, so touch alone could not dismiss the popover.
+    const onDown = (e: MouseEvent | TouchEvent): void => {
       const t = e.target as Node;
       if (!trigger.current?.contains(t) && !pop.current?.contains(t)) close();
     };
@@ -63,11 +65,13 @@ export function ConfirmPopover({
       if (e.key === 'Escape') close();
     };
     document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
     document.addEventListener('keydown', onKey);
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
     return () => {
       document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
       document.removeEventListener('keydown', onKey);
       window.removeEventListener('scroll', close, true);
       window.removeEventListener('resize', close);

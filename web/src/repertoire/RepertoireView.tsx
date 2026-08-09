@@ -204,13 +204,16 @@ function OpeningPicker({
         {open && (
           <div
             className="fixed inset-0 z-50 bg-black/50"
-            onClick={() => setOpen(false)}
+            // pointerdown, not click: iOS does not reliably synthesize click
+            // on a plain backdrop div, which left selecting an opening as the
+            // ONLY way to close the sheet (lanph3re's report).
+            onPointerDown={() => setOpen(false)}
           >
             <div
               // The safe-area term keeps the sheet below the notch/status bar
               // when installed as a PWA (standalone covers the whole screen).
               className="bg-surface border-line absolute inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] flex flex-col gap-2 rounded-xl border p-2 shadow-[var(--shadow-pop)]"
-              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <Input
                 autoFocus
