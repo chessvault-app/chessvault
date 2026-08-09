@@ -1026,15 +1026,15 @@ if (process.argv.includes('--repair')) {
     }
     // 2-cell repairs only among the least-confident cells, and only if no
     // single edit worked — a wider net would start inventing positions.
+    const margin = (i: number): number => {
+      const p = [...cells[i]!.probs].sort((a, b) => b - a);
+      return p[0]! - p[1]!;
+    };
+    const disagree = (i: number): number => [...cells[i]!.votes.values()].reduce((s, v) => s + v, 0);
+    const shaky = [...Array(64).keys()]
+      .sort((a, b) => disagree(b) - disagree(a) || margin(a) - margin(b))
+      .slice(0, 20);
     if (wins.size === 0) {
-      const margin = (i: number): number => {
-        const p = [...cells[i]!.probs].sort((a, b) => b - a);
-        return p[0]! - p[1]!;
-      };
-      const disagree = (i: number): number => [...cells[i]!.votes.values()].reduce((s, v) => s + v, 0);
-      const shaky = [...Array(64).keys()]
-        .sort((a, b) => disagree(b) - disagree(a) || margin(a) - margin(b))
-        .slice(0, 20);
       for (let a = 0; a < shaky.length; a++) {
         for (let b = a + 1; b < shaky.length; b++) {
           for (const altA of alternates(shaky[a]!, 2)) {
@@ -1044,6 +1044,30 @@ if (process.argv.includes('--repair')) {
               ls[shaky[b]!] = net.labels[altB]!;
               const got = test(ls);
               if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 2, cells: [[shaky[a]!, altA], [shaky[b]!, altB]] });
+            }
+          }
+        }
+      }
+    }
+    // 3-cell repairs: an even tighter pool, reached only when nothing
+    // simpler replayed. The uniqueness gate, TTA-support tie-break and
+    // sanity counts are what keep this from inventing positions.
+    if (wins.size === 0) {
+      const pool = shaky.slice(0, 12);
+      for (let a = 0; a < pool.length; a++) {
+        for (let b = a + 1; b < pool.length; b++) {
+          for (let c = b + 1; c < pool.length; c++) {
+            for (const altA of alternates(pool[a]!, 2)) {
+              for (const altB of alternates(pool[b]!, 2)) {
+                for (const altC of alternates(pool[c]!, 2)) {
+                  const ls = labels.slice();
+                  ls[pool[a]!] = net.labels[altA]!;
+                  ls[pool[b]!] = net.labels[altB]!;
+                  ls[pool[c]!] = net.labels[altC]!;
+                  const got = test(ls);
+                  if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 3, cells: [[pool[a]!, altA], [pool[b]!, altB], [pool[c]!, altC]] });
+                }
+              }
             }
           }
         }
@@ -1081,7 +1105,7 @@ if (process.argv.includes('--repair')) {
     }
   }
   console.log(
-    `pass 4 board repair: ${repaired} rescued (${byEdits.get(1) ?? 0} one-cell, ${byEdits.get(2) ?? 0} two-cell), ${ambiguous} ambiguous left alone`,
+    `pass 4 board repair: ${repaired} rescued (${byEdits.get(1) ?? 0} one-cell, ${byEdits.get(2) ?? 0} two-cell, ${byEdits.get(3) ?? 0} three-cell), ${ambiguous} ambiguous left alone`,
   );
   if (repairShard) {
     writeFileSync(
