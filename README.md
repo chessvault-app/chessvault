@@ -156,7 +156,8 @@ end · `f` flip board.
 
 ## Licensing
 
-Stockfish and Stockfish.js are GPLv3, bundled here for personal local
-use; that matters if this is ever redistributed. `chessops` and
+This project is licensed under **GPL-3.0** (see [LICENSE](LICENSE)) —
+the choice is effectively made by its bundled dependencies: Stockfish
+and Stockfish.js are GPLv3. `chessops` and
 `chessground` are AGPL/GPL — same caveat. The Lichess puzzle database
 is CC0; Lumbra's Gigabase is CC BY-NC-SA 4.0.
