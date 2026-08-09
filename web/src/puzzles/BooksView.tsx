@@ -115,7 +115,8 @@ interface BookPuzzle {
     | 'engine-corroborated'
     | 'engine-only'
     | 'engine-unverified'
-    | 'corrected';
+    | 'corrected'
+    | 'draft';
   evidence?: BookEvidence;
 }
 
@@ -487,6 +488,18 @@ function BookPage({ slug }: { slug: string }) {
           )}
           {/* Stacked headers drop the button labels — five labelled
               controls in a phone-width row read as clutter. */}
+          {(book?.drafts?.length ?? 0) > 0 && templates.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={rereading}
+              title="Re-run recognition on every draft with the learned font"
+              onClick={() => void rereadDrafts()}
+            >
+              {rereading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
+              <span className="hidden wide:inline">Read diagrams</span>
+            </Button>
+          )}
           <Button variant="secondary" size="sm" title="Import a book PDF" onClick={() => setImporting(true)}>
             <FileUp className="size-3.5" />
             <span className="hidden wide:inline">Import PDF</span>
@@ -504,50 +517,6 @@ function BookPage({ slug }: { slug: string }) {
           />
         </div>
 
-        {(book?.drafts?.length ?? 0) > 0 && (
-          <div className="bg-surface border-line mb-4 rounded-xl border p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-muted min-w-0 flex-1 text-xs">
-                {book!.drafts!.length} imported diagram{book!.drafts!.length === 1 ? '' : 's'}{' '}
-                awaiting a solution — tap one to enter it.
-              </p>
-              {templates.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={rereading}
-                  title="Re-run recognition on every draft with the learned font"
-                  onClick={() => void rereadDrafts()}
-                >
-                  {rereading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
-                  Read diagrams
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
-              {book!.drafts!.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setDraft(d)}
-                  title={d.fen ? 'Position read — confirm and record the solution' : 'Position not read yet'}
-                  className={cn(
-                    'overflow-hidden rounded-lg border transition-colors',
-                    d.fen ? 'border-good/50' : 'border-line hover:border-line-strong',
-                  )}
-                >
-                  <DraftThumb slug={slug} draft={d} />
-                  {d.number !== undefined && (
-                    <span className="text-subtle block py-0.5 text-center font-mono text-[0.625rem]">
-                      #{d.number}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
         {importing && (
           <Suspense fallback={null}>
         <PdfImport
@@ -564,7 +533,7 @@ function BookPage({ slug }: { slug: string }) {
 
         {book === null ? (
           <SkeletonRows rows={5} className="p-0" />
-        ) : book.puzzles.length === 0 ? (
+        ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <p className="text-muted text-sm">
               Empty book. “Add puzzle” sets up the position on a board and
@@ -575,8 +544,10 @@ function BookPage({ slug }: { slug: string }) {
           <PuzzleList
             slug={slug}
             puzzles={book.puzzles}
+            drafts={book.drafts ?? []}
             progress={book.progress}
             solvedCount={solvedCount}
+            onDraft={(d) => setDraft(d)}
           />
         )}
       </div>
@@ -788,18 +759,39 @@ function PuzzleNavigator({
 function PuzzleList({
   slug,
   puzzles,
+  drafts,
   progress,
   solvedCount,
+  onDraft,
 }: {
   slug: string;
   puzzles: BookPuzzle[];
+  drafts: BookDraft[];
   progress: Record<string, PuzzleProgress>;
   solvedCount: number;
+  onDraft: (d: BookDraft) => void;
 }) {
   const [stateFilter, setStateFilter] = useState<'all' | 'new' | 'failed' | 'solved'>('all');
   // Tier filtering groups by label, so provenances sharing a tier
   // ('book-parsed' + 'corrected') count and filter as one chip.
   const [tierFilter, setTierFilter] = useState<'all' | string>('all');
+
+  // Drafts live in the same list, as their own 'Draft' tier — rendered as
+  // pseudo-puzzles so one grid/filter machinery serves both. A click on a
+  // draft routes to the editor (see onClick), not the solver.
+  const draftIds = new Set(drafts.map((d) => d.id));
+  const items: BookPuzzle[] = [
+    ...puzzles,
+    ...drafts.map((d) => ({
+      id: d.id,
+      number: d.number,
+      fen: d.fen ?? '',
+      uci: [],
+      san: [],
+      provenance: 'draft' as const,
+      evidence: d.evidence,
+    })),
+  ].sort((a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER));
 
   const stateOf = (p: BookPuzzle): 'new' | 'failed' | 'solved' => {
     const last = progress[p.id]?.last;
@@ -812,17 +804,17 @@ function PuzzleList({
   type TierMeta = (typeof PROVENANCE_META)[keyof typeof PROVENANCE_META];
   const tiers = new Map<string, { meta: TierMeta; count: number }>();
   for (const key of Object.keys(PROVENANCE_META) as (keyof typeof PROVENANCE_META)[]) {
-    const count = puzzles.filter((p) => p.provenance === key).length;
+    const count = items.filter((p) => p.provenance === key).length;
     if (count === 0) continue;
     const meta = PROVENANCE_META[key];
     const entry = tiers.get(meta.label);
     if (entry) entry.count += count;
     else tiers.set(meta.label, { meta, count });
   }
-  const stateCounts = { all: puzzles.length, new: 0, failed: 0, solved: 0 };
-  for (const p of puzzles) stateCounts[stateOf(p)]++;
+  const stateCounts = { all: items.length, new: 0, failed: 0, solved: 0 };
+  for (const p of items) stateCounts[stateOf(p)]++;
 
-  const visible = puzzles.filter(
+  const visible = items.filter(
     (p) =>
       (stateFilter === 'all' || stateOf(p) === stateFilter) &&
       (tierFilter === 'all' || metaOf(p)?.label === tierFilter),
@@ -884,7 +876,11 @@ function PuzzleList({
             <button
               key={p.id}
               type="button"
-              onClick={() => navigate('puzzles', 'books', slug, p.id)}
+              onClick={() => {
+                const d = draftIds.has(p.id) ? drafts.find((x) => x.id === p.id) : null;
+                if (d) onDraft(d);
+                else navigate('puzzles', 'books', slug, p.id);
+              }}
               title={[
                 meta ? `${meta.label} — ${meta.title}` : null,
                 prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
@@ -902,7 +898,7 @@ function PuzzleList({
                     : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
               )}
             >
-              {p.number ?? puzzles.indexOf(p) + 1}
+              {p.number ?? items.indexOf(p) + 1}
               {meta && (
                 <meta.icon
                   className={cn('absolute right-2 top-2 size-3', meta.iconClass)}
@@ -959,55 +955,15 @@ const PROVENANCE_META = {
     icon: CircleHelp,
     iconClass: 'text-warn',
   },
+  // Least confident of all: an imported diagram with no solution yet. Opening
+  // one goes to the draft editor, not the solver.
+  draft: {
+    label: 'Draft',
+    title: 'Imported diagram awaiting a solution — open it to enter one',
+    icon: Pencil,
+    iconClass: 'text-subtle',
+  },
 } as const;
-
-/**
- * A draft's shelf thumbnail: the raw page scan cropped to the diagram's
- * rect. Never the warped board image the reader aligned — drafts are
- * exactly the cases where that alignment failed, so its picture is the
- * least faithful one available (#230 came out sheared). Pure percent
- * math keeps it fluid inside the grid cell.
- */
-function DraftThumb({ slug, draft }: { slug: string; draft: BookDraft }) {
-  const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
-  const ev = draft.evidence;
-  if (!ev?.page || !ev.rect) {
-    return <img src={diagramUrl(slug, draft.image)} alt="diagram" loading="lazy" decoding="async" className="w-full" />;
-  }
-  const m = 0.015;
-  const cx = Math.max(0, ev.rect.x - m);
-  const cy = Math.max(0, ev.rect.y - m);
-  const cw = Math.min(1 - cx, ev.rect.w + 2 * m);
-  const ch = Math.min(1 - cy, ev.rect.h + 2 * m);
-  return (
-    <div
-      className="w-full overflow-hidden"
-      style={{ aspectRatio: nat ? `${cw * nat.w} / ${ch * nat.h}` : '1 / 1' }}
-    >
-      <img
-        src={diagramUrl(slug, ev.page)}
-        alt="diagram"
-        loading="lazy"
-        decoding="async"
-        onLoad={(e) =>
-          setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
-        }
-        className="max-w-none"
-        style={
-          nat
-            ? {
-                width: `${(1 / cw) * 100}%`,
-                // Top offset is a % of the container WIDTH per CSS rules,
-                // hence the aspect correction.
-                marginLeft: `-${(cx / cw) * 100}%`,
-                marginTop: `-${((cy * nat.h) / (cw * nat.w)) * 100}%`,
-              }
-            : { width: '100%', visibility: 'hidden' }
-        }
-      />
-    </div>
-  );
-}
 
 /**
  * The correction aid: the scanned source page, cropped to THIS diagram
