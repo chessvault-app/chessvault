@@ -18,6 +18,33 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: 'slate', label: 'Slate' },
 ];
 
+/**
+ * A colour scheme is three numbers: the hue everything neutral is tinted
+ * towards, how strongly it is tinted, and the accent's hue.
+ *
+ * That is the whole model, and it is why a custom scheme costs nothing
+ * extra — a preset is a named triple, and "custom" is the same triple with
+ * the user holding the sliders. The semantic colours are deliberately not
+ * part of it: green means solved in every scheme.
+ */
+export interface Scheme {
+  /** 0–360. Everything neutral leans this way. */
+  hue: number;
+  /** 0–3. How far from grey the neutrals are pushed. */
+  tint: number;
+  /** 0–360. Buttons, links, the active nav. */
+  accent: number;
+}
+
+export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
+  { id: 'default', label: 'Slate', scheme: { hue: 264, tint: 1, accent: 240 } },
+  { id: 'paper', label: 'Paper', scheme: { hue: 75, tint: 1.8, accent: 45 } },
+  { id: 'forest', label: 'Forest', scheme: { hue: 150, tint: 1.6, accent: 155 } },
+  { id: 'rose', label: 'Rose', scheme: { hue: 350, tint: 1.5, accent: 350 } },
+  { id: 'midnight', label: 'Midnight', scheme: { hue: 265, tint: 2.4, accent: 275 } },
+  { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
+];
+
 export const PIECE_SETS: { id: PieceSet; label: string }[] = [
   { id: 'cburnett', label: 'Cburnett' },
   { id: 'merida', label: 'Merida' },
@@ -29,9 +56,14 @@ interface PrefsState {
   boardTheme: BoardTheme;
   pieces: PieceSet;
   sound: boolean;
+  /** Which preset is selected, or 'custom' while the sliders are in use. */
+  schemeId: string;
+  scheme: Scheme;
   setBoardTheme: (t: BoardTheme) => void;
   setPieces: (p: PieceSet) => void;
   setSound: (on: boolean) => void;
+  setSchemeId: (id: string) => void;
+  setScheme: (scheme: Scheme) => void;
 }
 
 const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
@@ -42,12 +74,22 @@ const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
   else el.dataset.pieces = pieces;
 };
 
+/** Three custom properties; every token in index.css reads from them. */
+const applyScheme = ({ hue, tint, accent }: Scheme): void => {
+  const el = document.documentElement;
+  el.style.setProperty('--ui-hue', String(hue));
+  el.style.setProperty('--ui-tint', String(tint));
+  el.style.setProperty('--accent-hue', String(accent));
+};
+
 export const usePrefs = create<PrefsState>()(
   persist(
     (set, get) => ({
       boardTheme: 'default',
       pieces: 'cburnett',
       sound: true,
+      schemeId: 'default',
+      scheme: SCHEME_PRESETS[0]!.scheme,
       setBoardTheme: (boardTheme) => {
         apply(boardTheme, get().pieces);
         set({ boardTheme });
@@ -57,6 +99,16 @@ export const usePrefs = create<PrefsState>()(
         set({ pieces });
       },
       setSound: (sound) => set({ sound }),
+      setSchemeId: (schemeId) => {
+        const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
+        const scheme = preset ? preset.scheme : get().scheme;
+        applyScheme(scheme);
+        set({ schemeId, scheme });
+      },
+      setScheme: (scheme) => {
+        applyScheme(scheme);
+        set({ scheme, schemeId: 'custom' });
+      },
     }),
     {
       name: 'chess-vault:prefs',
@@ -69,6 +121,7 @@ export const usePrefs = create<PrefsState>()(
 
 /** Applied before React mounts so the board never flashes the default skin. */
 export function initPrefs(): void {
-  const { boardTheme, pieces } = usePrefs.getState();
+  const { boardTheme, pieces, scheme } = usePrefs.getState();
   apply(boardTheme, pieces);
+  applyScheme(scheme);
 }

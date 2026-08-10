@@ -63,25 +63,36 @@
 :root {
   color-scheme: light;
 
-  --app-bg: oklch(98.4% 0.003 264);
-  --app-bg-accent: oklch(96.5% 0.008 264);
+  /* The three numbers a colour scheme IS. Everything neutral — page,
+     panels, borders, text — is one hue at a multiplied chroma, and the
+     accent is a hue of its own. The semantic colours (good/bad/warn/info)
+     are deliberately NOT here: green means solved whatever the scheme, and
+     a theme that could recolour them would break the grammar the whole UI
+     reads by. Presets are named triples; a custom theme is the same three
+     numbers chosen with sliders. */
+  --ui-hue: 264;
+  --ui-tint: 1;
+  --accent-hue: 240;
+
+  --app-bg: oklch(98.4% calc(0.003 * var(--ui-tint)) var(--ui-hue));
+  --app-bg-accent: oklch(96.5% calc(0.008 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(100% 0 0);
-  --surface-2: oklch(97.2% 0.004 264);
-  --surface-3: oklch(94.4% 0.006 264);
-  --surface-inset: oklch(96% 0.005 264);
+  --surface-2: oklch(97.2% calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(94.4% calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(96% calc(0.005 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(91% 0.006 264);
-  --border-strong: oklch(84% 0.009 264);
+  --border: oklch(91% calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --border-strong: oklch(84% calc(0.009 * var(--ui-tint)) var(--ui-hue));
 
-  --text: oklch(23% 0.02 264);
-  --text-muted: oklch(52% 0.016 264);
-  --text-subtle: oklch(64% 0.013 264);
+  --text: oklch(23% calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --text-muted: oklch(52% calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(64% calc(0.013 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(58% 0.135 240);
-  --primary-hover: oklch(52% 0.14 240);
+  --primary: oklch(58% 0.135 var(--accent-hue));
+  --primary-hover: oklch(52% 0.14 var(--accent-hue));
   --primary-fg: oklch(99% 0 0);
-  --primary-soft: oklch(94% 0.04 235);
-  --ring: oklch(58% 0.135 240 / 45%);
+  --primary-soft: oklch(94% 0.04 var(--accent-hue));
+  --ring: oklch(58% 0.135 var(--accent-hue) / 45%);
 
   --good: oklch(58% 0.15 150);
   --bad: oklch(56% 0.2 25);
@@ -91,15 +102,15 @@
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
   --board-light: oklch(91% 0.035 84);
   --board-dark: oklch(62% 0.072 52);
-  --board-frame: oklch(88% 0.01 264);
+  --board-frame: oklch(88% calc(0.01 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(83% 0.16 108 / 55%);
   --sq-selected: oklch(62% 0.15 150 / 50%);
   --sq-dest: oklch(45% 0.09 150 / 42%);
   --sq-check: oklch(58% 0.23 27);
 
   /* Eval bar: the "white advantage" / "black advantage" fills. */
-  --eval-white: oklch(97% 0.004 264);
-  --eval-black: oklch(30% 0.014 264);
+  --eval-white: oklch(97% calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(30% calc(0.014 * var(--ui-tint)) var(--ui-hue));
   /* Keeps the bar's dark half readable against a matching background. */
   --eval-border: oklch(0% 0 0 / 20%);
   /* Text sitting ON an eval fill (W/D/B bars, result badges). */
@@ -130,32 +141,32 @@
   /* Modal scrim (promotion picker). */
   --scrim: oklch(0% 0 0 / 45%);
 
-  --shadow-color: 264 22% 30%;
+  --shadow-color: var(--ui-hue) 22% 30%;
   --radius: 0.625rem;
 }
 
 .dark {
   color-scheme: dark;
 
-  --app-bg: oklch(17.5% 0.014 266);
-  --app-bg-accent: oklch(15% 0.015 266);
-  --surface: oklch(21.5% 0.017 266);
-  --surface-2: oklch(25% 0.018 266);
-  --surface-3: oklch(29% 0.019 266);
-  --surface-inset: oklch(19% 0.016 266);
+  --app-bg: oklch(17.5% calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --app-bg-accent: oklch(15% calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --surface: oklch(21.5% calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(25% calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(29% calc(0.019 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(19% calc(0.016 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(31% 0.02 266);
-  --border-strong: oklch(40% 0.024 266);
+  --border: oklch(31% calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --border-strong: oklch(40% calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
-  --text: oklch(96% 0.005 266);
-  --text-muted: oklch(70% 0.016 266);
-  --text-subtle: oklch(57% 0.017 266);
+  --text: oklch(96% calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --text-muted: oklch(70% calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(57% calc(0.017 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(73% 0.135 235);
-  --primary-hover: oklch(78% 0.125 235);
+  --primary: oklch(73% 0.135 var(--accent-hue));
+  --primary-hover: oklch(78% 0.125 var(--accent-hue));
   --primary-fg: oklch(16% 0.025 235);
-  --primary-soft: oklch(30% 0.055 235);
-  --ring: oklch(73% 0.135 235 / 50%);
+  --primary-soft: oklch(30% 0.055 var(--accent-hue));
+  --ring: oklch(73% 0.135 var(--accent-hue) / 50%);
 
   --good: oklch(72% 0.16 152);
   --bad: oklch(69% 0.18 25);
@@ -165,17 +176,17 @@
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light: oklch(60% 0.024 250);
   --board-dark: oklch(39% 0.031 256);
-  --board-frame: oklch(27% 0.018 266);
+  --board-frame: oklch(27% calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(72% 0.15 110 / 42%);
   --sq-selected: oklch(65% 0.15 152 / 45%);
   --sq-dest: oklch(72% 0.11 152 / 38%);
   --sq-check: oklch(62% 0.24 27);
 
-  --eval-white: oklch(93% 0.005 266);
-  --eval-black: oklch(13% 0.012 266);
+  --eval-white: oklch(93% calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(13% calc(0.012 * var(--ui-tint)) var(--ui-hue));
   --eval-border: oklch(100% 0 0 / 25%);
 
-  --shadow-color: 266 40% 4%;
+  --shadow-color: var(--ui-hue) 40% 4%;
 }
 
 /* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile

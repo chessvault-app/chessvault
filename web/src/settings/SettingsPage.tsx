@@ -7,7 +7,8 @@ import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
-import { BOARD_THEMES, PIECE_SETS, usePrefs, type BoardTheme, type PieceSet } from '@/store/prefs';
+import { cn } from '@/lib/cn';
+import { BOARD_THEMES, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type PieceSet } from '@/store/prefs';
 
 interface Settings {
   profile: { name?: string; chesscom?: string; lichess?: string };
@@ -166,7 +167,8 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, sound, setBoardTheme, setPieces, setSound } = usePrefs();
+  const { boardTheme, pieces, sound, schemeId, scheme, setBoardTheme, setPieces, setSound, setSchemeId, setScheme } =
+    usePrefs();
 
   return (
     <Card icon={Palette} title="Appearance">
@@ -181,6 +183,68 @@ function AppearanceCard() {
             { value: 'dark', label: 'Dark' },
           ] }]}
         />
+      </Field>
+
+      <Field label="Colours">
+        <div className="flex flex-col gap-2">
+          {/* Swatches rather than a dropdown: a colour scheme is the one
+              setting whose name tells you least about it. */}
+          <div className="flex flex-wrap gap-1.5">
+            {SCHEME_PRESETS.map((preset) => (
+              <button
+                key={preset.id}
+                type="button"
+                title={preset.label}
+                aria-label={preset.label}
+                aria-pressed={schemeId === preset.id}
+                onClick={() => setSchemeId(preset.id)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors duration-100',
+                  schemeId === preset.id
+                    ? 'border-primary/60 bg-primary-soft text-primary'
+                    : 'border-line text-muted hover:border-line-strong hover:text-fg',
+                )}
+              >
+                <span
+                  className="size-3 shrink-0 rounded-full"
+                  style={{
+                    background: `oklch(58% 0.135 ${preset.scheme.accent})`,
+                    outline: `2px solid oklch(90% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
+                  }}
+                />
+                {preset.label}
+              </button>
+            ))}
+          </div>
+
+          {/* The same three numbers the presets are made of. Choosing here
+              is what "custom" means — there is no second mechanism. */}
+          <details className="text-xs" open={schemeId === 'custom'}>
+            <summary className="text-subtle cursor-pointer select-none py-1">Mix your own</summary>
+            <div className="flex flex-col gap-2 pt-1">
+              {(
+                [
+                  ['hue', 'Tone', 0, 360, 1],
+                  ['tint', 'Colourfulness', 0, 3, 0.1],
+                  ['accent', 'Accent', 0, 360, 1],
+                ] as const
+              ).map(([key, label, min, max, step]) => (
+                <label key={key} className="flex items-center gap-3">
+                  <span className="text-subtle w-24 shrink-0">{label}</span>
+                  <input
+                    type="range"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={scheme[key]}
+                    onChange={(e) => setScheme({ ...scheme, [key]: Number(e.target.value) })}
+                    className="accent-primary min-w-0 flex-1"
+                  />
+                </label>
+              ))}
+            </div>
+          </details>
+        </div>
       </Field>
 
       <Field label="Board">
