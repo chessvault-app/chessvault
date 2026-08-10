@@ -68,7 +68,6 @@ export function SettingsPage() {
             </Button>
             <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
           </div>
-          <span className="text-subtle text-xs">Chess Vault {settings.version}</span>
         </header>
 
         <ProfileCard settings={settings} onSaved={refresh} />
@@ -221,6 +220,10 @@ function VersionCard() {
 
   return (
     <Card icon={Info} title="Version">
+      {/* Named, because the header used to show a bare "Chess Vault 0.2.1"
+          that was the SERVER's version and read as the app's — which is
+          how a desktop app sat on 0.1.0 while its own settings page
+          appeared to say otherwise. */}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
         <dt className="text-subtle">Server</dt>
         <dd className="text-fg font-mono">{server ?? '—'}</dd>
