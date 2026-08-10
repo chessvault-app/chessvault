@@ -103,12 +103,14 @@ interface BookSummary {
   cover?: boolean;
 }
 
+/**
+ * A puzzle AS THE GRID KNOWS IT. The position and its solution are not
+ * here: a book's list exists to draw numbered tiles, and shipping every
+ * position and line to do that is most of what a big book weighs. They
+ * come from /solutions the moment something actually solves.
+ */
 interface BookPuzzle {
   id: string;
-  fen: string;
-  uci: string[];
-  san: string[];
-  wildcards?: number[];
   /** Auto-imported puzzles carry their book number, fidelity tier and the
    *  source page (with the diagram's bounds as page fractions) so the
    *  original context is one click away. */
@@ -121,6 +123,14 @@ interface BookPuzzle {
     | 'corrected'
     | 'draft';
   evidence?: BookEvidence;
+}
+
+/** The half of a puzzle only the solver and the corrector need. */
+interface PuzzleSolution {
+  fen: string;
+  uci: string[];
+  san: string[];
+  wildcards?: number[];
 }
 
 type SourceRect = { x: number; y: number; w: number; h: number };
@@ -203,9 +213,39 @@ export function BooksView({ params }: { params: string[] }) {
  */
 const bookCache = new Map<string, BookDetail>();
 
+/** Positions and lines, fetched once per book when something solves. */
+const solutionCache = new Map<string, Record<string, PuzzleSolution>>();
+
 function forgetBook(slug?: string): void {
-  if (slug === undefined) bookCache.clear();
-  else bookCache.delete(slug);
+  if (slug === undefined) {
+    bookCache.clear();
+    solutionCache.clear();
+  } else {
+    bookCache.delete(slug);
+    solutionCache.delete(slug);
+  }
+}
+
+/**
+ * The book's positions and solutions — one request, cached like the book.
+ *
+ * One request rather than one per puzzle on purpose: stepping between
+ * puzzles has to stay instant, and the goal is to keep this weight off the
+ * path that merely OPENS a book, not to trade one wait for a hundred.
+ */
+async function loadSolutions(slug: string): Promise<Record<string, PuzzleSolution>> {
+  const hit = solutionCache.get(slug);
+  if (hit) return hit;
+  try {
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/solutions`);
+    if (!res.ok) return {};
+    const body = (await res.json()) as { solutions?: Record<string, PuzzleSolution> };
+    const solutions = body.solutions ?? {};
+    solutionCache.set(slug, solutions);
+    return solutions;
+  } catch {
+    return {};
+  }
 }
 
 async function loadBook(slug: string, force = false): Promise<BookDetail | null> {
@@ -1330,7 +1370,22 @@ function PuzzleEntry({
   onCancel: () => void;
 }) {
   const [fen, setFen] = useState<string | null>(null);
-  const [prefill] = useState<string | null>(replace?.fen ?? draft?.fen ?? null);
+  // The position being corrected is not part of the book list any more, so
+  // it arrives with the solutions rather than with the puzzle. Re-keying the
+  // editor on it is what makes it land.
+  const [prefill, setPrefill] = useState<string | null>(draft?.fen ?? null);
+  const replaceFenId = replace?.id;
+  useEffect(() => {
+    if (!replaceFenId) return;
+    let live = true;
+    void loadSolutions(slug).then((all) => {
+      const fen = all[replaceFenId]?.fen;
+      if (live && fen) setPrefill(fen);
+    });
+    return () => {
+      live = false;
+    };
+  }, [slug, replaceFenId]);
   const wide = useWideLayout();
   const [stackedView, setStackedView] = useState<'board' | 'diagram' | 'solutions'>('board');
   // The evidence views span the ACTUAL pane width (measured), not a guess.
@@ -1806,13 +1861,20 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const wide = useWideLayout();
 
   const index = book?.puzzles.findIndex((p) => p.id === puzzleId) ?? -1;
-  const puzzle = index >= 0 ? book!.puzzles[index]! : null;
+  // The list entry knows the puzzle's identity; its position and line come
+  // from the solutions request, which is cached per book — so this is one
+  // fetch when the first puzzle opens, not one per puzzle.
+  const [solutions, setSolutions] = useState<Record<string, PuzzleSolution>>({});
+  const entry = index >= 0 ? book!.puzzles[index]! : null;
+  const answer = entry ? solutions[entry.id] : undefined;
+  const puzzle = entry && answer ? { ...entry, ...answer } : null;
   const solution: BookSolution | null = puzzle
     ? { fen: puzzle.fen, uci: puzzle.uci, ...(puzzle.wildcards ? { wildcards: puzzle.wildcards } : {}) }
     : null;
 
   useEffect(() => {
     void loadBook(slug).then(setBook);
+    void loadSolutions(slug).then(setSolutions);
   }, [slug]);
 
   useEffect(() => {

@@ -182,13 +182,19 @@ describe('puzzle books api', () => {
     });
 
     const detail = (await (await app.request(`/api/puzzlebooks/${slug}`)).json()) as {
-      puzzles: { id: string; evidence?: unknown; added?: string; provenance?: string }[];
+      puzzles: Record<string, unknown>[];
     };
     expect(detail.puzzles).toHaveLength(1);
-    // The grid needs the tier badge; it never needs either of these.
-    expect(detail.puzzles[0]!.evidence).toBeUndefined();
-    expect(detail.puzzles[0]!.added).toBeUndefined();
-    expect(detail.puzzles[0]!.provenance).toBe('book-parsed');
+    // The grid draws numbered tiles wearing a tier badge. That is all it
+    // gets: no position, no line, no evidence, no timestamp.
+    expect(Object.keys(detail.puzzles[0]!).sort()).toEqual(['id', 'number', 'provenance']);
+
+    const solutions = (await (
+      await app.request(`/api/puzzlebooks/${slug}/solutions`)
+    ).json()) as { solutions: Record<string, { fen: string; uci: string[]; san: string[] }> };
+    expect(solutions.solutions.n4!.fen).toBe('7k/8/8/8/8/8/8/R6K w - - 0 1');
+    expect(solutions.solutions.n4!.uci).toEqual(['a1a8']);
+    expect(solutions.solutions.n4!.san).toEqual(['Ra8#']);
 
     const one = await app.request(`/api/puzzlebooks/${slug}/puzzles/n4/evidence`);
     expect(one.status).toBe(200);

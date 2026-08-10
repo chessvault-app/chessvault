@@ -250,15 +250,17 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({
       slug,
       title: book.title ?? slug,
-      // Evidence and `added` are stripped here. Opening a book downloads
-      // every puzzle in it, and the grid draws numbered tiles — it never
-      // looks at either. On the biggest book that was 716 KB of the 1.6 MB
-      // being parsed on a phone to render squares with numbers in them.
-      // Evidence comes back one puzzle at a time, from the route below,
-      // which is the only place anything ever wanted it.
-      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []).map(
-        ({ evidence: _evidence, added: _added, ...rest }) => rest,
-      ),
+      // What the grid needs, and nothing else. Opening a book downloads
+      // every puzzle in it to draw tiles with numbers on them, so the
+      // positions, solutions, evidence and timestamps are all left out —
+      // on the biggest book that is 1.7 MB the phone no longer parses.
+      // Solutions come from /solutions when a puzzle is opened; evidence
+      // one puzzle at a time from the route below.
+      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []).map((p) => ({
+        id: p.id,
+        ...(p.number === undefined ? {} : { number: p.number }),
+        ...(p.provenance === undefined ? {} : { provenance: p.provenance }),
+      })),
       progress: readJson<Record<string, PuzzleProgress>>(progressPath(slug), {}),
       drafts: readJson<
         { id: string; image: string; fen: string | null; added: string }[]
@@ -510,6 +512,33 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       written.push(file);
     }
     return c.json({ written });
+  });
+
+  /**
+   * The positions and solutions, keyed by id.
+   *
+   * Split from the book itself because solving is the only thing that wants
+   * them: the grid draws numbered tiles. Fetched as ONE request rather than
+   * per puzzle, because stepping between puzzles has to stay instant — the
+   * point is to keep it off the path that opens a book, not to trade a big
+   * wait for a hundred small ones.
+   */
+  api.get('/puzzlebooks/:slug/solutions', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const solutions: Record<
+      string,
+      { fen: string; uci: string[]; san: string[]; wildcards?: number[] }
+    > = {};
+    for (const p of readJson<BookPuzzle[]>(puzzlesPath(slug), [])) {
+      solutions[p.id] = {
+        fen: p.fen,
+        uci: p.uci,
+        san: p.san,
+        ...(p.wildcards ? { wildcards: p.wildcards } : {}),
+      };
+    }
+    return c.json({ solutions });
   });
 
   /**
