@@ -81,9 +81,20 @@ const { pages } = JSON.parse(readFileSync(resolve(REPO_ROOT, BOOK.lines), 'utf-8
 
 // --- text hygiene -------------------------------------------------------------
 
-/** Soft hyphens split words across lines; rejoin before anything else. */
+/**
+ * Soft hyphens split words across lines; rejoin before anything else.
+ *
+ * A real hyphen that happens to fall at a line end must survive, though:
+ * this book is full of "the f8-bishop" and "the a1-h8 diagonal", and
+ * joining those gave "f8bishop". A square always ends in a digit, which is
+ * the tell — no English word breaks after one.
+ */
 const dehyphenate = (text: string): string =>
-  text.replace(/­\s*/g, '').replace(/(\w)-\s+(\w)/g, (m, a, b) => (/^[a-z]$/.test(b) ? `${a}${b}` : m));
+  text
+    .replace(/­\s*/g, '')
+    .replace(/(\w)-\s+(\w)/g, (m, a: string, b: string) =>
+      /^[a-z]$/.test(b) && !/\d/.test(a) ? `${a}${b}` : m.replace(/-\s+/, '-'),
+    );
 
 const squash = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
@@ -809,6 +820,20 @@ for (const o of bad) {
     `  Game ${o.game.number} ${o.game.white}-${o.game.black}: stopped after ${o.played.length} of ${o.game.moves.length} moves — ${o.reason}`,
   );
   if (process.argv.includes('--debug')) console.log(`      ${o.played.map((p) => p.san).join(' ')}`);
+}
+
+// Which written games contain a move the scan lost and the search had to
+// supply. Those are forced by the moves around them, but they are
+// reconstructions rather than readings, and a study built from someone
+// else's book should say which of its moves it did not read.
+const rebuilt = good.filter((o) => o.recovered.length > 0);
+console.log(
+  rebuilt.length === 0
+    ? 'every written move was read from the book; none was supplied'
+    : `${rebuilt.length} game(s) needed a move the scan lost, each forced by the moves around it:`,
+);
+for (const o of rebuilt) {
+  console.log(`    Game ${o.game.number}: ${o.recovered.join(' ')}`);
 }
 
 const escape = (text: string): string => text.replace(/[{}]/g, '');
