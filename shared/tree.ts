@@ -1,7 +1,8 @@
-import { Chess } from 'chessops/chess';
+import { Chess, normalizeMove } from 'chessops/chess';
 import { makeFen, parseFen, INITIAL_FEN } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
-import { makeSquare, makeUci, parseUci } from 'chessops/util';
+import { chessgroundDests } from 'chessops/compat';
+import { makeUci, parseUci } from 'chessops/util';
 import type { Move } from 'chessops/types';
 import type { MoveNode, MoveTree, NodeId } from './types.ts';
 
@@ -37,16 +38,16 @@ export function positionAt(tree: MoveTree, id: NodeId): Chess {
   return parseFen(fen).chain((setup) => Chess.fromSetup(setup)).unwrap();
 }
 
-/** Legal moves from a node, as a `orig -> dest[]` map for chessground. */
+/**
+ * Legal moves from a node, as a `orig -> dest[]` map for chessground.
+ *
+ * chessgroundDests rather than allDests, because castling has two spellings
+ * and players use both: chessops encodes it as the king taking its own rook
+ * (e1h1), while the square everyone actually reaches for is the one the king
+ * lands on (e1g1). This offers both, and addMove settles which was meant.
+ */
 export function legalDests(tree: MoveTree, id: NodeId): Map<string, string[]> {
-  const pos = positionAt(tree, id);
-  const dests = new Map<string, string[]>();
-  for (const [from, squares] of pos.allDests()) {
-    if (squares.nonEmpty()) {
-      dests.set(makeSquare(from), Array.from(squares, makeSquare));
-    }
-  }
-  return dests;
+  return chessgroundDests(positionAt(tree, id));
 }
 
 export interface AddMoveResult {
@@ -63,9 +64,13 @@ export interface AddMoveResult {
  * duplicate branch — this is what makes replaying a known line navigate through
  * the existing tree instead of littering it with identical variations.
  */
-export function addMove(tree: MoveTree, parentId: NodeId, move: Move): AddMoveResult {
+export function addMove(tree: MoveTree, parentId: NodeId, requested: Move): AddMoveResult {
   const parent = getNode(tree, parentId);
   const pos = positionAt(tree, parentId);
+  // Castling to g1 and castling to h1 are the same move; normalising here
+  // means one spelling reaches the tree, so a line replays and matches
+  // whichever way it was entered.
+  const move = normalizeMove(pos, requested);
   const uci = makeUci(move);
 
   for (const childId of parent.children) {

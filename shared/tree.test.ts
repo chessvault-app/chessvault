@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  addMove,
   addSan,
   addUci,
   collectSubtree,
@@ -167,5 +168,48 @@ describe('move tree', () => {
     expect(moveNumberLabel(2)).toBe('1...');
     expect(moveNumberLabel(3)).toBe('2.');
     expect(moveNumberLabel(20)).toBe('10...');
+  });
+});
+
+describe('castling by either square', () => {
+  /** Kings and rooks home, everything else swept away. */
+  const ready = (): MoveTree =>
+    createTree('r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1');
+
+  it('offers the king its landing square as well as its rook', () => {
+    const tree = ready();
+    const dests = legalDests(tree, tree.rootId).get('e1') ?? [];
+    // h1 is how chessops spells it; g1 is where a player aims.
+    expect(dests).toContain('h1');
+    expect(dests).toContain('g1');
+    expect(dests).toContain('a1');
+    expect(dests).toContain('c1');
+  });
+
+  it('plays the same move whichever square was clicked', () => {
+    const base = ready();
+    const viaRook = addMove(base, base.rootId, { from: 4, to: 7 });
+    const viaKing = addMove(base, base.rootId, { from: 4, to: 6 });
+    const rookNode = getNode(viaRook.tree, viaRook.nodeId);
+    const kingNode = getNode(viaKing.tree, viaKing.nodeId);
+    expect(rookNode.san).toBe('O-O');
+    expect(kingNode.san).toBe('O-O');
+    // One spelling reaches the tree, so a line replays either way.
+    expect(kingNode.uci).toBe(rookNode.uci);
+    expect(kingNode.fen).toBe(rookNode.fen);
+  });
+
+  it('does not branch when the same castle is entered both ways', () => {
+    const base = ready();
+    const first = addMove(base, base.rootId, { from: 4, to: 6 });
+    const again = addMove(first.tree, base.rootId, { from: 4, to: 7 });
+    expect(again.existed).toBe(true);
+    expect(again.nodeId).toBe(first.nodeId);
+  });
+
+  it('queenside too, from the c-file', () => {
+    const base = ready();
+    const out = addMove(base, base.rootId, { from: 4, to: 2 });
+    expect(getNode(out.tree, out.nodeId).san).toBe('O-O-O');
   });
 });
