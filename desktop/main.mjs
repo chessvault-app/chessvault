@@ -62,6 +62,9 @@ function startLocalServer() {
         ...process.env,
         ELECTRON_RUN_AS_NODE: '1',
         PORT: String(LOCAL_PORT),
+        // Loopback only: this server has no password — it is the window in
+        // front of you — so it must not be reachable from the network.
+        CHESS_BIND: '127.0.0.1',
         CHESS_VAULT_DIR: join(app.getPath('userData'), 'vault'),
         CHESS_VAULT_DATA: join(app.getPath('userData'), 'data'),
         ...vaultEnv,
@@ -75,7 +78,7 @@ function startLocalServer() {
       cwd: repoRoot,
       // A GUI process spawning a console app would pop a terminal window.
       windowsHide: true,
-      env: { ...process.env, PORT: String(LOCAL_PORT), ...vaultEnv },
+      env: { ...process.env, PORT: String(LOCAL_PORT), CHESS_BIND: '127.0.0.1', ...vaultEnv },
       stdio: 'inherit',
     });
   }

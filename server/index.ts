@@ -128,7 +128,18 @@ void startVaultBackup().catch((error: Error) =>
   console.error('[vault-backup] disabled:', error.message),
 );
 
-serve({ fetch: app.fetch, port: PORT }, (info) => {
+/**
+ * Which interfaces to answer on.
+ *
+ * Unset means every one, which is what a server wants — devices on the
+ * tailnet have to reach it. The desktop app's LOCAL mode sets this to
+ * loopback, because that server is for the window in front of you and
+ * has no password: without it, opening the app on a café network put an
+ * unauthenticated vault on that network.
+ */
+const BIND = process.env.CHESS_BIND?.trim() || undefined;
+
+serve({ fetch: app.fetch, port: PORT, hostname: BIND }, (info) => {
   console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
   console.log(`  cross-origin isolation: on (Stockfish threads enabled)`);
   // Phones on the same network reach the app through Vite's LAN address.
