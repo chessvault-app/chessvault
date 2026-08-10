@@ -169,6 +169,44 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('stores evidence pages under a name the page owns', async () => {
+    await post('/api/puzzlebooks', { title: 'Evidence Book' });
+    const slug = encodeURIComponent('Evidence Book');
+    const image = `data:image/jpeg;base64,${Buffer.from('fakejpeg').toString('base64')}`;
+
+    const first = await post(`/api/puzzlebooks/${slug}/evidence`, {
+      pages: [{ page: 7, image }, { page: 108, image }],
+    });
+    expect(first.status).toBe(200);
+    expect(((await first.json()) as { written: string[] }).written).toEqual([
+      'page007.jpg',
+      'page108.jpg',
+    ]);
+
+    const served = await app.request(`/api/puzzlebooks/${slug}/diagrams/page007.jpg`);
+    expect(served.status).toBe(200);
+    expect(served.headers.get('content-type')).toBe('image/jpeg');
+
+    // A re-import overwrites the page it already had; a puzzle's evidence
+    // reference must not go stale, and copies must not pile up.
+    const again = await post(`/api/puzzlebooks/${slug}/evidence`, {
+      pages: [{ page: 7, image: `data:image/jpeg;base64,${Buffer.from('newer').toString('base64')}` }],
+    });
+    expect(((await again.json()) as { written: string[] }).written).toEqual(['page007.jpg']);
+    const reserved = await app.request(`/api/puzzlebooks/${slug}/diagrams/page007.jpg`);
+    expect(Buffer.from(await reserved.arrayBuffer()).toString()).toBe('newer');
+
+    for (const bad of [
+      { pages: [] },
+      { pages: [{ page: 0, image }] },
+      { pages: [{ page: 3, image: 'not-a-data-url' }] },
+    ]) {
+      expect((await post(`/api/puzzlebooks/${slug}/evidence`, bad)).status).toBe(400);
+    }
+
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
   it('stores, updates, serves and deletes drafts', async () => {
     await post('/api/puzzlebooks', { title: 'Draft Book' });
     const slug = encodeURIComponent('Draft Book');
