@@ -451,6 +451,41 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({ ok: true });
   });
 
+  /**
+   * Source-page images for evidence, the browser's half of what
+   * scripts/ml/evidence_jpegs.py writes offline.
+   *
+   * Named for the page rather than given a fresh id, so a re-import
+   * overwrites the page it already had instead of leaving a second copy
+   * behind — the same reason numbered puzzles keep `n<number>`.
+   */
+  api.post('/puzzlebooks/:slug/evidence', async (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as {
+      pages?: { page?: number; image?: string }[];
+    };
+    if (!Array.isArray(body.pages) || body.pages.length === 0 || body.pages.length > 100) {
+      return c.json({ error: 'expected { pages: [...] } (1..100)' }, 400);
+    }
+    mkdirSync(diagramsDir(slug), { recursive: true });
+    const written: string[] = [];
+    for (const [index, entry] of body.pages.entries()) {
+      const page = entry.page;
+      if (!Number.isInteger(page) || (page as number) < 1 || (page as number) > 9999) {
+        return c.json({ error: `page ${index}: expected a page number` }, 400);
+      }
+      const match = /^data:image\/(jpeg|png);base64,([A-Za-z0-9+/=]+)$/.exec(entry.image ?? '');
+      if (!match) return c.json({ error: `page ${index}: expected a jpeg/png data URL` }, 400);
+      const bytes = Buffer.from(match[2]!, 'base64');
+      if (bytes.length > 1_200_000) return c.json({ error: `page ${index}: image too large` }, 400);
+      const file = `page${String(page).padStart(3, '0')}.${match[1] === 'png' ? 'png' : 'jpg'}`;
+      writeFileSync(resolve(diagramsDir(slug), file), bytes);
+      written.push(file);
+    }
+    return c.json({ written });
+  });
+
   api.get('/puzzlebooks/:slug/diagrams/:file', (c) => {
     const slug = c.req.param('slug');
     const file = c.req.param('file');

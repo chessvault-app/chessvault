@@ -31,6 +31,8 @@ export function PdfImport({
   const mine = job.slug === slug;
   const found = mine ? job.found : [];
   const scanning = mine && job.status === 'scanning';
+  const reading = mine && job.status === 'reading';
+  const solve = mine ? job.solve : null;
 
   const save = async (): Promise<void> => {
     const chosen = found.filter((f) => f.selected);
@@ -102,6 +104,40 @@ export function PdfImport({
             page {job.page}/{job.pages || '…'} — {found.length} diagrams so far
           </p>
         )}
+        {reading && (
+          <p className="text-muted flex items-center gap-2 text-sm">
+            <Loader2 className="size-4 animate-spin" />
+            reading the book&rsquo;s solutions
+          </p>
+        )}
+        {solve && (
+          <div
+            className={cn(
+              'rounded-lg border p-3 text-xs',
+              solve.confident ? 'border-good/40 bg-good/5' : 'border-warn/40 bg-warn/5',
+            )}
+          >
+            <p className="text-fg text-sm font-medium">
+              {solve.solved} puzzle{solve.solved === 1 ? '' : 's'} imported with their solutions
+            </p>
+            <p className="text-muted pt-1">
+              {solve.confident
+                ? 'Each one replays the move the book prints, from the position on the page.'
+                : 'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.'}
+              {solve.unresolved > 0 &&
+                ` ${solve.unresolved} numbered diagram${solve.unresolved === 1 ? '' : 's'} had no solution we could read.`}
+            </p>
+            <p className="text-subtle pt-1">
+              Answers found on{' '}
+              {solve.answerRanges.length > 0
+                ? solve.answerRanges
+                    .map(([a, b]) => (a === b ? `p.${a}` : `p.${a}–${b}`))
+                    .join(', ')
+                : 'no page we could identify'}
+              .
+            </p>
+          </div>
+        )}
         {mine && job.error && <p className="text-bad text-xs">{job.error}</p>}
         {saveError && <p className="text-bad text-xs">{saveError}</p>}
 
@@ -109,7 +145,7 @@ export function PdfImport({
           <>
             <p className="text-subtle text-xs">
               {found.length} diagram{found.length === 1 ? '' : 's'} found — untick any false
-              positives, then add them as drafts.
+              positives, then add the rest as drafts.
               {found.every((f) => f.fen === null) &&
                 ' Positions are unread for now: confirming the first draft teaches this book’s font.'}
             </p>
@@ -126,8 +162,9 @@ export function PdfImport({
                 >
                   <img src={f.dataUrl} alt={`page ${f.page}`} className="w-full rounded" />
                   <span className="text-subtle block pt-0.5 text-[0.625rem]">
-                    p.{f.page}
-                    {f.fen !== null && (
+                    {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
+                    {f.solved && <span className="text-good ml-1">solved</span>}
+                    {!f.solved && f.fen !== null && (
                       <span className={cn('ml-1', f.uncertain > 0 ? 'text-warn' : 'text-good')}>
                         {f.uncertain > 0 ? `${f.uncertain} unsure` : 'read'}
                       </span>
