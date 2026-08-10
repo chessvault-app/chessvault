@@ -3,8 +3,10 @@ import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import {
   Dialect,
+  assignLabels,
   castlingRights,
   chapterSides,
+  fitLabelWindow,
   isMoveish,
   labelForDiagram,
   letterSides,
@@ -18,6 +20,7 @@ import {
   stripVariations,
   tokenPrefix,
   type BookText,
+  type PageLayout,
   type TextPage,
   type Word,
 } from './bookImport.ts';
@@ -281,5 +284,68 @@ describe('page-level hints', () => {
     expect(pageMateGoal('mate in 4')).toBe(4);
     expect(pageMateGoal('a quiet positional page')).toBe(0);
     expect(pageMateGoal('White mates in three moves.')).toBe(3);
+  });
+});
+
+describe('fitLabelWindow / assignLabels', () => {
+  /** A page laid out the way a puzzle book lays one out. */
+  const layout = (page: number, first: number, offset: { dx: number; dy: number }): PageLayout => {
+    const rects = [
+      { x: 100, y: 200, w: 200, h: 200 },
+      { x: 400, y: 200, w: 200, h: 200 },
+    ];
+    return {
+      page,
+      rects,
+      numbers: rects.map((r, i) => ({
+        value: first + i,
+        x0: r.x - offset.dx - 20,
+        x1: r.x - offset.dx,
+        y1: r.y - offset.dy,
+      })),
+    };
+  };
+
+  it('finds the window the book actually uses, without being told', () => {
+    const offset = { dx: 0, dy: 30 };
+    const pages = Array.from({ length: 12 }, (_, i) => layout(i + 1, i * 2 + 1, offset));
+    const found = assignLabels(pages);
+    expect(found.size).toBe(24);
+    expect(found.get(1)).toEqual({ page: 1, rect: { x: 100, y: 200, w: 200, h: 200 } });
+    expect(found.get(24)?.page).toBe(12);
+  });
+
+  it('reads a margin layout, where the number sits BELOW the diagram top', () => {
+    // Same code, no setting changed: the cluster is simply at a different
+    // place, which is the whole point of fitting it.
+    const pages = Array.from({ length: 12 }, (_, i) => layout(i + 1, i * 2 + 1, { dx: 40, dy: -60 }));
+    expect(assignLabels(pages).size).toBe(24);
+  });
+
+  it('ignores digits that are not labels', () => {
+    const offset = { dx: 0, dy: 30 };
+    const pages = Array.from({ length: 12 }, (_, i) => {
+      const p = layout(i + 1, i * 2 + 1, offset);
+      // A running head and a page number, nowhere near the cluster.
+      p.numbers.push({ value: 900 + i, x0: 90, x1: 130, y1: 60 });
+      p.numbers.push({ value: 800 + i, x0: 300, x1: 340, y1: 760 });
+      return p;
+    });
+    const found = assignLabels(pages);
+    expect(found.size).toBe(24);
+    expect([...found.keys()].every((n) => n <= 24)).toBe(true);
+  });
+
+  it('refuses to invent a layout from a handful of pages', () => {
+    expect(fitLabelWindow([layout(1, 1, { dx: 0, dy: 30 })])).toBeNull();
+    expect(assignLabels([layout(1, 1, { dx: 0, dy: 30 })]).size).toBe(0);
+  });
+
+  it("keeps a number's first diagram when the book reprints it", () => {
+    const offset = { dx: 0, dy: 30 };
+    const pages = Array.from({ length: 12 }, (_, i) => layout(i + 1, i * 2 + 1, offset));
+    // The answers section reprints puzzle 1's diagram, later in the book.
+    pages.push(layout(99, 1, offset));
+    expect(assignLabels(pages).get(1)?.page).toBe(1);
   });
 });

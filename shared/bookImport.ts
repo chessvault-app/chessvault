@@ -134,6 +134,107 @@ export function labelForDiagram(
 }
 
 /**
+ * Work the label window out from the page instead of being told it.
+ *
+ * Books put the printed number in different places — over the diagram, in
+ * the margin beside its top corner — and that was a per-book setting
+ * somebody had to measure by eye. It does not have to be: a book lays every
+ * puzzle out the SAME way, so the offset from a diagram to its own number
+ * is a tight cluster, and everything else (page numbers, digits in prose)
+ * scatters. Find the cluster and the window is the cluster's extent.
+ *
+ * Offsets are measured in fractions of the diagram, so the answer does not
+ * depend on the resolution anything was rendered at.
+ */
+export function fitLabelWindow(
+  pages: { rects: { x: number; y: number; w: number; h: number }[]; numbers: NumberBox[] }[],
+): LabelWindow | null {
+  const BINS = 24;
+  const counts = new Map<string, number>();
+  const samples: { dx: number; dy: number }[] = [];
+  for (const page of pages) {
+    for (const rect of page.rects) {
+      for (const n of page.numbers) {
+        // Generous enough to hold any layout a book actually uses.
+        const dx = (rect.x - n.x1) / rect.w;
+        const dy = (rect.y - n.y1) / rect.h;
+        if (dx < -1 || dx > 1 || dy < -1 || dy > 1) continue;
+        samples.push({ dx, dy });
+        const key = `${Math.round(dx * BINS)}:${Math.round(dy * BINS)}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    }
+  }
+  const best = [...counts].sort((a, b) => b[1] - a[1])[0];
+  // One cluster of a handful of pages is a coincidence, not a layout.
+  if (!best || best[1] < 10) return null;
+  const [bx, by] = best[0].split(':').map(Number) as [number, number];
+
+  // Everything within a bin of the mode belongs to the same layout.
+  const near = samples.filter(
+    (s) => Math.abs(s.dx * BINS - bx) <= 1.5 && Math.abs(s.dy * BINS - by) <= 1.5,
+  );
+  const dxs = near.map((s) => s.dx);
+  const dys = near.map((s) => s.dy);
+  const pad = 0.06;
+  return {
+    // labelX is how far LEFT of the diagram the number may end.
+    labelX: Math.max(...dxs, 0) + pad,
+    // labelY is how far ABOVE the diagram top the number may sit,
+    // labelDrop how far below — the cluster gives both signs.
+    labelY: Math.max(...dys, 0) + pad,
+    labelDrop: Math.max(...dys.map((d) => -d), 0) + pad,
+  };
+}
+
+/** A diagram's place on its page, in that page's render pixels. */
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** What one page contributes to labelling: its diagrams and its digits. */
+export interface PageLayout {
+  page: number;
+  rects: Rect[];
+  numbers: NumberBox[];
+}
+
+/** A diagram that knows which puzzle it is. */
+export interface LabelledDiagram {
+  page: number;
+  rect: Rect;
+}
+
+/**
+ * Every diagram in a book, keyed by the number printed on it — with the
+ * label window worked out from the pages rather than supplied.
+ *
+ * A number claimed twice keeps its first (reading-order) diagram: books
+ * reprint a puzzle's number beside its answer, and the answer's diagram is
+ * not the puzzle.
+ */
+export function assignLabels(pages: PageLayout[]): Map<number, LabelledDiagram> {
+  const fitted = fitLabelWindow(pages);
+  const out = new Map<number, LabelledDiagram>();
+  if (!fitted) return out;
+  for (const page of [...pages].sort((a, b) => a.page - b.page)) {
+    for (const rect of page.rects) {
+      // The window is in fractions of a diagram; the boxes are in pixels.
+      const label = labelForDiagram(rect, page.numbers, {
+        labelX: fitted.labelX * rect.w,
+        labelY: fitted.labelY * rect.h,
+        labelDrop: fitted.labelDrop * rect.h,
+      });
+      if (label && !out.has(label.value)) out.set(label.value, { page: page.page, rect });
+    }
+  }
+  return out;
+}
+
+/**
  * Books that print the side as a lone W or B under the puzzle number.
  *
  * The letter binds to the NUMBER, not to a diagram: prose is full of stray
