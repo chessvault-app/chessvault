@@ -565,8 +565,10 @@ export function RepertoireView() {
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
+        {/* fit: a short form under a tall board. Left to shrink, the panel
+            cut its own Start button off with nothing to scroll to. */}
         {phase === 'idle' ? (
-          <Panel flush className="shrink-0">
+          <Panel flush fit className="shrink-0">
             <PanelHeader title="New game" />
             <div className="flex flex-col gap-3 p-3">
               <div className="flex gap-1">

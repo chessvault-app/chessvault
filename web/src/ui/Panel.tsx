@@ -18,6 +18,16 @@ interface PanelProps {
    * to plain flex sizing.
    */
   defaultHeight?: number;
+  /**
+   * Size to the content and never clip it.
+   *
+   * A panel is normally allowed to shrink (`min-h-0`) and hides what does
+   * not fit (`overflow-hidden`), which is right for a scrolling list in a
+   * fixed column. It is wrong for a short form: squeezed by a tall board
+   * above it, the panel simply cut its own last row off with nothing to
+   * scroll — the Start button, on a phone.
+   */
+  fit?: boolean;
 }
 
 const storageKey = (key: string): string => `vault:panel-h:${key}`;
@@ -40,7 +50,14 @@ function useLgViewport(enabled: boolean): boolean {
 }
 
 /** The standard raised surface: every pane in the app sits in one of these. */
-export function Panel({ children, className, flush = false, resizeKey, defaultHeight }: PanelProps) {
+export function Panel({
+  children,
+  className,
+  flush = false,
+  resizeKey,
+  defaultHeight,
+  fit = false,
+}: PanelProps) {
   const ref = useRef<HTMLElement>(null);
   const drag = useRef<{ y: number; h: number } | null>(null);
   const [height, setHeight] = useState<number | null>(() => {
@@ -76,7 +93,8 @@ export function Panel({ children, className, flush = false, resizeKey, defaultHe
       style={style}
       className={cn(
         'bg-surface border-line rounded-xl border shadow-[var(--shadow-panel)]',
-        'flex min-h-0 flex-col overflow-hidden',
+        'flex flex-col',
+        fit ? 'min-h-max overflow-visible' : 'min-h-0 overflow-hidden',
         !flush && 'p-3',
         className,
       )}

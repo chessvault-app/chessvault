@@ -43,6 +43,12 @@ async function lookup(fen: string): Promise<void> {
  * @param fens every position from the start of the line to the cursor, in
  *   order. Positions already looked up cost nothing.
  */
+/**
+ * How deep to bother asking. The catalogue runs out long before this; a
+ * line is not going to acquire a name at move forty.
+ */
+const NAMED_PLIES = 30;
+
 export function useOpeningName(fens: string[]): string | null {
   const [, bump] = useState(0);
   const current = fens[fens.length - 1];
@@ -50,21 +56,27 @@ export function useOpeningName(fens: string[]): string | null {
   useEffect(() => {
     if (!current) return;
     let live = true;
-    // Only the position being looked at is fetched. Walking back through
-    // the line uses what earlier positions already taught us, so stepping
-    // through a game costs one request per new position and none at all
-    // for one already visited.
-    if (!known.has(current)) {
-      void lookup(current).then(() => {
-        if (live) bump((n) => n + 1);
-      });
-    }
+    // The whole line, not just the position being looked at. Asking only
+    // about the current one meant the answer depended on HOW you got here:
+    // stepping forward move by move looked up each position on the way,
+    // but opening a game — or handing a repertoire line to the board —
+    // lands on the last move with nothing behind it ever asked about, so
+    // the line came out unnamed or wearing whatever shallow name happened
+    // to be cached.
+    const wanted = fens.slice(0, NAMED_PLIES + 1).filter((fen) => !known.has(fen));
+    if (wanted.length === 0) return;
+    void Promise.all(wanted.map(lookup)).then(() => {
+      if (live) bump((n) => n + 1);
+    });
     return () => {
       live = false;
     };
+    // Keyed on the position: a different cursor means a different line to
+    // name, and the array identity changes on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
 
-  for (let at = fens.length - 1; at >= 0; at--) {
+  for (let at = Math.min(fens.length, NAMED_PLIES + 1) - 1; at >= 0; at--) {
     const name = known.get(fens[at]!);
     if (name) return name;
   }
