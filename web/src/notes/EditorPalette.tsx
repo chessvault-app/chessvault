@@ -1,7 +1,8 @@
-import { Bold, Code, Grid3x3, Heading1, Heading2, Italic, List, ListOrdered, Quote, Strikethrough } from 'lucide-react';
+import { Bold, Code, Heading1, Heading2, Italic, List, ListOrdered, Quote, Strikethrough } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { cn } from '@/lib/cn';
+import { KnightIcon } from '@/ui/KnightIcon';
 
 /**
  * The note formatting palette: one row, pinned to the top of the note
@@ -20,7 +21,7 @@ import { cn } from '@/lib/cn';
 
 interface Action {
   id: string;
-  icon: typeof Bold;
+  icon: typeof Bold | typeof KnightIcon;
   label: string;
   run: (editor: Editor) => void;
   active: (editor: Editor) => boolean;
@@ -92,7 +93,10 @@ const ACTIONS: Action[] = [
   },
   {
     id: 'board',
-    icon: Grid3x3,
+    // A knight, not a grid. Every grid icon in this app means a grid, and
+    // a stranger reading a toolbar full of text formatting would take one
+    // here for "insert table" — which is the one thing it is not.
+    icon: KnightIcon,
     label: 'Insert a board',
     run: (e) => e.chain().focus().insertChessBlock().run(),
     active: (e) => e.isActive('chessBlock'),

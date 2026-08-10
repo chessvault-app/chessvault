@@ -71,9 +71,17 @@ export function PromptSheet({
             if (e.key === 'Escape') onClose();
           }}
         />
-        <Button variant="primary" size="sm" className="self-end" onClick={submit}>
-          {submitLabel}
-        </Button>
+        <div className="flex justify-end gap-2">
+          {/* A way out that is not the scrim. Tapping outside works, but a
+              dialog asking for one value should say so rather than expect
+              you to know. */}
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={submit}>
+            {submitLabel}
+          </Button>
+        </div>
       </div>
     </div>
   );
