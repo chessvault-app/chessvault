@@ -58,7 +58,7 @@ export interface SolveResult {
    * knowing anything about how a book writes its answers: hand it a
    * position, it says whether the book's printed solution works there.
    */
-  replayFor: (number: number, placement: string) => { side: 'w' | 'b'; sans: string[] } | null;
+  replayFor: (number: number, placement: string) => Omit<VerifiedPuzzle, 'number'> | null;
   /**
    * Whether the winning settings read enough of the book to be believed.
    * False is a real answer: the positions are still worth importing as
@@ -135,10 +135,7 @@ export function solveBook(
   // The dialect is fully learned by now, so a retry gets the book's best
   // reading rather than the first pass's.
   const hints = dialect.hints();
-  const replayFor = (
-    number: number,
-    placement: string,
-  ): { side: 'w' | 'b'; sans: string[] } | null => {
+  const replayFor = (number: number, placement: string): Omit<VerifiedPuzzle, 'number'> | null => {
     const body = entries.get(number);
     const mainline = body ? parseMainline(body, config) : null;
     const board = boards.get(number);
@@ -157,8 +154,9 @@ export function solveBook(
       // Same rule as the first pass: the moves must also replay from the
       // FEN that would be stored, or the pair is not self-consistent.
       const fen = `${placement} ${side} ${castlingRights(placement)} - 0 1`;
-      if (!toUci(fen, out.sans)) continue;
-      return { side, sans: out.sans };
+      const uci = toUci(fen, out.sans);
+      if (!uci) continue;
+      return { fen, uci, san: out.sans, provenance: 'book-parsed' };
     }
     return null;
   };

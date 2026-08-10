@@ -5,10 +5,13 @@ import {
   letterSides,
   pageNumbers,
   type BookText,
+  type LabelledDiagram,
   type PageLayout,
   type TextPage,
 } from '@shared/bookImport';
-import { solveBook, type SolveResult } from '@shared/bookSolve';
+import { solveBook, type SolveResult, type VerifiedPuzzle } from '@shared/bookSolve';
+import { repairBoard } from '@shared/bookRepair';
+import type { CellCandidates } from '@shared/bookRepair';
 import type { ReadBoard } from '@shared/bookConfigSearch';
 import type { CellReading, Template } from './ocr/classify';
 import { classifyBoard, labelsToFen } from './ocr/classify';
@@ -16,6 +19,9 @@ import { grayFromCanvas, cropDiagram } from './ocr/browser';
 import { detectDiagrams } from './ocr/detect';
 import { extractTextPage } from './ocr/pdfText';
 import type { Gray } from './ocr/image';
+// Type-only: this file already loads pdf.js at runtime, and the repair
+// pass re-renders pages, so it needs the real document type.
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 export interface FoundDiagram {
   page: number;
@@ -29,9 +35,22 @@ export interface FoundDiagram {
   solved?: boolean;
 }
 
+/** Choices the user made before the import started. */
+export interface ImportOptions {
+  /**
+   * Re-read the boards whose printed solution would not replay, looking
+   * for a misread square. Off by default: measured on 1001 Chess
+   * Exercises it recovered 26 puzzles out of 242 failures and took twenty
+   * minutes, so it is worth offering and not worth imposing.
+   */
+  repair?: boolean;
+}
+
 /** What the solve stage concluded, for the dialog to show. */
 export interface SolveSummary {
   solved: number;
+  /** Of those, the ones a misread square had to be fixed on first. */
+  repaired: number;
   unresolved: number;
   confident: boolean;
   /** How the book turned out to write its answers — worked out, not set. */
@@ -49,7 +68,7 @@ interface ImportJobState {
   /** Null until the text half has run; null after it finds nothing. */
   solve: SolveSummary | null;
   error: string | null;
-  start: (slug: string, file: File, templates: Template[]) => void;
+  start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
   toggle: (index: number) => void;
   clear: () => void;
 }
@@ -59,6 +78,10 @@ interface ImportJobState {
 let worker: Worker | null = null;
 let nextId = 0;
 const pending = new Map<number, (r: CellReading[] | null) => void>();
+const detailPending = new Map<
+  number,
+  (r: { cells: CellCandidates[]; labels: string[] } | null) => void
+>();
 
 function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
   worker ??= (() => {
@@ -66,8 +89,23 @@ function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
       type: 'module',
     });
     w.onmessage = (e: MessageEvent) => {
-      const { id, readings } = e.data as { id: number; readings: CellReading[] | null };
-      pending.get(id)?.(readings);
+      const { id, readings, cells, labels } = e.data as {
+        id: number;
+        readings?: CellReading[] | null;
+        cells?: { probs: number[]; top: number; votes: [number, number][] }[] | null;
+        labels?: string[];
+      };
+      const waitingForDetail = detailPending.get(id);
+      if (waitingForDetail) {
+        detailPending.delete(id);
+        waitingForDetail(
+          cells && labels
+            ? { cells: cells.map((c) => ({ ...c, votes: new Map(c.votes) })), labels }
+            : null,
+        );
+        return;
+      }
+      pending.get(id)?.(readings ?? null);
       pending.delete(id);
     };
     return w;
@@ -80,6 +118,21 @@ function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
   return new Promise((resolve) => {
     pending.set(id, resolve);
     worker!.postMessage({ id, w: board.w, h: board.h, data: buffer }, [buffer]);
+  });
+}
+
+/** The same worker, asked for every cell's distribution — repair only. */
+function classifyDetailInWorker(
+  board: Gray,
+): Promise<{ cells: CellCandidates[]; labels: string[] } | null> {
+  const id = ++nextId;
+  const buffer = board.data.buffer.slice(
+    board.data.byteOffset,
+    board.data.byteOffset + board.data.byteLength,
+  );
+  return new Promise((resolve) => {
+    detailPending.set(id, resolve);
+    worker!.postMessage({ id, w: board.w, h: board.h, data: buffer, detail: true }, [buffer]);
   });
 }
 
@@ -100,10 +153,10 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   solve: null,
   error: null,
 
-  start: (slug, file, templates) => {
+  start: (slug, file, templates, options) => {
     if (get().status === 'scanning') return;
     set({ slug, status: 'scanning', page: 0, pages: 0, found: [], solve: null, error: null });
-    void scan(file, templates, set, get);
+    void scan(file, templates, options ?? {}, set, get);
   },
 
   toggle: (index) =>
@@ -138,6 +191,7 @@ async function uploadCover(slug: string, page: HTMLCanvasElement): Promise<void>
 async function scan(
   file: File,
   templates: Template[],
+  options: ImportOptions,
   set: (partial: Partial<ImportJobState>) => void,
   get: () => ImportJobState,
 ): Promise<void> {
@@ -216,7 +270,9 @@ async function scan(
     set({ status: 'reading' });
     await new Promise((r) => setTimeout(r, 0));
     const slug = get().slug;
-    const summary = slug ? await readSolutions(slug, texts, geometry, results, pageImages) : null;
+    const summary = slug
+      ? await readSolutions(slug, pdf, texts, geometry, results, pageImages, options)
+      : null;
     set({ solve: summary, status: 'done', found: [...results] });
   } catch (e) {
     set({ status: 'failed', error: `Could not read the PDF: ${(e as Error).message}` });
@@ -267,10 +323,12 @@ function pageJpeg(canvas: HTMLCanvasElement): string {
  */
 async function readSolutions(
   slug: string,
+  pdf: PDFDocumentProxy,
   texts: TextPage[],
   geometry: PageGeometry[],
   found: FoundDiagram[],
   pageImages: Map<number, string>,
+  options: ImportOptions,
 ): Promise<SolveSummary | null> {
   const numbering = deriveNumbering(texts);
   const byPage = new Map(texts.map((t) => [t.page, t]));
@@ -314,9 +372,18 @@ async function readSolutions(
 
   const result = solveBook(texts, boards, { ...numbering, solutionsAfterPage: 0 });
 
+  // Pass two: the boards whose printed solution did not replay. Nearly all
+  // of those are a correct reading of a page plus ONE misread square, and
+  // the book's own line is what finds it — see shared/bookRepair.ts.
+  const repaired = options.repair
+    ? await repairUnread(pdf, geometry, labelled, boards, result)
+    : [];
+  const solved = [...result.puzzles, ...repaired];
+  solved.sort((a, b) => a.number - b.number);
+
   // Evidence first: a puzzle must never reference a page image that is not
   // there, so the pages go up before anything that points at them.
-  const wanted = new Set(result.puzzles.map((p) => labelled.get(p.number)?.page).filter(Boolean));
+  const wanted = new Set(solved.map((p) => labelled.get(p.number)?.page).filter(Boolean));
   const pages = [...wanted].map((page) => ({ page: page as number, image: pageImages.get(page as number) }));
   for (let i = 0; i < pages.length; i += 12) {
     const chunk = pages.slice(i, i + 12).filter((p) => p.image);
@@ -329,7 +396,7 @@ async function readSolutions(
   }
 
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));
-  for (const puzzle of result.puzzles) {
+  for (const puzzle of solved) {
     const where = labelled.get(puzzle.number);
     const size = where ? sizes.get(where.page) : undefined;
     if (!where || !size) continue;
@@ -366,10 +433,96 @@ async function readSolutions(
   }
 
   return {
-    solved: result.puzzles.length,
-    unresolved: result.unresolved.length,
+    solved: solved.length,
+    repaired: repaired.length,
+    unresolved: result.unresolved.length - repaired.length,
     confident: result.confident,
     settings: result.settings,
     answerRanges: result.answerRanges,
   };
+}
+
+/** How many misread boards are worth re-reading. */
+const REPAIR_LIMIT = 400;
+
+/**
+ * Rescue the boards whose printed solution refused to replay.
+ *
+ * The cell classifier is right about 99.4% of squares, which still leaves
+ * only about two boards in three read perfectly — and almost every failure
+ * is a single wrong square. The book's own line catches those, so the ones
+ * that failed get read again properly: full class distributions per cell
+ * plus the same cell re-read under small shifts, which is what the search
+ * needs to know where to look.
+ *
+ * Five times the work of a normal read, so it runs only on the failures,
+ * and only on the pages that actually hold one — which is why the pages are
+ * re-rendered here rather than kept in memory through the whole scan.
+ */
+async function repairUnread(
+  pdf: PDFDocumentProxy,
+  geometry: PageGeometry[],
+  labelled: Map<number, LabelledDiagram>,
+  boards: Map<number, ReadBoard>,
+  result: SolveResult,
+): Promise<VerifiedPuzzle[]> {
+  // Only boards that were actually READ can be repaired; a number whose
+  // diagram never resolved has nothing to fix.
+  const candidates = result.unresolved
+    .filter((number) => boards.has(number) && labelled.has(number))
+    .slice(0, REPAIR_LIMIT);
+  if (candidates.length === 0) return [];
+
+  const byPage = new Map<number, number[]>();
+  for (const number of candidates) {
+    const page = labelled.get(number)!.page;
+    byPage.set(page, [...(byPage.get(page) ?? []), number]);
+  }
+
+  const out: VerifiedPuzzle[] = [];
+  for (const [pageNo, numbers] of [...byPage].sort((a, b) => a[0] - b[0])) {
+    const geo = geometry.find((g) => g.page === pageNo);
+    if (!geo) continue;
+    const page = await pdf.getPage(pageNo);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+
+    for (const number of numbers) {
+      const rect = labelled.get(number)!.rect;
+      const { board } = cropDiagram(canvas, rect);
+      const detail = await classifyDetailInWorker(board);
+      if (!detail) continue;
+      const fixed = repairBoard(
+        detail.cells,
+        detail.labels,
+        (labels) => {
+          const placement = labelsToFen(
+            labels.map((ch) => (ch === '1' ? 'empty' : ch)) as Parameters<typeof labelsToFen>[0],
+            false,
+          ).split(' ')[0];
+          if (!placement) return null;
+          const replayed = result.replayFor(number, placement);
+          return replayed ? { placement, side: 'w' as const, sans: replayed.san } : null;
+        },
+        // Two cells, not three. The third level costs more than the first
+        // two together and, on the book measured, found the fewest — and
+        // this runs while somebody watches an import finish.
+        { maxEdits: 2 },
+      );
+      if (!fixed.repaired) continue;
+      // Ask once more for the real answer: the search only needed to know
+      // THAT the position replays, this needs the moves it produced.
+      const verified = result.replayFor(number, fixed.repaired.placement);
+      if (verified) out.push({ number, ...verified });
+      // Yield after every board: the search is hundreds of replays, and it
+      // runs here rather than in the worker because replaying needs the
+      // book's parsed answers.
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+  return out;
 }

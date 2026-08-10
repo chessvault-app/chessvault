@@ -1,4 +1,5 @@
 import { type Gray } from './image';
+import type { CellCandidates } from '@shared/bookRepair';
 import type { CellLabel, CellReading } from './classify';
 
 /**
@@ -182,6 +183,55 @@ export function cellTile(board: Gray, col: number, row: number): Float32Array {
     }
   }
   return out;
+}
+
+/**
+ * Read a board the way the REPAIR search needs it: every cell's whole class
+ * distribution, plus how the same cell reads when the board is nudged.
+ *
+ * The nudges are the point. A cell the classifier is genuinely wrong about
+ * tends to flip when the board moves two pixels, while its softmax margin
+ * stays perfectly confident — so a disagreeing shifted read is a better
+ * pointer at a misread cell than the probabilities are. Both go to the
+ * search; see shared/bookRepair.ts.
+ *
+ * Five times the work of a plain read, so it is only ever run on the
+ * handful of boards whose printed solution did NOT replay.
+ */
+export function classifyBoardDetailed(
+  net: CellNet,
+  board: Gray,
+): { cells: CellCandidates[]; labels: string[] } {
+  const shifted = ([[2, 0], [-2, 0], [0, 2], [0, -2]] as const).map(([dx, dy]) => {
+    const data = new Uint8ClampedArray(board.w * board.h).fill(255);
+    for (let y = 0; y < board.h; y++) {
+      const sy = y + dy;
+      if (sy < 0 || sy >= board.h) continue;
+      for (let x = 0; x < board.w; x++) {
+        const sx = x + dx;
+        if (sx >= 0 && sx < board.w) data[y * board.w + x] = board.data[sy * board.w + sx]!;
+      }
+    }
+    return { w: board.w, h: board.h, data };
+  });
+
+  const cells: CellCandidates[] = [];
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const probs = runCellNet(net, cellTile(board, col, row));
+      let top = 0;
+      for (let i = 0; i < probs.length; i++) if (probs[i]! > probs[top]!) top = i;
+      const votes = new Map<number, number>();
+      for (const nudged of shifted) {
+        const alt = runCellNet(net, cellTile(nudged, col, row));
+        let at = 0;
+        for (let i = 0; i < alt.length; i++) if (alt[i]! > alt[at]!) at = i;
+        if (at !== top) votes.set(at, (votes.get(at) ?? 0) + 1);
+      }
+      cells.push({ probs, top, votes });
+    }
+  }
+  return { cells, labels: [...net.labels] };
 }
 
 /**

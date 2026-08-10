@@ -87,11 +87,27 @@ function alternates(cell: CellCandidates, take: number): number[] {
   return [...voted, ...byProb].slice(0, take);
 }
 
+/**
+ * How deep to search, in cells changed.
+ *
+ * Cost grows steeply — one cell is ~190 replays, two is ~760 more, three is
+ * ~1,760 more — while the returns fall away: on 1001 Chess Exercises the
+ * offline run rescued 24 boards at one cell, 4 more at two, and 5 more at
+ * three. Offline that is worth paying for across six processes; in a
+ * browser, in front of someone waiting for an import to finish, it is not.
+ */
+export interface RepairLimits {
+  /** 1, 2 or 3. Defaults to 3 — the offline pipeline's depth. */
+  maxEdits?: 1 | 2 | 3;
+}
+
 export function repairBoard(
   cells: CellCandidates[],
   labelNames: string[],
   replay: ReplayCandidate,
+  limits: RepairLimits = {},
 ): RepairOutcome {
+  const maxEdits = limits.maxEdits ?? 3;
   if (cells.length !== 64) return { repaired: null, ambiguous: [] };
   const base = cells.map((cell) => labelNames[cell.top] ?? '1');
   // Keyed by position, so two different edits that land on the same board
@@ -115,7 +131,7 @@ export function repairBoard(
   // sure of, and only when nothing simpler worked. Widening either of
   // these is how a search starts inventing positions rather than finding
   // them: more edits means more chances for a wrong board to replay.
-  if (wins.size === 0) {
+  if (wins.size === 0 && maxEdits >= 2) {
     const pool = shakiest(cells, 20);
     for (let a = 0; a < pool.length; a++) {
       for (let b = a + 1; b < pool.length; b++) {
@@ -130,7 +146,7 @@ export function repairBoard(
       }
     }
   }
-  if (wins.size === 0) {
+  if (wins.size === 0 && maxEdits >= 3) {
     const pool = shakiest(cells, 12);
     for (let a = 0; a < pool.length; a++) {
       for (let b = a + 1; b < pool.length; b++) {

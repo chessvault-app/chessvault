@@ -90,6 +90,25 @@ describe('repairBoard', () => {
     expect(out.repaired?.edits).toBe(2);
   });
 
+  it('stops at the depth it is given', () => {
+    // A board needing two changes is found at depth 2 and not at depth 1.
+    const cells = board({ 9: shaky('1', 'N'), 33: shaky('1', 'R') });
+    const replay = (labels: string[]) =>
+      labels[9] === 'N' && labels[33] === 'R'
+        ? { placement: 'both', side: 'w' as const, sans: ['Nf3'] }
+        : null;
+    expect(repairBoard(cells, LABELS, replay, { maxEdits: 1 }).repaired).toBeNull();
+    expect(repairBoard(cells, LABELS, replay, { maxEdits: 2 }).repaired?.placement).toBe('both');
+  });
+
+  it('a one-cell fix is still found at depth 1', () => {
+    const out = repairBoard(board({ 9: shaky('1', 'N') }), LABELS, (labels) =>
+      labels[9] === 'N' ? { placement: 'one', side: 'w', sans: ['Nf3'] } : null,
+      { maxEdits: 1 },
+    );
+    expect(out.repaired?.edits).toBe(1);
+  });
+
   it('declines anything that is not a whole board', () => {
     expect(repairBoard([sure('1')], LABELS, () => null).repaired).toBeNull();
   });

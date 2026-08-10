@@ -35,6 +35,7 @@ export function PdfImport({
   // is asked rather than assumed. Imported puzzles are keyed by their
   // printed number, so updating in place genuinely updates them.
   const [mode, setMode] = useState<'update' | 'rebuild'>('update');
+  const [repair, setRepair] = useState(false);
   const [preparing, setPreparing] = useState(false);
 
   const begin = async (file: File): Promise<void> => {
@@ -53,7 +54,7 @@ export function PdfImport({
       }
       setPreparing(false);
     }
-    job.start(slug, file, templates);
+    job.start(slug, file, templates, { repair });
   };
   const mine = job.slug === slug;
   const found = mine ? job.found : [];
@@ -131,6 +132,25 @@ export function PdfImport({
               </label>
             ))}
           </div>
+        )}
+
+        {!mine && (
+          <label className="text-muted flex cursor-pointer items-start gap-2 text-xs">
+            <input
+              type="checkbox"
+              checked={repair}
+              onChange={(e) => setRepair(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              Try harder on boards that fail
+              <span className="text-subtle block">
+                Re-reads each position whose printed solution would not replay, looking for a
+                single misread square. On a 1,000-puzzle book this recovered about 26 more
+                puzzles and took twenty minutes.
+              </span>
+            </span>
+          </label>
         )}
 
         {!mine && (
