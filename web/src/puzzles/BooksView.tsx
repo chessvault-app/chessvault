@@ -983,6 +983,24 @@ function useGridWindow(
     bottom: 0,
   }));
   useEffect(() => {
+    /**
+     * Only ever set state when the answer CHANGED.
+     *
+     * A ResizeObserver watching the grid calls this, and this resizes the
+     * grid — so handing React a fresh object every time is a loop that
+     * re-renders itself forever: the app goes blank and the window stops
+     * responding. Scroll events have the same problem more quietly, one
+     * wasted render per event.
+     */
+    const update = (next: { start: number; end: number; top: number; bottom: number }): void =>
+      setSlice((previous) =>
+        previous.start === next.start &&
+        previous.end === next.end &&
+        previous.top === next.top &&
+        previous.bottom === next.bottom
+          ? previous
+          : next,
+      );
     const measure = (): void => {
       const el = grid.current;
       if (!el) return;
@@ -991,7 +1009,7 @@ function useGridWindow(
       // Unmeasurable (hidden, zero-width, mid-layout): show the whole book
       // rather than a slice of it. Slow beats blank.
       if (!(cell > 0)) {
-        setSlice({ start: 0, end: total, top: 0, bottom: 0 });
+        update({ start: 0, end: total, top: 0, bottom: 0 });
         return;
       }
       const rows = Math.ceil(total / columns);
@@ -999,7 +1017,7 @@ function useGridWindow(
       const firstRow = Math.max(0, Math.floor(above / cell) - OVERSCAN);
       const visibleRows = Math.ceil(globalThis.innerHeight / cell) + OVERSCAN * 2;
       const lastRow = Math.min(rows, firstRow + visibleRows);
-      setSlice({
+      update({
         start: firstRow * columns,
         end: Math.min(total, lastRow * columns),
         top: firstRow * cell,

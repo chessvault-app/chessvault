@@ -151,6 +151,12 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
     <NodeViewWrapper
       className={cn(
         'border-line bg-surface-inset my-3 flex flex-col gap-2 rounded-xl border p-2 sm:flex-row',
+        // The box wraps the board, not the page: on a phone the block is a
+        // board with its moves under it, and a border stretched to the
+        // note's full width around a much narrower board read as an empty
+        // frame. From sm up the board and moves sit side by side and the
+        // box takes whatever that needs.
+        'mx-auto w-fit max-w-full sm:mx-0 sm:w-auto',
         selected && 'ring-primary/60 ring-2',
       )}
       data-chess-block
@@ -160,7 +166,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           sentence should not be the whole screen. Capped and centred on a
           phone; the side-by-side split takes over from sm up. */}
       <div
-        className="relative mx-auto w-full max-w-[15rem] shrink-0 sm:mx-0 sm:max-w-[19rem]"
+        className="relative mx-auto w-full max-w-[18rem] shrink-0 sm:mx-0 sm:max-w-[19rem]"
         contentEditable={false}
       >
         <Board
