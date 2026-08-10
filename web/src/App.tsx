@@ -22,11 +22,15 @@ import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { ThemeToggle } from '@/ui/ThemeToggle';
-import { AnalysisView } from '@/analysis/AnalysisView';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
 // (pdf/ocr machinery, TipTap, the study editor) load on first visit.
+// AnalysisView was the one view loaded eagerly, which put the board, the
+// engine, the explorer, the review strip and the move tree into the chunk
+// that has to parse before ANYTHING renders — including the landing page,
+// which uses none of them.
+const AnalysisView = lazy(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })));
 const EditorView = lazy(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
 const GamesView = lazy(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
 const NotesView = lazy(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
