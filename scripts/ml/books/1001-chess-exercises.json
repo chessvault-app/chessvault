@@ -10,7 +10,7 @@
  "text": "data/ml/1001-text.json",
  "cache": "data/ml/1001-reads.json",
  "report": "data/ml/autoimport-report.json",
- "note": "Found by scripts/ml/search-config.ts, then measured: 980 diagrams matched and 707 validated, against 677 with the script defaults. An earlier search picked sideMode label for this book, which prints no side at all, and measured 662 — the search now refuses that, and its ranking matches the measure exactly.",
+ "note": "Settings found by scripts/ml/search-config.ts and confirmed against the boards in 1001-reads.json: 980 matched, 707 validated, against 677 with the script defaults. An earlier search picked sideMode 'label' for this book, which prints no side at all, and measured 662; the search now refuses that. DO NOT re-import on these numbers. The book in the vault holds 970 puzzles (740 book-parsed), and a fresh detect+label pass over 1001-pages today matches only 858 diagrams and validates 656 — the read cache carries 980 rects that fresh detection no longer finds, and the run that produced them cannot be reproduced from what is in the repo. Re-importing would cost 114 verified solutions to gain a config fix worth 30. The gap between the cache and a fresh read is the thing to fix first.",
  "anchorStyle": "dash",
  "moveMarkers": "dotless",
  "sideMode": "chapter"
