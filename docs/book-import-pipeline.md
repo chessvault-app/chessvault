@@ -75,8 +75,9 @@ frame. The 1001 book's config encodes the original defaults.
 Books that put an answers section after **every chapter** instead of one
 at the back list their spans in `solutionRanges` (`[[28,33],[45,48],…]`),
 which replaces the "everything after `solutionsAfterPage`" rule — that
-rule would swallow the puzzle pages sitting between the sections. Add
-`pdf` and `coverPage` so `render_book_pages.py` can find the source.
+rule would swallow the puzzle pages sitting between the sections. Add `pdf` (the file's NAME, not its path — point `CHESS_BOOK_PDFS` at
+wherever your copies live) and `coverPage` so `render_book_pages.py` can
+find the source. Configs are committed; nobody's disk layout should be.
 
 ## Runbook (per book)
 

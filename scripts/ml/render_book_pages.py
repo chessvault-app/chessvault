@@ -6,7 +6,10 @@ A re-import wipes diagrams/, so this runs after evidence_jpegs.py and before
 enrich_solution_pages.py — which is what stamps each puzzle with the page
 that holds its answer.
 
-Usage: python render_book_pages.py scripts/ml/books/<book>.json
+The config names the book's file, not where it lives: point
+CHESS_BOOK_PDFS at the folder holding your own copies.
+
+Usage: CHESS_BOOK_PDFS=~/pdfs python render_book_pages.py scripts/ml/books/<book>.json
 """
 import json
 import os
@@ -29,7 +32,7 @@ def main():
     cfg = json.load(open(sys.argv[1], encoding='utf-8'))
     out = os.path.join(REPO, 'vault', 'puzzlebooks', cfg['title'], 'diagrams')
     os.makedirs(out, exist_ok=True)
-    doc = pymupdf.open(cfg['pdf'])
+    doc = pymupdf.open(os.path.join(os.environ.get('CHESS_BOOK_PDFS', ''), cfg['pdf']))
 
     if cfg.get('solutionRanges'):
         pages = [p for lo, hi in cfg['solutionRanges'] for p in range(lo, hi + 1)]
