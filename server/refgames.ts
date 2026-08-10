@@ -78,7 +78,7 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
 
   api.get('/refgames/search', (c) => {
     const d = db();
-    if (!d) return c.json({ error: 'No reference games. Run: npm run build:refgames' }, 503);
+    if (!d) return c.json({ error: 'No reference games. Run: npm run build:refgames (see docs/databases.md)' }, 503);
     const q = (c.req.query('q') ?? '').trim();
     const offset = Math.max(0, Number(c.req.query('offset')) || 0);
 

@@ -3,6 +3,32 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.2.0
+
+The first desktop release served from your own server rather than from a
+public repository, and the first with the book importer needing no
+configuration at all.
+
+- **Notes gained a formatting toolbar** — bold through quote, plus insert
+  a board, pinned with the note's header at the top of the page. Two
+  other placements were tried and rejected: floating over the selection
+  meant selecting text before you could insert anything, and a bar above
+  the keyboard collided with iOS's own accessory row.
+- **Editing is one idea across Games, Studies and Notes** — one Edit
+  button in the header, double-click a title to rename, nothing hidden in
+  a panel.
+- **The book importer works the book out for itself** — numbering, label
+  geometry, notation, answer pages and figurine symbols, all derived. 714
+  solutions verified by replay on 1001 Chess Exercises, against 707 for
+  the hand-tuned offline pipeline without its glyph pass.
+- **Opening a book is a fraction of the weight** — the largest book's list
+  went 1,856 KB to 283 KB, its grid builds only the rows on screen, and
+  the shelf's covers went 1.77 MB to 262 KB.
+- **Every page shows the shape of what it is loading**, and says nothing
+  at all when the wait is short.
+- **The installer is 108 MB, not 376** — it was shipping the server's
+  whole dependency tree.
+
 ## 2026-08-10
 
 - **Importing a book needs no configuration** — the app works out the
