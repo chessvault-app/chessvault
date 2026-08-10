@@ -142,6 +142,20 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <ChevronLeft className="size-3.5" />
       </Button>
       <TitleEditor id={id} backSection={backSection} />
+      {/* One edit button for the whole document, in the header — the shape
+          Notes uses. There is no separate pencil for the title (double-click
+          it, as in a note) and none inside the moves panel: editing a
+          document is one mode, not two. */}
+      <Button
+        variant={editing ? 'primary' : 'secondary'}
+        size="sm"
+        className="shrink-0"
+        title={editing ? 'Back to reading' : 'Edit moves, NAGs and comments'}
+        onClick={() => setEditing((v) => !v)}
+      >
+        <Pencil className="mr-1 size-3.5" />
+        {editing ? 'Done' : 'Edit'}
+      </Button>
       <SaveIndicator state={saveState} error={error} />
     </div>
   );
@@ -205,15 +219,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             title={movesTitle}
             actions={
               <>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  active={editing}
-                  title={editing ? 'Done — back to reading' : 'Edit (moves, NAGs & comments)'}
-                  onClick={() => setEditing((v) => !v)}
-                >
-                  <Pencil className="size-3.5" />
-                </Button>
                 <ReviewButton />
                 {editing && <LoadPositionButton />}
                 {editing && <MoveActions allowReset={false} />}
@@ -306,17 +311,6 @@ function TitleEditor({
         {name}
         {failure ? ` — ${failure}` : ''}
       </h1>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title="Rename"
-        onClick={() => {
-          setDraft(name);
-          setEditing(true);
-        }}
-      >
-        <Pencil className="size-3.5" />
-      </Button>
     </>
   );
 }
