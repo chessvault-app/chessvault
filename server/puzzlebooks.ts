@@ -24,7 +24,14 @@ import { VAULT } from './paths.ts';
  */
 
 const BOOKS_DIR = resolve(VAULT, 'puzzlebooks');
-const SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9 _.-]*$/;
+// A book's folder name is its title, so the set has to hold the
+// punctuation book titles actually use — "5334 Problems, Combinations and
+// Games" was on the shelf but could not be opened, and its cover would not
+// load, because of one comma. Same set as a study id (server/studies.ts):
+// every character Windows forbids (\ / : * ? " < > |) stays out, the name
+// must START alphanumeric, and callers reject a trailing dot, so ".." and
+// hidden folders stay unreachable.
+const SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9 (),'’&+_.–—-]*$/;
 
 interface BookPuzzle {
   id: string;
@@ -108,7 +115,10 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   const diagramsDir = (slug: string): string => resolve(bookDir(slug), 'diagrams');
 
   const validBook = (slug: string): boolean =>
-    SLUG_RE.test(slug) && existsSync(resolve(bookDir(slug), 'book.json'));
+    SLUG_RE.test(slug) &&
+    !slug.endsWith('.') &&
+    slug.trim() === slug &&
+    existsSync(resolve(bookDir(slug), 'book.json'));
 
   /**
    * puzzles.json is 500-600 KB per book and was re-read + re-parsed on the
@@ -189,7 +199,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const body = (await c.req.json().catch(() => ({}))) as { title?: string };
     const title = body.title?.trim();
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
-    const slug = title.replace(/[^A-Za-z0-9 _.-]/g, '').trim();
+    // Strip only what the folder name cannot hold; a title's commas and
+    // ampersands survive, so the book keeps the name it was given.
+    const slug = title.replace(/[^A-Za-z0-9 (),'’&+_.–—-]/g, '').trim();
     if (!SLUG_RE.test(slug)) return c.json({ error: 'that title cannot become a folder name' }, 400);
     if (existsSync(bookDir(slug))) return c.json({ error: 'a book with that name exists' }, 409);
     mkdirSync(bookDir(slug), { recursive: true });

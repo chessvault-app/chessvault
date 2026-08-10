@@ -219,6 +219,27 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('opens a book whose title has the punctuation chess titles use', async () => {
+    const title = '5334 Problems, Combinations & Games';
+    expect((await post('/api/puzzlebooks', { title })).status).toBe(200);
+    const slug = encodeURIComponent(title);
+    expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(200);
+    expect(
+      (await post(`/api/puzzlebooks/${slug}/puzzles`, {
+        fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
+        uci: ['a1a8'],
+        san: ['Ra8#'],
+      })).status,
+    ).toBe(200);
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
+  it('still refuses names that could escape the books folder', async () => {
+    for (const bad of ['../evil', 'a/b', '.hidden', 'ends.', ' padded']) {
+      expect((await app.request(`/api/puzzlebooks/${encodeURIComponent(bad)}`)).status).toBe(404);
+    }
+  });
+
   it('deletes a book', async () => {
     const slug = encodeURIComponent('1001 Sacrifices');
     expect((await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' })).status).toBe(200);
