@@ -57,6 +57,13 @@ interface Buckets {
   total: number;
 }
 
+/**
+ * Small enough to list rather than sample. 256 ids is one cheap query, and
+ * the puzzle pools that get this narrow are exactly the ones where random
+ * draws keep landing on puzzles already attempted.
+ */
+const SMALL_POOL = 256;
+
 /** Filter -> buckets, or null when the database predates the count tables. */
 const bucketCache = new Map<string, Buckets | null>();
 
@@ -181,6 +188,27 @@ function pickPuzzle(
   const byId = db.prepare(
     'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
   );
+
+  // A narrow filter — a rare theme in a tight rating band — can leave a
+  // pool of a handful. Drawing at random then hoping to miss the attempted
+  // ones re-serves a solved puzzle surprisingly often there: with three
+  // puzzles and two of them attempted, twelve draws all miss the fresh one
+  // about once in every 130 requests. Small pools are cheap to enumerate,
+  // so enumerate them and pick from what is actually left.
+  const total = buckets ? buckets.total : (countCache.get(cacheKey) ?? 0);
+  if (total > 0 && total <= SMALL_POOL) {
+    const where = theme
+      ? 'FROM themes WHERE theme = ? AND rating BETWEEN ? AND ?'
+      : 'FROM puzzles WHERE rating BETWEEN ? AND ?';
+    const args = theme ? [theme, min, max] : [min, max];
+    const ids = (db.prepare(`SELECT id ${where}`).all(...args) as { id: string }[]).map((r) => r.id);
+    const fresh = ids.filter((id) => !exclude.has(id));
+    // Everything attempted: a repeat beats a dead end.
+    const pool = fresh.length > 0 ? fresh : ids;
+    if (pool.length === 0) return null;
+    return byId.get(pool[Math.floor(Math.random() * pool.length)]!) as PuzzleRow;
+  }
+
   let fallback: string | null = null;
   for (let attempt = 0; attempt < 12; attempt++) {
     const id = drawId();
