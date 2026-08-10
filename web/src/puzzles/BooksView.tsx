@@ -1801,8 +1801,13 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     setEngineApproved(false);
     setFlipped(false);
     reported.current = false;
+    // Keyed on the PUZZLE, not the book object. Recording an attempt folds
+    // the server's new progress into the cached book, which is a new object
+    // every time — so depending on `book` here meant submitting an answer
+    // rebuilt the tree and threw you back to the start of the puzzle you
+    // had just solved.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [book, puzzleId]);
+  }, [puzzleId, puzzle?.fen]);
 
   const node = tree ? getNode(tree, cursorId) : null;
   // One position replay per cursor move, not one per render.
