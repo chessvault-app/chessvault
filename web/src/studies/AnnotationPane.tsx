@@ -1,4 +1,5 @@
 import { TextArea } from '@/ui/Input';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/MoveTreePane';
@@ -12,6 +13,9 @@ import { ChipRow } from '@/ui/ChipRow';
 const QUALITY_NAGS = [1, 2, 3, 4, 5, 6];
 /** Positional-assessment NAGs — also mutually exclusive. */
 const ASSESSMENT_NAGS = [14, 16, 18, 10, 13, 15, 17, 19];
+
+/** Whether the glyph palette is unfolded — a preference, so it persists. */
+const PALETTE_KEY = 'vault:nag-palette';
 
 /**
  * Comment + NAG editor for the cursor node. The textarea is local state
@@ -41,6 +45,13 @@ export function AnnotationPane({
   const [draft, setDraft] = useState(node.comment ?? '');
   const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
   const [sheet, setSheet] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(
+    () => localStorage.getItem(PALETTE_KEY) !== 'closed',
+  );
+
+  useEffect(() => {
+    localStorage.setItem(PALETTE_KEY, paletteOpen ? 'open' : 'closed');
+  }, [paletteOpen]);
 
   // Keep the draft in step when the cursor moves to another node.
   useEffect(() => {
@@ -96,6 +107,36 @@ export function AnnotationPane({
     <ChipRow innerClassName="gap-1">{glyphs}</ChipRow>
   );
 
+  // Folded away, the palette is two rows of thumb targets you get back —
+  // which matters most on the short viewports where this panel is tightest.
+  // The chevron keeps showing whatever glyphs the move already carries, so
+  // folding hides the CHOICES, never the annotation.
+  const chosen = [...QUALITY_NAGS, ...ASSESSMENT_NAGS].filter((nag) => node.nags.includes(nag));
+  const foldable = (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        aria-expanded={paletteOpen}
+        title={paletteOpen ? 'Hide glyphs' : 'Show glyphs'}
+        onClick={() => setPaletteOpen((open) => !open)}
+        className={cn(
+          'text-muted hover:bg-surface-2 hover:text-fg flex h-6 shrink-0 items-center gap-1 rounded px-1',
+          'transition-colors duration-100 pointer-coarse:h-8',
+        )}
+      >
+        <ChevronDown
+          className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
+        />
+        {!paletteOpen && chosen.length > 0 && (
+          <span className="text-primary font-mono text-xs font-semibold">
+            {chosen.map((nag) => NAG_GLYPH[nag]).join(' ')}
+          </span>
+        )}
+      </button>
+      {paletteOpen && <div className="min-w-0 flex-1">{palette}</div>}
+    </div>
+  );
+
   const placeholder = atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`;
   const flush = (): void => {
     if (draft !== (node.comment ?? '')) setComment(cursorId, draft);
@@ -103,7 +144,7 @@ export function AnnotationPane({
 
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
-      {!atRoot && palette}
+      {!atRoot && foldable}
       {coarse ? (
         // Touch: the inline textarea sits exactly where the keyboard (and
         // the bottom bar riding above it) land, so typing into it was a
