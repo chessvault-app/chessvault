@@ -1,0 +1,24 @@
+{
+  "slug": "logical",
+  "title": "Logical Chess - Move by Move",
+  "pdf": "logical.pdf",
+  "lines": "data/ml/logical-lines.json",
+  "games": 33,
+  "rankAliases": {
+    "1": "lI|!t",
+    "2": "Zz",
+    "3": "J",
+    "5": "Ss",
+    "6": "Gb",
+    "8": "B"
+  },
+  "fileAliases": {
+    "c": "ek",
+    "e": "c",
+    "f": "t!r"
+  },
+  "squareGlyphs": {
+    "n": "f1"
+  },
+  "note": "Annotated-games import — see scripts/ml/import-annotated-games.ts. The alias tables describe THIS scan's confusions; they are not shared with other books."
+}

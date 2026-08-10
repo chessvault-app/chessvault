@@ -111,25 +111,49 @@ badly. It is usable but has the most room left in it.
 
 **5334 did not use this pipeline at all** — see below.
 
-## The exception: a book that needs no OCR
+## Two importers that skip the scan
 
-`scripts/import-polgar-5334.ts` imports Polgár's *5334 Problems* from the
-PDF's text layer alone. That book was typeset in LaTeX with a diagram
-font, so every position is already in the text as one character per
-square (two glyphs per piece, one for light squares and one for dark),
-and every solution is plain algebraic. Nothing is recognised; it is read.
+Neither of these is a per-book script: like everything else here, the
+book's own facts live in `scripts/ml/books/*.json` and the code never
+knows which book it is reading.
+
+### `import-diagram-text.ts` — diagrams that are already text
+
+    npx tsx scripts/ml/import-diagram-text.ts --book scripts/ml/books/<slug>.json
+
+For books typeset in LaTeX with a diagram font, where every position is
+already in the text as one character per square (two glyphs per piece, one
+for light squares and one for dark) and every solution is plain algebraic.
+Nothing is recognised; it is read.
 Every entry is still replayed with chessops before it is imported, which
 is what catches a misread entry and what locates the printed position
 inside the 600 miniature games, whose answer is the whole game score.
 
 It writes no drafts: a draft exists so a human can re-read a board the
-importer could not, and here the boards are exact — it is 456 SOLUTIONS
-that still fail to parse. Those numbers are printed by the run and a
-better parser picks them up in place, since ids are `n<number>`.
+importer could not, and here the boards are exact — it is the remaining
+SOLUTIONS that fail to parse. Those numbers are printed by the run with
+the reason, and a better parser picks them up in place, since ids are
+`n<number>`.
 
 The lesson generalises: **check the text layer for diagram glyphs before
 reaching for CellNet.** It costs one `pdftotext` and can turn a week of
 model work into an afternoon.
+
+### `import-annotated-games.ts` — a book of annotated games as a study
+
+    python scripts/ml/extract_pdf_lines.py "<book>.pdf" data/ml/<slug>-lines.json
+    npx tsx scripts/ml/import-annotated-games.ts --book scripts/ml/books/<slug>.json
+
+Writes one study chapter per game, each move carrying the book's note on
+it. Moves are told from commentary by layout, not by font, and no token is
+ever read: every legal move is scored against the scanned wreckage and the
+whole game is searched depth-first for the reading under which every
+printed move still resolves. A game that will not replay end to end is
+reported, not written.
+
+The scan's own confusions — which characters it uses for which rank, which
+files it mixes up, which squares it collapses into one glyph — are in the
+book's config, because they belong to that scan and to no other.
 
 (Latest round: re-measured with the fine-tuned CellNet and the 3-cell
 repair search. Progress survives a re-import because puzzle ids are

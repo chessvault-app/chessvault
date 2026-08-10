@@ -1,15 +1,15 @@
 /**
- * Import László Polgár's *5334 Problems, Combinations and Games* as a vault
- * puzzle book — without reading a single pixel.
+ * Import a puzzle book whose diagrams are in the PDF's TEXT layer — without
+ * reading a single pixel.
  *
- *   python scripts/ml/extract_1001_text.py "<book>.pdf" data/ml/polgar-text.json
- *   npx tsx scripts/import-polgar-5334.ts data/ml/polgar-text.json
+ *   python scripts/ml/extract_1001_text.py "<book>.pdf" data/ml/<slug>-text.json
+ *   npx tsx scripts/ml/import-diagram-text.ts --book scripts/ml/books/<slug>.json
  *
- * The other tactics books are scans: their diagrams have to be found on the
- * page, warped, and read cell by cell by CellNet, and their solutions come
- * back as figurine garbage. This one was typeset in LaTeX with a diagram
- * font, so the PDF's own text layer already contains every position, one
- * character per square:
+ * Scanned books need the whole measure/import pipeline: find the diagram on
+ * the page, warp it, read it cell by cell with CellNet, and untangle
+ * figurine garbage into moves. A book typeset in LaTeX with a diagram font
+ * needs none of it, because the text layer already contains every position,
+ * one character per square:
  *
  *     80Z0Z0skZ        f8 = s = black rook on a dark square
  *     7Z0Z0Z0Z0        g8 = k = black king on a light square
@@ -27,14 +27,41 @@ import { Chess } from 'chessops/chess';
 import { makeBoardFen, makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
-import { VAULT } from '../server/paths.ts';
-
-const TITLE = '5334 Problems, Combinations and Games';
+import { REPO_ROOT, VAULT } from '../../server/paths.ts';
 
 /**
- * The diagram font gives every piece two glyphs, one for a light square and
- * one for a dark one, so that the board's checkering is part of the
- * character stream. Empty squares are `0` (light) and `Z` (dark).
+ * Per-book facts live in scripts/ml/books/*.json, like every other book in
+ * this pipeline. Nothing here knows which book it is reading.
+ */
+const bookAt = process.argv.indexOf('--book');
+if (bookAt < 0) throw new Error('usage: import-diagram-text --book scripts/ml/books/<slug>.json');
+const BOOK = {
+  title: '',
+  /** Text dump from extract_1001_text.py. */
+  text: '',
+  /** Heading that opens the answers chapter, as it appears in the text. */
+  solutionsHeading: 'Solutions',
+  /** Highest puzzle number the book prints. */
+  maxNumber: 9999,
+  /** Prefix of the repeated page header, to keep it out of the answers. */
+  runningHead: '',
+  ...(JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object),
+} as {
+  title: string;
+  text: string;
+  solutionsHeading: string;
+  maxNumber: number;
+  runningHead: string;
+};
+BOOK.runningHead ||= BOOK.title.slice(0, 14);
+if (!BOOK.title || !BOOK.text) throw new Error('book config needs a title and a text dump');
+
+/**
+ * The LaTeX chess diagram fonts (skak, chessfss and friends) give every
+ * piece two glyphs, one for a light square and one for a dark one, so that
+ * the board's checkering is part of the character stream. Empty squares are
+ * `0` (light) and `Z` (dark). This is a property of the FONT, so it is the
+ * same for every book typeset with it.
  */
 const GLYPHS: Record<string, string> = {
   K: 'K', J: 'K', Q: 'Q', L: 'Q', R: 'R', S: 'R',
@@ -49,8 +76,9 @@ interface Page {
   text: string;
 }
 
-const source = process.argv[2] ?? 'data/ml/polgar-text.json';
-const { pages } = JSON.parse(readFileSync(source, 'utf-8')) as { pages: Page[] };
+const { pages } = JSON.parse(readFileSync(resolve(REPO_ROOT, BOOK.text), 'utf-8')) as {
+  pages: Page[];
+};
 
 // --- diagrams -----------------------------------------------------------------
 
@@ -111,6 +139,11 @@ function readDiagrams(): Diagram[] {
 function normaliseSan(token: string): string {
   return token
     .replace(/X/g, 'x')
+    // Move-quality marks belong to the prose, not the move. The miniature
+    // games annotate their finishes ("17.Nf6! KXf6 18.Nh5+!"), so leaving
+    // these on made the SAN filter below throw the finish away — which is
+    // exactly the part of those entries that is the puzzle.
+    .replace(/[!?]+/g, '')
     .replace(/m$/, '#')
     .replace(/([a-h][18])([QRBN])/, '$1=$2')
     .replace(/0-0-0/, 'O-O-O')
@@ -146,10 +179,15 @@ interface Solution {
 
 function readSolutions(): Map<number, Solution> {
   const out = new Map<number, Solution>();
-  const start = pages.findIndex((p) => /^\s*8\.1 Solutions\s*$/m.test(p.text));
-  if (start < 0) throw new Error('no solutions chapter found');
+  const start = pages.findIndex((p) => p.text.includes(BOOK.solutionsHeading));
+  if (start < 0) throw new Error(`no page contains the heading ${JSON.stringify(BOOK.solutionsHeading)}`);
   // A whole miniature game does not fit on one line, so an entry runs from
   // its own "<number> 1." anchor to the next one.
+  // The running title, the section number and the page number repeat on
+  // every page of the answers and belong to none of them.
+  const isRunningHead = (text: string): boolean =>
+    text.startsWith(BOOK.runningHead) || /^\d+(\.\d+)+\b/.test(text) || /^\d+$/.test(text);
+
   let open: { number: number; page: number; body: string[] } | null = null;
   const tokens = (body: string): string[] =>
     stripVariations(body)
@@ -185,7 +223,7 @@ function readSolutions(): Map<number, Solution> {
       if (anchor) {
         close();
         open = { number: Number(anchor[1]), page: page.page, body: [anchor[2]!] };
-      } else if (open && !/^(5334 Problems|8\.\d|\d+$)/.test(text)) {
+      } else if (open && !isRunningHead(text)) {
         // A line break can fall inside a move ("O-" / "O"), so a trailing
         // hyphen means the next line continues the same token.
         const last = open.body.length - 1;
@@ -235,12 +273,31 @@ function play(pos: Chess, moves: string[], from = makeFen(pos.toSetup())): Line 
   return san.length > 0 ? { fen: from, uci, san, end: pos } : null;
 }
 
+/** Replay as much of a line as is legal, keeping whatever worked. */
+function playLongest(pos: Chess, moves: string[], from = makeFen(pos.toSetup())): Line | null {
+  const uci: string[] = [];
+  const san: string[] = [];
+  for (const move of moves) {
+    const parsed = parseSan(pos, move);
+    if (!parsed) break;
+    uci.push(makeUci(parsed));
+    san.push(makeSanAndPlay(pos, parsed));
+  }
+  return san.length > 0 ? { fen: from, uci, san, end: pos } : null;
+}
+
 /**
  * The last chapter is 600 miniature GAMES: the answer prints the whole game
  * from move one, while the diagram shows the position where the finish
  * begins. So replay the game from the start, find the printed position in
  * it, and the moves after that point are the puzzle — which also proves the
  * diagram and the game belong together.
+ *
+ * The tail is taken for as far as it stays legal rather than all-or-nothing.
+ * Those entries print in two columns and the odd one runs into its
+ * neighbour's text, so demanding the whole tail threw away games whose
+ * position and finish were both perfectly readable. Every move kept is
+ * still legality-checked; a short tail is a shorter puzzle, not a wrong one.
  */
 function fromWholeGame(board: string, moves: string[]): Line | null {
   const pos = Chess.default();
@@ -249,10 +306,61 @@ function fromWholeGame(board: string, moves: string[]): Line | null {
     if (!parsed) return null;
     pos.play(parsed);
     if (makeBoardFen(pos.board) !== board) continue;
-    const rest = moves.slice(index + 1);
-    return rest.length > 0 ? play(pos.clone(), rest) : null;
+    return playLongest(pos.clone(), moves.slice(index + 1));
   }
   return null;
+}
+
+/**
+ * Why an entry could not be used, for the run's own report. The answer is
+ * always about the TEXT, never the position — the diagrams are exact.
+ */
+function whyNot(board: string, moves: string[]): string {
+  const pos = Chess.default();
+  let played = 0;
+  let found = false;
+  for (const move of moves) {
+    const parsed = parseSan(pos, move);
+    if (!parsed) break;
+    pos.play(parsed);
+    played++;
+    if (makeBoardFen(pos.board) === board) found = true;
+  }
+  if (found) return 'the diagram is in the game text but nothing after it is legal';
+  if (played === moves.length) return 'the game text stops before reaching the diagram';
+  return 'the game text goes illegal before reaching the diagram';
+}
+
+/**
+ * A printed diagram says nothing about castling rights, so positions are
+ * built with none — but if the printed solution castles, the right plainly
+ * existed. Grant only what the board itself still supports: king and rook
+ * both untouched on their home squares.
+ */
+function castlingRights(board: string, moves: string[]): string {
+  const wants = moves.some((m) => m.startsWith('O-O'));
+  if (!wants) return '-';
+  const setup = parseFen(`${board} w - - 0 1`);
+  if (setup.isErr) return '-';
+  const at = (square: string): string => {
+    const files = 'abcdefgh';
+    const file = files.indexOf(square[0]!);
+    const rank = Number(square[1]) - 1;
+    const piece = setup.unwrap().board.get(rank * 8 + file);
+    if (!piece) return '';
+    const letter = { king: 'k', queen: 'q', rook: 'r', bishop: 'b', knight: 'n', pawn: 'p' }[piece.role];
+    return piece.color === 'white' ? letter.toUpperCase() : letter;
+  };
+  let rights = '';
+  if (at('e1') === 'K') {
+    if (at('h1') === 'R') rights += 'K';
+    if (at('a1') === 'R') rights += 'Q';
+  }
+  if (at('e8') === 'k') {
+    if (at('h8') === 'r') rights += 'k';
+    if (at('a8') === 'r') rights += 'q';
+  }
+  return rights || '-';
 }
 
 const added = new Date().toISOString();
@@ -280,7 +388,8 @@ for (const diagram of diagrams) {
   // Castling rights are not printed on a diagram, so claim none: a solution
   // that needs to castle will fail replay and be kept as a draft rather
   // than imported with rights nobody stated.
-  const fen = `${diagram.board} ${solution?.black ? 'b' : 'w'} - - 0 1`;
+  const rights = solution ? castlingRights(diagram.board, solution.full) : '-';
+  const fen = `${diagram.board} ${solution?.black ? 'b' : 'w'} ${rights} - 0 1`;
   const setup = parseFen(fen);
   if (setup.isErr) {
     note('unreadable position');
@@ -307,7 +416,7 @@ for (const diagram of diagrams) {
   // the diagram. Only a line that replays is kept either way, so trying
   // both costs nothing and asserts nothing.
   const flipped = Chess.fromSetup(
-    parseFen(`${diagram.board} ${solution.black ? 'w' : 'b'} - - 0 1`).unwrap(),
+    parseFen(`${diagram.board} ${solution.black ? 'w' : 'b'} ${rights} - 0 1`).unwrap(),
   );
   const line =
     play(printed.clone(), solution.moves, fen) ??
@@ -318,7 +427,7 @@ for (const diagram of diagrams) {
       : null) ??
     fromWholeGame(diagram.board, solution.full);
   if (!line) {
-    note('solution does not replay');
+    note(`solution does not replay — ${whyNot(diagram.board, solution.full)}`);
     unresolved.push(diagram.number);
     continue;
   }
@@ -344,13 +453,13 @@ for (const diagram of diagrams) {
 puzzles.sort((a, b) => a.number - b.number);
 unresolved.sort((a, b) => a - b);
 
-const dir = resolve(VAULT, 'puzzlebooks', TITLE);
+const dir = resolve(VAULT, 'puzzlebooks', BOOK.title);
 mkdirSync(resolve(dir, 'diagrams'), { recursive: true });
 const write = (name: string, value: unknown): void =>
   writeFileSync(resolve(dir, name), `${JSON.stringify(value, null, 1)}\n`);
 write('puzzles.json', puzzles);
 write('drafts.json', []);
-write('book.json', { title: TITLE, createdAt: added });
+write('book.json', { title: BOOK.title, createdAt: added });
 
 console.log(`\nimported ${puzzles.length} of ${diagrams.length} puzzles -> ${dir}`);
 if (unresolved.length > 0) {

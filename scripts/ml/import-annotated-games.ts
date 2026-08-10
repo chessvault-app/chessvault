@@ -1,10 +1,9 @@
 /**
- * Turn Irving Chernev's *Logical Chess: Move by Move* into a vault study —
- * one chapter per game, every move carrying the note the book prints under
- * it.
+ * Turn a book of ANNOTATED GAMES into a vault study — one chapter per game,
+ * every move carrying the note the book prints under it.
  *
- *   python scripts/ml/extract_pdf_lines.py "<book>.pdf" data/ml/logical-lines.json
- *   npx tsx scripts/import-logical-chess.ts data/ml/logical-lines.json
+ *   python scripts/ml/extract_pdf_lines.py "<book>.pdf" data/ml/<slug>-lines.json
+ *   npx tsx scripts/ml/import-annotated-games.ts --book scripts/ml/books/<slug>.json
  *
  * THE PROBLEM. The PDF's figurine font decodes to garbage that does not say
  * which piece moved: `lDc6` is Nc6, `.tcS` is Bc5, and `'ibe5` could be
@@ -28,9 +27,40 @@ import { Chess } from 'chessops/chess';
 import { makeSan, makeSanAndPlay, parseSan } from 'chessops/san';
 import { squareRank } from 'chessops/util';
 import type { Move, NormalMove, Role } from 'chessops/types';
-import { VAULT_STUDIES } from '../server/paths.ts';
+import { REPO_ROOT, VAULT_STUDIES } from '../../server/paths.ts';
 
-const TITLE = 'Logical Chess - Move by Move';
+/**
+ * Per-book facts are data, like every other book in this pipeline —
+ * including the scan's own confusions, which belong to the scan and not to
+ * the code that reads it.
+ */
+const bookAt = process.argv.indexOf('--book');
+if (bookAt < 0) throw new Error('usage: import-annotated-games --book scripts/ml/books/<slug>.json');
+const BOOK = {
+  title: '',
+  /** Line dump from extract_pdf_lines.py. */
+  lines: '',
+  /** How many games the book contains — a wrong count means a wrong parse. */
+  games: 0,
+  /** Characters this scan uses for each rank digit, beyond the digit. */
+  rankAliases: {} as Record<string, string>,
+  /** Files it confuses with each other, beyond the letter itself. */
+  fileAliases: {} as Record<string, string>,
+  /** Squares it collapses into a single glyph. */
+  squareGlyphs: {} as Record<string, string>,
+  ...(JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object),
+} as {
+  title: string;
+  lines: string;
+  games: number;
+  rankAliases: Record<string, string>;
+  fileAliases: Record<string, string>;
+  squareGlyphs: Record<string, string>;
+};
+if (!BOOK.title || !BOOK.lines || !BOOK.games) {
+  throw new Error('book config needs a title, a line dump and a game count');
+}
+const TITLE = BOOK.title;
 
 interface Line {
   x0: number;
@@ -45,8 +75,9 @@ interface Page {
   lines: Line[];
 }
 
-const source = process.argv[2] ?? 'data/ml/logical-lines.json';
-const { pages } = JSON.parse(readFileSync(source, 'utf-8')) as { pages: Page[] };
+const { pages } = JSON.parse(readFileSync(resolve(REPO_ROOT, BOOK.lines), 'utf-8')) as {
+  pages: Page[];
+};
 
 // --- text hygiene -------------------------------------------------------------
 
@@ -88,8 +119,8 @@ const headings: Heading[] = [];
 flat.forEach(({ line, page }, index) => {
   if (line.full && GAME_HEADING.test(squash(line.text))) headings.push({ index, page });
 });
-if (headings.length !== 33) {
-  console.error(`expected 33 game headings, found ${headings.length}`);
+if (headings.length !== BOOK.games) {
+  console.error(`expected ${BOOK.games} game headings, found ${headings.length}`);
   process.exit(1);
 }
 
@@ -142,29 +173,9 @@ function asMoveLine(text: string): { number: number; black: boolean; token: stri
  * font bleeding into them, so both are matched with a confusion set and an
  * exact hit is worth more than an aliased one.
  */
-const RANK_ALIASES: Record<string, string> = {
-  '1': 'lI|!t',
-  '2': 'Zz',
-  '3': 'J',
-  '4': '',
-  '5': 'Ss',
-  '6': 'Gb',
-  '7': '',
-  '8': 'B',
-};
-/** Files the scan confuses with each other, beyond the letter itself. */
-const FILE_ALIASES: Record<string, string> = {
-  a: '',
-  b: '',
-  c: 'ek',
-  d: '',
-  e: 'c',
-  f: 't!r',
-  g: '',
-  h: '',
-};
-/** Squares the scan collapses into a single glyph. */
-const SQUARE_GLYPHS: Record<string, string> = { n: 'f1' };
+const RANK_ALIASES: Record<string, string> = { ...Object.fromEntries('12345678'.split('').map((r) => [r, ''])), ...BOOK.rankAliases };
+const FILE_ALIASES: Record<string, string> = { ...Object.fromEntries('abcdefgh'.split('').map((f) => [f, ''])), ...BOOK.fileAliases };
+const SQUARE_GLYPHS: Record<string, string> = BOOK.squareGlyphs;
 
 /** 3 for the exact character, 1 for a known misreading, 0 for neither. */
 const rankQuality = (rank: string, ch: string): number =>
@@ -526,17 +537,31 @@ function solveGame(tokens: string[], dialect: Map<string, Role>, allowance: numb
   const walk = (pos: Chess, index: number, holes: number): Step[] | null => {
     if (index === tokens.length) return [];
     if (budget-- <= 0) return null;
-    for (const option of candidates(pos, tokens[index]!, dialect).slice(0, BREADTH)) {
+    const options = candidates(pos, tokens[index]!, dialect);
+    for (const option of options.slice(0, BREADTH)) {
       const next = pos.clone();
       next.play(option.move);
       const rest = walk(next, index + 1, holes);
       if (rest) return [{ move: option.move, token: index }, ...rest];
     }
-    // The scan drops a printed move now and then — a move line swallowed by
-    // a diagram, or lost at a page break. Try filling the gap, but only
-    // where the whole rest of the game then works out: a filler the printed
-    // continuation does not force never survives the search.
-    if (holes >= allowance) return null;
+    // Repairs are for tokens that say NOTHING — trying every legal move
+    // wherever a branch merely dead-ends turns the search exponential for
+    // no gain, because a token that still reads is not the damaged one.
+    if (options.length > 0 || holes >= allowance) return null;
+    // Two ways the scan damages a game beyond reading, both repairable only
+    // when the moves around them leave exactly one way through.
+    //
+    // (a) the token is wreckage — `Xn`, `:et`, `áaS` — and the move it stood
+    //     for has to come from its neighbours instead;
+    for (const move of legalMoves(pos)) {
+      const next = pos.clone();
+      next.play(move);
+      const rest = walk(next, index + 1, holes + 1);
+      if (rest) return [{ move, token: index }, ...rest];
+    }
+    // (b) a whole printed move is missing — a move line swallowed by a
+    //     diagram, or lost at a page break — so the token stream is a ply
+    //     short and this token belongs to the move after.
     for (const move of legalMoves(pos)) {
       const next = pos.clone();
       next.play(move);
@@ -711,6 +736,35 @@ console.log(
 );
 
 const outcomes = rawGames.map((game) => replay(game, dialect));
+
+// --- what kind of damage is actually stopping this? ---------------------------
+if (process.argv.includes('--stats')) {
+  let total = 0;
+  let unreadable = 0;
+  let ambiguous = 0;
+  let clean = 0;
+  const wrecks: string[] = [];
+  for (const outcome of outcomes) {
+    const pos = Chess.default();
+    for (const [index, raw] of outcome.game.moves.entries()) {
+      const options = candidates(pos, raw.token, dialect);
+      total++;
+      if (options.length === 0) {
+        unreadable++;
+        wrecks.push(raw.token);
+      } else if (options.length > 1 && options[0]!.score === options[1]!.score) ambiguous++;
+      else clean++;
+      const played = outcome.played[index];
+      if (!played) break;
+      const parsed = parseSan(pos, played.san);
+      if (!parsed) break;
+      pos.play(parsed);
+    }
+  }
+  console.log(`
+tokens: ${total}  read outright: ${clean}  tied readings: ${ambiguous}  unreadable: ${unreadable}`);
+  console.log(`sample wrecks: ${wrecks.slice(0, 25).join(' ')}`);
+}
 
 const dumpAt = process.argv.indexOf('--dump');
 if (dumpAt > 0) {
