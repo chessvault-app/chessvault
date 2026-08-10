@@ -24,6 +24,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
+import { makeBoardFen } from 'chessops/fen';
 import { makeSan, makeSanAndPlay, parseSan } from 'chessops/san';
 import { squareRank } from 'chessops/util';
 import type { Move, NormalMove, Role } from 'chessops/types';
@@ -37,6 +38,7 @@ import { REPO_ROOT, VAULT_STUDIES } from '../../server/paths.ts';
 const bookAt = process.argv.indexOf('--book');
 if (bookAt < 0) throw new Error('usage: import-annotated-games --book scripts/ml/books/<slug>.json');
 const BOOK = {
+  slug: '',
   title: '',
   /** Line dump from extract_pdf_lines.py. */
   lines: '',
@@ -50,6 +52,7 @@ const BOOK = {
   squareGlyphs: {} as Record<string, string>,
   ...(JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object),
 } as {
+  slug: string;
   title: string;
   lines: string;
   games: number;
@@ -415,6 +418,12 @@ interface RawMove {
   black: boolean;
   token: string;
   comment: string;
+  /**
+   * The printed diagram this move is followed by, as "<page>:<nth on that
+   * page>". The book marks those moves "(D)", and the diagram states the
+   * position in pixels — a checkpoint the move text cannot corrupt.
+   */
+  anchor?: string;
 }
 
 interface RawGame {
@@ -455,8 +464,21 @@ function readGame(from: number, to: number, gameNumber: number): RawGame {
     else moves[moves.length - 1]!.comment = [moves[moves.length - 1]!.comment, text].filter(Boolean).join(' ');
   };
 
+  // Diagrams are counted per page in line order, which is the order
+  // read-anchors.ts pairs them in, so the nth here is the nth there.
+  const seenOnPage = new Map<number, number>();
+
   for (; i < to; i++) {
     const line = flat[i]!.line;
+    const page = flat[i]!.page;
+    let anchor: string | undefined;
+    if (DIAGRAM.test(line.text)) {
+      DIAGRAM.lastIndex = 0;
+      const nth = seenOnPage.get(page) ?? 0;
+      seenOnPage.set(page, nth + 1);
+      anchor = `${page}:${nth}`;
+    }
+    DIAGRAM.lastIndex = 0;
     const text = squash(line.text.replace(DIAGRAM, ''));
     if (!text) continue;
     if (RESULT.test(text)) {
@@ -468,7 +490,7 @@ function readGame(from: number, to: number, gameNumber: number): RawGame {
     const asMove = isNarrow(line) ? asMoveLine(text) : null;
     if (asMove) {
       flushProse();
-      if (asMove.token) moves.push({ ...asMove, token: asMove.token, comment: '' });
+      if (asMove.token) moves.push({ ...asMove, token: asMove.token, comment: '', ...(anchor ? { anchor } : {}) });
       else pending = { number: asMove.number, black: asMove.black, line };
       continue;
     }
@@ -482,7 +504,13 @@ function readGame(from: number, to: number, gameNumber: number): RawGame {
       continue;
     }
     if (sameRow && isTokenish(text)) {
-      moves.push({ number: pending!.number, black: pending!.black, token: text, comment: '' });
+      moves.push({
+        number: pending!.number,
+        black: pending!.black,
+        token: text,
+        comment: '',
+        ...(anchor ? { anchor } : {}),
+      });
       pending = null;
       continue;
     }
@@ -506,6 +534,25 @@ function readGame(from: number, to: number, gameNumber: number): RawGame {
 const rawGames = headings.map((h, n) =>
   readGame(h.index, n + 1 < headings.length ? headings[n + 1]!.index : flat.length, n + 1),
 );
+
+/** Squares two placements disagree on. */
+function differing(a: string, b: string): number {
+  const expand = (fen: string): string[] => {
+    const out: string[] = [];
+    for (const ch of fen) {
+      if (ch === '/') continue;
+      if (ch >= '1' && ch <= '8') out.push(...(Array(Number(ch)).fill('.') as string[]));
+      else out.push(ch);
+    }
+    return out;
+  };
+  const x = expand(a);
+  const y = expand(b);
+  if (x.length !== 64 || y.length !== 64) return 64;
+  let wrong = 0;
+  for (let i = 0; i < 64; i++) if (x[i] !== y[i]) wrong++;
+  return wrong;
+}
 
 // --- replay -------------------------------------------------------------------
 
@@ -748,6 +795,44 @@ console.log(
 
 const outcomes = rawGames.map((game) => replay(game, dialect));
 
+// --- how well do the printed diagrams match the moves? ------------------------
+if (process.argv.includes('--anchor-check')) {
+  const anchors = JSON.parse(
+    readFileSync(resolve(REPO_ROOT, 'data', 'ml', `${BOOK.slug}-anchors.json`), 'utf-8'),
+  ) as Record<string, { placement: string; unsure: number }>;
+  const spread = new Map<number, number>();
+  let checked = 0;
+  let noAnchor = 0;
+  for (const outcome of outcomes.filter((o) => o.failedAt === null)) {
+    const pos = Chess.default();
+    for (const [index, move] of outcome.played.entries()) {
+      const parsed = parseSan(pos, move.san);
+      if (!parsed) break;
+      pos.play(parsed);
+      const key = outcome.game.moves[index]?.anchor;
+      if (!key) continue;
+      const read = anchors[key];
+      if (!read) {
+        noAnchor++;
+        continue;
+      }
+      checked++;
+      const wrong = differing(makeBoardFen(pos.board), read.placement);
+      spread.set(wrong, (spread.get(wrong) ?? 0) + 1);
+    }
+  }
+  console.log(`
+anchors checked on games that already replay: ${checked} (${noAnchor} had no read diagram)`);
+  const rows = [...spread].sort((a, b) => a[0] - b[0]);
+  let running = 0;
+  for (const [wrong, n] of rows) {
+    running += n;
+    console.log(
+      `  ${String(wrong).padStart(2)} squares wrong: ${String(n).padStart(4)}  (${((100 * running) / checked).toFixed(1)}% within)`,
+    );
+  }
+}
+
 // --- what kind of damage is actually stopping this? ---------------------------
 if (process.argv.includes('--stats')) {
   let total = 0;
@@ -862,16 +947,26 @@ function chapterPgn(o: Outcome): string {
   return header + wrap(parts.join(' ')) + '\n';
 }
 
-/** PGN readers cope with long lines, but a vault file is also a text file. */
+/**
+ * PGN readers cope with long lines, but a vault file is also a text file —
+ * so the movetext is wrapped, and comments never are.
+ *
+ * A newline inside `{ … }` is part of the comment's TEXT. Wrapping there
+ * put a line end every hundred characters into the book's prose, scattered
+ * mid-sentence, and the app showed them exactly as written.
+ */
 function wrap(text: string): string {
   const out: string[] = [];
   let line = '';
+  let inComment = false;
   for (const word of text.split(' ')) {
-    if (line && line.length + word.length + 1 > 100) {
+    if (!inComment && line && line.length + word.length + 1 > 100) {
       out.push(line);
       line = '';
     }
     line = line ? `${line} ${word}` : word;
+    if (word.includes('{')) inComment = true;
+    if (word.includes('}')) inComment = false;
   }
   if (line) out.push(line);
   return out.join('\n');
