@@ -33,6 +33,11 @@ engine-backed tiers or drafts — nothing is silently dropped.
    `--jobs N` shards page reads and the repair search across N child
    processes. Reads cache to `<slug>-reads.json` (with rects and sides);
    `--emit <dir>` dumps board/page grays for evidence images.
+2b. **Upside-down pages** — `derotate.ts <pages_dir> --book <cfg>`: finds
+   pages that hold diagrams but offer no numbers and no ordinary English,
+   rotates their renders back, and recovers their numbering from the gap
+   it leaves — only where the gap is exactly as wide as the run has
+   diagrams. Emits an `--extra-labels` file for a second measure pass.
 3. **Import** — `autoimport-import.ts <emit_dir> --book <cfg> --jobs N`:
    tiers every entry. Validated → book-parsed; else Stockfish solves the
    read position — decisive + overlapping the squares the book's entry
@@ -80,6 +85,8 @@ rule would swallow the puzzle pages sitting between the sections. Add
 python extract_1001_text.py book.pdf data/ml/<slug>-text.json
 python harvest_pdfs.py book.pdf data/ml/<slug>-pages          # page-NNN.gray
 npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
+npx tsx derotate.ts <renders> --book cfg.json                 # if any page is upside down
+npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6   --extra-labels data/ml/<slug>-extra-labels.json
 npx tsx autoimport-import.ts  <emit>    --book cfg.json --jobs 6
 python evidence_jpegs.py
 python render_book_pages.py cfg.json                          # cover + answers
@@ -100,14 +107,16 @@ validation reruns.
 | 1001 Chess Exercises for Beginners | 970 / 1001 | 739 | 10 |
 | The Complete Chess Workout | 1,145 / 1,200 | 530 | 0 |
 | The Woodpecker Method | 1,043 / 1,128 | 619 | 81 |
-| The Ultimate Chess Puzzle Book | 659 / 1001 | 191 | 119 |
+| The Ultimate Chess Puzzle Book | 689 / 1001 | 204 | 166 |
 | 5334 Problems, Combinations and Games | 4,878 / 5,334 | 4,878 | — |
 
-The Ultimate Chess Puzzle Book is the weakest of the scans: 778 of its
-1001 diagrams found a printed number (a dozen of its pages are scanned
-upside down, so their numbers are unreadable), and its answers are prose
-with the moves embedded in sentences, which the mainline parser handles
-badly. It is usable but has the most room left in it.
+The Ultimate Chess Puzzle Book is the weakest of the scans. Ten of its
+pages were scanned upside down; `derotate.ts` turns those back over and
+recovers their numbering from the gap they leave (855 of its 1001
+diagrams now find a number, up from 778). What still holds it back is its
+answers, which are prose with the moves embedded in sentences — the
+mainline parser handles that badly, and it is where the remaining room
+is.
 
 **5334 did not use this pipeline at all** — see below.
 
