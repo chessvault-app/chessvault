@@ -7,7 +7,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -16,7 +16,10 @@ import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
-import { NoteView } from './NoteView';
+// The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
+// thing in the app. The list needs none of it, so opening Notes no longer
+// pays for it; it loads when a note is actually opened.
+const NoteView = lazy(() => import('./NoteView').then((m) => ({ default: m.NoteView })));
 
 interface NoteMeta {
   id: string;
@@ -29,7 +32,13 @@ const API = '/api/notes';
 /** Router shell for Notes: the list, or one open note. */
 export function NotesView({ params }: { params: string[] }) {
   const id = params[0] ? decodeURIComponent(params[0]) : null;
-  return id ? <NoteView id={id} /> : <NoteList />;
+  return id ? (
+    <Suspense fallback={<div className="h-full" />}>
+      <NoteView id={id} />
+    </Suspense>
+  ) : (
+    <NoteList />
+  );
 }
 
 function NoteList() {
