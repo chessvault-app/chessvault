@@ -2,8 +2,8 @@
 
 Two modes, chosen on first launch (Vault → Switch vault… to change):
 
-- **remote** — a window onto a Chess Vault server (the cloud
-  deployment). Pure client.
+- **remote** — a window onto a Chess Vault server somewhere else. Pure
+  client.
 - **local** — self-hosted: the shell starts the repo's server as a child
   process (`node --import tsx server/index.ts`, port 8788) and points the
   window at it. Uses the repo's own `vault/` and `data/`; a packaged build
@@ -25,9 +25,10 @@ canonical.
 (NSIS one-click; macOS dmg target is pre-configured for later). Pipeline:
 
 1. `desktop/build-server.mjs`: esbuild-bundles the server to
-   `release/server/index.mjs`, copies better-sqlite3 beside it (v13 ships
-   Node-API prebuilds — ABI-stable under Electron, no rebuild), renders
-   `icon.ico`.
+   `release/server/index.mjs` and the book builder to
+   `release/server/build-book.mjs`, copies better-sqlite3 beside them
+   (v13 ships Node-API prebuilds — ABI-stable under Electron, no
+   rebuild), renders `icon.ico`.
 2. `npm run build`: the SPA (with engine/model assets) into `dist/`.
 3. `electron-builder`: ships `desktop/` in the asar; the server bundle
    and `dist/` ride as extraResources, so the server's `./dist` static
@@ -38,9 +39,10 @@ The packaged local mode runs the bundled server on Electron's own Node
 pointed at `%APPDATA%/Chess Vault/{vault,data}` — a fresh vault per
 machine profile.
 
-Known limits of packaged local mode: opening-book / puzzle-db /
-refgames builds are repo activities (the server's build jobs spawn repo
-scripts that are not shipped); bring built `data/` artefacts along if
+Opening books build in the packaged app: `build-book.mjs` ships beside
+the server bundle and the server prefers it over the repo script. The
+puzzle and reference-game databases are still prepared artefacts — no
+build job exposes them anywhere — so bring built `data/` files along if
 wanted.
 
 ## Auto-update

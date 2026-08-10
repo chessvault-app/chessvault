@@ -10,6 +10,7 @@ import pngToIco from 'png-to-ico';
  * binary (see package.json "build".extraResources):
  *
  *   release/server/index.mjs                 the whole Hono server, bundled
+ *   release/server/build-book.mjs            the book builder the server spawns
  *   release/server/node_modules/better-sqlite3   rebuilt for Electron's ABI
  *   desktop/icon.ico                         NSIS/installer icon
  *
@@ -41,6 +42,25 @@ await build({
   },
 });
 console.log('server bundled');
+
+// The opening-book builder is a repo script the server SPAWNS, so bundling
+// the server alone left packaged builds unable to build a book at all —
+// there is no scripts/ and no tsx beside the installer. It ships as its own
+// bundle next to the server, which looks for it there before falling back
+// to the repo script.
+await build({
+  entryPoints: [join(repo, 'scripts', 'build-book.ts')],
+  outfile: join(out, 'build-book.mjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['better-sqlite3'],
+  banner: {
+    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+  },
+});
+console.log('book builder bundled');
 
 // better-sqlite3 v13 ships Node-API prebuilds (prebuilds/<platform>.node),
 // ABI-stable across Node and Electron — a plain copy is the whole story.

@@ -93,11 +93,16 @@ export function booksApi(dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAUL
     const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
     job = current;
 
-    const child = spawn(
-      process.execPath,
-      ['--import', 'tsx', 'scripts/build-book.ts', ...sources, '--name', name, ...flags],
-      { cwd: REPO_ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
-    );
+    // A packaged build has no scripts/ and no tsx, so it ships the builder
+    // as a bundle beside the server; the repo runs the source directly.
+    const bundled = resolve(REPO_ROOT, 'server', 'build-book.mjs');
+    const args = existsSync(bundled)
+      ? [bundled, ...sources, '--name', name, ...flags]
+      : ['--import', 'tsx', 'scripts/build-book.ts', ...sources, '--name', name, ...flags];
+    const child = spawn(process.execPath, args, {
+      cwd: REPO_ROOT,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     const append = (chunk: Buffer): void => {
       for (const line of chunk.toString().split('\n')) {
         if (line.trim()) current.log.push(line);

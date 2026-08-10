@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
  * The desktop shell. Two modes, chosen on first run and kept in
  * userData/desktop.json:
  *
- *   remote — a window onto a Chess Vault server (the cloud deployment).
+ *   remote — a window onto a Chess Vault server somewhere else.
  *            Pure client; nothing runs locally.
  *   local  — self-hosted: the shell starts the repo's own server as a
  *            child process and points the window at it.
