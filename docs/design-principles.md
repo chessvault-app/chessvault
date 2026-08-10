@@ -99,15 +99,32 @@ native behavior. Settled rule: never move the PAGE while the keyboard is
 up; reset window scroll only on the viewport resize that signals it
 closed.
 
-Refined, not repealed: an overlay may position itself inside
-`visualViewport` — the part of the page the keyboard has left visible —
-because that moves the dialog rather than the document underneath it.
-`PromptSheet` centres this way instead of pinning itself to the top.
-Only its padding responds, and nothing is transitioned, so it does not
-animate against iOS's own animation.
+Refined, not repealed, and the refinement has a boundary that was found
+the hard way.
+
+**A transient dialog may live in the visual viewport.** `PromptSheet`
+centres inside `visualViewport` — the part of the page the keyboard has
+left visible — rather than pinning itself to the top. That moves the
+dialog, not the document underneath it. Only its padding responds and
+nothing is transitioned, so it never animates against iOS's own
+animation.
+
+**A persistent toolbar may not.** The note palette was built that way
+first and failed twice over: iOS already puts its own accessory row
+(prev/next/Done) immediately above the keyboard, so the bar competes for
+that strip; and because the bar is fixed, the last line of the document
+— and the caret in it — end up behind it with nothing to scroll. Padding
+the document helped and did not fix it. Editing toolbars go at the TOP of
+the document instead, sticky, where nothing else is claiming the space.
+Confluence does the same, for what appear to be the same reasons.
+
+The distinction is dwell time. Something that appears, takes one value
+and closes can borrow the space above the keyboard. Something that stays
+for as long as you are editing must not.
 
 Any change here requires an on-device test loop — desktop cannot
-reproduce it, and the automated browser cannot either.
+reproduce it, and the automated browser cannot either. The keyboard-bar
+palette looked correct on an iPad and was wrong on an iPhone.
 
 ## Process conventions
 
