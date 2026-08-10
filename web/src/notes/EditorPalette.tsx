@@ -132,8 +132,10 @@ export function EditorPalette({
       // sticky: it stays at the top of the note as the note scrolls under
       // it. Ten buttons do not fit a phone, so the row scrolls sideways —
       // the same rule the filter chips follow.
-      // Pinned by the header wrapper this sits inside, not by itself.
-      className="border-line flex shrink-0 items-center gap-0.5 overflow-x-auto border-b pb-1 scrollbar-hidden"
+      // Pinned by the header wrapper this sits inside, not by itself, and
+      // the rule under it belongs to that wrapper so it spans the pinned
+      // strip rather than stopping at the text column's edge.
+      className="flex shrink-0 items-center gap-0.5 overflow-x-auto scrollbar-hidden"
       role="toolbar"
       aria-label="Formatting"
     >

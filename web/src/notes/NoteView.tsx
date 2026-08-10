@@ -155,7 +155,7 @@ function NoteEditor({
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it
           read as narrower than the text it formats. */}
-      <div className="bg-app sticky top-0 z-30 -mx-4 -mt-4 flex shrink-0 flex-col gap-3 px-4 pt-4 lg:-mx-6 lg:-mt-6 lg:px-6 lg:pt-6">
+      <div className="border-line bg-app sticky top-0 z-30 -mx-4 -mt-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 lg:-mx-6 lg:-mt-6 lg:px-6 lg:pt-6">
       <header className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title="All notes" onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
