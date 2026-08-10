@@ -262,3 +262,36 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
     </Loading>
   );
 }
+
+/**
+ * A game row: two players over a line of date and opening, a result, the
+ * peek eye and the collect button.
+ *
+ * Its own shape rather than the generic list row, which starts with an
+ * icon a game row does not have and is a line shorter — so the list
+ * resized under you when the games landed.
+ */
+export function SkeletonGameRows({ rows = 6, className }: { rows?: number; className?: string }) {
+  const names = ['w-2/5', 'w-1/2', 'w-1/3', 'w-5/12', 'w-2/5', 'w-1/2'];
+  return (
+    <Loading className={cn('divide-line divide-y', className)}>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className="flex items-center gap-3 px-3 py-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            {/* Two players, each behind their side's dot. */}
+            {[0, 1].map((line) => (
+              <div key={line} className="flex items-center gap-1.5">
+                <Skeleton className="size-2 shrink-0 rounded-full" />
+                <Skeleton className={cn('h-3', names[(i + line) % names.length])} />
+              </div>
+            ))}
+            <Skeleton className="h-2 w-1/3" />
+          </div>
+          <Skeleton className="h-3 w-8 shrink-0" />
+          <Skeleton className="size-7 shrink-0 rounded pointer-coarse:size-9" />
+          <Skeleton className="h-6 w-16 shrink-0" />
+        </div>
+      ))}
+    </Loading>
+  );
+}

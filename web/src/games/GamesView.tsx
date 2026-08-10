@@ -29,7 +29,7 @@ import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { RowMenu } from '@/ui/RowMenu';
-import { SkeletonListRows, useSlowLoad } from '@/ui/Skeleton';
+import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 export interface GameSummary {
@@ -366,7 +366,7 @@ function EliteBrowser() {
 
       <Panel flush className="min-h-0 flex-1">
         <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
-        {searching && <SkeletonListRows rows={8} action />}
+        {searching && <SkeletonGameRows rows={8} />}
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
           {rows.map((g) => (
             <li key={g.id} className="flex items-center gap-3 pr-2">
@@ -955,7 +955,7 @@ function ArchiveBrowser({
             // take the games away and leave one line of text where the list
             // had been, so the panel appeared to close and reopen.
             <li>
-              <SkeletonListRows rows={6} action />
+              <SkeletonGameRows rows={6} />
             </li>
           ) : (
             visibleMonthGames.map((game) => {
@@ -999,7 +999,7 @@ function ArchiveBrowser({
       {/* Nothing browsed yet: fill the panel with a prompt instead of
           leaving a bare bar over blank space. */}
       {!month && loading !== 'months' && (
-        <div className="border-line flex flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
+        <div className="border-line flex min-h-0 flex-1 flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
           <Globe className="text-subtle size-8" strokeWidth={1.5} />
           <p className="text-muted max-w-xs text-sm leading-relaxed">
             Browse your games. Type your {provider === 'chesscom' ? 'chess.com' : 'Lichess'} username
