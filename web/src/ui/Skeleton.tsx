@@ -141,3 +141,67 @@ export function SkeletonTiles({ tiles = 36, className }: { tiles?: number; class
     </Loading>
   );
 }
+
+/** A written document: a heading, then paragraphs of ragged lines. */
+export function SkeletonDocument({ className }: { className?: string }) {
+  const paragraphs = [
+    ['w-full', 'w-11/12', 'w-4/5'],
+    ['w-full', 'w-full', 'w-3/5'],
+    ['w-10/12', 'w-full', 'w-2/3'],
+  ];
+  return (
+    <Loading className={cn('mx-auto flex w-full max-w-3xl flex-col gap-6 p-6', className)}>
+      <Skeleton className="h-5 w-1/3" />
+      {paragraphs.map((lines, p) => (
+        <div key={p} className="flex flex-col gap-2.5">
+          {lines.map((w, i) => (
+            <Skeleton key={i} className={cn('h-2.5', w)} />
+          ))}
+        </div>
+      ))}
+    </Loading>
+  );
+}
+
+/**
+ * A board beside its panel — the shape every playing surface takes.
+ *
+ * The board is a real square, so the column widths settle before the
+ * position arrives instead of snapping when it does.
+ */
+export function SkeletonBoard({ className }: { className?: string }) {
+  return (
+    <Loading className={cn('flex h-full flex-col gap-4 p-4 lg:flex-row', className)}>
+      <Skeleton className="aspect-square w-full max-w-[min(70vh,40rem)] shrink-0 rounded-xl" />
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-2.5 w-2/3" />
+        <div className="border-line mt-2 flex flex-col gap-2 rounded-lg border p-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className={cn('h-2.5', i % 2 ? 'w-3/5' : 'w-4/5')} />
+          ))}
+        </div>
+      </div>
+    </Loading>
+  );
+}
+
+/** Labelled controls stacked in cards — the settings shape. */
+export function SkeletonForm({ groups = 3, className }: { groups?: number; className?: string }) {
+  return (
+    <Loading className={cn('mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 md:p-6', className)}>
+      <Skeleton className="h-5 w-40" />
+      {Array.from({ length: groups }, (_, g) => (
+        <div key={g} className="border-line bg-surface flex flex-col gap-3 rounded-xl border p-4">
+          <Skeleton className="h-3 w-1/4" />
+          {Array.from({ length: 2 }, (_, i) => (
+            <div key={i} className="flex items-center justify-between gap-4">
+              <Skeleton className="h-2.5 w-1/3" />
+              <Skeleton className="h-6 w-20 shrink-0" />
+            </div>
+          ))}
+        </div>
+      ))}
+    </Loading>
+  );
+}

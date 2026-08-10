@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
 import { ChevronLeft, Eye, EyeOff, KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
 import { Button } from '@/ui/Button';
@@ -32,6 +33,7 @@ const reauth = (): void => {
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const pending = useSlowLoad(settings === null);
 
   const refresh = async (): Promise<void> => {
     const res = await fetch('/api/settings');
@@ -41,7 +43,13 @@ export function SettingsPage() {
     void refresh();
   }, []);
 
-  if (!settings) return <div className="h-full" />;
+  // Settings arrive fast on a local server, so nothing is shown at all
+  // unless the wait is long enough to notice.
+  if (!settings) {
+    return (
+      <div className="h-full overflow-y-auto">{pending && <SkeletonForm groups={3} />}</div>
+    );
+  }
 
   return (
     <div className="h-full overflow-y-auto">

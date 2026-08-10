@@ -23,6 +23,7 @@ import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
+import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -40,6 +41,7 @@ type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
 export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' | 'game' }) {
   const openId = useStudy((s) => s.openId);
+  const pending = useSlowLoad(openId !== id);
   const open = useStudy((s) => s.open);
   const close = useStudy((s) => s.close);
   const saveState = useStudy((s) => s.saveState);
@@ -103,11 +105,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   }
 
   if (openId !== id) {
-    return (
-      <div className="text-subtle grid h-full place-items-center text-sm">
-        <Loader2 className="size-5 animate-spin" />
-      </div>
-    );
+    // A study is a board beside its moves, so the wait is that shape —
+    // the columns settle before the position arrives instead of snapping
+    // into place when it does.
+    return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
 
   // Rendered twice — at the page top on stacked layouts, in the side column

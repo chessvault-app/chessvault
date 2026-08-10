@@ -12,6 +12,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
+import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
@@ -21,6 +22,7 @@ const AUTOSAVE_MS = 1500;
 /** One open note: a Tiptap editor over markdown, boards included. */
 export function NoteView({ id }: { id: string }) {
   const [initialDoc, setInitialDoc] = useState<object | null>(null);
+  const pending = useSlowLoad(initialDoc === null);
   const [failed, setFailed] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,11 +68,9 @@ export function NoteView({ id }: { id: string }) {
   }
 
   if (!initialDoc) {
-    return (
-      <div className="text-subtle grid h-full place-items-center">
-        <Loader2 className="size-5 animate-spin" />
-      </div>
-    );
+    // A note is prose, so the wait looks like prose rather than a spinner
+    // parked in the middle of an empty page.
+    return <div className="h-full overflow-y-auto">{pending && <SkeletonDocument />}</div>;
   }
 
   return (
