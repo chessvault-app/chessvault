@@ -4,6 +4,7 @@ import type { Config as CgConfig } from '@lichess-org/chessground/config';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
 import { useEffect, useRef, type MutableRefObject } from 'react';
+import { usePrefs } from '@/store/prefs';
 import { cn } from '@/lib/cn';
 
 /** The underlying chessground handle, for callers that need direct calls
@@ -84,6 +85,10 @@ export function Board({
   const onDropNewPieceRef = useRef(onDropNewPiece);
   const onBoardChangeRef = useRef(onBoardChange);
   const freeRef = useRef(free);
+  // Read once at construction and kept fresh for the update pass below.
+  const rookCastlesRef = useRef(usePrefs.getState().castleStyle === 'rook');
+  const castleStyle = usePrefs((p) => p.castleStyle);
+  rookCastlesRef.current = castleStyle === 'rook';
   onMoveRef.current = onMove;
   onSelectRef.current = onSelect;
   onShapesRef.current = onShapesChange;
@@ -111,6 +116,10 @@ export function Board({
       movable: {
         free,
         showDests: !free,
+        // legalDests offers BOTH castling squares; chessground shows one of
+        // them according to this, so the board matches what the player
+        // expects to reach for. Either still plays the same move.
+        rookCastle: rookCastlesRef.current,
         events: {
           after: (orig, dest) => onMoveRef.current?.(orig, dest),
         },
@@ -167,6 +176,7 @@ export function Board({
         // values are square names either way, so this cast is safe.
         dests: (dests as Dests | undefined) ?? new Map<Key, Key[]>(),
         showDests: !free,
+        rookCastle: castleStyle === 'rook',
       },
       draggable: { enabled: !viewOnly, showGhost: true, deleteOnDropOff },
     });

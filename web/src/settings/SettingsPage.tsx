@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { ChevronLeft, Eye, EyeOff, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { cn } from '@/lib/cn';
-import { BOARD_THEMES, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type PieceSet } from '@/store/prefs';
+import { BOARD_THEMES, CASTLE_STYLES, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet } from '@/store/prefs';
 
 interface Settings {
   profile: { name?: string; chesscom?: string; lichess?: string };
@@ -77,6 +77,7 @@ export function SettingsPage() {
         <SecurityCard settings={settings} onChanged={refresh} />
         <LichessCard settings={settings} onChanged={refresh} />
         <DangerCard gate={settings.gate} />
+        <VersionCard />
 
         <p className="text-subtle text-xs leading-relaxed">
           Vault: <span className="font-mono">{settings.vaultPath}</span> — every game, study and
@@ -180,6 +181,80 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
   );
 }
 
+// --- Version -----------------------------------------------------------------
+
+interface UpdateResult {
+  state: 'dev' | 'current' | 'available' | 'failed';
+  version?: string;
+  error?: string;
+}
+
+/**
+ * What is running, and whether it is current.
+ *
+ * The server's version always shows. The desktop shell's own version and
+ * its update check only appear inside the shell — and they exist because
+ * the automatic check on launch reported to a console, so an update that
+ * silently failed was indistinguishable from no update existing.
+ */
+function VersionCard() {
+  const [server, setServer] = useState<string | null>(null);
+  const [app, setApp] = useState<string | null>(null);
+  const [update, setUpdate] = useState<UpdateResult | null>(null);
+  const [checking, setChecking] = useState(false);
+  const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
+
+  useEffect(() => {
+    void fetch('/api/health')
+      .then((r) => r.json())
+      .then((b: { version?: string }) => setServer(b.version ?? null))
+      .catch(() => setServer(null));
+    void shell?.appInfo?.().then((info) => setApp(info?.version ?? null));
+  }, [shell]);
+
+  const check = async (): Promise<void> => {
+    if (!shell?.checkForUpdates) return;
+    setChecking(true);
+    setUpdate(await shell.checkForUpdates());
+    setChecking(false);
+  };
+
+  return (
+    <Card icon={Info} title="Version">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
+        <dt className="text-subtle">Server</dt>
+        <dd className="text-fg font-mono">{server ?? '—'}</dd>
+        {app && (
+          <>
+            <dt className="text-subtle">Desktop app</dt>
+            <dd className="text-fg font-mono">{app}</dd>
+          </>
+        )}
+      </dl>
+      {shell?.checkForUpdates && (
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" disabled={checking} onClick={() => void check()}>
+            {checking ? 'Checking…' : 'Check for updates'}
+          </Button>
+          {update && (
+            <span
+              className={cn('text-xs', update.state === 'failed' ? 'text-bad' : 'text-muted')}
+            >
+              {update.state === 'available'
+                ? `${update.version} is available — it installs when you quit.`
+                : update.state === 'current'
+                  ? 'This is the newest build.'
+                  : update.state === 'dev'
+                    ? 'Not a packaged build.'
+                    : `Could not check: ${update.error ?? 'no answer'}`}
+            </span>
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // --- Desktop shell -----------------------------------------------------------
 
 /**
@@ -196,6 +271,8 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
  */
 interface VaultShell {
   switchVault?: () => Promise<void>;
+  appInfo?: () => Promise<{ version?: string } | undefined>;
+  checkForUpdates?: () => Promise<UpdateResult>;
 }
 
 function DesktopCard() {
@@ -225,7 +302,8 @@ function DesktopCard() {
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, sound, schemeId, setBoardTheme, setPieces, setSound, setSchemeId } = usePrefs();
+  const { boardTheme, pieces, sound, schemeId, castleStyle, setBoardTheme, setPieces, setSound, setSchemeId, setCastleStyle } =
+    usePrefs();
 
   return (
     <Card icon={Palette} title="Appearance">
@@ -288,6 +366,15 @@ function AppearanceCard() {
             groups={[{ options: BOARD_THEMES.map(({ id, label }) => ({ value: id, label })) }]}
           />
         </div>
+      </Field>
+
+      <Field label="Castling">
+        <Select
+          value={castleStyle}
+          onChange={(v) => setCastleStyle(v as CastleStyle)}
+          ariaLabel="How to castle"
+          groups={[{ options: CASTLE_STYLES.map(({ id, label }) => ({ value: id, label })) }]}
+        />
       </Field>
 
       <Field label="Pieces">

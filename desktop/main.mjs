@@ -175,6 +175,29 @@ app.whenReady().then(async () => {
       return { error: `Could not reach that server (${err?.code ?? err?.message ?? 'no answer'}).` };
     }
   });
+  ipcMain.handle('app:info', () => ({
+    version: app.getVersion(),
+    feed: readSettings().mode === null ? null : process.env.CHESS_UPDATE_URL ?? null,
+  }));
+
+  /**
+   * Ask the feed, and ANSWER — the automatic check on launch reports only
+   * to a console, so an update that never arrives looks like an update that
+   * was never released.
+   */
+  ipcMain.handle('app:check-updates', async () => {
+    if (!app.isPackaged) return { state: 'dev' };
+    try {
+      const { autoUpdater } = await import('electron-updater');
+      const result = await autoUpdater.checkForUpdates();
+      const found = result?.updateInfo?.version;
+      if (!found || found === app.getVersion()) return { state: 'current', version: app.getVersion() };
+      return { state: 'available', version: found };
+    } catch (err) {
+      return { state: 'failed', error: err?.message ?? String(err) };
+    }
+  });
+
   // The same thing the Vault menu does, reachable from the app's settings.
   ipcMain.handle('vault:switch', async () => {
     writeSettings({ mode: null });

@@ -7,4 +7,8 @@ contextBridge.exposeInMainWorld('vaultShell', {
   // Back to the chooser, so the app can offer this somewhere findable
   // rather than only from a menu bar hidden behind Alt.
   switchVault: () => ipcRenderer.invoke('vault:switch'),
+  // What this shell is, and whether a newer one exists. Update failures
+  // used to go to a console nobody opens.
+  appInfo: () => ipcRenderer.invoke('app:info'),
+  checkForUpdates: () => ipcRenderer.invoke('app:check-updates'),
 });

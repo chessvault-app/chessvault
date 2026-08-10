@@ -45,6 +45,23 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
 ];
 
+/**
+ * Which square castling is played on.
+ *
+ * 'king' — drop the king on g1/c1, where it lands. chess.com's current way.
+ * 'rook' — drop the king on its own rook. Lichess, and chess.com before.
+ *
+ * Both are always LEGAL; this only decides which chessground offers, since
+ * showing both means a click on the rook is ambiguous with capturing it in
+ * the mind of someone who expects one or the other.
+ */
+export type CastleStyle = 'king' | 'rook';
+
+export const CASTLE_STYLES: { id: CastleStyle; label: string }[] = [
+  { id: 'king', label: 'Move the king two squares (g1)' },
+  { id: 'rook', label: 'Move the king onto the rook (h1)' },
+];
+
 export const PIECE_SETS: { id: PieceSet; label: string }[] = [
   { id: 'cburnett', label: 'Cburnett' },
   { id: 'merida', label: 'Merida' },
@@ -56,6 +73,7 @@ interface PrefsState {
   boardTheme: BoardTheme;
   pieces: PieceSet;
   sound: boolean;
+  castleStyle: CastleStyle;
   /** Which preset is selected. */
   schemeId: string;
   scheme: Scheme;
@@ -63,6 +81,7 @@ interface PrefsState {
   setPieces: (p: PieceSet) => void;
   setSound: (on: boolean) => void;
   setSchemeId: (id: string) => void;
+  setCastleStyle: (style: CastleStyle) => void;
 }
 
 const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
@@ -87,6 +106,7 @@ export const usePrefs = create<PrefsState>()(
       boardTheme: 'default',
       pieces: 'cburnett',
       sound: true,
+      castleStyle: 'king',
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
       setBoardTheme: (boardTheme) => {
@@ -98,6 +118,7 @@ export const usePrefs = create<PrefsState>()(
         set({ pieces });
       },
       setSound: (sound) => set({ sound }),
+      setCastleStyle: (castleStyle) => set({ castleStyle }),
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
         const scheme = preset ? preset.scheme : get().scheme;
