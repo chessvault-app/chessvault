@@ -27,6 +27,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
+import { t } from '@/lib/i18n';
 
 interface BlockState {
   tree: MoveTree;
@@ -191,13 +192,13 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
 
       <div className="flex min-w-0 flex-1 flex-col gap-1" contentEditable={false}>
         <div className="flex items-center gap-0.5">
-          <Button variant="ghost" size="icon-sm" title="Back" onClick={goBack}>
+          <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={goBack}>
             <ChevronLeft className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" title="Forward" onClick={goForward}>
+          <Button variant="ghost" size="icon-sm" title={t('Forward')} onClick={goForward}>
             <ChevronRight className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="icon-sm" title="Flip board" onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
+          <Button variant="ghost" size="icon-sm" title={t('Flip board')} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}>
             <FlipVertical2 className="size-3.5" />
           </Button>
           {editable && (
@@ -205,7 +206,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
               variant="ghost"
               size="icon-sm"
               active={pasteOpen}
-              title="Load a FEN or PGN into this board"
+              title={t('Load a FEN or PGN into this board')}
               onClick={() => setPasteOpen((v) => !v)}
             >
               <ClipboardPaste className="size-3.5" />
@@ -213,7 +214,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           )}
           <span className="flex-1" />
           {editable && (
-            <Button variant="ghost" size="icon-sm" title="Remove this board" onClick={deleteNode}>
+            <Button variant="ghost" size="icon-sm" title={t('Remove this board')} onClick={deleteNode}>
               <Trash2 className="size-3.5" />
             </Button>
           )}
@@ -224,13 +225,13 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
             <TextArea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
-              placeholder="Paste a FEN or PGN…"
+              placeholder={t('Paste a FEN or PGN…')}
               rows={3}
               className="w-full resize-none font-mono"
             />
             <div className="flex justify-end">
               <Button variant="primary" size="sm" disabled={!pasteText.trim()} onClick={loadPasted}>
-                Load
+                {t('Load')}
               </Button>
             </div>
           </div>
@@ -304,7 +305,7 @@ function MoveStrip({
 
   const root = getNode(tree, tree.rootId);
   if (root.children.length === 0) {
-    return <p className="text-subtle px-1 text-xs">Play moves on the board, or paste a FEN/PGN.</p>;
+    return <p className="text-subtle px-1 text-xs">{t('Play moves on the board, or paste a FEN/PGN.')}</p>;
   }
   renderLine(root.children[0]!);
   // Variations off the root come after the mainline rendering handles them —

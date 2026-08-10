@@ -83,6 +83,7 @@ import { ProgressBar } from '@/ui/ProgressBar';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
 import { AnswerPanel } from './AnswerPanel';
 import { formatScore } from '@/engine/uci';
+import { t } from '@/lib/i18n';
 
 /**
  * Book puzzles (lanph3re's long-wanted feature): positions transcribed from
@@ -330,7 +331,7 @@ function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string })
     );
   }
   if (!puzzle) {
-    return <div className="text-muted grid h-full place-items-center text-sm">Puzzle not found.</div>;
+    return <div className="text-muted grid h-full place-items-center text-sm">{t('Puzzle not found.')}</div>;
   }
   return (
     <PuzzleEntry
@@ -441,15 +442,15 @@ function Shelf() {
             variant="ghost"
             size="icon-sm"
             className="md:hidden"
-            title="Back to the dashboard"
+            title={t('Back to the dashboard')}
             onClick={() => navigate('puzzles', 'dashboard')}
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg flex-1 text-base font-semibold">Puzzle books</h1>
+          <h1 className="text-fg flex-1 text-base font-semibold">{t('Puzzle books')}</h1>
           <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
             <Plus className="size-3.5" />
-            New book
+            {t('New book')}
           </Button>
         </div>
 
@@ -468,10 +469,10 @@ function Shelf() {
               className="flex-1"
             />
             <Button variant="primary" size="sm" disabled={!title.trim()} onClick={() => void create()}>
-              Create
+              {t('Create')}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setCreating(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
           </div>
         )}
@@ -646,7 +647,7 @@ function BookPage({ slug }: { slug: string }) {
   if (missing) {
     return (
       <div className="grid h-full place-items-center">
-        <p className="text-muted text-sm">That book does not exist.</p>
+        <p className="text-muted text-sm">{t('That book does not exist.')}</p>
       </div>
     );
   }
@@ -681,7 +682,7 @@ function BookPage({ slug }: { slug: string }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            title="All books"
+            title={t('All books')}
             onClick={() => navigate('puzzles', 'books')}
           >
             <ChevronLeft className="size-3.5" />
@@ -714,20 +715,20 @@ function BookPage({ slug }: { slug: string }) {
               variant="secondary"
               size="sm"
               disabled={rereading}
-              title="Re-run recognition on every draft with the learned font"
+              title={t('Re-run recognition on every draft with the learned font')}
               onClick={() => void rereadDrafts()}
             >
               {rereading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
-              <span className="hidden wide:inline">Read diagrams</span>
+              <span className="hidden wide:inline">{t('Read diagrams')}</span>
             </Button>
           )}
-          <Button variant="secondary" size="sm" title="Import a book PDF" onClick={() => setImporting(true)}>
+          <Button variant="secondary" size="sm" title={t('Import a book PDF')} onClick={() => setImporting(true)}>
             <FileUp className="size-3.5" />
-            <span className="hidden wide:inline">Import PDF</span>
+            <span className="hidden wide:inline">{t('Import PDF')}</span>
           </Button>
-          <Button variant="primary" size="sm" title="Add a puzzle" onClick={() => setAdding(true)}>
+          <Button variant="primary" size="sm" title={t('Add a puzzle')} onClick={() => setAdding(true)}>
             <Plus className="size-3.5" />
-            <span className="hidden wide:inline">Add puzzle</span>
+            <span className="hidden wide:inline">{t('Add puzzle')}</span>
           </Button>
           <ConfirmPopover
             icon={RotateCcw}
@@ -758,8 +759,7 @@ function BookPage({ slug }: { slug: string }) {
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <p className="text-muted text-sm">
-              Empty book. “Add puzzle” sets up the position on a board and
-              records the full solution — both sides' moves.
+              {t('Empty book. “Add puzzle” sets up the position on a board and records the full solution — both sides’ moves.')}
             </p>
           </div>
         ) : (
@@ -828,7 +828,7 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
         <>
           <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={width - 32} />
           <p className="text-subtle text-xs leading-relaxed">
-            The book&rsquo;s own scan — make the board match it.
+            {t('The book’s own scan — make the board match it.')}
           </p>
         </>
       ) : tab === 'solutions' && evidence.solutionPage ? (
@@ -840,7 +840,7 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
       ) : null}
       </aside>
       <div
-        title="Drag to resize · double-click to reset"
+        title={t('Drag to resize · double-click to reset')}
         onDoubleClick={() => {
           drag.current = null;
           setWidth(SOURCE_PANE_DEFAULT_W);
@@ -1237,7 +1237,7 @@ function PuzzleList({
         {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}
       </div>
       {visible.length === 0 && (
-        <p className="text-subtle p-4 text-center text-xs">Nothing matches these filters.</p>
+        <p className="text-subtle p-4 text-center text-xs">{t('Nothing matches these filters.')}</p>
       )}
     </>
   );
@@ -1326,7 +1326,7 @@ function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?:
     <span data-peek className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9">
       <button
         type="button"
-        title="Peek at the book scan"
+        title={t('Peek at the book scan')}
         onClick={(e) => {
           if (window.matchMedia('(pointer: coarse)').matches) {
             e.stopPropagation();
@@ -1435,10 +1435,10 @@ function ZoomablePage({ src, alt, width }: { src: string; alt: string; width: nu
   return (
     <div className="relative" style={{ width }}>
       <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
-        <Button variant="secondary" size="icon-sm" title="Zoom out" disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-md">
+        <Button variant="secondary" size="icon-sm" title={t('Zoom out')} disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-md">
           <ZoomOut className="size-3.5" />
         </Button>
-        <Button variant="secondary" size="icon-sm" title="Zoom in" disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-md">
+        <Button variant="secondary" size="icon-sm" title={t('Zoom in')} disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-md">
           <ZoomIn className="size-3.5" />
         </Button>
       </span>
@@ -1480,7 +1480,7 @@ function SourceCrop({
       <Button
         variant="secondary"
         size="icon-sm"
-        title="Zoom out"
+        title={t('Zoom out')}
         disabled={zoom <= ZOOM_MIN}
         onClick={() => bump(1 / 1.25)}
         className="shadow-md"
@@ -1490,7 +1490,7 @@ function SourceCrop({
       <Button
         variant="secondary"
         size="icon-sm"
-        title="Zoom in"
+        title={t('Zoom in')}
         disabled={zoom >= ZOOM_MAX}
         onClick={() => bump(1.25)}
         className="shadow-md"
@@ -1532,7 +1532,7 @@ function SourceCrop({
         <Button
           variant="secondary"
           size="icon-sm"
-          title="Back to the diagram"
+          title={t('Back to the diagram')}
           onClick={() => setFull(false)}
           className="absolute right-1.5 top-1.5 shadow-md"
         >
@@ -1585,7 +1585,7 @@ function SourceCrop({
         <Button
           variant="secondary"
           size="icon-sm"
-          title="Show the whole page"
+          title={t('Show the whole page')}
           onClick={() => setFull(true)}
           className="absolute right-1.5 top-1.5 shadow-md"
         >
@@ -1708,7 +1708,7 @@ function PuzzleEntry({
       {/* Same borderless header as everywhere else; image import lives in
           the editor's own Position panel, not up here. */}
       <div className="flex h-12 shrink-0 items-center gap-2 px-4">
-        <Button variant="ghost" size="icon-sm" title="Back to the book" onClick={onCancel}>
+        <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
           <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
@@ -1723,8 +1723,7 @@ function PuzzleEntry({
             <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
               <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
               <p className="text-subtle text-xs leading-relaxed">
-                The diagram from the book — make the board match it, then
-                record the solution.
+                {t('The diagram from the book — make the board match it, then record the solution.')}
               </p>
             </aside>
           ) : null}
@@ -1931,18 +1930,18 @@ function SolutionRecorder({
           </div>
           <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
             <SideDot side={turn} />
-            <span className="text-muted">Play the solution — every move, both sides.</span>
+            <span className="text-muted">{t('Play the solution — every move, both sides.')}</span>
           </div>
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="flex shrink-0 items-center gap-2">
-          <Button variant="ghost" size="icon-sm" title="Back to the position" onClick={onBack}>
+          <Button variant="ghost" size="icon-sm" title={t('Back to the position')} onClick={onBack}>
             <ChevronLeft className="size-3.5" />
           </Button>
           <span className="text-muted min-w-0 flex-1 truncate text-sm">
-            Record the solution — every move, both sides.
+            {t('Record the solution — every move, both sides.')}
           </span>
         </div>
 
@@ -1953,7 +1952,7 @@ function SolutionRecorder({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                title="Undo the last move"
+                title={t('Undo the last move')}
                 disabled={line.length === 0}
                 onClick={undo}
               >
@@ -1964,8 +1963,7 @@ function SolutionRecorder({
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-sm">
             {line.length === 0 ? (
               <p className="text-subtle text-xs">
-                No moves yet. The first move you play is the puzzle's first
-                move to find.
+                {t("No moves yet. The first move you play is the puzzle's first move to find.")}
               </p>
             ) : (
               line.map((m, i) => {
@@ -2008,7 +2006,7 @@ function SolutionRecorder({
           </div>
           {line.length > 1 && (
             <p className="text-subtle border-line border-t px-3 py-1.5 text-[0.6875rem]">
-              Tip: click an opponent move to mark it “any move” (the book's ~).
+              {t('Tip: click an opponent move to mark it “any move” (the book’s ~).')}
             </p>
           )}
         </Panel>
@@ -2038,7 +2036,7 @@ function SolutionRecorder({
             variant="secondary"
             size="sm"
             disabled={line.length === 0 || verifying}
-            title="Ask Stockfish whether every solver move really wins"
+            title={t('Ask Stockfish whether every solver move really wins')}
             onClick={() => void verify()}
           >
             {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
@@ -2046,7 +2044,7 @@ function SolutionRecorder({
           </Button>
           <Button variant="ghost" size="sm" disabled={line.length === 0} onClick={() => { setLine([]); setWildcards(new Set()); setVerdicts(null); }}>
             <RotateCcw className="size-3.5" />
-            Start over
+            {t('Start over')}
           </Button>
         </div>
       </div>
@@ -2343,7 +2341,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       <Button
         variant="ghost"
         size="icon-sm"
-        title="Back to the book"
+        title={t('Back to the book')}
         onClick={() => navigate('puzzles', 'books', slug)}
       >
         <ChevronLeft className="size-3.5" />
@@ -2372,7 +2370,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
       <Button
         variant="ghost"
         size="icon-sm"
-        title="Correct this puzzle against the book scan"
+        title={t('Correct this puzzle against the book scan')}
         onClick={() => navigate('puzzles', 'books', slug, 'fix', puzzle.id)}
       >
         <Pencil className="size-3.5" />
@@ -2419,13 +2417,13 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             way the trainer reveals its difficulty row. */}
         <Panel flush className="shrink-0">
           <PanelHeader
-            title="Puzzle"
+            title={t('Puzzle')}
             actions={
               <>
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title="Previous puzzle"
+                  title={t('Previous puzzle')}
                   disabled={index <= 0}
                   onClick={() => {
                     const target = book.puzzles[index - 1];
@@ -2437,7 +2435,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title="Next puzzle"
+                  title={t('Next puzzle')}
                   disabled={index < 0 || index >= book.puzzles.length - 1}
                   onClick={() => {
                     const target = book.puzzles[index + 1];
@@ -2450,7 +2448,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                   variant="ghost"
                   size="icon-sm"
                   active={showNav}
-                  title="All puzzles in this book"
+                  title={t('All puzzles in this book')}
                   onClick={() => setShowNav((v) => !v)}
                 >
                   <LayoutGrid className="size-3.5" />
@@ -2458,7 +2456,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title="Dashboard"
+                  title={t('Dashboard')}
                   onClick={() => navigate('puzzles', 'dashboard')}
                 >
                   <BarChart3 className="size-3.5" />
@@ -2513,15 +2511,15 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                       onClick={() => navigate('puzzles', 'books', slug, next)}
                     >
                       <RotateCw className="size-3.5" />
-                      Next unsolved
+                      {t('Next unsolved')}
                     </Button>
                   )}
                   <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
                     <RotateCcw className="size-3.5" />
-                    Retry
+                    {t('Retry')}
                   </Button>
                   <Button variant="secondary" size="sm" onClick={analyse}>
-                    Analyse
+                    {t('Analyse')}
                   </Button>
                 </>
               ) : (
@@ -2531,7 +2529,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                     size="sm"
                     className="flex-1"
                     disabled={phase !== 'solving' || !hasMoves}
-                    title="Grade the mainline — this is the only judged moment"
+                    title={t('Grade the mainline — this is the only judged moment')}
                     onClick={() => void submit()}
                   >
                     {phase === 'checking' ? (
@@ -2546,10 +2544,10 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                     size="sm"
                     disabled={phase !== 'solving'}
                     onClick={showSolution}
-                    title="Counts as a failed attempt"
+                    title={t('Counts as a failed attempt')}
                   >
                     <Eye className="size-3.5" />
-                    Solution
+                    {t('Solution')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -2557,7 +2555,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                     onClick={() => navigate('puzzles', 'books', slug)}
                   >
                     <X className="size-3.5" />
-                    Skip
+                    {t('Skip')}
                   </Button>
                 </>
               )}
@@ -2581,19 +2579,19 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           live in the Puzzle panel above — no duplicates here. */}
       <MobileActionBar>
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(tree.rootId)} title="Start">
+          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(tree.rootId)} title={t('Start')}>
             <ChevronFirst className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(node.parentId ?? undefined)} title="Back">
+          <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(node.parentId ?? undefined)} title={t('Back')}>
             <ChevronLeft className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={node.children.length === 0} onClick={() => goTo(node.children[0])} title="Forward">
+          <Button variant="ghost" size="icon" disabled={node.children.length === 0} onClick={() => goTo(node.children[0])} title={t('Forward')}>
             <ChevronRight className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={cursorId === tipId} onClick={() => goTo(tipId)} title="Latest">
+          <Button variant="ghost" size="icon" disabled={cursorId === tipId} onClick={() => goTo(tipId)} title={t('Latest')}>
             <ChevronLast className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title="Flip board">
+          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
             <FlipVertical2 className="size-[1.1rem]" />
           </Button>
         </div>

@@ -1,6 +1,7 @@
 import type { Role } from 'chessops/types';
 import type { Color } from '@lichess-org/chessground/types';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 const CHOICES: Role[] = ['queen', 'knight', 'rook', 'bishop'];
 
@@ -43,7 +44,7 @@ export function PromotionPicker({
       }}
       role="dialog"
       aria-modal="true"
-      aria-label="Choose promotion piece"
+      aria-label={t('Choose promotion piece')}
     >
       {/* `cg-wrap promo-host` exists purely to bring chessground's piece sprites
           into scope; it is deliberately not the positioned overlay itself. */}

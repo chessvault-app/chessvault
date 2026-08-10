@@ -14,6 +14,7 @@ import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { BANDS, bandOf } from './bands';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { t } from '@/lib/i18n';
 
 /**
  * Training overview: counters, results by difficulty band, and the recent
@@ -147,7 +148,7 @@ export function DashboardPage() {
     <div className="h-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-3xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
-          <h1 className="text-fg text-base font-semibold">Puzzle dashboard</h1>
+          <h1 className="text-fg text-base font-semibold">{t('Puzzle dashboard')}</h1>
           <span className="min-w-0 flex-1" />
           <ResetButton onDone={refresh} />
         </div>
@@ -170,29 +171,29 @@ export function DashboardPage() {
               className="bg-surface border-line hover:bg-surface-2 flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors"
             >
               <Icon className="text-primary size-5" />
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <StatCard label="Solved" value={user ? String(user.wins) : '…'} />
+          <StatCard label={t('Solved')} value={user ? String(user.wins) : '…'} />
           <StatCard
-            label="Attempts"
-            title="Training attempts only — review sessions don't count here, which is why this can differ from the review pool"
+            label={t('Attempts')}
+            title={t("Training attempts only — review sessions don't count here, which is why this can differ from the review pool")}
             value={user ? String(user.attempts) : '…'}
           />
-          <StatCard label="Win rate" value={winRate === null ? '—' : `${winRate}%`} />
+          <StatCard label={t('Win rate')} value={winRate === null ? '—' : `${winRate}%`} />
           <StatCard
-            label="Failed"
-            title="Distinct puzzles whose latest attempt failed — always the review pool"
+            label={t('Failed')}
+            title={t('Distinct puzzles whose latest attempt failed — always the review pool')}
             value={String(failed)}
             action={
               failed > 0 ? (
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title="Review failed puzzles"
+                  title={t('Review failed puzzles')}
                   onClick={() => navigate('puzzles', 'failed')}
                 >
                   <RotateCcw className="size-3.5" />
@@ -203,7 +204,7 @@ export function DashboardPage() {
         </div>
 
         <Panel flush className="mb-4">
-          <PanelHeader title="By difficulty" />
+          <PanelHeader title={t('By difficulty')} />
           <div className="grid gap-2.5 p-3">
             {BANDS.map((band) => {
               const inBand = counted.filter(
@@ -213,7 +214,7 @@ export function DashboardPage() {
               const losses = inBand.length - wins;
               return (
                 <div key={band.label} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
-                  <span className="text-muted text-xs">{band.label}</span>
+                  <span className="text-muted text-xs">{t(band.label)}</span>
                   <ProgressBar total={inBand.length} solved={wins} failed={losses} showEmpty />
                   <span className="text-subtle w-16 text-right font-mono text-[0.6875rem] tabular-nums">
                     {inBand.length > 0 ? `${wins}/${inBand.length}` : '—'}
@@ -227,16 +228,16 @@ export function DashboardPage() {
         {books !== null && (
           <Panel flush className="mb-4">
             <PanelHeader
-              title="Books"
+              title={t('Books')}
               actions={
                 <Button
                   variant="ghost"
                   size="sm"
-                  title="All puzzle books"
+                  title={t('All puzzle books')}
                   onClick={() => navigate('puzzles', 'books')}
                 >
                   <BookMarked className="size-3.5" />
-                  Shelf
+                  {t('Shelf')}
                 </Button>
               }
             />
@@ -249,7 +250,7 @@ export function DashboardPage() {
                 </p>
                 <Button variant="primary" size="sm" onClick={() => navigate('puzzles', 'books')}>
                   <BookMarked className="size-3.5" />
-                  Import a book
+                  {t('Import a book')}
                 </Button>
               </div>
             ) : (
@@ -301,11 +302,11 @@ export function DashboardPage() {
               />
             ))}
             <span className="bg-line mx-1 h-4 w-px" />
-            <FilterChip label="Any" active={bandFilter === 'any'} onClick={() => setBandFilter('any')} />
+            <FilterChip label={t('Any')} active={bandFilter === 'any'} onClick={() => setBandFilter('any')} />
             {BANDS.map((b) => (
               <FilterChip
                 key={b.id}
-                label={b.label}
+                label={t(b.label)}
                 active={bandFilter === b.id}
                 onClick={() => setBandFilter(b.id)}
               />
@@ -328,15 +329,15 @@ export function DashboardPage() {
                     className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors duration-100"
                   >
                     {h.win ? (
-                      <Check className="text-good size-3.5 shrink-0" aria-label="solved" />
+                      <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
                     ) : (
-                      <X className="text-bad size-3.5 shrink-0" aria-label="failed" />
+                      <X className="text-bad size-3.5 shrink-0" aria-label={t('failed')} />
                     )}
                     <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
-                    <span className="text-subtle w-14 shrink-0">{bandOf(h.puzzleRating)}</span>
+                    <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
                     <Eye
                       className="text-subtle hover:text-fg ml-auto size-3.5 shrink-0"
-                      aria-label="Preview the position"
+                      aria-label={t('Preview the position')}
                       onMouseEnter={(e) => {
                         if (!window.matchMedia('(pointer: coarse)').matches)
                           void showPreview(h.id, e.currentTarget);
@@ -407,7 +408,7 @@ function ResetButton({ onDone }: { onDone: () => void }) {
   return (
     <ConfirmPopover
       icon={Eraser}
-      label="Reset"
+      label={t('Reset')}
       triggerTitle="Wipe attempts, history and the review pool"
       triggerClassName="text-subtle ml-auto"
       question="Wipe all attempts, history and the review pool?"

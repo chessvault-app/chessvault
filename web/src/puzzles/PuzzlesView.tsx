@@ -40,6 +40,7 @@ import { DashboardPage } from './DashboardPage';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
 import { bandOf } from './bands';
+import { t } from '@/lib/i18n';
 import {
   judgeMove,
   positionAt,
@@ -428,9 +429,9 @@ function Trainer({
     return (
       <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
         <div className="w-full max-w-md text-center">
-          <p className="text-fg mb-2 text-sm font-semibold">No puzzle database yet</p>
+          <p className="text-fg mb-2 text-sm font-semibold">{t('No puzzle database yet')}</p>
           <p className="text-muted text-xs leading-relaxed">
-            Download the Lichess dump and build it once:
+            {t('Download the Lichess dump and build it once:')}
           </p>
           <code className="bg-surface-inset border-line text-subtle mt-3 block overflow-x-auto rounded-md border p-3 text-left font-mono text-[0.6875rem] leading-relaxed">
             curl -L -o data/lichess_db_puzzle.csv.zst \<br />
@@ -449,7 +450,7 @@ function Trainer({
         <AnalysisBoard />
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
           <div className="flex shrink-0 items-center gap-2">
-            <Button variant="ghost" size="icon-sm" title="Back to the puzzle" onClick={backToPuzzle}>
+            <Button variant="ghost" size="icon-sm" title={t('Back to the puzzle')} onClick={backToPuzzle}>
               <ChevronLeft className="size-3.5" />
             </Button>
             <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
@@ -457,12 +458,12 @@ function Trainer({
             </span>
             <Button variant="primary" size="sm" onClick={nextFromAnalysis}>
               <RotateCw className="size-3.5" />
-              Next puzzle
+              {t('Next puzzle')}
             </Button>
           </div>
           <Panel flush className="min-h-min flex-1">
             <EngineBlock />
-            <PanelHeader title="Moves" actions={<MoveActions allowReset={false} />} />
+            <PanelHeader title={t('Moves')} actions={<MoveActions allowReset={false} />} />
             <MoveTreePane />
             <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
             <StatusBar />
@@ -485,7 +486,7 @@ function Trainer({
           variant="ghost"
           size="icon-sm"
           className="md:hidden"
-          title="Back to the dashboard"
+          title={t('Back to the dashboard')}
           onClick={() => navigate('puzzles', 'dashboard')}
         >
           <ChevronLeft className="size-3.5" />
@@ -558,7 +559,7 @@ function Trainer({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                title="Dashboard"
+                title={t('Dashboard')}
                 onClick={() => navigate('puzzles', 'dashboard')}
               >
                 <BarChart3 className="size-3.5" />
@@ -572,8 +573,7 @@ function Trainer({
             </p>
           ) : mode === 'failed' ? (
             <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">
-              Reviewing puzzles you failed before — not counted, and a clean solve retires the
-              puzzle from this list.
+              {t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')}
             </p>
           ) : null}
         </Panel>
@@ -581,7 +581,7 @@ function Trainer({
 
         <Panel flush className="shrink-0">
           <PanelHeader
-            title="Puzzle"
+            title={t('Puzzle')}
             actions={
               <>
                 {puzzle && phase === 'done' && (
@@ -594,7 +594,7 @@ function Trainer({
                       variant="ghost"
                       size="icon-sm"
                       active={showDifficulty}
-                      title="Difficulty"
+                      title={t('Difficulty')}
                       onClick={() => setShowDifficulty((v) => !v)}
                     >
                       <Settings2 className="size-3.5" />
@@ -603,7 +603,7 @@ function Trainer({
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    title="Dashboard"
+                    title={t('Dashboard')}
                     onClick={() => navigate('puzzles', 'dashboard')}
                   >
                     <BarChart3 className="size-3.5" />
@@ -629,7 +629,7 @@ function Trainer({
                 >
                   <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
                   <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-                    Theme
+                    {t('Theme')}
                   </span>
                   <span className="text-fg ml-auto truncate text-xs font-medium">
                     {theme ? themeLabel(theme) : 'All themes'}
@@ -650,11 +650,11 @@ function Trainer({
                       picks puzzles, not a verdict to hand back to whoever
                       just solved one. The dashboard has always shown it
                       this way; this panel had not. */}
-                  <dt className="text-subtle">Difficulty</dt>
+                  <dt className="text-subtle">{t('Difficulty')}</dt>
                   <dd className="text-fg">{bandOf(puzzle.rating)}</dd>
-                  <dt className="text-subtle">Played</dt>
+                  <dt className="text-subtle">{t('Played')}</dt>
                   <dd className="text-fg font-mono">{puzzle.plays.toLocaleString()}</dd>
-                  <dt className="text-subtle">Themes</dt>
+                  <dt className="text-subtle">{t('Themes')}</dt>
                   <dd className="flex flex-wrap gap-1">
                     {puzzle.themes.split(' ').map((t) => (
                       <span
@@ -673,7 +673,7 @@ function Trainer({
                     rel="noreferrer"
                     className="text-primary text-xs hover:underline"
                   >
-                    From this game ↗
+                    {t('From this game ↗')}
                   </a>
                 )}
               </>
@@ -713,7 +713,7 @@ function Trainer({
                   </Button>
                   <Button variant="secondary" size="sm" onClick={analyse}>
                     <Swords className="size-3.5" />
-                    Analyse
+                    {t('Analyse')}
                   </Button>
                 </>
               ) : (
@@ -723,20 +723,20 @@ function Trainer({
                     size="sm"
                     disabled={phase !== 'solving'}
                     onClick={() => setHint((h) => Math.min(h + 1, 2))}
-                    title="First press marks the piece, second the move (not counted as a fail)"
+                    title={t('First press marks the piece, second the move (not counted as a fail)')}
                   >
                     <Lightbulb className="size-3.5" />
-                    Hint
+                    {t('Hint')}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={phase !== 'solving'}
                     onClick={viewSolution}
-                    title="Counts as a failed attempt"
+                    title={t('Counts as a failed attempt')}
                   >
                     <Eye className="size-3.5" />
-                    Solution
+                    {t('Solution')}
                   </Button>
                   {mode !== 'single' && (
                     <Button
@@ -745,7 +745,7 @@ function Trainer({
                       onClick={() => void loadNext(theme, difficulty)}
                     >
                       <X className="size-3.5" />
-                      Skip
+                      {t('Skip')}
                     </Button>
                   )}
                 </>
@@ -763,8 +763,8 @@ function Trainer({
           />
         ) : (
           <Panel flush className="shrink-0">
-            <PanelHeader title="Moves" />
-            <p className="text-subtle px-3 py-2.5 text-xs">Finding a puzzle…</p>
+            <PanelHeader title={t('Moves')} />
+            <p className="text-subtle px-3 py-2.5 text-xs">{t('Finding a puzzle…')}</p>
           </Panel>
         )}
 
@@ -775,19 +775,19 @@ function Trainer({
           skip, next) live in the panel above — no duplicates here. */}
       <MobileActionBar>
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(1)} title="First move">
+          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(1)} title={t('First move')}>
             <ChevronFirst className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly((review ?? plies) - 1)} title="Back">
+          <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly((review ?? plies) - 1)} title={t('Back')}>
             <ChevronLeft className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly((review ?? plies) + 1)} title="Forward">
+          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly((review ?? plies) + 1)} title={t('Forward')}>
             <ChevronRight className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title="Latest">
+          <Button variant="ghost" size="icon" disabled={review === null} onClick={() => goToPly(plies)} title={t('Latest')}>
             <ChevronLast className="size-[1.1rem]" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title="Flip board">
+          <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
             <FlipVertical2 className="size-[1.1rem]" />
           </Button>
         </div>
@@ -814,10 +814,10 @@ function DifficultyRow({
           size="sm"
           variant={active === d.id ? 'primary' : 'secondary'}
           className="min-w-0 flex-1 px-0"
-          title={'hint' in d ? `Difficulty ${d.hint}` : 'Any difficulty'}
+          title={'hint' in d ? t('Difficulty {hint}', { hint: d.hint }) : t('Any difficulty')}
           onClick={() => onPick(d.id)}
         >
-          {d.label}
+          {t(d.label)}
         </Button>
       ))}
     </div>

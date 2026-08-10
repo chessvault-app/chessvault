@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 interface PanelProps {
   children: ReactNode;
@@ -102,7 +103,7 @@ export function Panel({
       {children}
       {resizeKey !== undefined && (
         <div
-          title="Drag to resize · double-click to reset"
+          title={t('Drag to resize · double-click to reset')}
           onDoubleClick={() => {
             drag.current = null;
             setHeight(null);

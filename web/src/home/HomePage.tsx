@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { navigate, type Section } from '@/lib/router';
 import { Skeleton } from '@/ui/Skeleton';
 import { KnightIcon } from '@/ui/KnightIcon';
+import { t } from '@/lib/i18n';
 
 /**
  * The landing page — minimal, but not empty-handed: the vault sections
@@ -76,8 +77,8 @@ export function HomePage() {
             <KnightIcon className="size-9" />
           </div>
           <div>
-            <h1 className="text-fg text-xl font-semibold tracking-tight">Chess Vault</h1>
-            <p className="text-subtle text-sm">Your chess, in plain files.</p>
+            <h1 className="text-fg text-xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+            <p className="text-subtle text-sm">{t('Your chess, in plain files.')}</p>
           </div>
         </div>
 
@@ -92,7 +93,7 @@ export function HomePage() {
               <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
               <span>
                 <span className="text-fg block text-sm font-medium">
-                  {label}
+                  {t(label)}
                   {counts[section] !== undefined ? (
                     <span className="text-subtle font-mono text-xs font-normal">
                       {' '}
@@ -108,7 +109,7 @@ export function HomePage() {
                     )
                   )}
                 </span>
-                <span className="text-subtle block text-xs leading-snug">{blurb}</span>
+                <span className="text-subtle block text-xs leading-snug">{t(blurb)}</span>
               </span>
             </button>
           ))}

@@ -29,6 +29,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
+import { t } from '@/lib/i18n';
 import {
   defaultEditorState,
   emptyEditorState,
@@ -195,9 +196,9 @@ export function EditorView({
   const positionPanels = (
     <>
         <Panel flush>
-          <PanelHeader title="Position" />
+          <PanelHeader title={t('Position')} />
           <div className="grid gap-3 p-3">
-            <Field label="Side to move">
+            <Field label={t('Side to move')}>
               <div className="flex gap-1">
                 {(['white', 'black'] as Color[]).map((color) => (
                   <Button
@@ -213,7 +214,7 @@ export function EditorView({
               </div>
             </Field>
 
-            <Field label="Castling rights">
+            <Field label={t('Castling rights')}>
               <div className="flex gap-1">
                 {(
                   [
@@ -242,11 +243,11 @@ export function EditorView({
               </div>
             </Field>
 
-            <Field label="En passant target">
+            <Field label={t('En passant target')}>
               <Select
                 value={state.epSquare ?? ''}
                 onChange={(v) => patch({ epSquare: v || null })}
-                ariaLabel="En passant target"
+                ariaLabel={t('En passant target')}
                 inset
                 mono
                 className="w-full"
@@ -262,14 +263,14 @@ export function EditorView({
             </Field>
 
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Halfmove clock">
+              <Field label={t('Halfmove clock')}>
                 <NumberInput
                   value={state.halfmoves}
                   min={0}
                   onChange={(halfmoves) => patch({ halfmoves })}
                 />
               </Field>
-              <Field label="Move number">
+              <Field label={t('Move number')}>
                 <NumberInput
                   value={state.fullmoves}
                   min={1}
@@ -290,7 +291,7 @@ export function EditorView({
           )}
           <div className="border-line flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
             {validity.legal && (
-              <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label="Legal position" />
+              <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
             )}
             <code
               className="text-subtle min-w-0 flex-1 truncate font-mono text-[0.6875rem]"
@@ -320,13 +321,13 @@ export function EditorView({
             variant="ghost"
             size="icon-sm"
             className="md:hidden"
-            title="Back"
+            title={t('Back')}
             onClick={() => window.history.back()}
           >
             <ChevronLeft className="size-3.5" />
           </Button>
           <SquarePen className="text-subtle size-4" aria-hidden />
-          <h1 className="text-fg text-sm font-semibold">Editor</h1>
+          <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
         </div>
       )}
 
@@ -400,27 +401,27 @@ export function EditorView({
             size="sm"
             className="h-full max-sm:w-10 max-sm:px-0"
             onClick={() => setTool({ kind: 'move' })}
-            title="Move: drag pieces around the board"
+            title={t('Move: drag pieces around the board')}
           >
             <MousePointer2 className="size-3.5" />
-            <span className="hidden sm:inline">Move</span>
+            <span className="hidden sm:inline">{t('Move')}</span>
           </Button>
           <Button
             variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
             size="sm"
             className="h-full max-sm:w-10 max-sm:px-0"
             onClick={() => setTool({ kind: 'erase' })}
-            title="Erase: click a square to remove its piece"
+            title={t('Erase: click a square to remove its piece')}
           >
             <Eraser className="size-3.5" />
-            <span className="hidden sm:inline">Erase</span>
+            <span className="hidden sm:inline">{t('Erase')}</span>
           </Button>
           <Button
             variant="ghost"
             size="icon-sm"
             className="h-full w-8"
             onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
-            title="Flip board"
+            title={t('Flip board')}
           >
             <FlipVertical2 className="size-3.5" />
           </Button>
@@ -429,7 +430,7 @@ export function EditorView({
             size="icon-sm"
             className="h-full w-8"
             onClick={() => setState(defaultEditorState())}
-            title="Reset to the starting position"
+            title={t('Reset to the starting position')}
           >
             <RotateCcw className="size-3.5" />
           </Button>
@@ -438,7 +439,7 @@ export function EditorView({
             size="icon-sm"
             className="h-full w-8"
             onClick={() => setState(emptyEditorState())}
-            title="Clear the board"
+            title={t('Clear the board')}
           >
             <Trash2 className="size-3.5" />
           </Button>
@@ -452,10 +453,10 @@ export function EditorView({
             active={sheetOpen}
             className="h-full wide:hidden"
             onClick={() => setSheetOpen((v) => !v)}
-            title="Position details (side to move, castling, FEN)"
+            title={t('Position details (side to move, castling, FEN)')}
           >
             <Settings2 className="size-3.5" />
-            <span>Position</span>
+            <span>{t('Position')}</span>
           </Button>
           <Button
             variant="primary"
@@ -481,7 +482,7 @@ export function EditorView({
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="flex h-9 shrink-0 items-center gap-2">
           <SquarePen className="text-subtle size-4" aria-hidden />
-          <h1 className="text-fg text-sm font-semibold">Editor</h1>
+          <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
         </div>
         {positionPanels}
       </div>

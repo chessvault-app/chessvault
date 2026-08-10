@@ -6,6 +6,7 @@ import { useReview, type GraphPoint } from '@/store/review';
 import { Button } from '@/ui/Button';
 import { SideDot } from '@/ui/SideDot';
 import type { SideSummary } from './review';
+import { t } from '@/lib/i18n';
 
 /**
  * Trigger for the engine review — lives in the Moves panel header, costs
@@ -23,7 +24,7 @@ export function ReviewButton() {
       variant="ghost"
       size="icon-sm"
       disabled={status === 'running'}
-      title="Engine review — judge every move (?!/?/??) and measure accuracy"
+      title={t('Engine review — judge every move (?!/?/??) and measure accuracy')}
       onClick={() => void run()}
     >
       {status === 'running' ? (
@@ -70,7 +71,7 @@ export function ReviewStrip() {
       {status === 'running' ? (
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-            Reviewing
+            {t('Reviewing')}
           </span>
           <div className="bg-surface-inset h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
             <div
@@ -85,7 +86,7 @@ export function ReviewStrip() {
       ) : status === 'error' ? (
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="text-bad min-w-0 flex-1 truncate text-xs">{error}</span>
-          <Button variant="ghost" size="icon-sm" title="Dismiss" onClick={clear}>
+          <Button variant="ghost" size="icon-sm" title={t('Dismiss')} onClick={clear}>
             <X className="size-3" />
           </Button>
         </div>
@@ -107,7 +108,7 @@ export function ReviewStrip() {
                 <ChevronDown className={cn('size-3 transition-transform', graphOpen && 'rotate-180')} />
               </Button>
             )}
-            <Button variant="ghost" size="icon-sm" title="Dismiss review" onClick={clear}>
+            <Button variant="ghost" size="icon-sm" title={t('Dismiss review')} onClick={clear}>
               <X className="size-3" />
             </Button>
           </div>
@@ -176,7 +177,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
           if (e.buttons & 1) scrub(e);
         }}
         role="slider"
-        aria-label="Evaluation graph — click to jump to a move"
+        aria-label={t('Evaluation graph — click to jump to a move')}
       >
         <path d={area} fill="var(--color-eval-white)" opacity="0.85" />
         {/* Thin line joining the move dots along the curve. */}

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 /**
  * THE horizontal filter row: single line, scrolls sideways, scrollbar
@@ -63,7 +64,7 @@ export function ChipRow({
   return (
     <div className={cn('relative min-w-0', className)}>
       {can.left && (
-        <button type="button" aria-label="Scroll left" onClick={() => nudge(-1)} className={cn(arrow, 'left-0')}>
+        <button type="button" aria-label={t('Scroll left')} onClick={() => nudge(-1)} className={cn(arrow, 'left-0')}>
           <ChevronLeft className="size-3.5" />
         </button>
       )}
@@ -75,7 +76,7 @@ export function ChipRow({
         {children}
       </div>
       {can.right && (
-        <button type="button" aria-label="Scroll right" onClick={() => nudge(1)} className={cn(arrow, 'right-0')}>
+        <button type="button" aria-label={t('Scroll right')} onClick={() => nudge(1)} className={cn(arrow, 'right-0')}>
           <ChevronRight className="size-3.5" />
         </button>
       )}

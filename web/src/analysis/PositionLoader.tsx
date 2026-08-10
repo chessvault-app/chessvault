@@ -9,6 +9,7 @@ const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ de
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { t } from '@/lib/i18n';
 
 /**
  * Load a position from FEN or PGN — a small header button opening a modal,
@@ -50,7 +51,7 @@ export function LoadPositionButton({
         variant="ghost"
         size="icon-sm"
         active={open}
-        title="Load a position — FEN, PGN, or image"
+        title={t('Load a position — FEN, PGN, or image')}
         onClick={() => setOpen(true)}
       >
         <FolderInput className="size-3.5" />
@@ -149,16 +150,16 @@ function LoadDialog({
       <div className="fixed inset-x-4 top-[15dvh] z-50 mx-auto max-w-md">
         <Panel flush>
           <PanelHeader
-            title="Load position"
+            title={t('Load position')}
             actions={
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => void pasteFromClipboard()}
-                title="Paste from clipboard"
+                title={t('Paste from clipboard')}
               >
                 <ClipboardPaste className="size-3.5" />
-                Paste
+                {t('Paste')}
               </Button>
             }
           />
@@ -177,7 +178,7 @@ function LoadDialog({
               }}
               rows={5}
               spellCheck={false}
-              placeholder="Paste a FEN or PGN, then press Enter"
+              placeholder={t('Paste a FEN or PGN, then press Enter')}
               className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
             />
 
@@ -201,7 +202,7 @@ function LoadDialog({
             >
               <ImagePlus className="size-4" />
               …or read the position from a picture
-              <span className="text-[0.6875rem]">click to choose, drop a file, or paste an image</span>
+              <span className="text-[0.6875rem]">{t('click to choose, drop a file, or paste an image')}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -215,10 +216,10 @@ function LoadDialog({
             </label>
             <div className="flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={onClose}>
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button variant="primary" size="sm" onClick={submit} disabled={!text.trim()}>
-                Load
+                {t('Load')}
               </Button>
             </div>
           </div>

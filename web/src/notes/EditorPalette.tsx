@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { cn } from '@/lib/cn';
 import { KnightIcon } from '@/ui/KnightIcon';
+import { t } from '@/lib/i18n';
 
 /**
  * The note formatting palette: one row, pinned to the top of the note
@@ -141,7 +142,7 @@ export function EditorPalette({
       // strip rather than stopping at the text column's edge.
       className="flex shrink-0 items-center gap-0.5 overflow-x-auto scrollbar-hidden"
       role="toolbar"
-      aria-label="Formatting"
+      aria-label={t('Formatting')}
     >
       {ACTIONS.map((action) => {
         const on = action.active(editor);

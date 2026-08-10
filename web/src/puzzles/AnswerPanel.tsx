@@ -6,6 +6,7 @@ import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { t } from '@/lib/i18n';
 
 /**
  * The moves panel both puzzle trainers share: the analysis tab's own move
@@ -61,7 +62,7 @@ export function AnswerPanel({
         <Button
           variant="ghost"
           size="icon"
-          title="Start"
+          title={t('Start')}
           disabled={cursorId === tree.rootId}
           onClick={() => onSelect(tree.rootId)}
         >
@@ -70,7 +71,7 @@ export function AnswerPanel({
         <Button
           variant="ghost"
           size="icon"
-          title="Back"
+          title={t('Back')}
           disabled={!node.parentId}
           onClick={() => node.parentId && onSelect(node.parentId)}
         >
@@ -79,7 +80,7 @@ export function AnswerPanel({
         <Button
           variant="ghost"
           size="icon"
-          title="Forward"
+          title={t('Forward')}
           disabled={!next}
           onClick={() => next && onSelect(next)}
         >
@@ -88,7 +89,7 @@ export function AnswerPanel({
         <Button
           variant="ghost"
           size="icon"
-          title="End of line"
+          title={t('End of line')}
           disabled={!lineEnd}
           onClick={() => lineEnd && onSelect(lineEnd)}
         >

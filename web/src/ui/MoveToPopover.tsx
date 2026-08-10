@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Input } from './Input';
+import { t } from '@/lib/i18n';
 
 /**
  * The "Move to" popover shared by the notes and studies shelves: existing
@@ -66,7 +67,7 @@ export function MoveToPopover({
       )}
     >
       <p className="text-subtle px-2 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-        Move to
+        {t('Move to')}
       </p>
       {targets.map((target) => (
         <button
@@ -87,7 +88,7 @@ export function MoveToPopover({
           inputSize="sm"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="New collection…"
+          placeholder={t('New collection…')}
           className="min-w-0 flex-1"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && draft.trim()) onPick(draft.trim().replace(/\//g, '-'));
@@ -95,7 +96,7 @@ export function MoveToPopover({
         />
         <button
           type="button"
-          title="Move into this new collection"
+          title={t('Move into this new collection')}
           disabled={!draft.trim()}
           onClick={() => draft.trim() && onPick(draft.trim().replace(/\//g, '-'))}
           className="text-subtle hover:text-fg disabled:opacity-40 grid size-7 shrink-0 place-items-center"

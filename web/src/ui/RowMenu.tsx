@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
+import { t } from '@/lib/i18n';
 
 export interface RowMenuItem {
   label: string;
@@ -123,7 +124,7 @@ export function RowMenu({
               <p className="text-fg text-xs font-medium">{confirming.confirm}</p>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
-                  Cancel
+                  {t('Cancel')}
                 </Button>
                 <Button
                   variant="danger"

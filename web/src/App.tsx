@@ -24,6 +24,7 @@ import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ThemeToggle } from '@/ui/ThemeToggle';
+import { t, useLang } from '@/lib/i18n';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -79,9 +80,15 @@ export function App() {
 
 function Shell() {
   const { section, params } = useRoute();
+  // Remount the whole tree when the language changes. Every t() call runs
+  // during render, so a re-render is all that is needed — but a keyed
+  // remount is what guarantees it reaches a memoised child too, and the
+  // route lives in the hash so nothing is lost by it.
+  const lang = useLang();
 
   return (
     <div
+      key={lang}
       className={cn(
         // --app-h is set in standalone PWA mode, where 100dvh can be stale
         // on launch. Browsers fall back to 100svh — the SMALL viewport, the
@@ -168,7 +175,7 @@ function ConnectionLabel() {
   const local = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
   return (
     <span className="text-subtle hidden truncate text-xs lg:block" title={location.origin}>
-      {!online ? 'Offline' : local ? 'This machine' : host}
+      {!online ? t('Offline') : local ? t('This machine') : host}
     </span>
   );
 }
@@ -214,7 +221,7 @@ function SubNavItem({
     <button
       type="button"
       onClick={onClick}
-      title={label}
+      title={t(label)}
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex h-8 items-center gap-2.5 rounded-lg text-xs font-medium transition-colors duration-150',
@@ -223,7 +230,7 @@ function SubNavItem({
       )}
     >
       <Icon className="size-3.5 shrink-0" />
-      <span className="hidden lg:block">{label}</span>
+      <span className="hidden lg:block">{t(label)}</span>
     </button>
   );
 }
@@ -239,7 +246,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
       <button
         type="button"
         onClick={() => navigate('home')}
-        title="Home"
+        title={t('Home')}
         className="hover:bg-surface-2 flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
       >
         <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg">
@@ -247,7 +254,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <KnightIcon className="size-5" />
         </div>
         <span className="hidden truncate text-sm font-semibold tracking-tight lg:block">
-          Chess Vault
+          {t('Chess Vault')}
         </span>
       </button>
 
@@ -259,7 +266,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               key={section}
               type="button"
               onClick={() => navigate(section)}
-              title={label}
+              title={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
@@ -274,7 +281,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                 <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />
               )}
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
-              <span className="hidden lg:block">{label}</span>
+              <span className="hidden lg:block">{t(label)}</span>
             </button>
           );
         })}
@@ -292,7 +299,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         <button
           type="button"
           onClick={() => navigate('analysis')}
-          title="Tools"
+          title={t('Tools')}
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
@@ -302,7 +309,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         >
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
           <Wrench className="size-[1.15rem] shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
-          <span className="hidden lg:block">Tools</span>
+          <span className="hidden lg:block">{t('Tools')}</span>
         </button>
         {TOOLS_SUBNAV.map(({ key, label, icon: Icon, nav, active: isActive }) => (
           <SubNavItem
@@ -321,7 +328,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <button
             type="button"
             onClick={() => navigate('settings')}
-            title="Settings"
+            title={t('Settings')}
             aria-current={active === 'settings' ? 'page' : undefined}
             className={cn(
               'grid size-9 place-items-center rounded-lg transition-colors duration-100',
@@ -369,11 +376,11 @@ function MorePage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto flex max-w-md flex-col gap-4 p-4">
-        <h1 className="px-1 text-lg font-semibold tracking-tight">More</h1>
+        <h1 className="px-1 text-lg font-semibold tracking-tight">{t('More')}</h1>
         {MORE_GROUPS.map(({ heading, items }) => (
           <div key={heading} className="flex flex-col gap-2">
             <h2 className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
-              {heading}
+              {t(heading)}
             </h2>
             {items.map(({ section, param, label, icon: Icon, blurb }) => (
               <button
@@ -389,8 +396,8 @@ function MorePage() {
                   <Icon className="size-5" strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">{label}</div>
-                  <div className="text-subtle text-xs">{blurb}</div>
+                  <div className="text-sm font-medium">{t(label)}</div>
+                  <div className="text-subtle text-xs">{t(blurb)}</div>
                 </div>
               </button>
             ))}
@@ -435,7 +442,7 @@ function MobileNav({ active }: { active: Section }) {
             )}
           >
             <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
-            {label}
+            {t(label)}
           </button>
         );
       })}
@@ -450,7 +457,7 @@ function MobileNav({ active }: { active: Section }) {
         )}
       >
         <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
-        More
+        {t('More')}
       </button>
     </nav>
   );
@@ -467,7 +474,7 @@ function Placeholder({ section }: { section: Section }) {
           <Swords className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-lg font-semibold tracking-tight capitalize">{section}</h1>
-        <p className="text-muted text-sm leading-relaxed">This page isn't available.</p>
+        <p className="text-muted text-sm leading-relaxed">{t("This page isn't available.")}</p>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 /**
  * Loading placeholders shaped like the content they stand in for — the
@@ -55,7 +56,7 @@ export function useSlowLoad(active: boolean, delay = 180, minVisible = 400): boo
 /** Wrapper that announces itself to screen readers exactly once. */
 function Loading({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={className} role="status" aria-label="Loading" aria-live="polite">
+    <div className={className} role="status" aria-label={t('Loading')} aria-live="polite">
       {children}
     </div>
   );

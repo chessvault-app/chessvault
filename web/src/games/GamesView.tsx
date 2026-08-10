@@ -32,6 +32,7 @@ import { SideDot } from '@/ui/SideDot';
 import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { t } from '@/lib/i18n';
 
 export interface GameSummary {
   file: string;
@@ -332,7 +333,7 @@ function EliteBrowser() {
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="max-w-md text-center">
-          <p className="text-fg mb-2 text-sm font-semibold">No reference games yet</p>
+          <p className="text-fg mb-2 text-sm font-semibold">{t('No reference games yet')}</p>
           <p className="text-muted text-xs leading-relaxed">
             Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into
             vault/sources and index them once:
@@ -348,7 +349,7 @@ function EliteBrowser() {
   return (
     <div className="mx-auto flex h-full min-h-0 max-w-3xl flex-col gap-3 p-4">
       <div className="flex shrink-0 items-center gap-2">
-        <Button variant="ghost" size="icon-sm" title="Back to games" onClick={() => navigate('games')}>
+        <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
           <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
@@ -360,7 +361,7 @@ function EliteBrowser() {
         inputSize="lg"
         value={query}
         onChange={(e) => onQuery(e.target.value)}
-        placeholder="Search players, openings, or ECO (e.g. Najdorf, B90)…"
+        placeholder={t('Search players, openings, or ECO (e.g. Najdorf, B90)…')}
         spellCheck={false}
         className="w-full shrink-0"
       />
@@ -376,7 +377,7 @@ function EliteBrowser() {
               <button
                 type="button"
                 onClick={() => void openGame(g)}
-                title="Open on the analysis board"
+                title={t('Open on the analysis board')}
                 className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left transition-colors duration-100"
               >
                 <span className="min-w-0 flex-1">
@@ -398,7 +399,7 @@ function EliteBrowser() {
                 <span className="grid size-7 shrink-0 place-items-center">
                   <Eye
                     className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-4.5"
-                    aria-label="Preview the final position"
+                    aria-label={t('Preview the final position')}
                     onMouseEnter={(e) => {
                       if (!coarse()) void showPreview(g, e.currentTarget);
                     }}
@@ -431,7 +432,7 @@ function EliteBrowser() {
                 ) : (
                   <>
                     <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-                    Add
+                    {t('Add')}
                   </>
                 )}
               </Button>
@@ -561,7 +562,7 @@ function CollectionView() {
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">Games</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
           <Button
             variant="ghost"
@@ -576,12 +577,12 @@ function CollectionView() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search collection…"
+            placeholder={t('Search collection…')}
             className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
           />
           <Button variant="primary" size="sm" active={importing} onClick={() => setImporting((v) => !v)}>
             <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-            Import
+            {t('Import')}
           </Button>
         </div>
       </header>
@@ -611,11 +612,11 @@ function CollectionView() {
               <Button
                 variant="ghost"
                 size="sm"
-                title="Browse the indexed reference games"
+                title={t('Browse the indexed reference games')}
                 onClick={() => navigate('games', 'elite')}
               >
                 <Trophy className="size-3.5" />
-                Elite games
+                {t('Elite games')}
               </Button>
             }
           />
@@ -660,7 +661,7 @@ function CollectionView() {
                     </Button>
                     {/* The … menu closes the line (lanph3re's call). */}
                     <RowMenu
-                      ariaLabel="Game actions"
+                      ariaLabel={t('Game actions')}
                       triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
                       items={[
                         {
@@ -883,7 +884,7 @@ function ArchiveBrowser({
             <Button
               variant="secondary"
               size="icon-sm"
-              title="Browse this player's online archive"
+              title={t("Browse this player's online archive")}
               disabled={loading !== null || !username.trim()}
               onClick={() => void loadMonths()}
             >
@@ -903,7 +904,7 @@ function ArchiveBrowser({
           <Select
             value={month}
             onChange={(m) => void loadMonth(m)}
-            ariaLabel="Archive month"
+            ariaLabel={t('Archive month')}
             size="sm"
             className="shrink-0"
             groups={[
@@ -941,7 +942,7 @@ function ArchiveBrowser({
       {((offline && months.length > 0) || error) && (
         <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
           {offline && months.length > 0 && (
-            <span className="text-warn text-xs">offline — cached months only</span>
+            <span className="text-warn text-xs">{t('offline — cached months only')}</span>
           )}
           {error && <span className="text-bad text-xs">{error}</span>}
         </div>
@@ -983,7 +984,7 @@ function ArchiveBrowser({
                       ) : (
                         <>
                           <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-                          Add
+                          {t('Add')}
                         </>
                       )}
                     </Button>
@@ -1082,7 +1083,7 @@ function GameRow({
             <p className="text-fg truncate text-sm font-medium">
               {customName}
               {game.annotated && (
-                <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
+                <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
               )}
             </p>
           ) : (
@@ -1096,7 +1097,7 @@ function GameRow({
                 </span>
                 {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
                 {game.annotated && (
-                  <NotebookPen className="text-info ml-1.5 inline size-3" aria-label="Annotated" />
+                  <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
                 )}
               </p>
               <p className="text-fg truncate text-sm">
@@ -1122,7 +1123,7 @@ function GameRow({
           <span className="grid size-7 shrink-0 place-items-center pointer-coarse:size-9">
             <Eye
               className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-5"
-              aria-label="Preview the final position"
+              aria-label={t('Preview the final position')}
               // Guarded like the other preview eyes: an unguarded mouseenter
               // trips iOS's sticky-hover heuristic (first tap hovers only).
               onMouseEnter={(e) => {
@@ -1150,7 +1151,7 @@ function GameRow({
           href={game.link}
           target="_blank"
           rel="noreferrer"
-          title="View on chess.com (needs internet)"
+          title={t('View on chess.com (needs internet)')}
           onClick={(e) => e.stopPropagation()}
           className="text-subtle hover:text-fg shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
         >
@@ -1226,7 +1227,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
       <div className="bg-scrim fixed inset-0 z-40" onClick={onCancel} />
       <div className="fixed inset-x-4 top-[8dvh] z-50 mx-auto max-h-[84dvh] max-w-lg overflow-y-auto rounded-xl">
     <Panel flush className="shrink-0">
-      <PanelHeader title="Import a game" />
+      <PanelHeader title={t('Import a game')} />
       <div className="flex flex-col gap-2 p-3">
         <TextArea
           autoFocus
@@ -1238,14 +1239,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           className="w-full resize-none font-mono placeholder:font-sans"
         />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Input value={white} onChange={(e) => setWhite(e.target.value)} placeholder="White (optional)" />
-          <Input value={black} onChange={(e) => setBlack(e.target.value)} placeholder="Black (optional)" />
-          <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder="Date, e.g. 2026-08-08" />
-          <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder="White rating" inputMode="numeric" />
-          <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder="Black rating" inputMode="numeric" />
-          <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder="Event / tournament (optional)" />
+          <Input value={white} onChange={(e) => setWhite(e.target.value)} placeholder={t('White (optional)')} />
+          <Input value={black} onChange={(e) => setBlack(e.target.value)} placeholder={t('Black (optional)')} />
+          <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder={t('Date, e.g. 2026-08-08')} />
+          <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder={t('White rating')} inputMode="numeric" />
+          <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder={t('Black rating')} inputMode="numeric" />
+          <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder={t('Event / tournament (optional)')} />
           {/* Segmented, not a dropdown: four states, all visible at once. */}
-          <div className="flex gap-1" role="radiogroup" aria-label="Result">
+          <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
             {(
               [
                 ['', 'Auto', 'Result from the pasted moves'],
@@ -1270,11 +1271,11 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         {failure && <p className="text-bad text-xs">{failure}</p>}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button variant="primary" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
             <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-            Add to collection
+            {t('Add to collection')}
           </Button>
         </div>
       </div>

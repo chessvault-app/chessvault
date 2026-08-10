@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
+import { t } from '@/lib/i18n';
 
 /**
  * Destructive-action confirmation, the anchored-popover way: the trigger
@@ -126,7 +127,7 @@ export function ConfirmPopover({
           <p className="text-fg text-xs font-medium">{question}</p>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="danger"

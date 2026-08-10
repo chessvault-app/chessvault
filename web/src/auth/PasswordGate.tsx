@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/ui/Button';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { Input } from '@/ui/Input';
+import { t } from '@/lib/i18n';
 
 /**
  * Wraps the app when the server has an appPassword configured (public
@@ -91,8 +92,8 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         <div className="bg-primary text-primary-fg mb-5 grid size-14 place-items-center rounded-2xl shadow-[var(--shadow-panel)]">
           <KnightIcon className="size-8" />
         </div>
-        <h1 className="text-fg text-xl font-semibold tracking-tight">Chess Vault</h1>
-        <p className="text-subtle mb-6 mt-1 text-sm">Your chess, in plain files.</p>
+        <h1 className="text-fg text-xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+        <p className="text-subtle mb-6 mt-1 text-sm">{t('Your chess, in plain files.')}</p>
 
         <form
           className="bg-surface border-line w-full rounded-2xl border p-5 shadow-[var(--shadow-panel)]"
@@ -105,7 +106,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label className="text-subtle mb-1.5 flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
                 <Lock className="size-3" />
-                Password
+                {t('Password')}
               </label>
               <Input
                 autoFocus
@@ -122,7 +123,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label className="text-subtle mb-1.5 flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
                 <ShieldCheck className="size-3" />
-                Authenticator code
+                {t('Authenticator code')}
               </label>
               <Input
                 autoFocus
@@ -157,13 +158,12 @@ export function PasswordGate({ children }: { children: ReactNode }) {
               className="text-subtle hover:text-fg mx-auto mt-3 flex items-center gap-1 text-xs"
             >
               <ChevronLeft className="size-3" />
-              Use a different password
+              {t('Use a different password')}
             </button>
           )}
         </form>
         <p className="text-subtle mt-6 text-center text-xs">
-          Private instance — every game, study and puzzle here lives in plain files on its
-          owner&rsquo;s server.
+          {t('Private instance — every game, study and puzzle here lives in plain files on its owner’s server.')}
         </p>
       </div>
     </div>

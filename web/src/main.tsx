@@ -4,11 +4,13 @@ import { App } from './App';
 import { initTheme, watchSystemTheme } from './store/theme';
 import { initPrefs } from './store/prefs';
 import { installTooltips } from './ui/tooltip';
+import { initLang } from './lib/i18n';
 import './index.css';
 
 initTheme();
 watchSystemTheme();
 initPrefs();
+initLang();
 
 // PWA shell: production only — a worker in dev would fight Vite's HMR.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

@@ -20,6 +20,7 @@ import { Input } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Select } from '@/ui/Select';
+import { t } from '@/lib/i18n';
 
 /**
  * Repertoire trainer: rehearse an opening against the field. You move; the app
@@ -292,7 +293,7 @@ function OpeningPicker({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  aria-label="Close"
+                  aria-label={t('Close')}
                   onPointerDown={(e) => {
                     e.stopPropagation();
                     setOpen(false);
@@ -307,7 +308,7 @@ function OpeningPicker({
                   inputSize="sm"
                   className="min-w-0 flex-1"
                   value={query}
-                  placeholder="Search any opening or ECO code…"
+                  placeholder={t('Search any opening or ECO code…')}
                   onChange={(e) => setQuery(e.target.value)}
                 />
               </div>
@@ -324,7 +325,7 @@ function OpeningPicker({
       <Input
         inputSize="sm"
         value={open ? query : value.eco ? `${value.eco}  ${value.name}` : value.name}
-        placeholder="Search any opening or ECO code…"
+        placeholder={t('Search any opening or ECO code…')}
         onFocus={() => {
           setOpen(true);
           setQuery('');
@@ -520,7 +521,7 @@ export function RepertoireView() {
   const header = (
     <>
       <SwatchBook className="text-subtle size-4" aria-hidden />
-      <h1 className="text-fg text-sm font-semibold">Repertoire</h1>
+      <h1 className="text-fg text-sm font-semibold">{t('Repertoire')}</h1>
     </>
   );
 
@@ -535,7 +536,7 @@ export function RepertoireView() {
           variant="ghost"
           size="icon-sm"
           className="md:hidden"
-          title="Back"
+          title={t('Back')}
           onClick={() => window.history.back()}
         >
           <ChevronLeft className="size-3.5" />
@@ -582,7 +583,7 @@ export function RepertoireView() {
             cut its own Start button off with nothing to scroll to. */}
         {phase === 'idle' ? (
           <Panel flush fit className="shrink-0">
-            <PanelHeader title="New game" />
+            <PanelHeader title={t('New game')} />
             <div className="flex flex-col gap-3 p-3">
               <div className="flex gap-1">
                 {(['white', 'black'] as const).map((c) => (
@@ -598,21 +599,21 @@ export function RepertoireView() {
                 ))}
               </div>
               <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">Rating</span>
+                <span className="text-muted text-xs font-medium">{t('Rating')}</span>
                 <Select
                   value={band}
                   onChange={setBand}
-                  ariaLabel="Opponent strength"
+                  ariaLabel={t('Opponent strength')}
                   groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">Opening</span>
+                <span className="text-muted text-xs font-medium">{t('Opening')}</span>
                 <OpeningPicker value={template} onChange={setTemplate} />
               </label>
               <Button variant="primary" size="sm" className="self-start" onClick={startGame}>
                 <Play className="size-3.5" />
-                Start
+                {t('Start')}
               </Button>
             </div>
           </Panel>
@@ -623,11 +624,11 @@ export function RepertoireView() {
                 other board page uses. */}
             <Panel flush className="shrink-0">
               <PanelHeader
-                title="Game"
+                title={t('Game')}
                 actions={
-                  <Button variant="ghost" size="sm" onClick={newGame} title="Set up a new game">
+                  <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
                     <RotateCcw className="size-3.5" />
-                    New game
+                    {t('New game')}
                   </Button>
                 }
               />
@@ -650,7 +651,7 @@ export function RepertoireView() {
                   onClick={analyse}
                 >
                   <Compass className="size-3.5" />
-                  Analyse this line
+                  {t('Analyse this line')}
                 </Button>
               </div>
             </Panel>
@@ -667,19 +668,19 @@ export function RepertoireView() {
       {phase !== 'idle' && (
         <MobileActionBar>
           <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
-            <Button variant="ghost" size="icon" disabled={cursorIndex <= 0} onClick={() => goTo(0)} title="First move">
+            <Button variant="ghost" size="icon" disabled={cursorIndex <= 0} onClick={() => goTo(0)} title={t('First move')}>
               <ChevronFirst className="size-[1.1rem]" />
             </Button>
-            <Button variant="ghost" size="icon" disabled={cursorIndex <= 0} onClick={() => goTo(cursorIndex - 1)} title="Back">
+            <Button variant="ghost" size="icon" disabled={cursorIndex <= 0} onClick={() => goTo(cursorIndex - 1)} title={t('Back')}>
               <ChevronLeft className="size-[1.1rem]" />
             </Button>
-            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(cursorIndex + 1)} title="Forward">
+            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(cursorIndex + 1)} title={t('Forward')}>
               <ChevronRight className="size-[1.1rem]" />
             </Button>
-            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(line.length - 1)} title="Latest">
+            <Button variant="ghost" size="icon" disabled={atTip} onClick={() => goTo(line.length - 1)} title={t('Latest')}>
               <ChevronLast className="size-[1.1rem]" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title="Flip board">
+            <Button variant="ghost" size="icon" onClick={() => setFlipped((f) => !f)} title={t('Flip board')}>
               <FlipVertical2 className="size-[1.1rem]" />
             </Button>
           </div>

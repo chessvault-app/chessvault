@@ -2,6 +2,7 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { t } from '@/lib/i18n';
 
 /**
  * A themed replacement for `<select>`: native controls styled fine, but
@@ -163,7 +164,7 @@ export function Select({
           className,
         )}
       >
-        <span className="min-w-0 flex-1 truncate text-left">{selected?.label ?? '—'}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{selected ? t(selected.label) : '—'}</span>
         <ChevronDown className="text-subtle size-3 shrink-0" />
       </button>
 
@@ -197,7 +198,7 @@ export function Select({
             <div key={gi}>
               {group.label && (
                 <p className="text-subtle px-2 pb-0.5 pt-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-                  {group.label}
+                  {t(group.label)}
                 </p>
               )}
               {group.options.map((option) => {
@@ -244,7 +245,7 @@ export function Select({
                       mono && 'font-mono',
                     )}
                   >
-                    <span className="min-w-0 flex-1 truncate">{option.label}</span>
+                    <span className="min-w-0 flex-1 truncate">{t(option.label)}</span>
                     {option.value === value && <Check className="size-3 shrink-0" />}
                   </button>
                 );

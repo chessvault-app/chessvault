@@ -18,6 +18,7 @@ import { MoveToPopover } from '@/ui/MoveToPopover';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
+import { t } from '@/lib/i18n';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
 // pays for it; it loads when a note is actually opened.
@@ -75,13 +76,13 @@ function NoteList() {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">Notes</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{t('Notes')}</h1>
         <div className="flex items-center gap-2">
           <SearchInput
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search notes…"
+            placeholder={t('Search notes…')}
             className="w-48"
           />
           <CreateMenu folders={folders} onDone={refresh} />
@@ -203,7 +204,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
             <Select
               value={folder}
               onChange={setFolder}
-              ariaLabel="Collection"
+              ariaLabel={t('Collection')}
               groups={[
                 {
                   options: [
@@ -228,10 +229,10 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button variant="primary" size="sm" disabled={!name.trim()} onClick={() => void submit()}>
-              Create
+              {t('Create')}
             </Button>
           </div>
         </div>
@@ -274,7 +275,7 @@ function GroupedNotes({
             </h2>
           )}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-subtle px-1 text-xs">Empty collection.</p>
+            <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {groups.get(folder)!.map((note) => (
@@ -377,7 +378,7 @@ function NoteCard({
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Rename this note"
+              title={t('Rename this note')}
               onClick={(e) => {
                 e.stopPropagation();
                 setDraft(name);
@@ -390,7 +391,7 @@ function NoteCard({
               ref={moveTrigger}
               variant="ghost"
               size="icon-sm"
-              title="Move to a collection"
+              title={t('Move to a collection')}
               active={moving}
               onClick={(e) => {
                 e.stopPropagation();

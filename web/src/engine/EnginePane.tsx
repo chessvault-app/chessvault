@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import { EvalBar } from './EvalBar';
 import { formatPv } from './pv.ts';
 import { formatScore, toWhitePov, type PvLine } from './uci.ts';
+import { t } from '@/lib/i18n';
 
 /**
  * The engine, panel-less: a slim strip (label, depth, settings, switch)
@@ -77,14 +78,14 @@ export function EngineBlock({ className }: { className?: string }) {
               size="icon-sm"
               active={showSettings}
               onClick={() => setShowSettings((v) => !v)}
-              title="Engine settings"
+              title={t('Engine settings')}
             >
               <Settings2 className="size-3.5" />
             </Button>
             <Switch
               checked={enabled}
               onToggle={toggle}
-              label="Engine on/off"
+              label={t('Engine on/off')}
               title={enabled ? 'Turn the engine off' : 'Turn the engine on'}
             />
           </>
@@ -114,7 +115,7 @@ export function EngineBlock({ className }: { className?: string }) {
 
           <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2 max-lg:max-h-none">
             {visibleLines.length === 0 ? (
-              <li className="text-subtle px-1.5 py-1 text-xs">Thinking…</li>
+              <li className="text-subtle px-1.5 py-1 text-xs">{t('Thinking…')}</li>
             ) : (
               visibleLines.map((line) => (
                 <PvRow
@@ -201,7 +202,7 @@ function EngineSettings() {
   return (
     <div className="border-line bg-surface-inset grid gap-3 border-b px-3 py-3">
       <Slider
-        label="Threads"
+        label={t('Threads')}
         value={threads}
         min={1}
         max={maxThreads}
@@ -210,21 +211,21 @@ function EngineSettings() {
         onChange={(v) => setOption({ threads: v })}
       />
       <Slider
-        label="Lines"
+        label={t('Lines')}
         value={multiPv}
         min={1}
         max={6}
         onChange={(v) => setOption({ multiPv: v })}
       />
       <Slider
-        label="Depth"
+        label={t('Depth')}
         value={depth}
         min={10}
         max={40}
         onChange={(v) => setOption({ depth: v })}
       />
       <Slider
-        label="Hash"
+        label={t('Hash')}
         value={hashMb}
         min={16}
         max={1024}

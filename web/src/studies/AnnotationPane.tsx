@@ -8,6 +8,7 @@ import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { ChipRow } from '@/ui/ChipRow';
+import { t } from '@/lib/i18n';
 
 /** Move-quality NAGs — one of these at most, like Lichess. */
 const QUALITY_NAGS = [1, 2, 3, 4, 5, 6];
@@ -193,7 +194,7 @@ export function AnnotationPane({
                 flush();
               }}
             >
-              Done
+              {t('Done')}
             </Button>
           </div>
         </div>

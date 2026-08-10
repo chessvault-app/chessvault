@@ -39,6 +39,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { AnnotationPane } from './AnnotationPane';
+import { t } from '@/lib/i18n';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
@@ -320,14 +321,14 @@ function SaveIndicator({ state, error }: { state: string; error: string | null }
   if (state === 'saved') {
     return (
       <span className="text-subtle flex items-center gap-1 text-xs">
-        <Check className="size-3.5" /> Saved
+        <Check className="size-3.5" /> {t('Saved')}
       </span>
     );
   }
   if (state === 'saving') {
     return (
       <span className="text-subtle flex items-center gap-1 text-xs">
-        <Loader2 className="size-3.5 animate-spin" /> Saving…
+        <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}
       </span>
     );
   }
@@ -339,7 +340,7 @@ function SaveIndicator({ state, error }: { state: string; error: string | null }
         title={error ?? 'Save failed — click to retry'}
         className="text-bad flex items-center gap-1 text-xs"
       >
-        <CircleAlert className="size-3.5" /> Retry save
+        <CircleAlert className="size-3.5" /> {t('Retry save')}
       </button>
     );
   }
@@ -347,10 +348,10 @@ function SaveIndicator({ state, error }: { state: string; error: string | null }
     <button
       type="button"
       onClick={() => void save()}
-      title="Unsaved changes — click to save now"
+      title={t('Unsaved changes — click to save now')}
       className="text-warn flex items-center gap-1 text-xs"
     >
-      <span className="bg-warn size-1.5 rounded-full" /> Unsaved
+      <span className="bg-warn size-1.5 rounded-full" /> {t('Unsaved')}
     </button>
   );
 }
@@ -420,7 +421,7 @@ function ChaptersPanel() {
       <PanelHeader
         title={`Chapters · ${chapters.length}`}
         actions={
-          <Button variant="ghost" size="icon-sm" title="Add a chapter" onClick={() => addChapter()}>
+          <Button variant="ghost" size="icon-sm" title={t('Add a chapter')} onClick={() => addChapter()}>
             <Plus className="size-3.5" />
           </Button>
         }
@@ -507,7 +508,7 @@ function ChapterRow({
             {ownName}
           </span>
           <PromptSheet
-            label="Rename this chapter"
+            label={t('Rename this chapter')}
             initial={ownName}
             onSubmit={(value) => {
               const segment = value.replace(/\//g, '-').trim();
@@ -535,7 +536,7 @@ function ChapterRow({
           type="button"
           onClick={() => selectChapter(index)}
           onDoubleClick={startRename}
-          title="Double-click to rename"
+          title={t('Double-click to rename')}
           className={cn(
             'flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-xs',
             'transition-colors duration-100',
@@ -579,14 +580,14 @@ function ChapterRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Add a sub-chapter"
+              title={t('Add a sub-chapter')}
               onClick={onAddSub}
             >
               <ListTree className="size-3" />
             </Button>
           )}
           {/* Touch has no double-click, so rename gets a real button. */}
-          <Button variant="ghost" size="icon-sm" title="Rename this chapter" onClick={startRename}>
+          <Button variant="ghost" size="icon-sm" title={t('Rename this chapter')} onClick={startRename}>
             <Pencil className="size-3" />
           </Button>
           {chapters.length > 1 && (

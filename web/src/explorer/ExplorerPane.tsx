@@ -23,6 +23,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Switch } from '@/ui/Switch';
+import { t } from '@/lib/i18n';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -97,14 +98,14 @@ export function ExplorerPane({
       defaultHeight={enabled ? 300 : undefined}
     >
       <PanelHeader
-        title="Explorer"
+        title={t('Explorer')}
         actions={
           <>
             {enabled && (books.length > 0 || isRemoteDb(book)) && (
               <Select
                 value={book ?? ''}
                 onChange={selectBook}
-                ariaLabel="Opening book"
+                ariaLabel={t('Opening book')}
                 size="sm"
                 align="end"
                 className="max-w-[8rem]"
@@ -123,7 +124,7 @@ export function ExplorerPane({
                 size="icon-sm"
                 active={showManager}
                 onClick={() => setShowManager((v) => !v)}
-                title="Manage books"
+                title={t('Manage books')}
               >
                 <BookOpen className="size-3.5" />
               </Button>
@@ -131,7 +132,7 @@ export function ExplorerPane({
             <Switch
               checked={enabled}
               onToggle={toggle}
-              label="Explorer on/off"
+              label={t('Explorer on/off')}
               title={enabled ? 'Hide the explorer' : 'Show the explorer'}
             />
           </>
@@ -289,7 +290,7 @@ function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: strin
   return (
     <div className="border-line border-t px-1.5 pb-2">
       <p className="text-subtle px-1.5 pb-1 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-        Top games
+        {t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
         {games.map((g, i) => {
@@ -299,7 +300,7 @@ function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: strin
               <button
                 type="button"
                 onClick={() => void open(g)}
-                title="Open this game"
+                title={t('Open this game')}
                 className={cn(
                   'hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1',
                   'text-left text-xs transition-colors duration-100',
@@ -361,7 +362,7 @@ function EmptyBooks({ onOpenManager }: { onOpenManager: () => void }) {
       </p>
       <Button variant="ghost" size="sm" onClick={onOpenManager}>
         <Hammer className="mr-1 size-3.5" />
-        Manage books
+        {t('Manage books')}
       </Button>
     </div>
   );
@@ -442,7 +443,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
 
       <div className="flex flex-col gap-1.5">
         <p className="text-subtle font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
-          Build a book
+          {t('Build a book')}
         </p>
         {sources.length === 0 ? (
           <p className="text-muted leading-relaxed">
@@ -486,7 +487,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
                 disabled={running || picked.size === 0 || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)}
                 onClick={() => void build(name, [...picked])}
               >
-                Build
+                {t('Build')}
               </Button>
             </div>
           </>
@@ -513,7 +514,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
 
       <div className="flex justify-end">
         <Button variant="ghost" size="sm" onClick={onClose}>
-          Close
+          {t('Close')}
         </Button>
       </div>
     </div>

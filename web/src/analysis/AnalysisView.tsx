@@ -19,6 +19,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
+import { t } from '@/lib/i18n';
 
 type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
@@ -230,7 +231,7 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
         variant="ghost"
         size="icon-sm"
         className="md:hidden"
-        title="Back"
+        title={t('Back')}
         onClick={() => window.history.back()}
       >
         <ChevronLeft className="size-3.5" />
@@ -259,12 +260,12 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
         size="icon-sm"
         disabled={atRoot}
         onClick={() => deleteNode(cursorId)}
-        title="Delete this move and everything after it"
+        title={t('Delete this move and everything after it')}
       >
         <Trash2 className="size-3.5" />
       </Button>
       {allowReset && (
-        <Button variant="ghost" size="icon-sm" onClick={() => reset()} title="Clear the board">
+        <Button variant="ghost" size="icon-sm" onClick={() => reset()} title={t('Clear the board')}>
           <RotateCcw className="size-3.5" />
         </Button>
       )}

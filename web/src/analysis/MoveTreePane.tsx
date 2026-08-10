@@ -5,6 +5,7 @@ import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
+import { t } from '@/lib/i18n';
 
 /** Glyphs for the NAGs a study realistically uses. */
 export const NAG_GLYPH: Record<number, string> = {
@@ -93,7 +94,7 @@ export function MoveTreePane({ className }: { className?: string }) {
       >
         {isEmpty ? (
           <p className="text-subtle px-2 py-6 text-center text-xs">
-            Play a move on the board, or load a FEN or PGN.
+            {t('Play a move on the board, or load a FEN or PGN.')}
           </p>
         ) : (
           <MainlineTable tree={tree} cursorId={cursorId} onSelect={setCursor} />
@@ -270,7 +271,7 @@ export function PromoteStrip({
       className="bg-primary/10 text-primary hover:bg-primary/20 border-line flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-xs font-medium transition-colors duration-100"
     >
       <ArrowUpToLine className="size-3.5" />
-      Make mainline
+      {t('Make mainline')}
     </button>
   );
 }
@@ -428,7 +429,7 @@ function MoveChip({ label, number, nags, hasComment, active, onClick }: MoveChip
               'ml-1 inline-block size-1 rounded-full align-middle',
               active ? 'bg-primary-fg/70' : 'bg-info',
             )}
-            title="Has a comment"
+            title={t('Has a comment')}
           />
         )}
       </button>

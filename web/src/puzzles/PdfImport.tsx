@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { useImportJob } from './importJob';
 import type { Template } from './ocr/classify';
+import { t } from '@/lib/i18n';
 
 /**
  * Whole-book import (lanph3re's original ask): pick the book's PDF, every
@@ -94,7 +95,7 @@ export function PdfImport({
       <div className="bg-surface border-line flex max-h-full w-full max-w-[44rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4">
         <div className="flex items-center gap-2">
           <FileUp className="text-subtle size-4" />
-          <h2 className="text-fg flex-1 text-sm font-semibold">Import a book PDF</h2>
+          <h2 className="text-fg flex-1 text-sm font-semibold">{t('Import a book PDF')}</h2>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -165,8 +166,8 @@ export function PdfImport({
               }}
             />
             <span className="text-muted text-sm">
-              Choose the book&rsquo;s PDF
-              <span className="text-subtle block text-xs">
+              {t('Choose the book’s PDF')}
+            <span className="text-subtle block text-xs">
                 every page is scanned for diagrams; nothing leaves this machine — and you can
                 keep using the app while it runs
               </span>
@@ -247,7 +248,7 @@ export function PdfImport({
                   <img src={f.dataUrl} alt={`page ${f.page}`} className="w-full rounded" />
                   <span className="text-subtle block pt-0.5 text-[0.625rem]">
                     {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
-                    {f.solved && <span className="text-good ml-1">solved</span>}
+                    {f.solved && <span className="text-good ml-1">{t('solved')}</span>}
                     {!f.solved && f.fen !== null && (
                       <span className={cn('ml-1', f.uncertain > 0 ? 'text-warn' : 'text-good')}>
                         {f.uncertain > 0 ? `${f.uncertain} unsure` : 'read'}

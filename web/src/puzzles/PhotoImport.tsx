@@ -12,6 +12,7 @@ import {
 import { detectBoardQuad } from './ocr/detect';
 import { classifyBoard, labelsToFen, type CellReading, type Template } from './ocr/classify';
 import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
+import { t } from '@/lib/i18n';
 
 /** Below this ratio-test margin a square is flagged for eyeballing. */
 const CONFIDENT = 0.35;
@@ -261,13 +262,13 @@ export function PhotoImport({
       >
         {dragOver && (
           <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-xl">
-            <p className="text-primary text-sm font-semibold">Drop the image</p>
+            <p className="text-primary text-sm font-semibold">{t('Drop the image')}</p>
           </div>
         )}
         <div className="flex items-center gap-2">
           <ImageUp className="text-subtle size-4" />
-          <h2 className="text-fg flex-1 text-sm font-semibold">Position from an image</h2>
-          <Button variant="ghost" size="icon-sm" title="Close" onClick={onClose}>
+          <h2 className="text-fg flex-1 text-sm font-semibold">{t('Position from an image')}</h2>
+          <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={onClose}>
             <X className="size-3.5" />
           </Button>
         </div>
@@ -286,22 +287,22 @@ export function PhotoImport({
               />
               <span className="text-muted text-sm">
                 Choose an image of the diagram
-                <span className="text-subtle block text-xs">a screenshot or scan works best</span>
+                <span className="text-subtle block text-xs">{t('a screenshot or scan works best')}</span>
               </span>
             </label>
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
                 <ClipboardPaste className="size-3.5" />
-                Paste image
+                {t('Paste image')}
               </Button>
-              <span className="text-subtle text-xs">or press Ctrl+V — dropping a file here works too</span>
+              <span className="text-subtle text-xs">{t('or press Ctrl+V — dropping a file here works too')}</span>
             </div>
             {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
           </>
         ) : (
           <>
             <p className="text-subtle text-xs">
-              Drag the four handles onto the corners of the diagram.
+              {t('Drag the four handles onto the corners of the diagram.')}
             </p>
             <canvas
               ref={canvasRef}
@@ -313,7 +314,7 @@ export function PhotoImport({
             <div className="flex flex-wrap items-center gap-3">
               <Button variant="primary" size="sm" onClick={() => void read()}>
                 <ScanSearch className="size-3.5" />
-                Read position
+                {t('Read position')}
               </Button>
               <label className="text-muted flex items-center gap-1.5 text-xs">
                 <input
@@ -324,14 +325,14 @@ export function PhotoImport({
                     setReading(null);
                   }}
                 />
-                Black at the bottom
+                {t('Black at the bottom')}
               </label>
               <button
                 type="button"
                 onClick={() => void pasteFromClipboard()}
                 className="text-subtle ml-auto cursor-pointer text-xs underline-offset-2 hover:underline"
               >
-                paste image
+                {t('paste image')}
               </button>
               <label className="text-subtle cursor-pointer text-xs underline-offset-2 hover:underline">
                 <input
@@ -343,7 +344,7 @@ export function PhotoImport({
                     if (file) pick(file);
                   }}
                 />
-                different image
+                {t('different image')}
               </label>
             </div>
             {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}

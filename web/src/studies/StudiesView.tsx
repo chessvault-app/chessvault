@@ -22,6 +22,7 @@ import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
+import { t } from '@/lib/i18n';
 
 /** Router shell for the Studies section: list, or one open study. */
 export function StudiesView({ params }: { params: string[] }) {
@@ -51,13 +52,13 @@ function StudyList() {
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">Studies</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{t('Studies')}</h1>
         <div className="flex items-center gap-2">
           <SearchInput
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search studies…"
+            placeholder={t('Search studies…')}
             className="w-48"
           />
           <CreateMenu />
@@ -156,7 +157,7 @@ function CreateMenu() {
     <div ref={menuHost} className="relative">
       <Button variant="primary" size="sm" onClick={() => setMenuOpen((v) => !v)}>
         <Plus className="mr-1 size-3.5" />
-        Create
+        {t('Create')}
         <ChevronDown className="ml-1 size-3" />
       </Button>
 
@@ -221,7 +222,7 @@ function CreateMenu() {
             <Select
               value={folder}
               onChange={setFolder}
-              ariaLabel="Collection"
+              ariaLabel={t('Collection')}
               groups={[
                 {
                   options: [
@@ -248,7 +249,7 @@ function CreateMenu() {
               <textarea
                 value={pgnText}
                 onChange={(e) => setPgnText(e.target.value)}
-                placeholder="Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows."
+                placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
                 spellCheck={false}
                 className={cn(
                   'bg-surface-inset border-line text-fg placeholder:text-subtle h-28 w-full resize-none',
@@ -258,7 +259,7 @@ function CreateMenu() {
               <div className="flex items-center justify-between gap-2">
                 <Button variant="secondary" size="sm" onClick={() => filePick.current?.click()}>
                   <FileUp className="mr-1 size-3.5" />
-                  Choose file
+                  {t('Choose file')}
                 </Button>
                 {pgnText.trim() && (
                   <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
@@ -280,7 +281,7 @@ function CreateMenu() {
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="primary"
@@ -288,7 +289,7 @@ function CreateMenu() {
               disabled={!name.trim() || (mode === 'import' && chapterCount === 0)}
               onClick={() => void submit()}
             >
-              {mode === 'import' ? 'Import' : 'Create'}
+              {mode === 'import' ? t('Import') : t('Create')}
             </Button>
           </div>
         </div>
@@ -365,7 +366,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
   return (
     <>
       <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-        Import from Lichess
+        {t('Import from Lichess')}
       </p>
       <div className="flex gap-2">
         <Input
@@ -377,15 +378,15 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
             if (e.key === 'Enter' && user.trim()) void load();
             if (e.key === 'Escape') onClose();
           }}
-          placeholder="Lichess username"
+          placeholder={t('Lichess username')}
           className="flex-1"
         />
         <Button variant="secondary" size="sm" disabled={!user.trim() || busy} onClick={() => void load()}>
-          List
+          {t('List')}
         </Button>
       </div>
       {note && <p className="text-subtle text-xs">{note}</p>}
-      {list && list.length === 0 && <p className="text-subtle text-xs">No studies found.</p>}
+      {list && list.length === 0 && <p className="text-subtle text-xs">{t('No studies found.')}</p>}
       {list && list.length > 0 && (
         <>
           <div className="border-line max-h-52 overflow-y-auto rounded-md border">
@@ -412,7 +413,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
             <Select
               value={folder}
               onChange={setFolder}
-              ariaLabel="Collection"
+              ariaLabel={t('Collection')}
               groups={[
                 {
                   options: [
@@ -428,7 +429,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
       {failure && <p className="text-bad text-xs">{failure}</p>}
       <div className="flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onClose}>
-          Cancel
+          {t('Cancel')}
         </Button>
         {list && list.length > 0 && (
           <Button
@@ -464,7 +465,7 @@ function GroupedStudies({ studies, allFolders }: { studies: StudyMeta[]; allFold
         <section key={folder || '(root)'} className="flex flex-col gap-2">
           {folder && <FolderHeader folder={folder} empty={groups.get(folder)!.length === 0} />}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-subtle px-1 text-xs">Empty collection.</p>
+            <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
           ) : (
             <ul className="flex flex-col gap-2">
               {groups.get(folder)!.map((study) => (
@@ -513,7 +514,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
             setDraft(folder);
             setRenaming(true);
           }}
-          title="Double-click to rename"
+          title={t('Double-click to rename')}
           className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]"
         >
           {folder}
@@ -524,7 +525,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            title="Rename this collection"
+            title={t('Rename this collection')}
             onClick={() => {
               setDraft(folder);
               setRenaming(true);
@@ -613,7 +614,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             <Button
               variant="ghost"
               size="icon-sm"
-              title="Rename this study"
+              title={t('Rename this study')}
               onClick={(e) => {
                 e.stopPropagation();
                 setDraft(name);
@@ -626,7 +627,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
               ref={moveTrigger}
               variant="ghost"
               size="icon-sm"
-              title="Move to a collection"
+              title={t('Move to a collection')}
               active={moving}
               onClick={(e) => {
                 e.stopPropagation();

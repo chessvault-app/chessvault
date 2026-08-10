@@ -21,6 +21,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { SideDot } from '@/ui/SideDot';
+import { t } from '@/lib/i18n';
 
 /**
  * The complete board column driven by the analysis store: eval bar, board with
@@ -376,20 +377,20 @@ export function BoardControls({
 
   return (
     <div className={cn('flex w-full shrink-0 items-center justify-center gap-1 py-1', className)}>
-      <Button variant="ghost" size="icon" onClick={goToStart} title="Start (↑)">
+      <Button variant="ghost" size="icon" onClick={goToStart} title={t('Start (↑)')}>
         <ChevronFirst className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goBack} title="Back (←)">
+      <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')}>
         <ChevronLeft className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goForward} title="Forward (→)">
+      <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')}>
         <ChevronRight className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goToEnd} title="End (↓)">
+      <Button variant="ghost" size="icon" onClick={goToEnd} title={t('End (↓)')}>
         <ChevronLast className="size-[1.1rem]" />
       </Button>
       <div className="bg-line mx-1 h-5 w-px" />
-      <Button variant="ghost" size="icon" onClick={flip} title="Flip board (f)">
+      <Button variant="ghost" size="icon" onClick={flip} title={t('Flip board (f)')}>
         <FlipVertical2 className="size-[1.1rem]" />
       </Button>
     </div>

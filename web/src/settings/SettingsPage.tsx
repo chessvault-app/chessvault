@@ -9,6 +9,7 @@ import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { cn } from '@/lib/cn';
 import { BOARD_THEMES, CASTLE_STYLES, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet } from '@/store/prefs';
+import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 
 interface Settings {
   profile: { name?: string; chesscom?: string; lichess?: string };
@@ -61,12 +62,12 @@ export function SettingsPage() {
               variant="ghost"
               size="icon-sm"
               className="md:hidden"
-              title="Back"
+              title={t('Back')}
               onClick={() => window.history.back()}
             >
               <ChevronLeft className="size-3.5" />
             </Button>
-            <h1 className="text-lg font-semibold tracking-tight">Settings</h1>
+            <h1 className="text-lg font-semibold tracking-tight">{t('Settings')}</h1>
           </div>
         </header>
 
@@ -159,21 +160,21 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
   };
 
   return (
-    <Card icon={User} title="Profile">
-      <Field label="Display name">
-        <Input inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder="How the app greets you" />
+    <Card icon={User} title={t('Profile')}>
+      <Field label={t('Display name')}>
+        <Input inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('How the app greets you')} />
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="chess.com username">
-          <Input inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder="your chess.com handle" autoCapitalize="none" />
+        <Field label={t('chess.com username')}>
+          <Input inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder={t('your chess.com handle')} autoCapitalize="none" />
         </Field>
-        <Field label="Lichess username">
-          <Input inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder="your Lichess handle" autoCapitalize="none" />
+        <Field label={t('Lichess username')}>
+          <Input inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess handle')} autoCapitalize="none" />
         </Field>
       </div>
-      <p className="text-subtle text-xs">Usernames pre-fill the archive browser on the Games page.</p>
+      <p className="text-subtle text-xs">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
       <div className="flex items-center gap-3">
-        <Button variant="primary" onClick={() => void save()}>Save profile</Button>
+        <Button variant="primary" onClick={() => void save()}>{t('Save profile')}</Button>
         <Feedback note={note} />
       </div>
     </Card>
@@ -219,17 +220,17 @@ function VersionCard() {
   };
 
   return (
-    <Card icon={Info} title="Version">
+    <Card icon={Info} title={t('Version')}>
       {/* Named, because the header used to show a bare "Chess Vault 0.2.1"
           that was the SERVER's version and read as the app's — which is
           how a desktop app sat on 0.1.0 while its own settings page
           appeared to say otherwise. */}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
-        <dt className="text-subtle">Server</dt>
+        <dt className="text-subtle">{t('Server')}</dt>
         <dd className="text-fg font-mono">{server ?? '—'}</dd>
         {app && (
           <>
-            <dt className="text-subtle">Desktop app</dt>
+            <dt className="text-subtle">{t('Desktop app')}</dt>
             <dd className="text-fg font-mono">{app}</dd>
           </>
         )}
@@ -284,16 +285,16 @@ function DesktopCard() {
   // no card rather than a button that does nothing.
   if (!shell?.switchVault) return null;
   return (
-    <Card icon={MonitorSmartphone} title="Desktop app">
+    <Card icon={MonitorSmartphone} title={t('Desktop app')}>
       <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
         <div className="min-w-0">
-          <div className="text-sm font-medium">Vault</div>
+          <div className="text-sm font-medium">{t('Vault')}</div>
           <div className="text-subtle text-xs">
-            Point this window at a server, or host a folder on this machine.
+            {t('Point this window at a server, or host a folder on this machine.')}
           </div>
         </div>
         <Button variant="secondary" size="sm" onClick={() => void shell.switchVault!()}>
-          Switch…
+          {t('Switch…')}
         </Button>
       </div>
     </Card>
@@ -309,12 +310,23 @@ function AppearanceCard() {
     usePrefs();
 
   return (
-    <Card icon={Palette} title="Appearance">
-      <Field label="App theme">
+    <Card icon={Palette} title={t('Appearance')}>
+      {/* Language leads: it changes every other label on this page, so
+          reading it first is what makes the rest of the card make sense. */}
+      <Field label={t('App language')}>
+        <Select
+          value={getLang()}
+          onChange={(v) => setLang(v as Lang)}
+          ariaLabel={t('App language')}
+          groups={[{ options: LANGS.map((l) => ({ value: l.id, label: l.label })) }]}
+        />
+      </Field>
+
+      <Field label={t('App theme')}>
         <Select
           value={theme}
           onChange={(v) => setTheme(v as ThemePreference)}
-          ariaLabel="App theme"
+          ariaLabel={t('App theme')}
           groups={[{ options: [
             { value: 'system', label: 'Follow system' },
             { value: 'light', label: 'Light' },
@@ -323,7 +335,7 @@ function AppearanceCard() {
         />
       </Field>
 
-      <FieldGroup label="Colours">
+      <FieldGroup label={t('Colours')}>
         <div className="flex flex-col gap-2">
           {/* Swatches rather than a dropdown: a colour scheme is the one
               setting whose name tells you least about it. */}
@@ -332,8 +344,8 @@ function AppearanceCard() {
               <button
                 key={preset.id}
                 type="button"
-                title={preset.label}
-                aria-label={preset.label}
+                title={t(preset.label)}
+                aria-label={t(preset.label)}
                 aria-pressed={schemeId === preset.id}
                 onClick={() => setSchemeId(preset.id)}
                 className={cn(
@@ -350,7 +362,7 @@ function AppearanceCard() {
                     outline: `2px solid oklch(90% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
                   }}
                 />
-                {preset.label}
+                {t(preset.label)}
               </button>
             ))}
           </div>
@@ -358,43 +370,43 @@ function AppearanceCard() {
         </div>
       </FieldGroup>
 
-      <Field label="Board">
+      <Field label={t('Board')}>
         <div className="flex items-center gap-3">
           <BoardPreview theme={boardTheme} />
           <Select
             value={boardTheme}
             onChange={(v) => setBoardTheme(v as BoardTheme)}
-            ariaLabel="Board theme"
+            ariaLabel={t('Board theme')}
             className="flex-1"
             groups={[{ options: BOARD_THEMES.map(({ id, label }) => ({ value: id, label })) }]}
           />
         </div>
       </Field>
 
-      <Field label="Castling">
+      <Field label={t('Castling')}>
         <Select
           value={castleStyle}
           onChange={(v) => setCastleStyle(v as CastleStyle)}
-          ariaLabel="How to castle"
+          ariaLabel={t('How to castle')}
           groups={[{ options: CASTLE_STYLES.map(({ id, label }) => ({ value: id, label })) }]}
         />
       </Field>
 
-      <Field label="Pieces">
+      <Field label={t('Pieces')}>
         <Select
           value={pieces}
           onChange={(v) => setPieces(v as PieceSet)}
-          ariaLabel="Piece set"
+          ariaLabel={t('Piece set')}
           groups={[{ options: PIECE_SETS.map(({ id, label }) => ({ value: id, label })) }]}
         />
       </Field>
 
       <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
         <div className="min-w-0">
-          <div className="text-sm font-medium">Move sounds</div>
-          <div className="text-subtle text-xs">Play a click on moves, captures and checks.</div>
+          <div className="text-sm font-medium">{t('Move sounds')}</div>
+          <div className="text-subtle text-xs">{t('Play a click on moves, captures and checks.')}</div>
         </div>
-        <Switch checked={sound} onToggle={() => setSound(!sound)} label="Move sounds" />
+        <Switch checked={sound} onToggle={() => setSound(!sound)} label={t('Move sounds')} />
       </div>
     </Card>
   );
@@ -424,7 +436,7 @@ function BoardPreview({ theme }: { theme: BoardTheme }) {
 
 function SecurityCard({ settings, onChanged }: { settings: Settings; onChanged: () => Promise<void> }) {
   return (
-    <Card icon={ShieldCheck} title="Security">
+    <Card icon={ShieldCheck} title={t('Security')}>
       <PasswordBlock gate={settings.gate} />
       <hr className="border-line" />
       <TotpBlock settings={settings} onChanged={onChanged} />
@@ -455,23 +467,22 @@ function PasswordBlock({ gate }: { gate: boolean }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium">{gate ? 'Change app password' : 'Set an app password'}</span>
+      <span className="text-sm font-medium">{gate ? t('Change app password') : t('Set an app password')}</span>
       {!gate && (
         <p className="text-subtle text-xs">
-          No password is set — anyone who can reach this server sees everything. Setting one turns
-          the lock screen on.
+          {t('No password is set — anyone who can reach this server sees everything. Setting one turns the lock screen on.')}
         </p>
       )}
       {gate && (
-        <Field label="Current password">
+        <Field label={t('Current password')}>
           <Input inputSize="lg" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
         </Field>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="New password">
+        <Field label={t('New password')}>
           <Input inputSize="lg" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
         </Field>
-        <Field label="Repeat new password">
+        <Field label={t('Repeat new password')}>
           <Input inputSize="lg" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         </Field>
       </div>
@@ -534,9 +545,9 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-medium">
           Two-factor authentication
-          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-[0.625rem] font-semibold">On</span>
+          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-[0.625rem] font-semibold">{t('On')}</span>
         </div>
-        <p className="text-subtle text-xs">Turning it off needs a current code from your authenticator app.</p>
+        <p className="text-subtle text-xs">{t('Turning it off needs a current code from your authenticator app.')}</p>
         <div className="flex items-center gap-2">
           <Input
             inputSize="lg"
@@ -548,7 +559,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
             onChange={(e) => setCode(e.target.value)}
           />
           <Button variant="danger" disabled={code.trim().length < 6} onClick={() => void disable()}>
-            Turn off 2FA
+            {t('Turn off 2FA')}
           </Button>
         </div>
         <Feedback note={note} />
@@ -558,23 +569,22 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
 
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-sm font-medium">Two-factor authentication</span>
+      <span className="text-sm font-medium">{t('Two-factor authentication')}</span>
       {!enroll ? (
         <>
           <p className="text-subtle text-xs">
-            Adds a 6-digit authenticator code (Google Authenticator, 1Password, Aegis…) to the lock
-            screen. {settings.gate ? '' : 'Set an app password first.'}
+            {t('Adds a 6-digit authenticator code (Google Authenticator, 1Password, Aegis…) to the lock screen.')}{' '}
+            {settings.gate ? '' : t('Set an app password first.')}
           </p>
           <div className="flex items-center gap-3">
-            <Button disabled={!settings.gate} onClick={() => void start()}>Set up 2FA</Button>
+            <Button disabled={!settings.gate} onClick={() => void start()}>{t('Set up 2FA')}</Button>
             <Feedback note={note} />
           </div>
         </>
       ) : (
         <>
           <p className="text-subtle text-xs">
-            Scan with your authenticator app, then enter the code it shows. Nothing is saved until
-            the code checks out.
+            {t('Scan with your authenticator app, then enter the code it shows. Nothing is saved until the code checks out.')}
           </p>
           <img src={enroll.qr} alt="TOTP enrolment QR code" className="size-40 rounded-lg bg-white p-1.5" />
           <p className="text-subtle break-all text-xs">
@@ -591,9 +601,9 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
               onChange={(e) => setCode(e.target.value)}
             />
             <Button variant="primary" disabled={code.trim().length < 6} onClick={() => void enable()}>
-              Verify &amp; enable
+              {t('Verify & enable')}
             </Button>
-            <Button variant="ghost" onClick={() => setEnroll(null)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setEnroll(null)}>{t('Cancel')}</Button>
           </div>
           <Feedback note={note} />
         </>
@@ -628,10 +638,10 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
   };
 
   return (
-    <Card icon={KeyRound} title="Lichess token">
+    <Card icon={KeyRound} title={t('Lichess token')}>
       <p className="text-subtle text-xs">
         Powers the online opening-explorer augmentation and Lichess puzzle history. Create one with{' '}
-        <em>no scopes</em> at{' '}
+        <em>{t('no scopes')}</em> at{' '}
         <a
           className="text-primary underline underline-offset-2"
           href="https://lichess.org/account/oauth/token/create"
@@ -644,7 +654,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
       </p>
       {settings.lichess.configured && (
         <p className="text-muted text-xs">
-          A token ending in <span className="font-mono">…{settings.lichess.last4}</span> is configured.
+          A token ending in <span className="font-mono">…{settings.lichess.last4}</span> {t('is configured.')}
         </p>
       )}
       <div className="flex items-center gap-2">
@@ -669,9 +679,9 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
             {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        <Button variant="primary" disabled={token.trim() === ''} onClick={() => void save()}>Save</Button>
+        <Button variant="primary" disabled={token.trim() === ''} onClick={() => void save()}>{t('Save')}</Button>
         {settings.lichess.configured && (
-          <Button variant="danger" onClick={() => void clear()}>Remove</Button>
+          <Button variant="danger" onClick={() => void clear()}>{t('Remove')}</Button>
         )}
       </div>
       <Feedback note={note} />
@@ -688,7 +698,7 @@ function DangerCard({ gate }: { gate: boolean }) {
   const [confirming, setConfirming] = useState(false);
 
   return (
-    <Card icon={Trash2} title="Danger zone">
+    <Card icon={Trash2} title={t('Danger zone')}>
       <p className="text-subtle text-xs leading-relaxed">
         Wipe every game, study, note, puzzle and imported book from the vault — including its
         change history. The app password, 2FA and tokens survive. There is no undo; if the vault
@@ -703,7 +713,7 @@ function DangerCard({ gate }: { gate: boolean }) {
           onChange={(e) => setPhrase(e.target.value)}
         />
         <Button variant="danger" disabled={phrase !== WIPE_PHRASE} onClick={() => setConfirming(true)}>
-          Wipe all data
+          {t('Wipe all data')}
         </Button>
       </div>
       {confirming && <WipeConfirmDialog gate={gate} onClose={() => setConfirming(false)} />}
@@ -746,15 +756,14 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
           <div className="bg-bad/12 text-bad grid size-9 place-items-center rounded-lg">
             <Trash2 className="size-4" />
           </div>
-          <h2 className="text-sm font-semibold">Wipe the entire vault?</h2>
+          <h2 className="text-sm font-semibold">{t('Wipe the entire vault?')}</h2>
         </div>
         <p className="text-muted mb-4 text-xs leading-relaxed">
-          This permanently deletes every game, study, note, puzzle and book, and their history.
-          There is no undo.
+          {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
         </p>
         {gate && (
           <label className="mb-3 flex flex-col gap-1">
-            <span className="text-muted text-xs font-medium">Confirm your app password</span>
+            <span className="text-muted text-xs font-medium">{t('Confirm your app password')}</span>
             <Input
               autoFocus
               inputSize="lg"
@@ -768,7 +777,7 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
         )}
         <Feedback note={note} />
         <div className="mt-4 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
           <Button variant="danger" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
             {busy ? 'Wiping…' : 'Wipe everything'}
           </Button>

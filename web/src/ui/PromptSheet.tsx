@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
 import { Input } from './Input';
+import { t } from '@/lib/i18n';
 
 /**
  * A one-field prompt, centred in the space you can actually see.
@@ -76,7 +77,7 @@ export function PromptSheet({
               dialog asking for one value should say so rather than expect
               you to know. */}
           <Button variant="ghost" size="sm" onClick={onClose}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button variant="primary" size="sm" onClick={submit}>
             {submitLabel}

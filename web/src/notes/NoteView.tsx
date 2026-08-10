@@ -15,6 +15,7 @@ import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
+import { t } from '@/lib/i18n';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
@@ -61,7 +62,7 @@ export function NoteView({ id }: { id: string }) {
           <p className="text-muted text-sm">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
             <ChevronLeft className="mr-1 size-3.5" />
-            All notes
+            {t('All notes')}
           </Button>
         </div>
       </div>
@@ -163,7 +164,7 @@ function NoteEditor({
           read as narrower than the text it formats. */}
       <div className="border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 lg:-mx-6 lg:px-6 lg:pt-6">
       <header className="flex shrink-0 items-center gap-2">
-        <Button variant="ghost" size="icon-sm" title="All notes" onClick={() => navigate('notes')}>
+        <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
         </Button>
         <NoteTitle id={id} />
@@ -253,27 +254,27 @@ function SaveBadge({ state, onRetry }: { state: SaveState; onRetry: () => void }
   if (state === 'saved') {
     return (
       <span className="text-subtle flex shrink-0 items-center gap-1 text-xs">
-        <Check className="size-3.5" /> Saved
+        <Check className="size-3.5" /> {t('Saved')}
       </span>
     );
   }
   if (state === 'saving') {
     return (
       <span className="text-subtle flex shrink-0 items-center gap-1 text-xs">
-        <Loader2 className="size-3.5 animate-spin" /> Saving…
+        <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}
       </span>
     );
   }
   if (state === 'error') {
     return (
       <button type="button" onClick={onRetry} className="text-bad flex shrink-0 items-center gap-1 text-xs">
-        <CircleAlert className="size-3.5" /> Retry save
+        <CircleAlert className="size-3.5" /> {t('Retry save')}
       </button>
     );
   }
   return (
     <span className="text-warn flex shrink-0 items-center gap-1 text-xs">
-      <span className="bg-warn size-1.5 rounded-full" /> Unsaved
+      <span className="bg-warn size-1.5 rounded-full" /> {t('Unsaved')}
     </span>
   );
 }

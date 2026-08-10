@@ -5,6 +5,7 @@ import { Button } from '@/ui/Button';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
+import { t } from '@/lib/i18n';
 
 /**
  * Full-page theme picker — cards grouped the way lichess organises its
@@ -139,18 +140,18 @@ export function ThemesPage() {
             variant="ghost"
             size="icon-sm"
             className="md:hidden"
-            title="Back to the dashboard"
+            title={t('Back to the dashboard')}
             onClick={() => navigate('puzzles', 'dashboard')}
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg text-base font-semibold">Puzzle themes</h1>
+          <h1 className="text-fg text-base font-semibold">{t('Puzzle themes')}</h1>
         </div>
 
         <ChipRow className="mb-5" innerClassName="gap-2">
           <ThemeCard
             className="w-full sm:w-auto"
-            label="All themes"
+            label={t('All themes')}
             count={total}
             highlight
             onClick={() => navigate('puzzles')}
@@ -158,7 +159,7 @@ export function ThemesPage() {
           {failed > 0 && (
             <ThemeCard
               className="w-full sm:w-auto"
-              label="Review failed puzzles"
+              label={t('Review failed puzzles')}
               count={failed}
               icon={RotateCcw}
               onClick={() => navigate('puzzles', 'failed')}
@@ -187,7 +188,7 @@ export function ThemesPage() {
               );
             })}
             {leftovers.length > 0 && (
-              <ThemeGroup title="More">
+              <ThemeGroup title={t('More')}>
                 {leftovers.map((t) => (
                   <ThemeCard
                     key={t.theme}
