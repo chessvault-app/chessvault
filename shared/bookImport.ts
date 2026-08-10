@@ -99,6 +99,59 @@ export function pageNumbers(words: Word[], book: BookText): NumberBox[] {
   return out;
 }
 
+/** How far a printed number may sit from the diagram it belongs to. */
+export interface LabelWindow {
+  /** How far left of the diagram's edge the number may start. */
+  labelX: number;
+  /** How far ABOVE the diagram's top the number's baseline may sit. */
+  labelY: number;
+  /** How far BELOW it — margin labels print beside the top corner. */
+  labelDrop: number;
+}
+
+/**
+ * The number belonging to a diagram: the lowest one inside the window
+ * around it.
+ *
+ * A loose "anywhere above" rule lets a stray digit on a prose page steal a
+ * label, which is why the band is tight and why the window is per book —
+ * some print the number over the diagram, some in the margin beside it.
+ */
+export function labelForDiagram(
+  rect: { x: number; y: number; w: number; h: number },
+  numbers: NumberBox[],
+  window: LabelWindow,
+): NumberBox | undefined {
+  return numbers
+    .filter(
+      (n) =>
+        n.y1 <= rect.y + window.labelDrop &&
+        rect.y - n.y1 <= window.labelY &&
+        n.x1 >= rect.x - window.labelX &&
+        n.x0 <= rect.x + rect.w,
+    )
+    .sort((a, b) => b.y1 - a.y1)[0];
+}
+
+/**
+ * Books that print the side as a lone W or B under the puzzle number.
+ *
+ * The letter binds to the NUMBER, not to a diagram: prose is full of stray
+ * capitals, and two puzzle columns on a page are well within reach of each
+ * other's geometry, so anything matched by distance alone goes wrong.
+ */
+export function letterSides(words: Word[], numbers: NumberBox[]): Map<number, 'w' | 'b'> {
+  const out = new Map<number, 'w' | 'b'>();
+  for (const w of words) {
+    if (!/^[WB]$/.test(w.text)) continue;
+    const under = numbers.find(
+      (n) => Math.abs(n.x0 - w.x0) < 6 && w.y0 >= n.y1 - 2 && w.y0 - n.y1 < 8,
+    );
+    if (under) out.set(under.value, w.text === 'W' ? 'w' : 'b');
+  }
+  return out;
+}
+
 /** Chapter headers state the side to move; pages inherit the last one. */
 export function chapterSides(pages: TextPage[]): Map<number, 'w' | 'b'> {
   const out = new Map<number, 'w' | 'b'>();

@@ -6,6 +6,8 @@ import {
   castlingRights,
   chapterSides,
   isMoveish,
+  labelForDiagram,
+  letterSides,
   pageMateGoal,
   pageNumbers,
   parseMainline,
@@ -62,6 +64,53 @@ describe('puzzle-number labels', () => {
   it('reads "123)" whole in paren books', () => {
     const paren = { ...BOOK, numberStyle: 'paren' as const };
     expect(pageNumbers([word('123)', 10, 40), word('45', 10, 60)], paren).map((n) => n.value)).toEqual([123]);
+  });
+});
+
+describe('matching a number to its diagram', () => {
+  const window = { labelX: 20, labelY: 40, labelDrop: 14 };
+  const rect = { x: 100, y: 200, w: 300, h: 300 };
+
+  it('takes the number printed just above the diagram', () => {
+    const numbers = [
+      { value: 7, x0: 100, x1: 112, y1: 180 },
+      { value: 8, x0: 100, x1: 112, y1: 560 }, // the next diagram's
+    ];
+    expect(labelForDiagram(rect, numbers, window)?.value).toBe(7);
+  });
+
+  it('ignores a number too far above to belong to it', () => {
+    expect(labelForDiagram(rect, [{ value: 7, x0: 100, x1: 112, y1: 100 }], window)).toBeUndefined();
+  });
+
+  it('ignores a number off to the side', () => {
+    expect(labelForDiagram(rect, [{ value: 7, x0: 500, x1: 512, y1: 190 }], window)).toBeUndefined();
+  });
+
+  it('accepts a margin label beside the diagram top when the book allows it', () => {
+    const margin = { labelX: 100, labelY: 130, labelDrop: 160 };
+    // Printed to the LEFT and slightly BELOW the top edge, as in The
+    // Ultimate Chess Puzzle Book.
+    const numbers = [{ value: 49, x0: 20, x1: 40, y1: 280 }];
+    expect(labelForDiagram(rect, numbers, window)).toBeUndefined();
+    expect(labelForDiagram(rect, numbers, margin)?.value).toBe(49);
+  });
+
+  it('binds a lone W or B to the number above it, not to a nearby column', () => {
+    const numbers = [
+      { value: 49, x0: 50, x1: 61, y1: 96 },
+      { value: 53, x0: 252, x1: 263, y1: 96 },
+    ];
+    const words: Word[] = [
+      { text: 'W', x0: 52, x1: 60, y0: 97, y1: 108 },
+      { text: 'B', x0: 254, x1: 262, y0: 97, y1: 108 },
+      // A capital in the running head, nowhere near a number.
+      { text: 'W', x0: 400, x1: 408, y0: 20, y1: 31 },
+    ];
+    const sides = letterSides(words, numbers);
+    expect(sides.get(49)).toBe('w');
+    expect(sides.get(53)).toBe('b');
+    expect(sides.size).toBe(2);
   });
 });
 

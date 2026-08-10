@@ -19,6 +19,8 @@ import { resolve } from 'node:path';
 import type { Role } from 'chessops/types';
 import {
   Dialect,
+  labelForDiagram,
+  letterSides as letterSidesOf,
   chapterSides,
   pageMateGoal,
   pageNumbers,
@@ -290,12 +292,8 @@ for (const pageInfo of textData.pages) {
     // a number box — and that binding is exact, so the side attaches to the
     // NUMBER rather than being matched to a diagram by geometry. Two puzzle
     // columns per page would otherwise be within reach of each other.
-    for (const w of pageInfo.words) {
-      if (!/^[WB]$/.test(w.text)) continue;
-      const under = pageNumbers(pageInfo.words, BOOK as BookText).find(
-        (n) => Math.abs(n.x0 - w.x0) < 6 && w.y0 >= n.y1 - 2 && w.y0 - n.y1 < 8,
-      );
-      if (under) letterSides.set(under.value, w.text === 'W' ? 'w' : 'b');
+    for (const [value, side] of letterSidesOf(pageInfo.words, pageNumbers(pageInfo.words, BOOK as BookText))) {
+      letterSides.set(value, side);
     }
   }
   if (page) {
@@ -322,16 +320,7 @@ for (const pageInfo of textData.pages) {
     // The printed number sits JUST above the diagram (within ~40px scaled),
     // left-aligned-ish. A loose "anywhere above" match lets stray digits on
     // prose pages steal labels — hence the tight vertical band.
-    const candidates = numbers
-      .filter(
-        (n) =>
-          n.y1 <= rect.y + BOOK.labelDrop &&
-          rect.y - n.y1 <= BOOK.labelY &&
-          n.x1 >= rect.x - BOOK.labelX &&
-          n.x0 <= rect.x + rect.w,
-      )
-      .sort((a, b) => b.y1 - a.y1);
-    const label = candidates[0];
+    const label = labelForDiagram(rect, numbers, BOOK);
     if (!label) continue;
     // Numbers are unique in the book; the first (earliest-page) claim wins.
     if (results.has(label.value)) continue;
