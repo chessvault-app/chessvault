@@ -988,7 +988,12 @@ function useGridWindow(
       if (!el) return;
       const columns = globalThis.matchMedia(GRID_SM).matches ? 8 : 6;
       const cell = (el.clientWidth - GRID_GAP * (columns - 1)) / columns + GRID_GAP;
-      if (!(cell > 0)) return;
+      // Unmeasurable (hidden, zero-width, mid-layout): show the whole book
+      // rather than a slice of it. Slow beats blank.
+      if (!(cell > 0)) {
+        setSlice({ start: 0, end: total, top: 0, bottom: 0 });
+        return;
+      }
       const rows = Math.ceil(total / columns);
       const above = Math.max(0, -el.getBoundingClientRect().top);
       const firstRow = Math.max(0, Math.floor(above / cell) - OVERSCAN);
@@ -1002,13 +1007,27 @@ function useGridWindow(
       });
     };
     measure();
-    // Capture: the scrolling ancestor is the page on a phone and a column
-    // on desktop, and this does not need to know which.
+    // Listen on the element that actually scrolls as well as on the window
+    // in capture. Either alone is nearly enough — which is the problem: a
+    // missed event here does not degrade the grid, it empties it, so it is
+    // worth wearing both.
+    const scrollers: EventTarget[] = [globalThis];
+    for (let el = grid.current?.parentElement; el; el = el.parentElement) {
+      const overflow = getComputedStyle(el).overflowY;
+      if (overflow === 'auto' || overflow === 'scroll') scrollers.push(el);
+    }
+    for (const target of scrollers) target.addEventListener('scroll', measure, { passive: true });
     globalThis.addEventListener('scroll', measure, true);
     globalThis.addEventListener('resize', measure);
+    // Last line of defence: the grid's own size settling (fonts, images,
+    // a filter changing the count) without any scroll at all.
+    const observer = new ResizeObserver(measure);
+    if (grid.current) observer.observe(grid.current);
     return () => {
+      for (const target of scrollers) target.removeEventListener('scroll', measure);
       globalThis.removeEventListener('scroll', measure, true);
       globalThis.removeEventListener('resize', measure);
+      observer.disconnect();
     };
   }, [grid, total]);
   return slice;
