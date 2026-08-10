@@ -281,7 +281,15 @@ async function checkForUpdates(win) {
 }
 
 app.on('window-all-closed', () => {
+  // macOS apps stay running with no windows — quitting there would be
+  // wrong, and the dock icon is expected to bring the app back.
+  if (process.platform === 'darwin') return;
   serverProc?.kill();
   app.quit();
+});
+
+app.on('activate', async () => {
+  if (BrowserWindow.getAllWindows().length > 0) return;
+  await openApp(createWindow());
 });
 app.on('before-quit', () => serverProc?.kill());

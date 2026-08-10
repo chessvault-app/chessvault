@@ -3,6 +3,20 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.2.2
+
+- **Settings says what is running** — the server's version and, in the
+  desktop app, its own, with a check that reports what it found. The
+  health endpoint had been returning a hardcoded 0.1.0 for two releases
+  while another endpoint read the real one, so the same page could
+  disagree with itself.
+- **Castling either way** — drop the king on g1 or on its own rook,
+  whichever your hand expects. Both were always legal; only one was
+  offered.
+- **macOS** — the shell keeps running with its windows closed and comes
+  back from the dock, and `npm run desktop:package:mac` builds a dmg.
+  Unsigned, so Gatekeeper wants a right-click and Open the first time.
+
 ## 0.2.1
 
 - **Switch vault from Settings** — the desktop shell's only way to change
