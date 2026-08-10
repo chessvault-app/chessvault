@@ -71,13 +71,23 @@ URL from the environment rather than naming anybody's server in the repo:
 ### Cutting a release
 
 ```
-# 1. bump "version" in package.json
-# 2. build, telling the app where it will look for updates
-CHESS_UPDATE_URL=https://<your-server>/updates npm run desktop:package
-# 3. upload BOTH to that path on the server
-#      release/installer/latest.yml
-#      release/installer/Chess Vault Setup <version>.exe
+# 1. bump "version" in package.json, and commit
+# 2. one command: build, publish, deploy, verify
+npm run desktop:release
 ```
+
+It reads the target from `scripts/deploy.env` (`CHESS_VAULT_HOST`,
+`CHESS_UPDATE_URL`), refuses to run on a dirty tree, and finishes by
+asking the server what it is serving — the feed and `/api/health` must
+both name the version just built, or it exits non-zero.
+
+The deploy is part of it on purpose. In remote mode the desktop app runs
+the SERVER's web build, so an installer published without a matching
+deploy leaves the two disagreeing about what version this is. They are one
+act, not two.
+
+electron-builder cannot do the publishing itself: the `generic` provider
+is download-only, so `--publish always` has nothing to upload with.
 
 The build refuses to run without `CHESS_UPDATE_URL`, because an installer
 built with an empty address can never update and gives no clue why.

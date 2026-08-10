@@ -25,7 +25,7 @@
     "tune:dbs": "tsx scripts/tune-dbs.ts",
     "desktop": "electron desktop/main.mjs",
     "desktop:package": "node desktop/build-server.mjs && npm run build && electron-builder --win nsis",
-    "desktop:release": "node desktop/build-server.mjs && npm run build && electron-builder --win nsis --publish always",
+    "desktop:release": "bash scripts/release.sh",
     "desktop:package:mac": "node desktop/build-server.mjs && npm run build && electron-builder --mac dmg"
   },
   "dependencies": {
