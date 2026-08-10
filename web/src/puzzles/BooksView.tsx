@@ -972,7 +972,16 @@ function useGridWindow(
   grid: React.RefObject<HTMLDivElement | null>,
   total: number,
 ): { start: number; end: number; top: number; bottom: number } {
-  const [slice, setSlice] = useState({ start: 0, end: total, top: 0, bottom: 0 });
+  // Starts NARROW. Seeding this with the whole book meant the first render
+  // built every tile and only then measured — which is the cost this hook
+  // exists to avoid. A screenful is a safe guess before anything is
+  // measured, and the effect corrects it on the same frame.
+  const [slice, setSlice] = useState(() => ({
+    start: 0,
+    end: Math.min(total, 200),
+    top: 0,
+    bottom: 0,
+  }));
   useEffect(() => {
     const measure = (): void => {
       const el = grid.current;
