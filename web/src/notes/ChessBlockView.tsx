@@ -156,7 +156,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
         // note's full width around a much narrower board read as an empty
         // frame. From sm up the board and moves sit side by side and the
         // box takes whatever that needs.
-        'mx-auto w-fit max-w-full sm:mx-0 sm:w-auto',
+        'mx-auto w-3/4 max-w-full sm:mx-0 sm:w-auto',
         selected && 'ring-primary/60 ring-2',
       )}
       data-chess-block
@@ -166,7 +166,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           sentence should not be the whole screen. Capped and centred on a
           phone; the side-by-side split takes over from sm up. */}
       <div
-        className="relative mx-auto w-full max-w-[18rem] shrink-0 sm:mx-0 sm:max-w-[19rem]"
+        className="relative w-full shrink-0 sm:max-w-[19rem]"
         contentEditable={false}
       >
         <Board

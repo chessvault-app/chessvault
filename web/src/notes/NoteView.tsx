@@ -14,6 +14,7 @@ import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
+import { EditorPalette } from './EditorPalette';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
@@ -179,6 +180,9 @@ function NoteEditor({
       </header>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+      {/* Floats over the selection on a mouse; a bar above the keyboard on
+          touch. Only rendered while the note is editable. */}
+      <EditorPalette editor={editor} />
     </div>
   );
 }
