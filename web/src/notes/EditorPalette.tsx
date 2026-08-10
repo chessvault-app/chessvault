@@ -4,20 +4,18 @@ import type { Editor } from '@tiptap/react';
 import { cn } from '@/lib/cn';
 
 /**
- * The note formatting palette, in the two places it can live.
+ * The note formatting palette: one row, pinned to the top of the note
+ * while it is being edited.
  *
- * On a mouse it FLOATS over the selection: you have selected some words,
- * the actions belong next to them, and it goes away when you deselect.
+ * It was tried the other two ways first. Floating over the selection meant
+ * dragging across text you did not want to change before you could insert
+ * anything. Pinned above the keyboard meant sitting on iOS's own accessory
+ * row, with the caret ending up behind the bar.
  *
- * On touch it does NOT. The selection is exactly where the thumb and the
- * system's own Copy/Look Up callout are, the rectangle moves while the
- * keyboard animates, and this app has learned not to script anything
- * against that animation. So it becomes a bar pinned above the keyboard
- * for as long as the note is being edited — where Notion, Bear and iA
- * Writer all ended up, for the same reasons.
- *
- * One set of actions either way; only the placement is chosen. That is the
- * same shape the opening picker uses for its dropdown and its sheet.
+ * A toolbar above the document is in one place, is there before you have
+ * selected anything, and never argues with the keyboard, the selection
+ * callout or the caret. It is further from the thumbs on a phone, which is
+ * a smaller price than a palette you have to fight.
  */
 
 interface Action {
@@ -101,11 +99,33 @@ const ACTIONS: Action[] = [
   },
 ];
 
-function Buttons({ editor, tick }: { editor: Editor; tick: number }) {
+export function EditorPalette({ editor }: { editor: Editor | null }) {
+  // Redraw as the caret moves, so the buttons show what it is inside.
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const redraw = (): void => bump((n) => n + 1);
+    editor.on('selectionUpdate', redraw);
+    editor.on('transaction', redraw);
+    return () => {
+      editor.off('selectionUpdate', redraw);
+      editor.off('transaction', redraw);
+    };
+  }, [editor]);
+
+  if (!editor || !editor.isEditable) return null;
+
   return (
-    <>
+    <div
+      // sticky: it stays at the top of the note as the note scrolls under
+      // it. Ten buttons do not fit a phone, so the row scrolls sideways —
+      // the same rule the filter chips follow.
+      className="border-line bg-app sticky top-0 z-30 flex shrink-0 items-center gap-0.5 overflow-x-auto border-b px-1 py-1 scrollbar-hidden"
+      role="toolbar"
+      aria-label="Formatting"
+    >
       {ACTIONS.map((action) => {
-        const on = tick >= 0 && action.active(editor);
+        const on = action.active(editor);
         return (
           <button
             key={action.id}
@@ -113,14 +133,14 @@ function Buttons({ editor, tick }: { editor: Editor; tick: number }) {
             title={action.label}
             aria-label={action.label}
             aria-pressed={on}
-            // pointerdown, not click: clicking would blur the editor first
-            // and the command would apply to no selection.
+            // pointerdown, not click: clicking blurs the editor first and
+            // the command would land on no selection.
             onPointerDown={(e) => {
               e.preventDefault();
               action.run(editor);
             }}
             className={cn(
-              'grid size-8 shrink-0 place-items-center rounded-md transition-colors duration-100 pointer-coarse:size-10',
+              'grid size-8 shrink-0 place-items-center rounded-md transition-colors duration-100 pointer-coarse:size-9',
               on ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
             )}
           >
@@ -128,132 +148,6 @@ function Buttons({ editor, tick }: { editor: Editor; tick: number }) {
           </button>
         );
       })}
-    </>
-  );
-}
-
-export function EditorPalette({ editor }: { editor: Editor | null }) {
-  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
-  // Re-render on every selection or document change, so the buttons show
-  // what the caret is actually inside.
-  const [tick, setTick] = useState(0);
-  const [box, setBox] = useState<{ left: number; top: number; bottom: number } | null>(null);
-  // How much of the window the keyboard covers, for the touch placement.
-  const [covered, setCovered] = useState(0);
-
-  useEffect(() => {
-    if (!editor) return;
-    const bump = (): void => setTick((n) => n + 1);
-    editor.on('selectionUpdate', bump);
-    editor.on('transaction', bump);
-    editor.on('focus', bump);
-    editor.on('blur', bump);
-    return () => {
-      editor.off('selectionUpdate', bump);
-      editor.off('transaction', bump);
-      editor.off('focus', bump);
-      editor.off('blur', bump);
-    };
-  }, [editor]);
-
-  useEffect(() => {
-    if (!coarse) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const measure = (): void =>
-      setCovered(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
-    measure();
-    vv.addEventListener('resize', measure);
-    vv.addEventListener('scroll', measure);
-    return () => {
-      vv.removeEventListener('resize', measure);
-      vv.removeEventListener('scroll', measure);
-    };
-  }, [coarse]);
-
-  /**
-   * Room at the foot of the note for the bar to sit over.
-   *
-   * The bar is fixed above the keyboard, so without this the last line of
-   * a note — and the caret in it — is simply behind it, and there is
-   * nothing to scroll to bring it back. Padding the document lets the
-   * browser's own caret-into-view do the right thing, which is better than
-   * scripting a scroll while the keyboard is animating.
-   */
-  const barVisible = coarse && (editor?.isFocused ?? false);
-  useEffect(() => {
-    const dom = editor?.view.dom as HTMLElement | undefined;
-    if (!dom) return;
-    dom.style.paddingBottom = barVisible ? '4rem' : '';
-    return () => {
-      dom.style.paddingBottom = '';
-    };
-  }, [editor, barVisible]);
-
-  // Where the selection is, for the floating placement.
-  useEffect(() => {
-    if (coarse || !editor || !editor.isEditable) {
-      setBox(null);
-      return;
-    }
-    const { from, to, empty } = editor.state.selection;
-    // Marks need a selection, but inserting a board or starting a list
-    // needs only a caret — and requiring text to be dragged first before
-    // anything could be inserted was the wrong way round. So it also
-    // appears on an EMPTY line, which is exactly where you would insert
-    // something, and gets out of the way the moment you type.
-    const onBlankLine = empty && editor.state.selection.$from.parent.content.size === 0;
-    if (empty && !onBlankLine) {
-      setBox(null);
-      return;
-    }
-    try {
-      const start = editor.view.coordsAtPos(from);
-      const end = editor.view.coordsAtPos(to);
-      setBox({
-        left: (start.left + end.right) / 2,
-        top: Math.min(start.top, end.top),
-        bottom: Math.max(start.bottom, end.bottom),
-      });
-    } catch {
-      // Positions can be stale for a frame after a document change.
-      setBox(null);
-    }
-  }, [coarse, editor, tick]);
-
-  if (!editor || !editor.isEditable) return null;
-
-  if (coarse) {
-    // Only while the note is actually being typed into. With the keyboard
-    // down this bar would sit exactly on the phone's navigation, and a
-    // formatting row is no use when nothing has the caret anyway.
-    if (!editor.isFocused) return null;
-    return (
-      <div
-        // Above the keyboard, not above the selection. Sits at the bottom
-        // of the visible viewport, which is where the keyboard leaves off.
-        className="border-line bg-surface fixed inset-x-0 z-40 flex items-center gap-1 overflow-x-auto border-t px-2 py-1.5 scrollbar-hidden"
-        style={{ bottom: covered }}
-      >
-        <Buttons editor={editor} tick={tick} />
-      </div>
-    );
-  }
-
-  if (!box) return null;
-  // Above the line normally; below it when there is no room above, which
-  // is the first line of a note — where you are most likely to be
-  // inserting something.
-  const above = box.top > 96;
-  return (
-    <div
-      className={cn(
-        'border-line bg-surface fixed z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border p-1 shadow-[var(--shadow-pop)]',
-        above && '-translate-y-full',
-      )}
-      style={{ left: box.left, top: above ? box.top - 8 : box.bottom + 8 }}
-    >
-      <Buttons editor={editor} tick={tick} />
     </div>
   );
 }

@@ -5,7 +5,6 @@ import {
   CircleAlert,
   Loader2,
   Pencil,
-  PlusSquare,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
@@ -162,27 +161,14 @@ function NoteEditor({
           title={editable ? 'Back to reading' : 'Edit this note'}
           onClick={() => setEditable((v) => !v)}
         >
-          <Pencil className="mr-1 size-3.5" />
-          {editable ? 'Done' : 'Edit'}
+          <Pencil className="size-3.5 md:mr-1" />
+          <span className="max-md:hidden">{editable ? 'Done' : 'Edit'}</span>
         </Button>
-        {editable && (
-        <Button
-          variant="secondary"
-          size="sm"
-          title="Insert an interactive board at the cursor"
-          onClick={() => editor?.chain().focus().insertChessBlock().run()}
-        >
-          <PlusSquare className="mr-1 size-3.5" />
-          Board
-        </Button>
-        )}
         <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc))} />
       </header>
 
-      <EditorContent editor={editor} className="min-h-0 flex-1" />
-      {/* Floats over the selection on a mouse; a bar above the keyboard on
-          touch. Only rendered while the note is editable. */}
       <EditorPalette editor={editor} />
+      <EditorContent editor={editor} className="min-h-0 flex-1" />
     </div>
   );
 }

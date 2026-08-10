@@ -153,8 +153,8 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         title={editing ? 'Back to reading' : 'Edit moves, NAGs and comments'}
         onClick={() => setEditing((v) => !v)}
       >
-        <Pencil className="mr-1 size-3.5" />
-        {editing ? 'Done' : 'Edit'}
+        <Pencil className="size-3.5 md:mr-1" />
+        <span className="max-md:hidden">{editing ? 'Done' : 'Edit'}</span>
       </Button>
       <SaveIndicator state={saveState} error={error} />
     </div>
