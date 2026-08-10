@@ -3,6 +3,21 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.2.1
+
+- **Switch vault from Settings** — the desktop shell's only way to change
+  where it points was a menu bar hidden behind Alt. It is a card in
+  Settings now, shown only when there is a shell to talk to.
+- **A redeploy no longer blacks out an open window** — every section is a
+  hashed chunk, so a deploy replaces the ones an already-open page is
+  about to ask for; that page now reloads itself once rather than
+  unmounting into a black screen.
+- **Colour schemes**, six presets. Clicking beside the swatches no longer
+  silently picks the first one — they were inside a label, which forwards
+  a stray click to whatever control it finds first.
+- The sidebar names the host it is connected to instead of always
+  claiming to be local.
+
 ## 0.2.0
 
 The first desktop release served from your own server rather than from a
