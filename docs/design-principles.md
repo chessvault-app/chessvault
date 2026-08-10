@@ -61,6 +61,28 @@ digit is also bold, tier marks also differ by icon shape.
 - Touch has no hover: anything hover-revealed must also work by tap
   (preview eyes toggle on tap; `pointer-coarse:` sizes tap targets up).
 
+## Waiting
+
+- **Show the shape of what is coming**, not a spinner and not a blank
+  page. Each surface sketches its own layout — cards where cards will be,
+  the square tile grid where the grid will be, prose where a note will be
+  — so nothing moves when the real thing lands. A generic stack of grey
+  bars is its own kind of flicker.
+- **Say nothing at all if the wait is short.** `useSlowLoad` holds every
+  skeleton back 180 ms and then keeps it for 400 ms once shown. A
+  placeholder that appears and vanishes reads as a glitch, and it makes a
+  fast load feel slower than showing nothing would.
+- **Cover the wait that actually exists.** Data arriving is not the same
+  as content appearing: a big book's list answers in 48 ms and then takes
+  most of a second to build, so the skeleton is keyed on the grid being on
+  screen, not on the fetch being done.
+- **Arrive whole.** The shelf decodes its covers before drawing, rather
+  than laying out cards and filling them in one at a time — bounded, and
+  skipped once cached, because a cover is a nicety and must never be
+  something a page waits on.
+- Suspense is used for CODE (route chunks), never for data; its fallback
+  stays blank because a chunk usually beats the next paint.
+
 ## Dialog policy
 
 One dialog per concept, shared everywhere. "Load position" (FEN, PGN,
@@ -73,10 +95,19 @@ scrim-click.
 
 Three attempts to outsmart the keyboard (scroll-pinning, focus
 pre-scrolling, shell resizing) each produced a worse artifact than the
-native behavior. Settled rule: do nothing while the keyboard is up;
-reset window scroll only on the viewport resize that signals it closed.
+native behavior. Settled rule: never move the PAGE while the keyboard is
+up; reset window scroll only on the viewport resize that signals it
+closed.
+
+Refined, not repealed: an overlay may position itself inside
+`visualViewport` — the part of the page the keyboard has left visible —
+because that moves the dialog rather than the document underneath it.
+`PromptSheet` centres this way instead of pinning itself to the top.
+Only its padding responds, and nothing is transitioned, so it does not
+animate against iOS's own animation.
+
 Any change here requires an on-device test loop — desktop cannot
-reproduce it.
+reproduce it, and the automated browser cannot either.
 
 ## Process conventions
 

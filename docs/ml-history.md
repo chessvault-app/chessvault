@@ -99,3 +99,17 @@ re-measure.
    not per-artifact accuracy.
 5. Keep the human in the loop cheap: drafts carry evidence crops and
    solution-page peeks so hand-fixing a residue puzzle takes seconds.
+6. A searched setting whose underlying fact is ABSENT will win on noise.
+   The config search picked "the book prints the side to move" for a book
+   that prints no side; with the fact missing the flag only changed which
+   side was tried second, so it gained a point on chance and cost the
+   import fifteen puzzles. Search only over facts you have checked exist.
+7. Score the COST beside the gain. Board repair buys 26 puzzles for
+   twenty minutes; reading the printed piece symbols buys 23 for a fifth
+   of a second. Equal-looking gains, and only one of them belongs in
+   front of somebody waiting — which is why one is a checkbox and the
+   other is simply on.
+8. What a measurement is taken THROUGH can be the thing that is broken.
+   A cache holding boards fresh detection no longer finds, an automated
+   browser that never fires scroll events, timers clamped in a background
+   tab: each looked like a result until it was checked.
