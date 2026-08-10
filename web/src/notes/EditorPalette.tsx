@@ -137,7 +137,7 @@ export function EditorPalette({ editor }: { editor: Editor | null }) {
   // Re-render on every selection or document change, so the buttons show
   // what the caret is actually inside.
   const [tick, setTick] = useState(0);
-  const [box, setBox] = useState<{ left: number; top: number } | null>(null);
+  const [box, setBox] = useState<{ left: number; top: number; bottom: number } | null>(null);
   // How much of the window the keyboard covers, for the touch placement.
   const [covered, setCovered] = useState(0);
 
@@ -171,6 +171,25 @@ export function EditorPalette({ editor }: { editor: Editor | null }) {
     };
   }, [coarse]);
 
+  /**
+   * Room at the foot of the note for the bar to sit over.
+   *
+   * The bar is fixed above the keyboard, so without this the last line of
+   * a note — and the caret in it — is simply behind it, and there is
+   * nothing to scroll to bring it back. Padding the document lets the
+   * browser's own caret-into-view do the right thing, which is better than
+   * scripting a scroll while the keyboard is animating.
+   */
+  const barVisible = coarse && (editor?.isFocused ?? false);
+  useEffect(() => {
+    const dom = editor?.view.dom as HTMLElement | undefined;
+    if (!dom) return;
+    dom.style.paddingBottom = barVisible ? '4rem' : '';
+    return () => {
+      dom.style.paddingBottom = '';
+    };
+  }, [editor, barVisible]);
+
   // Where the selection is, for the floating placement.
   useEffect(() => {
     if (coarse || !editor || !editor.isEditable) {
@@ -178,14 +197,24 @@ export function EditorPalette({ editor }: { editor: Editor | null }) {
       return;
     }
     const { from, to, empty } = editor.state.selection;
-    if (empty) {
+    // Marks need a selection, but inserting a board or starting a list
+    // needs only a caret — and requiring text to be dragged first before
+    // anything could be inserted was the wrong way round. So it also
+    // appears on an EMPTY line, which is exactly where you would insert
+    // something, and gets out of the way the moment you type.
+    const onBlankLine = empty && editor.state.selection.$from.parent.content.size === 0;
+    if (empty && !onBlankLine) {
       setBox(null);
       return;
     }
     try {
       const start = editor.view.coordsAtPos(from);
       const end = editor.view.coordsAtPos(to);
-      setBox({ left: (start.left + end.right) / 2, top: Math.min(start.top, end.top) });
+      setBox({
+        left: (start.left + end.right) / 2,
+        top: Math.min(start.top, end.top),
+        bottom: Math.max(start.bottom, end.bottom),
+      });
     } catch {
       // Positions can be stale for a frame after a document change.
       setBox(null);
@@ -212,10 +241,17 @@ export function EditorPalette({ editor }: { editor: Editor | null }) {
   }
 
   if (!box) return null;
+  // Above the line normally; below it when there is no room above, which
+  // is the first line of a note — where you are most likely to be
+  // inserting something.
+  const above = box.top > 96;
   return (
     <div
-      className="border-line bg-surface fixed z-40 flex -translate-x-1/2 -translate-y-full items-center gap-0.5 rounded-lg border p-1 shadow-[var(--shadow-pop)]"
-      style={{ left: box.left, top: box.top - 8 }}
+      className={cn(
+        'border-line bg-surface fixed z-40 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border p-1 shadow-[var(--shadow-pop)]',
+        above && '-translate-y-full',
+      )}
+      style={{ left: box.left, top: above ? box.top - 8 : box.bottom + 8 }}
     >
       <Buttons editor={editor} tick={tick} />
     </div>
