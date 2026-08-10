@@ -331,7 +331,13 @@ function Shelf() {
    */
   const [coversReady, setCoversReady] = useState(shelfCache !== null && coversDecoded);
   useEffect(() => {
-    if (books === null || books.length === 0) return;
+    if (books === null) return;
+    // An empty shelf has no covers to wait for, and waiting for none of
+    // them left it skeletal forever.
+    if (books.length === 0) {
+      setCoversReady(true);
+      return;
+    }
     let live = true;
     const covers = books.map(
       (b) =>

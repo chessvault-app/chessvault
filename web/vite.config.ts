@@ -53,7 +53,11 @@ export default defineConfig({
     outDir: `${repo}dist`,
     emptyOutDir: true,
     target: 'es2022',
-    sourcemap: true,
+    // Maps are a debugging aid, and shipping them publishes the source: the
+    // server serves whatever is in dist/, and the desktop installer carries
+    // it too (25 MB of the package, most of it maps). Set CHESS_SOURCEMAPS=1
+    // to get them back for a build you are actually debugging.
+    sourcemap: process.env.CHESS_SOURCEMAPS === '1',
   },
   worker: { format: 'es' },
   optimizeDeps: {

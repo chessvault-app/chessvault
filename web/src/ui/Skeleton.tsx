@@ -75,10 +75,12 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
   );
 }
 
+/** Ragged widths, so a list of placeholders does not read as a barcode. */
+const NAME_WIDTHS = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
+
 /**
- * Rows of the shape the document lists actually use: an icon, a name over
- * a meta line, and something on the right. Widths vary a little so it
- * reads as a list of different things rather than a barcode.
+ * Rows inside a divided list — the shape the games lists use: an icon, a
+ * name over a meta line, and something on the right.
  */
 export function SkeletonListRows({
   rows = 6,
@@ -90,14 +92,13 @@ export function SkeletonListRows({
   action?: boolean;
   className?: string;
 }) {
-  const widths = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
   return (
     <Loading className={cn('divide-line divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-3 py-2.5">
           <Skeleton className="size-4 shrink-0 rounded" />
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton className={cn('h-3', widths[i % widths.length])} />
+            <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             <Skeleton className="h-2 w-1/4" />
           </div>
           {action && <Skeleton className="h-6 w-14 shrink-0" />}
@@ -107,15 +108,55 @@ export function SkeletonListRows({
   );
 }
 
+/**
+ * Separate bordered cards under a collection heading — what Studies and
+ * Notes actually draw. They are not a divided list, and a skeleton shaped
+ * like one made the page jump when the real cards arrived.
+ */
+export function SkeletonCards({
+  cards = 5,
+  heading = true,
+  className,
+}: {
+  cards?: number;
+  /** Documents are grouped under a collection name; keep its place. */
+  heading?: boolean;
+  className?: string;
+}) {
+  return (
+    <Loading className={cn('flex flex-col gap-4', className)}>
+      {heading && <Skeleton className="ml-1 h-2.5 w-24" />}
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: cards }, (_, i) => (
+          <div
+            key={i}
+            className="bg-surface border-line flex items-center gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)]"
+          >
+            <Skeleton className="size-4 shrink-0 rounded" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+              <Skeleton className="h-2 w-1/5" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Loading>
+  );
+}
+
 /** The puzzle shelf: a cover, a title, a count and a progress bar. */
 export function SkeletonBookCards({ cards = 4, className }: { cards?: number; className?: string }) {
   return (
-    <Loading className={cn('grid gap-3 sm:grid-cols-2', className)}>
+    <Loading className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', className)}>
       {Array.from({ length: cards }, (_, i) => (
-        <div key={i} className="bg-surface border-line flex gap-3 rounded-xl border p-3">
-          {/* Same aspect as a real cover, so nothing reflows when it lands. */}
-          <Skeleton className="h-[6.5rem] w-[4.6rem] shrink-0 rounded-lg" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2 pt-1">
+        <div
+          key={i}
+          className="bg-surface border-line flex w-full items-stretch gap-3 rounded-xl border p-3"
+        >
+          {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
+              the size it will be rather than the size it looks like. */}
+          <Skeleton className="h-24 w-[4.5rem] shrink-0 rounded-md" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2 py-0.5">
             <Skeleton className="h-3.5 w-4/5" />
             <Skeleton className="h-2.5 w-1/3" />
             <Skeleton className="mt-auto h-1.5 w-full rounded-full" />
@@ -126,18 +167,26 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
   );
 }
 
-/** A book's puzzle grid: square numbered tiles. */
-export function SkeletonTiles({ tiles = 36, className }: { tiles?: number; className?: string }) {
+/**
+ * A book's puzzle page: the progress bar and filter chips it wears above
+ * the grid, then the grid itself — same columns, gap and tile shape as the
+ * real one, so nothing moves when the puzzles arrive.
+ */
+export function SkeletonTiles({ tiles = 48, className }: { tiles?: number; className?: string }) {
+  const chips = ['w-12', 'w-14', 'w-16', 'w-16', 'w-24'];
   return (
-    <Loading
-      className={cn(
-        'grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1.5',
-        className,
-      )}
-    >
-      {Array.from({ length: tiles }, (_, i) => (
-        <Skeleton key={i} className="aspect-square rounded-lg" />
-      ))}
+    <Loading className={className}>
+      <Skeleton className="mb-3 h-1.5 w-full rounded-full" />
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {chips.map((w, i) => (
+          <Skeleton key={i} className={cn('h-6 rounded-full', w)} />
+        ))}
+      </div>
+      <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
+        {Array.from({ length: tiles }, (_, i) => (
+          <Skeleton key={i} className="aspect-square rounded-lg" />
+        ))}
+      </div>
     </Loading>
   );
 }
