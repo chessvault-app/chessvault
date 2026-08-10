@@ -105,21 +105,17 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
  * repertoire answering — so they say that rather than pretending to be a
  * game, and the side to move is the one shown in full strength.
  */
-function PlayerSlot({
-  side,
-  you,
-  fen,
-}: {
-  side: 'white' | 'black';
-  you: 'white' | 'black';
-  fen: string;
-}) {
+function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
   const toMove = (fen.split(' ')[1] === 'b' ? 'black' : 'white') === side;
   return (
-    <div className="flex h-6 w-full items-center gap-2 px-0.5">
+    // Hidden on stacked layouts: two more rows around the board pushed the
+    // New game panel off the bottom of a phone, and a label naming the
+    // colour of the pieces you can already see is the first thing that
+    // should go when height is short.
+    <div className="hidden h-6 w-full items-center gap-2 px-0.5 wide:flex">
       <SideDot side={side} />
       <span className={cn('min-w-0 flex-1 truncate text-sm', toMove ? 'text-fg font-medium' : 'text-subtle')}>
-        {side === you ? 'You' : 'Repertoire'}
+        {side === 'white' ? 'White' : 'Black'}
       </span>
     </div>
   );
@@ -510,7 +506,7 @@ export function RepertoireView() {
 
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-          <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} you={userColor} fen={node.fen} />
+          <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
           <Board
             fen={node.fen}
             orientation={orientation}
@@ -519,7 +515,7 @@ export function RepertoireView() {
             check={pos.isCheck()}
             onMove={onMove}
           />
-          <PlayerSlot side={orientation} you={userColor} fen={node.fen} />
+          <PlayerSlot side={orientation} fen={node.fen} />
         </div>
       </div>
 

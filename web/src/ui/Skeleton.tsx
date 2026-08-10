@@ -220,7 +220,14 @@ export function SkeletonDocument({ className }: { className?: string }) {
  */
 export function SkeletonBoard({ className }: { className?: string }) {
   return (
-    <Loading className={cn('flex h-full flex-col gap-4 p-4 lg:flex-row', className)}>
+    <Loading className={cn('flex h-full flex-col gap-3 p-4', className)}>
+      {/* The page's own header — a way back and a title — which the board
+          skeleton used to drop, leaving a study loading with no way out. */}
+      <div className="flex shrink-0 items-center gap-2">
+        <Skeleton className="size-7 shrink-0 rounded-md" />
+        <Skeleton className="h-3.5 w-40" />
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
       <Skeleton className="aspect-square w-full max-w-[min(70vh,40rem)] shrink-0 rounded-xl" />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <Skeleton className="h-4 w-1/3" />
@@ -230,6 +237,7 @@ export function SkeletonBoard({ className }: { className?: string }) {
             <Skeleton key={i} className={cn('h-2.5', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
+      </div>
       </div>
     </Loading>
   );
