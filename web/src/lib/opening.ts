@@ -25,7 +25,12 @@ async function lookup(fen: string): Promise<void> {
   try {
     const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
     const body = (await res.json()) as { opening?: { eco: string; name: string } | null };
-    known.set(fen, body.opening ? body.opening.name : null);
+    // The ECO code rides with the name — "B90 Sicilian, Najdorf" says more
+    // than either half, and it is what every book and database prints.
+    known.set(
+      fen,
+      body.opening ? [body.opening.eco, body.opening.name].filter(Boolean).join(' ') : null,
+    );
   } catch {
     // A name is decoration; a failed lookup must not break the panel.
     known.set(fen, null);

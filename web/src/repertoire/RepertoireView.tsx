@@ -186,7 +186,12 @@ function OpeningPicker({
     <ul
       className={cn(
         'border-line bg-surface overflow-y-auto overscroll-contain rounded-lg border p-1',
-        coarse ? 'max-h-[45dvh]' : 'max-h-44',
+        // On a mouse the list FLOATS over the page. Inline, it pushed
+        // everything below it down as you typed and let go again when you
+        // picked — the panel jumping about while you read it.
+        coarse
+          ? 'max-h-[45dvh]'
+          : 'absolute inset-x-0 top-full z-40 mt-1 max-h-64 shadow-[var(--shadow-pop)]',
       )}
     >
       {matches.length === 0 ? (
@@ -295,7 +300,9 @@ function OpeningPicker({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    // relative: the list is positioned against this box so it can float
+    // over what is below rather than pushing it down.
+    <div className="relative flex flex-col gap-1">
       <Input
         inputSize="sm"
         value={open ? query : value.eco ? `${value.eco}  ${value.name}` : value.name}
@@ -519,7 +526,11 @@ export function RepertoireView() {
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      {/* stacked:flex-none — the page column is what scrolls on a phone, so
+          this one must take the height its content needs. As flex-1 with
+          min-h-0 it shrank under that content instead, and the bottom of
+          the New game panel was cut off. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {phase === 'idle' ? (
