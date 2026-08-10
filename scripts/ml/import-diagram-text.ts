@@ -73,7 +73,10 @@ const GLYPHS: Record<string, string> = {
 
 interface Page {
   page: number;
+  width: number;
+  height: number;
   text: string;
+  words: { x0: number; y0: number; x1: number; y1: number; text: string }[];
 }
 
 const { pages } = JSON.parse(readFileSync(resolve(REPO_ROOT, BOOK.text), 'utf-8')) as {
@@ -88,11 +91,49 @@ interface Diagram {
   number: number;
   board: string;
   page: number;
+  /** Where the diagram sits on its page, in page fractions. */
+  rect?: { x: number; y: number; w: number; h: number };
+}
+
+/**
+ * Where each diagram is printed, taken from the text layer rather than
+ * looked for in pixels: the eight rank rows ARE words, so the union of
+ * their boxes is the diagram's frame, exactly. Every book puzzle has to
+ * carry evidence, and for this book the evidence is free.
+ */
+function diagramRects(page: Page): { x: number; y: number; w: number; h: number }[] {
+  const rows = page.words.filter((w) => ROW.test(w.text));
+  const out: { x: number; y: number; w: number; h: number }[] = [];
+  for (let i = 0; i + 7 < rows.length; ) {
+    const group = rows.slice(i, i + 8);
+    // Ranks print 8 down to 1; anything else is not one diagram.
+    if (!group.every((w, r) => w.text.startsWith(String(8 - r)))) {
+      i++;
+      continue;
+    }
+    const x0 = Math.min(...group.map((w) => w.x0));
+    const x1 = Math.max(...group.map((w) => w.x1));
+    const y0 = Math.min(...group.map((w) => w.y0));
+    const y1 = Math.max(...group.map((w) => w.y1));
+    out.push({
+      x: x0 / page.width,
+      y: y0 / page.height,
+      w: (x1 - x0) / page.width,
+      h: (y1 - y0) / page.height,
+    });
+    i += 8;
+  }
+  return out;
 }
 
 function readDiagrams(): Diagram[] {
   const out: Diagram[] = [];
   for (const page of pages) {
+    // The rects come out of the word boxes in reading order and the
+    // diagrams out of the line text in the same order, so the nth of one is
+    // the nth of the other.
+    const rects = diagramRects(page);
+    let seen = 0;
     const lines = page.text.split('\n').map((l) => l.trim());
     for (let i = 0; i < lines.length; i++) {
       const label = /^(\d{1,4})$/.exec(lines[i]!);
@@ -123,7 +164,8 @@ function readDiagrams(): Diagram[] {
         })
         .join('/');
       if (board.includes('null')) continue;
-      out.push({ number: Number(label[1]), board, page: page.page });
+      out.push({ number: Number(label[1]), board, page: page.page, rect: rects[seen] });
+      seen++;
       i += 8;
     }
   }
@@ -250,7 +292,11 @@ interface Puzzle {
   added: string;
   number: number;
   provenance: 'book-parsed';
-  evidence?: { solutionPage: string };
+  evidence: {
+    page: string;
+    rect?: { x: number; y: number; w: number; h: number };
+    solutionPage?: string;
+  };
 }
 
 interface Line {
@@ -383,7 +429,13 @@ for (const diagram of diagrams) {
   if (seen.has(diagram.number)) continue;
   seen.add(diagram.number);
   const solution = solutions.get(diagram.number);
-  const evidence = solution ? { solutionPage: `page${String(solution.page).padStart(4, '0')}.jpg` } : undefined;
+  // Every book puzzle carries its source: the page it was printed on, where
+  // on that page it sits, and the page its answer is on.
+  const evidence = {
+    page: `page${String(diagram.page).padStart(4, '0')}.jpg`,
+    ...(diagram.rect ? { rect: diagram.rect } : {}),
+    ...(solution ? { solutionPage: `page${String(solution.page).padStart(4, '0')}.jpg` } : {}),
+  };
 
   // Castling rights are not printed on a diagram, so claim none: a solution
   // that needs to castle will fail replay and be kept as a draft rather
@@ -446,7 +498,7 @@ for (const diagram of diagrams) {
     added,
     number: diagram.number,
     provenance: 'book-parsed',
-    ...(evidence ? { evidence } : {}),
+    evidence,
   });
 }
 
