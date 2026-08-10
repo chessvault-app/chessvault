@@ -205,19 +205,10 @@ function DesktopCard() {
 
 // --- Appearance --------------------------------------------------------------
 
-/** Shown in the empty custom-CSS box: the shape of an answer, not a lecture. */
-const CUSTOM_CSS_EXAMPLE = [
-  ':root {',
-  '  --primary: oklch(70% 0.15 300);',
-  '  --app-bg: oklch(97% 0.01 300);',
-  '}',
-].join(String.fromCharCode(10));
-
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, sound, schemeId, customCss, setBoardTheme, setPieces, setSound, setSchemeId, setCustomCss } =
-    usePrefs();
+  const { boardTheme, pieces, sound, schemeId, setBoardTheme, setPieces, setSound, setSchemeId } = usePrefs();
 
   return (
     <Card icon={Palette} title="Appearance">
@@ -266,32 +257,6 @@ function AppearanceCard() {
             ))}
           </div>
 
-          {/* Raw CSS rather than a few sliders: three knobs can only make
-              the themes those three knobs describe, and someone who wants
-              a particular look usually knows exactly which colour they
-              want where. This overrides everything the app ships. */}
-          <details className="text-xs" open={customCss.trim().length > 0}>
-            <summary className="text-subtle cursor-pointer select-none py-1">Custom CSS</summary>
-            <div className="flex flex-col gap-2 pt-1">
-              <textarea
-                value={customCss}
-                onChange={(e) => setCustomCss(e.target.value)}
-                spellCheck={false}
-                rows={6}
-                placeholder={CUSTOM_CSS_EXAMPLE}
-                className="border-line bg-surface-inset text-fg min-h-0 w-full resize-y rounded-md border p-2 font-mono text-[0.6875rem] leading-relaxed outline-none focus:border-line-strong"
-              />
-              <p className="text-subtle leading-relaxed">
-                Applied last, so it beats the preset. Colours are OKLCH tokens on{' '}
-                <code className="font-mono">:root</code> — the useful ones are{' '}
-                <code className="font-mono">--app-bg</code>, <code className="font-mono">--surface</code>,{' '}
-                <code className="font-mono">--border</code>, <code className="font-mono">--text</code>{' '}
-                and <code className="font-mono">--primary</code>. Add{' '}
-                <code className="font-mono">.dark</code> before the selector to change dark mode only.
-                Emptying this box removes it.
-              </p>
-            </div>
-          </details>
         </div>
       </Field>
 
