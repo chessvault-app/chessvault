@@ -70,6 +70,24 @@ const PROVENANCE = [
 const IMAGE_FILE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 
 /** An evidence block is only kept if every part of it is well formed. */
+/**
+ * A crop box needs four decimals, not seventeen.
+ *
+ * These are fractions of a page image about 1100px wide, so the fourth
+ * decimal is a tenth of a pixel — everything past it is float noise that
+ * a browser has to download and parse. Across a big book it is not
+ * rounding error, it is a quarter of a megabyte.
+ */
+function roundRect(rect: { x: number; y: number; w: number; h: number }): {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+} {
+  const to4 = (n: number): number => Math.round(n * 10000) / 10000;
+  return { x: to4(rect.x), y: to4(rect.y), w: to4(rect.w), h: to4(rect.h) };
+}
+
 function cleanEvidence(raw: unknown): BookEvidence | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
   const { page, rect, solutionPage } = raw as BookEvidence;
@@ -82,7 +100,7 @@ function cleanEvidence(raw: unknown): BookEvidence | undefined {
     rect &&
     (['x', 'y', 'w', 'h'] as const).every((k) => typeof rect[k] === 'number' && rect[k] >= 0 && rect[k] <= 1)
   ) {
-    out.rect = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+    out.rect = roundRect(rect);
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }
@@ -232,7 +250,12 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({
       slug,
       title: book.title ?? slug,
-      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []),
+      // Rounded on the way out as well as in: the books already imported
+      // carry full float precision, and nobody should have to re-import a
+      // book to stop downloading digits that mean nothing.
+      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []).map((p) =>
+        p.evidence?.rect ? { ...p, evidence: { ...p.evidence, rect: roundRect(p.evidence.rect) } } : p,
+      ),
       progress: readJson<Record<string, PuzzleProgress>>(progressPath(slug), {}),
       drafts: readJson<
         { id: string; image: string; fen: string | null; added: string }[]
