@@ -521,18 +521,20 @@ function BookPage({ slug }: { slug: string }) {
       return;
     }
     let live = true;
-    // Two frames: one to paint the skeleton, one to be sure it landed.
-    const first = requestAnimationFrame(() => {
-      const second = requestAnimationFrame(() => live && setGridReady(true));
-      frames.current = second;
-    });
-    frames.current = first;
+    const go = (): void => {
+      if (live) setGridReady(true);
+    };
+    // A frame to let the skeleton paint — but backgrounded tabs never get
+    // one, and a page that stays skeletal until you look at it would be a
+    // worse bug than the one this fixes. So a timer races the frame.
+    const frame = requestAnimationFrame(() => requestAnimationFrame(go));
+    const timer = setTimeout(go, 60);
     return () => {
       live = false;
-      cancelAnimationFrame(frames.current);
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
     };
   }, [book]);
-  const frames = useRef(0);
   // Shown while the data is in flight AND while the grid is being built.
   const detailPending = useSlowLoad(book === null) || (book !== null && !gridReady);
   const [adding, setAdding] = useState(false);
