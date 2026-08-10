@@ -855,6 +855,38 @@ ${label} (${total} comparisons)`);
   };
   table('against the position the move reaches', spread);
   table('against the position two plies LATER (the control)', control);
+
+  /**
+   * The question that decides whether anchors are worth wiring in: do the
+   * games that FAIL have a diagram anywhere past the point they failed?
+   *
+   * An anchor can only settle a mangled move if there is one after it. A
+   * game that dies on move 30 with its last printed diagram on move 12 is
+   * beyond this kind of help, however good the diagrams are.
+   */
+  const failed = outcomes.filter((o) => o.failedAt !== null);
+  let withAnchorAhead = 0;
+  let anchorsAhead = 0;
+  const detail: string[] = [];
+  for (const outcome of failed) {
+    const at = outcome.failedAt!;
+    const ahead = outcome.game.moves
+      .slice(at)
+      .map((m) => m.anchor)
+      .filter((key): key is string => Boolean(key) && Boolean(anchors[key!]));
+    anchorsAhead += ahead.length;
+    if (ahead.length > 0) withAnchorAhead++;
+    detail.push(
+      `  Game ${outcome.game.number} ${outcome.game.white}-${outcome.game.black}: ` +
+        `stopped at move ${Math.ceil((at + 1) / 2)}, ` +
+        `${ahead.length} read diagram(s) after it`,
+    );
+  }
+  console.log(`
+of the ${failed.length} games that do not replay:`);
+  console.log(`  ${withAnchorAhead} have at least one read diagram past the failure`);
+  console.log(`  ${anchorsAhead} such diagrams in total`);
+  for (const row of detail) console.log(row);
 }
 
 // --- what kind of damage is actually stopping this? ---------------------------
