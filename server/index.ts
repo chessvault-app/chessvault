@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
-import { existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
@@ -18,7 +18,7 @@ import { refGamesApi } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup } from './vaultBackup.ts';
-import { DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
+import { DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -89,6 +89,32 @@ app.route('/api', refGamesApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', settingsApi());
 app.route('/api', lichessStudiesApi());
+
+/**
+ * Desktop update feed. Deliberately OUTSIDE /api and outside the password
+ * gate: the updater is a background process with no session and no way to
+ * get one. On a tailnet-only deployment the network is the boundary; on a
+ * public one, these are the same bytes you hand out as an installer
+ * anyway, and every download is checked against the sha512 in latest.yml.
+ *
+ * No directory listing, and only the file shapes a release actually
+ * consists of — the folder is not a general file server.
+ */
+app.get('/updates/:file', (c) => {
+  const file = c.req.param('file');
+  if (!/^[A-Za-z0-9][A-Za-z0-9 ._-]{0,80}\.(yml|exe|blockmap|dmg|zip|AppImage)$/.test(file)) {
+    return c.json({ error: 'not an update file' }, 404);
+  }
+  const path = resolve(UPDATES, file);
+  // resolve() collapses any traversal the pattern let through.
+  if (!path.startsWith(resolve(UPDATES))) return c.json({ error: 'not an update file' }, 404);
+  if (!existsSync(path)) return c.json({ error: 'no such update file' }, 404);
+  return c.body(new Uint8Array(readFileSync(path)), 200, {
+    'content-type': file.endsWith('.yml') ? 'text/yaml' : 'application/octet-stream',
+    // latest.yml must never be cached — it is the thing that changes.
+    'cache-control': file.endsWith('.yml') ? 'no-store' : 'public, max-age=31536000, immutable',
+  });
+});
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;

@@ -100,9 +100,8 @@
     ],
     "npmRebuild": false,
     "publish": {
-      "provider": "github",
-      "owner": "Lanph3re",
-      "repo": "chess-vault"
+      "provider": "generic",
+      "url": "${env.CHESS_UPDATE_URL}"
     },
     "win": {
       "target": "nsis",

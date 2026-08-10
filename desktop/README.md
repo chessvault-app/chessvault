@@ -47,14 +47,53 @@ wanted.
 
 ## Auto-update
 
-The shell auto-updates from GitHub releases via `electron-updater`
-(`build.publish` in the root `package.json` points at the repo). On
-launch a packaged build checks for a newer release, downloads it in the
-background, and offers to restart — otherwise it installs on next quit.
-Dev runs and unsigned builds no-op.
+The shell updates itself from a feed it fetches on launch: a `latest.yml`
+naming the newest version and the installer to fetch, plus that installer.
+Both are built here and uploaded to a server — there is no GitHub in the
+loop, so the source repository can stay private.
 
-Cut a release: bump `version` in `package.json`, then with a GitHub token
-in `GH_TOKEN` run `npm run desktop:release` (packages + uploads the
-installer and `latest.yml`). Clients pick it up on their next launch.
-Requires the repo to be public (or a token baked in) for clients to read
-releases.
+Two files with confusingly similar names are involved, at opposite ends:
+
+| | `app-update.yml` | `latest.yml` |
+| --- | --- | --- |
+| lives | inside the installed app | on the server |
+| says | "ask this address" | "newest is 0.2.0, here it is" |
+| written by | electron-builder, into the bundle | electron-builder, beside the installer |
+| changes | never after install | every release |
+
+Both come from `build.publish` in the root `package.json`, which reads its
+URL from the environment rather than naming anybody's server in the repo:
+
+```
+"publish": { "provider": "generic", "url": "${env.CHESS_UPDATE_URL}" }
+```
+
+### Cutting a release
+
+```
+# 1. bump "version" in package.json
+# 2. build, telling the app where it will look for updates
+CHESS_UPDATE_URL=https://<your-server>/updates npm run desktop:package
+# 3. upload BOTH to that path on the server
+#      release/installer/latest.yml
+#      release/installer/Chess Vault Setup <version>.exe
+```
+
+The build refuses to run without `CHESS_UPDATE_URL`, because an installer
+built with an empty address can never update and gives no clue why.
+
+### Serving the feed
+
+The server exposes `/updates/:file` from `CHESS_VAULT_UPDATES` (default
+`<repo>/updates`, gitignored). It is deliberately outside `/api` and
+outside the password gate: the updater is a background process with no
+session and no way to get one. On a tailnet-only deployment the network is
+the boundary; publicly, these are the same bytes you hand out as an
+installer anyway, and every download is verified against the sha512 in
+`latest.yml`. Only release-shaped filenames are served and there is no
+directory listing.
+
+### Going public later
+
+Change `build.publish` back to the GitHub provider and cut a release the
+same way. Nothing else in the app knows where updates come from.

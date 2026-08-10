@@ -28,3 +28,6 @@ release/
 
 # Personal deploy target (host, key) — never committed.
 scripts/deploy.env
+
+# Desktop release artefacts, built and uploaded rather than committed.
+updates/

@@ -28,3 +28,13 @@ export const DATA_BOOKS = resolve(DATA, 'books');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 export const DATA_OPENINGS = resolve(DATA, 'openings.json');
 export const DATA_EXPLORER_CACHE = resolve(DATA, 'explorer-cache');
+
+/**
+ * Desktop update artefacts — `latest.yml` and the installers it names.
+ *
+ * Neither vault nor derived data: they are built on somebody's machine and
+ * uploaded here, so they live on their own and are not backed up with the
+ * vault (an installer is 80 MB of something you can rebuild) and not
+ * deleted with the cache (deleting them would strand every installed app).
+ */
+export const UPDATES = fromEnv('CHESS_VAULT_UPDATES') ?? resolve(REPO_ROOT, 'updates');
