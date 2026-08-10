@@ -1,6 +1,6 @@
 """Dump a two-column book's text as LINES in reading order, with geometry.
 
-extract_1001_text.py gives words and a flat page string, which is all the
+extract_pdf_words.py gives words and a flat page string, which is all the
 puzzle importer needs. A prose book needs the line structure: in Logical
 Chess the moves are told apart from the commentary purely by layout — a
 move sits indented and short in its own line, a sentence runs the full

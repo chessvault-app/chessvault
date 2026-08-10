@@ -1,6 +1,10 @@
-"""Dump the 1001 book's text layer with word boxes (PDF point coords) for
-the auto-import measurement: puzzle-number labels above diagrams, and the
-solutions text. Usage: python extract_1001_text.py <book.pdf> <out.json>
+"""Dump a PDF's text layer as words with boxes (PDF point coords).
+
+This is what the puzzle importer reads: the numbers printed above the
+diagrams, and the solutions text. Nothing here is specific to a book —
+a word box is a word box.
+
+Usage: python extract_pdf_words.py <book.pdf> <out.json>
 """
 import json
 import sys

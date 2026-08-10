@@ -16,7 +16,7 @@ engine-backed tiers or drafts — nothing is silently dropped.
 
 ## Stages (`scripts/ml/`)
 
-1. **Text layer dump** — `extract_1001_text.py <book.pdf> <out.json>`:
+1. **Text layer dump** — `extract_pdf_words.py <book.pdf> <out.json>`:
    pymupdf word boxes + page text.
 2. **Measure** — `autoimport-measure.ts <pages_dir> --book <cfg>`:
    per page, detect diagrams, match each to its printed number, read the
@@ -83,7 +83,7 @@ find the source. Configs are committed; nobody's disk layout should be.
 
 ```
 # once: extract text, write the config, render pages
-python extract_1001_text.py book.pdf data/ml/<slug>-text.json
+python extract_pdf_words.py book.pdf data/ml/<slug>-text.json
 python harvest_pdfs.py book.pdf data/ml/<slug>-pages          # page-NNN.gray
 npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
 npx tsx derotate.ts <renders> --book cfg.json                 # if any page is upside down

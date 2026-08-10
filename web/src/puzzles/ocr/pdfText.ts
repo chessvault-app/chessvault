@@ -3,7 +3,7 @@ import type { TextPage, Word } from '@shared/bookImport';
 /**
  * A PDF's text layer, in the shape the book importer reads.
  *
- * The dev pipeline gets this from pymupdf (scripts/ml/extract_1001_text.py),
+ * The dev pipeline gets this from pymupdf (scripts/ml/extract_pdf_words.py),
  * which hands over word boxes with a top-left origin. pdf.js hands over
  * RUNS of text with a bottom-left origin, so two things have to happen here
  * before the importer sees it, and both are why this is its own file with

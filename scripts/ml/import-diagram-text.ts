@@ -2,7 +2,7 @@
  * Import a puzzle book whose diagrams are in the PDF's TEXT layer — without
  * reading a single pixel.
  *
- *   python scripts/ml/extract_1001_text.py "<book>.pdf" data/ml/<slug>-text.json
+ *   python scripts/ml/extract_pdf_words.py "<book>.pdf" data/ml/<slug>-text.json
  *   npx tsx scripts/ml/import-diagram-text.ts --book scripts/ml/books/<slug>.json
  *
  * Scanned books need the whole measure/import pipeline: find the diagram on
@@ -37,7 +37,7 @@ const bookAt = process.argv.indexOf('--book');
 if (bookAt < 0) throw new Error('usage: import-diagram-text --book scripts/ml/books/<slug>.json');
 const BOOK = {
   title: '',
-  /** Text dump from extract_1001_text.py. */
+  /** Text dump from extract_pdf_words.py. */
   text: '',
   /** Heading that opens the answers chapter, as it appears in the text. */
   solutionsHeading: 'Solutions',
