@@ -411,6 +411,7 @@ function reach(pos: Chess, tokens: string[], index: number, depth: number, diale
   return best;
 }
 
+
 // --- per-game extraction ------------------------------------------------------
 
 interface RawMove {
@@ -868,6 +869,7 @@ ${label} (${total} comparisons)`);
   let withAnchorAhead = 0;
   let anchorsAhead = 0;
   const detail: string[] = [];
+  const gaps: number[] = [];
   for (const outcome of failed) {
     const at = outcome.failedAt!;
     const ahead = outcome.game.moves
@@ -876,16 +878,32 @@ ${label} (${total} comparisons)`);
       .filter((key): key is string => Boolean(key) && Boolean(anchors[key!]));
     anchorsAhead += ahead.length;
     if (ahead.length > 0) withAnchorAhead++;
+    // The distance to the FIRST one is what decides the design. An anchor
+    // is only useful as a target if the unread stretch between the failure
+    // and the diagram is short enough to search: every ply multiplies the
+    // work by about thirty.
+    const firstAt = outcome.game.moves.findIndex(
+      (m, at2) => at2 >= at && m.anchor && anchors[m.anchor],
+    );
+    const gap = firstAt < 0 ? null : firstAt - at + 1;
+    if (gap !== null) gaps.push(gap);
     detail.push(
       `  Game ${outcome.game.number} ${outcome.game.white}-${outcome.game.black}: ` +
         `stopped at move ${Math.ceil((at + 1) / 2)}, ` +
-        `${ahead.length} read diagram(s) after it`,
+        `${ahead.length} read diagram(s) after it` +
+        (gap === null ? '' : `, first is ${gap} ply on`),
     );
   }
   console.log(`
 of the ${failed.length} games that do not replay:`);
   console.log(`  ${withAnchorAhead} have at least one read diagram past the failure`);
   console.log(`  ${anchorsAhead} such diagrams in total`);
+  if (gaps.length) {
+    console.log(
+      `  plies from failure to the first such diagram: ` +
+        `min ${Math.min(...gaps)}, median ${[...gaps].sort((a, b) => a - b)[gaps.length >> 1]}, max ${Math.max(...gaps)}`,
+    );
+  }
   for (const row of detail) console.log(row);
 }
 
