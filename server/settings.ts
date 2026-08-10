@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
-import { REPO_ROOT, VAULT, VAULT_CONFIG } from './paths.ts';
+import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 
 /**
@@ -65,12 +65,6 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
 
   api.get('/settings', (c) => {
     const config = readConfig();
-    let version = '0.0.0';
-    try {
-      version = (JSON.parse(readFileSync(resolve(REPO_ROOT, 'package.json'), 'utf-8')) as { version: string }).version;
-    } catch {
-      /* packaged builds may relocate package.json — version is cosmetic */
-    }
     const token = config.lichessToken?.trim() ?? '';
     return c.json({
       profile: config.profile ?? {},
@@ -78,7 +72,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       totp: !!config.totpSecret?.trim(),
       lichess: { configured: token !== '', last4: token === '' ? null : token.slice(-4) },
       vaultPath: vaultDir,
-      version,
+      version: APP_VERSION,
     });
   });
 

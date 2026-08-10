@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -58,6 +58,13 @@ await build({
   },
 });
 console.log('server bundled');
+
+// The bundle reports its version from package.json, and it does not ship
+// beside the repo — so it gets the one fact it needs.
+const { version } = JSON.parse(readFileSync(join(repo, 'package.json'), 'utf-8'));
+writeFileSync(join(out, 'package.json'), `${JSON.stringify({ version }, null, 2)}
+`);
+console.log(`version ${version} stamped beside the bundle`);
 
 // The opening-book builder is a repo script the server SPAWNS, so bundling
 // the server alone left packaged builds unable to build a book at all —

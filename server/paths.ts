@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -38,3 +39,26 @@ export const DATA_EXPLORER_CACHE = resolve(DATA, 'explorer-cache');
  * deleted with the cache (deleting them would strand every installed app).
  */
 export const UPDATES = fromEnv('CHESS_VAULT_UPDATES') ?? resolve(REPO_ROOT, 'updates');
+
+/**
+ * What this build is, read from package.json rather than written down.
+ *
+ * It was a literal in the health handler, and it stayed at 0.1.0 across
+ * two releases — so the Settings page reported a version the server had
+ * not been for some time. A number nobody has to remember to change is
+ * the only kind that stays true.
+ *
+ * The packaged desktop server gets a copy beside its bundle (see
+ * desktop/build-server.mjs); the repo reads its own.
+ */
+export const APP_VERSION = ((): string => {
+  for (const at of [resolve(REPO_ROOT, 'package.json'), resolve(here, 'package.json')]) {
+    try {
+      const parsed = JSON.parse(readFileSync(at, 'utf-8')) as { version?: string };
+      if (parsed.version) return parsed.version;
+    } catch {
+      // Try the next place before giving up.
+    }
+  }
+  return 'unknown';
+})();

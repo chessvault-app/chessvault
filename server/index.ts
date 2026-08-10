@@ -18,7 +18,7 @@ import { refGamesApi } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup } from './vaultBackup.ts';
-import { DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
+import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -48,7 +48,7 @@ app.get('/api/health', (c) =>
     ok: true,
     // Reported so the UI can show whether threads are actually available.
     crossOriginIsolated: true,
-    version: '0.1.0',
+    version: APP_VERSION,
   }),
 );
 
