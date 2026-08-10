@@ -16,7 +16,7 @@ import {
   SwatchBook,
   Wrench,
 } from 'lucide-react';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
@@ -143,6 +143,35 @@ function Shell() {
 /** The phone bottom row: global tabs, or a page's contextual action bar
     when one is claimed (see MobileActionBar). The slot is always mounted so
     a page's portal has a target; it only shows while claimed. */
+/**
+ * Where this window's data actually lives.
+ *
+ * It used to read "Offline · local" always — a tagline, not a status, and
+ * it said "local" while you were looking at a server on the other side of
+ * a tailnet. It now names the host it is talking to, and only says offline
+ * when the browser says so.
+ */
+function ConnectionLabel() {
+  const [online, setOnline] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const up = (): void => setOnline(true);
+    const down = (): void => setOnline(false);
+    addEventListener('online', up);
+    addEventListener('offline', down);
+    return () => {
+      removeEventListener('online', up);
+      removeEventListener('offline', down);
+    };
+  }, []);
+  const host = location.hostname;
+  const local = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
+  return (
+    <span className="text-subtle hidden truncate text-xs lg:block" title={location.origin}>
+      {!online ? 'Offline' : local ? 'This machine' : host}
+    </span>
+  );
+}
+
 function MobileBottom({ active }: { active: Section }) {
   const claimed = useMobileBarClaimed();
   return (
@@ -286,7 +315,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
       </div>
 
       <div className="border-line flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
-        <span className="text-subtle hidden text-xs lg:block">Offline · local</span>
+        <ConnectionLabel />
         <div className="flex flex-col items-center gap-1 lg:flex-row">
           <button
             type="button"

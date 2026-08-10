@@ -175,6 +175,13 @@ app.whenReady().then(async () => {
       return { error: `Could not reach that server (${err?.code ?? err?.message ?? 'no answer'}).` };
     }
   });
+  // The same thing the Vault menu does, reachable from the app's settings.
+  ipcMain.handle('vault:switch', async () => {
+    writeSettings({ mode: null });
+    serverProc?.kill();
+    serverProc = null;
+    await win.loadFile(join(here, 'chooser.html'));
+  });
   ipcMain.handle('vault:pick-folder', async () => {
     const picked = await dialog.showOpenDialog(win, {
       title: 'Open vault folder',

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { ChevronLeft, Eye, EyeOff, KeyRound, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
@@ -72,6 +72,7 @@ export function SettingsPage() {
         </header>
 
         <ProfileCard settings={settings} onSaved={refresh} />
+        <DesktopCard />
         <AppearanceCard />
         <SecurityCard settings={settings} onChanged={refresh} />
         <LichessCard settings={settings} onChanged={refresh} />
@@ -157,6 +158,46 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
       <div className="flex items-center gap-3">
         <Button variant="primary" onClick={() => void save()}>Save profile</Button>
         <Feedback note={note} />
+      </div>
+    </Card>
+  );
+}
+
+// --- Desktop shell -----------------------------------------------------------
+
+/**
+ * The shell's own settings, and only when there is a shell.
+ *
+ * The app talks HTTP and nothing else — that rule is why the desktop build
+ * can lag or disappear without leaving debt. This does not break it: the
+ * control is feature-detected, so in a browser the card is simply not
+ * there, and what it calls is the shell's configuration bridge rather than
+ * anything the app depends on.
+ *
+ * It is here because the alternative was a menu bar hidden behind Alt,
+ * which is not a way anybody finds a setting.
+ */
+interface VaultShell {
+  switchVault?: () => Promise<void>;
+}
+
+function DesktopCard() {
+  const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
+  // switchVault is newer than the bridge itself, so an older shell shows
+  // no card rather than a button that does nothing.
+  if (!shell?.switchVault) return null;
+  return (
+    <Card icon={MonitorSmartphone} title="Desktop app">
+      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+        <div className="min-w-0">
+          <div className="text-sm font-medium">Vault</div>
+          <div className="text-subtle text-xs">
+            Point this window at a server, or host a folder on this machine.
+          </div>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => void shell.switchVault!()}>
+          Switch…
+        </Button>
       </div>
     </Card>
   );
