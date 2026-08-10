@@ -71,7 +71,11 @@ def main():
         if n < 1 or n > len(doc):
             continue
         render(doc[n - 1], os.path.join(out, name))
-    render(doc[cfg.get('coverPage', 1) - 1], os.path.join(out, 'cover.jpg'), 700)
+    # The shelf draws the cover as a small card, so it is rendered small.
+    # At 700px and up this file was reaching 700 KB — the single heaviest
+    # thing the shelf loads, for a thumbnail. 480 matches what the in-app
+    # importer writes, so both paths produce the same kind of cover.
+    render(doc[cfg.get('coverPage', 1) - 1], os.path.join(out, 'cover.jpg'), 480)
     print(f'{len(wanted)} pages + cover -> {out}')
 
 
