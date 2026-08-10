@@ -1,11 +1,12 @@
 import { ChevronLeft, Check, Compass, Cpu, FolderPlus, Grid3x3, ListOrdered, Loader2, RotateCcw, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { getNode } from '@shared/tree';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
+import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
 import { useAnalysis } from '@/store/analysis';
@@ -22,6 +23,15 @@ import { LoadPositionButton } from './PositionLoader';
 type AnalysisPane = 'moves' | 'engine' | 'explorer';
 
 export function AnalysisView({ params = [] }: { params?: string[] }) {
+  const openingTree = useAnalysis((s) => s.tree);
+  const openingCursor = useAnalysis((s) => s.cursorId);
+  const openingName = useOpeningName(
+    useMemo(
+      () => pathTo(openingTree, openingCursor).map((id) => getNode(openingTree, id).fen),
+      [openingTree, openingCursor],
+    ),
+  );
+
   // Reached as Tools > Explorer (navigate('analysis', 'explorer')): open
   // straight to the opening explorer instead of the move list.
   const wantExplorer = params[0] === 'explorer';
@@ -112,7 +122,11 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
               own tab (below), so hide the docked copy there. */}
           <EngineBlock className="max-lg:hidden" />
           <PanelHeader
-            title="Moves"
+            // The line's own name rather than the word "Moves", which every
+            // panel in the app could have been called. It updates as you
+            // play and is looked up by position, so transpositions arrive
+            // at the right name.
+            title={openingName ?? 'Starting position'}
             actions={
               <>
                 <ReviewButton />

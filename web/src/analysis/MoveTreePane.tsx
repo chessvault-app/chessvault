@@ -3,6 +3,7 @@ import { ArrowUpToLine } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
+import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
 
 /** Glyphs for the NAGs a study realistically uses. */
@@ -61,11 +62,13 @@ export function MoveTreePane({ className }: { className?: string }) {
   const promoteNode = useAnalysis((s) => s.promoteNode);
   const scroller = useRef<HTMLDivElement>(null);
 
-  // Keep the active move visible as the user walks the line.
+  // Keep the active move visible as the user walks the line, along with
+  // the comment written under it — and without moving the page.
   useEffect(() => {
-    scroller.current
-      ?.querySelector('[data-active="true"]')
-      ?.scrollIntoView({ block: 'nearest' });
+    scrollRowIntoPanel(
+      scroller.current,
+      scroller.current?.querySelector('[data-active="true"]') ?? null,
+    );
   }, [cursorId]);
 
   const root = getNode(tree, tree.rootId);

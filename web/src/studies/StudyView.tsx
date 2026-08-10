@@ -13,7 +13,10 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { getNode, pathTo } from '@shared/tree';
+import { useAnalysis } from '@/store/analysis';
+import { useOpeningName } from '@/lib/opening';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
@@ -45,6 +48,21 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const open = useStudy((s) => s.open);
   const close = useStudy((s) => s.close);
   const saveState = useStudy((s) => s.saveState);
+  // What the moves panel is called. A study's moves belong to a chapter,
+  // and its name is the useful thing to see while reading — the study's own
+  // title is already in the header above. A game has one chapter named
+  // after the document, so it takes the opening instead, like the Board.
+  const chapterName = useStudy((s) => s.chapters[s.chapterIndex]?.name ?? '');
+  const analysisTree = useAnalysis((s) => s.tree);
+  const analysisCursor = useAnalysis((s) => s.cursorId);
+  const openingName = useOpeningName(
+    useMemo(
+      () => pathTo(analysisTree, analysisCursor).map((nodeId) => getNode(analysisTree, nodeId).fen),
+      [analysisTree, analysisCursor],
+    ),
+  );
+  const movesTitle =
+    kind === 'game' ? (openingName ?? 'Starting position') : chapterName || 'Moves';
   const error = useStudy((s) => s.error);
   const [failed, setFailed] = useState(false);
   // Small screens show one pane at a time under the board.
@@ -181,7 +199,10 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           {/* Docked on desktop; its own tab on phones (below). */}
           <EngineBlock className="max-lg:hidden" />
           <PanelHeader
-            title="Moves"
+            // A study's moves belong to a chapter, and the chapter's name
+            // is the useful thing to see while reading it — the study's own
+            // title is already in the header above.
+            title={movesTitle}
             actions={
               <>
                 <Button

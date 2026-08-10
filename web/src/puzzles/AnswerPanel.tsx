@@ -3,6 +3,7 @@ import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-rea
 import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
+import { scrollRowIntoPanel } from '@/lib/scroll';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
@@ -29,10 +30,13 @@ export function AnswerPanel({
   emptyText?: string;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
+  // Panel-only: in a mobile browser the first move of a puzzle used to
+  // scroll the PAGE, clipping the top of the panel on load.
   useEffect(() => {
-    scroller.current
-      ?.querySelector('[data-active="true"]')
-      ?.scrollIntoView({ block: 'nearest' });
+    scrollRowIntoPanel(
+      scroller.current,
+      scroller.current?.querySelector('[data-active="true"]') ?? null,
+    );
   }, [cursorId]);
 
   const node = getNode(tree, cursorId);
