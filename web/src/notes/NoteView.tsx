@@ -150,12 +150,18 @@ function NoteEditor({
   }, [editor, editable]);
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto p-4 lg:p-6">
+    // No padding on the TOP of the scroll container: `sticky top-0` pins to
+    // the scrollport, which is the padding box, so a pt- here leaves a band
+    // above the pinned header for content to scroll through in plain view.
+    // The header wrapper carries that padding instead. The bottom keeps the
+    // home-indicator inset, since an edited note claims the phone's bar and
+    // its text would otherwise run under it.
+    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:px-6 lg:pb-6">
       {/* Header AND palette pin together. Pinning only the palette left the
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it
           read as narrower than the text it formats. */}
-      <div className="border-line bg-app sticky top-0 z-30 -mx-4 -mt-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 lg:-mx-6 lg:-mt-6 lg:px-6 lg:pt-6">
+      <div className="border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 lg:-mx-6 lg:px-6 lg:pt-6">
       <header className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title="All notes" onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
