@@ -107,34 +107,34 @@ export function AnnotationPane({
     <ChipRow innerClassName="gap-1">{glyphs}</ChipRow>
   );
 
-  // Folded away, the palette is two rows of thumb targets you get back —
-  // which matters most on the short viewports where this panel is tightest.
-  // The chevron keeps showing whatever glyphs the move already carries, so
-  // folding hides the CHOICES, never the annotation.
+  // The fold is only worth anything if it gives the row back, so the toggle
+  // rides beside the comment box rather than taking a row of its own — and
+  // the palette above it renders unwrapped, which is what lets ChipRow
+  // measure itself and keep its scroll arrows.
+  //
+  // Folded, the toggle still shows whatever glyphs the move already carries:
+  // it hides the CHOICES, never the annotation.
   const chosen = [...QUALITY_NAGS, ...ASSESSMENT_NAGS].filter((nag) => node.nags.includes(nag));
-  const foldable = (
-    <div className="flex items-center gap-1">
-      <button
-        type="button"
-        aria-expanded={paletteOpen}
-        title={paletteOpen ? 'Hide glyphs' : 'Show glyphs'}
-        onClick={() => setPaletteOpen((open) => !open)}
-        className={cn(
-          'text-muted hover:bg-surface-2 hover:text-fg flex h-6 shrink-0 items-center gap-1 rounded px-1',
-          'transition-colors duration-100 pointer-coarse:h-8',
-        )}
-      >
-        <ChevronDown
-          className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
-        />
-        {!paletteOpen && chosen.length > 0 && (
-          <span className="text-primary font-mono text-xs font-semibold">
-            {chosen.map((nag) => NAG_GLYPH[nag]).join(' ')}
-          </span>
-        )}
-      </button>
-      {paletteOpen && <div className="min-w-0 flex-1">{palette}</div>}
-    </div>
+  const toggle = (
+    <button
+      type="button"
+      aria-expanded={paletteOpen}
+      title={paletteOpen ? 'Hide glyphs' : 'Show glyphs'}
+      onClick={() => setPaletteOpen((open) => !open)}
+      className={cn(
+        'text-muted hover:bg-surface-2 hover:text-fg flex shrink-0 items-center gap-0.5 self-stretch',
+        'rounded px-1 transition-colors duration-100',
+      )}
+    >
+      <ChevronDown
+        className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
+      />
+      {!paletteOpen && chosen.length > 0 && (
+        <span className="text-primary font-mono text-xs font-semibold">
+          {chosen.map((nag) => NAG_GLYPH[nag]).join('')}
+        </span>
+      )}
+    </button>
   );
 
   const placeholder = atRoot ? rootPlaceholder : `Comment on ${node.san ?? 'this move'}…`;
@@ -144,33 +144,36 @@ export function AnnotationPane({
 
   return (
     <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
-      {!atRoot && foldable}
-      {coarse ? (
-        // Touch: the inline textarea sits exactly where the keyboard (and
-        // the bottom bar riding above it) land, so typing into it was a
-        // mash. Tapping opens a sheet pinned to the TOP of the viewport —
-        // the same idiom as the opening search.
-        <button
-          type="button"
-          onClick={() => setSheet(true)}
-          className="border-line bg-surface-inset min-h-9 w-full rounded-md border px-2.5 py-2 text-left text-xs leading-relaxed"
-        >
-          {draft ? (
-            <span className="text-fg line-clamp-2 whitespace-pre-wrap">{draft}</span>
-          ) : (
-            <span className="text-subtle">{placeholder}</span>
-          )}
-        </button>
-      ) : (
-        <TextArea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={flush}
-          placeholder={placeholder}
-          rows={2}
-          className="w-full resize-none leading-relaxed"
-        />
-      )}
+      {!atRoot && paletteOpen && palette}
+      <div className="flex items-stretch gap-1">
+        {!atRoot && toggle}
+        {coarse ? (
+          // Touch: the inline textarea sits exactly where the keyboard (and
+          // the bottom bar riding above it) land, so typing into it was a
+          // mash. Tapping opens a sheet pinned to the TOP of the viewport —
+          // the same idiom as the opening search.
+          <button
+            type="button"
+            onClick={() => setSheet(true)}
+            className="border-line bg-surface-inset min-h-9 min-w-0 flex-1 rounded-md border px-2.5 py-2 text-left text-xs leading-relaxed"
+          >
+            {draft ? (
+              <span className="text-fg line-clamp-2 whitespace-pre-wrap">{draft}</span>
+            ) : (
+              <span className="text-subtle">{placeholder}</span>
+            )}
+          </button>
+        ) : (
+          <TextArea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={flush}
+            placeholder={placeholder}
+            rows={2}
+            className="min-w-0 flex-1 resize-none leading-relaxed"
+          />
+        )}
+      </div>
       {sheet && coarse && (
         <div
           className="fixed inset-0 z-50 bg-black/50"
