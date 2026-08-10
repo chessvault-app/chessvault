@@ -351,6 +351,57 @@ describe('fitLabelWindow / assignLabels', () => {
   });
 });
 
+describe('assignLabels — numbers the scan lost', () => {
+  /** A page of `count` diagrams in one column, with numbers for `given`. */
+  const page = (no: number, first: number, count: number, given: number[]): PageLayout => {
+    const rects = [...Array(count).keys()].map((i) => ({ x: 100, y: 100 + i * 300, w: 200, h: 200 }));
+    return {
+      page: no,
+      rects,
+      numbers: rects
+        .map((r, i) => ({ value: first + i, x0: r.x - 20, x1: r.x, y1: r.y - 30 }))
+        .filter((n) => given.includes(n.value)),
+    };
+  };
+
+  /** Enough pages for the window to be fitted at all. */
+  const filler = (): PageLayout[] =>
+    [...Array(10).keys()].map((i) => page(100 + i, 500 + i * 3, 3, [500 + i * 3, 501 + i * 3, 502 + i * 3]));
+
+  it('deduces a number missing from the text layer', () => {
+    // 10, 11, 12 printed; the scan lost 11.
+    const found = assignLabels([page(1, 10, 3, [10, 12]), ...filler()]);
+    expect(found.get(11)).toEqual({ page: 1, rect: { x: 100, y: 400, w: 200, h: 200 } });
+  });
+
+  it('fills a gap several wide when it matches exactly', () => {
+    const found = assignLabels([page(1, 20, 5, [20, 24]), ...filler()]);
+    expect([21, 22, 23].map((n) => found.get(n)?.rect.y)).toEqual([400, 700, 1000]);
+  });
+
+  it('refuses a gap that does not match what stands in it', () => {
+    // Two diagrams between 30 and 34 — but three numbers are missing, so
+    // which diagram is which is not deducible. Guessing would put wrong
+    // numbers on real positions.
+    const p = page(1, 30, 5, [30, 34]);
+    p.rects.splice(2, 1); // one diagram was never detected
+    const found = assignLabels([p, ...filler()]);
+    expect(found.has(31)).toBe(false);
+    expect(found.has(32)).toBe(false);
+    expect(found.has(33)).toBe(false);
+  });
+
+  it('never overwrites a number a diagram actually carried', () => {
+    const found = assignLabels([page(1, 40, 3, [40, 41, 42]), ...filler()]);
+    expect(found.get(41)?.rect.y).toBe(400);
+  });
+
+  it('leaves a page alone when nothing on it was labelled', () => {
+    const found = assignLabels([page(1, 50, 3, []), ...filler()]);
+    expect([50, 51, 52].some((n) => found.has(n))).toBe(false);
+  });
+});
+
 describe('deriveNumbering', () => {
   const digits = (values: number[], style: 'bare' | 'paren'): TextPage[] =>
     values.map((v, i) => ({

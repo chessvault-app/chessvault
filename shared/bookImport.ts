@@ -259,7 +259,9 @@ export function assignLabels(pages: PageLayout[]): Map<number, LabelledDiagram> 
   const fitted = fitLabelWindow(pages);
   const out = new Map<number, LabelledDiagram>();
   if (!fitted) return out;
+  const claimed = new Map<PageLayout, Map<Rect, number>>();
   for (const page of [...pages].sort((a, b) => a.page - b.page)) {
+    const here = new Map<Rect, number>();
     for (const rect of page.rects) {
       // The window is in fractions of a diagram; the boxes are in pixels.
       const label = labelForDiagram(rect, page.numbers, {
@@ -267,10 +269,79 @@ export function assignLabels(pages: PageLayout[]): Map<number, LabelledDiagram> 
         labelY: fitted.labelY * rect.h,
         labelDrop: fitted.labelDrop * rect.h,
       });
-      if (label && !out.has(label.value)) out.set(label.value, { page: page.page, rect });
+      if (label && !out.has(label.value)) {
+        out.set(label.value, { page: page.page, rect });
+        here.set(rect, label.value);
+      }
+    }
+    claimed.set(page, here);
+  }
+  fillGaps(pages, claimed, out);
+  return out;
+}
+
+/** Diagrams in the order a reader meets them: across each row, then down. */
+function readingOrder(rects: Rect[]): Rect[] {
+  const rows = [...rects].sort((a, b) => a.y - b.y);
+  const out: Rect[] = [];
+  let band: Rect[] = [];
+  for (const rect of rows) {
+    const first = band[0];
+    // Same row while the tops are within half a diagram of each other.
+    if (first && rect.y - first.y > first.h / 2) {
+      out.push(...band.sort((a, b) => a.x - b.x));
+      band = [];
+    }
+    band.push(rect);
+  }
+  out.push(...band.sort((a, b) => a.x - b.x));
+  return out;
+}
+
+/**
+ * Number the diagrams whose printed number the scan simply lost.
+ *
+ * Some numbers are not in the text layer at all — page 14 of one book
+ * offers 100 and 102 and nothing in between, though 101 is printed right
+ * there. No window can find what was never scanned.
+ *
+ * It does not have to be found, only deduced: puzzle numbers run in order
+ * as you read down a page, so a diagram between the one labelled 100 and
+ * the one labelled 102 can only be 101. The gap is filled ONLY when its
+ * width matches the diagrams standing in it exactly — one missing number
+ * and one unlabelled diagram, or three and three. A gap that does not
+ * match means something else is going on, and guessing there would put
+ * wrong numbers on real positions.
+ */
+function fillGaps(
+  pages: PageLayout[],
+  claimed: Map<PageLayout, Map<Rect, number>>,
+  out: Map<number, LabelledDiagram>,
+): void {
+  for (const page of pages) {
+    const here = claimed.get(page);
+    if (!here || here.size === 0) continue;
+    const order = readingOrder(page.rects);
+    // Walk between consecutive labelled diagrams, filling what is between.
+    let previousAt = -1;
+    for (let at = 0; at < order.length; at++) {
+      const number = here.get(order[at]!);
+      if (number === undefined) continue;
+      if (previousAt >= 0) {
+        const before = here.get(order[previousAt]!)!;
+        const between = at - previousAt - 1;
+        const span = number - before - 1;
+        if (between > 0 && span === between) {
+          for (let step = 1; step <= between; step++) {
+            const guess = before + step;
+            if (out.has(guess)) continue;
+            out.set(guess, { page: page.page, rect: order[previousAt + step]! });
+          }
+        }
+      }
+      previousAt = at;
     }
   }
-  return out;
 }
 
 /**
