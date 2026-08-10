@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
 import { existsSync, mkdirSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
@@ -52,6 +53,17 @@ app.get('/api/health', (c) =>
 );
 
 // Cap request bodies before any handler buffers them: the vault-write
+/**
+ * Gzip the API only.
+ *
+ * A book's detail response is its whole puzzle list — 1.9 MB of JSON for
+ * the largest, every byte of it repetitive FENs and move lists, which is
+ * exactly what gzip is good at. Everything under /dist is already
+ * compressed (jpeg, wasm) or served by the static handler, so squeezing
+ * those would cost CPU for nothing.
+ */
+app.use('/api/*', compress());
+
 // routes (studies, notes, draft images) otherwise accept unbounded input.
 // 32 MB clears the largest legitimate case (a book's draft batch) with room
 // to spare; the per-route byte checks refine it.
