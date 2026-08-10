@@ -153,6 +153,23 @@ async function openApp(win) {
   await win.loadFile(join(here, 'chooser.html'));
 }
 
+/**
+ * electron-updater is CommonJS, so `await import()` hands back a namespace
+ * whose exports live under `.default` — destructuring `{ autoUpdater }`
+ * from it yields undefined, every time, silently.
+ *
+ * This is why the app never updated itself: the launch check threw
+ * "Cannot read properties of undefined", the catch logged it to a console
+ * nobody opens, and a machine sat on 0.1.0 while the feed served three
+ * newer builds correctly.
+ */
+async function updater() {
+  const mod = await import('electron-updater');
+  const found = mod.autoUpdater ?? mod.default?.autoUpdater;
+  if (!found) throw new Error('electron-updater exposed no autoUpdater');
+  return found;
+}
+
 app.whenReady().then(async () => {
   const win = createWindow();
 
@@ -191,7 +208,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('app:check-updates', async () => {
     if (!app.isPackaged) return { state: 'dev' };
     try {
-      const { autoUpdater } = await import('electron-updater');
+      const autoUpdater = await updater();
       const result = await autoUpdater.checkForUpdates();
       const found = result?.updateInfo?.version;
       if (!found || found === app.getVersion()) return { state: 'current', version: app.getVersion() };
@@ -258,7 +275,7 @@ app.whenReady().then(async () => {
 async function checkForUpdates(win) {
   if (!app.isPackaged) return;
   try {
-    const { autoUpdater } = await import('electron-updater');
+    const autoUpdater = await updater();
     autoUpdater.autoDownload = true;
     autoUpdater.autoInstallOnAppQuit = true;
     autoUpdater.on('update-downloaded', (info) => {

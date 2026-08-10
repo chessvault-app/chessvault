@@ -3,6 +3,19 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.2.3
+
+- **Auto-update actually works.** It never had. electron-updater is
+  CommonJS, so `await import()` puts its exports under `.default` and
+  destructuring `{ autoUpdater }` gave undefined — the check threw on
+  every launch, the error went to a console nobody opens, and the app sat
+  on 0.1.0 while the feed served three correct builds. This is the last
+  release that needs installing by hand.
+- **The desktop app's own server no longer answers the network.** Local
+  mode has no password, by design, but it was bound to every interface —
+  so opening the app on a shared network published an unauthenticated
+  vault to it. Loopback only now.
+
 ## 0.2.2
 
 - **Settings says what is running** — the server's version and, in the
