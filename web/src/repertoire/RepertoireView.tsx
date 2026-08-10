@@ -1,6 +1,7 @@
 import { parseSquare } from 'chessops/util';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Compass, FlipVertical2, Play, RotateCcw, SwatchBook } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { treeToPgn } from '@shared/pgn';
@@ -143,6 +144,27 @@ function OpeningPicker({
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
+  // Where to put the floating list. A Panel clips its children (rounded
+  // corners), so an absolutely-positioned dropdown inside one is buried in
+  // it — the list has to leave the panel entirely and be placed against
+  // the input's own box on screen.
+  const anchor = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ left: number; top: number; width: number } | null>(null);
+  useEffect(() => {
+    if (!open || coarse) return;
+    const place = (): void => {
+      const rect = anchor.current?.getBoundingClientRect();
+      if (rect) setBox({ left: rect.left, top: rect.bottom + 4, width: rect.width });
+    };
+    place();
+    window.addEventListener('resize', place);
+    // Capture: the panel it lives in is itself scrollable.
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [open, coarse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -186,12 +208,10 @@ function OpeningPicker({
     <ul
       className={cn(
         'border-line bg-surface overflow-y-auto overscroll-contain rounded-lg border p-1',
-        // On a mouse the list FLOATS over the page. Inline, it pushed
-        // everything below it down as you typed and let go again when you
-        // picked — the panel jumping about while you read it.
-        coarse
-          ? 'max-h-[45dvh]'
-          : 'absolute inset-x-0 top-full z-40 mt-1 max-h-64 shadow-[var(--shadow-pop)]',
+        // On a mouse the list FLOATS over the page, portalled out of the
+        // panel that would otherwise clip it. Inline, it also pushed
+        // everything below it down as you typed and let go when you picked.
+        coarse ? 'max-h-[45dvh]' : 'max-h-64 shadow-[var(--shadow-pop)]',
       )}
     >
       {matches.length === 0 ? (
@@ -300,9 +320,7 @@ function OpeningPicker({
   }
 
   return (
-    // relative: the list is positioned against this box so it can float
-    // over what is below rather than pushing it down.
-    <div className="relative flex flex-col gap-1">
+    <div ref={anchor} className="flex flex-col gap-1">
       <Input
         inputSize="sm"
         value={open ? query : value.eco ? `${value.eco}  ${value.name}` : value.name}
@@ -317,7 +335,17 @@ function OpeningPicker({
           if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
         }}
       />
-      {open && list}
+      {open &&
+        box &&
+        createPortal(
+          <div
+            className="fixed z-50"
+            style={{ left: box.left, top: box.top, width: box.width }}
+          >
+            {list}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

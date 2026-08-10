@@ -949,6 +949,62 @@ function PuzzleGrid({
   );
 }
 
+/** Tailwind's sm breakpoint, where the grid goes from six columns to eight. */
+const GRID_SM = '(min-width: 40rem)';
+/** gap-2 in pixels. */
+const GRID_GAP = 8;
+/** Rows kept beyond the viewport, so a fast scroll does not outrun it. */
+const OVERSCAN = 6;
+
+/**
+ * Which slice of a square-tile grid is worth building.
+ *
+ * A big book is five thousand tiles, each a button carrying an icon, and
+ * React spent most of a second creating them all before the page could be
+ * seen — content-visibility skips PAINTING what is offscreen but not
+ * building it. So only the rows near the viewport are built, and the rest
+ * are two spacers holding the scrollbar honest.
+ *
+ * Measured from the grid's own box rather than a scroll container, because
+ * which ancestor scrolls differs between the phone and desktop layouts.
+ */
+function useGridWindow(
+  grid: React.RefObject<HTMLDivElement | null>,
+  total: number,
+): { start: number; end: number; top: number; bottom: number } {
+  const [slice, setSlice] = useState({ start: 0, end: total, top: 0, bottom: 0 });
+  useEffect(() => {
+    const measure = (): void => {
+      const el = grid.current;
+      if (!el) return;
+      const columns = globalThis.matchMedia(GRID_SM).matches ? 8 : 6;
+      const cell = (el.clientWidth - GRID_GAP * (columns - 1)) / columns + GRID_GAP;
+      if (!(cell > 0)) return;
+      const rows = Math.ceil(total / columns);
+      const above = Math.max(0, -el.getBoundingClientRect().top);
+      const firstRow = Math.max(0, Math.floor(above / cell) - OVERSCAN);
+      const visibleRows = Math.ceil(globalThis.innerHeight / cell) + OVERSCAN * 2;
+      const lastRow = Math.min(rows, firstRow + visibleRows);
+      setSlice({
+        start: firstRow * columns,
+        end: Math.min(total, lastRow * columns),
+        top: firstRow * cell,
+        bottom: Math.max(0, (rows - lastRow) * cell),
+      });
+    };
+    measure();
+    // Capture: the scrolling ancestor is the page on a phone and a column
+    // on desktop, and this does not need to know which.
+    globalThis.addEventListener('scroll', measure, true);
+    globalThis.addEventListener('resize', measure);
+    return () => {
+      globalThis.removeEventListener('scroll', measure, true);
+      globalThis.removeEventListener('resize', measure);
+    };
+  }, [grid, total]);
+  return slice;
+}
+
 /**
  * The book's puzzles as an information-dense, filterable list: number,
  * fidelity tier, goal, attempt history — filters double as the tier
@@ -1036,6 +1092,9 @@ function PuzzleList({
       (tierFilter === 'all' || metaOf(p)?.label === tierFilter),
   );
 
+  const grid = useRef<HTMLDivElement>(null);
+  const window_ = useGridWindow(grid, visible.length);
+
   return (
     <>
       <ProgressBar
@@ -1080,8 +1139,13 @@ function PuzzleList({
           />
         ))}
       </ChipRow>
-      <div className="grid grid-cols-6 gap-2 sm:grid-cols-8">
-        {visible.map((p) => {
+      <div ref={grid} className="grid grid-cols-6 gap-2 sm:grid-cols-8">
+        {/* The rows above the viewport, as one spacer that spans the grid.
+            content-visibility already skipped PAINTING them; this skips
+            building them, which is the part that cost most of a second on
+            a five-thousand-puzzle book. */}
+        {window_.top > 0 && <div style={{ gridColumn: '1/-1', height: window_.top }} />}
+        {visible.slice(window_.start, window_.end).map((p) => {
           const state = stateOf(p);
           const meta =
             p.provenance && p.provenance in PROVENANCE_META
@@ -1124,6 +1188,7 @@ function PuzzleList({
             </button>
           );
         })}
+        {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}
       </div>
       {visible.length === 0 && (
         <p className="text-subtle p-4 text-center text-xs">Nothing matches these filters.</p>
