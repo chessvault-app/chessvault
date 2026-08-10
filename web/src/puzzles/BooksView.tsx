@@ -213,6 +213,43 @@ export function BooksView({ params }: { params: string[] }) {
  */
 const bookCache = new Map<string, BookDetail>();
 
+/**
+ * One puzzle's evidence, fetched when something wants to show it.
+ *
+ * Evidence is no longer part of the book download — it was the heaviest
+ * thing a book carried and the grid never reads it — so anything that
+ * DOES read it asks for its own. Both the solver (which offers a peek at
+ * the scan) and the corrector (which shows it beside the board) go
+ * through here, and a puzzle already looked at costs nothing.
+ */
+const evidenceCache = new Map<string, BookEvidence | undefined>();
+
+function usePuzzleEvidence(slug: string, id: string | undefined): BookEvidence | undefined {
+  const key = id ? `${slug}/${id}` : '';
+  const [, bump] = useState(0);
+  useEffect(() => {
+    if (!id || evidenceCache.has(key)) return;
+    let live = true;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(id)}/evidence`,
+        );
+        const body = res.ok ? ((await res.json()) as { evidence?: BookEvidence }) : {};
+        evidenceCache.set(key, body.evidence);
+      } catch {
+        // A missing scan is a missing button, not a broken puzzle.
+        evidenceCache.set(key, undefined);
+      }
+      if (live) bump((n) => n + 1);
+    })();
+    return () => {
+      live = false;
+    };
+  }, [slug, id, key]);
+  return key ? evidenceCache.get(key) : undefined;
+}
+
 /** Positions and lines, fetched once per book when something solves. */
 const solutionCache = new Map<string, Record<string, PuzzleSolution>>();
 
@@ -1536,27 +1573,7 @@ function PuzzleEntry({
   // heaviest thing a book carries and only ever wanted here — so it is
   // fetched when a puzzle is opened. Drafts still carry theirs inline;
   // there are few enough of them for it not to matter.
-  const [fetched, setFetched] = useState<BookEvidence | undefined>(undefined);
-  const replaceId = replace?.id;
-  useEffect(() => {
-    if (!replaceId) return;
-    let live = true;
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(replaceId)}/evidence`,
-        );
-        if (!res.ok) return;
-        const body = (await res.json()) as { evidence?: BookEvidence };
-        if (live) setFetched(body.evidence);
-      } catch {
-        // No evidence pane is a smaller loss than a broken editor.
-      }
-    })();
-    return () => {
-      live = false;
-    };
-  }, [slug, replaceId]);
+  const fetched = usePuzzleEvidence(slug, replace?.id);
   const evidence = replace?.evidence ?? fetched ?? draft?.evidence;
   const boardContent =
     fen === null ? (
@@ -1966,7 +1983,11 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [solutions, setSolutions] = useState<Record<string, PuzzleSolution>>({});
   const entry = index >= 0 ? book!.puzzles[index]! : null;
   const answer = entry ? solutions[entry.id] : undefined;
-  const puzzle = entry && answer ? { ...entry, ...answer } : null;
+  // The scan this puzzle came off, for the peek button beside the board.
+  // It travels separately from the book now, so the solver asks for its
+  // own — without this the button vanished from every layout.
+  const evidence = usePuzzleEvidence(slug, entry?.id);
+  const puzzle = entry && answer ? { ...entry, ...answer, evidence } : null;
   const solution: BookSolution | null = puzzle
     ? { fen: puzzle.fen, uci: puzzle.uci, ...(puzzle.wildcards ? { wildcards: puzzle.wildcards } : {}) }
     : null;

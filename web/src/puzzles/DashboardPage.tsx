@@ -12,6 +12,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
+import { suppressNextClick } from '@/lib/suppressNextClick';
 
 /**
  * Training overview: counters, results by difficulty band, and the recent
@@ -123,6 +124,7 @@ export function DashboardPage() {
   // Coarse pointers can't hover: the eye TAPS the preview open and a
   // second tap (or another row's) dismisses it.
   const previewFor = useRef<string | null>(null);
+  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
   const togglePreview = (id: string, anchor: Element): void => {
     if (previewFor.current === id) {
       hidePreview();
@@ -371,6 +373,21 @@ export function DashboardPage() {
       </div>
 
       {preview && (
+        <>
+        {/* Touch has no hover to leave, so a tapped-open preview stayed
+            until you tapped its own eye again — anywhere else did nothing.
+            A transparent sheet catches that tap and dismisses. Coarse
+            pointers only: on a mouse this would sit between the cursor and
+            every other row, and hovering is how it opens. */}
+        {coarse && (
+          <div
+            className="fixed inset-0 z-40"
+            onPointerDown={() => {
+              hidePreview();
+              suppressNextClick();
+            }}
+          />
+        )}
         <div
           style={{ top: preview.top, left: preview.left }}
           className={cn(
@@ -386,6 +403,7 @@ export function DashboardPage() {
             className="rounded"
           />
         </div>
+        </>
       )}
     </div>
   );
