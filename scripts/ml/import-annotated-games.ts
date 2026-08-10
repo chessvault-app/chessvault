@@ -801,6 +801,7 @@ if (process.argv.includes('--anchor-check')) {
     readFileSync(resolve(REPO_ROOT, 'data', 'ml', `${BOOK.slug}-anchors.json`), 'utf-8'),
   ) as Record<string, { placement: string; unsure: number }>;
   const spread = new Map<number, number>();
+  const control = new Map<number, number>();
   let checked = 0;
   let noAnchor = 0;
   for (const outcome of outcomes.filter((o) => o.failedAt === null)) {
@@ -819,18 +820,41 @@ if (process.argv.includes('--anchor-check')) {
       checked++;
       const wrong = differing(makeBoardFen(pos.board), read.placement);
       spread.set(wrong, (spread.get(wrong) ?? 0) + 1);
+      // Control: the SAME diagram against a position that is close but
+      // wrong — the game two plies on. If a read diagram cannot tell these
+      // apart it cannot steer a search either, however good it looks
+      // against the right answer.
+      const drift = pos.clone();
+      let stepped = 0;
+      for (const later of outcome.played.slice(index + 1, index + 3)) {
+        const next = parseSan(drift, later.san);
+        if (!next) break;
+        drift.play(next);
+        stepped++;
+      }
+      if (stepped === 2) {
+        const off = differing(makeBoardFen(drift.board), read.placement);
+        control.set(off, (control.get(off) ?? 0) + 1);
+      }
     }
   }
   console.log(`
 anchors checked on games that already replay: ${checked} (${noAnchor} had no read diagram)`);
-  const rows = [...spread].sort((a, b) => a[0] - b[0]);
-  let running = 0;
-  for (const [wrong, n] of rows) {
-    running += n;
-    console.log(
-      `  ${String(wrong).padStart(2)} squares wrong: ${String(n).padStart(4)}  (${((100 * running) / checked).toFixed(1)}% within)`,
-    );
-  }
+  const table = (label: string, data: Map<number, number>): void => {
+    const total = [...data.values()].reduce((a, b) => a + b, 0);
+    if (total === 0) return;
+    console.log(`
+${label} (${total} comparisons)`);
+    let running = 0;
+    for (const [wrong, n] of [...data].sort((a, b) => a[0] - b[0])) {
+      running += n;
+      console.log(
+        `  ${String(wrong).padStart(2)} squares differ: ${String(n).padStart(4)}  (${((100 * running) / total).toFixed(1)}% within)`,
+      );
+    }
+  };
+  table('against the position the move reaches', spread);
+  table('against the position two plies LATER (the control)', control);
 }
 
 // --- what kind of damage is actually stopping this? ---------------------------
