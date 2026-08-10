@@ -16,6 +16,7 @@ import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
+import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Select } from '@/ui/Select';
 
@@ -96,6 +97,35 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
 }
 
 /**
+ * The two name slots either side of the board.
+ *
+ * The Board tab wears these and a repertoire line did not, so the board
+ * sat at a different height and shifted when you moved between them.
+ * There are no real players here — one side is you, the other is the
+ * repertoire answering — so they say that rather than pretending to be a
+ * game, and the side to move is the one shown in full strength.
+ */
+function PlayerSlot({
+  side,
+  you,
+  fen,
+}: {
+  side: 'white' | 'black';
+  you: 'white' | 'black';
+  fen: string;
+}) {
+  const toMove = (fen.split(' ')[1] === 'b' ? 'black' : 'white') === side;
+  return (
+    <div className="flex h-6 w-full items-center gap-2 px-0.5">
+      <SideDot side={side} />
+      <span className={cn('min-w-0 flex-1 truncate text-sm', toMove ? 'text-fg font-medium' : 'text-subtle')}>
+        {side === you ? 'You' : 'Repertoire'}
+      </span>
+    </div>
+  );
+}
+
+/**
  * Opening picker: the curated spread when idle, the ENTIRE ECO catalogue
  * (served from the vendored lichess chess-openings set) as soon as you type.
  * A combobox rather than a Select — 3,800 openings need a filter, not a list.
@@ -133,12 +163,21 @@ function OpeningPicker({
     };
   }, []);
 
-  const matches = useMemo(() => {
+  /** Rendered at once. The catalogue is thousands of entries, and building
+      that many buttons to open a dropdown costs most of a second. */
+  const SHOWN = 300;
+
+  const { matches, hidden } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return TEMPLATES;
-    return (all ?? []).filter(
-      (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
-    ).slice(0, 50);
+    // An empty box used to offer a dozen curated openings, so the picker
+    // could be searched but not browsed. It now offers the whole
+    // catalogue, ordered by ECO, with the curated few first.
+    const pool = q
+      ? (all ?? []).filter(
+          (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
+        )
+      : [...TEMPLATES, ...(all ?? []).filter((o) => !TEMPLATES.some((t) => t.name === o.name))];
+    return { matches: pool.slice(0, SHOWN), hidden: Math.max(0, pool.length - SHOWN) };
   }, [query, all]);
 
   const pick = (o: Template): void => {
@@ -160,7 +199,7 @@ function OpeningPicker({
         </li>
       ) : (
         matches.map((o, i) => (
-          <li key={`${o.eco}-${o.name}-${i}`}>
+          <li key={`${o.eco}-${o.name}-${i}`} className="[content-visibility:auto]">
             <button
               type="button"
               // mousedown, not click: it fires before the input's blur
@@ -181,6 +220,11 @@ function OpeningPicker({
             </button>
           </li>
         ))
+      )}
+      {hidden > 0 && (
+        <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
+          {hidden.toLocaleString()} more — type to narrow.
+        </li>
       )}
     </ul>
   );
@@ -221,13 +265,31 @@ function OpeningPicker({
               className="bg-surface border-line absolute inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] flex flex-col gap-2 rounded-xl border p-2 shadow-[var(--shadow-pop)]"
               onPointerDown={(e) => e.stopPropagation()}
             >
-              <Input
-                autoFocus
-                inputSize="sm"
-                value={query}
-                placeholder="Search any opening or ECO code…"
-                onChange={(e) => setQuery(e.target.value)}
-              />
+              {/* With the keyboard up, the backdrop is mostly covered and
+                  the only dead space is a sliver — so closing needed an
+                  explicit way out, not just a tap somewhere else. */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    suppressNextClick();
+                  }}
+                  className="text-subtle hover:text-fg -ml-1 grid size-8 shrink-0 place-items-center rounded-md"
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+                <Input
+                  autoFocus
+                  inputSize="sm"
+                  className="min-w-0 flex-1"
+                  value={query}
+                  placeholder="Search any opening or ECO code…"
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
               {list}
             </div>
           </div>
@@ -448,6 +510,7 @@ export function RepertoireView() {
 
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+          <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} you={userColor} fen={node.fen} />
           <Board
             fen={node.fen}
             orientation={orientation}
@@ -456,6 +519,7 @@ export function RepertoireView() {
             check={pos.isCheck()}
             onMove={onMove}
           />
+          <PlayerSlot side={orientation} you={userColor} fen={node.fen} />
         </div>
       </div>
 
