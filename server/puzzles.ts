@@ -335,7 +335,7 @@ export function puzzlesApi(
     const db = puzzleDb();
     if (!db) {
       return c.json(
-        { error: 'No puzzle database. Run: npm run build:puzzles (see HANDOFF.md)' },
+        { error: 'No puzzle database. Run: npm run build:puzzles (see docs/databases.md)' },
         503,
       );
     }

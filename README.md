@@ -203,6 +203,8 @@ end · `f` flip board.
   layout rules, and other standing decisions.
 - [Book import pipeline](docs/book-import-pipeline.md) — how PDFs
   become verified puzzle books, with a runbook.
+- [Prepared databases](docs/databases.md) — the puzzle and reference-game
+  databases: built once, copied to the server, rarely touched again.
 - [ML history](docs/ml-history.md) — how the book reader got good.
 - [Update log](docs/update-log.md) — what changed, newest first.
 
