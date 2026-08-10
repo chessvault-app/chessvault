@@ -1,10 +1,17 @@
 {
-  "slug": "1001",
-  "title": "1001 Chess Exercises for Beginners",
-  "pages": [5, 105],
-  "solutionsAfterPage": 100,
-  "maxNumber": 1001,
-  "text": "data/ml/1001-text.json",
-  "cache": "data/ml/1001-reads.json",
-  "report": "data/ml/autoimport-report.json"
+ "slug": "1001",
+ "title": "1001 Chess Exercises for Beginners",
+ "pages": [
+  5,
+  105
+ ],
+ "solutionsAfterPage": 100,
+ "maxNumber": 1001,
+ "anchorStyle": "dash",
+ "moveMarkers": "dotless",
+ "sideMode": "label",
+ "text": "data/ml/1001-text.json",
+ "cache": "data/ml/1001-reads.json",
+ "report": "data/ml/autoimport-report.json",
+ "note": "Settings found by scripts/ml/search-config.ts, not by hand: they validate 709 entries against the 678 the script defaults gave. The book does not print a per-puzzle side, so sideMode only changes which side is tried second."
 }

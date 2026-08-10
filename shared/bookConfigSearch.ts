@@ -22,6 +22,7 @@
  * list, because an anchor has a signature no punctuation can hide: it is
  * the line-leading pattern whose captured number counts upwards.
  */
+import type { Role } from 'chessops/types';
 import {
   Dialect,
   chapterSides,
@@ -126,30 +127,40 @@ export function scoreSettings(
   const entries = solutionEntries(pages, config);
   const sides = chapterSides(pages);
   const dialect = new Dialect();
-  let validated = 0;
 
-  for (const [number, board] of boards) {
-    const body = entries.get(number);
-    if (!body) continue;
-    const mainline = parseMainline(body, config);
-    if (!mainline) continue;
-    // The printed side beats the dots when the book prints one; either way
-    // the other side gets a try before the entry is given up on, exactly as
-    // the measure stage does.
-    const first =
-      settings.sidePrinted && board.sideStated
-        ? board.sideStated
-        : mainline.startsBlack
-          ? 'b'
-          : 'w';
-    const second = first === 'w' ? 'b' : 'w';
-    const fallback = settings.sidePrinted ? second : (sides.get(board.page) ?? second);
-    const ok =
-      !('fail' in replayLine(board.placement, first, mainline.tokens, dialect)) ||
-      !('fail' in replayLine(board.placement, fallback, mainline.tokens, dialect));
-    if (ok) validated++;
-  }
-  return { ...settings, validated, entries: entries.size };
+  const attempt = (hints?: Map<string, Role>): number => {
+    let validated = 0;
+    for (const [number, board] of boards) {
+      const body = entries.get(number);
+      if (!body) continue;
+      const mainline = parseMainline(body, config);
+      if (!mainline) continue;
+      // The printed side beats the dots when the book prints one; either
+      // way the other side gets a try before the entry is given up on,
+      // exactly as the measure stage does.
+      const first =
+        settings.sidePrinted && board.sideStated
+          ? board.sideStated
+          : mainline.startsBlack
+            ? 'b'
+            : 'w';
+      const second = first === 'w' ? 'b' : 'w';
+      const fallback = settings.sidePrinted ? second : (sides.get(board.page) ?? second);
+      const ok =
+        !('fail' in replayLine(board.placement, first, mainline.tokens, dialect, hints)) ||
+        !('fail' in replayLine(board.placement, fallback, mainline.tokens, dialect, hints));
+      if (ok) validated++;
+    }
+    return validated;
+  };
+
+  // Two passes, like the measure stage: the first learns the book's
+  // figurine dialect from the lines that needed no help, the second uses it
+  // to break the ties the first could not. Scoring on one pass alone
+  // ranked correctly but undercounted by a tenth, which made the number
+  // useless for deciding whether a book had been read well enough.
+  attempt();
+  return { ...settings, validated: attempt(dialect.hints()), entries: entries.size };
 }
 
 /**
