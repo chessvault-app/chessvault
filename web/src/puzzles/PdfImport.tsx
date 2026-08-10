@@ -17,17 +17,44 @@ import type { Template } from './ocr/classify';
 export function PdfImport({
   slug,
   templates,
+  existing,
   onDone,
   onClose,
 }: {
   slug: string;
   templates: Template[];
+  /** Puzzles and drafts already in the book — 0 means a first import. */
+  existing: number;
   onDone: () => void;
   onClose: () => void;
 }) {
   const job = useImportJob();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // Re-importing a book that already has content is a real choice, so it
+  // is asked rather than assumed. Imported puzzles are keyed by their
+  // printed number, so updating in place genuinely updates them.
+  const [mode, setMode] = useState<'update' | 'rebuild'>('update');
+  const [preparing, setPreparing] = useState(false);
+
+  const begin = async (file: File): Promise<void> => {
+    setSaveError(null);
+    if (existing > 0 && mode === 'rebuild') {
+      setPreparing(true);
+      try {
+        const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) throw new Error(`could not clear the book (${res.status})`);
+      } catch (e) {
+        setSaveError((e as Error).message);
+        setPreparing(false);
+        return;
+      }
+      setPreparing(false);
+    }
+    job.start(slug, file, templates);
+  };
   const mine = job.slug === slug;
   const found = mine ? job.found : [];
   const scanning = mine && job.status === 'scanning';
@@ -77,6 +104,35 @@ export function PdfImport({
           </Button>
         </div>
 
+        {!mine && existing > 0 && (
+          <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">
+            <p className="text-fg text-xs font-medium">
+              This book already holds {existing} puzzle{existing === 1 ? '' : 's'}. What should the
+              import do with them?
+            </p>
+            {(
+              [
+                ['update', 'Update in place', 'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.'],
+                ['rebuild', 'Clear and rebuild', 'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.'],
+              ] as const
+            ).map(([value, label, blurb]) => (
+              <label key={value} className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="radio"
+                  name="reimport-mode"
+                  checked={mode === value}
+                  onChange={() => setMode(value)}
+                  className="mt-0.5"
+                />
+                <span className="text-sm">
+                  {label}
+                  <span className="text-subtle block text-xs">{blurb}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        )}
+
         {!mine && (
           <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
             <input
@@ -85,7 +141,7 @@ export function PdfImport({
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) job.start(slug, file, templates);
+                if (file) void begin(file);
               }}
             />
             <span className="text-muted text-sm">
@@ -98,6 +154,12 @@ export function PdfImport({
           </label>
         )}
 
+        {preparing && (
+          <p className="text-muted flex items-center gap-2 text-sm">
+            <Loader2 className="size-4 animate-spin" />
+            clearing the book
+          </p>
+        )}
         {scanning && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
@@ -124,6 +186,8 @@ export function PdfImport({
               {solve.confident
                 ? 'Each one replays the move the book prints, from the position on the page.'
                 : 'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.'}
+              {solve.repaired > 0 &&
+                ` ${solve.repaired} had a square misread, found by the book's own solution.`}
               {solve.unresolved > 0 &&
                 ` ${solve.unresolved} numbered diagram${solve.unresolved === 1 ? '' : 's'} had no solution we could read.`}
             </p>

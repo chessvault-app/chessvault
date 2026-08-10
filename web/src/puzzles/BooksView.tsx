@@ -608,6 +608,7 @@ function BookPage({ slug }: { slug: string }) {
         <PdfImport
             slug={slug}
             templates={templates}
+            existing={(book?.puzzles.length ?? 0) + (book?.drafts?.length ?? 0)}
             onDone={() => {
               setImporting(false);
               void load();

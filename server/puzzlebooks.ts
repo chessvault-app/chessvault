@@ -235,6 +235,34 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({ ok: true });
   });
 
+  /**
+   * Empty a book without deleting it: every puzzle, every draft, and the
+   * page images they cited. The book, its cover and the ATTEMPT HISTORY
+   * stay.
+   *
+   * Progress survives on purpose. Imported puzzles are keyed `n<number>`,
+   * so the same puzzle in the rebuilt book is the same id — throwing the
+   * history away would punish someone for re-importing a book they have
+   * been working through, which is exactly when they would want to.
+   */
+  api.delete('/puzzlebooks/:slug/puzzles', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const puzzles = readJson<BookPuzzle[]>(puzzlesPath(slug), []).length;
+    const drafts = readJson<Draft[]>(draftsPath(slug), []).length;
+    rmSync(puzzlesPath(slug), { force: true });
+    rmSync(draftsPath(slug), { force: true });
+    // The diagrams folder holds draft crops and evidence pages; the cover
+    // is the one thing in there that does not belong to the contents.
+    const dir = diagramsDir(slug);
+    if (existsSync(dir)) {
+      for (const file of readdirSync(dir)) {
+        if (file !== 'cover.jpg') rmSync(resolve(dir, file), { force: true });
+      }
+    }
+    return c.json({ cleared: { puzzles, drafts } });
+  });
+
   // Wipe every attempt on this book; the puzzles themselves stay put.
   api.delete('/puzzlebooks/:slug/progress', (c) => {
     const slug = c.req.param('slug');

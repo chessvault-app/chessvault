@@ -208,6 +208,39 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('clears a book’s contents but keeps the book and the history', async () => {
+    await post('/api/puzzlebooks', { title: 'Clear Book' });
+    const slug = encodeURIComponent('Clear Book');
+    const image = `data:image/png;base64,${Buffer.from('fakepng').toString('base64')}`;
+    await post(`/api/puzzlebooks/${slug}/puzzles`, {
+      number: 1,
+      fen: '7k/8/8/8/8/8/8/R6K w - - 0 1',
+      uci: ['a1a8'],
+      san: ['Ra8#'],
+    });
+    await post(`/api/puzzlebooks/${slug}/drafts`, { drafts: [{ image }] });
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: true });
+
+    const cleared = await app.request(`/api/puzzlebooks/${slug}/puzzles`, { method: 'DELETE' });
+    expect(cleared.status).toBe(200);
+    expect(await cleared.json()).toEqual({ cleared: { puzzles: 1, drafts: 1 } });
+
+    const after = (await (await app.request(`/api/puzzlebooks/${slug}`)).json()) as {
+      title: string;
+      puzzles: unknown[];
+      drafts: unknown[];
+      progress: Record<string, unknown>;
+    };
+    // The book is still there and still empty-handed about its contents…
+    expect(after.title).toBe('Clear Book');
+    expect(after.puzzles).toHaveLength(0);
+    expect(after.drafts).toHaveLength(0);
+    // …but the attempt survives, because a rebuilt puzzle keeps its id.
+    expect(after.progress.n1).toBeTruthy();
+
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
   it('stores evidence pages under a name the page owns', async () => {
     await post('/api/puzzlebooks', { title: 'Evidence Book' });
     const slug = encodeURIComponent('Evidence Book');
