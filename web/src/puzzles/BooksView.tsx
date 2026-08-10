@@ -218,6 +218,8 @@ const solutionCache = new Map<string, Record<string, PuzzleSolution>>();
 
 /** The shelf as it was last drawn, so returning to it is not a redraw. */
 let shelfCache: BookSummary[] | null = null;
+/** Covers are in the browser's cache after the first visit; skip the wait. */
+let coversDecoded = false;
 
 function forgetBook(slug?: string): void {
   // The shelf shows each book's puzzle and progress counts, so whatever
@@ -316,9 +318,45 @@ function Shelf() {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
+  /**
+   * The shelf waits for its covers.
+   *
+   * The list is a kilobyte and the covers are five separate images, so
+   * the cards used to appear immediately and then fill with pictures one
+   * at a time — a page assembling itself in front of you. Decoding them
+   * first costs a moment and arrives whole.
+   *
+   * Bounded, because a cover is a nicety: if the images are slow or
+   * missing the shelf draws anyway rather than waiting on them.
+   */
+  const [coversReady, setCoversReady] = useState(shelfCache !== null && coversDecoded);
+  useEffect(() => {
+    if (books === null || books.length === 0) return;
+    let live = true;
+    const covers = books.map(
+      (b) =>
+        new Promise<void>((done) => {
+          const img = new Image();
+          img.onload = () => done();
+          img.onerror = () => done();
+          img.src = `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`;
+        }),
+    );
+    void Promise.race([
+      Promise.all(covers),
+      new Promise((r) => setTimeout(r, 2000)),
+    ]).then(() => {
+      if (!live) return;
+      coversDecoded = true;
+      setCoversReady(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [books]);
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
-  const shelfPending = useSlowLoad(books === null);
+  const shelfPending = useSlowLoad(books === null || !coversReady);
 
   // Shown from cache immediately, refreshed underneath: a book's counts
   // change as you solve, so the list is never trusted to stay right — only
@@ -396,8 +434,8 @@ function Shelf() {
         )}
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
 
-        {books === null ? (
-          shelfPending ? <SkeletonBookCards cards={4} /> : null
+        {books === null || !coversReady ? (
+          shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
         ) : books.length === 0 && !creating ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle mx-auto mb-2 size-6" />
@@ -463,8 +501,40 @@ function Shelf() {
 
 function BookPage({ slug }: { slug: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
-  // Same rule as the shelf: a fast book shows nothing, not a flicker.
-  const detailPending = useSlowLoad(book === null);
+  /**
+   * The wait on a big book is not the fetch, it is the render.
+   *
+   * Measured on the 5,334-puzzle book: the API answers in 48 ms and the
+   * grid is on screen at 964 ms — React spends 916 ms building 5,222
+   * tiles, and the page is frozen and blank for all of it. A skeleton
+   * keyed on "has the data arrived" is therefore gone before the wait
+   * even starts, which is exactly backwards.
+   *
+   * So the grid is held back one frame: the skeleton paints first, and
+   * only then does React begin the expensive part, with the skeleton
+   * still on screen while it works.
+   */
+  const [gridReady, setGridReady] = useState(false);
+  useEffect(() => {
+    if (book === null) {
+      setGridReady(false);
+      return;
+    }
+    let live = true;
+    // Two frames: one to paint the skeleton, one to be sure it landed.
+    const first = requestAnimationFrame(() => {
+      const second = requestAnimationFrame(() => live && setGridReady(true));
+      frames.current = second;
+    });
+    frames.current = first;
+    return () => {
+      live = false;
+      cancelAnimationFrame(frames.current);
+    };
+  }, [book]);
+  const frames = useRef(0);
+  // Shown while the data is in flight AND while the grid is being built.
+  const detailPending = useSlowLoad(book === null) || (book !== null && !gridReady);
   const [adding, setAdding] = useState(false);
   const [missing, setMissing] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -638,7 +708,7 @@ function BookPage({ slug }: { slug: string }) {
         </Suspense>
         )}
 
-        {book === null ? (
+        {book === null || !gridReady ? (
           detailPending ? <SkeletonTiles tiles={48} /> : null
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
