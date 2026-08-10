@@ -250,11 +250,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({
       slug,
       title: book.title ?? slug,
-      // Rounded on the way out as well as in: the books already imported
-      // carry full float precision, and nobody should have to re-import a
-      // book to stop downloading digits that mean nothing.
-      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []).map((p) =>
-        p.evidence?.rect ? { ...p, evidence: { ...p.evidence, rect: roundRect(p.evidence.rect) } } : p,
+      // Evidence and `added` are stripped here. Opening a book downloads
+      // every puzzle in it, and the grid draws numbered tiles — it never
+      // looks at either. On the biggest book that was 716 KB of the 1.6 MB
+      // being parsed on a phone to render squares with numbers in them.
+      // Evidence comes back one puzzle at a time, from the route below,
+      // which is the only place anything ever wanted it.
+      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []).map(
+        ({ evidence: _evidence, added: _added, ...rest }) => rest,
       ),
       progress: readJson<Record<string, PuzzleProgress>>(progressPath(slug), {}),
       drafts: readJson<
@@ -507,6 +510,27 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       written.push(file);
     }
     return c.json({ written });
+  });
+
+  /**
+   * One puzzle's evidence: the page it was printed on, where on that page
+   * it sits, and the page its answer is on.
+   *
+   * Fetched when a puzzle is actually opened rather than shipped with the
+   * whole book, because it is the heaviest thing a book carries and the
+   * lightest thing to ask for.
+   */
+  api.get('/puzzlebooks/:slug/puzzles/:id/evidence', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const puzzle = readJson<BookPuzzle[]>(puzzlesPath(slug), []).find(
+      (p) => p.id === c.req.param('id'),
+    );
+    if (!puzzle) return c.json({ error: 'unknown puzzle' }, 404);
+    const evidence = puzzle.evidence;
+    return c.json({
+      evidence: evidence?.rect ? { ...evidence, rect: roundRect(evidence.rect) } : evidence,
+    });
   });
 
   api.get('/puzzlebooks/:slug/diagrams/:file', (c) => {

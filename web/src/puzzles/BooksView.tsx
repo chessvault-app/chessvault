@@ -1377,7 +1377,33 @@ function PuzzleEntry({
 
   // ONE persistent layout for both phases — the evidence pane and header
   // stay put while the right side swaps editor <-> recorder (seamless).
-  const evidence = replace?.evidence ?? draft?.evidence;
+  //
+  // A puzzle's evidence is NOT part of the book download — it is the
+  // heaviest thing a book carries and only ever wanted here — so it is
+  // fetched when a puzzle is opened. Drafts still carry theirs inline;
+  // there are few enough of them for it not to matter.
+  const [fetched, setFetched] = useState<BookEvidence | undefined>(undefined);
+  const replaceId = replace?.id;
+  useEffect(() => {
+    if (!replaceId) return;
+    let live = true;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(replaceId)}/evidence`,
+        );
+        if (!res.ok) return;
+        const body = (await res.json()) as { evidence?: BookEvidence };
+        if (live) setFetched(body.evidence);
+      } catch {
+        // No evidence pane is a smaller loss than a broken editor.
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, [slug, replaceId]);
+  const evidence = replace?.evidence ?? fetched ?? draft?.evidence;
   const boardContent =
     fen === null ? (
       <EditorView

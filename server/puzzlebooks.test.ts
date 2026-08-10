@@ -169,6 +169,39 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('keeps evidence out of the book list and serves it per puzzle', async () => {
+    await post('/api/puzzlebooks', { title: 'Split Book' });
+    const slug = encodeURIComponent('Split Book');
+    await post(`/api/puzzlebooks/${slug}/puzzles`, {
+      number: 4,
+      fen: '7k/8/8/8/8/8/8/R6K w - - 0 1',
+      uci: ['a1a8'],
+      san: ['Ra8#'],
+      provenance: 'book-parsed',
+      evidence: { page: 'page012.jpg', rect: { x: 0.123456789, y: 0.2, w: 0.3, h: 0.4 } },
+    });
+
+    const detail = (await (await app.request(`/api/puzzlebooks/${slug}`)).json()) as {
+      puzzles: { id: string; evidence?: unknown; added?: string; provenance?: string }[];
+    };
+    expect(detail.puzzles).toHaveLength(1);
+    // The grid needs the tier badge; it never needs either of these.
+    expect(detail.puzzles[0]!.evidence).toBeUndefined();
+    expect(detail.puzzles[0]!.added).toBeUndefined();
+    expect(detail.puzzles[0]!.provenance).toBe('book-parsed');
+
+    const one = await app.request(`/api/puzzlebooks/${slug}/puzzles/n4/evidence`);
+    expect(one.status).toBe(200);
+    const body = (await one.json()) as { evidence?: { page?: string; rect?: { x: number } } };
+    expect(body.evidence?.page).toBe('page012.jpg');
+    // Four decimals is a tenth of a pixel on the page image it indexes.
+    expect(body.evidence?.rect?.x).toBe(0.1235);
+
+    expect((await app.request(`/api/puzzlebooks/${slug}/puzzles/nope/evidence`)).status).toBe(404);
+
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
   it('stores evidence pages under a name the page owns', async () => {
     await post('/api/puzzlebooks', { title: 'Evidence Book' });
     const slug = encodeURIComponent('Evidence Book');
