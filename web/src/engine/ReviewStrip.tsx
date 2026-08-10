@@ -1,5 +1,5 @@
-import { Loader2, Microscope, X } from 'lucide-react';
-import { useRef } from 'react';
+import { ChevronDown, Loader2, Microscope, X } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 import { useReview, type GraphPoint } from '@/store/review';
@@ -47,6 +47,15 @@ function getRootHasMoves(s: { tree: { rootId: string; nodes: unknown } }): boole
  */
 export function ReviewStrip() {
   const status = useReview((s) => s.status);
+  // Folded state outlives one review: someone who does not want the graph
+  // does not want it again on the next game either.
+  const [graphOpen, setGraphOpen] = useState(() => localStorage.getItem(GRAPH_FOLD) !== 'closed');
+  const toggleGraph = (): void => {
+    setGraphOpen((open) => {
+      localStorage.setItem(GRAPH_FOLD, open ? 'closed' : 'open');
+      return !open;
+    });
+  };
   const progress = useReview((s) => s.progress);
   const white = useReview((s) => s.white);
   const black = useReview((s) => s.black);
@@ -82,12 +91,22 @@ export function ReviewStrip() {
         </div>
       ) : (
         <>
-          {points && points.length > 1 && <EvalGraph points={points} />}
+          {points && points.length > 1 && graphOpen && <EvalGraph points={points} />}
           <div className="flex items-center gap-1 px-3 py-1.5">
             <div className="grid min-w-0 flex-1 gap-0.5">
               {white && <SummaryRow side="white" summary={white} />}
               {black && <SummaryRow side="black" summary={black} />}
             </div>
+            {points && points.length > 1 && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={graphOpen ? 'Hide the evaluation graph' : 'Show the evaluation graph'}
+                onClick={toggleGraph}
+              >
+                <ChevronDown className={cn('size-3 transition-transform', graphOpen && 'rotate-180')} />
+              </Button>
+            )}
             <Button variant="ghost" size="icon-sm" title="Dismiss review" onClick={clear}>
               <X className="size-3" />
             </Button>
@@ -97,6 +116,9 @@ export function ReviewStrip() {
     </div>
   );
 }
+
+/** Where the fold is remembered, so it survives the next review. */
+const GRAPH_FOLD = 'chess-vault.reviewGraph';
 
 const GRAPH_W = 100;
 const GRAPH_H = 28;
