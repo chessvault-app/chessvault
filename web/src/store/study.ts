@@ -3,6 +3,7 @@ import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { useAnalysis } from './analysis';
+import { forgetCollection } from '@/games/collection';
 
 export interface StudyMeta {
   id: string;
@@ -359,6 +360,10 @@ export const useStudy = create<StudyState>()((set, get) => {
           set({ saveState: 'error', error: body?.error ?? `save failed (${res.status})` });
           return;
         }
+        // Annotating a collected game changes what its row says about it
+        // (its comments, its glyphs, its variations), so the cached
+        // collection list is stale the moment the save lands.
+        if (openBase === 'games/docs') forgetCollection();
         // Edits made while the request was in flight stay dirty.
         set((s) => ({ saveState: s.saveState === 'saving' ? 'saved' : s.saveState, error: null }));
       } catch {

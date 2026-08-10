@@ -7,6 +7,7 @@ import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
 import { copyText } from '@/lib/clipboard';
+import { forgetCollection } from '@/games/collection';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
@@ -170,6 +171,7 @@ function CollectGameButton() {
       body: JSON.stringify({ pgn: useAnalysis.getState().exportPgn() }),
     });
     // 409 = already collected; that is still a success for the user.
+    if (res.ok) forgetCollection(); // the Games list is now a game short
     setState(res.ok || res.status === 409 ? 'done' : 'failed');
     setTimeout(() => setState('idle'), 2000);
   };

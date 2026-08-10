@@ -13,6 +13,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { cachedCollection, forgetCollection, loadCollection } from './collection';
 import { create } from 'zustand';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
@@ -31,7 +32,7 @@ import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
-interface GameSummary {
+export interface GameSummary {
   file: string;
   index: number;
   white: string;
@@ -259,9 +260,8 @@ function EliteBrowser() {
   const [added, setAdded] = useState<Set<number>>(new Set());
   const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
   useEffect(() => {
-    void fetch('/api/games')
-      .then((r) => r.json() as Promise<{ games: GameSummary[] }>)
-      .then((d) => setCollectionKeys(new Set(d.games.map((g) => `${g.white}|${g.black}|${g.date}`))))
+    void loadCollection()
+      .then((games) => setCollectionKeys(new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))))
       .catch(() => {});
   }, []);
   const inCollection = (g: RefGame): boolean =>
@@ -276,6 +276,7 @@ function EliteBrowser() {
       body: JSON.stringify({ pgn }),
     });
     // 409 = already there; either way this game is now in the collection.
+    if (posted.ok) forgetCollection();
     if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(game.id));
   };
 
@@ -458,11 +459,12 @@ function CollectionView() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
 
+  // A write invalidates, so `load` always goes to the server; the cached
+  // copy is what fills the screen while it does.
   const load = useCallback(async (): Promise<void> => {
+    forgetCollection();
     try {
-      const res = await fetch('/api/games');
-      const body = (await res.json()) as { games: GameSummary[] };
-      setGames(body.games);
+      setGames(await loadCollection());
       setLoaded(true);
     } catch {
       setError('vault server unreachable');
@@ -470,7 +472,17 @@ function CollectionView() {
   }, []);
 
   useEffect(() => {
-    void load();
+    const cached = cachedCollection();
+    if (cached) {
+      setGames(cached);
+      setLoaded(true);
+    }
+    void loadCollection()
+      .then((games) => {
+        setGames(games);
+        setLoaded(true);
+      })
+      .catch(() => setError('vault server unreachable'));
     void fetch('/api/games/bookmarks')
       .then((r) => r.json() as Promise<{ keys: string[] }>)
       .then((b) => setBookmarks(new Set(b.keys)))
