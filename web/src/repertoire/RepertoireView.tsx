@@ -562,7 +562,12 @@ export function RepertoireView() {
           this one must take the height its content needs. As flex-1 with
           min-h-0 it shrank under that content instead, and the bottom of
           the New game panel was cut off. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      {/* Scrolls at EVERY width, which is what the analysis and study columns
+          already do. This one only scrolled from lg (64rem) while it becomes
+          a fixed-width side column at wide (44rem in landscape) — so between
+          them, a phone held sideways, it was a fixed column with nowhere to
+          put what did not fit and the New game panel lost its bottom. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {/* fit: a short form under a tall board. Left to shrink, the panel
