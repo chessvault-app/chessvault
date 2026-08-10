@@ -54,7 +54,7 @@ import { EditorView } from '@/editor/EditorView';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
-import { SkeletonRows } from '@/ui/Skeleton';
+import { SkeletonBookCards, SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
@@ -316,6 +316,9 @@ function Shelf() {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Nothing at all for the first moment: a shelf that arrives in 30 ms
+  // should not flash a skeleton on its way in.
+  const shelfPending = useSlowLoad(books === null);
 
   // Shown from cache immediately, refreshed underneath: a book's counts
   // change as you solve, so the list is never trusted to stay right — only
@@ -394,7 +397,7 @@ function Shelf() {
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
 
         {books === null ? (
-          <SkeletonRows rows={3} className="p-0" />
+          shelfPending ? <SkeletonBookCards cards={4} /> : null
         ) : books.length === 0 && !creating ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle mx-auto mb-2 size-6" />
@@ -460,6 +463,8 @@ function Shelf() {
 
 function BookPage({ slug }: { slug: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
+  // Same rule as the shelf: a fast book shows nothing, not a flicker.
+  const detailPending = useSlowLoad(book === null);
   const [adding, setAdding] = useState(false);
   const [missing, setMissing] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -634,7 +639,7 @@ function BookPage({ slug }: { slug: string }) {
         )}
 
         {book === null ? (
-          <SkeletonRows rows={5} className="p-0" />
+          detailPending ? <SkeletonTiles tiles={48} /> : null
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <p className="text-muted text-sm">

@@ -93,6 +93,16 @@ function Shell() {
       <Sidebar active={section} params={params} />
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
+        {/*
+          This Suspense is for CODE, not data: it covers the moment a
+          section's chunk is being fetched. Data loading is plain fetch in
+          effects, so each page draws its own skeleton — React only suspends
+          on promises it is given, which ours are not.
+
+          The fallback is deliberately blank. A chunk is a few tens of KB
+          over a local network and usually arrives before a paint; a
+          skeleton here would flash on every single navigation.
+        */}
         <Suspense fallback={<div className="h-full" />}>
         {section === 'home' ? (
           <HomePage />

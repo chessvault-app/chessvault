@@ -29,7 +29,7 @@ import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
 import { RowMenu } from '@/ui/RowMenu';
-import { SkeletonRows } from '@/ui/Skeleton';
+import { SkeletonListRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 export interface GameSummary {
@@ -195,6 +195,9 @@ function EliteBrowser() {
   const [rows, setRows] = useState<RefGame[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  // Nothing for the first moment — a search that answers in 40 ms should
+  // not flash a skeleton on the way past.
+  const searching = useSlowLoad(loading && rows.length === 0);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const search = useCallback(async (q: string, offset: number) => {
@@ -363,7 +366,7 @@ function EliteBrowser() {
 
       <Panel flush className="min-h-0 flex-1">
         <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
-        {loading && rows.length === 0 && <SkeletonRows rows={8} />}
+        {searching && <SkeletonListRows rows={8} action />}
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
           {rows.map((g) => (
             <li key={g.id} className="flex items-center gap-3 pr-2">
@@ -948,8 +951,11 @@ function ArchiveBrowser({
       {month && (
         <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
           {loading === 'games' ? (
-            <li className="text-subtle flex items-center gap-2 px-3 py-3 text-xs">
-              <Loader2 className="size-3.5 animate-spin" /> fetching {month}…
+            // Rows, not a spinner on an empty box. Fetching a month used to
+            // take the games away and leave one line of text where the list
+            // had been, so the panel appeared to close and reopen.
+            <li>
+              <SkeletonListRows rows={6} action />
             </li>
           ) : (
             visibleMonthGames.map((game) => {

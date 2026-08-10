@@ -11,7 +11,7 @@ import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { ProgressBar } from '@/ui/ProgressBar';
-import { SkeletonRows } from '@/ui/Skeleton';
+import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 
 /**
  * Training overview: counters, results by difficulty band, and the recent
@@ -60,6 +60,7 @@ export function DashboardPage() {
   const [user, setUser] = useState<MetaUser | null>(null);
   const [failed, setFailed] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
+  const pending = useSlowLoad(history === null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
   const refresh = useCallback(() => {
@@ -317,7 +318,7 @@ export function DashboardPage() {
             ))}
           </ChipRow>
           {history === null ? (
-            <SkeletonRows rows={5} />
+            pending ? <SkeletonRows rows={5} /> : null
           ) : puzzles.length === 0 ? (
             <p className="text-subtle px-3 py-3 text-xs">
               {history.length === 0 ? 'No attempts yet — go solve something.' : 'Nothing matches this filter.'}

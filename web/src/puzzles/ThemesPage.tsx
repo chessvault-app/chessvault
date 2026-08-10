@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
-import { SkeletonRows } from '@/ui/Skeleton';
+import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 
 /**
  * Full-page theme picker — cards grouped the way lichess organises its
@@ -113,6 +113,7 @@ interface ThemeCount {
 
 export function ThemesPage() {
   const [themes, setThemes] = useState<ThemeCount[] | null>(null);
+  const pending = useSlowLoad(themes === null);
   const [total, setTotal] = useState(0);
   const [failed, setFailed] = useState(0);
 
@@ -166,7 +167,7 @@ export function ThemesPage() {
         </ChipRow>
 
         {themes === null ? (
-          <SkeletonRows rows={6} className="p-0" />
+          pending ? <SkeletonRows rows={6} className="p-0" /> : null
         ) : (
           <>
             {GROUPS.map((group) => {
