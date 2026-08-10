@@ -76,10 +76,11 @@ export function AnnotationPane({
   // tree, and the bottom box looked like a dead input (lanph3re's report).
   if (!editing) return null;
 
-  // Desktop: one line with the filter rows' scroll affordances (arrows).
-  // Touch: WRAP instead — the 14 thumb-sized glyphs are ~510px wide, so a
-  // narrow panel (a tablet in landscape) cut the row off with no arrows to
-  // reveal the rest, which read as a clipped editor.
+  // One line that scrolls, on every pointer: ChipRow pans under a finger
+  // and gives a mouse the nudge arrows. It used to wrap on touch, back when
+  // the palette was always on screen and a cut-off row read as a clipped
+  // editor — now it folds away instead, so the second row it cost is worth
+  // more than the wrap.
   const glyphs = (
     <>
       {QUALITY_NAGS.map((nag) => (
@@ -101,20 +102,13 @@ export function AnnotationPane({
       ))}
     </>
   );
-  const palette = coarse ? (
-    <div className="flex flex-wrap items-center gap-1">{glyphs}</div>
-  ) : (
-    <ChipRow innerClassName="gap-1">{glyphs}</ChipRow>
-  );
+  const palette = <ChipRow innerClassName="gap-1">{glyphs}</ChipRow>;
 
   // The fold is only worth anything if it gives the row back, so the toggle
   // rides beside the comment box rather than taking a row of its own — and
   // the palette above it renders unwrapped, which is what lets ChipRow
-  // measure itself and keep its scroll arrows.
-  //
-  // Folded, the toggle still shows whatever glyphs the move already carries:
-  // it hides the CHOICES, never the annotation.
-  const chosen = [...QUALITY_NAGS, ...ASSESSMENT_NAGS].filter((nag) => node.nags.includes(nag));
+  // measure itself and keep its scroll arrows. The glyphs a move carries
+  // are already on the move in the tree, so the toggle stays a toggle.
   const toggle = (
     <button
       type="button"
@@ -122,18 +116,13 @@ export function AnnotationPane({
       title={paletteOpen ? 'Hide glyphs' : 'Show glyphs'}
       onClick={() => setPaletteOpen((open) => !open)}
       className={cn(
-        'text-muted hover:bg-surface-2 hover:text-fg flex shrink-0 items-center gap-0.5 self-stretch',
+        'text-muted hover:bg-surface-2 hover:text-fg flex shrink-0 items-center self-stretch',
         'rounded px-1 transition-colors duration-100',
       )}
     >
       <ChevronDown
         className={cn('size-3.5 transition-transform duration-150', paletteOpen && 'rotate-180')}
       />
-      {!paletteOpen && chosen.length > 0 && (
-        <span className="text-primary font-mono text-xs font-semibold">
-          {chosen.map((nag) => NAG_GLYPH[nag]).join('')}
-        </span>
-      )}
     </button>
   );
 
