@@ -36,6 +36,48 @@ interface BookPuzzle {
   added: string;
   /** Solution origin tier; 'corrected' = entered or fixed by a human. */
   provenance?: string;
+  /** The number the book prints beside this puzzle. */
+  number?: number;
+  /** Where in the book it came from, for the source pane. */
+  evidence?: BookEvidence;
+}
+
+interface BookEvidence {
+  /** Rendered page image in diagrams/, e.g. "page033.jpg". */
+  page?: string;
+  /** The diagram's place on that page, in page fractions. */
+  rect?: { x: number; y: number; w: number; h: number };
+  /** The answers page covering this puzzle's number. */
+  solutionPage?: string;
+}
+
+/** The tiers a solution can arrive with, in descending confidence. */
+const PROVENANCE = [
+  'book-parsed',
+  'corrected',
+  'engine-corroborated',
+  'engine-only',
+  'engine-unverified',
+] as const;
+
+const IMAGE_FILE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
+
+/** An evidence block is only kept if every part of it is well formed. */
+function cleanEvidence(raw: unknown): BookEvidence | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const { page, rect, solutionPage } = raw as BookEvidence;
+  const out: BookEvidence = {};
+  if (typeof page === 'string' && IMAGE_FILE.test(page)) out.page = page;
+  if (typeof solutionPage === 'string' && IMAGE_FILE.test(solutionPage)) {
+    out.solutionPage = solutionPage;
+  }
+  if (
+    rect &&
+    (['x', 'y', 'w', 'h'] as const).every((k) => typeof rect[k] === 'number' && rect[k] >= 0 && rect[k] <= 1)
+  ) {
+    out.rect = { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 interface PuzzleProgress {
@@ -197,6 +239,10 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       /** Correcting an existing puzzle: swap it in place, keep its id
        *  (progress stays attached) and its book metadata. */
       replaceId?: string;
+      /** An importer adding a puzzle it read out of the book itself. */
+      number?: number;
+      provenance?: string;
+      evidence?: unknown;
     };
     if (
       typeof body.fen !== 'string' ||
@@ -229,18 +275,32 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       writeJson(puzzlesPath(slug), puzzles);
       return c.json({ puzzle: corrected });
     }
+    // An importer says which puzzle this is, how it knows the solution and
+    // where in the book it came from; a human typing one in says none of
+    // that, and lands at the top of the ladder because they read it.
+    const number = Number.isInteger(body.number) && body.number! > 0 ? body.number : undefined;
+    const provenance = PROVENANCE.includes(body.provenance as (typeof PROVENANCE)[number])
+      ? body.provenance!
+      : 'corrected';
+    const evidence = cleanEvidence(body.evidence);
+    // Numbered puzzles keep the importer's id, so a re-import updates a
+    // puzzle in place and its progress survives — the same reason the
+    // pipeline writes `n<number>`.
+    const id = number === undefined ? `p${Date.now().toString(36)}` : `n${number}`;
+    const at = puzzles.findIndex((p) => p.id === id);
     const puzzle: BookPuzzle = {
-      id: `p${Date.now().toString(36)}`,
+      id,
       fen: body.fen,
       uci: body.uci,
       san: body.san,
       ...(wildcards.length > 0 ? { wildcards } : {}),
       added: new Date().toISOString(),
-      // A human typed this in from the book — top of the fidelity ladder,
-      // same tier the correction flow stamps.
-      provenance: 'corrected',
+      provenance,
+      ...(number === undefined ? {} : { number }),
+      ...(evidence ? { evidence } : {}),
     };
-    puzzles.push(puzzle);
+    if (at === -1) puzzles.push(puzzle);
+    else puzzles[at] = puzzle;
     writeJson(puzzlesPath(slug), puzzles);
     return c.json({ puzzle });
   });

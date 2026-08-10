@@ -69,6 +69,56 @@ describe('puzzle books api', () => {
     expect(after.progress[puzzle.id]).toBeUndefined();
   });
 
+  it('takes a puzzle an importer read out of the book, with its evidence', async () => {
+    const slug = encodeURIComponent('1001 Sacrifices');
+    const sent = {
+      fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
+      uci: ['a1a8'],
+      san: ['Ra8#'],
+      number: 42,
+      provenance: 'book-parsed',
+      evidence: {
+        page: 'page033.jpg',
+        rect: { x: 0.1, y: 0.2, w: 0.3, h: 0.3 },
+        solutionPage: 'page225.jpg',
+      },
+    };
+    const { puzzle } = await (await post(`/api/puzzlebooks/${slug}/puzzles`, sent)).json();
+    // The importer's own id, so a re-import lands on the same puzzle and
+    // its progress survives.
+    expect(puzzle.id).toBe('n42');
+    expect(puzzle).toMatchObject({ number: 42, provenance: 'book-parsed', evidence: sent.evidence });
+
+    // Sending it again updates in place rather than duplicating.
+    const again = await (
+      await post(`/api/puzzlebooks/${slug}/puzzles`, { ...sent, san: ['Ra8#'], uci: ['a1a8'] })
+    ).json();
+    expect(again.puzzle.id).toBe('n42');
+    const detail = await (await app.request(`/api/puzzlebooks/${slug}`)).json();
+    expect(detail.puzzles.filter((p: { id: string }) => p.id === 'n42')).toHaveLength(1);
+
+    await app.request(`/api/puzzlebooks/${slug}/puzzles/n42`, { method: 'DELETE' });
+  });
+
+  it('refuses a tier or an evidence file it does not recognise', async () => {
+    const slug = encodeURIComponent('1001 Sacrifices');
+    const { puzzle } = await (
+      await post(`/api/puzzlebooks/${slug}/puzzles`, {
+        fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
+        uci: ['a1a8'],
+        san: ['Ra8#'],
+        provenance: 'trust-me',
+        evidence: { page: '../../etc/passwd', rect: { x: 5, y: 0, w: 1, h: 1 } },
+      })
+    ).json();
+    // An unknown tier falls back to the human one; a path that is not a
+    // plain image name, and a rect outside the page, are dropped.
+    expect(puzzle.provenance).toBe('corrected');
+    expect(puzzle.evidence).toBeUndefined();
+
+    await app.request(`/api/puzzlebooks/${slug}/puzzles/${puzzle.id}`, { method: 'DELETE' });
+  });
+
   it('resets progress without touching puzzles', async () => {
     const slug = encodeURIComponent('1001 Sacrifices');
     const added = await post(`/api/puzzlebooks/${slug}/puzzles`, {
