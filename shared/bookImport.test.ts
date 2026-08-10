@@ -231,8 +231,6 @@ describe('page-level hints', () => {
     expect(pageMateGoal('White to move and mate in three')).toBe(3);
     expect(pageMateGoal('mate in 4')).toBe(4);
     expect(pageMateGoal('a quiet positional page')).toBe(0);
-    // Only "mate in" is matched, so a page that says "mates in three"
-    // states a goal this does not pick up. See the commit that widens it.
-    expect(pageMateGoal('White mates in three moves.')).toBe(0);
+    expect(pageMateGoal('White mates in three moves.')).toBe(3);
   });
 });

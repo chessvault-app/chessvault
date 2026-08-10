@@ -113,9 +113,13 @@ export function chapterSides(pages: TextPage[]): Map<number, 'w' | 'b'> {
 
 const MATE_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
 
-/** "mate in three" on the page — the goal the puzzle states. */
+/**
+ * "mate in three" on the page — the goal the puzzle states. Books phrase it
+ * both ways ("White to move and mate in three", "White mates in three
+ * moves"), and only the first was being picked up.
+ */
 export function pageMateGoal(text: string): number {
-  const m = /mate in (\w+)/i.exec(text);
+  const m = /mates? in (\w+)/i.exec(text);
   if (!m) return 0;
   const word = m[1]!.toLowerCase();
   return MATE_WORDS[word] ?? (Number(word) > 0 && Number(word) < 9 ? Number(word) : 0);
