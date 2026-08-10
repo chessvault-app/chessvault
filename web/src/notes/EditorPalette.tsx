@@ -99,7 +99,19 @@ const ACTIONS: Action[] = [
   },
 ];
 
-export function EditorPalette({ editor }: { editor: Editor | null }) {
+export function EditorPalette({
+  editor,
+  editable,
+}: {
+  editor: Editor | null;
+  /**
+   * Passed in rather than read off the editor: `setEditable` does not
+   * raise a transaction, so a palette watching only the editor stayed
+   * hidden until something else happened to fire one — which looked like
+   * it took seconds to appear.
+   */
+  editable: boolean;
+}) {
   // Redraw as the caret moves, so the buttons show what it is inside.
   const [, bump] = useState(0);
   useEffect(() => {
@@ -113,14 +125,15 @@ export function EditorPalette({ editor }: { editor: Editor | null }) {
     };
   }, [editor]);
 
-  if (!editor || !editor.isEditable) return null;
+  if (!editor || !editable) return null;
 
   return (
     <div
       // sticky: it stays at the top of the note as the note scrolls under
       // it. Ten buttons do not fit a phone, so the row scrolls sideways —
       // the same rule the filter chips follow.
-      className="border-line bg-app sticky top-0 z-30 flex shrink-0 items-center gap-0.5 overflow-x-auto border-b px-1 py-1 scrollbar-hidden"
+      // Pinned by the header wrapper this sits inside, not by itself.
+      className="border-line flex shrink-0 items-center gap-0.5 overflow-x-auto border-b pb-1 scrollbar-hidden"
       role="toolbar"
       aria-label="Formatting"
     >

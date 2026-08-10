@@ -14,6 +14,7 @@ import { Input } from '@/ui/Input';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
 import { EditorPalette } from './EditorPalette';
+import { MobileActionBar } from '@/ui/MobileActionBar';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
@@ -150,6 +151,11 @@ function NoteEditor({
 
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto p-4 lg:p-6">
+      {/* Header AND palette pin together. Pinning only the palette left the
+          title scrolling away above it, and the negative margins let the
+          bar span the column's full width — inset by the page padding it
+          read as narrower than the text it formats. */}
+      <div className="bg-app sticky top-0 z-30 -mx-4 -mt-4 flex shrink-0 flex-col gap-3 px-4 pt-4 lg:-mx-6 lg:-mt-6 lg:px-6 lg:pt-6">
       <header className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title="All notes" onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
@@ -166,9 +172,14 @@ function NoteEditor({
         </Button>
         <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc))} />
       </header>
+      <EditorPalette editor={editor} editable={editable} />
+      </div>
 
-      <EditorPalette editor={editor} />
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+      {/* While editing, the note owns the bottom of the phone: the global
+          tabs are pushed above the keyboard by iOS and eat the room the
+          note needs. Claiming the bar (with nothing in it) hides them. */}
+      {editable && <MobileActionBar>{null}</MobileActionBar>}
     </div>
   );
 }
