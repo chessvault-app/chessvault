@@ -216,7 +216,13 @@ const bookCache = new Map<string, BookDetail>();
 /** Positions and lines, fetched once per book when something solves. */
 const solutionCache = new Map<string, Record<string, PuzzleSolution>>();
 
+/** The shelf as it was last drawn, so returning to it is not a redraw. */
+let shelfCache: BookSummary[] | null = null;
+
 function forgetBook(slug?: string): void {
+  // The shelf shows each book's puzzle and progress counts, so whatever
+  // invalidates a book invalidates the shelf's summary of it too.
+  shelfCache = null;
   if (slug === undefined) {
     bookCache.clear();
     solutionCache.clear();
@@ -302,14 +308,23 @@ function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string })
 // Shelf
 
 function Shelf() {
-  const [books, setBooks] = useState<BookSummary[] | null>(null);
+  // Seeded from the last visit, so coming back from a book shows the shelf
+  // as you left it. Without this the component remounts empty, flashes its
+  // skeleton and redraws every cover — which reads as a blink, not as
+  // loading, because the content was already on screen a moment ago.
+  const [books, setBooks] = useState<BookSummary[] | null>(shelfCache);
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // Shown from cache immediately, refreshed underneath: a book's counts
+  // change as you solve, so the list is never trusted to stay right — only
+  // to be right ENOUGH to draw while the real answer is on its way.
   const load = useCallback(async () => {
     const res = await fetch('/api/puzzlebooks');
-    setBooks(((await res.json()) as { books: BookSummary[] }).books);
+    const fresh = ((await res.json()) as { books: BookSummary[] }).books;
+    shelfCache = fresh;
+    setBooks(fresh);
   }, []);
   useEffect(() => void load(), [load]);
 

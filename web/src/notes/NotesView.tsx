@@ -16,6 +16,7 @@ import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
+import { SkeletonRows } from '@/ui/Skeleton';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
 // pays for it; it loads when a note is actually opened.
@@ -87,7 +88,9 @@ function NoteList() {
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
-      {loaded && notes.length === 0 && folders.length === 0 ? (
+      {!loaded ? (
+        <SkeletonRows rows={6} className="p-0" />
+      ) : notes.length === 0 && folders.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <NotebookPen className="text-subtle size-6" strokeWidth={1.5} />
           <p className="text-muted max-w-sm text-sm leading-relaxed">

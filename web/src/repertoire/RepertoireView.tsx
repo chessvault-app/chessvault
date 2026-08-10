@@ -156,7 +156,7 @@ function OpeningPicker({
     >
       {matches.length === 0 ? (
         <li className="text-subtle px-2 py-1.5 text-xs">
-          {all === null ? 'Loading the catalogue…' : 'No opening matches that.'}
+          {all === null ? 'Reading the catalogue…' : 'No opening matches that.'}
         </li>
       ) : (
         matches.map((o, i) => (

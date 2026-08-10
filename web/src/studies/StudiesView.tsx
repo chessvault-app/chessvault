@@ -19,6 +19,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { SkeletonRows } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
 
@@ -64,7 +65,11 @@ function StudyList() {
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
-      {listLoaded && studies.length === 0 && folders.length === 0 ? (
+      {!listLoaded ? (
+        // The shape of the list that is coming, rather than a blank page
+        // that fills in — the wait reads as loading instead of as nothing.
+        <SkeletonRows rows={6} className="p-0" />
+      ) : studies.length === 0 && folders.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <Library className="text-subtle size-6" strokeWidth={1.5} />
           <p className="text-muted max-w-sm text-sm leading-relaxed">

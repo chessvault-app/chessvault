@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { navigate, type Section } from '@/lib/router';
+import { Skeleton } from '@/ui/Skeleton';
 
 /**
  * The landing page — minimal, but not empty-handed: the vault sections
@@ -28,6 +29,9 @@ const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof G
 
 export function HomePage() {
   const [counts, setCounts] = useState<Partial<Record<Section, number>>>({});
+  // The counts arrive a moment after the tiles do. Holding their place
+  // stops the tiles reflowing under the cursor as each number lands.
+  const [counted, setCounted] = useState(false);
   useEffect(() => {
     const grab = async (url: string): Promise<unknown> => {
       try {
@@ -59,6 +63,7 @@ export function HomePage() {
       const trainerPool = (puzzles as { puzzles?: number })?.puzzles;
       if (typeof trainerPool === 'number' && trainerPool > 0) next.puzzles = trainerPool;
       setCounts(next);
+      setCounted(true);
     })();
   }, []);
 
@@ -90,11 +95,19 @@ export function HomePage() {
               <span>
                 <span className="text-fg block text-sm font-medium">
                   {label}
-                  {counts[section] !== undefined && (
+                  {counts[section] !== undefined ? (
                     <span className="text-subtle font-mono text-xs font-normal">
                       {' '}
                       · {compact.format(counts[section]!)}
                     </span>
+                  ) : (
+                    // Only the tiles that will get a number keep space for
+                    // one: Board and Editor are tools and never carry one.
+                    !counted &&
+                    section !== 'analysis' &&
+                    section !== 'editor' && (
+                      <Skeleton className="ml-1.5 inline-block h-2 w-5 align-middle" />
+                    )
                   )}
                 </span>
                 <span className="text-subtle block text-xs leading-snug">{blurb}</span>
