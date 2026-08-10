@@ -4,6 +4,30 @@ Turns a scanned tactics-book PDF into a vault puzzle book: positions,
 verified solutions, per-puzzle evidence images, and honest fidelity
 tiers. Everything runs locally; only the resulting vault files matter.
 
+## Two ways in, one set of code
+
+**In the app** is the normal way: open a puzzle book, import its PDF, and
+the browser does the whole thing — renders each page, finds the diagrams,
+reads them with CellNet, reads the page's text layer, pairs numbers to
+diagrams, works out how the book writes its answers, and saves what
+replays as numbered puzzles with evidence. The user picks a file; there
+is nothing to configure, and nothing about the book is written down
+anywhere.
+
+**Offline** is the backup and the laboratory. The stages below run the
+same shared code (`shared/bookImport.ts`, `shared/bookConfigSearch.ts`,
+`shared/bookSolve.ts`) over pre-rendered pages, which is what makes it
+possible to measure a change against a whole book in a minute instead of
+re-scanning in a browser. It also still carries two passes the app has
+not got yet — glyph hints and solution-constrained board repair — which
+is the gap between 667 and 707 solved on 1001 Chess Exercises.
+
+The per-book config files under `scripts/ml/books/` belong to the offline
+side only. The app states none of it: number style and ceiling are read
+off the book's own numbering, the label window is fitted from its layout,
+the notation is searched, and the answer pages are wherever the winning
+anchor fires.
+
 ## The core idea: the book proves itself
 
 A puzzle is only imported as a **book solution** when the whole chain
