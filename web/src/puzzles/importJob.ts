@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import {
   assignLabels,
   deriveNumbering,
+  isMoveish,
+  tokenPrefix,
   letterSides,
   pageNumbers,
   type BookText,
@@ -11,6 +13,7 @@ import {
 } from '@shared/bookImport';
 import { solveBook, type SolveResult, type VerifiedPuzzle } from '@shared/bookSolve';
 import { repairBoard } from '@shared/bookRepair';
+import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs';
 import type { CellCandidates } from '@shared/bookRepair';
 import type { ReadBoard } from '@shared/bookConfigSearch';
 import type { CellReading, Template } from './ocr/classify';
@@ -22,6 +25,7 @@ import type { Gray } from './ocr/image';
 // Type-only: this file already loads pdf.js at runtime, and the repair
 // pass re-renders pages, so it needs the real document type.
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { Role } from 'chessops/types';
 
 export interface FoundDiagram {
   page: number;
@@ -370,7 +374,18 @@ async function readSolutions(
   }
   if (boards.size === 0) return null;
 
-  const result = solveBook(texts, boards, { ...numbering, solutionsAfterPage: 0 });
+  let result = solveBook(texts, boards, { ...numbering, solutionsAfterPage: 0 });
+
+  // The book prints its piece symbols; the scan mangled them into garbage.
+  // The first solve settles the common ones from lines that replayed, and
+  // the printed glyphs settle the rest — so the answers get read a second
+  // time, knowing what the symbols look like. Cheap: nineteen pages and a
+  // few thousand tiny crops on the book this was measured against, for 25
+  // more solutions.
+  const glyphs = await readAnswerGlyphs(pdf, texts, result.answerRanges, result.learnedHints);
+  if (glyphs.size > 0) {
+    result = solveBook(texts, boards, { ...numbering, solutionsAfterPage: 0 }, glyphs);
+  }
 
   // Pass two: the boards whose printed solution did not replay. Nearly all
   // of those are a correct reading of a page plus ONE misread square, and
@@ -525,4 +540,57 @@ async function repairUnread(
     }
   }
   return out;
+}
+
+/**
+ * Learn this book's piece symbols from the pages its answers are printed
+ * on.
+ *
+ * Only the answer pages are re-rendered, and only once — the diagrams'
+ * pages were rendered during the scan but the answers usually were not,
+ * and keeping every page's pixels through a whole book is not worth the
+ * memory.
+ */
+async function readAnswerGlyphs(
+  pdf: PDFDocumentProxy,
+  texts: TextPage[],
+  ranges: [number, number][],
+  settled: Map<string, Role>,
+): Promise<Map<string, Role>> {
+  if (ranges.length === 0) return new Map();
+  const wanted = new Set<number>();
+  for (const [from, to] of ranges) {
+    for (let page = from; page <= to; page++) wanted.add(page);
+  }
+  const byPage = new Map(texts.map((t) => [t.page, t]));
+  const samples: GlyphSample[] = [];
+  for (const pageNo of [...wanted].sort((a, b) => a - b)) {
+    const text = byPage.get(pageNo);
+    if (!text) continue;
+    const page = await pdf.getPage(pageNo);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+    const gray = grayFromCanvas(canvas);
+    const scale = text.width > 0 ? gray.w / text.width : 1;
+    for (const word of text.words) {
+      if (!isMoveish(word.text)) continue;
+      const prefix = tokenPrefix(word.text);
+      if (!prefix) continue;
+      const pixels = readGlyph(gray, {
+        x0: word.x0 * scale,
+        y0: word.y0 * scale,
+        x1: word.x1 * scale,
+        y1: word.y1 * scale,
+      });
+      if (pixels) samples.push({ prefix, pixels });
+    }
+    await new Promise((r) => setTimeout(r, 0));
+  }
+  // Trained on what the text already settled; those labels come from lines
+  // that replayed, so they are the trustworthy half.
+  return learnGlyphHints(samples, settled);
 }

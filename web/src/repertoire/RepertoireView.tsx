@@ -525,7 +525,11 @@ export function RepertoireView() {
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4">
+    // stacked:pb-8 — this column is what scrolls on a phone, and its last
+    // panel used to end flush against the bottom navigation with its own
+    // border cut off. Padding inside the scroll area gives it somewhere to
+    // finish.
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 wide:flex-row wide:gap-4 wide:p-4">
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
         <Button
           variant="ghost"
