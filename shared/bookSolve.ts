@@ -51,6 +51,15 @@ export interface SolveResult {
   /** Where the answers turned out to be, which nobody had to write down. */
   answerRanges: [number, number][];
   /**
+   * Replay a candidate position for one puzzle, against the same parsed
+   * line and learned dialect the solve used.
+   *
+   * This is what makes board REPAIR possible without the repair search
+   * knowing anything about how a book writes its answers: hand it a
+   * position, it says whether the book's printed solution works there.
+   */
+  replayFor: (number: number, placement: string) => { side: 'w' | 'b'; sans: string[] } | null;
+  /**
    * Whether the winning settings read enough of the book to be believed.
    * False is a real answer: the positions are still worth importing as
    * drafts, but their printed solutions were not understood.
@@ -122,12 +131,45 @@ export function solveBook(
   puzzles.sort((a, b) => a.number - b.number);
   unresolved.sort((a, b) => a - b);
   const share = boards.size > 0 ? puzzles.length / boards.size : 0;
+
+  // The dialect is fully learned by now, so a retry gets the book's best
+  // reading rather than the first pass's.
+  const hints = dialect.hints();
+  const replayFor = (
+    number: number,
+    placement: string,
+  ): { side: 'w' | 'b'; sans: string[] } | null => {
+    const body = entries.get(number);
+    const mainline = body ? parseMainline(body, config) : null;
+    const board = boards.get(number);
+    if (!mainline || !board) return null;
+    const stated =
+      settings.sidePrinted && board.sideStated
+        ? board.sideStated
+        : mainline.startsBlack
+          ? 'b'
+          : 'w';
+    const other = stated === 'w' ? 'b' : 'w';
+    const fallback = settings.sidePrinted ? other : (sides.get(board.page) ?? other);
+    for (const side of [stated, fallback]) {
+      const out = replayLine(placement, side, mainline.tokens, dialect, hints);
+      if ('fail' in out) continue;
+      // Same rule as the first pass: the moves must also replay from the
+      // FEN that would be stored, or the pair is not self-consistent.
+      const fen = `${placement} ${side} ${castlingRights(placement)} - 0 1`;
+      if (!toUci(fen, out.sans)) continue;
+      return { side, sans: out.sans };
+    }
+    return null;
+  };
+
   return {
     settings,
     ranking,
     puzzles,
     unresolved,
     answerRanges: answerPages(pages, config),
+    replayFor,
     confident: puzzles.length >= MIN_VALIDATED && share >= MIN_SHARE,
   };
 }
