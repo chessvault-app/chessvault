@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Pull the server's vault down to a local timestamped folder.
 #
-# cloud auto-snapshots already guard against instance loss, but they
-# live in the same AWS account — this is the off-cloud copy. The tarball
-# includes vault/.history.git, so the pulled copy carries the full
-# change history, not just the latest state.
+# Your host's own snapshots guard against instance loss, but they usually
+# live in the same account as the instance — this is the copy that does
+# not. The tarball includes vault/.history.git, so the pulled copy carries
+# the full change history, not just the latest state.
 #
 #   bash scripts/backup-vault.sh                # -> vault-backups/<date>/
 #   bash scripts/backup-vault.sh /mnt/nas/chess # -> explicit destination

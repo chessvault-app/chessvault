@@ -57,21 +57,35 @@ engine caches, ML artifacts under `data/`) is always rebuildable.
 - **PWA**: the same web app installed from the browser. Manifest +
   service worker (network-first, cache fallback, never `/api`), safe-area
   handling for notches, splash screens, and a code-split landing chunk
-  (~400 kB) because iOS relaunches backgrounded PWAs from scratch.
+  (~250 kB of JS) because iOS relaunches backgrounded PWAs from scratch.
+  Every view is lazy, including the analysis board — the landing page must
+  not pay for the engine, the explorer and the PGN parsers to draw six
+  tiles.
 
 ## Deployment model
 
-Target: a small Linux box (cloud) running the server; every device —
+Target: a small Linux box running the server; every device —
 desktop app in remote mode, phone PWA — is a client. The current Windows
 dev box is temporary; nothing may depend on it. Cross-platform paths and
 LF endings are policy.
 
 Ship with `scripts/deploy.sh` (git-bundle push → `npm ci` → build →
-`systemctl restart chess-vault`). SSH runs over a Tailscale tailnet with
-public port 22 closed at the firewall; only 80/443 face the internet, and
-the app sits behind Caddy for HTTPS. Backups are layered:
-`vault/.history.git` (per-change undo), host snapshots, and
-`scripts/backup-vault.sh` for an off-cloud pull.
+`systemctl restart chess-vault`), which also runs `tune-dbs.ts` so the
+prepared databases keep their indexes. SSH runs over a Tailscale tailnet
+with public port 22 closed at the firewall.
+
+How the app itself is reached is a deployment choice, not an architectural
+one: a reverse proxy terminating HTTPS on a public address, or Tailscale
+alone with nothing public at all. Both are just HTTP to the same server.
+
+Two things are prepared rather than produced by the app — the puzzle and
+reference-game databases — and are copied to the server; see
+[databases](databases.md) for when that has to happen. Desktop builds
+update from a feed the server hosts at `/updates`, so releases need no
+third party and no public repository.
+
+Backups are layered: `vault/.history.git` (per-change undo), host
+snapshots, and `scripts/backup-vault.sh` for an off-host pull.
 
 ## Shared code
 

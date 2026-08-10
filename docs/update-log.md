@@ -3,6 +3,35 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 2026-08-10
+
+- **Importing a book needs no configuration** — the app works out the
+  book's numbering, where its numbers sit beside the diagrams, how it
+  writes its answers and where they are, and what its figurine symbols
+  mean, all from the book. On 1001 Chess Exercises that is 714 solutions
+  verified by replay, against 707 for the hand-tuned offline pipeline
+  without its own glyph pass. Numbers the scan lost entirely are deduced
+  from the gaps they leave; board repair is offered as a checkbox with
+  what it costs stated, because it buys 26 puzzles for twenty minutes.
+- **Opening a book got much lighter** — a book's list no longer carries
+  the positions, solutions, evidence or timestamps that only the solver
+  and the source pane read. The largest book went from 1,856 KB to
+  283 KB, and its grid now builds the rows on screen rather than five
+  thousand tiles. Covers were 1.77 MB of page renders for five
+  thumbnails; they are 262 KB.
+- **Loading looks like loading** — every list, board and form sketches
+  its own shape while it waits, held back long enough that a fast load
+  shows nothing at all. The moves panel is named for the line it holds:
+  the opening (with its ECO code) on the board and in games, the chapter
+  in a study.
+- **Editing is one idea** — Games and Studies follow Notes: one Edit
+  button in the header, double-click the title to rename, no second
+  pencil hidden in a panel.
+- **Desktop releases without a public repository** — the shell updates
+  from a feed the server hosts, so the source can stay private. The
+  installer also stopped shipping the server's dependency tree: 376 MB
+  to 108 MB.
+
 ## 2026-08-09
 
 - **Reading vs editing everywhere** — Studies, Games and note boards

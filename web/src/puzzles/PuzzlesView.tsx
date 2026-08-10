@@ -39,6 +39,7 @@ import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
+import { bandOf } from './bands';
 import {
   judgeMove,
   positionAt,
@@ -645,8 +646,12 @@ function Trainer({
                   {failed ? 'Solved with help.' : 'Solved!'}
                 </p>
                 <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
-                  <dt className="text-subtle">Rating</dt>
-                  <dd className="text-fg font-mono">{puzzle.rating}</dd>
+                  {/* The band, not the number: a rating is how the trainer
+                      picks puzzles, not a verdict to hand back to whoever
+                      just solved one. The dashboard has always shown it
+                      this way; this panel had not. */}
+                  <dt className="text-subtle">Difficulty</dt>
+                  <dd className="text-fg">{bandOf(puzzle.rating)}</dd>
                   <dt className="text-subtle">Played</dt>
                   <dd className="text-fg font-mono">{puzzle.plays.toLocaleString()}</dd>
                   <dt className="text-subtle">Themes</dt>

@@ -75,3 +75,22 @@ refactors and behaviour changes go in separate commits so the neutral one
 stays provable.
 
 **UI text is sentence case**, and nothing user-facing exposes a rating.
+Difficulty is a word — see `web/src/puzzles/bands.ts`. A rating is how the
+trainer picks a puzzle, not a verdict to hand back to whoever solved it.
+
+## Before cutting a release
+
+Both of these, every time, before the version is bumped:
+
+**Audit the repo against this file.** Grep every tracked file for absolute
+paths, hostnames, addresses and tokens. Check that nothing new is
+per-book code, one-machine tooling, or a user action that needs a shell.
+Check no UI has started showing a rating. The point is to catch drift
+while it is one line, not at the moment of publishing.
+
+**Read the docs and fix what has gone stale.** `README.md`, everything in
+`docs/`, `scripts/ml/README.md`, `desktop/README.md`. Docs rot silently —
+a number that was true, a file that has been renamed, a limitation that
+has been fixed — and a wrong doc is worse than a missing one because it
+is believed. Add the release's entry to `docs/update-log.md` while you
+are there.

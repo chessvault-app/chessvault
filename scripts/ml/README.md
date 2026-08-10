@@ -1,5 +1,14 @@
 # Diagram-OCR model pipeline
 
+> **This is the laboratory, not the way in.** Importing a book is something
+> the app does: upload a PDF and it works the rest out (see
+> [docs/book-import-pipeline.md](../../docs/book-import-pipeline.md)).
+> What lives here is how the models were trained and how a change is
+> measured against a whole book in a minute rather than by re-scanning in
+> a browser. The reading logic itself is shared code — `shared/bookImport.ts`,
+> `bookConfigSearch.ts`, `bookSolve.ts`, `bookGlyphs.ts`, `bookRepair.ts` —
+> so the two cannot drift.
+
 ## Text-side models (stage 1: number labels — `digit_labels.py`)
 
 The PDF text layer loses 83 of the 1001 puzzle numbers (and its OCR of the
@@ -29,7 +38,7 @@ whole line; +30 more validated, multi-candidate cases left alone.
 Trains the cell classifier used by photo/PDF diagram reading: 32×32 grayscale
 tile → 13 classes (`1RNBQKPrnbqkp`, linrock-compatible order). Everything here
 is a DEV-TIME tool — only the exported weights ship, inference runs in the
-browser. Deployment (AWS cloud) never needs any of this, nor a GPU.
+browser. A deployment never needs any of this, nor a GPU.
 
 ## Environments (uv-managed, throwaway)
 

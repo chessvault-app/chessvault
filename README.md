@@ -113,6 +113,27 @@ the firewall, and `scripts/deploy.sh` (bundle → push → rebuild →
 restart) reaches it over the tailnet. Override the host with
 `CHESS_VAULT_HOST`.
 
+### Deploy-time jobs
+
+Two databases are **built on your machine and copied to the server**,
+rather than by anything the app does. They are the only such exception,
+and they are one-offs — not part of a normal deploy:
+
+```bash
+# the puzzle trainer's pool: download the Lichess dump (CC0, ~304 MB) once
+curl -o data/lichess_db_puzzle.csv.zst https://database.lichess.org/lichess_db_puzzle.csv.zst
+npm run build:puzzles              # -> data/puzzles.sqlite (~2.5 GB)
+
+# the reference-game browser: any PGNs you drop in vault/sources/
+npm run build:refgames             # -> data/refgames.sqlite
+```
+
+Copy both to the server's data directory. Every later deploy keeps their
+indexes current on its own. Rebuild only for a newer puzzle dump or more
+reference games — see [docs/databases.md](docs/databases.md) for why these
+are not done in the app, and what would have to change for that to stop
+being the right answer.
+
 Backups are layered: the server auto-commits every vault change to
 `vault/.history.git` (fine-grained undo), your host's snapshots guard
 against instance loss, and `scripts/backup-vault.sh` pulls the whole

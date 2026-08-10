@@ -12,6 +12,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
+import { BANDS, bandOf } from './bands';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 
 /**
@@ -43,16 +44,7 @@ interface BookSummary {
   failed: number;
 }
 
-const BANDS = [
-  { id: 'easy', label: 'Easy', min: 0, max: 1399 },
-  { id: 'medium', label: 'Medium', min: 1400, max: 1799 },
-  { id: 'hard', label: 'Hard', min: 1800, max: 2199 },
-  { id: 'expert', label: 'Expert', min: 2200, max: 9999 },
-] as const;
 
-/** Ratings are internal curation data — users see the band, not the number. */
-const bandOf = (rating: number): string =>
-  BANDS.find((b) => rating >= b.min && rating <= b.max)?.label ?? '—';
 
 type ResultFilter = 'all' | 'solved' | 'review';
 type BandFilter = 'any' | (typeof BANDS)[number]['id'];
