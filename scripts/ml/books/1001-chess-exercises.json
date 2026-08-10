@@ -7,11 +7,11 @@
  ],
  "solutionsAfterPage": 100,
  "maxNumber": 1001,
- "anchorStyle": "dash",
- "moveMarkers": "dotless",
- "sideMode": "label",
  "text": "data/ml/1001-text.json",
  "cache": "data/ml/1001-reads.json",
  "report": "data/ml/autoimport-report.json",
- "note": "Settings found by scripts/ml/search-config.ts, not by hand: they validate 709 entries against the 678 the script defaults gave. The book does not print a per-puzzle side, so sideMode only changes which side is tried second."
+ "note": "Found by scripts/ml/search-config.ts, then measured: 980 diagrams matched and 707 validated, against 677 with the script defaults. An earlier search picked sideMode label for this book, which prints no side at all, and measured 662 — the search now refuses that, and its ranking matches the measure exactly.",
+ "anchorStyle": "dash",
+ "moveMarkers": "dotless",
+ "sideMode": "chapter"
 }

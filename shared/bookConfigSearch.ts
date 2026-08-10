@@ -173,10 +173,18 @@ export function searchSettings(
   boards: Map<number, ReadBoard>,
   book: Omit<BookText, 'anchorStyle' | 'moveMarkers'>,
 ): Score[] {
+  // A book that prints no side beside its puzzles cannot be read as one
+  // that does, however the score happens to fall. Left free, this is the
+  // setting the search gets wrong: the side it would be "using" is absent,
+  // so the flag only reshuffles which side gets tried second, and a book
+  // can score a point higher on noise and then import materially worse.
+  const stated = [...boards.values()].filter((b) => b.sideStated).length;
+  const sideModes = stated >= Math.max(10, boards.size * 0.5) ? [false, true] : [false];
+
   const candidates: TextSettings[] = [];
   for (const anchorStyle of ANCHOR_STYLES) {
     for (const moveMarkers of MOVE_MARKERS) {
-      for (const sidePrinted of [false, true]) {
+      for (const sidePrinted of sideModes) {
         candidates.push({ anchorStyle, moveMarkers, sidePrinted });
       }
     }
@@ -184,7 +192,7 @@ export function searchSettings(
   // Derived anchors ride on top of the same marker/side choices.
   for (const anchorPattern of deriveAnchors(pages, book.maxNumber).slice(0, 4)) {
     for (const moveMarkers of MOVE_MARKERS) {
-      for (const sidePrinted of [false, true]) {
+      for (const sidePrinted of sideModes) {
         candidates.push({ anchorStyle: 'paren', moveMarkers, sidePrinted, anchorPattern });
       }
     }

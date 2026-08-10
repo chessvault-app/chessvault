@@ -6,6 +6,7 @@ import {
   assignLabels,
   castlingRights,
   chapterSides,
+  deriveNumbering,
   fitLabelWindow,
   isMoveish,
   labelForDiagram,
@@ -347,5 +348,40 @@ describe('fitLabelWindow / assignLabels', () => {
     // The answers section reprints puzzle 1's diagram, later in the book.
     pages.push(layout(99, 1, offset));
     expect(assignLabels(pages).get(1)?.page).toBe(1);
+  });
+});
+
+describe('deriveNumbering', () => {
+  const digits = (values: number[], style: 'bare' | 'paren'): TextPage[] =>
+    values.map((v, i) => ({
+      page: i + 1,
+      width: 600,
+      text: '',
+      words: [
+        { x0: 10, x1: 30, y0: 10, y1: 20, text: style === 'paren' ? `${v})` : String(v) },
+        // Noise every book has: a page number, a year in the prose.
+        { x0: 300, x1: 330, y0: 700, y1: 710, text: String(400 + i) },
+        { x0: 100, x1: 140, y0: 300, y1: 310, text: '1987' },
+      ],
+    }));
+
+  it('reads the ceiling off the book’s own dense run', () => {
+    expect(deriveNumbering(digits([...Array(120).keys()].map((i) => i + 1), 'bare'))).toEqual({
+      numberStyle: 'bare',
+      maxNumber: 120,
+    });
+  });
+
+  it('tells a parenthesised book from a bare one', () => {
+    const found = deriveNumbering(digits([...Array(120).keys()].map((i) => i + 1), 'paren'));
+    expect(found.numberStyle).toBe('paren');
+    expect(found.maxNumber).toBe(120);
+  });
+
+  it('stops where the run stops, not at the largest digit on the page', () => {
+    // Scattered high numbers (years, page numbers) must not raise the
+    // ceiling — only a run that keeps counting does.
+    const found = deriveNumbering(digits([...Array(60).keys()].map((i) => i + 1), 'bare'));
+    expect(found.maxNumber).toBe(60);
   });
 });

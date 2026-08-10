@@ -187,6 +187,45 @@ export function fitLabelWindow(
   };
 }
 
+/**
+ * How this book writes its puzzle numbers, worked out from the numbers.
+ *
+ * `numberStyle` is a two-way choice, so it is simply tried both ways.
+ * `maxNumber` is only ever a ceiling — it exists to stop a year or a page
+ * number being mistaken for a puzzle — so it does not have to be the
+ * book's real count, and a value read off the book's own numbering is
+ * better than a guess either way. Puzzle numbers are the one run of
+ * integers in a book that is DENSE: 1, 2, 3 … with almost none missing.
+ * Nothing else in a book counts like that.
+ */
+export function deriveNumbering(pages: TextPage[]): Pick<BookText, 'numberStyle' | 'maxNumber'> {
+  const styles: BookText['numberStyle'][] = ['bare', 'paren'];
+  let best: { numberStyle: BookText['numberStyle']; maxNumber: number } = {
+    numberStyle: 'bare',
+    maxNumber: 1,
+  };
+  for (const numberStyle of styles) {
+    const seen = new Set<number>();
+    for (const page of pages) {
+      for (const n of pageNumbers(page.words, { numberStyle, maxNumber: 9999 } as BookText)) {
+        seen.add(n.value);
+      }
+    }
+    // Walk up while the run stays dense, allowing for numbers the scan
+    // dropped; stop where the book stops counting and stray digits begin.
+    let max = 0;
+    let missing = 0;
+    for (let v = 1; v <= 9999; v++) {
+      if (seen.has(v)) {
+        max = v;
+        missing = 0;
+      } else if (++missing > 20) break;
+    }
+    if (max > best.maxNumber) best = { numberStyle, maxNumber: max };
+  }
+  return best;
+}
+
 /** A diagram's place on its page, in that page's render pixels. */
 export interface Rect {
   x: number;
