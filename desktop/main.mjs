@@ -158,13 +158,22 @@ app.whenReady().then(async () => {
     // preload bridge — force https so a plaintext or exotic-scheme server
     // can never receive the session cookie or the bridge.
     if (mode === 'remote' && !/^https:\/\//i.test(url ?? '')) {
-      return { error: 'the server URL must start with https://' };
+      return { error: 'The server address must start with https://' };
     }
+    const previous = readSettings();
     writeSettings({ mode, url: url ?? null, vaultDir: vaultDir ?? null });
     // A different vault means a different server environment.
     serverProc?.kill();
     serverProc = null;
-    await openApp(win);
+    try {
+      await openApp(win);
+    } catch (err) {
+      // An address that does not answer must not be remembered, or the
+      // next launch opens straight onto a dead page with no way back.
+      writeSettings(previous);
+      await win.loadFile(join(here, 'chooser.html'));
+      return { error: `Could not reach that server (${err?.code ?? err?.message ?? 'no answer'}).` };
+    }
   });
   ipcMain.handle('vault:pick-folder', async () => {
     const picked = await dialog.showOpenDialog(win, {

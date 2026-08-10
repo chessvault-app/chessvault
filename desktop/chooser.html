@@ -226,6 +226,7 @@
         <input id="url" type="url" placeholder="https://vault.example.com" required spellcheck="false" />
         <button class="connect" type="submit">Connect</button>
       </form>
+      <p class="error" id="remoteError"></p>
     </div>
 
     <div class="card" id="stepLocal" hidden>
@@ -294,9 +295,22 @@
         if (!step2.hidden) show(step1, step2);
         else if (!stepLocal.hidden) show(step1, stepLocal);
       });
-      document.getElementById('urlForm').onsubmit = (e) => {
+      const remoteError = document.getElementById('remoteError');
+      document.getElementById('urlForm').onsubmit = async (e) => {
         e.preventDefault();
-        window.vaultShell.choose('remote', document.getElementById('url').value.trim());
+        remoteError.textContent = '';
+        // choose() ANSWERS: it returns { error } when it refuses the
+        // address. Firing and forgetting meant a rejected URL — an http://
+        // one, say — looked like a button that simply did nothing.
+        const result = await window.vaultShell.choose(
+          'remote',
+          document.getElementById('url').value.trim(),
+        );
+        if (result && result.error) remoteError.textContent = result.error;
+      };
+      // Clear the complaint as soon as they start fixing it.
+      document.getElementById('url').oninput = () => {
+        remoteError.textContent = '';
       };
     </script>
   </body>
