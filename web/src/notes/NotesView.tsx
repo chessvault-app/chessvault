@@ -7,8 +7,9 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
@@ -20,7 +21,7 @@ import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
 // pays for it; it loads when a note is actually opened.
-const NoteView = lazy(() => import('./NoteView').then((m) => ({ default: m.NoteView })));
+const NoteView = lazyRoute(() => import('./NoteView').then((m) => ({ default: m.NoteView })));
 
 interface NoteMeta {
   id: string;

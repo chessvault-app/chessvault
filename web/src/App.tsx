@@ -16,8 +16,9 @@ import {
   SwatchBook,
   Wrench,
 } from 'lucide-react';
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
@@ -31,15 +32,15 @@ import { ThemeToggle } from '@/ui/ThemeToggle';
 // engine, the explorer, the review strip and the move tree into the chunk
 // that has to parse before ANYTHING renders — including the landing page,
 // which uses none of them.
-const AnalysisView = lazy(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })));
-const EditorView = lazy(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
-const GamesView = lazy(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
-const NotesView = lazy(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
-const PuzzlesView = lazy(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
-const HomePage = lazy(() => import('@/home/HomePage').then((m) => ({ default: m.HomePage })));
-const StudiesView = lazy(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
-const SettingsPage = lazy(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
-const RepertoireView = lazy(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
+const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })));
+const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
+const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
+const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
+const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
+const HomePage = lazyRoute(() => import('@/home/HomePage').then((m) => ({ default: m.HomePage })));
+const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
+const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way

@@ -116,6 +116,23 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+/**
+ * A labelled GROUP of controls, which must not be a <label>.
+ *
+ * Clicking the dead space in a label activates its first labelable
+ * descendant — so a row of theme swatches inside one meant that clicking
+ * beside them silently pressed the first swatch and reset the colours to
+ * default. A label points at one control; this points at several.
+ */
+function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1" role="group" aria-label={label}>
+      <span className="text-muted text-xs font-medium">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 function Feedback({ note }: { note: { kind: 'ok' | 'error'; text: string } | null }) {
   if (!note) return null;
   return (
@@ -225,7 +242,7 @@ function AppearanceCard() {
         />
       </Field>
 
-      <Field label="Colours">
+      <FieldGroup label="Colours">
         <div className="flex flex-col gap-2">
           {/* Swatches rather than a dropdown: a colour scheme is the one
               setting whose name tells you least about it. */}
@@ -258,7 +275,7 @@ function AppearanceCard() {
           </div>
 
         </div>
-      </Field>
+      </FieldGroup>
 
       <Field label="Board">
         <div className="flex items-center gap-3">
