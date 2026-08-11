@@ -1,25 +1,34 @@
-# Publish the static demo to GitHub Pages.
+# Build the static demo, and publish it to GitHub Pages — two jobs, on
+# purpose.
 #
-# Pushes ONLY the built output to a separate repository, so this one can
-# stay private: what lands there is minified JavaScript, the synthetic seed
-# vault, and the curated CC0 puzzle/game subsets. No source, no source maps,
-# no vault data, no book puzzles, no tokens.
+# Building proves the demo still works and costs nothing; publishing puts it
+# in front of strangers and cannot be taken back. Split, every release
+# verifies the demo builds while going live stays a deliberate act:
 #
-# Needs two things configured once, in this repository's settings:
-#   - a secret DEMO_DEPLOY_KEY: an SSH private key whose public half is a
-#     deploy key WITH WRITE ACCESS on the target repository. A deploy key is
-#     scoped to that one repository, unlike a personal access token, which
-#     is why it is worth the extra step.
-#   - a variable DEMO_REPO, e.g. chessvault/chessvault.github.io
+#   - `publish` is skipped entirely until DEMO_REPO is set, so while the
+#     demo is not meant to be public there is nothing to remember and no
+#     failing run to learn to ignore;
+#   - it runs in the `demo-site` environment, which holds the deploy key and
+#     can require an approval — so the irreversible step waits for a person
+#     even though the release that triggered it did not.
 #
-# Runs on a release tag, which scripts/release.sh pushes only after the
-# installer and the server have both been verified to report the new
-# version. That is the point: the public demo shows a version that actually
-# shipped, not whatever happened to be on main.
+# What lands in the target repository is build output only: minified
+# JavaScript, the synthetic seed vault, and the curated CC0 puzzle and game
+# subsets. No source, no source maps, no vault data, no book puzzles, no
+# tokens — which is what lets this repository stay private.
 #
-# Not on push to main — that would publish work in progress to a public
-# address. workflow_dispatch stays for rebuilding the demo without cutting a
-# release (a fixed screenshot, a curated database rebuilt).
+# Configured once:
+#   - environment `demo-site` with secret DEMO_DEPLOY_KEY: an SSH private
+#     key whose public half is a deploy key WITH WRITE ACCESS on the target.
+#     A deploy key is scoped to that one repository, unlike a personal
+#     token, which is why it is worth the extra step.
+#   - repository variable DEMO_REPO, e.g. chessvault-app/chessvault-app.github.io
+#
+# Triggered by the v* tag scripts/release.sh pushes after verifying the
+# installer and the server both report the new version, so the demo can only
+# show a version that actually shipped. Not on push to main, which would
+# publish work in progress. workflow_dispatch is for rebuilding the demo
+# without cutting a release.
 name: demo
 
 on:
@@ -40,23 +49,50 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
-      # The engine assets are fetched by a postinstall-style step, not
-      # committed, so the demo would ship without an engine otherwise.
+      # Fetched rather than committed: the demo would ship without an engine
+      # otherwise.
       - run: npm run setup:engine
 
-      # The curated databases are built from the full ones, which are far
-      # too large to live in a repository. They are committed under
+      # The curated databases are built from the full ones, which are far too
+      # large to live in a repository. They are committed under
       # web/public/demo/ precisely so this job does not need them.
       - name: Check the demo databases are present
         run: |
-          for f in web/public/demo/puzzles.sqlite web/public/demo/refgames.sqlite web/public/demo/openings.json; do
+          for f in web/public/demo/puzzles.sqlite web/public/demo/refgames.sqlite \
+                   web/public/demo/book.sqlite web/public/demo/openings.json; do
             [ -f "$f" ] || { echo "missing $f — run npm run build:demo-dbs and commit it"; exit 1; }
           done
 
+      # The demo's own guards: that it still mounts every route the app has,
+      # and that its databases carry every column the queries ask for.
+      - run: npx vitest run server/demoStatic.test.ts
+
       - run: npm run build:site
 
-      # Jekyll would otherwise eat any path beginning with an underscore.
+      # Jekyll would otherwise swallow any path beginning with an underscore.
       - run: touch dist-site/.nojekyll
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-site
+          path: dist-site
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Nothing to publish to means nothing to do — not a failure. This is what
+    # keeps the demo unpublished until you decide otherwise: leave DEMO_REPO
+    # unset and releases quietly build it without ever putting it online.
+    if: vars.DEMO_REPO != ''
+    # Holds the deploy key, and can require an approval before the one step
+    # that cannot be undone.
+    environment: demo-site
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: demo-site
+          path: dist-site
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v4
