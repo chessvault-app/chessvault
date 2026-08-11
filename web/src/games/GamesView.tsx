@@ -799,7 +799,12 @@ function ArchiveBrowser({
     }
   };
 
+  // Selection is a MODE, not a permanent column: a checkbox on every row
+  // is clutter for the common case, which is picking out one game.
+  const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [bulk, setBulk] = useState<{ month: number; months: number; added: number } | null>(null);
+  const stopRef = useRef(false);
   const [busy, setBusy] = useState(false);
   const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
   const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
@@ -808,6 +813,53 @@ function ArchiveBrowser({
       (sideFilter === 'any' || g.userSide === sideFilter) &&
       (resultFilter === 'any' || g.result === resultFilter),
   );
+
+  /**
+   * Import every game this player ever played, month by month.
+   *
+   * Driven from here rather than as a server job: fetching an archive month
+   * is already a client call, the server caches each month as it goes, and
+   * a loop with a visible count and a Stop button is honest about a job
+   * that can take minutes over dozens of months. Nothing is lost by
+   * stopping — the months already imported stay imported, and running it
+   * again skips what is there.
+   *
+   * Oldest first, so an interrupted run leaves a contiguous history rather
+   * than a hole in the middle.
+   */
+  const importEverything = async (): Promise<void> => {
+    const user = username.trim();
+    if (!user || !months.length) return;
+    stopRef.current = false;
+    setBulk({ month: 0, months: months.length, added: 0 });
+
+    let added = 0;
+    const oldestFirst = months.map((m) => m.month).sort();
+    for (const [at, m] of oldestFirst.entries()) {
+      if (stopRef.current) break;
+      setBulk({ month: at + 1, months: oldestFirst.length, added });
+      try {
+        // Caches the month on the server if it is not there yet.
+        const got = await fetch(
+          `${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`,
+        );
+        if (!got.ok) continue;
+        const res = await fetch('/api/games/collect', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ file: `chesscom/${user.toLowerCase()}/${m}.pgn`, all: true }),
+        });
+        if (res.ok) added += ((await res.json()) as { added?: number }).added ?? 0;
+      } catch {
+        // One unreachable month should not abandon the rest of a decade.
+      }
+      setBulk({ month: at + 1, months: oldestFirst.length, added });
+    }
+
+    setBulk(null);
+    onCollected();
+    if (month) await loadMonth(month);
+  };
 
   /** Shown by the current filters and not already collected. */
   const pickable = visibleMonthGames.filter(
@@ -849,6 +901,7 @@ function ArchiveBrowser({
         return next;
       });
       setPicked(new Set());
+      setSelecting(false);
       onCollected();
     } else {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -989,35 +1042,79 @@ function ArchiveBrowser({
 
       {month && visibleMonthGames.length > 0 && loading !== 'games' && (
         <div className="border-line flex flex-wrap items-center gap-2 border-t px-3 py-1.5 text-xs">
-          <label className="flex cursor-pointer items-center gap-1.5">
-            <input
-              type="checkbox"
-              className="accent-primary"
-              checked={pickable.length > 0 && picked.size === pickable.length}
-              // Indeterminate is the honest state for a partial selection:
-              // an unchecked box next to eight ticked rows reads as a bug.
-              ref={(el) => {
-                if (el) el.indeterminate = picked.size > 0 && picked.size < pickable.length;
-              }}
-              disabled={pickable.length === 0}
-              onChange={(e) =>
-                setPicked(e.target.checked ? new Set(pickable.map(gameKey)) : new Set())
-              }
-            />
-            <span className="text-muted">{t('Select all')}</span>
-          </label>
-          {picked.size > 0 && (
+          {!selecting ? (
             <>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pickable.length === 0 || bulk !== null}
+                onClick={() => setSelecting(true)}
+              >
+                {t('Select…')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={bulk !== null || !months.length}
+                onClick={() => void importEverything()}
+                title={t('Add every game this player has ever played')}
+              >
+                {t('Import all games')}
+              </Button>
+              {bulk && (
+                <>
+                  <span className="text-muted tabular-nums">
+                    {t('Month {at} of {total} · {added} added', {
+                      at: bulk.month,
+                      total: bulk.months,
+                      added: bulk.added,
+                    })}
+                  </span>
+                  <Button variant="ghost" size="sm" onClick={() => (stopRef.current = true)}>
+                    {t('Stop')}
+                  </Button>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <label className="flex cursor-pointer items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  className="accent-primary"
+                  checked={pickable.length > 0 && picked.size === pickable.length}
+                  // Indeterminate is the honest state for a partial
+                  // selection: an unchecked box next to eight ticked rows
+                  // reads as a bug.
+                  ref={(el) => {
+                    if (el) el.indeterminate = picked.size > 0 && picked.size < pickable.length;
+                  }}
+                  onChange={(e) =>
+                    setPicked(e.target.checked ? new Set(pickable.map(gameKey)) : new Set())
+                  }
+                />
+                <span className="text-muted">{t('Select all')}</span>
+              </label>
               <span className="text-subtle tabular-nums">
                 {t('{n} selected', { n: picked.size })}
               </span>
               <Button
                 variant="primary"
                 size="sm"
-                disabled={busy}
+                disabled={busy || picked.size === 0}
                 onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}
               >
                 {busy ? t('Adding…') : t('Add selected')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelecting(false);
+                  setPicked(new Set());
+                }}
+              >
+                {t('Cancel')}
               </Button>
             </>
           )}
@@ -1046,7 +1143,7 @@ function ArchiveBrowser({
                   onPreview={onPreview}
                   actions={
                     <>
-                    {!inCollection && (
+                    {selecting && !inCollection && (
                       <input
                         type="checkbox"
                         className="accent-primary mr-1 shrink-0"
