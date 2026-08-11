@@ -1,9 +1,15 @@
 /**
  * Move sounds. Move and capture are the lichess standard samples
- * (web/public/sound, vendored from lila's public/sound/standard —
- * AGPL-3.0, compatible with this GPL-3.0 project). Lichess has no
- * distinct check sound, so check plays the move sample plus a short
- * synthesised accent.
+ * (web/public/sound, vendored from lila's public/sound/standard).
+ *
+ * That set is NON-FREE and has to go before a public release — see
+ * THIRD-PARTY.md, which carries the hashes proving which files these are.
+ * This comment used to claim they were "AGPL-3.0, compatible with this
+ * GPL-3.0 project", which was simply wrong: lila's AGPL covers four named
+ * sound sets and `standard` is not one of them.
+ *
+ * Lichess has no distinct check sound, so check plays the move sample plus
+ * a short synthesised accent.
  * Everything is decoded once into WebAudio buffers: no play latency, and
  * overlapping sounds mix instead of cutting each other off.
  */

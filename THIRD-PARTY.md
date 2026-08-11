@@ -61,17 +61,34 @@ the public demo to the public repository. If the source were ever taken
 private again while the demo stayed up, this would be back, and the fix
 would be to drop the set.
 
-### The sounds are not accounted for
+### The sounds are non-free, and this is now settled rather than suspected
 
-lila licenses its sound *collections* individually — futuristic, nes, piano
-and sfx are AGPLv3+ by Enigmahack, lisp is CC BY-NC-SA 4.0 — and lists
-others under "Exceptions (non-free)". Our `Move.mp3` and `Capture.mp3` match
-none of those names, and where they came from was never written down.
+`web/public/sound/Move.mp3` and `Capture.mp3` are lichess's `standard` set,
+bit for bit. Verified by hash against
+`lichess-org/lila:public/sound/standard/`:
 
-An unattributable asset that may be non-free is worse than no sound at all
-on a public site. Either identify them against lila's list and record it
-here, or replace them: two short clicks are trivial to synthesise or to take
-from a CC0 source, and that ends the question permanently.
+| File | SHA-256 |
+| --- | --- |
+| Move.mp3 | `3dd52fa3657d876cf40194d2005eddef3364e3b65bc0c508288529ae7bde8485` |
+| Capture.mp3 | `60c4c6066989a85089c68d8ea43a084044e2a2fa9b20ab786690b8e1f9e9205b` |
+
+lila licenses its sound *collections* individually: futuristic, nes, piano
+and sfx are AGPLv3+ by Enigmahack, and lisp is CC BY-NC-SA 4.0. `standard`
+is in none of those, so it falls under that file's exceptions line — "The
+other sounds in public/sound" — which is the **non-free** list. Asked
+directly on lichess's own forum, nobody from lichess ever answered what the
+rights are, and silence is not a grant.
+
+So this is not "unattributed, possibly fine". It is a file we have no
+licence to convey, shipped in every installer and served by the public
+demo. **It must be replaced before a public release.**
+
+Work in progress, not yet landed: replacements synthesised from scratch —
+modal synthesis, so they are ours outright and end the question rather
+than moving it. Nothing licensable was found to be worth substituting; the
+one genuinely apt CC0 source is el_boss's "Chess Puzzle Blitz SFX" on
+Freesound, recorded on a real board, if buying that argument is ever
+preferred to synthesising.
 
 ## Development only — never shipped
 
