@@ -35,6 +35,7 @@
     "build:demo": "tsx scripts/build-demo-seed.ts && vite build --config web/vite.demo.config.ts",
     "build:demo-dbs": "tsx scripts/build-demo-dbs.ts",
     "build:site": "npm run build:demo && tsx scripts/build-landing.ts",
+    "shots": "electron scripts/capture-screenshots.mjs",
     "desktop:package:linux": "node desktop/build-server.mjs && npm run build && electron-builder --linux AppImage deb"
   },
   "dependencies": {

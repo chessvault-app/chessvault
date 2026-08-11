@@ -110,13 +110,13 @@
          that shows the entire page and stays readable. */
       .feature p { color: var(--muted); max-width: 44rem; margin: 0 0 var(--s6); }
       .feature figure { margin: 0; }
-      /* One box for both, so the two sections do not step. The ratio is the
-         TALLER screenshot's, and the shorter one is fitted inside rather
-         than cropped — nothing may be cut off when the point is to show the
-         whole page. The bands that leaves are the page's own background,
-         and the screenshots' own is nearly the same dark. */
+      /* Both sources are captured at the same size, so one aspect-ratio
+         fits each exactly: the sections cannot step, and nothing is cropped
+         or letterboxed. Stated rather than left implicit so a screenshot
+         recaptured at some other size is caught here instead of silently
+         changing the page's rhythm. */
       .feature img {
-        width: 100%; aspect-ratio: 2880 / 1760; object-fit: contain;
+        width: 100%; aspect-ratio: 1904 / 993; object-fit: cover;
         background: var(--bg); border-radius: 0.8rem; border: 1px solid var(--line);
       }
 
