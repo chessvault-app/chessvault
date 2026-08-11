@@ -55,6 +55,15 @@ const md = new MarkdownIt({ html: false, linkify: true });
  * dependencies, and vice versa. Over-inclusion is harmless — an extra
  * notice costs a few lines — and under-inclusion is the failure that
  * matters, so no attempt is made to narrow it.
+ *
+ * Cross-checked 2026-08-11 against two outside tools. license-checker
+ * (rseidelsohn) found 137 production packages and nothing this misses, with
+ * no disagreement about any licence id. `npm sbom --omit dev` found 108 and
+ * dropped `hono` — a declared production dependency and the server itself —
+ * apparently because the dev-only @hono/node-server also requires it, so
+ * pruning the dev tree took the shared node with it. Worth remembering
+ * before replacing this with the official tool: it under-reported, and the
+ * package it lost was not a small one.
  */
 interface Dep {
   name: string;
