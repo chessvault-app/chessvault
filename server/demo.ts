@@ -78,8 +78,18 @@ const WRITABLE: string[] = [
   'POST /api/puzzles/reset',
 ];
 
-/** Whole surfaces closed to READS as well. */
-const UNREADABLE = ['/api/puzzlebooks'];
+/**
+ * Whole surfaces closed to READS as well.
+ *
+ * /api/lichess is not about storage. The explorer proxy attaches the
+ * DEPLOYMENT'S Lichess token to every upstream call, so on a public demo a
+ * stranger's query is made as the owner's account from the owner's server:
+ * their rate limit spent by anybody who finds the URL, and an
+ * unauthenticated endpoint turned into an outbound amplifier. The demo has
+ * local opening books and the reference-game database, which is what the
+ * explorer is for anyway.
+ */
+const UNREADABLE = ['/api/puzzlebooks', '/api/lichess'];
 
 function matches(pattern: string, method: string, path: string): boolean {
   const [wantMethod, wantPath] = pattern.split(' ') as [string, string];

@@ -94,6 +94,14 @@ describe('demo guard', () => {
     expect(await ask('GET', '/api/puzzlebooks/some-book')).toBe(404);
   });
 
+  it("never lets a stranger spend the deployment's Lichess token", async () => {
+    // The proxy authenticates upstream as the owner, so an open demo would
+    // hand out their rate limit and their IP.
+    expect(await ask('GET', '/api/lichess/explorer')).toBe(404);
+    expect(await ask('GET', '/api/lichess/studies/someone')).toBe(404);
+    expect(await ask('POST', '/api/lichess/studies/import')).toBe(404);
+  });
+
   it('leaves ordinary reads alone', async () => {
     for (const path of ['/api/studies', '/api/games', '/api/puzzles/next', '/api/settings']) {
       expect(await ask('GET', path), path).toBe(200);
