@@ -1,5 +1,5 @@
-import { BookOpen, Compass, ExternalLink, Hammer, Loader2, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, Compass, ExternalLink, Hammer, Loader2, Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
@@ -403,14 +403,57 @@ function BooksManager({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
   const wasRunning = useRef(false);
 
-  useEffect(() => {
-    void fetch('/api/sources')
-      .then((r) => r.json() as Promise<{ sources: { name: string; bytes: number }[] }>)
-      .then((b) => setSources(b.sources))
-      .catch(() => setError('could not list vault/sources'));
+  const refreshSources = useCallback(async (): Promise<void> => {
+    try {
+      const res = await fetch('/api/sources');
+      const body = (await res.json()) as { sources: { name: string; bytes: number }[] };
+      setSources(body.sources);
+    } catch {
+      setError('could not list the PGN collections');
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshSources();
+  }, [refreshSources]);
+
+  /**
+   * Upload PGN collections.
+   *
+   * Sent one at a time as a raw body, which streams: these files run to
+   * hundreds of megabytes, and FormData would buffer the whole thing in the
+   * page before a byte left. The panel used to tell people to copy files
+   * into vault/sources/ themselves, which a phone or a remote browser
+   * cannot do.
+   */
+  const upload = async (files: FileList | null): Promise<void> => {
+    if (!files?.length) return;
+    setError(null);
+    for (const file of Array.from(files)) {
+      if (!file.name.toLowerCase().endsWith('.pgn')) {
+        setError(`${file.name} is not a .pgn`);
+        continue;
+      }
+      setUploading(file.name);
+      try {
+        const res = await fetch(`/api/sources?name=${encodeURIComponent(file.name)}`, {
+          method: 'POST',
+          body: file,
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          setError(`${file.name}: ${body?.error ?? res.statusText}`);
+        }
+      } catch {
+        setError(`${file.name}: upload failed`);
+      }
+    }
+    setUploading(null);
+    await refreshSources();
+  };
 
   // Poll the build while one runs; refresh the shelf when it finishes.
   useEffect(() => {
@@ -467,9 +510,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
         </p>
         {sources.length === 0 ? (
           <p className="text-muted leading-relaxed">
-            {t("No PGN files found. Put game collections (e.g. Lichess Elite months, Lumbra's Gigabase exports) into")}{' '}
-            <code className="font-mono">vault/sources/</code>{' '}
-            {t('then come back here.')}
+            {t('No PGN collections yet. Add one below — Lichess Elite months and Gigabase exports are the usual sources.')}
           </p>
         ) : (
           <>
@@ -512,6 +553,27 @@ function BooksManager({ onClose }: { onClose: () => void }) {
             </div>
           </>
         )}
+
+        {/* Adding a collection has to be possible here: the vault may be on
+            a server across the network, and a phone has no way to copy a
+            file into it. */}
+        <label className="mt-1 flex cursor-pointer items-center gap-2 self-start">
+          <input
+            type="file"
+            accept=".pgn"
+            multiple
+            disabled={uploading !== null}
+            className="hidden"
+            onChange={(e) => {
+              void upload(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <span className="border-line text-muted hover:border-line-strong hover:text-fg flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors">
+            {uploading ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
+            {uploading ? t('Uploading {name}…', { name: uploading }) : t('Add PGN files')}
+          </span>
+        </label>
       </div>
 
       {(running || (status?.log?.length ?? 0) > 0) && (

@@ -1,8 +1,11 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import { makeSan } from 'chessops/san';
@@ -301,6 +304,58 @@ export function booksApi(dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAUL
       .filter((f) => f.endsWith('.pgn'))
       .map((f) => ({ name: f, bytes: statSync(resolve(dirs.sources, f)).size }));
     return c.json({ sources });
+  });
+
+  /**
+   * Upload a PGN collection.
+   *
+   * Streamed to disk rather than read into memory: these are Lichess Elite
+   * months and Gigabase exports, hundreds of megabytes each, and buffering
+   * one would take the server down on the 2 GB box it runs on.
+   *
+   * It exists because the app used to tell people to put files in
+   * vault/sources/ themselves, which is not something a phone or a remote
+   * browser can do — and the rule is that every user action is possible in
+   * the app.
+   */
+  api.post('/sources', async (c) => {
+    const name = c.req.query('name') ?? '';
+    if (!NAME_RE.test(name) || !name.toLowerCase().endsWith('.pgn')) {
+      return c.json({ error: 'name must be a plain .pgn filename' }, 400);
+    }
+    const target = resolve(dirs.sources, name);
+    // resolve() collapses any traversal NAME_RE somehow allowed; refuse
+    // anything that did not land directly in the sources directory.
+    if (resolve(target, '..') !== resolve(dirs.sources)) {
+      return c.json({ error: 'invalid name' }, 400);
+    }
+    if (existsSync(target)) return c.json({ error: 'a file with that name is already here' }, 409);
+    if (!c.req.raw.body) return c.json({ error: 'empty upload' }, 400);
+
+    mkdirSync(dirs.sources, { recursive: true });
+    // Write beside the target, then rename: a dropped connection leaves a
+    // .part behind rather than a truncated PGN that looks importable.
+    const part = `${target}.part`;
+    try {
+      await pipeline(Readable.fromWeb(c.req.raw.body as NodeReadableStream), createWriteStream(part));
+      renameSync(part, target);
+    } catch (error) {
+      rmSync(part, { force: true });
+      return c.json({ error: `upload failed: ${(error as Error).message}` }, 500);
+    }
+    return c.json({ name, bytes: statSync(target).size });
+  });
+
+  api.delete('/sources/:name', (c) => {
+    const name = c.req.param('name');
+    if (!NAME_RE.test(name) || !name.toLowerCase().endsWith('.pgn')) {
+      return c.json({ error: 'invalid name' }, 400);
+    }
+    const target = resolve(dirs.sources, name);
+    if (resolve(target, '..') !== resolve(dirs.sources)) return c.json({ error: 'invalid name' }, 400);
+    if (!existsSync(target)) return c.json({ error: 'no such file' }, 404);
+    rmSync(target);
+    return c.json({ deleted: name });
   });
 
   return api;

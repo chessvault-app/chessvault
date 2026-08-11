@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { INITIAL_FEN } from 'chessops/fen';
@@ -97,6 +97,34 @@ describe('books api', () => {
     const res = await app.request('/api/sources');
     const { sources } = await res.json();
     expect(sources.map((s: { name: string }) => s.name)).toEqual(['test-source.pgn']);
+  });
+
+  it('uploads a pgn collection, and refuses one that is already there', async () => {
+    const upload = (name: string, body: string): Promise<Response> =>
+      app.request(`/api/sources?name=${encodeURIComponent(name)}`, { method: 'POST', body });
+
+    expect((await upload('uploaded.pgn', PGN)).status).toBe(200);
+    expect(readFileSync(join(dir, 'uploaded.pgn'), 'utf8')).toBe(PGN);
+
+    // Same name twice must not silently replace a 300 MB collection.
+    expect((await upload('uploaded.pgn', PGN)).status).toBe(409);
+  });
+
+  it('refuses uploads that are not a plain .pgn filename', async () => {
+    for (const name of ['../escape.pgn', 'nested/file.pgn', 'notpgn.txt', '']) {
+      const res = await app.request(`/api/sources?name=${encodeURIComponent(name)}`, {
+        method: 'POST',
+        body: PGN,
+      });
+      expect(res.status, name).toBe(400);
+    }
+    expect(existsSync(join(dir, '..', 'escape.pgn'))).toBe(false);
+  });
+
+  it('deletes an uploaded collection', async () => {
+    expect((await app.request('/api/sources/uploaded.pgn', { method: 'DELETE' })).status).toBe(200);
+    expect(existsSync(join(dir, 'uploaded.pgn'))).toBe(false);
+    expect((await app.request('/api/sources/uploaded.pgn', { method: 'DELETE' })).status).toBe(404);
   });
 
   it('deletes a book', async () => {

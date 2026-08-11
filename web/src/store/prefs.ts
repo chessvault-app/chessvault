@@ -77,9 +77,10 @@ export const PIECE_SETS: { id: PieceSet; label: string }[] = [
  * is also why `move-opponent-*` appear here despite the app drawing no
  * distinction between whose move it is. They are simply more takes.
  *
- * `rotate` is the default and the reason the variations exist — a move
- * repeated fifty times in an analysis session should not sound like one
- * sample fired fifty times.
+ * `rotate` plays a different take each time, so a long analysis does not
+ * sound like one sample fired fifty times. It is not the default — a chosen
+ * sound is, because a sound that changes on every move is a stronger
+ * preference than most people want by default.
  */
 export interface SoundChoice {
   id: string;
@@ -89,10 +90,13 @@ export interface SoundChoice {
 }
 
 /**
- * Ordered darkest to brightest by measured spectral centroid, which is why
- * they are numbered rather than named: with ten takes of one knock, an
- * adjective per take would be inventing distinctions nobody can hear, while
- * a consistent ordering means moving down the list is a single direction.
+ * Numbered rather than named: with ten takes of one knock, an adjective per
+ * take would be inventing distinctions nobody can hear.
+ *
+ * The first entry is the default, so the order is chosen rather than
+ * measured — number one is the one picked by ear. The rest run darkest to
+ * brightest by spectral centroid, which is the only ordering that gives
+ * "try the next one" a direction.
  */
 const take = (files: string[]): SoundChoice[] => [
   { id: 'rotate', take: null, file: null },
@@ -100,9 +104,9 @@ const take = (files: string[]): SoundChoice[] => [
 ];
 
 export const MOVE_SOUNDS: SoundChoice[] = take([
+  'move-opponent-1.wav', //  984 Hz — the default
   'move-opponent-3.wav', //  825 Hz
   'move-self-1.wav', //  919 Hz
-  'move-opponent-1.wav', //  984 Hz
   'move-self.wav', //  984 Hz
   'move-self-3.wav', //  997 Hz
   'move-self-4.wav', // 1062 Hz
@@ -169,8 +173,10 @@ export const usePrefs = create<PrefsState>()(
       pieces: 'cburnett',
       sound: true,
       soundVolume: 0.7,
-      moveSound: 'rotate',
-      captureSound: 'rotate',
+      // Take one of each, chosen by ear. Rotating is still there for anyone
+      // who would rather not hear the same knock every move.
+      moveSound: 'take-1',
+      captureSound: 'take-1',
       castleStyle: 'king',
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,

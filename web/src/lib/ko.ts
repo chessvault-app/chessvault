@@ -311,8 +311,6 @@ export const ko: Record<string, string> = {
   'Rotate through all': '번갈아 재생',
   'Move {n}': '수 {n}',
   'Capture {n}': '기물 잡기 {n}',
-  'Numbered from deepest to brightest. Rotating plays a different one each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.':
-    '번호는 낮은 소리에서 밝은 소리 순입니다. 번갈아 재생하면 매번 다른 것이 나오므로, 긴 분석에서도 같은 샘플이 반복되는 느낌이 없습니다. 이 소리들은 녹음이 아니라 합성한 것입니다.',
   Security: '보안',
   'Current password': '현재 비밀번호',
   'New password': '새 비밀번호',
@@ -452,9 +450,10 @@ export const ko: Record<string, string> = {
   'No notes yet. A note is plain markdown in': '아직 노트가 없습니다. 노트는',
   'with interactive chess boards embedded anywhere in the text.':
     '에 저장되는 평범한 마크다운이며, 본문 어디에나 체스 보드를 넣을 수 있습니다.',
-  "No PGN files found. Put game collections (e.g. Lichess Elite months, Lumbra's Gigabase exports) into":
-    'PGN 파일이 없습니다. 기보 모음(예: Lichess Elite 월별 파일, Lumbra Gigabase 내보내기)을',
-  'then come back here.': '에 넣은 뒤 다시 오세요.',
+  'No PGN collections yet. Add one below — Lichess Elite months and Gigabase exports are the usual sources.':
+    '아직 PGN 모음이 없습니다. 아래에서 추가하세요 — 보통 Lichess Elite 월별 파일이나 Gigabase 내보내기를 씁니다.',
+  'Add PGN files': 'PGN 파일 추가',
+  'Uploading {name}…': '{name} 올리는 중…',
   'Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:':
     'PGN 모음(Lichess Elite 월별 파일, TWIC, Lumbra 내보내기)을 vault/sources에 넣고 한 번만 색인하세요:',
   'Vault:': '보관함:',

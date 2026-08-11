@@ -547,11 +547,6 @@ function SoundCard() {
         />
       </Field>
 
-      <p className="text-subtle text-xs leading-relaxed">
-        {t(
-          'Numbered from deepest to brightest. Rotating plays a different one each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.',
-        )}
-      </p>
     </Card>
   );
 }
