@@ -1,0 +1,55 @@
+/**
+ * Assemble the published site: the landing page at the root, the demo app
+ * under /app/.
+ *
+ * Kept separate from the Vite build because the landing page has no build
+ * step at all — it is one self-contained HTML file. A page that greets
+ * strangers should not be able to break because a bundler config changed.
+ *
+ *   npx tsx scripts/build-landing.ts     (after vite build --config web/vite.demo.config.ts)
+ */
+import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { REPO_ROOT } from '../server/paths.ts';
+
+const APP_BUILD = resolve(REPO_ROOT, 'dist-demo');
+const SITE = resolve(REPO_ROOT, 'dist-site');
+
+if (!existsSync(resolve(APP_BUILD, 'index.html'))) {
+  console.error('no demo build at dist-demo — run the vite demo build first');
+  process.exit(1);
+}
+
+rmSync(SITE, { recursive: true, force: true });
+mkdirSync(SITE, { recursive: true });
+
+// The app, one level down. Its base is relative, so it does not care.
+cpSync(APP_BUILD, resolve(SITE, 'app'), { recursive: true });
+
+copyFileSync(resolve(REPO_ROOT, 'web/landing/index.html'), resolve(SITE, 'index.html'));
+
+// Screenshots are shared with the README rather than duplicated.
+const shots = resolve(SITE, 'shots');
+mkdirSync(shots, { recursive: true });
+for (const name of readdirSync(resolve(REPO_ROOT, 'docs/screenshots'))) {
+  if (name.endsWith('.png')) {
+    copyFileSync(resolve(REPO_ROOT, 'docs/screenshots', name), resolve(shots, name));
+  }
+}
+
+// Jekyll would otherwise swallow anything starting with an underscore.
+copyFileSync(resolve(REPO_ROOT, 'web/landing/index.html'), resolve(SITE, '404.html'));
+
+const size = (dir: string): number => {
+  let total = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = resolve(dir, entry.name);
+    total += entry.isDirectory() ? size(full) : statSync(full).size;
+  }
+  return total;
+};
+
+console.log(`site: ${SITE} (${(size(SITE) / 1024 / 1024).toFixed(1)} MB)`);
+console.log('  /            landing page');
+console.log('  /app/        the demo');
+console.log('  /shots/      screenshots');

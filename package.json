@@ -28,7 +28,8 @@
     "desktop:release": "bash scripts/release.sh",
     "desktop:package:mac": "node desktop/build-server.mjs && npm run build && electron-builder --mac dmg",
     "build:demo": "tsx scripts/build-demo-seed.ts && vite build --config web/vite.demo.config.ts",
-    "build:demo-dbs": "tsx scripts/build-demo-dbs.ts"
+    "build:demo-dbs": "tsx scripts/build-demo-dbs.ts",
+    "build:site": "npm run build:demo && tsx scripts/build-landing.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

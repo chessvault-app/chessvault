@@ -47,10 +47,10 @@ jobs:
             [ -f "$f" ] || { echo "missing $f — run npm run build:demo-dbs and commit it"; exit 1; }
           done
 
-      - run: npm run build:demo
+      - run: npm run build:site
 
       # Jekyll would otherwise eat any path beginning with an underscore.
-      - run: touch dist-demo/.nojekyll
+      - run: touch dist-site/.nojekyll
 
       - name: Publish
         uses: peaceiris/actions-gh-pages@v4
@@ -58,7 +58,7 @@ jobs:
           deploy_key: ${{ secrets.DEMO_DEPLOY_KEY }}
           external_repository: ${{ vars.DEMO_REPO }}
           publish_branch: main
-          publish_dir: ./dist-demo
+          publish_dir: ./dist-site
           # The target holds build output only, so replacing it wholesale is
           # correct — a leftover file from an older build is a file the app
           # no longer knows about but the browser can still reach.

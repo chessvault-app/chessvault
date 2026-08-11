@@ -34,3 +34,4 @@ updates/
 
 # Static demo build output (rebuildable from demo-seed/).
 dist-demo/
+dist-site/
