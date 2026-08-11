@@ -179,7 +179,60 @@ function dependencyNotice(deps: Dep[]): string {
   return [...head, ...body].join('\n');
 }
 
-function indexPage(files: string[]): string {
+const escapeHtml = (s: string): string =>
+  s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+
+/**
+ * The package list, each one openable to its own text.
+ *
+ * A single 325 kB notice satisfies the obligation and answers no actual
+ * question — nobody scrolls it to find out what one package is under. The
+ * texts are inlined rather than fetched so that a licence is readable with
+ * no network and no JavaScript: <details> opens on its own, and the filter
+ * box above is the only scripted part.
+ */
+function packageList(deps: Dep[]): string {
+  const counts = new Map<string, number>();
+  for (const d of deps) counts.set(d.license, (counts.get(d.license) ?? 0) + 1);
+
+  const chips = [...counts]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(
+      ([license, n]) =>
+        `<button type="button" class="chip" data-filter="${escapeHtml(license)}">` +
+        `${escapeHtml(license)} <span class="n">${n}</span></button>`,
+    )
+    .join('\n      ');
+
+  const items = deps
+    .map((d) => {
+      const body =
+        d.text ??
+        `This package ships no licence file. It declares ${d.license}; the ` +
+          'full text of that licence is linked above.';
+      return `      <details class="dep" data-name="${escapeHtml(d.name.toLowerCase())}" data-license="${escapeHtml(d.license)}">
+        <summary><span class="nm">${escapeHtml(d.name)}</span><span class="ver">${escapeHtml(d.version)}</span><span class="lic">${escapeHtml(d.license)}</span></summary>
+        <pre>${escapeHtml(body)}</pre>
+      </details>`;
+    })
+    .join('\n');
+
+  return `    <h2>Packages</h2>
+    <p class="lede">
+      Every npm package installed to build and run this app, with its own
+      licence text. Click one to read it. The same content as one plain file
+      is <a href="dependencies.txt">dependencies.txt</a>.
+    </p>
+    <div class="controls">
+      <input id="q" type="search" placeholder="Filter ${deps.length} packages by name or licence…" autocomplete="off" />
+      <button type="button" class="chip clear" data-filter="">all <span class="n">${deps.length}</span></button>
+      ${chips}
+    </div>
+    <p id="count" class="lede" aria-live="polite"></p>
+${items}`;
+}
+
+function indexPage(files: string[], deps: Dep[]): string {
   const notice = md
     .render(readFileSync(NOTICE, 'utf8'))
     // The notice links `licenses/` as seen from the repository root. This
@@ -212,6 +265,39 @@ function indexPage(files: string[]): string {
       th, td { border: 1px solid rgba(128,128,128,.35); padding: .4rem .6rem; text-align: left; vertical-align: top; }
       ul.texts { padding-left: 1.2rem; }
       .lede { opacity: .75; }
+
+      .controls { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0; }
+      #q {
+        flex: 1 1 16rem; min-width: 0; font: inherit; font-size: .95rem;
+        padding: .45rem .7rem; border-radius: .5rem;
+        border: 1px solid rgba(128,128,128,.45); background: transparent; color: inherit;
+      }
+      .chip {
+        font: inherit; font-size: .8rem; padding: .3rem .6rem; border-radius: 999px;
+        border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit;
+        cursor: pointer;
+      }
+      .chip:hover { background: rgba(128,128,128,.15); }
+      .chip[aria-pressed="true"] { background: rgba(128,128,128,.28); font-weight: 600; }
+      .chip .n { opacity: .6; }
+
+      .dep { border-top: 1px solid rgba(128,128,128,.25); }
+      .dep[hidden] { display: none; }
+      .dep > summary {
+        cursor: pointer; padding: .5rem .2rem; display: flex; gap: .6rem;
+        align-items: baseline; flex-wrap: wrap;
+      }
+      .dep > summary::marker { color: rgba(128,128,128,.7); }
+      .dep .nm { font-weight: 600; }
+      .dep .ver { font-size: .8rem; opacity: .6; font-family: ui-monospace, monospace; }
+      .dep .lic { font-size: .75rem; opacity: .8; margin-left: auto;
+                  border: 1px solid rgba(128,128,128,.35); border-radius: 999px; padding: .05rem .5rem; }
+      .dep pre {
+        margin: 0 0 1rem; padding: .9rem 1rem; border-radius: .5rem;
+        background: rgba(128,128,128,.12); overflow-x: auto;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: .78rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+      }
     </style>
   </head>
   <body>
@@ -220,12 +306,52 @@ function indexPage(files: string[]): string {
       The full text of every licence this app's bundled work is under. The
       source is at <a href="${REPO_URL}">${REPO_URL}</a>.
     </p>
+    <h2>Licence texts</h2>
     <ul class="texts">
 ${list}
-      <li><a href="dependencies.txt">dependencies.txt</a> — every npm package
-      this app depends on, with its own licence text and copyright line</li>
     </ul>
 ${notice}
+${packageList(deps)}
+    <script>
+      (function () {
+        var q = document.getElementById('q');
+        var count = document.getElementById('count');
+        var deps = Array.prototype.slice.call(document.querySelectorAll('.dep'));
+        var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
+        var licence = '';
+
+        function apply() {
+          var term = q.value.trim().toLowerCase();
+          var shown = 0;
+          deps.forEach(function (d) {
+            var ok =
+              (!licence || d.dataset.license === licence) &&
+              (!term ||
+                d.dataset.name.indexOf(term) !== -1 ||
+                d.dataset.license.toLowerCase().indexOf(term) !== -1);
+            d.hidden = !ok;
+            // Collapse on the way out, so filtering back does not reveal a
+            // dozen licences left open from an earlier search.
+            if (!ok) d.open = false;
+            if (ok) shown++;
+          });
+          count.textContent =
+            shown === deps.length ? '' : shown + ' of ' + deps.length + ' packages';
+          chips.forEach(function (c) {
+            c.setAttribute('aria-pressed', String(c.dataset.filter === licence));
+          });
+        }
+
+        q.addEventListener('input', apply);
+        chips.forEach(function (c) {
+          c.addEventListener('click', function () {
+            licence = c.dataset.filter === licence ? '' : c.dataset.filter;
+            apply();
+          });
+        });
+        apply();
+      })();
+    </script>
   </body>
 </html>
 `;
@@ -251,7 +377,12 @@ export function licenses(): Plugin {
         const name = basename(decodeURIComponent((req.url ?? '/').split('?')[0] ?? '/'));
         if (!name || name === 'index.html') {
           res.setHeader('content-type', 'text/html; charset=utf-8');
-          res.end(indexPage(texts()));
+          res.end(indexPage(texts(), collect()));
+          return;
+        }
+        if (name === 'dependencies.txt') {
+          res.setHeader('content-type', 'text/plain; charset=utf-8');
+          res.end(dependencyNotice(collect()));
           return;
         }
         const file = resolve(SOURCE, name);
@@ -269,7 +400,7 @@ export function licenses(): Plugin {
 
       const deps = collect();
       writeFileSync(resolve(target, 'dependencies.txt'), dependencyNotice(deps));
-      writeFileSync(resolve(target, 'index.html'), indexPage(files));
+      writeFileSync(resolve(target, 'index.html'), indexPage(files, deps));
       console.log(`licenses: ${files.length} texts + ${deps.length} dependency notices`);
     },
   };
