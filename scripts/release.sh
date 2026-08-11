@@ -60,3 +60,27 @@ echo "  feed    ${FEED}"
 echo "  server  ${SERVED}"
 case "$FEED" in *"$VERSION"*) ;; *) echo "release: FEED DOES NOT NAME ${VERSION}" >&2; exit 1;; esac
 case "$SERVED" in *"$VERSION"*) ;; *) echo "release: SERVER DOES NOT REPORT ${VERSION}" >&2; exit 1;; esac
+
+# Tag the release and push it, which is what rebuilds the public demo.
+#
+# Deliberately LAST, and deliberately after the two checks above: a tag is a
+# claim that this version shipped, and the demo built from it will be shown
+# to strangers. A release that failed to verify must not produce either.
+#
+# Also deliberately NOT fatal, which is a departure from this file's "all
+# steps or none" rule and worth saying why. The three steps above are one
+# act because an installer without a matching server disagree about what
+# version this is — a real inconsistency. The demo is downstream: if the tag
+# does not reach GitHub, the release is still whole and the demo is merely a
+# version behind. That earns a loud message, not a failure that suggests
+# something needs undoing.
+TAG="v${VERSION}"
+if git -C "$ROOT" rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+  echo "release: tag ${TAG} already exists — not re-tagging"
+elif git -C "$ROOT" tag -a "${TAG}" -m "Release ${VERSION}" &&
+     git -C "$ROOT" push origin "${TAG}"; then
+  echo "release: tagged ${TAG} — the demo rebuilds from it"
+else
+  echo "release: could not push ${TAG}; the release is fine, the demo is not rebuilt." >&2
+  echo "release: push it yourself with: git push origin ${TAG}" >&2
+fi

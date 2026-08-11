@@ -12,14 +12,20 @@
 #     is why it is worth the extra step.
 #   - a variable DEMO_REPO, e.g. chessvault/chessvault.github.io
 #
-# Manual by default. A demo that redeploys on every push to main would
-# publish work in progress to a public address.
+# Runs on a release tag, which scripts/release.sh pushes only after the
+# installer and the server have both been verified to report the new
+# version. That is the point: the public demo shows a version that actually
+# shipped, not whatever happened to be on main.
+#
+# Not on push to main — that would publish work in progress to a public
+# address. workflow_dispatch stays for rebuilding the demo without cutting a
+# release (a fixed screenshot, a curated database rebuilt).
 name: demo
 
 on:
   workflow_dispatch:
   push:
-    tags: ['demo-*']
+    tags: ['v*']
 
 jobs:
   build:
