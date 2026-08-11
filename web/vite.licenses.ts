@@ -100,9 +100,28 @@ const edges = (pkg: Record<string, unknown> | null): string[] => [
   ...Object.keys((pkg?.peerDependencies as Record<string, string>) ?? {}),
 ];
 
+/**
+ * devDependencies that nonetheless ship.
+ *
+ * Electron is declared dev because nothing imports it — but the desktop
+ * installer IS Electron, and with it Chromium and Node. Being absent from
+ * `dependencies` meant the runtime a desktop user is actually executing
+ * appeared nowhere on the page listing what this app is made of.
+ *
+ * electron-builder puts LICENSE.electron.txt and the 20 MB
+ * LICENSES.chromium.html at the root of the packaged app by itself, so the
+ * installer already satisfies the obligation; this is about the page
+ * telling the truth. Chromium's own file is far too large to inline, and
+ * is referenced from THIRD-PARTY.md instead.
+ */
+const SHIPPED_DEV_DEPS = ['electron'];
+
 function collect(): Dep[] {
   const root = readJson(resolve(repo, 'package.json'));
-  const queue: { name: string; from: string }[] = edges(root).map((name) => ({
+  const queue: { name: string; from: string }[] = [
+    ...edges(root),
+    ...SHIPPED_DEV_DEPS,
+  ].map((name) => ({
     name,
     from: repo,
   }));

@@ -42,6 +42,7 @@ this machine.
 | Lichess puzzles | `data/puzzles.sqlite`, demo subset | CC0 | <https://database.lichess.org/#puzzles> |
 | Reference games | `data/refgames.sqlite`, demo subset | derived from the Lichess database (CC0) | Not Lumbra's Gigabase, which is CC BY-NC-SA and would restrict a public demo |
 | CellNet weights | `web/public/models/cellnet-v1.bin` | ours (GPL-3.0) | Trained partly on scans of commercial books; the weights carry none of their content, and no book content is redistributed |
+| Electron, and with it Chromium and Node (**desktop installer only**) | the packaged app | MIT, plus Chromium's own many | Declared a devDependency because nothing imports it, but the installer *is* Electron. electron-builder puts `LICENSE.electron.txt` and `LICENSES.chromium.html` (20 MB, several hundred licences) at the root of the installed app by itself — verified in `release/installer/win-unpacked/`. Too large to inline in the licences page, which lists Electron and points here |
 
 ## Piece sets and sounds — checked against lila's COPYING.md
 
