@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 export interface PaneTab<T extends string> {
   id: T;
@@ -41,8 +42,8 @@ export function PaneTabs<T extends string>({
             type="button"
             role="tab"
             aria-selected={tab.id === value}
-            aria-label={tab.label}
-            title={tab.label}
+            aria-label={t(tab.label)}
+            title={t(tab.label)}
             onClick={() => onChange(tab.id)}
             className={cn(
               // Icon tabs stay a thin row (the full-width flex button is a
@@ -52,7 +53,7 @@ export function PaneTabs<T extends string>({
               tab.id === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
             )}
           >
-            {Icon ? <Icon className="size-3.5" /> : tab.label}
+            {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
           </button>
         );
       })}

@@ -274,7 +274,16 @@
   --font-sans: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-moves: var(--font-sans);
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
+     fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
+     mono element fell through to whatever the OS offered — which is why
+     "엔진" and "깊이" rendered as two different typefaces two centimetres
+     apart, one of them not Pretendard. Latin still hits JetBrains Mono
+     first and keeps its fixed advance; only the characters JetBrains Mono
+     genuinely cannot draw reach Pretendard, and those were never going to
+     be monospaced anyway. */
+  --font-mono: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
+    Menlo, monospace;
 
   --shadow-panel: 0 1px 2px -1px hsl(var(--shadow-color) / 12%), 0 4px 16px -6px hsl(var(--shadow-color) / 14%);
   --shadow-pop: 0 4px 12px -2px hsl(var(--shadow-color) / 18%), 0 16px 40px -12px hsl(var(--shadow-color) / 22%);

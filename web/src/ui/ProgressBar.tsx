@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 /**
  * THE progress bar — every solved/failed fraction in the app uses this one
@@ -25,8 +26,12 @@ export function ProgressBar({
     <span
       title={
         total === 0
-          ? 'Nothing attempted yet'
-          : `${solved} solved · ${failed} failed · ${total - solved - failed} remaining`
+          ? t('Nothing attempted yet')
+          : t('{solved} solved · {failed} failed · {left} remaining', {
+              solved,
+              failed,
+              left: total - solved - failed,
+            })
       }
       className={cn(
         'bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border',

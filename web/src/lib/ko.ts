@@ -870,7 +870,7 @@ export const ko: Record<string, string> = {
 
   // --- exploring your own games --------------------------------------------
   "Explorer source": "탐색기 소스",
-  "Your vault": "내 볼트",
+  "Your vault": "내 보관함",
   "My games": "내 게임",
   "As white": "백으로",
   "As black": "흑으로",
@@ -892,4 +892,35 @@ export const ko: Record<string, string> = {
   "None of your games reached this position under these filters.": "이 조건에서 이 국면에 도달한 내 게임이 없습니다.",
   "For your own games, pick “My games” in the explorer instead — they are always up to date and can be filtered by side, result, speed and date. A book is for a large reference database.": "내 게임은 탐색기에서 “내 게임”을 고르세요. 항상 최신이고 색·결과·시간제·날짜로 걸러 볼 수 있습니다. 북은 큰 참고 데이터베이스를 위한 것입니다.",
   "Small collection. A book is a reference for what is normally played, and too few games will mislead: every position answers with one move at 100%.": "적은 모음입니다. 북은 보통 어떤 수를 두는지를 보는 참고 자료라, 게임이 너무 적으면 오해를 부릅니다. 모든 국면이 한 수 100%로 답하게 됩니다.",
+
+  // --- translated at the component boundary, and the last stragglers ------
+  "Delete this study": "이 스터디 삭제",
+  "Delete this chapter?": "이 챕터를 삭제할까요?",
+  "Chapters": "챕터",
+  "Replay puzzle #{id}": "퍼즐 #{id} 다시 풀기",
+  "Import PGN": "PGN 가져오기",
+  "From Lichess": "Lichess에서",
+  "explorer server unreachable": "탐색기 서버에 연결할 수 없습니다",
+  "explorer request failed ({status})": "탐색기 요청이 실패했습니다 ({status})",
+
+  // --- theme toggle, editor palette, explorer strip ------------------------
+  "Light theme": "밝은 테마",
+  "Dark theme": "어두운 테마",
+  "System theme": "시스템 테마",
+  "{theme} — click to change": "{theme} — 눌러서 변경",
+  "Place {color} {piece}": "{color} {piece} 놓기",
+  "white": "백",
+  "black": "흑",
+  "pawn": "폰",
+  "knight": "나이트",
+  "bishop": "비숍",
+  "rook": "룩",
+  "queen": "퀸",
+  "king": "킹",
+  "none": "없음",
+  "Rebuild from {sources}": "{sources}에서 다시 만들기",
+  "Replay #{id}": "#{id} 다시 풀기",
+  "Nothing attempted yet": "아직 시도한 것이 없습니다",
+  "{solved} solved · {failed} failed · {left} remaining": "{solved}개 해결 · {failed}개 실패 · {left}개 남음",
+  "{games} games · {positions} positions · {mb} MB": "{games}개 게임 · {positions}개 국면 · {mb} MB",
 };

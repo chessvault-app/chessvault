@@ -154,8 +154,13 @@ export function PanelHeader({ title, actions, className }: PanelHeaderProps) {
         className,
       )}
     >
+      {/* Translated HERE, not at every call site. A panel title is always
+          user-facing, so a caller that forgets t() is a bug that renders
+          fine in English and ships. Doing it once means it cannot be
+          forgotten; a caller that already translated passes Korean, and
+          t() on a string with no entry returns it unchanged. */}
       <h2 className="text-subtle min-w-0 shrink truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-        {title}
+        {typeof title === 'string' ? t(title) : title}
       </h2>
       {actions ? <div className="flex min-w-0 grow items-center justify-end gap-1">{actions}</div> : null}
     </header>

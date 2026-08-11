@@ -44,6 +44,29 @@ import {
 const ROLES: Role[] = ['pawn', 'knight', 'bishop', 'rook', 'queen', 'king'];
 
 /**
+ * "Place white knight", in whatever language.
+ *
+ * Built from two translated halves rather than twelve sentences: the
+ * dictionary keeps six piece names and two colours instead of every
+ * combination, and the sentence itself is one key so word order stays the
+ * target language's business — Korean puts the colour and piece before the
+ * verb, which a concatenation could never do.
+ */
+const ROLE_NAMES: Record<Role, string> = {
+  pawn: 'pawn',
+  knight: 'knight',
+  bishop: 'bishop',
+  rook: 'rook',
+  queen: 'queen',
+  king: 'king',
+};
+const placeLabel = (color: Color, role: Role): string =>
+  t('Place {color} {piece}', {
+    color: color === 'white' ? t('white') : t('black'),
+    piece: t(ROLE_NAMES[role]),
+  });
+
+/**
  * What a click on the board does.
  *
  * `move` is a distinct mode rather than an implicit default because chessground
@@ -254,7 +277,7 @@ export function EditorView({
                 groups={[
                   {
                     options: [
-                      { value: '', label: 'none' },
+                      { value: '', label: t('none') },
                       ...epOptions.map((square) => ({ value: square, label: square })),
                     ],
                   },
@@ -300,7 +323,7 @@ export function EditorView({
               {fen}
             </code>
             <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
-              {copied === 'ok' ? 'Copied' : copied === 'failed' ? 'Failed' : 'Copy'}
+              {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
             </Button>
             {/* Same Load-position dialog as the Board tab (lanph3re: one
                 dialog everywhere); here it lands on the editor state. */}
@@ -464,12 +487,12 @@ export function EditorView({
             className="h-full max-sm:w-10 max-sm:px-0"
             disabled={!validity.legal}
             onClick={analyse}
-            title={validity.legal ? (onUse ? useLabel : 'Analyse this position') : validity.reason}
+            title={validity.legal ? (onUse ? useLabel : t('Analyse this position')) : validity.reason}
           >
             {/* Analysis = the game-review microscope; embedded mode records
                 a move list, so the glyph says "list", not "go". */}
             {onUse ? <ListPlus className="size-3.5" /> : <Microscope className="size-3.5" />}
-            <span className="hidden sm:inline">{onUse ? useLabel : 'Analyse'}</span>
+            <span className="hidden sm:inline">{onUse ? useLabel : t('Analyse')}</span>
           </Button>
         </div>
       </div>
@@ -561,8 +584,8 @@ function PiecePalette({
               <button
                 key={role}
                 type="button"
-                aria-label={`Place ${color} ${role}`}
-                title={`Place ${color} ${role}`}
+                aria-label={placeLabel(color, role)}
+                title={placeLabel(color, role)}
                 onClick={() => onPick({ kind: 'piece', role, color })}
                 // A drag is chessground's from the first pixel; a clean
                 // click (no movement, so no drop) still arms the tool.

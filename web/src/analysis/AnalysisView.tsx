@@ -96,7 +96,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           ) : (
             <Grid3x3 className="text-subtle size-4" aria-hidden />
           )}
-          <h1 className="text-fg text-sm font-semibold">{wantExplorer ? 'Explorer' : 'Board'}</h1>
+          <h1 className="text-fg text-sm font-semibold">
+            {wantExplorer ? t('Explorer') : t('Board')}
+          </h1>
         </div>
         <PaneTabs
           className="lg:hidden"
@@ -222,8 +224,8 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
     headers && (headers['White'] ?? '?') !== '?'
       ? `${headers['White']} – ${headers['Black'] ?? '?'}`
       : explorer
-        ? 'Explorer'
-        : 'Board';
+        ? t('Explorer')
+        : t('Board');
   const Icon = explorer ? Compass : Grid3x3;
   return (
     <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
@@ -295,10 +297,10 @@ export function StatusBar() {
         {node.fen}
       </code>
       <Button variant="ghost" size="sm" onClick={() => void copy('fen', node.fen)}>
-        {copied === 'fen' ? 'Copied' : copied === 'failed' ? 'Failed' : 'FEN'}
+        {copied === 'fen' ? t('Copied') : copied === 'failed' ? t('Failed') : 'FEN'}
       </Button>
       <Button variant="ghost" size="sm" onClick={() => void copy('pgn', exportPgn())}>
-        {copied === 'pgn' ? 'Copied' : copied === 'failed' ? 'Failed' : 'PGN'}
+        {copied === 'pgn' ? t('Copied') : copied === 'failed' ? t('Failed') : 'PGN'}
       </Button>
     </div>
   );

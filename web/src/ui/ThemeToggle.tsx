@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { Button } from './Button';
+import { t } from '@/lib/i18n';
 
 const icons: Record<ThemePreference, typeof Sun> = {
   light: Sun,
@@ -24,8 +25,8 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={cycle}
-      title={`${labels[preference]} — click to change`}
-      aria-label={labels[preference]}
+      title={t('{theme} — click to change', { theme: t(labels[preference]) })}
+      aria-label={t(labels[preference])}
     >
       <Icon className="size-[1.05rem]" strokeWidth={2} />
     </Button>

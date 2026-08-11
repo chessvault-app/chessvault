@@ -190,7 +190,7 @@ export function ExplorerPane({
               </>
             ) : (
               <span className="text-subtle text-xs">
-                {node.ply === 0 ? 'Starting position' : 'Out of book'}
+                {node.ply === 0 ? t('Starting position') : t('Out of book')}
               </span>
             )}
             {loading && <Loader2 className="text-subtle ml-auto size-3 shrink-0 animate-spin" />}
@@ -879,8 +879,11 @@ function BookRow({
       <div className="min-w-0 flex-1">
         <p className="text-fg truncate font-mono font-semibold">{book.name}</p>
         <p className="text-subtle tabular-nums">
-          {compact.format(book.games)} games · {compact.format(book.positions)} positions ·{' '}
-          {(book.bytes / 1e6).toFixed(0)} MB
+          {t('{games} games · {positions} positions · {mb} MB', {
+            games: compact.format(book.games),
+            positions: compact.format(book.positions),
+            mb: (book.bytes / 1e6).toFixed(0),
+          })}
         </p>
       </div>
       <Button
@@ -890,8 +893,8 @@ function BookRow({
         onClick={onRebuild}
         title={
           book.sources.length > 0
-            ? `Rebuild from ${book.sources.join(', ')}`
-            : 'Original sources unknown'
+            ? t('Rebuild from {sources}', { sources: book.sources.join(', ') })
+            : t('Original sources unknown')
         }
       >
         <Hammer className="size-3.5" />

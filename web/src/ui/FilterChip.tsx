@@ -1,6 +1,14 @@
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
-/** THE filter chip — one style for every filter row in the app. */
+/**
+ * THE filter chip — one style for every filter row in the app.
+ *
+ * A string label is translated here rather than at each call site: filter
+ * rows are built from `[id, label]` tuples in array literals, which is
+ * exactly the shape a call-site t() keeps getting forgotten in. A
+ * ReactNode label is passed through — the caller composed it and owns it.
+ */
 export function FilterChip({
   label,
   count,
@@ -17,7 +25,7 @@ export function FilterChip({
   return (
     <button
       type="button"
-      title={title}
+      title={title ? t(title) : undefined}
       onClick={onClick}
       className={cn(
         // inline-flex so an icon-bearing label and the count share one
@@ -28,7 +36,7 @@ export function FilterChip({
           : 'border-line text-muted hover:border-line-strong',
       )}
     >
-      {label}
+      {typeof label === 'string' ? t(label) : label}
       {count !== undefined && <span className="ml-1 opacity-60">{count}</span>}
     </button>
   );

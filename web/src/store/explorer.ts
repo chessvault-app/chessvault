@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { t } from '@/lib/i18n';
 
 export interface BookInfo {
   name: string;
@@ -184,7 +185,7 @@ export const useExplorer = create<ExplorerState>()(
           if (fen !== latestFen) return; // user has moved on
           if (!res.ok) {
             const body = (await res.json().catch(() => null)) as { error?: string } | null;
-            set({ loading: false, error: body?.error ?? `explorer request failed (${res.status})` });
+            set({ loading: false, error: body?.error ?? t('explorer request failed ({status})', { status: res.status }) });
             return;
           }
           const body = (await res.json()) as {
@@ -206,7 +207,7 @@ export const useExplorer = create<ExplorerState>()(
         } catch (error) {
           if ((error as Error).name === 'AbortError') return;
           if (fen !== latestFen) return;
-          set({ loading: false, error: 'explorer server unreachable' });
+          set({ loading: false, error: t('explorer server unreachable') });
         }
       };
 
@@ -264,7 +265,7 @@ export const useExplorer = create<ExplorerState>()(
             const body = (await res.json()) as { books: BookInfo[] };
             set({ books: body.books, booksLoaded: true, error: null });
           } catch {
-            set({ booksLoaded: true, error: 'explorer server unreachable' });
+            set({ booksLoaded: true, error: t('explorer server unreachable') });
           }
         },
 

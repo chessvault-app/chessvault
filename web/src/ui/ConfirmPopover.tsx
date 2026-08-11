@@ -12,6 +12,13 @@ import { t } from '@/lib/i18n';
  * escapes overflow-hidden panels) with an explicit red confirm and a
  * cancel. Replaces the old morphing two-step buttons, whose in-place
  * expansion rearranged everything around them.
+ *
+ * Every string it is given is translated HERE. Each of these props is
+ * user-facing by definition — there is no such thing as an internal
+ * confirmation question — and asking eight call sites to remember t() on
+ * four props each is asking for the English dialog this shipped with.
+ * Callers interpolating a name still call t() themselves; translating an
+ * already-translated string is a no-op.
  */
 export function ConfirmPopover({
   icon: Icon,
@@ -88,7 +95,7 @@ export function ConfirmPopover({
         ref={trigger}
         variant="ghost"
         size={label ? 'sm' : 'icon-sm'}
-        title={triggerTitle}
+        title={t(triggerTitle)}
         aria-haspopup="dialog"
         aria-expanded={open}
         disabled={disabled}
@@ -103,14 +110,14 @@ export function ConfirmPopover({
         }}
       >
         <Icon className="size-3.5" />
-        {label}
+        {label && t(label)}
       </Button>
 
       {open && rect && (
         <div
           ref={pop}
           role="dialog"
-          aria-label={question}
+          aria-label={t(question)}
           style={{
             position: 'fixed',
             top: rect.bottom + 6,
@@ -124,7 +131,7 @@ export function ConfirmPopover({
           onMouseLeave={scheduleClose}
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="text-fg text-xs font-medium">{question}</p>
+          <p className="text-fg text-xs font-medium">{t(question)}</p>
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
               {t('Cancel')}
@@ -138,7 +145,7 @@ export function ConfirmPopover({
               }}
             >
               <Icon className="size-3.5" />
-              {confirmLabel}
+              {t(confirmLabel)}
             </Button>
           </div>
         </div>

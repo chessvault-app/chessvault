@@ -997,7 +997,9 @@ function ArchiveBrowser({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && username.trim()) void loadMonths();
               }}
-              placeholder={provider === 'chesscom' ? 'chess.com username' : 'Lichess username'}
+              placeholder={
+                provider === 'chesscom' ? t('chess.com username') : t('Lichess username')
+              }
               className="w-40 shrink-0 font-mono max-[560px]:w-auto max-[560px]:flex-1"
               inputSize="sm"
             />

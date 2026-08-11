@@ -412,7 +412,11 @@ function Trainer({
 
   const solverSide: Color = puzzle ? solverColor(puzzle) : 'white';
   const title =
-    mode === 'single' ? `Replay #${puzzleId}` : mode === 'failed' ? 'Review' : 'Puzzles';
+    mode === 'single'
+      ? t('Replay #{id}', { id: puzzleId ?? '' })
+      : mode === 'failed'
+        ? t('Review')
+        : t('Puzzles');
   const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
   const hintShapes: DrawShape[] =
     puzzle && phase === 'solving' && !reviewing && hint > 0
@@ -632,7 +636,7 @@ function Trainer({
                     {t('Theme')}
                   </span>
                   <span className="text-fg ml-auto truncate text-xs font-medium">
-                    {theme ? themeLabel(theme) : 'All themes'}
+                    {theme ? themeLabel(theme) : t('All themes')}
                   </span>
                   <ChevronRight className="text-subtle size-3.5 shrink-0" />
                 </button>
@@ -643,7 +647,7 @@ function Trainer({
             {phase === 'done' && puzzle ? (
               <>
                 <p className={cn('text-sm font-semibold', failed ? 'text-bad' : 'text-good')}>
-                  {failed ? 'Solved with help.' : 'Solved!'}
+                  {failed ? t('Solved with help.') : t('Solved!')}
                 </p>
                 <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
                   {/* The band, not the number: a rating is how the trainer

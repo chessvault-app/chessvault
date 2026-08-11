@@ -172,8 +172,8 @@ function CreateMenu() {
             [
               ['study', t('New study'), Library],
               ['folder', t('New collection'), FolderIcon],
-              ['import', 'Import PGN', FileUp],
-              ['lichess', 'From Lichess', CloudDownload],
+              ['import', t('Import PGN'), FileUp],
+              ['lichess', t('From Lichess'), CloudDownload],
             ] as const
           ).map(([kind, label, Icon]) => (
             <button

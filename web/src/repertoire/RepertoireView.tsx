@@ -597,10 +597,10 @@ export function RepertoireView() {
                     // included: these two are a segmented control, not
                     // actions, and at full touch height they were the
                     // tallest thing in a panel of one-line fields.
-                    className="h-7 flex-1 capitalize pointer-coarse:h-8"
+                    className="h-7 flex-1 pointer-coarse:h-8"
                     onClick={() => setUserColor(c)}
                   >
-                    {c}
+                    {c === 'white' ? t('White') : t('Black')}
                   </Button>
                 ))}
               </div>

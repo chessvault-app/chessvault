@@ -165,7 +165,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
     <div ref={menuHost} className="relative">
       <Button variant="primary" size="sm" onClick={() => setMenuOpen((v) => !v)}>
         <Plus className="mr-1 size-3.5" />
-        Create
+        {t('Create')}
         <ChevronDown className="ml-1 size-3" />
       </Button>
 

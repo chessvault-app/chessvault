@@ -283,7 +283,7 @@ export function DashboardPage() {
 
         <Panel flush>
           <PanelHeader
-            title={history === null ? 'Puzzles' : `Puzzles · ${puzzles.length}`}
+            title={history === null ? t('Puzzles') : `${t('Puzzles')} · ${puzzles.length}`}
           />
           {/* Filters: outcome × rating band. Click a row to replay it. */}
           <ChipRow className="border-line border-b px-3 py-2" innerClassName="gap-1">
@@ -325,7 +325,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => navigate('puzzles', 'id', h.id)}
-                    title={`Replay puzzle #${h.id}`}
+                    title={t('Replay puzzle #{id}', { id: h.id })}
                     className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors duration-100"
                   >
                     {h.win ? (
