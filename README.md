@@ -166,7 +166,7 @@ are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
 month of Lichess Elite (280,246 games) indexes 361 k positions in 47 s into
 69 MB.
 
-### The two big ones are built on a workstation
+### The two big ones are built once, not by the app
 
 `puzzles.sqlite` (~2.5 GB) and `refgames.sqlite` are the **only** things
 the app cannot make for itself, and they are one-offs rather than part of
@@ -183,20 +183,34 @@ npm run build:refgames         # -> data/refgames.sqlite
 ```
 
 Running **on this machine**: that is all — they are already where the app
-looks. Running **on a server**: copy both into its data directory
-(`CHESS_VAULT_DATA`, default `data/` beside the app) with `scp`. Never
-build them on a small server; the puzzle build once OOM-killed a 2 GB box.
+looks.
+
+Running **on a server**: build them wherever the memory is. If the server
+has room, build there and skip the transfer; otherwise build on your
+workstation and `scp` both into its data directory (`CHESS_VAULT_DATA`,
+default `data/` beside the app). The puzzle build is the demanding one —
+it streams a 304 MB compressed dump into a 2.5 GB database — and it will
+OOM on a small instance; it did on a 2 GB one here. That is a question
+about the machine, not about servers.
+
 Every later deploy keeps their indexes current on its own, so rebuild only
 for a newer dump or more games.
 
 [docs/databases.md](docs/databases.md) explains why these are not done in
 the app, and what would have to change for that to stop being the answer.
 
-## Everything works offline
+## It never calls anyone but your own server
 
-No runtime CDN calls: fonts, icons, WASM and CSS are all bundled. The only
-features needing network are *imports* — one-time by nature — and the
-optional Lichess explorer augmentation.
+No CDNs, no telemetry, no third-party requests at runtime: fonts, icons,
+WASM and CSS are all bundled. The only features that reach outside are
+*imports* — one-time by nature — and the optional Lichess explorer
+augmentation, which you can leave off.
+
+Whether it works with **no network at all** depends on where the vault is.
+Running on this machine, yes, completely — engine, books, puzzles and all.
+Running against a server, you need to be able to reach that server; the PWA
+keeps its shell offline so the app still opens, but your games and studies
+live on the other end of the connection.
 
 ## Layout
 

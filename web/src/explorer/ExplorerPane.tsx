@@ -404,6 +404,20 @@ function BooksManager({ onClose }: { onClose: () => void }) {
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
+
+  /**
+   * Warn before building a book out of almost nothing.
+   *
+   * A PGN of a few games produces a book that answers every position with
+   * one move at 100%, which reads as authority and is noise. Judged on
+   * bytes because that is all we know before parsing: a game is roughly a
+   * kilobyte or two, so this is about three thousand games.
+   */
+  const BOOK_MIN_BYTES = 4_000_000;
+  const pickedBytes = sources
+    .filter((s) => picked.has(s.name))
+    .reduce((sum, s) => sum + s.bytes, 0);
+  const tooSmall = picked.size > 0 && pickedBytes < BOOK_MIN_BYTES;
   const wasRunning = useRef(false);
 
   const refreshSources = useCallback(async (): Promise<void> => {
@@ -510,7 +524,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
         </p>
         {sources.length === 0 ? (
           <p className="text-muted leading-relaxed">
-            {t('No PGN collections yet. Add one below — Lichess Elite months and Gigabase exports are the usual sources.')}
+            {t('No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.')}
           </p>
         ) : (
           <>
@@ -533,6 +547,13 @@ function BooksManager({ onClose }: { onClose: () => void }) {
                 </span>
               </label>
             ))}
+            {tooSmall && (
+              <p className="text-muted mt-1 leading-relaxed">
+                {t(
+                  'That is a small collection. A book is a statistical picture of how a position is actually played, so it wants thousands of games — a handful gives one line per position and no sense of what is common.',
+                )}
+              </p>
+            )}
             <div className="mt-1 flex items-center gap-2">
               <Input
                 type="text"

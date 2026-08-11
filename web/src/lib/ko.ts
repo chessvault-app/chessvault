@@ -450,9 +450,11 @@ export const ko: Record<string, string> = {
   'No notes yet. A note is plain markdown in': '아직 노트가 없습니다. 노트는',
   'with interactive chess boards embedded anywhere in the text.':
     '에 저장되는 평범한 마크다운이며, 본문 어디에나 체스 보드를 넣을 수 있습니다.',
-  'No PGN collections yet. Add one below — Lichess Elite months and Gigabase exports are the usual sources.':
-    '아직 PGN 모음이 없습니다. 아래에서 추가하세요 — 보통 Lichess Elite 월별 파일이나 Gigabase 내보내기를 씁니다.',
+  'No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.':
+    '아직 PGN 모음이 없습니다. 아래에서 추가하세요. 북은 참고할 만하려면 수천 판이 필요하므로, 보통 한 달치나 데이터베이스 전체를 내보낸 파일을 씁니다 — Lichess Elite 월별 파일, Gigabase 같은 것들입니다.',
   'Add PGN files': 'PGN 파일 추가',
+  'That is a small collection. A book is a statistical picture of how a position is actually played, so it wants thousands of games — a handful gives one line per position and no sense of what is common.':
+    '작은 모음입니다. 북은 그 국면이 실제로 어떻게 두어지는지를 통계로 그린 것이라 수천 판은 있어야 합니다. 몇 판뿐이면 국면마다 한 수만 나오고, 무엇이 흔한 수인지는 알 수 없습니다.',
   'Uploading {name}…': '{name} 올리는 중…',
   'Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:':
     'PGN 모음(Lichess Elite 월별 파일, TWIC, Lumbra 내보내기)을 vault/sources에 넣고 한 번만 색인하세요:',
