@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { booksApi } from '../../../server/books.ts';
 import { gamesApi } from '../../../server/games.ts';
 import { openingsApi } from '../../../server/openings.ts';
 import { puzzlesApi } from '../../../server/puzzles.ts';
@@ -7,6 +8,7 @@ import { studiesApi } from '../../../server/studies.ts';
 import { installBuffer } from './nodeShim/buffer.ts';
 import { seedFile } from './nodeShim/fs.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
+import { DATA_OPENINGS } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
 
 /**
@@ -45,6 +47,11 @@ function buildApp(): Hono {
   app.route('/api', studiesApi(`${VAULT}/games/collection`, 'games/docs', '.pgn'));
   app.route('/api', studiesApi(`${VAULT}/notes`, 'notes', '.md'));
   // The real puzzle and reference-game routes, over the curated subsets.
+  // books.ts owns /api/opening (ECO naming) and /api/books (the local
+  // opening-book list) — the Board asks for both on mount and died on the
+  // error shape when neither existed. The book list comes back empty here,
+  // which is true: a demo ships no indexed PGN sources.
+  app.route('/api', booksApi());
   app.route('/api', gamesApi(`${VAULT}/games`));
   app.route('/api', openingsApi());
   app.route('/api', puzzlesApi(PUZZLES_DB, `${VAULT}/puzzles`));
@@ -88,6 +95,17 @@ export async function installDemoBackend(): Promise<void> {
   // asset must not cost the visitor everything else. The routes already
   // draw a "no puzzle database yet" state, which is the honest thing to
   // show when there genuinely is none.
+  // The ECO catalogue is a plain file the openings lookup reads off disk,
+  // so it is fetched once and written into the in-memory filesystem at the
+  // exact path the real code resolves. 284 KB, and without it every line
+  // in the app is nameless.
+  try {
+    const eco = await fetch(new URL('demo/openings.json', document.baseURI));
+    if (eco.ok) seedFile(DATA_OPENINGS, await eco.text(), Date.now());
+  } catch {
+    // Names are a nicety; the boards still work without them.
+  }
+
   try {
     await loadDemoDatabases({
       [PUZZLES_DB]: 'demo/puzzles.sqlite',
