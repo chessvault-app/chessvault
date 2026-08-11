@@ -86,7 +86,7 @@ export function EngineBlock({ className }: { className?: string }) {
               checked={enabled}
               onToggle={toggle}
               label={t('Engine on/off')}
-              title={enabled ? 'Turn the engine off' : 'Turn the engine on'}
+              title={enabled ? t('Turn the engine off') : t('Turn the engine on')}
             />
           </>
         }

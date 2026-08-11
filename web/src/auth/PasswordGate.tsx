@@ -64,16 +64,16 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       return;
     }
     if (res.status === 429) {
-      setError('Too many attempts — wait a few minutes.');
+      setError(t('Too many attempts — wait a few minutes.'));
       return;
     }
     if (body.error === 'wrong authenticator code') {
-      setError('Wrong authenticator code.');
+      setError(t('Wrong authenticator code.'));
       setCode('');
       return;
     }
     // A wrong password can only come from stage one; start over there.
-    setError('Wrong password.');
+    setError(t('Wrong password.'));
     setPassword('');
     setStage('password');
   };

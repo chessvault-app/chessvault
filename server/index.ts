@@ -8,6 +8,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
+import { DEMO, demoGuard, startDemoResets } from './demo.ts';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
@@ -49,6 +50,7 @@ app.get('/api/health', (c) =>
     // Reported so the UI can show whether threads are actually available.
     crossOriginIsolated: true,
     version: APP_VERSION,
+    ...(DEMO && { demo: true }),
   }),
 );
 
@@ -67,12 +69,18 @@ app.use('/api/*', compress());
 // routes (studies, notes, draft images) otherwise accept unbounded input.
 // 32 MB clears the largest legitimate case (a book's draft batch) with room
 // to spare; the per-route byte checks refine it.
-app.use('/api/*', bodyLimit({ maxSize: 32 * 1024 * 1024 }));
+// The demo has no book imports and no draft batches, so the ceiling that
+// exists for those is only a ceiling on what a stranger may post.
+app.use('/api/*', bodyLimit({ maxSize: (DEMO ? 1 : 32) * 1024 * 1024 }));
 
 // Auth first: its own routes stay reachable while everything /api after
 // this point requires the session (no-op unless appPassword is set).
 app.route('/api', authApi());
 app.use('/api/*', requireAuth());
+
+// After auth, before every route: in demo mode nothing may be changed
+// except through the short list in demo.ts.
+if (DEMO) app.use('/api/*', demoGuard());
 
 app.route('/api', booksApi());
 app.route('/api', openingsApi());
@@ -86,7 +94,11 @@ app.route('/api', studiesApi(VAULT_NOTES, 'notes', '.md'));
 app.route('/api', gamesApi());
 app.route('/api', puzzlesApi());
 app.route('/api', refGamesApi());
-app.route('/api', puzzleBooksApi());
+// Book puzzles are read from commercial PDFs and are not ours to
+// redistribute, so in demo mode the route is never created — the guard
+// already refuses it, and a route that does not exist cannot be reached
+// past a mistake in the guard.
+if (!DEMO) app.route('/api', puzzleBooksApi());
 app.route('/api', settingsApi());
 app.route('/api', lichessStudiesApi());
 
@@ -124,9 +136,16 @@ if (existsSync(dist)) {
 }
 
 // Safety net: every vault change is auto-committed to vault/.history.git.
-void startVaultBackup().catch((error: Error) =>
-  console.error('[vault-backup] disabled:', error.message),
-);
+// Not in the demo: a history repo of strangers' edits grows without bound
+// and is the one directory the reset does not empty.
+if (!DEMO) {
+  void startVaultBackup().catch((error: Error) =>
+    console.error('[vault-backup] disabled:', error.message),
+  );
+}
+
+// Shared demo vault: restore it from the seed now and on a timer.
+startDemoResets();
 
 /**
  * Which interfaces to answer on.

@@ -150,8 +150,8 @@ export function EditorPalette({
           <button
             key={action.id}
             type="button"
-            title={action.label}
-            aria-label={action.label}
+            title={t(action.label)}
+            aria-label={t(action.label)}
             aria-pressed={on}
             // pointerdown, not click: clicking blurs the editor first and
             // the command would land on no selection.

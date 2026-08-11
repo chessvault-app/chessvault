@@ -133,7 +133,7 @@ export function ExplorerPane({
               checked={enabled}
               onToggle={toggle}
               label={t('Explorer on/off')}
-              title={enabled ? 'Hide the explorer' : 'Show the explorer'}
+              title={enabled ? t('Hide the explorer') : t('Show the explorer')}
             />
           </>
         }

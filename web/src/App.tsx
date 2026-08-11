@@ -78,6 +78,30 @@ export function App() {
   );
 }
 
+/**
+ * Public demo notice.
+ *
+ * A shared vault that anyone can edit is only honest if it says so: a
+ * visitor who writes a study and comes back to find it gone should have
+ * been told, and a visitor about to type something private should be
+ * warned before rather than after.
+ */
+function DemoBanner() {
+  const [demo, setDemo] = useState(false);
+  useEffect(() => {
+    void fetch('/api/health')
+      .then((r) => r.json() as Promise<{ demo?: boolean }>)
+      .then((h) => setDemo(!!h.demo))
+      .catch(() => setDemo(false));
+  }, []);
+  if (!demo) return null;
+  return (
+    <div className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-xs">
+      {t('Demo — everyone shares this vault and it resets regularly. Do not put anything private here.')}
+    </div>
+  );
+}
+
 function Shell() {
   const { section, params } = useRoute();
   // Remount the whole tree when the language changes. Every t() call runs
@@ -96,13 +120,18 @@ function Shell() {
         // retracted, which is taller than what you can actually see while
         // they are out, and that difference was cutting the bottom off
         // panels that reached the end of the page.
-        'bg-app text-fg flex h-[var(--app-h,100svh)] flex-col overflow-hidden md:flex-row',
+        'bg-app text-fg flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
         'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
       )}
     >
+      <DemoBanner />
+      {/* The sidebar/main row. Separated from the shell so a full-width
+          strip (the demo notice) can sit above BOTH rather than becoming a
+          third column beside the sidebar. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
       <Sidebar active={section} params={params} />
 
       <main className="min-h-0 min-w-0 flex-1 overflow-hidden">
@@ -144,6 +173,7 @@ function Shell() {
       </main>
 
       <MobileBottom active={section} />
+      </div>
     </div>
   );
 }

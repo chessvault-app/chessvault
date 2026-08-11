@@ -465,7 +465,7 @@ function Shelf() {
                 if (e.key === 'Enter') void create();
                 if (e.key === 'Escape') setCreating(false);
               }}
-              placeholder="Book title, e.g. “1001 Winning Chess Sacrifices”"
+              placeholder={t('Book title, e.g. “1001 Winning Chess Sacrifices”')}
               className="flex-1"
             />
             <Button variant="primary" size="sm" disabled={!title.trim()} onClick={() => void create()}>

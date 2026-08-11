@@ -102,7 +102,7 @@ export function ReviewStrip() {
               <Button
                 variant="ghost"
                 size="icon-sm"
-                title={graphOpen ? 'Hide the evaluation graph' : 'Show the evaluation graph'}
+                title={graphOpen ? t('Hide the evaluation graph') : t('Show the evaluation graph')}
                 onClick={toggleGraph}
               >
                 <ChevronDown className={cn('size-3 transition-transform', graphOpen && 'rotate-180')} />

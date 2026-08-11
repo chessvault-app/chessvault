@@ -175,7 +175,7 @@ export function ThemesPage() {
               const present = group.themes.filter((t) => byName.has(t));
               if (present.length === 0) return null;
               return (
-                <ThemeGroup key={group.title} title={group.title}>
+                <ThemeGroup key={group.title} title={t(group.title)}>
                   {present.map((t) => (
                     <ThemeCard
                       key={t}

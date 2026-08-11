@@ -62,7 +62,7 @@ function NoteList() {
       setError(null);
     } catch {
       setLoaded(true);
-      setError('vault server unreachable');
+      setError(t('vault server unreachable'));
     }
   }, []);
 

@@ -112,7 +112,7 @@ export function PhotoImport({
           return;
         }
       }
-      setPasteHint('No image in the clipboard — copy or snip one first.');
+      setPasteHint(t('No image in the clipboard — copy or snip one first.'));
     } catch {
       setPasteHint('Clipboard access was blocked — press Ctrl+V instead.');
     }
@@ -244,7 +244,7 @@ export function PhotoImport({
     setDragOver(false);
     const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/'));
     if (file) pick(file);
-    else setPasteHint('That drop had no image file.');
+    else setPasteHint(t('That drop had no image file.'));
   };
 
   return (

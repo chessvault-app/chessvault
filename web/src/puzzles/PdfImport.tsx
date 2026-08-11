@@ -99,7 +99,7 @@ export function PdfImport({
           <Button
             variant="ghost"
             size="icon-sm"
-            title={scanning ? 'Close — the scan keeps running' : 'Close'}
+            title={scanning ? t('Close — the scan keeps running') : t('Close')}
             onClick={onClose}
           >
             <X className="size-3.5" />
@@ -178,7 +178,7 @@ export function PdfImport({
         {preparing && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
-            clearing the book
+            {t('clearing the book')}
           </p>
         )}
         {scanning && (

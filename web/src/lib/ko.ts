@@ -453,4 +453,187 @@ export const ko: Record<string, string> = {
   Training: '훈련',
   'TOTP enrolment QR code': 'TOTP 등록 QR 코드',
   'Book title, e.g. “1001 Winning Chess Sacrifices”': '책 제목, 예: “1001 Winning Chess Sacrifices”',
+  // --- status, feedback and confirmations ---------------------------------
+  Copied: '복사됨',
+  'Could not load that.': '불러올 수 없습니다.',
+  'Could not add this game': '이 게임을 추가할 수 없습니다',
+  'Add this game to the collection': '이 게임을 모음에 추가',
+  'In the collection': '모음에 있음',
+  'Starting position': '시작 국면',
+  Engine: '엔진',
+  'Turn the engine off': '엔진 끄기',
+  'Turn the engine on': '엔진 켜기',
+  'Hide the evaluation graph': '평가 그래프 숨기기',
+  'Show the evaluation graph': '평가 그래프 보기',
+  'Analyse this position': '이 국면 분석',
+  'That PGN could not be read.': 'PGN을 읽을 수 없습니다.',
+  'That FEN could not be read.': 'FEN을 읽을 수 없습니다.',
+  'vault server unreachable': '보관함 서버에 연결할 수 없습니다',
+  'Searching…': '검색 중…',
+  'Checking…': '확인 중…',
+  Continue: '계속',
+  Unlock: '잠금 해제',
+  'Wrong password.': '비밀번호가 틀렸습니다.',
+  'Wrong authenticator code.': '인증 코드가 틀렸습니다.',
+  'Too many attempts — wait a few minutes.': '시도가 너무 많습니다 — 몇 분 뒤에 다시 하세요.',
+
+  // --- editor --------------------------------------------------------------
+  'White O-O': '백 O-O',
+  'White O-O-O': '백 O-O-O',
+  'Black O-O': '흑 O-O',
+  'Black O-O-O': '흑 O-O-O',
+
+  // --- explorer ------------------------------------------------------------
+  'Local books': '로컬 북',
+  'Online (via proxy)': '온라인 (프록시 경유)',
+  'Hide the explorer': '탐색기 숨기기',
+  'Show the explorer': '탐색기 보기',
+  'Out of book': '정석을 벗어남',
+  'Show fewer moves': '수 적게 보기',
+  'Original sources unknown': '원본 출처를 알 수 없음',
+  'Delete this book (the source PGNs stay)': '이 북 삭제 (원본 PGN은 남습니다)',
+  'Delete this opening book?': '이 오프닝 북을 삭제할까요?',
+  Delete: '삭제',
+
+  // --- games ---------------------------------------------------------------
+  Added: '추가됨',
+  'Show all games': '모든 게임 보기',
+  'Show bookmarked games only': '즐겨찾기한 게임만 보기',
+  'Remove bookmark': '즐겨찾기 해제',
+  Bookmark: '즐겨찾기',
+  Rename: '이름 바꾸기',
+  'View online': '온라인에서 보기',
+  'Remove this game from the collection?': '이 게임을 모음에서 뺄까요?',
+  'could not load that game': '그 게임을 불러오지 못했습니다',
+  'could not add that game': '그 게임을 추가하지 못했습니다',
+  'could not import that game': '그 게임을 가져오지 못했습니다',
+  'rename failed': '이름을 바꾸지 못했습니다',
+  'could not rename': '이름을 바꾸지 못했습니다',
+  'save failed': '저장하지 못했습니다',
+  '· needs internet': '· 인터넷 필요',
+  Event: '대회',
+  Date: '날짜',
+  Auto: '자동',
+  'Result from the pasted moves': '붙여넣은 수에서 결과 판단',
+  'White won': '백 승',
+  'Black won': '흑 승',
+  Draw: '무승부',
+
+  // --- notes ---------------------------------------------------------------
+  'New note': '새 노트',
+  'New collection': '새 모음',
+  'Note name': '노트 이름',
+  'Collection name': '모음 이름',
+  'Delete this note': '이 노트 삭제',
+  'Back to reading': '읽기로 돌아가기',
+  'Edit this note': '이 노트 편집',
+  Edit: '편집',
+  Bold: '굵게',
+  Italic: '기울임',
+  Strikethrough: '취소선',
+  Code: '코드',
+  Heading: '제목',
+  Subheading: '소제목',
+  'Bulleted list': '글머리 목록',
+  'Numbered list': '번호 목록',
+  Quote: '인용',
+  'Insert a board': '보드 넣기',
+
+  // --- puzzles: trainer feedback ------------------------------------------
+  'Play a move on the board.': '보드에서 수를 두세요.',
+  'Solved!': '정답입니다!',
+  'Solved with help.': '힌트를 보고 맞혔습니다.',
+  'Not this time.': '이번엔 아닙니다.',
+  'Checking your answer…': '답을 확인하는 중…',
+  'That is not it — it rolls back, try again.': '아닙니다 — 되돌립니다, 다시 해 보세요.',
+  'Opponent is moving…': '상대가 두는 중…',
+  'Keep looking — find the best move.': '계속 찾아보세요 — 최선의 수를 찾는 겁니다.',
+  'Back to dashboard': '대시보드로',
+  Review: '복습',
+  'That is the book line. Retry it clean later.':
+    '책의 변화가 맞습니다. 나중에 힌트 없이 다시 해 보세요.',
+  'Off the book at the end — but the engine approves. Solved.':
+    '끝에서 책과 갈라졌지만 엔진이 인정합니다. 정답입니다.',
+  'Exactly as the book has it.': '책과 정확히 같습니다.',
+  'Not quite — the marked move is where it goes wrong.':
+    '아쉽습니다 — 표시된 수에서 어긋납니다.',
+  'Correct so far, but the book line goes further.':
+    '여기까진 맞지만, 책의 변화는 더 이어집니다.',
+  'Explore freely — only the mainline is judged on submit.':
+    '자유롭게 살펴보세요 — 제출할 때 채점되는 것은 주 변화뿐입니다.',
+  'Engine agrees': '엔진도 동의',
+  'Engine agrees: every solver move keeps a decisive advantage.':
+    '엔진도 동의합니다: 풀이의 모든 수가 결정적인 우위를 유지합니다.',
+  'any move': '아무 수나',
+  'Any move accepted here (click to require this exact move)':
+    '여기서는 아무 수나 받습니다 (클릭하면 이 수만 인정합니다)',
+  'That puzzle does not exist.': '그런 퍼즐이 없습니다.',
+
+  // --- puzzles: books, tiers and imports ----------------------------------
+  Diagram: '다이어그램',
+  Solutions: '정답',
+  'not attempted': '시도 안 함',
+  Draft: '초안',
+  'Book solution': '책의 정답',
+  "The book's exact solution — parsed and verified, or entered by hand":
+    '책에 있는 그대로의 정답 — 해석해 검증했거나 직접 입력한 것',
+  'Engine + book': '엔진 + 책',
+  'Engine solution, corroborated by the book text': '책의 글이 뒷받침하는 엔진 정답',
+  'Engine solution': '엔진 정답',
+  'Engine solution (decisive line, no text corroboration)':
+    '엔진 정답 (결정적인 변화, 글의 뒷받침은 없음)',
+  'Engine guess': '엔진 추측',
+  'Engine best line only — nothing decisive found; check the source if it feels off':
+    '엔진의 최선 변화뿐 — 결정적인 것을 찾지 못했습니다. 이상하면 원본을 확인하세요',
+  'Imported diagram awaiting a solution — open it to enter one':
+    '정답을 기다리는 가져온 다이어그램 — 열어서 입력하세요',
+  'Record solution': '정답 기록',
+  Fix: '고치기',
+  'could not create the book': '책을 만들지 못했습니다',
+  'Delete this book and its progress': '이 책과 진행 상황 삭제',
+  'Delete this book and its progress?': '이 책과 진행 상황을 삭제할까요?',
+  'Reset all progress in this book': '이 책의 진행 상황 초기화',
+  'Reset all progress in this book?': '이 책의 진행 상황을 초기화할까요?',
+  'Close — the scan keeps running': '닫기 — 스캔은 계속 돌아갑니다',
+  'Update in place': '제자리에서 갱신',
+  'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.':
+    '책을 다시 읽어 각 퍼즐을 찾은 것으로 바꿉니다. 이번 가져오기가 놓친 것은 그대로 둡니다.',
+  'Clear and rebuild': '비우고 다시 만들기',
+  'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.':
+    '책을 먼저 비워서 이번 가져오기의 결과만 담기게 합니다. 어느 쪽이든 시도 기록은 유지됩니다.',
+  'Each one replays the move the book prints, from the position on the page.':
+    '하나하나가 페이지의 국면에서 책이 인쇄한 수를 재생한 것입니다.',
+  'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.':
+    '재생된 정답이 너무 적어 신뢰하기 어렵습니다 — 출발점으로 삼고 직접 확인하세요.',
+  'Positions are unread for now: confirming the first draft teaches this book’s font.':
+    '아직 국면을 읽지 못했습니다. 첫 초안을 확인해 주면 이 책의 글꼴을 배웁니다.',
+  '— still scanning': '— 아직 스캔 중',
+  Hide: '숨기기',
+  'No attempts yet — go solve something.': '아직 시도가 없습니다 — 뭐라도 풀어 보세요.',
+  'Nothing matches this filter.': '이 조건에 맞는 것이 없습니다.',
+  'Wipe attempts, history and the review pool': '시도, 기록, 복습 대상을 모두 지우기',
+  'Wipe all attempts, history and the review pool?':
+    '시도, 기록, 복습 대상을 모두 지울까요?',
+  'Wipe everything': '전부 지우기',
+
+  // --- position from an image ----------------------------------------------
+  'No image in the clipboard — copy or snip one first.':
+    '클립보드에 이미지가 없습니다 — 먼저 복사하거나 잘라 두세요.',
+  'That drop had no image file.': '놓은 것에 이미지 파일이 없습니다.',
+  'Set up by hand': '직접 만들기',
+  'Load into the editor': '편집기로 불러오기',
+
+  // --- puzzle theme groups -------------------------------------------------
+  'Game phase': '게임 단계',
+  Checkmates: '메이트',
+  'Tactical motifs': '전술 모티프',
+  Attacks: '공격',
+  'Special moves': '특수한 수',
+  Goals: '목표',
+  Length: '길이',
+  Source: '출처',
+
+  // --- the demo ------------------------------------------------------------
+  'Demo — everyone shares this vault and it resets regularly. Do not put anything private here.':
+    '데모 — 이 보관함은 모두가 함께 쓰며 주기적으로 초기화됩니다. 개인적인 내용은 넣지 마세요.',
 };

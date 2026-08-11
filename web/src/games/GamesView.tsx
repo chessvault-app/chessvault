@@ -471,7 +471,7 @@ function CollectionView() {
       setGames(await loadCollection());
       setLoaded(true);
     } catch {
-      setError('vault server unreachable');
+      setError(t('vault server unreachable'));
     }
   }, []);
 
@@ -486,7 +486,7 @@ function CollectionView() {
         setGames(games);
         setLoaded(true);
       })
-      .catch(() => setError('vault server unreachable'));
+      .catch(() => setError(t('vault server unreachable')));
     void fetch('/api/games/bookmarks')
       .then((r) => r.json() as Promise<{ keys: string[] }>)
       .then((b) => setBookmarks(new Set(b.keys)))
@@ -567,7 +567,7 @@ function CollectionView() {
             variant="ghost"
             size="icon-sm"
             active={starredOnly}
-            title={starredOnly ? 'Show all games' : 'Show bookmarked games only'}
+            title={starredOnly ? t('Show all games') : t('Show bookmarked games only')}
             onClick={() => setStarredOnly((v) => !v)}
           >
             <Star className={cn('size-3.5', starredOnly && 'fill-current')} />
@@ -644,7 +644,7 @@ function CollectionView() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      title={bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark'}
+                      title={bookmarks.has(gameKey(game)) ? t('Remove bookmark') : t('Bookmark')}
                       className="shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -756,7 +756,7 @@ function ArchiveBrowser({
         if (body.months[0]) await loadMonth(body.months[0].month);
       }
     } catch {
-      setError('vault server unreachable');
+      setError(t('vault server unreachable'));
     } finally {
       setLoading(null);
     }
@@ -774,7 +774,7 @@ function ArchiveBrowser({
       if ('error' in body) setError(body.error);
       else setMonthGames(body.games.slice().reverse()); // newest first
     } catch {
-      setError('vault server unreachable');
+      setError(t('vault server unreachable'));
     } finally {
       setLoading(null);
     }
@@ -795,7 +795,7 @@ function ArchiveBrowser({
         navigate('analysis');
       }
     } catch {
-      setError('could not load that game');
+      setError(t('could not load that game'));
     }
   };
 

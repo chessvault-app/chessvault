@@ -171,7 +171,7 @@ function NoteEditor({
         <Button
           variant={editable ? 'primary' : 'secondary'}
           size="sm"
-          title={editable ? 'Back to reading' : 'Edit this note'}
+          title={editable ? t('Back to reading') : t('Edit this note')}
           onClick={() => setEditable((v) => !v)}
         >
           <Pencil className="size-3.5 md:mr-1" />
