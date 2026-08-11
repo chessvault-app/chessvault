@@ -42,6 +42,40 @@ const writeSettings = (patch) =>
 
 let serverProc = null;
 
+/**
+ * Is this URL served by the vault this window is showing?
+ *
+ * Local mode serves from loopback on LOCAL_PORT; remote mode from the
+ * server the user chose. Anything else is the open web and belongs in the
+ * browser.
+ */
+function isOwnOrigin(url) {
+  if (url.startsWith(`http://127.0.0.1:${LOCAL_PORT}`)) return true;
+  const settings = readSettings();
+  return Boolean(settings.mode === 'remote' && settings.url && url.startsWith(settings.url));
+}
+
+/**
+ * A sentence, not electron-updater's stack.
+ *
+ * Its 404 message is ~2 kB: the URL, an explanation about tokens, then every
+ * response header — which on github.com includes Set-Cookie, so the raw text
+ * put a session cookie on screen in a settings panel. None of it helps anyone
+ * decide what to do, and the useful part is one of three situations.
+ */
+function updateFailure(err) {
+  const text = String(err?.message ?? err ?? '');
+  if (/404|ENOTFOUND releases|no published versions/i.test(text)) {
+    return 'no published release to update to yet';
+  }
+  if (/ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNREFUSED|network|offline/i.test(text)) {
+    return 'no internet connection';
+  }
+  if (/403|401|auth/i.test(text)) return 'the update feed refused the request';
+  // Anything unforeseen: the first line only, and short enough to read.
+  return text.split(/\r?\n/)[0].slice(0, 120);
+}
+
 function startLocalServer() {
   if (serverProc) return;
   // An explicitly opened vault folder (Obsidian-style) wins everywhere;
@@ -119,6 +153,20 @@ function createWindow() {
   // but only http(s), so a hostile page can't hand the OS an arbitrary URI
   // scheme (file:, smb:, ms-msdt:, …) to launch.
   win.webContents.setWindowOpenHandler(({ url }) => {
+    // Pages served by our OWN vault — the licences page is the one that
+    // matters — open in a window of this app rather than being handed to
+    // the browser. It is our content; sending it out of the app to read it
+    // is the wrong answer. No preload and no node integration, so the new
+    // window is an ordinary page with none of the shell bridge.
+    if (isOwnOrigin(url)) {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          autoHideMenuBar: true,
+          webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true },
+        },
+      };
+    }
     if (/^https?:\/\//i.test(url)) void shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -214,7 +262,7 @@ app.whenReady().then(async () => {
       if (!found || found === app.getVersion()) return { state: 'current', version: app.getVersion() };
       return { state: 'available', version: found };
     } catch (err) {
-      return { state: 'failed', error: err?.message ?? String(err) };
+      return { state: 'failed', error: updateFailure(err) };
     }
   });
 

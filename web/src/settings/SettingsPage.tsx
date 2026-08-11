@@ -262,22 +262,28 @@ function VersionCard() {
           </>
         )}
       </dl>
+      {/* Wraps rather than sitting on one line: an update failure is a
+          sentence, and on a narrow card it used to run out past the panel's
+          edge instead of onto a second line. */}
       {shell?.checkForUpdates && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="secondary" size="sm" disabled={checking} onClick={() => void check()}>
-            {checking ? 'Checking…' : 'Check for updates'}
+            {checking ? t('Checking…') : t('Check for updates')}
           </Button>
           {update && (
             <span
-              className={cn('text-xs', update.state === 'failed' ? 'text-bad' : 'text-muted')}
+              className={cn(
+                'min-w-0 flex-1 break-words text-xs',
+                update.state === 'failed' ? 'text-bad' : 'text-muted',
+              )}
             >
               {update.state === 'available'
-                ? `${update.version} is available — it installs when you quit.`
+                ? t('{version} is available — it installs when you quit.', { version: update.version ?? '' })
                 : update.state === 'current'
-                  ? 'This is the newest build.'
+                  ? t('This is the newest build.')
                   : update.state === 'dev'
-                    ? 'Not a packaged build.'
-                    : `Could not check: ${update.error ?? 'no answer'}`}
+                    ? t('Not a packaged build.')
+                    : t('Could not check: {reason}', { reason: update.error ?? t('no answer') })}
             </span>
           )}
         </div>
