@@ -826,6 +826,10 @@ function ArchiveBrowser({
    *
    * Oldest first, so an interrupted run leaves a contiguous history rather
    * than a hole in the middle.
+   *
+   * Running it twice adds everything twice, as "… (2)" files. Nothing is
+   * overwritten and nothing is refused — the button says what it does and
+   * the count says what it did.
    */
   const importEverything = async (): Promise<void> => {
     const user = username.trim();
@@ -861,10 +865,16 @@ function ArchiveBrowser({
     if (month) await loadMonth(month);
   };
 
-  /** Shown by the current filters and not already collected. */
-  const pickable = visibleMonthGames.filter(
-    (g) => !added.has(gameKey(g)) && !collectionKeys.has(`${g.white}|${g.black}|${g.date}`),
-  );
+  /**
+   * Everything the current filters show.
+   *
+   * Deliberately NOT filtered to "not already collected". Adding a game
+   * twice writes a second file with a "(2)" suffix rather than overwriting
+   * anything, so the cost of a stray double-click is one duplicate the user
+   * can delete — cheaper than a checkbox that refuses to tick and does not
+   * say why.
+   */
+  const pickable = visibleMonthGames;
 
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
     if (next === provider) return;
@@ -1101,7 +1111,7 @@ function ArchiveBrowser({
               <Button
                 variant="primary"
                 size="sm"
-                disabled={busy || picked.size === 0}
+                disabled={picked.size === 0}
                 onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}
               >
                 {busy ? t('Adding…') : t('Add selected')}
@@ -1143,7 +1153,7 @@ function ArchiveBrowser({
                   onPreview={onPreview}
                   actions={
                     <>
-                    {selecting && !inCollection && (
+                    {selecting && (
                       <input
                         type="checkbox"
                         className="accent-primary mr-1 shrink-0"
