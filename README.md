@@ -112,8 +112,10 @@ screen; add authenticator 2FA there too. Then:
 Keep SSH off the public internet: the reference deployment runs the box
 on a [Tailscale](https://tailscale.com) tailnet with port 22 closed at
 the firewall, and `scripts/deploy.sh` (bundle → push → rebuild →
-restart) reaches it over the tailnet. Override the host with
-`CHESS_VAULT_HOST`.
+restart) reaches it over the tailnet. Copy
+`scripts/deploy.env.example` to `scripts/deploy.env` (gitignored) and set
+`CHESS_VAULT_HOST`; the directory and service name have defaults matching
+this layout and can be overridden there too.
 
 ### Deploy-time jobs
 

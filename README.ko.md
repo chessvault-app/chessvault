@@ -110,7 +110,9 @@ CHESS_VAULT_DIR=/srv/chess-vault npm run start
 SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22번 포트를 닫은
 채 [Tailscale](https://tailscale.com) 테일넷 위에서 서버를 돌리고,
 `scripts/deploy.sh`(번들 → 전송 → 재빌드 → 재시작)가 테일넷을 통해
-접근합니다. 대상 호스트는 `CHESS_VAULT_HOST`로 지정합니다.
+접근합니다. `scripts/deploy.env.example`을 `scripts/deploy.env`(gitignore
+대상)로 복사해 `CHESS_VAULT_HOST`를 채우세요. 서버의 디렉터리와 서비스
+이름은 이 문서의 배치를 기본값으로 쓰며, 같은 파일에서 바꿀 수 있습니다.
 
 ### 배포 시점에 한 번 하는 작업
 
