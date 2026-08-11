@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { cn } from '@/lib/cn';
-import { BOARD_THEMES, CASTLE_STYLES, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet } from '@/store/prefs';
+import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet } from '@/store/prefs';
+import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
 
@@ -80,6 +81,7 @@ export function SettingsPage() {
         {isDemo() ? (
           <>
             <AppearanceCard />
+            <SoundCard />
             <Card icon={Info} title={t('This is a demo')}>
               <p className="text-subtle text-xs leading-relaxed">
                 {t(
@@ -94,6 +96,7 @@ export function SettingsPage() {
             <ProfileCard settings={settings} onSaved={refresh} />
             <DesktopCard />
             <AppearanceCard />
+            <SoundCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
             <DangerCard gate={settings.gate} />
@@ -356,7 +359,7 @@ function DesktopCard() {
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, sound, schemeId, castleStyle, setBoardTheme, setPieces, setSound, setSchemeId, setCastleStyle } =
+  const { boardTheme, pieces, schemeId, castleStyle, setBoardTheme, setPieces, setSchemeId, setCastleStyle } =
     usePrefs();
 
   return (
@@ -451,6 +454,26 @@ function AppearanceCard() {
         />
       </Field>
 
+    </Card>
+  );
+}
+
+// --- Sound ---------------------------------------------------------------
+
+/**
+ * Its own card rather than one switch under Appearance.
+ *
+ * Choosing a sound is the one setting on this page that cannot be judged by
+ * reading it, so every control here plays what it does the moment it
+ * changes — picking from a dropdown IS the audition, with no separate
+ * preview step to find.
+ */
+function SoundCard() {
+  const { sound, soundVolume, moveSound, captureSound, setSound, setSoundVolume, setMoveSound, setCaptureSound } =
+    usePrefs();
+
+  return (
+    <Card icon={Volume2} title={t('Sound')}>
       <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
         <div className="min-w-0">
           <div className="text-sm font-medium">{t('Move sounds')}</div>
@@ -458,6 +481,58 @@ function AppearanceCard() {
         </div>
         <Switch checked={sound} onToggle={() => setSound(!sound)} label={t('Move sounds')} />
       </div>
+
+      <label className={cn('grid gap-1', !sound && 'opacity-50')}>
+        <span className="flex items-baseline justify-between text-xs">
+          <span className="text-muted">{t('Volume')}</span>
+          <span className="text-fg font-mono tabular-nums">{Math.round(soundVolume * 100)}%</span>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          value={Math.round(soundVolume * 100)}
+          disabled={!sound}
+          // Preview on release rather than on every step: dragging fires
+          // dozens of times and would machine-gun the sample.
+          onChange={(e) => setSoundVolume(Number(e.target.value) / 100)}
+          onPointerUp={() => previewSound('move', moveSound)}
+          onKeyUp={() => previewSound('move', moveSound)}
+          className="accent-primary h-1 w-full cursor-pointer"
+          aria-label={t('Volume')}
+        />
+      </label>
+
+      <Field label={t('Move sound')}>
+        <Select
+          value={moveSound}
+          onChange={(v) => {
+            setMoveSound(v);
+            previewSound('move', v);
+          }}
+          ariaLabel={t('Move sound')}
+          groups={[{ options: MOVE_SOUNDS.map(({ id, label }) => ({ value: id, label: t(label) })) }]}
+        />
+      </Field>
+
+      <Field label={t('Capture sound')}>
+        <Select
+          value={captureSound}
+          onChange={(v) => {
+            setCaptureSound(v);
+            previewSound('capture', v);
+          }}
+          ariaLabel={t('Capture sound')}
+          groups={[{ options: CAPTURE_SOUNDS.map(({ id, label }) => ({ value: id, label: t(label) })) }]}
+        />
+      </Field>
+
+      <p className="text-subtle text-xs leading-relaxed">
+        {t(
+          'Rotating plays a different take each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.',
+        )}
+      </p>
     </Card>
   );
 }

@@ -301,6 +301,22 @@ export const ko: Record<string, string> = {
   Pieces: '기물',
   'Piece set': '기물 세트',
   'Move sounds': '수 소리',
+  Sound: '소리',
+  Volume: '음량',
+  // Deliberately not a bare 'Move'/'Capture': `Move` is already taken at the
+  // top of this file for relocating a file ('이동'), and this dictionary is
+  // keyed by the English string, so one word cannot carry both senses.
+  'Move sound': '수 소리',
+  'Capture sound': '기물 잡기 소리',
+  'Rotate through all': '번갈아 재생',
+  Deep: '낮게',
+  Standard: '기본',
+  Bright: '밝게',
+  Sharp: '날카롭게',
+  Long: '길게',
+  Short: '짧게',
+  'Rotating plays a different take each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.':
+    '번갈아 재생하면 매번 다른 테이크가 나오므로, 긴 분석에서도 같은 샘플이 반복되는 느낌이 없습니다. 이 소리들은 녹음이 아니라 합성한 것입니다.',
   Security: '보안',
   'Current password': '현재 비밀번호',
   'New password': '새 비밀번호',

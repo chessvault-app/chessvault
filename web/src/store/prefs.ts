@@ -69,10 +69,52 @@ export const PIECE_SETS: { id: PieceSet; label: string }[] = [
   { id: 'pirouetti', label: 'Pirouetti' },
 ];
 
+/**
+ * The move and capture samples, and what they sound like.
+ *
+ * Filenames are the generator's own (chessvault-app/chesssounds-gen), kept
+ * exactly so a file can be traced back to the run that produced it. The
+ * labels are what the setting shows, and they are not decoration: each was
+ * assigned from the measured spectral centroid of that file, so "Bright"
+ * really is brighter than "Standard" rather than being a guess about a
+ * sound nobody could describe.
+ *
+ * `rotate` is the default and the reason the variations exist — a move
+ * repeated fifty times in an analysis session should not sound like one
+ * sample fired fifty times.
+ */
+export interface SoundChoice {
+  id: string;
+  label: string;
+  file: string | null;
+}
+
+export const MOVE_SOUNDS: SoundChoice[] = [
+  { id: 'rotate', label: 'Rotate through all', file: null },
+  { id: 'deep', label: 'Deep', file: 'move-self-1.wav' }, //  919 Hz
+  { id: 'standard', label: 'Standard', file: 'move-self.wav' }, //  984 Hz
+  { id: 'bright', label: 'Bright', file: 'move-self-4.wav' }, // 1062 Hz
+  { id: 'sharp', label: 'Sharp', file: 'move-self-2.wav' }, // 1156 Hz
+  { id: 'long', label: 'Long', file: 'move-self-3.wav' }, //  54 ms
+];
+
+export const CAPTURE_SOUNDS: SoundChoice[] = [
+  { id: 'rotate', label: 'Rotate through all', file: null },
+  { id: 'deep', label: 'Deep', file: 'capture-3.wav' }, // 1737 Hz
+  { id: 'standard', label: 'Standard', file: 'capture.wav' }, // 1907 Hz
+  { id: 'bright', label: 'Bright', file: 'capture-6.wav' }, // 2083 Hz
+  { id: 'sharp', label: 'Sharp', file: 'capture-8.wav' }, // 2186 Hz
+  { id: 'short', label: 'Short', file: 'capture-7.wav' }, //  51 ms
+];
+
 interface PrefsState {
   boardTheme: BoardTheme;
   pieces: PieceSet;
   sound: boolean;
+  /** 0–1. Applied as a gain, so 0 is silent without disabling the setting. */
+  soundVolume: number;
+  moveSound: string;
+  captureSound: string;
   castleStyle: CastleStyle;
   /** Which preset is selected. */
   schemeId: string;
@@ -80,6 +122,9 @@ interface PrefsState {
   setBoardTheme: (t: BoardTheme) => void;
   setPieces: (p: PieceSet) => void;
   setSound: (on: boolean) => void;
+  setSoundVolume: (v: number) => void;
+  setMoveSound: (id: string) => void;
+  setCaptureSound: (id: string) => void;
   setSchemeId: (id: string) => void;
   setCastleStyle: (style: CastleStyle) => void;
 }
@@ -106,6 +151,9 @@ export const usePrefs = create<PrefsState>()(
       boardTheme: 'default',
       pieces: 'cburnett',
       sound: true,
+      soundVolume: 0.7,
+      moveSound: 'rotate',
+      captureSound: 'rotate',
       castleStyle: 'king',
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
@@ -118,6 +166,9 @@ export const usePrefs = create<PrefsState>()(
         set({ pieces });
       },
       setSound: (sound) => set({ sound }),
+      setSoundVolume: (soundVolume) => set({ soundVolume: Math.min(1, Math.max(0, soundVolume)) }),
+      setMoveSound: (moveSound) => set({ moveSound }),
+      setCaptureSound: (captureSound) => set({ captureSound }),
       setCastleStyle: (castleStyle) => set({ castleStyle }),
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);

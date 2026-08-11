@@ -52,7 +52,7 @@ this machine.
 | merida | Armando Hernandez Marroquin | GPLv2+ | Fine, same as cburnett |
 | chessnut | Alexis Luengas | Apache 2.0 | Fine; `licenses/Apache-2.0.txt` |
 | pirouetti | pirouetti | **AGPLv3+** | `licenses/AGPL-3.0.txt`; see below |
-| move / capture sounds | unknown | **unknown** | See below |
+| move / capture sounds | ours | ours (GPL-3.0) | Synthesised, not sampled — see below. Previously lichess's non-free `standard` set |
 
 ### pirouetti is AGPL, and this app is served over a network
 
@@ -71,11 +71,23 @@ the public demo to the public repository. If the source were ever taken
 private again while the demo stayed up, this would be back, and the fix
 would be to drop the set.
 
-### The sounds are non-free, and this is now settled rather than suspected
+### The sounds are ours now — resolved
 
-`web/public/sound/Move.mp3` and `Capture.mp3` are lichess's `standard` set,
-bit for bit. Verified by hash against
-`lichess-org/lila:public/sound/standard/`:
+`web/public/sound/*.wav` are **synthesised from scratch** by
+[chesssounds-gen](https://github.com/chessvault-app/chesssounds-gen), so
+they are this project's own work and carry nobody else's licence. No
+recording is sampled and none is redistributed.
+
+The generator measures the character it aims for — per-band envelopes,
+tonality and peak frequencies — and rebuilds it from sine and noise. What
+transfers is a set of measurements, which are facts, and 17 U.S.C. §114(b)
+is explicit that the sound-recording right does not reach an independently
+fixed imitation. The jingles it can also produce are original compositions
+rather than imitations, because a tune *is* protected where a knock is not.
+
+**What this replaced, and why it had to go.** The previous `Move.mp3` and
+`Capture.mp3` were lichess's `standard` set, bit for bit — verified by hash
+against `lichess-org/lila:public/sound/standard/`:
 
 | File | SHA-256 |
 | --- | --- |
@@ -84,21 +96,16 @@ bit for bit. Verified by hash against
 
 lila licenses its sound *collections* individually: futuristic, nes, piano
 and sfx are AGPLv3+ by Enigmahack, and lisp is CC BY-NC-SA 4.0. `standard`
-is in none of those, so it falls under that file's exceptions line — "The
-other sounds in public/sound" — which is the **non-free** list. Asked
-directly on lichess's own forum, nobody from lichess ever answered what the
-rights are, and silence is not a grant.
+is in none of those, so it fell under that file's exceptions line — "The
+other sounds in public/sound" — the **non-free** list. Asked directly on
+lichess's own forum, nobody from lichess ever answered what the rights are,
+and silence is not a grant. Kept here because the next person to wonder
+where the sounds came from deserves the finished answer, not the search.
 
-So this is not "unattributed, possibly fine". It is a file we have no
-licence to convey, shipped in every installer and served by the public
-demo. **It must be replaced before a public release.**
-
-Work in progress, not yet landed: replacements synthesised from scratch —
-modal synthesis, so they are ours outright and end the question rather
-than moving it. Nothing licensable was found to be worth substituting; the
-one genuinely apt CC0 source is el_boss's "Chess Puzzle Blitz SFX" on
-Freesound, recorded on a real board, if buying that argument is ever
-preferred to synthesising.
+Ten takes ship: five move and five capture, chosen from the generator's
+variations to span dull-to-bright, and selectable in Settings. The default
+rotates through them so a long analysis does not sound like one sample
+repeating.
 
 ## Development only — never shipped
 
