@@ -40,4 +40,13 @@ export function extname(path: string): string {
   return dot <= 0 ? '' : name.slice(dot);
 }
 
-export default { sep, resolve, join, dirname, basename, extname };
+/** `from` -> `to` as a relative path. Used to turn a vault path into an id. */
+export function relative(from: string, to: string): string {
+  const a = resolve(from).split('/').filter(Boolean);
+  const b = resolve(to).split('/').filter(Boolean);
+  let same = 0;
+  while (same < a.length && same < b.length && a[same] === b[same]) same++;
+  return [...Array(a.length - same).fill('..'), ...b.slice(same)].join('/');
+}
+
+export default { sep, resolve, join, dirname, basename, extname, relative };

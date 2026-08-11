@@ -13,7 +13,7 @@ import './index.css';
 // dynamic so the demo code is not in the app's bundle at all.
 if (typeof __DEMO__ !== 'undefined' && __DEMO__) {
   const { installDemoBackend } = await import('./demo/server.ts');
-  installDemoBackend();
+  await installDemoBackend();
 }
 
 initTheme();

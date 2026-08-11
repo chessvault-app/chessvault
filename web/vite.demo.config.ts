@@ -37,6 +37,7 @@ export default defineConfig({
       'node:fs': `${root}src/demo/nodeShim/fs.ts`,
       'node:path': `${root}src/demo/nodeShim/path.ts`,
       'node:url': `${root}src/demo/nodeShim/url.ts`,
+      'better-sqlite3': `${root}src/demo/nodeShim/sqlite.ts`,
     },
   },
   build: {
