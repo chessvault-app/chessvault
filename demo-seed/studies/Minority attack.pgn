@@ -2,43 +2,43 @@
 [ChapterName "Main line"]
 [Date "2026.07.04"]
 [Round "4"]
-[White "Nepomniachtchi, I"]
-[Black "Niemann, H"]
-[Result "1-0"]
-[WhiteElo "3571"]
-[BlackElo "3138"]
-[ECO "D37"]
-[Opening "Queen's Gambit Declined: Harrwitz Attack, Main Line"]
+[White "Grieve, M"]
+[Black "Verhoeven, J"]
+[Result "1/2-1/2"]
+[WhiteElo "2888"]
+[BlackElo "2982"]
+[ECO "A38"]
+[Opening "English Opening: Symmetrical Variation, Full Symmetry Line"]
 
-{Queen's Gambit Declined: Harrwitz Attack, Main Line. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. d4 d5 2. c4 e6 3. Nf3 Nf6 4. Nc3 Be7 5. Bf4 O-O {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. e3 c5 7. dxc5 Bxc5 8. Qc2 ! Nc6 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. Rd1 a6 10. Be2 Re8 11. O-O h6 ?! 12. h3 Qe7 13. cxd5 exd5 14. Nxd5 Nxd5 15. Rxd5 Ba7 16. Rfd1 Be6 17. R5d2 Rad8 18. b3 Rxd2 19. Rxd2 Rd8 20. Rxd8+ Qxd8 21. Bd3 Ne7 22. Be2 Bd5 23. e4 Bxe4 24. Qxe4 Nc6 25. Bc4 Qd7 26. Ne5 Nxe5 27. Qxe5 Qc6 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 28. Qf5 1-0
+{English Opening: Symmetrical Variation, Full Symmetry Line. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. c4 c5 2. g3 g6 3. Nf3 Bg7 4. Bg2 Nc6 5. Nc3 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. d4 cxd4 7. Nxd4 h5 8. h3 ! Nxd4 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... h4 Rb1 hxg3 {was the alternative — playable, but it hands over the initiative.}) 9. Qxd4 O-O 10. Bd2 d6 11. Rc1 a5 ?! 12. O-O a4 13. Rfd1 Bf5 14. Qe3 Qd7 15. Kh2 h4 16. gxh4 Rfc8 17. b3 Rc5 18. Nd5 Nxd5 19. Bxd5 Be5+ 20. Kg2 Bb2 21. h5 axb3 22. axb3 e6 23. Bf3 Qe7 24. Qf4 gxh5 25. Be3 Bxc1 26. Bxc1 Bc2 27. Rxd6 e5 28. Qg3+ Bg6 29. b4 Qxd6 30. bxc5 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Qe7 1/2-1/2
 
 [Event "Minority attack: Chapter 2"]
 [ChapterName "The critical sideline"]
 [Date "2026.08.05"]
 [Round "5"]
-[White "Ding Liren"]
-[Black "Duda, J-K"]
-[Result "0-1"]
-[WhiteElo "2789"]
-[BlackElo "2921"]
-[ECO "A36"]
-[Opening "English Opening: Symmetrical Variation, Ultra-Symmetrical Variation"]
+[White "Halvorsen, T"]
+[Black "Oyelaran, B"]
+[Result "1/2-1/2"]
+[WhiteElo "3029"]
+[BlackElo "3035"]
+[ECO "C92"]
+[Opening "Ruy Lopez: Closed"]
 
-{English Opening: Symmetrical Variation, Ultra-Symmetrical Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. c4 c5 2. g3 Nc6 3. Bg2 g6 4. Nc3 Bg7 5. a3 Nf6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Rb1 e6 7. b4 cxb4 8. axb4 ! d5 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Nxb4 Ra1 Na2 {was the alternative — playable, but it hands over the initiative.}) 9. b5 Ne5 10. cxd5 exd5 11. Nf3 Nxf3+ ?! 12. Bxf3 Bf5 13. d3 O-O 14. O-O Rc8 15. Bd2 d4 16. Na4 Qd7 17. Qb3 Bg4 18. Rfc1 Bxf3 19. exf3 b6 20. Kg2 Nd5 21. Rc4 Rce8 22. Bb4 Re2 23. Kg1 Rfe8 24. Rc2 Qxb5 25. Rxe2 Rxe2 26. Nc5 bxc5 27. Qxd5 Qxd3 28. Qd8+ Bf8 29. Bxc5 Qxb1+ 30. Kg2 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Rxf2+ 0-1
+{Ruy Lopez: Closed. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Be7 5. O-O Nf6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Re1 b5 7. Bb3 d6 8. c3 ! O-O {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... b4 Na3 bxa3 {was the alternative — playable, but it hands over the initiative.}) 9. h3 a5 10. d4 Bb7 11. Qe2 a4 ?! 12. Bc2 Ba6 13. Nbd2 b4 14. Qe3 Bb5 15. dxe5 bxc3 16. bxc3 Nxe5 17. Rb1 Bc6 18. Nd4 Bd7 19. f4 Ng6 20. c4 a3 21. N2f3 Re8 22. Nb5 c6 23. Nc3 Bf8 24. Qd3 Rb8 25. Rxb8 Qxb8 26. Be3 Qc7 27. Rd1 Qa5 28. Qd2 Bc8 29. Rb1 Nd7 30. Nd4 Ne7 31. Nb3 Qc7 32. Qc1 Ba6 33. c5 dxc5 34. Qxa3 Qc8 35. Qc1 c4 36. Nd2 Ng6 37. e5 f6 38. Nde4 fxe5 39. f5 Nf4 40. Bxf4 exf4 41. Qxf4 Qd8 42. Rd1 Qe7 43. Qf2 Nf6 44. Nxf6+ gxf6 45. Ne4 Rd8 46. Rxd8 Qxd8 47. Qa7 Bc8 48. g4 c5 49. Kf1 Qd4 50. Qa8 Qb2 51. Qd5+ Kg7 52. Qxc4 Bb7 53. a4 Bxe4 54. Qxe4 Qc3 55. Bd3 c4 56. Qxc4 Qd2 57. Qd4 Bb4 58. h4 Qd1+ 59. Kg2 Qxa4 60. g5 Qa8+ 61. Be4 Qa2+ 62. Kg3 Be7 63. h5 Qa3+ 64. Kg4 Qd6 65. h6+ Kh8 66. Qxd6 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Bxd6 1/2-1/2
 
 [Event "Minority attack: Chapter 3"]
 [ChapterName "A model game"]
 [Date "2026.09.06"]
 [Round "6"]
-[White "Rapport, R"]
-[Black "Vaishali R"]
+[White "Ibarra, L"]
+[Black "Tavares, M"]
 [Result "1/2-1/2"]
-[WhiteElo "3005"]
-[BlackElo "2972"]
-[ECO "A88"]
-[Opening "Dutch Defense: Leningrad Variation, Warsaw Variation"]
+[WhiteElo "3030"]
+[BlackElo "2902"]
+[ECO "E73"]
+[Opening "King's Indian Defense: Semi-Averbakh System"]
 
-{Dutch Defense: Leningrad Variation, Warsaw Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. d4 f5 2. c4 Nf6 3. Nf3 g6 4. g3 d6 5. Bg2 Bg7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Nc3 O-O 7. O-O c6 8. Qc2 ! Na6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... f4 Rb1 fxg3 {was the alternative — playable, but it hands over the initiative.}) 9. Rb1 Nc7 10. b3 Qe8 11. Re1 h6 ?! 12. Bb2 g5 13. e3 Bd7 14. Ne2 a5 15. Nd2 b5 16. a3 Rc8 17. Bc3 Ra8 18. Bb2 Qf7 19. cxb5 Nxb5 20. Nc4 Rfb8 21. Qd3 Nd5 22. Qd2 Nbc7 23. Nxa5 f4 24. e4 f3 25. exd5 fxg2 26. Nxc6 Rxb3 27. Nc3 Re8 28. Re3 Rb7 29. Rbe1 Nxd5 30. Nxd5 Bxc6 31. Nb4 Bd7 32. d5 Bxb2 33. Qxb2 Qxd5 34. Qc3 Qf7 35. Rf3 Qg7 36. Qb3+ e6 {The rest is technique, which is another way of saying it still has to be played accurately.} 37. Qc2 1/2-1/2
+{King's Indian Defense: Semi-Averbakh System. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Be3 Na6 7. h3 e5 8. d5 ! Nc5 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. Qc2 Ne8 10. b4 Nd7 11. Nf3 a5 ?! 12. b5 f5 13. g4 Qe7 14. Rg1 Nc5 15. O-O-O Nxe4 16. Nxe4 fxe4 17. Ng5 a4 18. h4 Bh6 19. Qd2 Bd7 20. Rg3 Nf6 21. Rh1 a3 22. h5 gxh5 23. Nxh7 Bxe3 24. Nxf6+ Qxf6 25. fxe3 h4 26. Rgh3 Kg7 27. Rxh4 Rh8 28. Rh5 Rxh5 29. gxh5 Qg5 30. c5 Kh6 31. Bc4 b6 32. cxd6 cxd6 33. Kc2 Bg4 34. Qb4 Rc8 35. Qxd6+ Kg7 36. Qxb6 Rxc4+ 37. Kb3 Rc8 38. h6+ Kh8 39. Rg1 Rg8 40. Kb4 Qe7+ 41. Qc5 Qh4 42. Rc1 Bd7 43. Qd6 Qh2 44. Qf6+ Kh7 45. Qf7+ Kh8 46. Qf6+ Kh7 47. Qe7+ Kh8 48. Rc3 Qb2+ 49. Rb3 Qd2+ 50. Kc5 Qxa2 51. Qxe5+ Kh7 52. Qxe4+ Kh8 53. Qd4+ Kh7 54. Qe4+ Kh8 55. Qe5+ Kh7 {The rest is technique, which is another way of saying it still has to be played accurately.} 56. Qe4+ 1/2-1/2

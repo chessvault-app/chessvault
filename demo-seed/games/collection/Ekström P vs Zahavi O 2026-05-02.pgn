@@ -1,0 +1,14 @@
+[Event "Tata Steel Masters"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.05.02"]
+[Round "2"]
+[White "Ekström, P"]
+[Black "Zahavi, O"]
+[Result "1/2-1/2"]
+[WhiteElo "2684"]
+[BlackElo "2959"]
+[ECO "B57"]
+[Opening "Sicilian Defense: Classical Variation, Sozin Attack"]
+
+{Sicilian Defense: Classical Variation, Sozin Attack. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. e4 c5 2. Nf3 d6 3. Bc4 Nf6 4. Nc3 Nc6 5. d4 cxd4 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Nxd4 e5 7. Nf5 Bxf5 8. exf5 ! Be7 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... e4 Rb1 e3 {was the alternative — playable, but it hands over the initiative.}) 9. Nd5 O-O 10. c3 Nxd5 11. Bxd5 Bg5 ?! 12. Qf3 Bxc1 13. Rxc1 Qf6 14. O-O Rab8 15. Rcd1 Ne7 16. Be4 b5 17. Rd2 Rfd8 18. g4 h5 19. h3 g6 20. Qe2 b4 21. fxg6 Nxg6 22. Bxg6 Qxg6 23. Rfd1 bxc3 24. bxc3 Kf8 25. c4 hxg4 26. hxg4 Rb4 27. a3 Rb3 28. Rd5 e4 29. R1d4 e3 30. fxe3 Re8 31. Rxd6 Qg5 32. Rd3 Rb1+ 33. Kg2 Qh4 34. Rd1 Rb3 35. R1d3 Rb1 36. Rd1 Rb3 37. R1d3 Re4 38. R6d4 Qxg4+ 39. Qxg4 Rxg4+ 40. Kf3 Rxd3 41. Rxg4 Rxa3 42. Ke4 Ke7 43. Rg1 a5 44. Kd4 a4 45. Rf1 Rb3 46. Rf5 Ra3 47. Ra5 Ra1 48. Kc5 Re1 49. Rxa4 Rxe3 50. Kc6 f5 51. c5 Ke6 52. Kb6 Rb3+ 53. Kc6 Ke5 54. Ra1 f4 55. Kc7 Rc3 56. c6 f3 57. Kb7 Rb3+ 58. Kc8 Rc3 59. c7 Ke4 60. Kb7 Ke3 61. c8=Q Rxc8 62. Kxc8 f2 63. Kb7 Kf3 64. Ka6 Kg2 65. Ka7 f1=Q 66. Rxf1 {The rest is technique, which is another way of saying it still has to be played accurately.} Kxf1 1/2-1/2

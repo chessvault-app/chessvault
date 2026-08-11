@@ -1,0 +1,14 @@
+[Event "Candidates Tournament"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.02.02"]
+[Round "2"]
+[White "Bex, N"]
+[Black "Ueda, K"]
+[Result "0-1"]
+[WhiteElo "2818"]
+[BlackElo "2963"]
+[ECO "E85"]
+[Opening "King's Indian Defense: Sämisch Variation, Orthodox Variation"]
+
+{King's Indian Defense: Sämisch Variation, Orthodox Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. d4 Nf6 2. c4 g6 3. f3 Bg7 4. e4 d6 5. Nc3 O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Be3 e5 7. Nge2 Nh5 8. g4 ! Nf4 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... exd4 Rb1 dxc3 {was the alternative — playable, but it hands over the initiative.}) 9. Nxf4 exf4 10. Bxf4 Nc6 11. d5 Ne5 ?! 12. Be2 f5 13. exf5 gxf5 14. g5 Ng6 15. Qd2 Qe7 16. Kf2 Bd7 17. Rae1 Rae8 18. Bd1 Qf7 19. Rxe8 Rxe8 20. h4 Qe7 21. Be3 f4 22. Bd4 Ne5 23. b3 Bf5 24. Bc2 Bxc2 25. Qxc2 Ng4+ 26. fxg4 Bxd4+ 27. Kg2 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Bxc3 0-1

@@ -1,0 +1,14 @@
+[Event "Online rapid arena"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.02.14"]
+[Round "5"]
+[White "Bex, N"]
+[Black "Ueda, K"]
+[Result "1/2-1/2"]
+[WhiteElo "3031"]
+[BlackElo "2832"]
+[ECO "A70"]
+[Opening "Benoni Defense: Classical Variation"]
+
+{Benoni Defense: Classical Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. c4 c5 2. Nf3 Nf6 3. d4 e6 4. d5 exd5 5. cxd5 d6 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Nc3 g6 7. e4 Bg7 8. Nd2 ! O-O {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... c4 Rb1 Nxe4 {was the alternative — playable, but it hands over the initiative.}) 9. Be2 Nbd7 10. a4 a6 11. O-O Re8 ?! 12. h3 h6 13. Qc2 Qe7 14. Re1 Rb8 15. Ra3 b6 16. Nf1 Nh7 17. Be3 Qh4 18. Nh2 Qd8 19. Nf1 Qh4 20. Qd2 Ng5 21. f3 f5 22. Rd1 fxe4 23. Bf2 Bd4 24. Bxd4 cxd4 25. Nxe4 Nxe4 26. fxe4 Rxe4 27. Ng3 Re7 28. Rf1 Bb7 29. Rf4 Qg5 30. Qxd4 Rf8 31. Rxf8+ Nxf8 32. Qxb6 Qxd5 33. Qb3 Qxb3 34. Rxb3 a5 35. Rb6 Ne6 36. Rxd6 Nf4 37. Bf1 Kg7 38. Rd4 Nd5 39. Ne4 Ne3 40. Nd2 Rc7 41. b3 Rc2 42. Rd7+ Kf6 43. Nc4 Nxc4 44. bxc4 Be4 45. Ra7 Ke5 46. Rxa5+ Kf4 47. Ra7 Rc1 48. Re7 Ke3 49. a5 Ra1 50. c5 Kf4 51. a6 Bd3 52. Rf7+ Ke5 53. a7 Bxf1 54. Rxf1 Rxa7 55. Kh2 Rc7 56. Rc1 Kd5 57. Kg3 Rxc5 58. Rxc5+ Kxc5 59. h4 Kd5 60. Kf4 Ke6 61. h5 gxh5 62. Ke4 h4 63. Kf4 h3 64. Kg3 hxg2 65. Kh2 g1=R 66. Kxg1 h5 67. Kh2 h4 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 68. Kh3 1/2-1/2

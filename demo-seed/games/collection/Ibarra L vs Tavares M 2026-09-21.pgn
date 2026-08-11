@@ -1,0 +1,14 @@
+[Event "Online rapid arena"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.09.21"]
+[Round "3"]
+[White "Ibarra, L"]
+[Black "Tavares, M"]
+[Result "1/2-1/2"]
+[WhiteElo "2945"]
+[BlackElo "3033"]
+[ECO "B56"]
+[Opening "Sicilian Defense: Kupreichik Variation"]
+
+{Sicilian Defense: Kupreichik Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Bd7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bc4 e6 7. Bb3 Be7 8. O-O ! Nc6 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... d5 Rb1 dxe4 {was the alternative — playable, but it hands over the initiative.}) 9. Be3 O-O 10. h3 Nxd4 11. Qxd4 Bc6 ?! 12. Rad1 Nd7 13. a4 Nc5 14. Qc4 Nxb3 15. cxb3 Rc8 16. Nb5 Bxb5 17. Qxb5 b6 18. Bd4 Qc7 19. Bc3 f5 20. exf5 Rxf5 21. Qe2 e5 22. f4 Rcf8 23. fxe5 dxe5 24. Rxf5 Rxf5 25. b4 Bf6 26. Qe4 Rf4 27. Qd5+ Kf8 28. a5 bxa5 29. bxa5 a6 30. Qe6 Qc4 31. Qd6+ Be7 32. Qxe5 Qc5+ 33. Qxc5 Bxc5+ 34. Kh2 Ke7 35. Bxg7 Bd6 36. Kg1 Ke6 37. Re1+ Kd5 38. Bc3 h5 39. Re8 h4 40. Rd8 Kc6 41. Rh8 Bc5+ 42. Kh2 Bd6 43. Kg1 Bc5+ 44. Kh2 Bd6 {The rest is technique, which is another way of saying it still has to be played accurately.} 45. Kg1 1/2-1/2

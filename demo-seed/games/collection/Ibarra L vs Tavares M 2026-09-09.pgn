@@ -1,0 +1,14 @@
+[Event "Candidates Tournament"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.09.09"]
+[Round "9"]
+[White "Ibarra, L"]
+[Black "Tavares, M"]
+[Result "0-1"]
+[WhiteElo "2550"]
+[BlackElo "2809"]
+[ECO "A69"]
+[Opening "Benoni Defense: Four Pawns Attack, Main Line"]
+
+{Benoni Defense: Four Pawns Attack, Main Line. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. f4 O-O {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Nf3 c5 7. d5 e6 8. Be2 ! exd5 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... e5 Rb1 exf4 {was the alternative — playable, but it hands over the initiative.}) 9. cxd5 Re8 10. e5 dxe5 11. fxe5 Ng4 ?! 12. e6 fxe6 13. d6 Nc6 14. O-O a6 15. Bg5 Qd7 16. Ne4 h6 17. Nxc5 Qf7 18. Ne5 Qxf1+ 19. Qxf1 Ngxe5 20. Bh4 Nd7 21. Nxd7 Bxd7 22. Rd1 Nd4 23. Bc4 Rac8 24. Be7 Nf5 25. Qe2 Kh7 26. Bxe6 Nd4 27. Bxd7 Nxe2+ 28. Kf2 Nd4 29. Bxc8 Rxc8 30. d7 Rc2+ 31. Kf1 Nc6 32. b4 Rxa2 33. Rd6 Ra1+ 34. Ke2 Nd4+ 35. Rxd4 Bxd4 36. d8=Q Bg7 37. Bf6 Ra2+ 38. Kd1 Bxf6 39. Qxf6 Rxg2 40. Qf7+ Kh8 41. Qe8+ Kg7 42. Qe7+ Kg8 43. Qd8+ Kg7 44. Qc7+ {The rest is technique, which is another way of saying it still has to be played accurately.} Kf6 0-1

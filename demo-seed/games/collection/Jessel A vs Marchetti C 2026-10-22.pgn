@@ -1,0 +1,14 @@
+[Event "Tata Steel Masters"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.10.22"]
+[Round "4"]
+[White "Jessel, A"]
+[Black "Marchetti, C"]
+[Result "0-1"]
+[WhiteElo "2741"]
+[BlackElo "3001"]
+[ECO "C69"]
+[Opening "Ruy Lopez: Exchange Variation, Alapin Gambit"]
+
+{Ruy Lopez: Exchange Variation, Alapin Gambit. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Bxc6 dxc6 5. O-O Bg4 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. h3 h5 7. d3 Qf6 8. Nbd2 ! Ne7 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Bxf3 Rb1 Bxd1 {was the alternative — playable, but it hands over the initiative.}) 9. b3 Ng6 10. Bb2 Bc5 11. Rb1 O-O-O ?! 12. hxg4 hxg4 13. Nh2 Rh4 14. g3 Rdh8 15. gxh4 Rxh4 16. Ndf3 gxf3 17. Qxf3 Nf4 18. Kh1 Qh6 19. Qg3 Rh3 20. Bc1 Qh5 21. Bxf4 exf4 22. Qg1 f3 23. Rbe1 f5 24. d4 Bd6 25. e5 Be7 26. Re3 Bg5 27. Rxf3 Rxf3 28. Rd1 Rh3 29. Rd3 Rh4 30. Rg3 Bf4 31. a3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} b6 0-1

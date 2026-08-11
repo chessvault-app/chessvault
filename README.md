@@ -233,6 +233,9 @@ end · `f` flip board.
 
 ## Licensing
 
+Third-party code, data and assets — what is bundled, under what terms, and
+what is not yet cleared — are listed in [THIRD-PARTY.md](THIRD-PARTY.md).
+
 This project is licensed under **GPL-3.0** (see [LICENSE](LICENSE)) —
 the choice is effectively made by its bundled dependencies: Stockfish
 and Stockfish.js are GPLv3. `chessops` and

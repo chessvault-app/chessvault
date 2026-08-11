@@ -1,0 +1,14 @@
+[Event "Norway Chess"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.03.03"]
+[Round "3"]
+[White "Castellan, J"]
+[Black "Novak, E"]
+[Result "1/2-1/2"]
+[WhiteElo "2956"]
+[BlackElo "3058"]
+[ECO "B23"]
+[Opening "Sicilian Defense: Closed"]
+
+{Sicilian Defense: Closed. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. e4 c5 2. Nc3 d6 3. Bb5+ Bd7 4. Bxd7+ Qxd7 5. d4 cxd4 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Qxd4 Nc6 7. Qd3 g6 8. Nf3 ! Bg7 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. O-O Nf6 10. Nd5 O-O 11. Bg5 Nxd5 ?! 12. exd5 Ne5 13. Nxe5 Bxe5 14. c3 Bf6 15. h4 Bxg5 16. hxg5 Rae8 17. Rfe1 e5 18. dxe6 Rxe6 19. Re3 Rfe8 20. Rae1 Rxe3 21. Rxe3 Rxe3 22. Qxe3 Qf5 23. Qxa7 Qb1+ 24. Kh2 Qxb2 25. a4 Qe2 26. Qxb7 Qh5+ 27. Kg3 Qxg5+ 28. Kf3 Qf6+ 29. Ke2 Qxc3 30. Qb5 Qc2+ 31. Ke3 Qc1+ 32. Ke4 Qe1+ 33. Kd5 Qe6+ 34. Kd4 Qf6+ 35. Ke3 Qc3+ 36. Ke4 Qe1+ 37. Kd5 Qe6+ 38. Kd4 Qf6+ 39. Kc4 Qxf2 40. Qb8+ Kg7 41. Qxd6 Qxg2 42. a5 h5 43. a6 h4 44. Qd4+ f6 45. a7 h3 46. Qd7+ Kh6 47. a8=R Qxa8 48. Qxh3+ Kg5 49. Qg3+ Kf5 50. Qh3+ Kf4 51. Qh4+ Kf5 52. Qh3+ Ke5 53. Qg3+ Ke6 54. Qg4+ Ke5 55. Qg3+ Ke6 56. Qg4+ Kf7 57. Qd7+ Kf8 58. Qd6+ Kf7 59. Qd7+ Kg8 60. Qe6+ Kg7 61. Qe7+ Kh6 62. Qe3+ g5 63. Qh3+ Kg7 64. Qd7+ Kg6 65. Qd3+ f5 66. Qd6+ Kh5 67. Qh2+ Kg4 68. Qg1+ Kf4 69. Qh2+ Ke3 70. Qg1+ {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Ke2 1/2-1/2

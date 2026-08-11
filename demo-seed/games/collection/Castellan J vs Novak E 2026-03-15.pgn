@@ -1,0 +1,14 @@
+[Event "Tata Steel Masters"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.03.15"]
+[Round "6"]
+[White "Castellan, J"]
+[Black "Novak, E"]
+[Result "1/2-1/2"]
+[WhiteElo "3023"]
+[BlackElo "2980"]
+[ECO "D86"]
+[Opening "Grünfeld Defense: Exchange Variation, Classical Variation"]
+
+{Grünfeld Defense: Exchange Variation, Classical Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. cxd5 Nxd5 5. e4 Nxc3 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. bxc3 Bg7 7. Bc4 c5 8. Ne2 ! Nc6 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... cxd4 Rb1 dxc3 {was the alternative — playable, but it hands over the initiative.}) 9. Be3 O-O 10. O-O Bg4 11. f3 cxd4 ?! 12. cxd4 Na5 13. Bxf7+ Rxf7 14. fxg4 Rxf1+ 15. Kxf1 Qb6 16. Kg1 Qe6 17. Qd3 Rd8 18. Nf4 Qc4 19. Rd1 e5 20. Nd5 Qxd3 21. Rxd3 Re8 22. Nc3 exd4 23. Bxd4 Bxd4+ 24. Rxd4 Rc8 25. Rd3 Rc4 26. g5 Nc6 27. Nd5 Kf7 28. Nf6 Ne5 29. Ra3 h6 30. Rxa7 Rc1+ 31. Kf2 hxg5 32. Nd5 Rc2+ 33. Kg3 Rb2 34. h3 Ke6 35. Ra3 Re2 36. Nc3 Rd2 37. Nb1 Rc2 38. Rb3 Rxa2 39. Rb6+ Nc6 40. Kh2 g4 41. h4 Re2 42. Rxb7 Rxe4 43. Rb6 Kd7 44. Nc3 Rd4 45. Ne2 Re4 46. Nc3 Rd4 47. Ne2 Re4 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 48. Nc3 1/2-1/2

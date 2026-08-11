@@ -60,11 +60,19 @@ const rows = db
   .all(GAMES + STUDIES * 3) as (Row & { rank: number })[];
 db.close();
 
-/** Plausible names, so the demo does not show strangers' Lichess handles. */
-const WHITE = ['Carlsen, M', 'Nakamura, H', 'Ju Wenjun', 'Firouzja, A', 'Gukesh D', 'Caruana, F',
-  'Nepomniachtchi, I', 'Ding Liren', 'Rapport, R', 'Vachier-Lagrave, M', 'Aronian, L', 'So, W'];
-const BLACK = ['Praggnanandhaa R', 'Giri, A', 'Duda, J-K', 'Abdusattorov, N', 'Erigaisi, A',
-  'Kosteniuk, A', 'Muzychuk, A', 'Vaishali R', 'Tan Zhongyi', 'Niemann, H', 'Keymer, V', 'Wei Yi'];
+/**
+ * INVENTED names, not real players'.
+ *
+ * The first version used grandmasters — Carlsen, Ju Wenjun, Gukesh — over
+ * anonymous games from the reference database. Harmless in a private
+ * fixture, and not harmless on a public website: it puts real people's
+ * names on games they never played, in a product that presents itself as a
+ * record of games. Made-up names cost nothing and claim nothing.
+ */
+const WHITE = ['Alderman, R', 'Bex, N', 'Castellan, J', 'Doyle, F', 'Ekström, P', 'Farrow, K',
+  'Grieve, M', 'Halvorsen, T', 'Ibarra, L', 'Jessel, A', 'Kowal, D', 'Lindqvist, S'];
+const BLACK = ['Marchetti, C', 'Novak, E', 'Oyelaran, B', 'Pereira, V', 'Quinn, H', 'Rasmussen, I',
+  'Sorokin, Y', 'Tavares, M', 'Ueda, K', 'Verhoeven, J', 'Whitlock, A', 'Zahavi, O'];
 const EVENTS = ['Tata Steel Masters', 'Candidates Tournament', 'Norway Chess', 'Sinquefield Cup',
   'FIDE Grand Swiss', 'Club championship', 'Online rapid arena'];
 
@@ -161,7 +169,7 @@ function annotate(row: Row, index: number): { pgn: string; plies: number } | nul
   const date = `2026.${String(1 + (index % 12)).padStart(2, '0')}.${String(1 + (index % 27)).padStart(2, '0')}`;
   const headers = [
     ['Event', pick(EVENTS, index)],
-    ['Site', 'Chess Vault demo'],
+    ['Site', 'Chess Vault demo (sample data — invented players)'],
     ['Date', date],
     ['Round', String(1 + (index % 9))],
     ['White', white],

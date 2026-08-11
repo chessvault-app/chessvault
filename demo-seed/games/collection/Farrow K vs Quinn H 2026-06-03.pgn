@@ -1,0 +1,14 @@
+[Event "Candidates Tournament"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.06.03"]
+[Round "3"]
+[White "Farrow, K"]
+[Black "Quinn, H"]
+[Result "0-1"]
+[WhiteElo "2725"]
+[BlackElo "2600"]
+[ECO "E89"]
+[Opening "King's Indian Defense: Sämisch Variation, Closed Variation, Main Line"]
+
+{King's Indian Defense: Sämisch Variation, Closed Variation, Main Line. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. d4 Nf6 2. c4 g6 3. f3 Bg7 4. e4 d6 5. Nc3 O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Be3 e5 7. Nge2 c6 8. d5 ! cxd5 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... c5 Rb1 Nxe4 {was the alternative — playable, but it hands over the initiative.}) 9. cxd5 a6 10. Qd2 b5 11. g4 h5 ?! 12. g5 Ne8 13. Nc1 Nd7 14. Nd3 Bb7 15. O-O-O Rc8 16. Kb1 Nc5 17. Nxc5 dxc5 18. d6 Qd7 19. h4 Rc6 20. Bh3 Qxd6 21. Qxd6 Nxd6 22. Bd7 Rfc8 23. Bxc6 Rxc6 24. Bxc5 Nc4 25. Rd8+ Kh7 26. b4 Bc8 27. Rhd1 Be6 28. Nd5 a5 29. Nf6+ Bxf6 30. gxf6 Na3+ 31. Kb2 axb4 32. Rc1 Nc4+ 33. Rxc4 Bxc4 34. Bxb4 Rxf6 35. Bd6 Rxf3 36. Bxe5 f6 37. Bc3 Rf2+ 38. Ka3 Rxa2+ 39. Kb4 Rf2 40. Rd7+ Kg8 41. Kc5 Rf3 42. Kb4 Kf8 43. e5 Ke8 44. Rg7 fxe5 45. Bxe5 Rf5 46. Bc3 Bf7 47. Rh7 Rf4+ 48. Kxb5 Rxh4 49. Bf6 Rg4 50. Kc5 Rf4 51. Bd4 Kd7 52. Be5 Ke6 53. Bxf4 Be8 54. Bb8 Bf7 55. Bd6 g5 56. Kd4 Bg6 57. Rg7 Kf5 58. Be7 g4 59. Bh4 Be8 60. Bg3 Bc6 61. Rc7 Bf3 62. Rc5+ {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Kg6 0-1

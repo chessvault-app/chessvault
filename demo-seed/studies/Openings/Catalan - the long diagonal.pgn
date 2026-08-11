@@ -2,43 +2,43 @@
 [ChapterName "Main line"]
 [Date "2026.10.10"]
 [Round "1"]
-[White "Vachier-Lagrave, M"]
-[Black "Praggnanandhaa R"]
+[White "Jessel, A"]
+[Black "Marchetti, C"]
 [Result "0-1"]
-[WhiteElo "2861"]
-[BlackElo "2959"]
-[ECO "C22"]
-[Opening "Center Game: Berger Variation"]
+[WhiteElo "2502"]
+[BlackElo "2528"]
+[ECO "D69"]
+[Opening "Queen's Gambit Declined: Orthodox Defense, Classical Variation"]
 
-{Center Game: Berger Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 e5 2. d4 exd4 3. Qxd4 Nc6 4. Qe3 Nf6 5. Bc4 Bb4+ {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. c3 Ba5 7. Nf3 O-O 8. O-O ! Re8 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Bxc3 Nbd2 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. Qd3 Nxe4 10. Qd5 Re7 11. Ng5 Qe8 ?! 12. Nxe4 Rxe4 13. Bd3 Re5 14. Qf3 Re6 15. Qg3 Ne5 16. Bf5 Rf6 17. Bc2 Bb6 18. Be3 d6 19. Nd2 Bxe3 20. Qxe3 Re6 21. Qg3 Nd7 22. Ba4 Qe7 23. h3 Nc5 24. Bc2 Re2 25. Rad1 Bd7 26. b4 Ba4 27. Bb3 Nxb3 28. axb3 Bd7 29. Nc4 Bb5 30. Na3 Bd7 31. Nc4 Re4 32. Ne3 Bc6 33. Nf5 Qe5 34. Qxe5 Rxe5 35. Nd4 Bd7 36. c4 a6 37. f3 h5 38. Rd2 Rae8 39. Kf2 h4 40. Rc1 g5 41. b5 a5 42. Ne2 b6 43. f4 Rf5 44. Rc3 f6 45. Rd4 Rc5 46. Rcd3 Bc8 47. Nc3 Bb7 48. g3 hxg3+ 49. Rxg3 Kf7 50. Ne2 Rh8 51. fxg5 fxg5 52. Ke1 Rf5 53. Kd2 Kf6 54. Rdd3 Rh4 55. Rg1 a4 56. bxa4 Rxc4 57. Rd4 Rxd4+ 58. Nxd4 Rf2+ 59. Kc3 Bg2 60. Re1 Bxh3 61. Re8 Kf7 62. Ra8 g4 63. Rh8 Bg2 64. Rh7+ Kf6 65. Rxc7 Be4 66. Kb4 g3 67. Rc3 g2 68. Rg3 Rb2+ 69. Kc3 Ra2 70. Rg4 Rxa4 71. Ne2 d5 72. Kb2 Rb4+ 73. Kc1 Rb1+ 74. Kd2 Rxb5 75. Rg8 Rb1 76. Ng3 g1=Q 77. Nxe4+ dxe4 78. Rxg1 Rxg1 79. Ke3 Rd1 80. Kf4 b5 81. Kg4 b4 82. Kh4 Rd3 83. Kh5 Kf5 84. Kh4 b3 85. Kh5 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Rh3# 0-1
+{Queen's Gambit Declined: Orthodox Defense, Classical Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Nf3 Nbd7 5. Bg5 Be7 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. e3 Ne4 7. Bxe7 Qxe7 8. Rc1 ! c6 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Nd2 Ra1 Nb1 {was the alternative — playable, but it hands over the initiative.}) 9. Bd3 Nxc3 10. Rxc3 O-O 11. O-O dxc4 ?! 12. Bxc4 e5 13. Nxe5 Nxe5 14. dxe5 Qxe5 15. f4 Qe7 16. Qc2 Be6 17. Bd3 f5 18. e4 fxe4 19. Bxe4 h6 20. Re3 Qf6 21. Rfe1 Bf7 22. g3 Rfe8 23. Bh7+ Kh8 24. Rxe8+ Rxe8 25. Rxe8+ Bxe8 26. Bf5 Qd4+ 27. Kg2 Bf7 28. Be4 Bxa2 29. Bf3 Bd5 30. Qg6 Qxb2+ 31. Kh3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Bxf3 0-1
 
 [Event "Catalan - the long diagonal: Chapter 2"]
 [ChapterName "The critical sideline"]
 [Date "2026.11.11"]
 [Round "2"]
-[White "Aronian, L"]
-[Black "Kosteniuk, A"]
+[White "Kowal, D"]
+[Black "Rasmussen, I"]
 [Result "1/2-1/2"]
-[WhiteElo "3054"]
-[BlackElo "3031"]
-[ECO "B48"]
-[Opening "Sicilian Defense: Taimanov Variation, Bastrikov Variation, English Attack"]
+[WhiteElo "3058"]
+[BlackElo "3078"]
+[ECO "E54"]
+[Opening "Nimzo-Indian Defense: Normal Variation, Gligoric System, Exchange Variation"]
 
-{Sicilian Defense: Taimanov Variation, Bastrikov Variation, English Attack. Book so far. The plan is the usual one: finish development, then decide which side to open.}
-1. e4 c5 2. Nf3 e6 3. d4 cxd4 4. Nxd4 Nc6 5. Nc3 Qc7 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Be3 a6 7. Qf3 Nf6 8. O-O-O ! Ne5 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... a5 Kb1 a4 {was the alternative — playable, but it hands over the initiative.}) 9. Qg3 b5 10. f4 Neg4 11. Bg1 h5 ?! 12. e5 b4 13. Na4 Nd5 14. h3 Nh6 15. f5 Bb7 16. Bd3 Be7 17. Kb1 h4 18. Qe1 Nf4 19. Nb6 Rd8 20. Nc4 Nxd3 21. cxd3 Bd5 22. Rc1 Bxc4 23. Rxc4 Qa5 24. fxe6 fxe6 25. Bf2 Qd5 26. Qe3 O-O 27. Nf3 b3 28. axb3 Rb8 29. d4 Rb6 30. Rhc1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Nf5 1/2-1/2
+{Nimzo-Indian Defense: Normal Variation, Gligoric System, Exchange Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Bb4 5. e3 O-O {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Bd3 dxc4 7. Bxc4 c5 8. O-O ! cxd4 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. exd4 b6 10. Bg5 Bb7 11. Qe2 Nbd7 ?! 12. Rac1 Bxc3 13. Rxc3 Qb8 14. h3 Rc8 15. Re1 a6 16. Bd3 Rxc3 17. bxc3 b5 18. a4 h6 19. Bxf6 Nxf6 20. axb5 axb5 21. Ne5 Ra5 22. Rb1 Qc7 23. Qc2 Nd5 24. c4 bxc4 25. Qxc4 Ra7 26. Qc5 Qxc5 27. dxc5 f6 28. Nc4 g5 29. Be4 Kg7 30. Ne3 h5 31. h4 gxh4 32. Bxd5 Bxd5 33. Nxd5 exd5 34. c6 Kg6 35. Rc1 Rc7 36. Rc5 f5 37. Rxd5 Rxc6 38. Kh2 Kg5 39. Rd8 Rc2 40. Rg8+ Kf4 41. Rh8 Rxf2 42. Rxh5 h3 43. Kxh3 Rf1 44. g4 fxg4+ 45. Kh2 g3+ 46. Kg2 Ra1 47. Rh8 Rb1 48. Rg8 Ra1 49. Rxg3 Rb1 50. Ra3 Rc1 51. Rh3 Ra1 52. Rh6 Rb1 53. Ra6 Rc1 54. Kf2 Rb1 55. Rh6 Ra1 56. Rf6+ Ke4 57. Kg2 Rb1 58. Rd6 Ra1 59. Rd8 Rb1 60. Kh3 Ra1 61. Rb8 Rc1 62. Kg2 Ra1 63. Kg3 Rc1 64. Rb2 Ra1 65. Rb4+ Kd3 66. Kf4 Rc1 67. Kg5 Ra1 68. Rb7 Rc1 69. Kf6 Ra1 70. Kg7 Rc1 71. Rd7+ Kc2 72. Rd6 Ra1 73. Kf7 Rb1 74. Rh6 Ra1 75. Kg8 Rb1 76. Kf7 Ra1 77. Rb6 Rb1 78. Rxb1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Kxb1 1/2-1/2
 
 [Event "Catalan - the long diagonal: Chapter 3"]
 [ChapterName "A model game"]
 [Date "2026.12.12"]
 [Round "3"]
-[White "So, W"]
-[Black "Keymer, V"]
-[Result "0-1"]
-[WhiteElo "2934"]
-[BlackElo "3015"]
-[ECO "E65"]
-[Opening "King's Indian Defense: Fianchetto Variation, Yugoslav Variation, Exchange Line"]
+[White "Lindqvist, S"]
+[Black "Whitlock, A"]
+[Result "1/2-1/2"]
+[WhiteElo "2996"]
+[BlackElo "2972"]
+[ECO "D49"]
+[Opening "Semi-Slav Defense: Meran Variation, Blumenfeld Variation"]
 
-{King's Indian Defense: Fianchetto Variation, Yugoslav Variation, Exchange Line. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. d4 Nf6 2. Nf3 g6 3. g3 Bg7 4. Bg2 O-O 5. O-O d6 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. c4 c5 7. Nc3 Nc6 8. dxc5 ! dxc5 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. Bf4 Nh5 10. Be3 b6 11. Qc1 Bb7 ?! 12. Rd1 Qe8 13. Bh6 Rd8 14. Qe3 Bxh6 15. Qxh6 f6 16. Ne1 Ng7 17. Rxd8 Nxd8 18. Rd1 Nf7 19. Qd2 Bxg2 20. Nxg2 Nd6 21. b3 Qf7 22. Qd5 Qxd5 23. Nxd5 Kf7 24. f3 Ngf5 25. Kf2 Nd4 26. Nc3 Rd8 27. Nf4 e6 28. g4 Ke7 29. h4 Nc6 30. g5 f5 31. h5 Rg8 32. hxg6 hxg6 33. Rh1 Nf7 34. Rh7 Nd8 35. Nb5 a6 36. Nc3 Kd6 37. Na4 Kc6 38. Nxe6 Nxe6 39. Rxf7 b5 40. Rf6 Re8 41. Nc3 bxc4 42. bxc4 Kd6 43. Rxg6 Ke5 44. e3 f4 45. Ne4 Rb8 46. Rxe6+ Kxe6 47. exf4 Rb2+ 48. Kg3 Rxa2 49. Nxc5+ Kf5 50. Nb3 a5 51. c5 Kg6 52. c6 Rc2 53. Nxa5 Rc5 54. Nb3 Rxc6 55. Nd4 Rc1 56. Ne2 Re1 57. Nc3 Ra1 58. Nd5 Rg1+ 59. Kf2 Ra1 60. Ne3 Ra2+ 61. Kg3 Ra1 62. Ng2 Rg1 63. Kf2 Ra1 64. Nh4+ Kh5 65. Nf5 Kg6 66. Ne7+ Kf7 67. Nc6 Kg6 68. Kg2 Kf5 69. Ne7+ Kxf4 70. g6 Ra5 71. Kh3 Rg5 72. Kh4 Rg1 73. Kh3 Ke5 74. f4+ Kxf4 75. Nd5+ Ke5 76. Ne3 Rxg6 77. Ng4+ Kf4 78. Nf2 Kf3 79. Kh4 Kxf2 80. Kh5 Rg3 81. Kh4 Kf3 82. Kh5 Rg4 83. Kh6 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Kf4 0-1
+{Semi-Slav Defense: Meran Variation, Blumenfeld Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. e3 Nbd7 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Bd3 dxc4 7. Bxc4 b5 8. Bd3 ! a6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... b4 Rb1 b3 {was the alternative — playable, but it hands over the initiative.}) 9. e4 c5 10. e5 cxd4 11. Nxb5 axb5 ?! 12. exf6 gxf6 13. O-O Qb6 14. Qe2 b4 15. Bf4 Bc5 16. Nd2 Bb7 17. a4 e5 18. Ne4 Rg8 19. a5 Qe6 20. Bg3 Be7 21. a6 Bd5 22. a7 f5 23. Ra6 Nb6 24. Nd2 Kf8 25. Bxf5 Qxf5 26. Rxb6 Rxa7 27. Rb8+ Kg7 28. Bxe5+ f6 29. Bxd4 Rd7 30. Rxg8+ Kxg8 31. Ra1 h5 32. Be3 Qg6 33. f3 Qc2 34. Qb5 Bc6 35. Qc4+ Qxc4 36. Nxc4 Kf7 37. Ra5 Rd5 38. Ra7 Rd7 39. Ra5 Rd5 40. Ra7 Rd7 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 41. Ra5 1/2-1/2

@@ -1,0 +1,14 @@
+[Event "FIDE Grand Swiss"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.05.05"]
+[Round "5"]
+[White "Ekström, P"]
+[Black "Zahavi, O"]
+[Result "0-1"]
+[WhiteElo "2736"]
+[BlackElo "2902"]
+[ECO "E41"]
+[Opening "Nimzo-Indian Defense: Rubinstein System"]
+
+{Nimzo-Indian Defense: Rubinstein System. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 c5 5. Nf3 O-O {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bd2 cxd4 7. Nxd4 a6 8. Qc2 ! Qc7 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. a3 Be7 10. Be2 b6 11. Bf3 Bb7 ?! 12. Bxb7 Qxb7 13. O-O Rc8 14. Qd3 Nc6 15. Nxc6 Rxc6 16. b3 Rd8 17. e4 d6 18. h3 Nd7 19. Qe2 Rdc8 20. a4 Bf6 21. Rac1 Nc5 22. Rb1 R6c7 23. Rfe1 g6 24. Na2 d5 25. e5 Be7 26. cxd5 exd5 27. Nb4 Ne6 28. Qxa6 Qxa6 29. Nxa6 Rc2 30. Red1 d4 31. Bb4 Bh4 32. g3 Bg5 33. Bd6 h5 34. h4 Bh6 35. Nb4 Re2 36. Kf1 Rd2 37. Rxd2 Bxd2 38. Nd5 Rc2 39. Nxb6 d3 40. Nc4 Bc3 41. Rd1 Bd4 42. Rd2 Rc3 43. a5 Rxb3 44. a6 Rc3 45. Na5 Rc1+ 46. Kg2 Ra1 47. Bb4 Bc5 48. Bxc5 Rxa5 49. Bb4 Rxa6 50. Rxd3 Ra8 51. Re3 Rd8 52. Bd6 Re8 53. Re4 Ng7 54. g4 hxg4 55. Rxg4 Nf5 56. h5 Kh7 57. hxg6+ fxg6 58. Rc4 Kg7 59. Rc7+ Kg8 60. Kf3 Nd4+ 61. Kf4 Ne6+ 62. Kg4 Nxc7 63. Bxc7 Kf7 64. Bd6 Ke6 65. f4 Rg8 66. Kg5 Rg7 67. Kh6 Rg8 68. Kh7 Ra8 69. Kxg6 Rg8+ 70. Kh5 Rg1 71. Kh4 Kf5 72. Kh5 {The rest is technique, which is another way of saying it still has to be played accurately.} Rh1# 0-1

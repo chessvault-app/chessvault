@@ -1,0 +1,14 @@
+[Event "Sinquefield Cup"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.01.25"]
+[Round "7"]
+[White "Alderman, R"]
+[Black "Pereira, V"]
+[Result "1/2-1/2"]
+[WhiteElo "2949"]
+[BlackElo "2855"]
+[ECO "C18"]
+[Opening "French Defense: Winawer Variation, Portisch-Hook Variation"]
+
+{French Defense: Winawer Variation, Portisch-Hook Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 c5 5. a3 Bxc3+ {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. bxc3 Qa5 7. Bd2 Qa4 8. h4 ! Nc6 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Qxc2 Rb1 Qxb1 {was the alternative — playable, but it hands over the initiative.}) 9. Qg4 Kf8 10. h5 h6 11. Qf4 Qxc2 ?! 12. Rc1 Qe4+ 13. Qxe4 dxe4 14. Ne2 f6 15. Rh4 fxe5 16. dxc5 Nf6 17. Ng3 Ne7 18. Nxe4 Nf5 19. Nxf6 Nxh4 20. Ng4 e4 21. Rb1 g6 22. Bf4 gxh5 23. Nf6 b6 24. c6 Ba6 25. Nd7+ Ke8 26. Be5 Bxf1 27. Kxf1 Ng6 28. Bxh8 Nxh8 29. c4 Rc8 30. c5 Rxc6 31. cxb6 axb6 32. Nxb6 Ng6 33. a4 Nf4 34. a5 Nd5 35. Nxd5 exd5 36. Rd1 Rd6 37. Ra1 Ra6 38. Ke2 d4 39. Ra4 d3+ 40. Ke3 Kf7 41. Kxe4 d2 42. Rd4 Rxa5 43. Rxd2 h4 44. Kf3 h5 45. Rd4 Rf5+ 46. Ke2 h3 47. gxh3 {The rest is technique, which is another way of saying it still has to be played accurately.} h4 1/2-1/2

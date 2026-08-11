@@ -1,0 +1,14 @@
+[Event "Candidates Tournament"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.11.23"]
+[Round "5"]
+[White "Kowal, D"]
+[Black "Rasmussen, I"]
+[Result "1/2-1/2"]
+[WhiteElo "2960"]
+[BlackElo "2969"]
+[ECO "C39"]
+[Opening "King's Gambit Accepted: Kieseritzky Gambit, Berlin Defense"]
+
+{King's Gambit Accepted: Kieseritzky Gambit, Berlin Defense. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. e4 e5 2. f4 exf4 3. Nf3 g5 4. h4 g4 5. Ne5 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nxg4 Nc6 7. Nc3 Nd4 8. Nxf6+ ! Qxf6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Ke7 Rb1 Nxc2+ {was the alternative — playable, but it hands over the initiative.}) 9. d3 c6 10. Ne2 Ne6 11. Qd2 d5 ?! 12. Nxf4 dxe4 13. dxe4 Rg8 14. Nd3 Rg4 15. Qf2 Rxe4+ 16. Be2 Be7 17. Qxf6 Bxf6 18. Nf2 Rxh4 19. Rxh4 Bxh4 20. Be3 Nc7 21. O-O-O Bf5 22. Rh1 Bf6 23. Bf3 a6 24. Ne4 Be7 25. Bf4 O-O-O 26. Bg5 Bxg5+ 27. Nxg5 f6 28. Be4 Bg6 29. Bxg6 hxg6 30. Nf7 Rg8 31. Nd6+ Kb8 32. Rh7 f5 33. Rf7 Rd8 34. Nc4 Nd5 35. Rg7 Nf4 36. b3 b5 37. Ne5 Rd6 38. Rg8+ Kc7 39. Rg7+ Kc8 40. Rg8+ Rd8 41. Rg7 Rd6 42. Rg8+ Kc7 43. Rg7+ {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Kb8 1/2-1/2

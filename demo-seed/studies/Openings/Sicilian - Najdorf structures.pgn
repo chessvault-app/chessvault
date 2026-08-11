@@ -2,43 +2,43 @@
 [ChapterName "Main line"]
 [Date "2026.04.04"]
 [Round "4"]
-[White "Firouzja, A"]
-[Black "Muzychuk, A"]
-[Result "1-0"]
-[WhiteElo "2734"]
-[BlackElo "2851"]
-[ECO "D22"]
-[Opening "Queen's Gambit Accepted: Alekhine Defense, Haberditz Variation"]
+[White "Doyle, F"]
+[Black "Sorokin, Y"]
+[Result "1/2-1/2"]
+[WhiteElo "2784"]
+[BlackElo "3079"]
+[ECO "C66"]
+[Opening "Ruy Lopez: Berlin Defense, Improved Steinitz Defense"]
 
-{Queen's Gambit Accepted: Alekhine Defense, Haberditz Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
-1. d4 d5 2. c4 dxc4 3. Nf3 a6 4. e3 b5 5. a4 Bb7 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. axb5 axb5 7. Rxa8 Bxa8 8. b3 ! Nf6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... cxb3 Nbd2 b2 {was the alternative — playable, but it hands over the initiative.}) 9. bxc4 bxc4 10. Bxc4 e6 11. O-O Bd6 ?! 12. Nc3 O-O 13. Qe2 c5 14. Rd1 cxd4 15. Nxd4 Qc7 16. h3 Rc8 17. Ncb5 Qb7 18. Nf3 Bf8 19. Nd6 Bxd6 20. Rxd6 Qc7 21. Ba3 Bxf3 22. gxf3 Nbd7 23. Bb5 Ne5 24. f4 Ng6 25. Rc6 Qb8 26. Rxc8+ Qxc8 27. Qc4 Qd8 28. Bb2 h6 29. Bxf6 Qxf6 30. Qc8+ Kh7 31. Bd3 Qh4 32. Kg2 Qf6 33. Qc5 Kg8 34. Qc8+ Nf8 35. Qc7 g6 36. Qe5 Qe7 37. Qb8 Kg7 38. Qe5+ Kh7 39. Qb8 Qc5 40. Qe5 Qa3 41. Be4 Qa4 42. Bf3 Qd7 43. Qf6 Kg8 44. h4 Qd6 45. h5 Nh7 46. Qh4 g5 47. fxg5 Nxg5 48. Qg4 f5 49. Qh4 Kf7 50. Qf4 Qc5 51. Bb7 Qb6 52. Ba8 Qd8 53. Bb7 Qe7 54. Ba8 Kf6 55. Qd4+ e5 56. Qb6+ Qe6 57. Qd8+ Kf7 58. Bd5 Qxd5+ 59. Qxd5+ Kf6 60. Qd6+ Ne6 61. f4 exf4 62. exf4 Kf7 63. Qe5 Ke7 64. Qxf5 Ng7 65. Qe5+ Kf7 66. f5 Ne8 67. Qe6+ Kf8 68. Qg6 Ke7 69. Qe6+ Kf8 70. Qxh6+ Ke7 71. Qg6 Kd8 72. h6 Nd6 73. h7 Nc4 74. Qg8+ Kc7 75. Qg7+ Kb6 76. h8=Q Kc5 77. Qh3 Ne3+ 78. Qxe3+ Kb5 79. Qgd4 Kc6 80. Qec3+ Kb7 81. Qdb4+ Ka8 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 82. Qca3# 1-0
+{Ruy Lopez: Berlin Defense, Improved Steinitz Defense. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. O-O d6 5. c3 Nxe4 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. d4 Bd7 7. Re1 Nf6 8. Bxc6 ! Bxc6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... e4 Nbd2 e3 {was the alternative — playable, but it hands over the initiative.}) 9. dxe5 dxe5 10. Qxd8+ Kxd8 11. Nxe5 Be8 ?! 12. Bg5 h6 13. Bxf6+ gxf6 14. Ng4 Be7 15. Ne3 c6 16. Nf5 Bf8 17. Nd2 Bd7 18. Nd4 Rg8 19. Ne4 Rg6 20. h4 h5 21. Ne2 Kc7 22. Nf4 Rh6 23. Rad1 Re8 24. Rd4 Bf5 25. Kf1 Re5 26. Ng3 Rxe1+ 27. Kxe1 Be6 28. Ngxh5 Bc5 29. Re4 Bxa2 30. g3 Bb1 31. Ra4 Bf5 32. f3 Kb6 33. Kd2 Bc8 34. g4 Bd6 35. Ke3 a5 36. Ra1 Kb5 37. b3 Be5 38. c4+ Kb4 39. Nd3+ Kxb3 40. Rxa5 Bc3 41. Ra8 Be6 42. Nc5+ Kxc4 43. Nxb7 Bd4+ 44. Ke4 f5+ 45. Kf4 c5 46. Rd8 fxg4 47. fxg4 Bb2 48. Nd6+ Kb3 49. Rb8+ Ka2 50. Nf5 Bxf5 51. Kxf5 c4 52. Nf4 Rxh4 53. Nd5 Rh2 54. g5 Rd2 55. Rb5 c3 56. Nxc3+ Bxc3 57. Rb7 Rf2+ 58. Ke4 Bd2 59. Rb5 Bc1 60. Rf5 Rxf5 61. Kxf5 Kb3 62. g6 fxg6+ {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 63. Kxg6 1/2-1/2
 
 [Event "Sicilian - Najdorf structures: Chapter 2"]
 [ChapterName "The critical sideline"]
 [Date "2026.05.05"]
 [Round "5"]
-[White "Gukesh D"]
-[Black "Wei Yi"]
+[White "Ekström, P"]
+[Black "Zahavi, O"]
 [Result "1/2-1/2"]
-[WhiteElo "2770"]
-[BlackElo "2781"]
-[ECO "C27"]
-[Opening "Vienna Game: Frankenstein-Dracula Variation"]
+[WhiteElo "2995"]
+[BlackElo "3016"]
+[ECO "A84"]
+[Opening "Dutch Defense: Classical Variation"]
 
-{Vienna Game: Frankenstein-Dracula Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
-1. e4 e5 2. Nc3 Nf6 3. Bc4 Nxe4 4. Nxe4 d5 5. Bb5+ c6 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bd3 dxe4 7. Bxe4 Nd7 8. d3 ! Nf6 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... c5 Rb1 c4 {was the alternative — playable, but it hands over the initiative.}) 9. Bf3 Bc5 10. Ne2 Bg4 11. Nc3 Qd7 ?! 12. O-O O-O 13. Ne4 Nxe4 14. dxe4 Qxd1 15. Rxd1 Be6 16. Be3 Bxe3 17. fxe3 Rfd8 18. Kf2 Kf8 19. a3 Ke7 20. Be2 f6 21. Ke1 a5 22. Rd3 g6 23. Rad1 f5 24. exf5 gxf5 25. g3 Bd5 26. c4 Be4 27. Rxd8 Rxd8 28. Rxd8 Kxd8 29. c5 Kc7 30. b4 axb4 31. axb4 b6 32. Kd2 bxc5 33. bxc5 Kd7 34. Bc4 h6 35. Bg8 Ke7 36. Bh7 Kf7 37. g4 Kf6 38. h4 Ke6 39. Kc3 Kd5 40. Kb4 Ke6 41. Ka5 Bb1 42. Kb6 fxg4 43. Bxb1 Kd5 44. Bg6 g3 45. Be8 e4 46. Bxc6+ Ke5 47. Bxe4 Kxe4 48. c6 g2 49. c7 g1=Q 50. c8=Q Qb1+ 51. Ka7 Qa2+ 52. Kb8 Qb3+ 53. Ka7 Qa3+ 54. Kb6 Qb3+ 55. Ka5 Qa3+ 56. Kb5 Qb3+ 57. Ka6 Qa3+ 58. Kb7 Qb3+ 59. Ka7 Qa3+ 60. Kb8 Qb3+ 61. Ka8 Qa3+ 62. Kb7 Qb3+ 63. Ka6 Qa3+ 64. Kb6 Qb3+ 65. Ka5 Qa3+ 66. Kb5 Qb3+ {The rest is technique, which is another way of saying it still has to be played accurately.} 67. Ka6 1/2-1/2
+{Dutch Defense: Classical Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. c4 f5 2. d4 e6 3. Nf3 Nf6 4. g3 Be7 5. Qc2 c5 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. dxc5 Bxc5 7. Bg2 d6 8. O-O ! O-O {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... Bxf2+ Rxf2 f4 {was the alternative — playable, but it hands over the initiative.}) 9. Nc3 Nc6 10. e4 fxe4 11. Nxe4 Nxe4 ?! 12. Qxe4 h6 13. Nh4 Qb6 14. Be3 Ne5 15. Rae1 Bd7 16. Bxc5 Qxc5 17. Qxb7 Rad8 18. b3 g5 19. Rxe5 dxe5 20. Ng6 Bc8 21. Ne7+ Kh8 22. Ng6+ Kg8 23. Qe4 Rf5 24. Bh3 Re8 25. Bg2 Rd8 26. Bh3 Re8 27. b4 Qc7 28. Bg2 Rd8 29. g4 Rd4 30. Qe2 Rf6 31. Nxe5 Bb7 32. Qe3 Rff4 33. Bxb7 Qxb7 34. f3 Qxb4 35. Ng6 Qxc4 36. Qe5 Kh7 37. Nxf4 Rxf4 38. Rf2 Qd4 39. Qc7+ Kg6 40. Qc2+ Kg7 41. Kg2 Qd5 42. Qc7+ Kg6 43. Qc2+ Kg7 44. Qc7+ Kg6 45. h3 a5 46. Qc2+ Kg7 47. Qc7+ Kg8 48. Qc3 e5 49. Qc8+ Kf7 50. Qc2 Kg7 51. Qc7+ Kg8 52. Qb8+ Kf7 53. Qa7+ Kg6 54. Qb6+ Kh7 55. Qc7+ Kg8 56. Qc8+ Kg7 57. Qc3 Rc4 58. Qb2 Rf4 59. Qc3 Rc4 60. Qb2 Rb4 61. Qc3 Rf4 62. Re2 Kf6 63. Qa3 Rb4 64. Qc3 Rd4 65. Rc2 Rd3 66. Qc6+ Qxc6 67. Rxc6+ Kg7 68. Re6 Rd2+ 69. Kg3 Rxa2 70. Rxe5 a4 71. h4 gxh4+ 72. Kxh4 a3 73. Kg3 Ra1 74. Ra5 a2 75. Ra7+ Kf6 76. Kg2 Ke5 77. Ra4 Kd5 78. f4 Ke6 79. f5+ Ke5 80. Ra6 Rb1 81. Rxa2 Kf4 82. Rf2+ Kg5 83. Kf3 h5 84. gxh5 Kxf5 85. Rh2 Kf6 86. Ke4 Kg7 87. h6+ Kh8 88. h7 Rb8 89. Kd5 Kg7 90. Rh1 Rh8 91. Ke5 Rf8 92. Ke6 Rh8 93. Rg1+ Kf8 94. Rh1 Kg7 95. Rg1+ Kf8 96. Rf1+ Kg7 97. Rh1 Rf8 98. Ke7 Rc8 99. h8=Q+ Rxh8 100. Rxh8 {The rest is technique, which is another way of saying it still has to be played accurately.} Kxh8 1/2-1/2
 
 [Event "Sicilian - Najdorf structures: Chapter 3"]
 [ChapterName "A model game"]
 [Date "2026.06.06"]
 [Round "6"]
-[White "Caruana, F"]
-[Black "Erigaisi, A"]
-[Result "1/2-1/2"]
-[WhiteElo "2997"]
-[BlackElo "2897"]
-[ECO "B62"]
-[Opening "Sicilian Defense: Richter-Rauzer Variation"]
+[White "Farrow, K"]
+[Black "Quinn, H"]
+[Result "0-1"]
+[WhiteElo "2905"]
+[BlackElo "2820"]
+[ECO "A14"]
+[Opening "English Opening: Agincourt Defense, Neo-Catalan Declined"]
 
-{Sicilian Defense: Richter-Rauzer Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
-1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Nc6 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Bg5 e6 7. Qd3 Bd7 8. O-O-O ! a6 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Nb4 Kb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. f4 h6 10. Bh4 g5 11. fxg5 Ng4 ?! 12. Nf3 Nge5 13. Qe2 Be7 14. Kb1 hxg5 15. Bg3 Qa5 16. Qe3 O-O-O 17. Be2 Nxf3 18. Bxf3 Ne5 19. Be2 Bc6 20. Rhf1 f6 21. Qg1 Kb8 22. Bf2 Nd7 23. Bg4 f5 24. exf5 exf5 25. Bxf5 Rhf8 26. Bxd7 Rxd7 27. Bb6 Rxf1 28. Rxf1 Qe5 29. Re1 Qh8 30. Qe3 d5 31. Bd4 Qc8 32. Ne2 Bd6 33. Be5 Qc7 34. Nd4 Bxe5 35. Qxe5 Qxe5 36. Rxe5 Rf7 37. b3 g4 38. Kb2 Rh7 39. Rg5 Bd7 40. Rxd5 Bc8 41. Ne2 Rxh2 42. Nf4 Rh1 43. Rg5 Rf1 44. Nh5 Rf2 45. g3 Bf5 46. Nf4 Bxc2 47. Kc3 Bd1 48. Kd4 Rxa2 49. Nd5 Bxb3 50. Nb6 Bd1 51. Rg8+ Ka7 52. Nc8+ Kb8 53. Nb6+ Kc7 54. Nd5+ Kd6 55. Rg6+ Kd7 56. Rg7+ Kd6 57. Rg6+ Kd7 58. Rg7+ Ke6 59. Nf4+ Kf6 60. Rxb7 Ra4+ 61. Ke3 Bf3 62. Rh7 Ra3+ 63. Kd4 Ra4+ 64. Ke3 Re4+ 65. Kd3 a5 66. Rh6+ Kf7 67. Ra6 a4 68. Kc3 Rxf4 69. gxf4 g3 70. Rxa4 g2 71. Ra1 Be2 72. Rg1 Bf1 73. Kd4 Kf6 74. Ke4 Ke6 75. f5+ Kf6 76. Kf4 Kf7 77. Ke5 Ke7 78. f6+ Kf7 79. Kf5 Kf8 80. Kg6 Bd3+ 81. Kh6 Bf1 82. Kg5 Kf7 83. Kf5 Kf8 84. Ke6 Bc4+ 85. Kd6 Bf1 86. Ke5 Kf7 87. Ke4 Kxf6 88. Kf4 Ke6 89. Ke3 Kf5 90. Kf2 Kf4 91. Ke1 Kf3 92. Kd2 Kf2 93. Rxg2+ {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Bxg2 1/2-1/2
+{English Opening: Agincourt Defense, Neo-Catalan Declined. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. c4 Nf6 2. g3 e6 3. Bg2 d5 4. Nf3 Be7 5. O-O O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. d3 b6 7. cxd5 Nxd5 8. Nc3 ! Bb7 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Nxc3 Rb1 Nxb1 {was the alternative — playable, but it hands over the initiative.}) 9. Bd2 c5 10. d4 Na6 11. Rc1 Rc8 ?! 12. Qa4 Nxc3 13. Bxc3 cxd4 14. Nxd4 Bxg2 15. Kxg2 Nc5 16. Qc2 Qd5+ 17. Kg1 Bf6 18. Rfd1 Qxa2 19. Ra1 Qc4 20. Rxa7 Rfd8 21. e3 Qd5 22. Raa1 Qe4 23. Qxe4 Nxe4 24. Be1 h5 25. f3 Nc5 26. Bc3 g5 27. Kf2 g4 28. Ke2 Kg7 29. Rf1 gxf3+ 30. Rxf3 Ne4 31. Raf1 e5 32. Nf5+ Kg6 33. Nh4+ Bxh4 34. gxh4 f6 35. Rc1 Rd5 36. Rff1 Rb5 37. Rfd1 Kf5 38. Rf1+ Ke6 39. Rfd1 Rc6 40. Kf3 Kf5 41. Be1 Rbc5 42. Rxc5 Rxc5 43. Rd3 Rc2 44. Bg3 Nd2+ {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 45. Ke2 0-1

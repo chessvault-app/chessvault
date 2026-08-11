@@ -1,0 +1,14 @@
+[Event "Club championship"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.08.20"]
+[Round "2"]
+[White "Halvorsen, T"]
+[Black "Oyelaran, B"]
+[Result "1-0"]
+[WhiteElo "3037"]
+[BlackElo "2588"]
+[ECO "E75"]
+[Opening "King's Indian Defense: Averbakh Variation, Main Line"]
+
+{King's Indian Defense: Averbakh Variation, Main Line. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6 5. Be2 O-O {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Bg5 c5 7. d5 e6 8. Qd2 ! Re8 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... exd5 Rb1 dxc4 {was the alternative — playable, but it hands over the initiative.}) 9. Nf3 exd5 10. exd5 Bg4 11. O-O Bxf3 ?! 12. Bxf3 Nbd7 13. h3 a6 14. a4 Qa5 15. Qc2 h5 16. Bd2 Qc7 17. g3 Re7 18. Rae1 Rxe1 19. Rxe1 Re8 20. Rxe8+ Nxe8 21. b3 Bd4 22. Kg2 Qb8 23. Bd1 Qd8 24. Ne2 Bf6 25. a5 Ng7 26. g4 Bg5 27. f4 Bh4 28. Qd3 Qe7 29. Bc2 Nf8 30. Ng3 Bxg3 31. Kxg3 f5 32. Qe3 Qxe3+ 33. Bxe3 Kf7 34. Kh4 hxg4 35. hxg4 Nh7 36. Bc1 Nf6 37. gxf5 gxf5 38. Kg5 Ne4+ 39. Bxe4 fxe4 40. Be3 Ne8 41. Kf5 Ng7+ 42. Kxe4 Kf6 43. Bd2 Nh5 44. Be1 Kg6 45. Bh4 Kg7 46. Kf5 Kf7 47. Kg4 Ng7 48. f5 Kf8 49. Bd8 Ne8 50. f6 Kg8 51. Kf5 b5 52. axb6 a5 53. Kg6 a4 54. b7 a3 55. Be7 Kh8 56. f7 a2 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 57. fxe8=Q# 1-0

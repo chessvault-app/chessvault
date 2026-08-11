@@ -1,0 +1,14 @@
+[Event "Club championship"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.03.27"]
+[Round "9"]
+[White "Castellan, J"]
+[Black "Novak, E"]
+[Result "1-0"]
+[WhiteElo "3035"]
+[BlackElo "2979"]
+[ECO "B36"]
+[Opening "Sicilian Defense: Accelerated Dragon, Maróczy Bind"]
+
+{Sicilian Defense: Accelerated Dragon, Maróczy Bind. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. e4 c5 2. Nf3 Nc6 3. d4 cxd4 4. Nxd4 g6 5. c4 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nc3 d6 7. Be2 Bg7 8. Be3 ! O-O {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. O-O Nxd4 10. Bxd4 Be6 11. f4 Rc8 ?! 12. b3 Qa5 13. a3 Bg4 14. e5 dxe5 15. fxe5 Bxe2 16. Qxe2 Nd7 17. Nd5 Kh8 18. Bc3 Qa6 19. Rad1 Qe6 20. Qe3 Nc5 21. Rf3 Rfd8 22. Bd4 b6 23. Rdf1 Rf8 24. a4 Kg8 25. Kh1 h5 26. h3 Kh7 27. Qe1 Bh6 28. Bf2 Nxb3 29. Rxb3 Rxc4 30. Rd3 Rfc8 31. Nc3 Rf4 32. Nb5 Bg7 33. Bg3 Rxf1+ 34. Qxf1 Qc4 35. Qd1 Qc1 36. Nxa7 Rc4 37. Qxc1 Rxc1+ 38. Kh2 g5 39. Re3 Kg6 40. h4 Bh6 41. Re4 Kf5 42. hxg5 Bxg5 43. Rb4 Be3 44. Rh4 Kg6 45. Nb5 Bg1+ 46. Kh3 Be3 47. Bh2 Rd1 48. Rc4 Bf2 49. Rc2 Be3 50. Rc6+ Kf5 51. Rc3 Ke4 52. Rb3 Re1 53. Rb4+ Kd3 54. Rh4 Ra1 55. Nc7 Bc5 56. e6 fxe6 57. Nxe6 Bf2 58. Rxh5 Rxa4 59. g4 Be3 60. Bg3 Re4 61. Nc7 Ke2 62. Nd5 Bd4 63. g5 b5 64. g6 b4 65. Nxb4 Re6 66. Nd5 Kf3 67. Nf4 Rc6 68. Rb5 Rc8 69. Rb3+ Ke4 70. Kg4 Rg8 71. Rb4 e5 72. Bf2 Rf8 73. Ne6 Rxf2 74. Ng5+ Kd3 75. g7 Bc3 76. Rb3 e4 77. g8=Q Rg2+ 78. Kh5 Rb2 79. Rxb2 Bxb2 80. Nxe4 Bc1 81. Qd5+ Ke3 82. Qc4 Ba3 83. Kg4 Be7 84. Nc3 Bd8 85. Qe4+ Kd2 86. Na2 Bb6 87. Kf3 Be3 88. Qc4 Bg1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 89. Qe2# 1-0

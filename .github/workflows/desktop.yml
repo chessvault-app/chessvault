@@ -1,0 +1,75 @@
+# Build the desktop app for Windows and macOS on GitHub's own machines.
+#
+# The macOS build is the point: electron-builder cannot produce a dmg from
+# Linux or Windows, so shipping for Mac has meant owning a Mac. GitHub hosts
+# macOS runners, so it does not any more.
+#
+# This builds and uploads installers as workflow artifacts. It does NOT
+# publish them to the update feed — that is scripts/release.sh, which also
+# deploys the server, because in remote mode the desktop app runs the
+# SERVER's web build and an installer published without a matching deploy
+# leaves the two disagreeing about what version this is.
+#
+# So: use this to get a Mac build you cannot make locally, and to prove both
+# platforms still compile. Publishing stays one deliberate act.
+name: desktop
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  package:
+    strategy:
+      # Don't cancel the other platform when one fails: knowing Windows is
+      # fine while macOS is broken is more useful than one red X.
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            script: desktop:package
+            artifact: windows-installer
+            # NSIS installer, its blockmap, and the feed electron-updater reads.
+            files: |
+              release/installer/*.exe
+              release/installer/*.blockmap
+              release/installer/latest.yml
+          - os: macos-latest
+            script: desktop:package:mac
+            artifact: macos-installer
+            files: |
+              release/installer/*.dmg
+              release/installer/*.zip
+              release/installer/latest-mac.yml
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # The engine is copied from node_modules rather than downloaded, so
+      # this needs no network beyond the install above.
+      - run: npm run setup:engine
+
+      # The build refuses to run without an update URL, because an installer
+      # built with an empty address can never update and gives no clue why.
+      # A workflow build is not published, so the value only has to be a real
+      # URL — the vars entry is there for when it should point somewhere.
+      - name: Package
+        env:
+          CHESS_UPDATE_URL: ${{ vars.CHESS_UPDATE_URL || 'https://example.invalid/updates' }}
+        run: npm run ${{ matrix.script }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.files }}
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,14 @@
+[Event "Online rapid arena"]
+[Site "Chess Vault demo (sample data — invented players)"]
+[Date "2026.07.07"]
+[Round "7"]
+[White "Grieve, M"]
+[Black "Verhoeven, J"]
+[Result "1/2-1/2"]
+[WhiteElo "3001"]
+[BlackElo "2963"]
+[ECO "A31"]
+[Opening "English Opening: Symmetrical Variation, Anti-Benoni Variation"]
+
+{English Opening: Symmetrical Variation, Anti-Benoni Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. c4 c5 2. Nf3 Nf6 3. d4 cxd4 4. Nxd4 g6 5. g3 h5 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. h3 d5 7. Bg2 e5 8. Nb3 ! Bb4+ {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... dxc4 N1d2 cxb3 {was the alternative — playable, but it hands over the initiative.}) 9. Bd2 Nc6 10. cxd5 Nxd5 11. Bxb4 Ndxb4 ?! 12. Nc3 Bf5 13. O-O Qxd1 14. Rfxd1 Bc2 15. Rd2 Bxb3 16. axb3 Rd8 17. Bxc6+ Nxc6 18. Rxd8+ Kxd8 19. b4 Nxb4 20. Rxa7 Kc7 21. Ra5 Nc6 22. Rb5 Ra8 23. Nd5+ Kd6 24. Ne3 Kc7 25. Nd5+ Kd6 26. Nc3 Kc7 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 27. Nd5+ 1/2-1/2

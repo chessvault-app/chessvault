@@ -232,6 +232,9 @@ npm run desktop:package  # Windows 설치 프로그램
 
 ## 라이선스
 
+함께 배포되는 제3자 코드·데이터·자산과 그 조건, 그리고 아직 확인되지 않은
+항목은 [THIRD-PARTY.md](THIRD-PARTY.md)에 정리되어 있습니다.
+
 이 프로젝트는 **GPL-3.0**을 따릅니다([LICENSE](LICENSE) 참고). 사실상
 동봉한 의존성이 선택을 대신했습니다. Stockfish와 Stockfish.js가
 GPLv3이고, `chessops`와 `chessground`는 AGPL/GPL로 사정이 같습니다.
