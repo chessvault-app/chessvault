@@ -460,11 +460,23 @@ function AppearanceCard() {
 
 // --- Sound ---------------------------------------------------------------
 
-/** Numbered takes, or the rotating option — see MOVE_SOUNDS for the order. */
-const soundOption = ({ id, take }: SoundChoice): { value: string; label: string } => ({
-  value: id,
-  label: take === null ? t('Rotate through all') : t('Take {n}', { n: take }),
-});
+/**
+ * Numbered options, or the rotating one — see MOVE_SOUNDS for the order.
+ *
+ * Named per kind ("Move 3", "Capture 3") rather than a bare number, so a
+ * choice read aloud or written down still says which sound it is.
+ */
+const soundOption =
+  (kind: 'Move' | 'Capture') =>
+  ({ id, take }: SoundChoice): { value: string; label: string } => ({
+    value: id,
+    label:
+      take === null
+        ? t('Rotate through all')
+        : kind === 'Move'
+          ? t('Move {n}', { n: take })
+          : t('Capture {n}', { n: take }),
+  });
 
 
 /**
@@ -519,7 +531,7 @@ function SoundCard() {
             previewSound('move', v);
           }}
           ariaLabel={t('Move sound')}
-          groups={[{ options: MOVE_SOUNDS.map(soundOption) }]}
+          groups={[{ options: MOVE_SOUNDS.map(soundOption('Move')) }]}
         />
       </Field>
 
@@ -531,13 +543,13 @@ function SoundCard() {
             previewSound('capture', v);
           }}
           ariaLabel={t('Capture sound')}
-          groups={[{ options: CAPTURE_SOUNDS.map(soundOption) }]}
+          groups={[{ options: CAPTURE_SOUNDS.map(soundOption('Capture')) }]}
         />
       </Field>
 
       <p className="text-subtle text-xs leading-relaxed">
         {t(
-          'Takes run from deepest to brightest. Rotating plays a different one each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.',
+          'Numbered from deepest to brightest. Rotating plays a different one each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.',
         )}
       </p>
     </Card>

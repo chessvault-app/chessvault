@@ -241,6 +241,8 @@ npm run desktop:package:linux  # Linux AppImage + deb
 포함되며, 빌드 때 `licenses/dependencies.txt`로 생성되고 앱의
 설정 → 라이선스에서 바로 볼 수 있습니다.
 
+저작권 © 2026 the Chess Vault authors.
+
 이 프로젝트는 **GPL-3.0**을 따릅니다([LICENSE](LICENSE) 참고). 사실상
 동봉한 의존성이 선택을 대신했습니다. Stockfish와 Stockfish.js가
 GPLv3이고, `chessops`와 `chessground`는 AGPL/GPL로 사정이 같습니다.
