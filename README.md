@@ -237,8 +237,10 @@ end · `f` flip board.
 
 ## Licensing
 
-Third-party code, data and assets — what is bundled, under what terms, and
-what is not yet cleared — are listed in [THIRD-PARTY.md](THIRD-PARTY.md).
+Third-party code, data and assets — what is bundled and under what terms —
+are listed in [THIRD-PARTY.md](THIRD-PARTY.md). Every npm package is
+covered too, generated at build time into `licenses/dependencies.txt` and
+browsable in the app under Settings → Licences.
 
 This project is licensed under **GPL-3.0** (see [LICENSE](LICENSE)) —
 the choice is effectively made by its bundled dependencies: Stockfish

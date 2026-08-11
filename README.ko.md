@@ -236,8 +236,10 @@ npm run desktop:package:linux  # Linux AppImage + deb
 
 ## 라이선스
 
-함께 배포되는 제3자 코드·데이터·자산과 그 조건, 그리고 아직 확인되지 않은
-항목은 [THIRD-PARTY.md](THIRD-PARTY.md)에 정리되어 있습니다.
+함께 배포되는 제3자 코드·데이터·자산과 그 조건은
+[THIRD-PARTY.md](THIRD-PARTY.md)에 정리되어 있습니다. npm 패키지도 모두
+포함되며, 빌드 때 `licenses/dependencies.txt`로 생성되고 앱의
+설정 → 라이선스에서 바로 볼 수 있습니다.
 
 이 프로젝트는 **GPL-3.0**을 따릅니다([LICENSE](LICENSE) 참고). 사실상
 동봉한 의존성이 선택을 대신했습니다. Stockfish와 Stockfish.js가
