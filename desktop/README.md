@@ -87,7 +87,7 @@ where updates come from.
 
 ```
 # 1. bump "version" in package.json, and commit
-# 2. deploy the server, verify it, push the tag
+# 2. check, tag, push — GitHub builds from the tag
 npm run desktop:release
 # 3. when the workflow finishes, check the draft and press Publish
 gh release view v0.2.4 --web
@@ -97,21 +97,26 @@ Three parties, in order:
 
 | | does what |
 | --- | --- |
-| `release.sh` | deploys the server, proves `/api/health` names this version, pushes the tag |
+| `release.sh` | typechecks, tests, refuses a dirty tree or an existing tag, pushes the tag |
 | the `desktop` workflow | builds Windows, macOS and Linux onto one **draft** release |
-| you | check both, publish the draft |
+| you | check the three installers are there, publish the draft |
 
-It reads the target from `scripts/deploy.env` (`CHESS_VAULT_HOST`), refuses
-to run on a dirty tree, and refuses if the tag already exists — the tag is
-what triggers the build, so a tag that is already there means nothing would
-happen.
+**A release needs no server and no personal configuration.** It is a
+property of the project — a version, a tag, and three installers built from
+that commit — so anyone with push access can cut one. It used to deploy one
+particular server and refuse to tag until that machine answered, which made
+releasing depend on private infrastructure being reachable and meant nobody
+else could do it.
 
-The server deploy and the installers stay tied together on purpose. In
-remote mode the desktop app runs the SERVER's web build, so an installer
-released without a matching deploy leaves the two disagreeing about what
-version this is. The deploy goes first, and the draft holds the installers
-back until someone agrees — the same guarantee the old all-or-nothing
-script gave, with a person where the `&&` used to be.
+Deploying a server is a separate act, run by whoever operates that server:
+`bash scripts/deploy.sh`, or `npm run desktop:release -- --deploy` to do both
+at once.
+
+They are still related. In remote mode the desktop app loads the SERVER's
+web build, so a server left on an older commit disagrees with a freshly
+installed app about what version it is — which is why Settings shows the
+server's version and the shell's version separately. If you run a server,
+deploy it around the same time.
 
 Nothing is offered to any installed app until the draft is published.
 
