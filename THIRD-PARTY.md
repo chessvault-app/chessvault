@@ -1,5 +1,11 @@
 # Third-party code, data and assets
 
+Licence texts are in [`licenses/`](licenses/). They are there because
+publishing the source satisfies only the *network* half of a copyleft
+obligation: when a copy is conveyed — an AppImage downloaded, a demo page
+loaded — the licence has to travel with it. Someone who never visits the
+repository still has to receive them.
+
 What this app ships that somebody else made, and under what terms. Kept
 because "we are GPL-3.0" covers our own code and says nothing about a
 bundled engine's obligations or an artist's attribution.
@@ -12,12 +18,12 @@ this machine.
 
 | What | Where | Licence | Notes |
 | --- | --- | --- | --- |
-| Stockfish 18 (WASM) | `web/public/engine/` | GPL-3.0 | Licence shipped beside the binaries as `LICENSE.txt`. Source: <https://github.com/official-stockfish/Stockfish> and <https://github.com/lichess-org/stockfish.wasm> |
+| Stockfish 18 (WASM) | `web/public/engine/` | GPL-3.0 | `web/public/engine/LICENSE.txt`, also `licenses/GPL-3.0-Stockfish.txt`. Source: <https://github.com/official-stockfish/Stockfish> and <https://github.com/lichess-org/stockfish.wasm> |
 | chessground | npm, bundled into `dist/` | GPL-3.0 | lichess-org/chessground |
 | chessops | npm, bundled into `dist/` | GPL-3.0 | niklasf/chessops |
-| pdf.js | `web/public/pdfjs-wasm/`, npm | Apache-2.0 | mozilla/pdf.js |
-| sql.js (static demo only) | `web/public/sqljs/` | MIT | sql-js/sql.js |
-| lucide icons | npm, bundled | ISC | lucide-icons/lucide |
+| pdf.js | `web/public/pdfjs-wasm/`, npm | Apache-2.0 | `licenses/Apache-2.0.txt` |
+| sql.js (static demo only) | `web/public/sqljs/` | MIT | `licenses/sqljs.txt` |
+| lucide icons | npm, bundled | ISC | `licenses/lucide-react.txt` |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | see its `README.md` | lichess-org/chess-openings |
 | Lichess puzzles | `data/puzzles.sqlite`, demo subset | CC0 | <https://database.lichess.org/#puzzles> |
 | Reference games | `data/refgames.sqlite`, demo subset | derived from the Lichess database (CC0) | Not Lumbra's Gigabase, which is CC BY-NC-SA and would restrict a public demo |
@@ -27,10 +33,10 @@ this machine.
 
 | What | Author | Licence | Verdict |
 | --- | --- | --- | --- |
-| cburnett (board pieces, app icon, favicon, landing mark) | Colin M.L. Burnett | GPLv2+ | Fine. GPLv2+ combines with our GPL-3.0, and attribution is here |
-| merida | Armando Hernandez Marroquin | GPLv2+ | Fine |
-| chessnut | Alexis Luengas | Apache 2.0 | Fine |
-| pirouetti | pirouetti | **AGPLv3+** | See below |
+| cburnett (board pieces, app icon, favicon, landing mark) | Colin M.L. Burnett | GPLv2+ | Fine. "or later" lets us convey under GPL-3.0, which is this project's own licence; `licenses/GPL-2.0.txt` kept for the original terms |
+| merida | Armando Hernandez Marroquin | GPLv2+ | Fine, same as cburnett |
+| chessnut | Alexis Luengas | Apache 2.0 | Fine; `licenses/Apache-2.0.txt` |
+| pirouetti | pirouetti | **AGPLv3+** | `licenses/AGPL-3.0.txt`; see below |
 | move / capture sounds | unknown | **unknown** | See below |
 
 ### pirouetti is AGPL, and this app is served over a network
