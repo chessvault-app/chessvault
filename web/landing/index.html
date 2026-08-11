@@ -101,23 +101,23 @@
       .card h3 { margin: 0 0 var(--s2); font-size: 1rem; }
       .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 
-      /* Text over a FULL-WIDTH screenshot, not beside a half-width one.
-         These shots are whole application windows, and a half column could
-         not show one legibly at any zoom: the sources are 2880px (a 1440px
-         window at 2x), so half a column scaled the app's 12px UI text below
-         two pixels. Across the whole wrap it lands near 0.7x of life size,
-         which is the same treatment the hero already uses and the only one
-         that shows the entire page and stays readable. */
-      .feature p { color: var(--muted); max-width: 44rem; margin: 0 0 var(--s6); }
-      .feature figure { margin: 0; }
-      /* Both sources are captured at the same size, so one aspect-ratio
-         fits each exactly: the sections cannot step, and nothing is cropped
-         or letterboxed. Stated rather than left implicit so a screenshot
-         recaptured at some other size is caught here instead of silently
-         changing the page's rhythm. */
-      .feature img {
-        width: 100%; aspect-ratio: 1904 / 993; object-fit: cover;
-        background: var(--bg); border-radius: 0.8rem; border: 1px solid var(--line);
+      /* A figure BESIDE the paragraph, at 320px.
+         Nothing but a phone layout can be read at that width, so these two
+         are captured at 390px CSS rather than as desktop windows — and each
+         has to be about what it sits next to, which the previous pair were
+         not: a note carrying markdown, a live board and wiki-links for the
+         file formats, and the collection on a phone for reaching it from
+         anywhere. Sides alternate so the page does not march. */
+      .split { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
+      @media (min-width: 48rem) {
+        .split { grid-template-columns: 1fr 20rem; }
+        .split.flip { grid-template-columns: 20rem 1fr; }
+      }
+      .split p { color: var(--muted); margin: 0; }
+      .split figure { margin: 0; justify-self: center; }
+      .split figure img {
+        display: block; width: 100%; max-width: 20rem;
+        border-radius: 1.1rem; border: 1px solid var(--line);
       }
 
       .downloads { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
@@ -269,21 +269,33 @@
       </section>
 
       <section class="wrap">
-        <div class="feature">
+        <div class="split">
+          <div>
             <h2 data-ko="파일이 곧 형식입니다">The files are the format</h2>
             <p data-ko="스터디는 PGN이고, 노트는 마크다운이며, 진행 상황은 JSON입니다. 데이터베이스가 진실의 원천이 되는 일도, 독자 규격도 없습니다. 백업은 폴더 하나를 복사하는 일이고, 이 앱이 사라져도 당신의 체스는 다른 도구로 열립니다.">
               Studies are PGN, notes are markdown, progress is JSON. No database as the source of
               truth, no proprietary formats. Backing up is copying a folder — and if this app ever
               goes away, your chess opens in something else.
             </p>
+          </div>
           <figure>
-            <img src="shots/games.png" alt="The games collection, with the archive browser below it" />
+            <img
+              src="shots/note-phone.png"
+              alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
+            />
           </figure>
         </div>
       </section>
 
       <section class="wrap">
-        <div class="feature">
+        <div class="split flip">
+          <figure>
+            <img
+              src="shots/games-phone.png"
+              alt="The same game collection at phone width, with the bottom bar the app uses there"
+            />
+          </figure>
+          <div>
             <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
             <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 원격 서버에 올릴 수도 있습니다. 작은 리눅스 서버 하나가 보관함을 소유하면 나머지는 전부 클라이언트가 됩니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서 씁니다. 어느 기기에서 열어도 같은 기보와 같은 진행 상황입니다. 비밀번호와 2단계 인증은 선택 사항입니다.">
               Keeping the vault on this machine is the default, but you can put it on a remote
@@ -292,9 +304,7 @@
               Same games, same progress, whichever device you opened. A password and two-factor
               authentication are optional.
             </p>
-          <figure>
-            <img src="shots/dashboard.png" alt="The puzzle dashboard: counters, a breakdown by difficulty and imported books" />
-          </figure>
+          </div>
         </div>
       </section>
 

@@ -10,78 +10,105 @@
  * usernames in the README.
  *
  * Electron rather than the browser tooling because capturePage() gives real
- * PNG bytes — a JPEG round-trip would bake compression ringing into white
- * UI text on a dark background, which is the one thing these images are
- * for. Both are captured at the SAME size so they share an aspect ratio
- * exactly, and the landing page's shared box needs no letterboxing.
+ * PNG bytes, and a JPEG round-trip would bake compression ringing into white
+ * UI text on a dark background, which is the one thing these images are for.
  *
- * Narrower than the originals (1440px) on purpose: at 1100 the app is still
- * the full desktop layout, and shown across the landing page's 960px column
- * that is 0.87x of life size instead of 0.67x — legible without cropping.
+ * SIZE IS SET WITH ZOOM, NOT THE WINDOW. A BrowserWindow clamps to the
+ * screen, so asking for a 1100px window on a 1920px display quietly gives
+ * 1904. Zooming instead decouples the two: the raster is the window's size
+ * and the LAYOUT is that divided by the zoom factor. So each shot names the
+ * CSS width it wants the app laid out at, and gets a raster comfortably
+ * denser than wherever it is displayed.
  */
 import { app, BrowserWindow } from 'electron';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const BASE = process.env.SHOT_BASE ?? 'http://localhost:8129';
-// The window clamps to the screen, so the CSS viewport is set with zoom
-// instead: a 1904px-wide raster showing a 1100px-wide layout. That keeps
-// the app compact (a narrower view than the 1440px originals) AND leaves
-// roughly 2x the pixels the landing page's 960px column needs.
-const WIDTH = 1904;
-const HEIGHT = 996;
-const CSS_WIDTH = 1100;
 
+/**
+ * `css` is the width the app lays out at — the smaller it is, the larger
+ * the app's own text is relative to the frame, which is what decides
+ * whether a shot survives being shown small.
+ *
+ * The two landing-page figures are phone-shaped because they are shown at
+ * 320px, and at that width nothing but a phone layout can be read. They
+ * also each have to illustrate the paragraph beside them: a note carrying
+ * markdown, a live board and wiki-links for "the files are the format",
+ * and the collection on a phone for "reach it from anywhere".
+ */
 const TARGETS = [
-  { hash: '#/games', out: 'docs/screenshots/games.png', wait: '.divide-line' },
-  { hash: '#/puzzles/dashboard', out: 'docs/screenshots/dashboard.png', wait: 'table, ul' },
+  // README + the landing hero: the full desktop layout.
+  { hash: '#/analysis', out: 'board.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
+  { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-line' },
+  { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
+  // The landing page's two side figures.
+  {
+    hash: `#/notes/${encodeURIComponent('Blunders to stop making')}`,
+    out: 'note-phone.png',
+    win: [585, 780],
+    css: 390,
+    wait: 'cg-board',
+  },
+  { hash: '#/games', out: 'games-phone.png', win: [585, 780], css: 390, wait: '.divide-line' },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** The demo's own banner: a property of the demo, not of the app. */
+const HIDE_DEMO_BANNER = `
+  (() => {
+    for (const el of document.querySelectorAll('body *')) {
+      const text = (el.textContent || '').trim();
+      if (text.startsWith('Demo —') && el.children.length === 0) {
+        const bar = el.closest('div');
+        if (bar) bar.style.display = 'none';
+      }
+    }
+    return true;
+  })()
+`;
+
+// Each shot gets its own window, and destroying the last one would
+// otherwise end the run: Electron quits when no windows remain.
+app.on('window-all-closed', () => {});
+
 app.whenReady().then(async () => {
-  const win = new BrowserWindow({
-    width: WIDTH,
-    height: HEIGHT,
-    show: false,
-    useContentSize: true,
-    webPreferences: { backgroundThrottling: false },
-  });
+  for (const { hash, out, win: [w, h], css, wait } of TARGETS) {
+    const win = new BrowserWindow({
+      width: w,
+      height: h,
+      show: false,
+      useContentSize: true,
+      webPreferences: { backgroundThrottling: false },
+    });
 
-  // English, and the demo's own banner out of the way: it is a property of
-  // the demo, not of the app these images are meant to show.
-  await win.loadURL(`${BASE}/app/`);
-  await win.webContents.executeJavaScript(
-    `localStorage.setItem('chess-vault:lang', 'en'); true`,
-  );
-  win.webContents.setZoomFactor(WIDTH / CSS_WIDTH);
-
-  for (const { hash, out, wait } of TARGETS) {
-    await win.loadURL(`${BASE}/app/${hash}`);
-    win.webContents.setZoomFactor(WIDTH / CSS_WIDTH);
-    await sleep(1500);
-    await win.webContents.executeJavaScript(`
-      (() => {
-        for (const el of document.querySelectorAll('body *')) {
-          const t = (el.textContent || '').trim();
-          if (t.startsWith('Demo —') && el.children.length === 0) {
-            const bar = el.closest('div');
-            if (bar) bar.style.display = 'none';
-          }
-        }
-        return document.querySelectorAll('${wait}').length;
-      })()
-    `);
+    // One load, then route from inside the page. A second loadURL to the
+    // same document with a different hash aborts the first and rejects.
+    await win.loadURL(`${BASE}/app/`);
+    await win.webContents.executeJavaScript(
+      `localStorage.setItem('chess-vault:lang', 'en'); location.hash = ${JSON.stringify(hash.slice(1))}; true`,
+    );
+    // After the load, not before: a navigation resets it.
+    win.webContents.setZoomFactor(w / css);
+    await sleep(1800);
+    await win.webContents.executeJavaScript(HIDE_DEMO_BANNER);
+    const found = await win.webContents.executeJavaScript(
+      `document.querySelectorAll('${wait}').length`,
+    );
     await sleep(1200);
+
     const image = await win.webContents.capturePage();
     const png = image.toPNG();
-    const path = resolve(out);
-    writeFileSync(path, png);
+    writeFileSync(resolve('docs/screenshots', out), png);
     const size = image.getSize();
-    const css = await win.webContents.executeJavaScript('[innerWidth, innerHeight]');
-    console.log(`${out}  raster ${size.width}x${size.height}, layout ${css[0]}x${css[1]} css, ${(png.length / 1e3).toFixed(0)} KB`);
+    const layout = await win.webContents.executeJavaScript('[innerWidth, innerHeight]');
+    console.log(
+      `${out.padEnd(18)} raster ${size.width}x${size.height}  layout ${layout[0]}x${layout[1]}` +
+        `  ${(png.length / 1e3).toFixed(0)} KB` +
+        (found ? '' : `  (WARNING: no "${wait}" on the page — is it still loading?)`),
+    );
+    win.destroy();
   }
-
-  win.destroy();
   app.quit();
 });
