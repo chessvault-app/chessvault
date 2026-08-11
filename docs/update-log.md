@@ -5,6 +5,39 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.2.4
+
+- **The sounds are ours.** The move and capture samples were lichess's
+  `standard` set, bit for bit, and that set is on lila's non-free list —
+  shipped in every installer and served by the demo with no licence to do
+  so. Replaced with nineteen synthesised takes, and Settings now has a
+  Sound card: which take, how loud, or rotate so a long analysis does not
+  sound like one sample repeating.
+- **Licences travel with the build.** `licenses/` reached nobody who never
+  opened the repository. Every build now carries the texts and a page
+  listing all 931 things this app is built from — bundled assets, npm
+  packages, and Electron's 773 Chromium components — each opening to its
+  own licence text, with a link to its source. Generated from
+  `node_modules` at build time, so it cannot go stale.
+- **Opening books from your own games.** A book answers "what is played
+  here"; pointed at your own games it answers "what do *I* play here, and
+  how has it gone" — the same win/draw/loss data read against yourself. A
+  new page under Tools builds one from the vault's own games or from
+  uploaded collections.
+- **Games in batches.** Select many from an archive and add them in one
+  action, or pick *All dates* in the month selector and take a whole
+  history. Uploading PGN collections is in the app too — it used to tell
+  you to copy files into `vault/sources/`, which a phone cannot do.
+- **Korean, everywhere.** Status and error messages were English whatever
+  the language, including the server's own. All of them are translated
+  now; a message with no entry falls back to English rather than breaking.
+- **Desktop builds for macOS and Linux actually work.** They never had:
+  an invalid `linux.desktop` schema failed every platform, the macOS icon
+  was below the 512 px minimum, and the `.deb` had no maintainer. Found by
+  running the workflow rather than reading it.
+- **Every dependency updated**, including TypeScript 7 and Vitest 4, and
+  the CI actions off deprecated Node 20.
+
 ## 0.2.3
 
 - **Auto-update actually works.** It never had. electron-updater is
