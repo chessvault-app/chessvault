@@ -693,7 +693,7 @@ function Trainer({
                     ? 'Finding a puzzle…'
                     : failed
                       ? 'Keep looking — find the best move.'
-                      : 'Find the best move. The rating and themes stay hidden until you finish.'}
+                      : 'Find the best move. The difficulty and themes stay hidden until you finish.'}
                 </p>
               </div>
             )}
