@@ -40,11 +40,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
 
       - run: npm ci --no-audit --no-fund
@@ -72,7 +72,7 @@ jobs:
       # Jekyll would otherwise swallow any path beginning with an underscore.
       - run: touch dist-site/.nojekyll
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: demo-site
           path: dist-site
@@ -89,7 +89,7 @@ jobs:
     # that cannot be undone.
     environment: demo-site
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: demo-site
           path: dist-site
