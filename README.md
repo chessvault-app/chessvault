@@ -61,9 +61,10 @@ stored as PGN, markdown and JSON in one folder you own.
   app, no shell needed.
 - **Everywhere** — responsive down to phones, installable as a PWA
   (home-screen icon, splash screens, offline shell), and a desktop app
-  (Windows installer) that runs self-hosted or as a client to your
-  server. On a phone the bottom bar turns into the open page's controls
-  (move navigation, puzzle actions), chess.com/Lichess-style.
+  (Windows, macOS and Linux installers) that keeps the vault on that
+  machine by default, or runs as a client to your server. On a phone the
+  bottom bar turns into the open page's controls (move navigation, puzzle
+  actions), chess.com/Lichess-style.
 
 ## Two ways to run it
 
@@ -219,11 +220,15 @@ WASM and CSS are all bundled. The only features that reach outside are
 *imports* — one-time by nature — and the optional Lichess explorer
 augmentation, which you can leave off.
 
-Whether it works with **no network at all** depends on where the vault is.
-Running on this machine, yes, completely — engine, books, puzzles and all.
-Running against a server, you need to be able to reach that server; the PWA
-keeps its shell offline so the app still opens, but your games and studies
-live on the other end of the connection.
+**With no network at all: yes.** That is the default arrangement — the
+app and the vault both on your machine — and nothing about it needs the
+internet. Engine, opening books, puzzles, your whole collection.
+
+If you have moved the vault to a server (way B), you need to be able to
+reach that server. The PWA keeps its shell offline so the app still opens,
+but your games and studies live on the other end of the connection. That
+is a trade you make deliberately, in exchange for the same vault on every
+device.
 
 ## Layout
 
@@ -280,7 +285,7 @@ npm run build:book     # index vault/sources PGNs into opening books
 npm run build:openings # compile ECO opening names
 npm run build:refgames # index reference games for the elite browser
 npm run build:puzzles  # build the puzzle trainer's pool from the Lichess dump
-npm run desktop:package        # Windows installer
+npm run desktop:package        # Windows installer (:mac, :linux for the others)
 npm run desktop:package:mac    # macOS dmg (needs a Mac, or GitHub Actions)
 npm run desktop:package:linux  # Linux AppImage + deb
 npm run desktop:release        # check, tag, push — GitHub builds the installers

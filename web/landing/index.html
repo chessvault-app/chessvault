@@ -110,6 +110,12 @@
       .dl { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: var(--s5); }
       .dl h3 { margin: 0 0 var(--s2); font-size: 1rem; }
       .dl p { margin: 0 0 var(--s4); color: var(--muted); font-size: 0.88rem; }
+      /* Wraps rather than scrolls: three short buttons fit one line on a
+         desktop and stack cleanly on a phone, and a horizontally scrolling
+         download row would hide the platform somebody came for. */
+      .os-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
+      .btn.os { gap: 0.45rem; }
+      .btn.os svg { width: 1em; height: 1em; flex: none; }
       code {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
         background: var(--bg); border: 1px solid var(--line); border-radius: 0.35rem; padding: 0.1rem 0.35rem;
@@ -206,10 +212,11 @@
             </p>
           </div>
           <div class="card">
-            <h3 data-ko="오프라인에서">Offline</h3>
-            <p data-ko="런타임에 CDN을 부르지 않습니다. 엔진, 글꼴, 아이콘이 전부 함께 들어 있어 인터넷 없이 동작합니다.">
-              No runtime CDN calls. The engine, fonts and icons all ship with it, so it works with
-              no internet at all.
+            <h3 data-ko="완전히 오프라인">Completely offline</h3>
+            <p data-ko="기본은 이 기기입니다. 앱도 보관함도 당신의 컴퓨터에 있고, 엔진·글꼴·아이콘이 전부 함께 들어 있어 런타임에 부르는 CDN이 없습니다. 인터넷을 끊어도 달라지는 것이 없습니다.">
+              By default it runs on this machine — the app and the vault both. The engine, fonts and
+              icons all ship with it and there are no runtime CDN calls, so pulling the network
+              cable changes nothing.
             </p>
           </div>
         </div>
@@ -233,11 +240,13 @@
         <div class="split">
           <img src="shots/dashboard.png" alt="The puzzle dashboard" />
           <div>
-            <h2 data-ko="당신의 서버, 모든 기기">Your server, every device</h2>
-            <p data-ko="작은 리눅스 서버 하나가 보관함을 소유하고, 나머지는 전부 클라이언트입니다. 휴대폰에서는 홈 화면에 추가해 PWA로 쓰고, 데스크톱에서는 앱을 설치해 그 서버에 연결하거나 직접 호스팅합니다. 비밀번호와 2단계 인증은 선택 사항입니다.">
-              One small Linux box owns the vault; everything else is a client. On a phone, add it to
-              the home screen as a PWA. On a desktop, install the app and point it at your server —
-              or host it there instead. A password and two-factor authentication are optional.
+            <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
+            <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 원격 서버에 올릴 수도 있습니다. 작은 리눅스 서버 하나가 보관함을 소유하면 나머지는 전부 클라이언트가 됩니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서 씁니다. 어느 기기에서 열어도 같은 기보와 같은 진행 상황입니다. 비밀번호와 2단계 인증은 선택 사항입니다.">
+              Keeping the vault on this machine is the default, but you can put it on a remote
+              server instead. Then one small Linux box owns the vault and everything else is a
+              client: add it to a phone's home screen as a PWA, or point the same desktop app at it.
+              Same games, same progress, whichever device you opened. A password and two-factor
+              authentication are optional.
             </p>
           </div>
         </div>
@@ -248,13 +257,30 @@
         <div class="downloads">
           <div class="dl">
             <h3 data-ko="데스크톱 앱">Desktop app</h3>
-            <p data-ko="Windows 설치 프로그램. 서버에 연결하는 원격 모드와, 이 기기의 폴더를 직접 쓰는 로컬 모드를 지원하며, 실행할 때 스스로 갱신됩니다.">
-              A Windows installer. Runs as a client to your server or self-hosted against a folder
-              on that machine, and updates itself on launch.
+            <p data-ko="Windows, macOS, Linux 설치 프로그램. 기본은 이 기기의 폴더를 보관함으로 쓰는 로컬 모드이고, 원한다면 서버에 연결하는 클라이언트로도 씁니다. 실행할 때 스스로 갱신됩니다.">
+              Installers for Windows, macOS and Linux. By default it keeps the vault in a folder on
+              that machine; point it at a server instead if you have one. It updates itself on
+              launch.
             </p>
-            <a class="btn" href="https://github.com/" data-dl="windows" data-ko="설치 프로그램 받기"
-              >Get the installer</a
-            >
+            <!-- All three are listed, always. The one matching the visitor's
+                 OS is promoted to the primary button and moved first by the
+                 script below; a wrong guess costs nothing because the other
+                 two are right there, which a single detected download would
+                 not have been. -->
+            <div class="os-row">
+              <a class="btn os" href="https://github.com/chessvault-app/chessvault/releases/latest" data-os="win">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M0 2.25 6.5 1.36v6.14H0zM7.3 1.25 16 0v7.5H7.3zM0 8.5h6.5v6.14L0 13.75zm7.3 0H16V16l-8.7-1.25z"/></svg>
+                <span>Windows</span>
+              </a>
+              <a class="btn os" href="https://github.com/chessvault-app/chessvault/releases/latest" data-os="mac">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M11.18 8.5c-.02-1.7 1.39-2.52 1.45-2.56-.79-1.16-2.02-1.32-2.46-1.34-1.05-.11-2.05.62-2.58.62-.53 0-1.35-.6-2.22-.59-1.14.02-2.19.66-2.78 1.68-1.19 2.06-.3 5.11.85 6.78.57.82 1.24 1.73 2.12 1.7.85-.03 1.18-.55 2.21-.55 1.03 0 1.32.55 2.22.53.92-.01 1.5-.83 2.06-1.65.65-.95.92-1.87.93-1.92-.02-.01-1.78-.68-1.8-2.7zM9.5 3.4c.47-.57.78-1.36.7-2.15-.67.03-1.49.45-1.97 1.01-.43.5-.81 1.31-.71 2.08.75.06 1.51-.38 1.98-.94z"/></svg>
+                <span>macOS</span>
+              </a>
+              <a class="btn os" href="https://github.com/chessvault-app/chessvault/releases/latest" data-os="linux">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C6.3 0 5.4 1.4 5.4 3.1c0 .8.1 1.5.1 2.1 0 .7-.6 1.4-1.2 2.4C3.5 8.9 2.6 10.4 2.6 12c0 .5.1.9.3 1.2-.3.4-.5.8-.4 1.2.1.5.6.8 1.3.9.6.1 1.4.1 2.1.3.6.2 1.1.5 1.8.5s1.4-.3 2.1-.5c.7-.2 1.5-.2 2.1-.3.7-.1 1.2-.4 1.3-.9.1-.4-.1-.8-.4-1.2.2-.3.3-.7.3-1.2 0-1.6-.9-3.1-1.7-4.4-.6-1-1.2-1.7-1.2-2.4 0-.6.1-1.3.1-2.1C10.6 1.4 9.7 0 8 0zm-1.1 3.2c.3 0 .5.3.5.7s-.2.7-.5.7-.5-.3-.5-.7.2-.7.5-.7zm2.2 0c.3 0 .5.3.5.7s-.2.7-.5.7-.5-.3-.5-.7.2-.7.5-.7zM8 5.4c.6 0 1.5.4 1.5.8 0 .2-.2.3-.5.5-.3.2-.7.4-1 .4s-.7-.2-1-.4c-.3-.2-.5-.3-.5-.5 0-.4.9-.8 1.5-.8z"/></svg>
+                <span>Linux</span>
+              </a>
+            </div>
           </div>
           <div class="dl">
             <h3 data-ko="직접 호스팅">Host it yourself</h3>
@@ -300,6 +326,36 @@ CHESS_VAULT_DIR=/srv/chess-vault npm start</code></pre>
     </footer>
 
     <script>
+      // Promote the visitor's platform in the download row.
+      //
+      // Progressive enhancement, deliberately: all three buttons are in the
+      // markup and all three work. Detection only reorders them and marks
+      // one primary, so a wrong guess — or no script at all — still leaves
+      // a page where every platform is one click away. A page that showed
+      // ONLY the detected download would be broken for anyone downloading
+      // on one machine to install on another, which is most Linux users.
+      (function () {
+        var row = document.querySelector('.os-row');
+        if (!row) return;
+        var ua = navigator.userAgent;
+        // userAgentData first: Chrome freezes the platform token in the UA
+        // string, and this is the value it actually keeps current.
+        var platform = (navigator.userAgentData && navigator.userAgentData.platform) || '';
+        var probe = (platform + ' ' + ua).toLowerCase();
+        var os = null;
+        // iOS and Android get nothing promoted — there is no installer for
+        // them, and the Phone card beside this one is their answer.
+        if (/iphone|ipad|ipod|android/.test(probe)) os = null;
+        else if (/mac/.test(probe)) os = 'mac';
+        else if (/win/.test(probe)) os = 'win';
+        else if (/linux|x11|cros/.test(probe)) os = 'linux';
+        if (!os) return;
+        var mine = row.querySelector('[data-os="' + os + '"]');
+        if (!mine) return;
+        mine.classList.add('primary');
+        row.insertBefore(mine, row.firstChild);
+      })();
+
       // Language switch. Every translatable node carries its Korean in
       // data-ko; the English stays in the markup so the page is readable
       // and indexable with the script disabled.
