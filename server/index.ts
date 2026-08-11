@@ -9,15 +9,10 @@ import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
 import { DEMO, demoGuard, startDemoResets } from './demo.ts';
-import { booksApi } from './books.ts';
-import { gamesApi } from './games.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
-import { openingsApi } from './openings.ts';
-import { puzzlesApi } from './puzzles.ts';
+import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
-import { refGamesApi } from './refgames.ts';
 import { settingsApi } from './settings.ts';
-import { studiesApi } from './studies.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
@@ -82,18 +77,12 @@ app.use('/api/*', requireAuth());
 // except through the short list in demo.ts.
 if (DEMO) app.use('/api/*', demoGuard());
 
-app.route('/api', booksApi());
-app.route('/api', openingsApi());
+// Everything that reads or writes the vault. Shared with the static demo,
+// which mounts the same list over an in-memory filesystem — see
+// server/mountVault.ts for why that list is not written twice any more.
+mountVault(app);
+
 app.route('/api', lichessExplorerApi());
-app.route('/api', studiesApi());
-// The games collection speaks the same document API as studies: an annotated
-// game is a one-chapter study living in vault/games/collection/.
-app.route('/api', studiesApi(resolve(VAULT_GAMES, 'collection'), 'games/docs'));
-// Notes: the same document API over markdown files.
-app.route('/api', studiesApi(VAULT_NOTES, 'notes', '.md'));
-app.route('/api', gamesApi());
-app.route('/api', puzzlesApi());
-app.route('/api', refGamesApi());
 // Book puzzles are read from commercial PDFs and are not ours to
 // redistribute, so in demo mode the route is never created — the guard
 // already refuses it, and a route that does not exist cannot be reached

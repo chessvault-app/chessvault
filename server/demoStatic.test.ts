@@ -46,7 +46,18 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
 };
 
 describe('the static demo keeps up with the app', () => {
+  it('shares one vault route list with the server', () => {
+    // The list itself is server/mountVault.ts, so the routes in it cannot
+    // drift. What CAN drift is a caller quietly dropping the call — then
+    // every vault route disappears from the demo at once.
+    expect(read('server/index.ts')).toContain('mountVault(app)');
+    expect(read('web/src/demo/server.ts')).toContain('mountVault(app,');
+  });
+
   it('mounts every route module the server does, or says why not', () => {
+    // Anything mounted DIRECTLY in index.ts rather than through mountVault:
+    // the auth gate, settings, the Lichess proxies. Those are the ones a
+    // future route is likely to join, and the ones the demo must decide about.
     const server = mounted(read('server/index.ts'));
     const demo = mounted(read('web/src/demo/server.ts'));
 
@@ -64,11 +75,12 @@ describe('the static demo keeps up with the app', () => {
   });
 
   it('keeps the absent list honest — nothing listed that the server dropped', () => {
-    const server = mounted(read('server/index.ts'));
-    // puzzleBooksApi is mounted conditionally, so match it loosely.
+    // Matched loosely rather than through mounted(): puzzleBooksApi is
+    // mounted conditionally, and the point here is only that the module
+    // still exists to be excluded.
     const anywhere = read('server/index.ts');
     const stale = Object.keys(DELIBERATELY_ABSENT).filter(
-      (name) => !server.has(name) && !anywhere.includes(`${name}(`),
+      (name) => !anywhere.includes(`${name}(`),
     );
     expect(stale, `no longer in server/index.ts: ${stale.join(', ')}`).toEqual([]);
   });
