@@ -68,6 +68,29 @@ function buildApp(): Hono {
       demo: true,
     }),
   );
+  /**
+   * The opening explorer is not available without a server.
+   *
+   * Calling Lichess directly from the page was the plan, on the assumption
+   * that the explorer's public endpoints work unauthenticated. Measured:
+   * they do not — explorer.lichess.org and explorer.lichess.ovh both answer
+   * 401 with no token. CORS is not the obstacle; authentication is.
+   *
+   * A token cannot be shipped instead. A static bundle is readable by
+   * everyone who loads it, so embedding one would publish it — the same
+   * leak that closed this route on the hosted demo, except worse, because
+   * there it was at least behind a server.
+   *
+   * So this says what is true, in the shape the client already handles,
+   * and the repertoire trainer reports it instead of hanging.
+   */
+  app.get('/api/explorer/:db', (c) =>
+    c.json(
+      { error: 'The opening explorer needs a server with a Lichess token, so it is off in this demo.' },
+      503,
+    ),
+  );
+
   // Book puzzles are read from commercial books and are not in the demo at
   // all. The dashboard still draws a shelf, so this answers with the shape
   // the real route uses when a vault holds no books — an empty list, which

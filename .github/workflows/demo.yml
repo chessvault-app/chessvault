@@ -1,0 +1,66 @@
+# Publish the static demo to GitHub Pages.
+#
+# Pushes ONLY the built output to a separate repository, so this one can
+# stay private: what lands there is minified JavaScript, the synthetic seed
+# vault, and the curated CC0 puzzle/game subsets. No source, no source maps,
+# no vault data, no book puzzles, no tokens.
+#
+# Needs two things configured once, in this repository's settings:
+#   - a secret DEMO_DEPLOY_KEY: an SSH private key whose public half is a
+#     deploy key WITH WRITE ACCESS on the target repository. A deploy key is
+#     scoped to that one repository, unlike a personal access token, which
+#     is why it is worth the extra step.
+#   - a variable DEMO_REPO, e.g. chessvault/chessvault.github.io
+#
+# Manual by default. A demo that redeploys on every push to main would
+# publish work in progress to a public address.
+name: demo
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['demo-*']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # The engine assets are fetched by a postinstall-style step, not
+      # committed, so the demo would ship without an engine otherwise.
+      - run: npm run setup:engine
+
+      # The curated databases are built from the full ones, which are far
+      # too large to live in a repository. They are committed under
+      # web/public/demo/ precisely so this job does not need them.
+      - name: Check the demo databases are present
+        run: |
+          for f in web/public/demo/puzzles.sqlite web/public/demo/refgames.sqlite web/public/demo/openings.json; do
+            [ -f "$f" ] || { echo "missing $f — run npm run build:demo-dbs and commit it"; exit 1; }
+          done
+
+      - run: npm run build:demo
+
+      # Jekyll would otherwise eat any path beginning with an underscore.
+      - run: touch dist-demo/.nojekyll
+
+      - name: Publish
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.DEMO_DEPLOY_KEY }}
+          external_repository: ${{ vars.DEMO_REPO }}
+          publish_branch: main
+          publish_dir: ./dist-demo
+          # The target holds build output only, so replacing it wholesale is
+          # correct — a leftover file from an older build is a file the app
+          # no longer knows about but the browser can still reach.
+          force_orphan: true
+          commit_message: 'Demo build from ${{ github.sha }}'
