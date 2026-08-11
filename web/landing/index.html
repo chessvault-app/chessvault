@@ -26,6 +26,20 @@
         --primary: oklch(72% 0.13 240);
         --primary-ink: oklch(18% 0.03 240);
         color-scheme: dark;
+
+        /* One spacing scale. Every margin, padding and gap below is a step
+           on it — the page was written with ad-hoc values (0.9, 1.15, 1.75,
+           2.5) and the mismatches were visible: cards padded differently
+           from download cards, headings spaced differently from each other,
+           sections not matching the hero. */
+        --s1: 0.25rem;
+        --s2: 0.5rem;
+        --s3: 0.75rem;
+        --s4: 1rem;
+        --s5: 1.5rem;
+        --s6: 2rem;
+        --s7: 3rem;
+        --s8: 4rem;
       }
       * { box-sizing: border-box; }
       html { -webkit-text-size-adjust: 100%; }
@@ -38,71 +52,75 @@
         -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; }
-      .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.25rem; }
+      /* padding-INLINE, not the shorthand: every section also carries .wrap, and
+         a class beats an element selector — so `section { padding: … }` was
+         overwritten wholesale and the sections had no vertical padding at
+         all. Longhands on different axes cannot fight. */
+      .wrap { max-width: 62rem; margin: 0 auto; padding-inline: var(--s4); }
 
-      header { padding: 1.25rem 0; }
-      .bar { display: flex; align-items: center; gap: 0.75rem; }
-      .mark { display: flex; align-items: center; gap: 0.6rem; font-weight: 650; letter-spacing: -0.01em; }
+      header { padding-block: var(--s4); }
+      .bar { display: flex; align-items: center; gap: var(--s3); }
+      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 650; letter-spacing: -0.01em; }
       .mark svg { width: 1.75rem; height: 1.75rem; color: var(--primary); }
       .lang {
-        margin-left: auto; display: flex; gap: 0.25rem;
+        margin-left: auto; display: flex; gap: var(--s1);
         background: var(--surface); border: 1px solid var(--line);
-        border-radius: 0.6rem; padding: 0.15rem;
+        border-radius: 0.6rem; padding: var(--s1);
       }
       .lang button {
-        font: inherit; font-size: 0.78rem; padding: 0.2rem 0.55rem; border: 0;
+        font: inherit; font-size: 0.78rem; padding: var(--s1) var(--s3); border: 0;
         border-radius: 0.45rem; background: transparent; color: var(--muted); cursor: pointer;
       }
       .lang button[aria-pressed='true'] { background: var(--primary); color: var(--primary-ink); font-weight: 600; }
 
-      .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
-      h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.1; margin: 0 0 0.9rem; letter-spacing: -0.03em; }
-      .tagline { font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--muted); margin: 0 auto 2rem; max-width: 34rem; }
-      .cta { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+      .hero { padding-block: var(--s8) var(--s7); text-align: center; }
+      h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.1; margin: 0 0 var(--s4); letter-spacing: -0.03em; }
+      .tagline { font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--muted); margin: 0 auto var(--s6); max-width: 34rem; }
+      .cta { display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: center; }
       .btn {
-        display: inline-flex; align-items: center; gap: 0.5rem;
-        padding: 0.7rem 1.4rem; border-radius: 0.7rem; text-decoration: none;
+        display: inline-flex; align-items: center; gap: var(--s2);
+        padding: var(--s3) var(--s5); border-radius: 0.7rem; text-decoration: none;
         font-weight: 600; border: 1px solid var(--line); background: var(--surface);
         transition: background 0.15s, border-color 0.15s;
       }
       .btn:hover { background: var(--line); }
       .btn.primary { background: var(--primary); color: var(--primary-ink); border-color: transparent; }
       .btn.primary:hover { filter: brightness(1.08); }
-      .note { color: var(--subtle); font-size: 0.82rem; margin-top: 0.9rem; }
+      .note { color: var(--subtle); font-size: 0.82rem; margin-top: var(--s4); }
 
-      .shot { margin: 2.5rem 0 0; }
+      .shot { margin: var(--s7) 0 0; }
       .shot img {
         width: 100%; height: auto; display: block; border-radius: 0.9rem;
         border: 1px solid var(--line); box-shadow: 0 1.5rem 3rem oklch(0% 0 0 / 0.45);
       }
 
-      section { padding: 3.5rem 0; }
-      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: 0 0 1.75rem; }
-      .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-      .card { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: 1.15rem; }
-      .card h3 { margin: 0 0 0.4rem; font-size: 1rem; }
+      section { padding-block: var(--s8); }
+      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: 0 0 var(--s5); }
+      .grid { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+      .card { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: var(--s5); }
+      .card h3 { margin: 0 0 var(--s2); font-size: 1rem; }
       .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 
-      .split { display: grid; gap: 2rem; grid-template-columns: 1fr; align-items: center; }
+      .split { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
       @media (min-width: 48rem) { .split { grid-template-columns: 1fr 1fr; } }
       .split img { width: 100%; border-radius: 0.8rem; border: 1px solid var(--line); }
       .split p { color: var(--muted); }
 
-      .downloads { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
-      .dl { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: 1.25rem; }
-      .dl h3 { margin: 0 0 0.3rem; font-size: 1rem; }
-      .dl p { margin: 0 0 1rem; color: var(--muted); font-size: 0.88rem; }
+      .downloads { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+      .dl { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: var(--s5); }
+      .dl h3 { margin: 0 0 var(--s2); font-size: 1rem; }
+      .dl p { margin: 0 0 var(--s4); color: var(--muted); font-size: 0.88rem; }
       code {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
         background: var(--bg); border: 1px solid var(--line); border-radius: 0.35rem; padding: 0.1rem 0.35rem;
       }
       pre {
         background: var(--bg); border: 1px solid var(--line); border-radius: 0.6rem;
-        padding: 0.85rem 1rem; overflow-x: auto; font-size: 0.85rem; margin: 0;
+        padding: var(--s3) var(--s4); overflow-x: auto; font-size: 0.85rem; margin: 0;
       }
       pre code { background: none; border: 0; padding: 0; }
 
-      footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--subtle); font-size: 0.85rem; }
+      footer { border-top: 1px solid var(--line); padding-block: var(--s6) var(--s7); color: var(--subtle); font-size: 0.85rem; }
       footer a { text-decoration: none; }
       footer a:hover { text-decoration: underline; }
     </style>

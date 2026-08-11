@@ -25,7 +25,7 @@ import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { t, useLang } from '@/lib/i18n';
-import { isDemo, noteServerDemo } from '@/lib/demo';
+import { demoKind, isDemo, noteServerDemo } from '@/lib/demo';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -102,7 +102,9 @@ function DemoBanner() {
   if (!demo) return null;
   return (
     <div className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-xs">
-      {t('Demo — everyone shares this vault and it resets regularly. Do not put anything private here.')}
+      {demoKind() === 'server'
+        ? t('Demo — everyone shares this vault and it resets regularly. Do not put anything private here.')
+        : t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
     </div>
   );
 }

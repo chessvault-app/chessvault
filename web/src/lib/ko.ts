@@ -642,4 +642,6 @@ export const ko: Record<string, string> = {
     '여기서 바꾼 것은 모두 이 브라우저 탭에만 남고 새로고침하면 사라집니다. 프로필, 비밀번호, 2단계 인증, Lichess 토큰, 그리고 보관함 자체는 당신의 서버가 있어야 합니다 — 앱을 설치하거나 직접 호스팅하면 이 페이지가 진짜가 됩니다.',
   'No games from this position in “{book}”.': '“{book}”에는 이 국면의 기보가 없습니다.',
   'The demo book covers the first {plies} plies.': '데모 북은 처음 {plies}수까지만 담고 있습니다.',
+  'Demo — this is a sample vault of your own. Edit anything; a reload puts it back.':
+    '데모 — 당신만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.',
 };

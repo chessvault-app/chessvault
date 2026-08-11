@@ -132,7 +132,7 @@ function annotate(row: Row, index: number): { pgn: string; plies: number } | nul
       );
       const line = before.clone();
       const alternative = options.find((candidate) => {
-        if (candidate.from === move.from && candidate.to === move.to) return false;
+        if ('from' in move && candidate.from === move.from && candidate.to === move.to) return false;
         return before.isLegal(candidate);
       });
       if (alternative) {

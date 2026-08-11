@@ -20,7 +20,21 @@ if (!existsSync(resolve(APP_BUILD, 'index.html'))) {
   process.exit(1);
 }
 
-rmSync(SITE, { recursive: true, force: true });
+// A directory being served cannot be deleted on Windows, and the raw error
+// is an unreadable EBUSY with a \?\ path. This has cost two debugging
+// rounds already — both times spent looking for a stale build rather than a
+// local http-server still holding the folder open.
+try {
+  rmSync(SITE, { recursive: true, force: true });
+} catch (error) {
+  console.error(
+    `could not clear ${SITE} — something is holding it open.
+` +
+      'A local static server (npx http-server dist-site) will do this on Windows. ' +
+      'Stop it and run again.',
+  );
+  throw error;
+}
 mkdirSync(SITE, { recursive: true });
 
 // The app, one level down. Its base is relative, so it does not care.

@@ -19,6 +19,23 @@ export function isDemo(): boolean {
   return BUILT_AS_DEMO || serverSaysDemo;
 }
 
+/**
+ * WHICH demo, because the two promise opposite things.
+ *
+ * 'static' — the published build. Each visitor has their own vault, in
+ *   their own tab, gone on reload. Nothing is shared with anybody.
+ * 'server' — a deployment running with CHESS_DEMO=1: one vault everyone
+ *   edits, restored from the seed on a timer.
+ *
+ * Telling a visitor of the static demo that "everyone shares this vault" is
+ * not a harmless simplification. It is the reverse of the truth, and it
+ * warns them off typing into an app that is entirely their own.
+ */
+export function demoKind(): 'static' | 'server' | null {
+  if (BUILT_AS_DEMO) return 'static';
+  return serverSaysDemo ? 'server' : null;
+}
+
 /** Called once, with what /api/health reported. */
 export function noteServerDemo(demo: boolean): void {
   serverSaysDemo = demo;
