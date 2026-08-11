@@ -11,10 +11,13 @@ const render = (size, path) => {
 render(512, 'web/public/icon-512.png');
 render(192, 'web/public/icon-192.png');
 render(180, 'web/public/apple-touch-icon.png');
-// 512 because electron-builder refuses anything smaller for macOS: "Icon
-// must be at least 512x512 pixels, provided: 256x256". It was 256, which
-// meant the mac target could never have built.
+// Two sizes, because the platforms disagree and one file cannot satisfy
+// both. macOS refuses anything under 512 ("Icon must be at least 512x512
+// pixels, provided: 256x256"), while NSIS refuses anything over 256 —
+// desktop/build-server.mjs turns the 256 into icon.ico, and feeding it a
+// 512 produced "invalid icon file size" and no Windows installer.
 render(512, 'desktop/icon.png');
+render(256, 'desktop/icon-256.png');
 
 /**
  * iOS splash screens (apple-touch-startup-image): the app background with

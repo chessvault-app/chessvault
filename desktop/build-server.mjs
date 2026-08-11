@@ -86,6 +86,9 @@ const sqliteOut = join(out, 'node_modules', 'better-sqlite3');
 cpSync(join(repo, 'node_modules', 'better-sqlite3'), sqliteOut, { recursive: true });
 console.log('better-sqlite3 copied (Node-API prebuilds, no rebuild needed)');
 
-// The installer icon, from the same knight PNG the window uses.
-writeFileSync(join(here, 'icon.ico'), await pngToIco([join(here, 'icon.png')]));
+// The installer icon. Built from icon-256.png, NOT icon.png: NSIS rejects
+// any frame above 256x256 with "invalid icon file size" and produces no
+// installer at all, while icon.png has to be 512 for macOS. Both are
+// rendered from the same favicon by scripts/render-icons.mjs.
+writeFileSync(join(here, 'icon.ico'), await pngToIco([join(here, 'icon-256.png')]));
 console.log('icon.ico written');
