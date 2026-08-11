@@ -1,8 +1,10 @@
-# Build the desktop app for Windows and macOS on GitHub's own machines.
+# Build the desktop app for Windows, macOS and Linux on GitHub's own machines.
 #
 # The macOS build is the point: electron-builder cannot produce a dmg from
 # Linux or Windows, so shipping for Mac has meant owning a Mac. GitHub hosts
-# macOS runners, so it does not any more.
+# macOS runners, so it does not any more. Linux rides along on the same
+# matrix — and unlike macOS it needs no signing, no developer account and no
+# Gatekeeper exception, so its output is usable the moment it is built.
 #
 # This builds and uploads installers as workflow artifacts. It does NOT
 # publish them to the update feed — that is scripts/release.sh, which also
@@ -10,8 +12,9 @@
 # SERVER's web build and an installer published without a matching deploy
 # leaves the two disagreeing about what version this is.
 #
-# So: use this to get a Mac build you cannot make locally, and to prove both
-# platforms still compile. Publishing stays one deliberate act.
+# So: use this to get the Mac and Linux builds you cannot make locally, and
+# to prove all three platforms still compile. Publishing stays one
+# deliberate act.
 name: desktop
 
 on:
@@ -42,6 +45,16 @@ jobs:
               release/installer/*.dmg
               release/installer/*.zip
               release/installer/latest-mac.yml
+          - os: ubuntu-latest
+            script: desktop:package:linux
+            artifact: linux-installer
+            # AppImage is the one to hand people: a single executable file
+            # that needs no install and no package manager. The .deb is for
+            # anyone who would rather their system tracked it.
+            files: |
+              release/installer/*.AppImage
+              release/installer/*.deb
+              release/installer/latest-linux.yml
 
     runs-on: ${{ matrix.os }}
     steps:

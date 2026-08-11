@@ -41,13 +41,14 @@ is arguable; a public demo on the open web is not. Shipping the pirouetti
 set from a public deployment while this repository is private is the one
 combination that does not work.
 
-Three ways out, any of which is fine:
+**Decided (lanph3re): the repository goes public with the public release**,
+which satisfies §13 completely — the source is offered to everyone, network
+users included. The set stays.
 
-1. publish the source — already the plan, and it settles this completely;
-2. drop pirouetti and keep the other three, which are GPLv2+ and Apache;
-3. keep it and put a visible source offer in the app.
-
-Until one of those is done, **the static demo should not ship pirouetti**.
+The obligation is worth remembering rather than forgetting, though: it ties
+the public demo to the public repository. If the source were ever taken
+private again while the demo stayed up, this would be back, and the fix
+would be to drop the set.
 
 ### The sounds are not accounted for
 

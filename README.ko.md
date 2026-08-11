@@ -211,7 +211,9 @@ npm run setup:engine   # Stockfish를 web/public/engine/으로 복사
 npm run build:book     # vault/sources의 PGN을 오프닝 북으로 색인
 npm run build:openings # ECO 오프닝 이름 컴파일
 npm run build:refgames # 엘리트 브라우저용 참고 게임 색인
-npm run desktop:package  # Windows 설치 프로그램
+npm run desktop:package        # Windows 설치 프로그램
+npm run desktop:package:mac    # macOS dmg (Mac 또는 GitHub Actions 필요)
+npm run desktop:package:linux  # Linux AppImage + deb
 ```
 
 키보드: `←` `→` 한 수씩 이동 · `↑`/`Home` 처음 · `↓`/`End` 끝 ·

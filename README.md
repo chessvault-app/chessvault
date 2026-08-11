@@ -212,7 +212,9 @@ npm run setup:engine   # copy Stockfish into web/public/engine/
 npm run build:book     # index vault/sources PGNs into opening books
 npm run build:openings # compile ECO opening names
 npm run build:refgames # index reference games for the elite browser
-npm run desktop:package  # Windows installer
+npm run desktop:package        # Windows installer
+npm run desktop:package:mac    # macOS dmg (needs a Mac, or GitHub Actions)
+npm run desktop:package:linux  # Linux AppImage + deb
 ```
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
