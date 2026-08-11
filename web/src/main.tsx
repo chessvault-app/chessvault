@@ -7,6 +7,15 @@ import { installTooltips } from './ui/tooltip';
 import { initLang } from './lib/i18n';
 import './index.css';
 
+// The static demo answers its own /api from an in-memory vault. Installed
+// before anything renders, so no request can be made before the backend
+// exists. `__DEMO__` is false in every normal build, and the import is
+// dynamic so the demo code is not in the app's bundle at all.
+if (typeof __DEMO__ !== 'undefined' && __DEMO__) {
+  const { installDemoBackend } = await import('./demo/server.ts');
+  installDemoBackend();
+}
+
 initTheme();
 watchSystemTheme();
 initPrefs();

@@ -1,0 +1,182 @@
+/**
+ * A synchronous in-memory filesystem, shaped like the parts of `node:fs`
+ * the vault routes use.
+ *
+ * The static demo runs the REAL server route modules in the browser: the
+ * demo build aliases `node:fs` to this file, so `server/studies.ts` is the
+ * same code answering the same requests, with its bytes in a Map instead of
+ * on a disk. That is the whole point — a demo built from a second
+ * implementation of the vault API would agree with the app today and lie
+ * about it in a month.
+ *
+ * Nothing persists. A visitor may rename, annotate and delete freely; a
+ * reload brings the seed back. That is the entire storage design, and it is
+ * why the demo needs no quotas, no reset timer and no server to attack.
+ */
+
+interface Entry {
+  /** Directories hold no bytes; files hold exactly these. */
+  content?: string;
+  mtimeMs: number;
+}
+
+const files = new Map<string, Entry>();
+
+/** Posix-normalise: the shim works in one separator and knows no drives. */
+function norm(path: string): string {
+  const parts: string[] = [];
+  for (const segment of String(path).split(/[\\/]+/)) {
+    if (segment === '' || segment === '.') continue;
+    if (segment === '..') parts.pop();
+    else parts.push(segment);
+  }
+  return `/${parts.join('/')}`;
+}
+
+const parentOf = (path: string): string => norm(path).split('/').slice(0, -1).join('/') || '/';
+
+export function seedFile(path: string, content: string, mtimeMs: number): void {
+  const key = norm(path);
+  for (
+    let dir = parentOf(key);
+    dir !== '/' && !files.has(dir);
+    dir = parentOf(dir)
+  ) {
+    files.set(dir, { mtimeMs });
+  }
+  files.set(key, { content, mtimeMs });
+}
+
+export function existsSync(path: string): boolean {
+  return files.has(norm(path));
+}
+
+export function mkdirSync(path: string, _options?: unknown): void {
+  const key = norm(path);
+  const now = Date.now();
+  const segments = key.split('/').filter(Boolean);
+  let at = '';
+  for (const segment of segments) {
+    at += `/${segment}`;
+    if (!files.has(at)) files.set(at, { mtimeMs: now });
+  }
+}
+
+export function readFileSync(path: string, _encoding?: unknown): string {
+  const entry = files.get(norm(path));
+  if (entry?.content === undefined) {
+    const error = new Error(`ENOENT: no such file, open '${path}'`) as Error & { code: string };
+    error.code = 'ENOENT';
+    throw error;
+  }
+  return entry.content;
+}
+
+export function writeFileSync(path: string, content: string, _options?: unknown): void {
+  mkdirSync(parentOf(path));
+  files.set(norm(path), { content: String(content), mtimeMs: Date.now() });
+}
+
+export function readdirSync(
+  path: string,
+  options?: { recursive?: boolean; withFileTypes?: boolean },
+): unknown[] {
+  const base = norm(path);
+  const prefix = base === '/' ? '/' : `${base}/`;
+  const names = new Set<string>();
+  for (const key of files.keys()) {
+    if (!key.startsWith(prefix) || key === base) continue;
+    const rest = key.slice(prefix.length);
+    names.add(options?.recursive ? rest : rest.split('/')[0]!);
+  }
+  const sorted = [...names].sort();
+  if (!options?.withFileTypes) return sorted;
+  return sorted.map((name) => {
+    const entry = files.get(norm(`${prefix}${name}`));
+    return {
+      name,
+      isFile: () => entry?.content !== undefined,
+      isDirectory: () => entry !== undefined && entry.content === undefined,
+    };
+  });
+}
+
+export function statSync(path: string): {
+  isFile: () => boolean;
+  isDirectory: () => boolean;
+  size: number;
+  mtime: Date;
+  mtimeMs: number;
+} {
+  const key = norm(path);
+  const entry = files.get(key);
+  if (!entry) {
+    const error = new Error(`ENOENT: no such file, stat '${path}'`) as Error & { code: string };
+    error.code = 'ENOENT';
+    throw error;
+  }
+  return {
+    isFile: () => entry.content !== undefined,
+    isDirectory: () => entry.content === undefined,
+    // Bytes, not characters: a multi-byte comment must not under-report.
+    size: entry.content === undefined ? 0 : new TextEncoder().encode(entry.content).length,
+    mtime: new Date(entry.mtimeMs),
+    mtimeMs: entry.mtimeMs,
+  };
+}
+
+export function renameSync(from: string, to: string): void {
+  const source = norm(from);
+  const target = norm(to);
+  // A directory rename has to drag its contents, exactly as a real one does.
+  for (const [key, entry] of [...files]) {
+    if (key !== source && !key.startsWith(`${source}/`)) continue;
+    files.delete(key);
+    files.set(target + key.slice(source.length), entry);
+  }
+}
+
+export function rmSync(path: string, options?: { recursive?: boolean; force?: boolean }): void {
+  const key = norm(path);
+  if (!files.has(key) && !options?.force) {
+    const error = new Error(`ENOENT: no such file, unlink '${path}'`) as Error & { code: string };
+    error.code = 'ENOENT';
+    throw error;
+  }
+  for (const existing of [...files.keys()]) {
+    if (existing === key || existing.startsWith(`${key}/`)) files.delete(existing);
+  }
+}
+
+export function rmdirSync(path: string): void {
+  rmSync(path, { recursive: true, force: true });
+}
+
+export function unlinkSync(path: string): void {
+  rmSync(path);
+}
+
+export function appendFileSync(path: string, content: string): void {
+  const key = norm(path);
+  const existing = files.get(key)?.content ?? '';
+  files.set(key, { content: existing + String(content), mtimeMs: Date.now() });
+}
+
+export function copyFileSync(from: string, to: string): void {
+  writeFileSync(to, readFileSync(from));
+}
+
+export default {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+  readdirSync,
+  statSync,
+  renameSync,
+  rmSync,
+  rmdirSync,
+  unlinkSync,
+  appendFileSync,
+  copyFileSync,
+};

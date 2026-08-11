@@ -31,3 +31,6 @@ scripts/deploy.env
 
 # Desktop release artefacts, built and uploaded rather than committed.
 updates/
+
+# Static demo build output (rebuildable from demo-seed/).
+dist-demo/
