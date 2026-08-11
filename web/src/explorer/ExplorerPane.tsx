@@ -391,7 +391,14 @@ function EmptyBooks({ onOpenManager }: { onOpenManager: () => void }) {
 // ---------------------------------------------------------------------------
 // Book manager: list/build/delete books over the /api/books endpoints.
 
-function BooksManager({ onClose }: { onClose: () => void }) {
+/**
+ * Build and manage opening books.
+ *
+ * Rendered both as a panel inside the explorer and as its own page under
+ * Tools (`#/books`), because building a book from a season of your own
+ * games is a sit-down job, not something to do in a 300 px sidebar.
+ */
+export function BooksManager({ onClose, page = false }: { onClose?: () => void; page?: boolean }) {
   const books = useExplorer((s) => s.books);
   const refreshBooks = useExplorer((s) => s.refreshBooks);
   const deleteBook = useExplorer((s) => s.deleteBook);
@@ -399,6 +406,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
   const fetchBuildStatus = useExplorer((s) => s.fetchBuildStatus);
 
   const [sources, setSources] = useState<{ name: string; bytes: number }[]>([]);
+  const [games, setGames] = useState<{ id: string; name: string; bytes: number }[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
   const [status, setStatus] = useState<BuildStatus | null>(null);
@@ -419,8 +427,13 @@ function BooksManager({ onClose }: { onClose: () => void }) {
    * roughly a kilobyte or two, so this is about three thousand games.
    */
   const BOOK_MIN_BYTES = 4_000_000;
-  const pickedBytes = sources
-    .filter((s) => picked.has(s.name))
+  /** Uploaded collections and the vault's own games, as one pickable list. */
+  const everySource = [
+    ...sources.map((s) => ({ id: s.name, label: s.name, bytes: s.bytes, mine: false })),
+    ...games.map((g) => ({ id: g.id, label: g.name, bytes: g.bytes, mine: true })),
+  ];
+  const pickedBytes = everySource
+    .filter((s) => picked.has(s.id))
     .reduce((sum, s) => sum + s.bytes, 0);
   const tooSmall = picked.size > 0 && pickedBytes < BOOK_MIN_BYTES;
   const wasRunning = useRef(false);
@@ -428,8 +441,12 @@ function BooksManager({ onClose }: { onClose: () => void }) {
   const refreshSources = useCallback(async (): Promise<void> => {
     try {
       const res = await fetch('/api/sources');
-      const body = (await res.json()) as { sources: { name: string; bytes: number }[] };
+      const body = (await res.json()) as {
+        sources: { name: string; bytes: number }[];
+        games?: { id: string; name: string; bytes: number }[];
+      };
       setSources(body.sources);
+      setGames(body.games ?? []);
     } catch {
       setError('could not list the PGN collections');
     }
@@ -505,7 +522,13 @@ function BooksManager({ onClose }: { onClose: () => void }) {
   const running = status?.running === true;
 
   return (
-    <div className="border-line bg-surface-inset flex min-h-0 flex-col gap-3 overflow-y-auto border-b px-3 py-3 text-xs">
+    <div
+      className={
+        page
+          ? 'mx-auto flex max-w-2xl flex-col gap-3 p-4 pb-10 text-xs md:p-6'
+          : 'border-line bg-surface-inset flex min-h-0 flex-col gap-3 overflow-y-auto border-b px-3 py-3 text-xs'
+      }
+    >
       {books.length > 0 && (
         <ul className="flex flex-col gap-1">
           {books.map((b) => (
@@ -527,31 +550,44 @@ function BooksManager({ onClose }: { onClose: () => void }) {
         <p className="text-subtle font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
           {t('Build a book')}
         </p>
-        {sources.length === 0 ? (
+        {everySource.length === 0 ? (
           <p className="text-muted leading-relaxed">
             {t('No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.')}
           </p>
         ) : (
           <>
-            {sources.map((s) => (
-              <label key={s.name} className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={picked.has(s.name)}
-                  onChange={(e) => {
-                    const next = new Set(picked);
-                    if (e.target.checked) next.add(s.name);
-                    else next.delete(s.name);
-                    setPicked(next);
-                  }}
-                  className="accent-primary"
-                />
-                <span className="text-fg min-w-0 flex-1 truncate font-mono">{s.name}</span>
-                <span className="text-subtle shrink-0 tabular-nums">
-                  {(s.bytes / 1e6).toFixed(0)} MB
-                </span>
-              </label>
-            ))}
+            {(['collections', 'mine'] as const).map((group) => {
+              const rows = everySource.filter((s) => (group === 'mine') === s.mine);
+              if (!rows.length) return null;
+              return (
+                <div key={group} className="flex flex-col gap-1">
+                  <p className="text-subtle mt-1 font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
+                    {group === 'mine' ? t('Your games in this vault') : t('Uploaded collections')}
+                  </p>
+                  {rows.map((s) => (
+                    <label key={s.id} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={picked.has(s.id)}
+                        onChange={(e) => {
+                          const next = new Set(picked);
+                          if (e.target.checked) next.add(s.id);
+                          else next.delete(s.id);
+                          setPicked(next);
+                        }}
+                        className="accent-primary"
+                      />
+                      <span className="text-fg min-w-0 flex-1 truncate font-mono">{s.label}</span>
+                      <span className="text-subtle shrink-0 tabular-nums">
+                        {s.bytes < 1e6
+                          ? `${Math.max(1, Math.round(s.bytes / 1e3))} KB`
+                          : `${(s.bytes / 1e6).toFixed(0)} MB`}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })}
             {tooSmall && (
               <p className="text-muted mt-1 leading-relaxed">
                 {t(
@@ -620,11 +656,13 @@ function BooksManager({ onClose }: { onClose: () => void }) {
 
       {error && <p className="text-bad">{error}</p>}
 
-      <div className="flex justify-end">
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {t('Close')}
-        </Button>
-      </div>
+      {onClose && (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Close')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

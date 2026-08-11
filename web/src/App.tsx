@@ -43,6 +43,7 @@ const HomePage = lazyRoute(() => import('@/home/HomePage').then((m) => ({ defaul
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
+const BooksManager = lazyRoute(() => import('@/explorer/ExplorerPane').then((m) => ({ default: m.BooksManager })));
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
@@ -68,8 +69,10 @@ const TOOLS_SUBNAV: {
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
   { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
+  { key: 'books', label: 'Opening books', icon: BookOpen, nav: ['books'], active: (s) => s === 'books' },
 ];
-const inTools = (s: Section): boolean => s === 'analysis' || s === 'editor' || s === 'repertoire';
+const inTools = (s: Section): boolean =>
+  s === 'analysis' || s === 'editor' || s === 'repertoire' || s === 'books';
 
 export function App() {
   return (
@@ -169,6 +172,10 @@ function Shell() {
           <PuzzlesView params={params} />
         ) : section === 'repertoire' ? (
           <RepertoireView />
+        ) : section === 'books' ? (
+          <div className="h-full overflow-y-auto">
+            <BooksManager page />
+          </div>
         ) : section === 'settings' ? (
           <SettingsPage />
         ) : section === 'more' ? (
@@ -397,6 +404,7 @@ const MORE_GROUPS: {
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
+      { section: 'books', label: 'Opening books', icon: BookOpen, blurb: 'Build a book from collections or your own games' },
     ],
   },
   {

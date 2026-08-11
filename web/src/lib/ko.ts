@@ -453,6 +453,10 @@ export const ko: Record<string, string> = {
   'No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.':
     '아직 PGN 모음이 없습니다. 아래에서 추가하세요. 북은 참고할 만하려면 수천 판이 필요하므로, 보통 한 달치나 데이터베이스 전체를 내보낸 파일을 씁니다 — Lichess Elite 월별 파일, Gigabase 같은 것들입니다.',
   'Add PGN files': 'PGN 파일 추가',
+  'Opening books': '오프닝 북',
+  'Build a book from collections or your own games': '모음이나 내 기보로 북을 만듭니다',
+  'Your games in this vault': '이 보관함의 내 기보',
+  'Uploaded collections': '올린 모음',
   'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.':
     '작은 모음입니다. 내 기보 데이터베이스로는 괜찮습니다 — 무엇을 뒀고 결과가 어땠는지 알려 줍니다. 다만 일반적으로 어떻게 두는지에 대한 참고 자료로는 오해를 부릅니다. 판수가 적어 국면마다 한 수가 100%로 나오기 때문입니다.',
   'Uploading {name}…': '{name} 올리는 중…',

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { INITIAL_FEN } from 'chessops/fen';
@@ -37,7 +37,9 @@ describe('books api', () => {
       sources: [join(dir, 'test-source.pgn')],
       out: join(dir, 'testbook.sqlite'),
     });
-    app = new Hono().route('/api', booksApi({ books: dir, sources: dir }));
+    mkdirSync(join(dir, 'games', 'chesscom', 'someone'), { recursive: true });
+    writeFileSync(join(dir, 'games', 'chesscom', 'someone', '2026-08.pgn'), PGN);
+    app = new Hono().route('/api', booksApi({ books: dir, sources: dir, games: join(dir, 'games') }));
   });
 
   afterAll(() => {
@@ -125,6 +127,32 @@ describe('books api', () => {
     expect((await app.request('/api/sources/uploaded.pgn', { method: 'DELETE' })).status).toBe(200);
     expect(existsSync(join(dir, 'uploaded.pgn'))).toBe(false);
     expect((await app.request('/api/sources/uploaded.pgn', { method: 'DELETE' })).status).toBe(404);
+  });
+
+  it('offers the vault own games as book sources', async () => {
+    const res = await app.request('/api/sources');
+    const { games } = await res.json();
+    expect(games.map((g: { id: string }) => g.id)).toEqual(['games/chesscom/someone/2026-08.pgn']);
+  });
+
+  it('refuses a source that climbs out of its directory', async () => {
+    for (const source of ['games/../../escape.pgn', '../escape.pgn', 'games/', 'games/x.txt']) {
+      const res = await app.request('/api/books/build', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: 'nope', sources: [source] }),
+      });
+      expect(res.status, source).toBe(400);
+    }
+  });
+
+  it('builds a book from the vault own games', async () => {
+    const res = await app.request('/api/books/build', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'mygames', sources: ['games/chesscom/someone/2026-08.pgn'] }),
+    });
+    expect(res.status).toBe(200);
   });
 
   it('deletes a book', async () => {
