@@ -11,7 +11,10 @@ const render = (size, path) => {
 render(512, 'web/public/icon-512.png');
 render(192, 'web/public/icon-192.png');
 render(180, 'web/public/apple-touch-icon.png');
-render(256, 'desktop/icon.png');
+// 512 because electron-builder refuses anything smaller for macOS: "Icon
+// must be at least 512x512 pixels, provided: 256x256". It was 256, which
+// meant the mac target could never have built.
+render(512, 'desktop/icon.png');
 
 /**
  * iOS splash screens (apple-touch-startup-image): the app background with

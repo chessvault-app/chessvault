@@ -156,6 +156,7 @@
       "icon": "desktop/icon.png",
       "category": "Game",
       "synopsis": "Your chess, in plain files",
+      "maintainer": "the Chess Vault authors <chessvault-app@users.noreply.github.com>",
       "desktop": {
         "entry": {
           "StartupWMClass": "Chess Vault"
