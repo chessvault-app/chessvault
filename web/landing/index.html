@@ -103,18 +103,61 @@
 
       .split { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
       @media (min-width: 48rem) { .split { grid-template-columns: 1fr 1fr; } }
-      .split img { width: 100%; border-radius: 0.8rem; border: 1px solid var(--line); }
+      /* One shape for both, so the two sections do not step. The ratio is
+         the WIDER screenshot's own (2880x1480), so that one is untouched
+         and only the taller one is cropped — from the bottom, where its
+         content is a list that visibly continues. Cropping the sides
+         instead would have cut into a sidebar. */
+      .split img {
+        width: 100%; aspect-ratio: 2880 / 1480; object-fit: cover; object-position: top;
+        border-radius: 0.8rem; border: 1px solid var(--line);
+      }
       .split p { color: var(--muted); }
 
-      .downloads { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
-      .dl { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: var(--s5); }
+      /* 18rem, not 16: three OS buttons have to sit on one line inside the
+         first card, and 16rem left them wrapping. Three 18rem cards plus
+         gaps still fit the 62rem wrap, so the desktop layout is unchanged. */
+      .downloads { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+      /* Column + auto margin on the last child: the three cards carry
+         different amounts of prose, and without this their calls to action
+         sat at three different heights. */
+      .dl {
+        display: flex; flex-direction: column;
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: 0.9rem; padding: var(--s5);
+      }
       .dl h3 { margin: 0 0 var(--s2); font-size: 1rem; }
       .dl p { margin: 0 0 var(--s4); color: var(--muted); font-size: 0.88rem; }
-      /* Wraps rather than scrolls: three short buttons fit one line on a
-         desktop and stack cleanly on a phone, and a horizontally scrolling
-         download row would hide the platform somebody came for. */
-      .os-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
-      .btn.os { gap: 0.45rem; }
+      .dl > :last-child { margin-top: auto; }
+      /* A card's call to action fills its width and matches the OS row's
+         size, so the two button cards line up instead of differing by the
+         few pixels a font-size apart costs. */
+      .dl > .btn { justify-content: center; font-size: 0.9rem; }
+      /* A .btn's own background is --surface, which is also the card's, so
+         inside a card it read as a bare outline. */
+      .dl .btn:not(.primary) { background: var(--bg); }
+      .dl .btn:not(.primary):hover { background: var(--line); }
+      /* One row, never wrapped. The three share the width equally and
+         shrink together, so the card cannot be narrow enough to break the
+         line — a wrapped download row put one platform below the others
+         and made it look like an afterthought. */
+      .os-row { display: flex; flex-wrap: nowrap; gap: var(--s2); }
+      .btn.os {
+        /* Basis auto, not 0: forcing three equal widths gave "Windows" the
+           same share as "Linux", so the longest label overflowed while the
+           shortest had slack. Sizing to content and sharing the remainder
+           makes the row fit whenever the three labels together fit, which
+           is the only condition that actually matters. */
+        flex: 1 1 auto; min-width: 0; justify-content: center;
+        gap: 0.35rem; padding-inline: var(--s2);
+        /* Shrinks with the viewport so the row never has to wrap. Measured,
+           not guessed: "Windows" — the longest of the three — needs 58px of
+           icon + gap + text at 0.9rem, and the narrowest share the grid can
+           give a button is 85px at the 62rem wrap and 75px on a 320px
+           phone. The floor is what keeps the second case inside. */
+        font-size: clamp(0.72rem, 0.636rem + 0.41vw, 0.9rem);
+        white-space: nowrap;
+      }
       .btn.os svg { width: 1em; height: 1em; flex: none; }
       code {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
