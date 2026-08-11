@@ -8,7 +8,7 @@ import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { cn } from '@/lib/cn';
-import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet } from '@/store/prefs';
+import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -460,6 +460,13 @@ function AppearanceCard() {
 
 // --- Sound ---------------------------------------------------------------
 
+/** Numbered takes, or the rotating option — see MOVE_SOUNDS for the order. */
+const soundOption = ({ id, take }: SoundChoice): { value: string; label: string } => ({
+  value: id,
+  label: take === null ? t('Rotate through all') : t('Take {n}', { n: take }),
+});
+
+
 /**
  * Its own card rather than one switch under Appearance.
  *
@@ -512,7 +519,7 @@ function SoundCard() {
             previewSound('move', v);
           }}
           ariaLabel={t('Move sound')}
-          groups={[{ options: MOVE_SOUNDS.map(({ id, label }) => ({ value: id, label: t(label) })) }]}
+          groups={[{ options: MOVE_SOUNDS.map(soundOption) }]}
         />
       </Field>
 
@@ -524,13 +531,13 @@ function SoundCard() {
             previewSound('capture', v);
           }}
           ariaLabel={t('Capture sound')}
-          groups={[{ options: CAPTURE_SOUNDS.map(({ id, label }) => ({ value: id, label: t(label) })) }]}
+          groups={[{ options: CAPTURE_SOUNDS.map(soundOption) }]}
         />
       </Field>
 
       <p className="text-subtle text-xs leading-relaxed">
         {t(
-          'Rotating plays a different take each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.',
+          'Takes run from deepest to brightest. Rotating plays a different one each time, so a long analysis does not sound like one sample repeating. The sounds are synthesised, not recorded.',
         )}
       </p>
     </Card>

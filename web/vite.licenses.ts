@@ -1,7 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import MarkdownIt from 'markdown-it';
 import type { Plugin } from 'vite';
 
 /**
@@ -17,14 +16,15 @@ import type { Plugin } from 'vite';
  * on purpose, for the rest, without moving the texts out of the conventional
  * place a source tree keeps them.
  *
- * The index page is GENERATED from THIRD-PARTY.md rather than written twice.
- * That file is the notice; a hand-kept copy of it would be the version that
- * goes stale.
+ * The page it generates is the notice itself: one list of everything the
+ * app is built from — bundled assets, npm packages, and Electron's Chromium
+ * components — each row opening to its own licence text. THIRD-PARTY.md is
+ * the human summary and is deliberately NOT rendered here; a page that
+ * repeats a document is a second copy to keep true.
  */
 
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const SOURCE = resolve(repo, 'licenses');
-const NOTICE = resolve(repo, 'THIRD-PARTY.md');
 
 const pkg = JSON.parse(readFileSync(resolve(repo, 'package.json'), 'utf8')) as {
   repository?: { url?: string };
@@ -38,7 +38,34 @@ const pkg = JSON.parse(readFileSync(resolve(repo, 'package.json'), 'utf8')) as {
  */
 export const REPO_URL = pkg.repository?.url ?? '';
 
-const md = new MarkdownIt({ html: false, linkify: true });
+/**
+ * Bundled work that is not an npm package, so no dependency walk can find
+ * it: artwork vendored as base64 into the CSS, data compiled into the
+ * databases, and the sounds. Each names the licence text shipped beside it
+ * in this directory.
+ */
+const ASSETS: { name: string; version: string; license: string; url: string; file: string | null }[] = [
+  { name: 'cburnett (piece set, app icon, favicon)', version: '—', license: 'GPL-2.0-or-later',
+    url: 'https://github.com/lichess-org/lila/tree/master/public/piece/cburnett', file: 'GPL-2.0.txt' },
+  { name: 'merida (piece set)', version: '—', license: 'GPL-2.0-or-later',
+    url: 'https://github.com/lichess-org/lila/tree/master/public/piece/merida', file: 'GPL-2.0.txt' },
+  { name: 'chessnut (piece set)', version: '—', license: 'Apache-2.0',
+    url: 'https://github.com/lichess-org/lila/tree/master/public/piece/chessnut', file: 'Apache-2.0.txt' },
+  { name: 'pirouetti (piece set)', version: '—', license: 'AGPL-3.0-or-later',
+    url: 'https://github.com/lichess-org/lila/tree/master/public/piece/pirouetti', file: 'AGPL-3.0.txt' },
+  { name: 'Stockfish (WASM engine)', version: '18', license: 'GPL-3.0-or-later',
+    url: 'https://github.com/official-stockfish/Stockfish', file: 'GPL-3.0-Stockfish.txt' },
+  { name: 'ECO opening names', version: '—', license: 'CC0-1.0',
+    url: 'https://github.com/lichess-org/chess-openings', file: null },
+  { name: 'Lichess puzzle database', version: '—', license: 'CC0-1.0',
+    url: 'https://database.lichess.org/#puzzles', file: null },
+  { name: 'Reference games (derived from the Lichess database)', version: '—', license: 'CC0-1.0',
+    url: 'https://database.lichess.org/', file: null },
+  { name: 'Move and capture sounds', version: '—', license: 'GPL-3.0-only (ours)',
+    url: 'https://github.com/chessvault-app/chesssounds-gen', file: null },
+  { name: 'CellNet board-recognition weights', version: 'v1', license: 'GPL-3.0-only (ours)',
+    url: REPO_URL, file: null },
+];
 
 /**
  * Every production dependency, with its own licence text.
@@ -69,7 +96,24 @@ interface Dep {
   name: string;
   version: string;
   license: string;
+  /** Where the source is, for the link on each row. */
+  url: string;
   text: string | null;
+}
+
+/** `repository` comes in several shapes; all of them reduce to a URL. */
+function sourceUrl(pkg: Record<string, unknown>, name: string): string {
+  const repository = pkg.repository as { url?: string } | string | undefined;
+  const raw = typeof repository === 'string' ? repository : (repository?.url ?? '');
+  const cleaned = raw
+    .replace(/^git\+/, '')
+    .replace(/^git:\/\//, 'https://')
+    .replace(/^github:/, 'https://github.com/')
+    .replace(/\.git$/, '');
+  if (cleaned.startsWith('http')) return cleaned;
+  if (cleaned) return `https://github.com/${cleaned}`;
+  const home = typeof pkg.homepage === 'string' ? pkg.homepage : '';
+  return home || `https://www.npmjs.com/package/${name}`;
 }
 
 function readJson(file: string): Record<string, unknown> | null {
@@ -125,6 +169,58 @@ const edges = (pkg: Record<string, unknown> | null): string[] => [
  */
 const SHIPPED_DEV_DEPS = ['electron'];
 
+/**
+ * Chromium's own components, from the file Electron ships.
+ *
+ * 773 entries and 19 MB of text, which is the bulk of what a desktop
+ * install actually contains — and none of it is visible to any npm tool,
+ * because none of it is an npm package. Only ~320 of those licence texts
+ * are distinct, so they are stored once and referenced, which is what makes
+ * shipping the list possible at all.
+ *
+ * Desktop only. The web and demo builds contain no Chromium, so listing it
+ * there would be a false claim about what the visitor received.
+ */
+const CHROMIUM_HTML = resolve(repo, 'node_modules/electron/dist/LICENSES.chromium.html');
+
+interface Chromium {
+  names: [name: string, url: string, text: number][];
+  texts: string[];
+}
+
+const unescapeHtml = (s: string): string =>
+  s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+
+function chromium(): Chromium | null {
+  if (!existsSync(CHROMIUM_HTML)) return null;
+  const html = readFileSync(CHROMIUM_HTML, 'utf8');
+  const texts: string[] = [];
+  const seen = new Map<string, number>();
+  const names: Chromium['names'] = [];
+
+  for (const block of html.split('<div class="product">').slice(1)) {
+    const name = /<span class="title">([^<]+)<\/span>/.exec(block)?.[1]?.trim();
+    if (!name) continue;
+    const url = /<span class="homepage"><a href="([^"]+)"/.exec(block)?.[1] ?? '';
+    const body = /<pre[^>]*>([\s\S]*?)<\/pre>/.exec(block)?.[1] ?? '';
+    const text = unescapeHtml(body).trim();
+
+    let at = seen.get(text);
+    if (at === undefined) {
+      at = texts.length;
+      texts.push(text);
+      seen.set(text, at);
+    }
+    names.push([unescapeHtml(name), unescapeHtml(url), at]);
+  }
+  return { names, texts };
+}
+
 function collect(): Dep[] {
   const root = readJson(resolve(repo, 'package.json'));
   const queue: { name: string; from: string }[] = [
@@ -163,7 +259,13 @@ function collect(): Dep[] {
       // the terms, and the shipped canonical texts cover the wording.
     }
 
-    out.push({ name, version: String(pkg.version ?? '?'), license, text });
+    out.push({
+      name,
+      version: String(pkg.version ?? '?'),
+      license,
+      url: sourceUrl(pkg, name),
+      text,
+    });
     queue.push(...edges(pkg).map((dep) => ({ name: dep, from: dir })));
   }
 
@@ -207,71 +309,89 @@ function dependencyNotice(deps: Dep[]): string {
   return [...head, ...body].join('\n');
 }
 
+/**
+ * One list of everything, each row openable to its own licence text.
+ *
+ * A single 325 kB notice satisfies the obligation and answers no actual
+ * question — nobody scrolls it to find out what one package is under.
+ * Everything except Chromium is inlined, so a licence stays readable with
+ * no network and with JavaScript off: <details> opens by itself, and the
+ * filter is the only scripted part.
+ */
 const escapeHtml = (s: string): string =>
   s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 
-/**
- * The package list, each one openable to its own text.
- *
- * A single 325 kB notice satisfies the obligation and answers no actual
- * question — nobody scrolls it to find out what one package is under. The
- * texts are inlined rather than fetched so that a licence is readable with
- * no network and no JavaScript: <details> opens on its own, and the filter
- * box above is the only scripted part.
- */
-function packageList(deps: Dep[]): string {
+interface Row {
+  name: string;
+  version: string;
+  license: string;
+  url: string;
+  /** Inlined licence text, or null when it is fetched on demand. */
+  text: string | null;
+  group: string;
+}
+
+function rowHtml(r: Row, index: number, lazy: boolean): string {
+  const body = lazy
+    ? '<pre data-lazy="' + index + '">…</pre>'
+    : `<pre>${escapeHtml(r.text ?? `No licence file ships with this component. It is under ${r.license}.`)}</pre>`;
+  return `      <details class="dep" data-name="${escapeHtml(r.name.toLowerCase())}" data-license="${escapeHtml(r.license)}" data-group="${escapeHtml(r.group)}">
+        <summary><span class="nm">${escapeHtml(r.name)}</span>${
+          r.version && r.version !== '—' ? `<span class="ver">${escapeHtml(r.version)}</span>` : ''
+        }<span class="lic">${escapeHtml(r.license)}</span></summary>
+        ${r.url ? `<p class="src"><a href="${escapeHtml(r.url)}" rel="noreferrer">${escapeHtml(r.url)}</a></p>` : ''}
+        ${body}
+      </details>`;
+}
+
+function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): string {
+  const rows: Row[] = [
+    ...ASSETS.map((a) => ({
+      name: a.name,
+      version: a.version,
+      license: a.license,
+      url: a.url,
+      text: a.file ? readFileSync(resolve(SOURCE, a.file), 'utf8').trim() : null,
+      group: 'Bundled assets',
+    })),
+    ...deps.map((d) => ({
+      name: d.name,
+      version: d.version,
+      license: d.license,
+      url: d.url,
+      text: d.text,
+      group: 'Packages',
+    })),
+  ];
+
+  // Chromium's texts are fetched on first open: 19 MB inlined would make a
+  // settings page nobody could load, and only the desktop app contains it.
+  const chromeRows = (chrome?.names ?? []).map(([name, url, at]) => ({
+    name,
+    version: '—',
+    license: 'see text',
+    url,
+    text: null,
+    group: 'Chromium (desktop app)',
+    at,
+  }));
+
   const counts = new Map<string, number>();
-  for (const d of deps) counts.set(d.license, (counts.get(d.license) ?? 0) + 1);
+  for (const r of [...rows, ...chromeRows]) counts.set(r.group, (counts.get(r.group) ?? 0) + 1);
 
   const chips = [...counts]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .map(
-      ([license, n]) =>
-        `<button type="button" class="chip" data-filter="${escapeHtml(license)}">` +
-        `${escapeHtml(license)} <span class="n">${n}</span></button>`,
+      ([group, n]) =>
+        `<button type="button" class="chip" data-group="${escapeHtml(group)}">${escapeHtml(group)} <span class="n">${n}</span></button>`,
     )
     .join('\n      ');
 
-  const items = deps
-    .map((d) => {
-      const body =
-        d.text ??
-        `This package ships no licence file. It declares ${d.license}; the ` +
-          'full text of that licence is linked above.';
-      return `      <details class="dep" data-name="${escapeHtml(d.name.toLowerCase())}" data-license="${escapeHtml(d.license)}">
-        <summary><span class="nm">${escapeHtml(d.name)}</span><span class="ver">${escapeHtml(d.version)}</span><span class="lic">${escapeHtml(d.license)}</span></summary>
-        <pre>${escapeHtml(body)}</pre>
-      </details>`;
-    })
-    .join('\n');
+  const list = [
+    ...rows.map((r, i) => rowHtml(r, i, false)),
+    ...chromeRows.map((r) => rowHtml(r, r.at, true)),
+  ].join('\n');
 
-  return `    <h2>Packages</h2>
-    <p class="lede">
-      Every npm package installed to build and run this app, with its own
-      licence text. Click one to read it. The same content as one plain file
-      is <a href="dependencies.txt">dependencies.txt</a>.
-    </p>
-    <div class="controls">
-      <input id="q" type="search" placeholder="Filter ${deps.length} packages by name or licence…" autocomplete="off" />
-      <button type="button" class="chip clear" data-filter="">all <span class="n">${deps.length}</span></button>
-      ${chips}
-    </div>
-    <p id="count" class="lede" aria-live="polite"></p>
-${items}`;
-}
-
-function indexPage(files: string[], deps: Dep[]): string {
-  const notice = md
-    .render(readFileSync(NOTICE, 'utf8'))
-    // The notice links `licenses/` as seen from the repository root. This
-    // page IS that directory, so the prefix comes off — and a link to the
-    // directory itself becomes a link to here, not an empty href.
-    .replaceAll('href="licenses/"', 'href="."')
-    .replaceAll('href="licenses/', 'href="');
-
-  const list = files
-    .map((name) => `      <li><a href="${name}">${name}</a></li>`)
-    .join('\n');
+  const total = rows.length + chromeRows.length;
 
   return `<!doctype html>
 <html lang="en">
@@ -282,19 +402,13 @@ function indexPage(files: string[], deps: Dep[]): string {
     <style>
       :root { color-scheme: light dark; }
       body {
-        margin: 0 auto; padding: 2.5rem 1.25rem 5rem; max-width: 46rem;
+        margin: 0 auto; padding: 2.5rem 1.25rem 5rem; max-width: 48rem;
         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
       }
-      h1 { font-size: 1.6rem; margin: 0 0 .5rem; }
-      h2 { font-size: 1.15rem; margin: 2.25rem 0 .5rem; }
-      h3 { font-size: 1rem; margin: 1.75rem 0 .5rem; }
-      code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .875em; }
-      table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; font-size: .9rem; }
-      th, td { border: 1px solid rgba(128,128,128,.35); padding: .4rem .6rem; text-align: left; vertical-align: top; }
-      ul.texts { padding-left: 1.2rem; }
-      .lede { opacity: .75; }
-
-      .controls { display: flex; flex-wrap: wrap; gap: .4rem; margin: .8rem 0; }
+      h1 { font-size: 1.6rem; margin: 0 0 .3rem; }
+      .lede { opacity: .75; margin: 0 0 .4rem; }
+      .copyright { font-size: .9rem; opacity: .85; margin: 0 0 1.4rem; }
+      .controls { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 .3rem; }
       #q {
         flex: 1 1 16rem; min-width: 0; font: inherit; font-size: .95rem;
         padding: .45rem .7rem; border-radius: .5rem;
@@ -308,6 +422,7 @@ function indexPage(files: string[], deps: Dep[]): string {
       .chip:hover { background: rgba(128,128,128,.15); }
       .chip[aria-pressed="true"] { background: rgba(128,128,128,.28); font-weight: 600; }
       .chip .n { opacity: .6; }
+      #count { font-size: .85rem; opacity: .7; margin: .2rem 0 .8rem; }
 
       .dep { border-top: 1px solid rgba(128,128,128,.25); }
       .dep[hidden] { display: none; }
@@ -315,11 +430,11 @@ function indexPage(files: string[], deps: Dep[]): string {
         cursor: pointer; padding: .5rem .2rem; display: flex; gap: .6rem;
         align-items: baseline; flex-wrap: wrap;
       }
-      .dep > summary::marker { color: rgba(128,128,128,.7); }
       .dep .nm { font-weight: 600; }
       .dep .ver { font-size: .8rem; opacity: .6; font-family: ui-monospace, monospace; }
       .dep .lic { font-size: .75rem; opacity: .8; margin-left: auto;
                   border: 1px solid rgba(128,128,128,.35); border-radius: 999px; padding: .05rem .5rem; }
+      .dep .src { margin: .1rem .2rem .5rem; font-size: .8rem; word-break: break-all; }
       .dep pre {
         margin: 0 0 1rem; padding: .9rem 1rem; border-radius: .5rem;
         background: rgba(128,128,128,.12); overflow-x: auto;
@@ -330,62 +445,90 @@ function indexPage(files: string[], deps: Dep[]): string {
   </head>
   <body>
     <h1>Licences</h1>
-    <p class="lede">
-      The full text of every licence this app's bundled work is under. The
-      source is at <a href="${REPO_URL}">${REPO_URL}</a>.
+    <p class="lede">Everything this app is built from, and the terms it is under.</p>
+    <p class="copyright">
+      Chess Vault © Chess Vault contributors, under the
+      <a href="GPL-3.0-Stockfish.txt">GNU General Public License v3</a>.
+      Source: <a href="${REPO_URL}" rel="noreferrer">${REPO_URL}</a>
     </p>
-    <h2>Licence texts</h2>
-    <ul class="texts">
+
+    <div class="controls">
+      <input id="q" type="search" placeholder="Filter ${total} entries by name or licence…" autocomplete="off" />
+      <button type="button" class="chip" data-group="">all <span class="n">${total}</span></button>
+      ${chips}
+    </div>
+    <p id="count" aria-live="polite"></p>
+
 ${list}
-    </ul>
-${notice}
-${packageList(deps)}
+
     <script>
       (function () {
         var q = document.getElementById('q');
         var count = document.getElementById('count');
         var deps = Array.prototype.slice.call(document.querySelectorAll('.dep'));
         var chips = Array.prototype.slice.call(document.querySelectorAll('.chip'));
-        var licence = '';
+        var group = '';
 
         function apply() {
           var term = q.value.trim().toLowerCase();
           var shown = 0;
           deps.forEach(function (d) {
             var ok =
-              (!licence || d.dataset.license === licence) &&
+              (!group || d.dataset.group === group) &&
               (!term ||
                 d.dataset.name.indexOf(term) !== -1 ||
                 d.dataset.license.toLowerCase().indexOf(term) !== -1);
             d.hidden = !ok;
-            // Collapse on the way out, so filtering back does not reveal a
-            // dozen licences left open from an earlier search.
             if (!ok) d.open = false;
             if (ok) shown++;
           });
-          count.textContent =
-            shown === deps.length ? '' : shown + ' of ' + deps.length + ' packages';
+          count.textContent = shown === deps.length ? '' : shown + ' of ' + deps.length;
           chips.forEach(function (c) {
-            c.setAttribute('aria-pressed', String(c.dataset.filter === licence));
+            c.setAttribute('aria-pressed', String(c.dataset.group === group));
           });
         }
-
         q.addEventListener('input', apply);
         chips.forEach(function (c) {
           c.addEventListener('click', function () {
-            licence = c.dataset.filter === licence ? '' : c.dataset.filter;
+            group = c.dataset.group === group ? '' : c.dataset.group;
             apply();
           });
         });
         apply();
+
+        // Chromium's texts live in one file, fetched the first time any of
+        // its rows is opened. Inlining 19 MB would make this page unusable
+        // to serve a list almost nobody expands.
+        var chromiumTexts = null;
+        var pending = null;
+        function fill(pre) {
+          var at = Number(pre.dataset.lazy);
+          pre.textContent = (chromiumTexts && chromiumTexts[at]) || 'Licence text unavailable.';
+        }
+        document.addEventListener('toggle', function (e) {
+          var d = e.target;
+          if (!d.open || !d.classList || !d.classList.contains('dep')) return;
+          var pre = d.querySelector('pre[data-lazy]');
+          if (!pre || pre.dataset.filled) return;
+          pre.dataset.filled = '1';
+          if (chromiumTexts) return fill(pre);
+          pre.textContent = 'Loading…';
+          pending = pending || fetch('chromium.json').then(function (r) { return r.json(); });
+          pending.then(function (data) { chromiumTexts = data; fill(pre); })
+                 .catch(function () { pre.textContent = 'Could not load the licence text.'; });
+        }, true);
       })();
     </script>
   </body>
 </html>
 `;
 }
-
-export function licenses(): Plugin {
+/**
+ * @param withChromium list Electron's Chromium components too. False for the
+ * web and demo builds, which contain no Chromium — claiming otherwise would
+ * describe something the visitor never received.
+ */
+export function licenses(withChromium = true): Plugin {
   let outDir = '';
   return {
     name: 'chess-vault:licenses',
@@ -405,12 +548,17 @@ export function licenses(): Plugin {
         const name = basename(decodeURIComponent((req.url ?? '/').split('?')[0] ?? '/'));
         if (!name || name === 'index.html') {
           res.setHeader('content-type', 'text/html; charset=utf-8');
-          res.end(indexPage(texts(), collect()));
+          res.end(indexPage(texts(), collect(), withChromium ? chromium() : null));
           return;
         }
         if (name === 'dependencies.txt') {
           res.setHeader('content-type', 'text/plain; charset=utf-8');
           res.end(dependencyNotice(collect()));
+          return;
+        }
+        if (name === 'chromium.json') {
+          res.setHeader('content-type', 'application/json; charset=utf-8');
+          res.end(JSON.stringify(chromium()?.texts ?? []));
           return;
         }
         const file = resolve(SOURCE, name);
@@ -427,9 +575,16 @@ export function licenses(): Plugin {
       for (const name of files) copyFileSync(resolve(SOURCE, name), resolve(target, name));
 
       const deps = collect();
+      const chrome = withChromium ? chromium() : null;
       writeFileSync(resolve(target, 'dependencies.txt'), dependencyNotice(deps));
-      writeFileSync(resolve(target, 'index.html'), indexPage(files, deps));
-      console.log(`licenses: ${files.length} texts + ${deps.length} dependency notices`);
+      if (chrome) {
+        writeFileSync(resolve(target, 'chromium.json'), JSON.stringify(chrome.texts));
+      }
+      writeFileSync(resolve(target, 'index.html'), indexPage(files, deps, chrome));
+      console.log(
+        `licenses: ${ASSETS.length} assets + ${deps.length} packages` +
+          (chrome ? ` + ${chrome.names.length} Chromium components` : ''),
+      );
     },
   };
 }

@@ -85,27 +85,46 @@ export const PIECE_SETS: { id: PieceSet; label: string }[] = [
  */
 export interface SoundChoice {
   id: string;
-  label: string;
+  /** Position in the list, 1-based. Null is the rotating option. */
+  take: number | null;
   file: string | null;
 }
 
-export const MOVE_SOUNDS: SoundChoice[] = [
-  { id: 'rotate', label: 'Rotate through all', file: null },
-  { id: 'deep', label: 'Deep', file: 'move-self-1.wav' }, //  919 Hz
-  { id: 'standard', label: 'Standard', file: 'move-self.wav' }, //  984 Hz
-  { id: 'bright', label: 'Bright', file: 'move-self-4.wav' }, // 1062 Hz
-  { id: 'sharp', label: 'Sharp', file: 'move-self-2.wav' }, // 1156 Hz
-  { id: 'long', label: 'Long', file: 'move-self-3.wav' }, //  54 ms
+/**
+ * Ordered darkest to brightest by measured spectral centroid, which is why
+ * they are numbered rather than named: with ten takes of one knock, an
+ * adjective per take would be inventing distinctions nobody can hear, while
+ * a consistent ordering means moving down the list is a single direction.
+ */
+const take = (files: string[]): SoundChoice[] => [
+  { id: 'rotate', take: null, file: null },
+  ...files.map((file, i) => ({ id: `take-${i + 1}`, take: i + 1, file })),
 ];
 
-export const CAPTURE_SOUNDS: SoundChoice[] = [
-  { id: 'rotate', label: 'Rotate through all', file: null },
-  { id: 'deep', label: 'Deep', file: 'capture-3.wav' }, // 1737 Hz
-  { id: 'standard', label: 'Standard', file: 'capture.wav' }, // 1907 Hz
-  { id: 'bright', label: 'Bright', file: 'capture-6.wav' }, // 2083 Hz
-  { id: 'sharp', label: 'Sharp', file: 'capture-8.wav' }, // 2186 Hz
-  { id: 'short', label: 'Short', file: 'capture-7.wav' }, //  51 ms
-];
+export const MOVE_SOUNDS: SoundChoice[] = take([
+  'move-opponent-3.wav', //  825 Hz
+  'move-self-1.wav', //  919 Hz
+  'move-opponent-1.wav', //  984 Hz
+  'move-self.wav', //  984 Hz
+  'move-self-3.wav', //  997 Hz
+  'move-self-4.wav', // 1062 Hz
+  'move-opponent-4.wav', // 1101 Hz
+  'move-self-2.wav', // 1156 Hz
+  'move-opponent.wav', // 1193 Hz
+  'move-opponent-2.wav', // 1352 Hz
+]);
+
+export const CAPTURE_SOUNDS: SoundChoice[] = take([
+  'capture-3.wav', // 1737 Hz
+  'capture.wav', // 1907 Hz
+  'capture-1.wav', // 1935 Hz
+  'capture-4.wav', // 1940 Hz
+  'capture-6.wav', // 2083 Hz
+  'capture-7.wav', // 2106 Hz
+  'capture-2.wav', // 2156 Hz
+  'capture-5.wav', // 2169 Hz
+  'capture-8.wav', // 2186 Hz
+]);
 
 interface PrefsState {
   boardTheme: BoardTheme;
