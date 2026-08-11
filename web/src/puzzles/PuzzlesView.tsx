@@ -278,7 +278,7 @@ function Trainer({
     const prev = prevPieces.current;
     prevPieces.current = pieces;
     if (prev === null || !displayed.lastMove) return;
-    playSound(displayed.check ? 'check' : pieces < prev ? 'capture' : 'move');
+    playSound(pieces < prev ? 'capture' : 'move');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayed?.fen]);
 

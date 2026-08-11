@@ -1,5 +1,6 @@
 import { Resvg } from '@resvg/resvg-js';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync } from 'node:fs';
+import pngToIco from 'png-to-ico';
 
 /** Rasterise the favicon knight into every PNG the app ships. */
 const svg = readFileSync('web/public/favicon.svg', 'utf-8');
@@ -18,6 +19,25 @@ render(180, 'web/public/apple-touch-icon.png');
 // 512 produced "invalid icon file size" and no Windows installer.
 render(512, 'desktop/icon.png');
 render(256, 'desktop/icon-256.png');
+
+/**
+ * favicon.ico, still, in 2026.
+ *
+ * The SVG favicon is linked and served correctly, but a browser that does
+ * not render SVG icons — and anything that simply asks for /favicon.ico —
+ * got the SPA's index.html back with a 200 and showed nothing. A real .ico
+ * at the conventional path is the fallback that makes the tab icon appear
+ * everywhere rather than almost everywhere.
+ */
+const ICO_SIZES = [16, 32, 48];
+const tmp = ICO_SIZES.map((size) => {
+  const path = `web/public/.favicon-${size}.png`;
+  render(size, path);
+  return path;
+});
+writeFileSync('web/public/favicon.ico', await pngToIco(tmp));
+for (const path of tmp) rmSync(path);
+console.log('web/public/favicon.ico  16+32+48');
 
 /**
  * iOS splash screens (apple-touch-startup-image): the app background with

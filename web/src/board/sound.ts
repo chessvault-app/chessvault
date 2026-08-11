@@ -5,8 +5,10 @@
  * ours outright — no recording is sampled and nothing here carries anyone
  * else's licence.
  *
- * Lichess has no distinct check sound and neither does the generator, so
- * check plays the move sample plus a short synthesised accent.
+ * There is no check sound, by the same reasoning lichess uses: a checking
+ * move plays the ordinary move or capture sound. What used to be here was a
+ * two-note accent synthesised on top, which no sample in the set was made
+ * to sit under.
  *
  * Everything is decoded once into WebAudio buffers: no play latency, and
  * overlapping sounds mix instead of cutting each other off. WAV rather than
@@ -16,7 +18,7 @@
 
 import { CAPTURE_SOUNDS, MOVE_SOUNDS, usePrefs, type SoundChoice } from '@/store/prefs';
 
-export type SoundKind = 'move' | 'capture' | 'check';
+export type SoundKind = 'move' | 'capture';
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -93,25 +95,6 @@ function pick(kind: SoundKind, choices: SoundChoice[], selected: string): string
   return takes[at % takes.length]!;
 }
 
-/** The check accent: a brief, quiet two-note alert over the move sample. */
-function playAccent(ac: AudioContext): void {
-  const at = ac.currentTime + 0.02;
-  for (const [offset, freq] of [
-    [0, 740],
-    [0.085, 990],
-  ] as const) {
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, at + offset);
-    gain.gain.setValueAtTime(0.07, at + offset);
-    gain.gain.exponentialRampToValueAtTime(0.001, at + offset + 0.1);
-    osc.connect(gain).connect(output(ac));
-    osc.start(at + offset);
-    osc.stop(at + offset + 0.12);
-  }
-}
-
 export function playSound(kind: SoundKind): void {
   const prefs = usePrefs.getState();
   if (!prefs.sound) return;
@@ -123,10 +106,6 @@ export function playSound(kind: SoundKind): void {
       break;
     case 'capture':
       playSample(ac, pick('capture', CAPTURE_SOUNDS, prefs.captureSound));
-      break;
-    case 'check':
-      playSample(ac, pick('check', MOVE_SOUNDS, prefs.moveSound));
-      playAccent(ac);
       break;
   }
 }
@@ -144,9 +123,7 @@ export function previewSound(kind: 'move' | 'capture', id: string): void {
   playSample(ac, pick(kind, kind === 'move' ? MOVE_SOUNDS : CAPTURE_SOUNDS, id));
 }
 
-/** Sound for a rendered move, judged from its SAN. Check trumps capture. */
+/** Sound for a rendered move, judged from its SAN. */
 export function soundForSan(san: string): SoundKind {
-  if (san.includes('+') || san.includes('#')) return 'check';
-  if (san.includes('x')) return 'capture';
-  return 'move';
+  return san.includes('x') ? 'capture' : 'move';
 }

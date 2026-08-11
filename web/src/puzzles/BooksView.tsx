@@ -1815,7 +1815,7 @@ function SolutionRecorder({
     const move = parseUci(uci);
     if (!move || !pos.isLegal(move)) return;
     const san = makeSanAndPlay(pos, move);
-    playSound(san.includes('#') || san.includes('+') ? 'check' : san.includes('x') ? 'capture' : 'move');
+    playSound(san.includes('x') ? 'capture' : 'move');
     setLine((prev) => [...prev, { uci, san, fen: makeFen(pos.toSetup()) }]);
     setVerdicts(null);
   };
@@ -2313,7 +2313,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     const prev = prevPieces.current;
     prevPieces.current = pieces;
     if (prev === null || !node.uci) return;
-    playSound(pos.isCheck() ? 'check' : pieces < prev ? 'capture' : 'move');
+    playSound(pieces < prev ? 'capture' : 'move');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.fen]);
 
