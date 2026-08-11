@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
+import { licenses } from './vite.licenses.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -19,7 +20,7 @@ const crossOriginIsolation = {
 export default defineConfig({
   root,
   publicDir: `${root}public`,
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), licenses()],
   resolve: {
     alias: {
       '@shared': `${repo}shared`,

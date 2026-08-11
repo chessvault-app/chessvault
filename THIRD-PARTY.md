@@ -6,6 +6,11 @@ obligation: when a copy is conveyed — an AppImage downloaded, a demo page
 loaded — the licence has to travel with it. Someone who never visits the
 repository still has to receive them.
 
+Every build therefore carries them: `web/vite.licenses.ts` copies the
+directory into the output and generates `licenses/index.html` from this
+file, which Settings links to beside the version, and the landing page from
+its footer.
+
 What this app ships that somebody else made, and under what terms. Kept
 because "we are GPL-3.0" covers our own code and says nothing about a
 bundled engine's obligations or an artist's attribution.

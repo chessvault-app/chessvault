@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
+import { licenses } from './vite.licenses.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -23,7 +24,7 @@ export default defineConfig({
   root,
   base: './',
   publicDir: `${root}public`,
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), licenses()],
   define: {
     // server/paths.ts reads process.env for its overrides; in the demo there
     // are none, and an undefined `process` would throw at import.

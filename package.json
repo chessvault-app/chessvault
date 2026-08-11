@@ -5,6 +5,10 @@
   "version": "0.2.3",
   "type": "module",
   "description": "A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chessvault-app/chessvault"
+  },
   "scripts": {
     "predev": "npm run setup:engine",
     "dev": "concurrently -n server,web -c cyan,magenta \"npm:dev:server\" \"npm:dev:web\"",

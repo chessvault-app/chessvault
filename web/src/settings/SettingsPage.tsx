@@ -279,6 +279,32 @@ function VersionCard() {
           )}
         </div>
       )}
+      {/* The source link is not decoration: pirouetti's pieces are AGPLv3,
+          whose §13 owes an offer of source to anyone using the app over a
+          network — which is every visitor to the demo. The licence texts
+          ship with the build (web/vite.licenses.ts) so a copy that was
+          conveyed carries them, rather than pointing at a repository the
+          reader may never open. */}
+      <p className="text-subtle text-xs leading-relaxed">
+        {t('Free software under the GPL-3.0.')}{' '}
+        <a
+          className="text-primary underline underline-offset-2"
+          href={__REPO_URL__}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t('Source code')}
+        </a>
+        {' · '}
+        <a
+          className="text-primary underline underline-offset-2"
+          href={`${import.meta.env.BASE_URL}licenses/index.html`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t('Licences')}
+        </a>
+      </p>
     </Card>
   );
 }
