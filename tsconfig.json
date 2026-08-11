@@ -21,10 +21,11 @@
     "isolatedModules": true,
     "noEmit": true,
     "types": ["node", "vitest/globals"],
-    "baseUrl": ".",
+    // TypeScript 7 removed baseUrl and requires path targets to be
+    // relative; these resolve from this file's directory now.
     "paths": {
-      "@shared/*": ["shared/*"],
-      "@/*": ["web/src/*"]
+      "@shared/*": ["./shared/*"],
+      "@/*": ["./web/src/*"]
     }
   },
   "include": ["shared/**/*.ts", "server/**/*.ts", "scripts/**/*.ts", "web/src/**/*.ts", "web/src/**/*.tsx", "web/*.ts"]
