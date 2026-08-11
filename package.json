@@ -157,7 +157,9 @@
       "category": "Game",
       "synopsis": "Your chess, in plain files",
       "desktop": {
-        "StartupWMClass": "Chess Vault"
+        "entry": {
+          "StartupWMClass": "Chess Vault"
+        }
       }
     }
   },
