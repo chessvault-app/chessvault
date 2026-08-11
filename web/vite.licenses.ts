@@ -26,8 +26,19 @@ import type { Plugin } from 'vite';
 const repo = fileURLToPath(new URL('..', import.meta.url));
 const SOURCE = resolve(repo, 'licenses');
 
+/**
+ * This project's OWN licence, copied into the output as GPL-3.0.txt.
+ *
+ * It used to be missing, and the page's "under the GNU General Public
+ * License v3" linked to GPL-3.0-Stockfish.txt instead — Stockfish's copy of
+ * the same text, under a filename that says it belongs to a different
+ * project. The words were identical and the attribution was wrong.
+ */
+const OWN_LICENSE = resolve(repo, 'LICENSE');
+
 const pkg = JSON.parse(readFileSync(resolve(repo, 'package.json'), 'utf8')) as {
   repository?: { url?: string };
+  author?: string | { name?: string };
 };
 
 /**
@@ -37,6 +48,24 @@ const pkg = JSON.parse(readFileSync(resolve(repo, 'package.json'), 'utf8')) as {
  * the app and the generated page cannot disagree.
  */
 export const REPO_URL = pkg.repository?.url ?? '';
+
+/**
+ * Whose copyright. Read from package.json rather than written here, because
+ * a name in a licence notice is an assertion about who holds the rights and
+ * it should have exactly one source. The GPL expects one; the bare LICENSE
+ * text carries only the FSF's line, which covers the licence document
+ * itself and grants nothing on our behalf.
+ */
+export const COPYRIGHT =
+  typeof pkg.author === 'string' ? pkg.author : (pkg.author?.name ?? 'the Chess Vault authors');
+
+/**
+ * Stated, not taken from the clock. A copyright year is the year of
+ * publication, so deriving it from the build date would rewrite history
+ * every January and claim a date the work was not first published in.
+ * Widen to a range ("2026–2027") when the project spans years.
+ */
+export const COPYRIGHT_YEAR = '2026';
 
 /**
  * Bundled work that is not an npm package, so no dependency walk can find
@@ -447,8 +476,8 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
     <h1>Licences</h1>
     <p class="lede">Everything this app is built from, and the terms it is under.</p>
     <p class="copyright">
-      Chess Vault © Chess Vault contributors, under the
-      <a href="GPL-3.0-Stockfish.txt">GNU General Public License v3</a>.
+      Chess Vault © ${COPYRIGHT_YEAR} ${escapeHtml(COPYRIGHT)}, under the
+      <a href="GPL-3.0.txt">GNU General Public License v3</a>.
       Source: <a href="${REPO_URL}" rel="noreferrer">${REPO_URL}</a>
     </p>
 
@@ -561,6 +590,11 @@ export function licenses(withChromium = true): Plugin {
           res.end(JSON.stringify(chromium()?.texts ?? []));
           return;
         }
+        if (name === 'GPL-3.0.txt') {
+          res.setHeader('content-type', 'text/plain; charset=utf-8');
+          res.end(readFileSync(OWN_LICENSE));
+          return;
+        }
         const file = resolve(SOURCE, name);
         if (!texts().includes(name) || !existsSync(file)) return next();
         res.setHeader('content-type', 'text/plain; charset=utf-8');
@@ -573,6 +607,7 @@ export function licenses(withChromium = true): Plugin {
       const target = resolve(outDir, 'licenses');
       mkdirSync(target, { recursive: true });
       for (const name of files) copyFileSync(resolve(SOURCE, name), resolve(target, name));
+      copyFileSync(OWN_LICENSE, resolve(target, 'GPL-3.0.txt'));
 
       const deps = collect();
       const chrome = withChromium ? chromium() : null;

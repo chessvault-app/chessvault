@@ -2,6 +2,7 @@
   "name": "chess-vault",
   "private": true,
   "license": "GPL-3.0-only",
+  "author": "the Chess Vault authors",
   "version": "0.2.3",
   "type": "module",
   "description": "A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles.",

@@ -242,6 +242,8 @@ are listed in [THIRD-PARTY.md](THIRD-PARTY.md). Every npm package is
 covered too, generated at build time into `licenses/dependencies.txt` and
 browsable in the app under Settings → Licences.
 
+Copyright © 2026 the Chess Vault authors.
+
 This project is licensed under **GPL-3.0** (see [LICENSE](LICENSE)) —
 the choice is effectively made by its bundled dependencies: Stockfish
 and Stockfish.js are GPLv3. `chessops` and
