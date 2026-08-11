@@ -10,7 +10,7 @@ import { makeSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
 import { openingForKey } from './openings.ts';
-import { DATA_BOOKS, REPO_ROOT, VAULT_GAMES, VAULT_SOURCES } from './paths.ts';
+import { DATA_BOOKS, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
 /** No slashes, no dots-only names — book names map straight to file names. */
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
@@ -67,12 +67,10 @@ let job: BuildJob | null = null;
 export interface BooksApiDirs {
   books: string;
   sources: string;
-  /** The vault's own games, usable as book sources. */
-  games?: string;
 }
 
 export function booksApi(
-  dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAULT_SOURCES, games: VAULT_GAMES },
+  dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAULT_SOURCES },
 ): Hono {
   mkdirSync(dirs.books, { recursive: true });
   const api = new Hono();
@@ -97,54 +95,23 @@ export function booksApi(
   /**
    * Turn a source id from the client into an absolute path, or null.
    *
-   * Two namespaces: a bare filename is an uploaded collection in
-   * vault/sources, and `games/<relative path>` is one of the vault's own
-   * game files — the archives pulled from chess.com or Lichess, and the
-   * curated collection. Both are containment-checked after resolve(), so a
-   * crafted id cannot walk out of the directory it names.
+   * One namespace: an uploaded collection in vault/sources, named by its
+   * bare filename. Containment-checked after resolve(), so a crafted id
+   * cannot walk out of the directory it names.
+   *
+   * The vault's own games used to be a second namespace here, and it did
+   * not work: `/books` reports a book's sources through basename(), which
+   * threw the `games/` prefix away, so Rebuild answered 400 for every book
+   * built from them. It is gone rather than repaired — a book is the wrong
+   * shape for your own games (see server/myGames.ts), and the fix would
+   * have made a broken workflow merely functional.
    */
   const sourcePath = (id: string): string | null => {
-    if (!id.endsWith('.pgn')) return null;
-    const [root, rest] = id.startsWith('games/')
-      ? [dirs.games, id.slice('games/'.length)]
-      : [dirs.sources, id];
-    if (!root || !rest || rest.includes('\\')) return null;
-    const path = resolve(root, rest);
-    if (!path.startsWith(resolve(root) + sep)) return null;
+    if (!id.endsWith('.pgn') || id.includes('/') || id.includes('\\')) return null;
+    const root = resolve(dirs.sources);
+    const path = resolve(root, id);
+    if (!path.startsWith(root + sep)) return null;
     return existsSync(path) ? path : null;
-  };
-
-  /**
-   * Every .pgn under a directory, relative to it, newest-looking first.
-   *
-   * Listed recursively rather than walked by hand, and deliberately NOT
-   * gated on existsSync: the static demo runs this code against an
-   * in-memory filesystem where a directory only "exists" if something
-   * explicitly created it, so the guard returned nothing while the files
-   * were plainly there. A failed listing is simply no sources.
-   */
-  const pgnsUnder = (root: string): { name: string; bytes: number }[] => {
-    let entries: string[];
-    try {
-      entries = readdirSync(root, { recursive: true }) as unknown as string[];
-    } catch {
-      return [];
-    }
-    const out: { name: string; bytes: number }[] = [];
-    for (const entry of entries) {
-      const rel = String(entry).split('\\').join('/');
-      if (!rel.endsWith('.pgn')) continue;
-      try {
-        // Joined as a string, not via resolve(): the demo's path shim
-        // normalises differently, so a resolve()d key missed its own file
-        // and every stat threw ENOENT into the catch below — leaving the
-        // list silently empty while the games were plainly there.
-        out.push({ name: rel, bytes: statSync(`${root}/${rel}`).size });
-      } catch {
-        // listed then vanished, or a broken link — not a source either way
-      }
-    }
-    return out.sort((a, b) => b.name.localeCompare(a.name));
   };
 
   const startBuild = (name: string, sources: string[], flags: string[]): void => {
@@ -354,12 +321,7 @@ export function booksApi(
     const sources = readdirSync(dirs.sources)
       .filter((f) => f.endsWith('.pgn'))
       .map((f) => ({ name: f, bytes: statSync(resolve(dirs.sources, f)).size }));
-    // The vault's own games are book sources too — a book built from them
-    // is a database of what YOU have played, not of what is normal.
-    const games = dirs.games
-      ? pgnsUnder(dirs.games).map((g) => ({ ...g, id: `games/${g.name}` }))
-      : [];
-    return c.json({ sources, games });
+    return c.json({ sources });
   });
 
   /**

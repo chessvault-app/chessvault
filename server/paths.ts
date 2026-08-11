@@ -28,6 +28,8 @@ export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_BOOKS = resolve(DATA, 'books');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 export const DATA_OPENINGS = resolve(DATA, 'openings.json');
+/** The live index over the vault's own games (see server/myGames.ts). */
+export const DATA_MYGAMES = resolve(DATA, 'mygames.sqlite');
 export const DATA_EXPLORER_CACHE = resolve(DATA, 'explorer-cache');
 
 /**

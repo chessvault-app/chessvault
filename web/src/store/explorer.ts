@@ -30,6 +30,29 @@ export interface TopGame {
   result: string;
   date: string | null;
   site: string | null;
+  /** Set only for your own games: where the game lives in the vault. */
+  file?: string;
+  index?: number;
+}
+
+export type Speed = 'bullet' | 'blitz' | 'rapid' | 'classical' | 'correspondence';
+
+/**
+ * What to count when exploring your own games.
+ *
+ * Persisted alongside the source choice: a filter you set is a question you
+ * are asking, and it should still be the question after a reload. Every
+ * field absent means "all of them" — the filter set has no default state to
+ * get out of step with.
+ */
+export interface MyGamesFilters {
+  side?: 'white' | 'black';
+  outcome?: 'win' | 'loss' | 'draw';
+  speeds?: Speed[];
+  collectionOnly?: boolean;
+  /** Inclusive `YYYY-MM-DD` bounds. */
+  from?: string;
+  to?: string;
 }
 
 export interface Opening {
@@ -48,10 +71,17 @@ export interface BuildStatus {
 interface ExplorerState {
   /** Pane visibility switch (persisted). */
   enabled: boolean;
-  /** Selected book name (persisted). Null falls back to the first book. */
+  /**
+   * The selected source (persisted): a book name, a `lichess:` database, or
+   * MY_GAMES. Null falls back to the first book.
+   */
   book: string | null;
   books: BookInfo[];
   booksLoaded: boolean;
+  /** Filters, applied only while MY_GAMES is the source. */
+  myFilters: MyGamesFilters;
+  /** How much the index holds, for the pane's footer. Null until asked. */
+  myStats: { games: number; positions: number } | null;
 
   /** FEN the current results belong to; guards against stale responses. */
   resultFen: string | null;
@@ -69,6 +99,8 @@ interface ExplorerState {
 
   toggle: () => void;
   selectBook: (name: string) => void;
+  setMyFilters: (patch: Partial<MyGamesFilters>) => void;
+  refreshMyStats: () => Promise<void>;
   refreshBooks: () => Promise<void>;
   /** Debounced lookup for the position on screen. */
   lookup: (fen: string) => void;
@@ -90,9 +122,38 @@ export const REMOTE_DBS = [
 export const isRemoteDb = (name: string | null): boolean =>
   name !== null && name.startsWith('lichess:');
 
-/** The active book, resolving the persisted choice against what exists. */
+/**
+ * The vault's own games, as a source the switcher can select.
+ *
+ * Not a book, and not in `books`: there is nothing to build, nothing to
+ * rebuild and nothing to delete. It is always available, because the games
+ * are always there — a vault with no games answers "no games from this
+ * position" the same way an unhelpful book does.
+ */
+export const MY_GAMES = 'vault:mine';
+
+export const isMyGames = (name: string | null): boolean => name === MY_GAMES;
+
+/** Turn the filter set into the query the server reads. */
+export function myGamesQuery(fen: string, f: MyGamesFilters): string {
+  const query = new URLSearchParams({ fen });
+  if (f.side) query.set('side', f.side);
+  if (f.outcome) query.set('outcome', f.outcome);
+  if (f.speeds?.length) query.set('speeds', f.speeds.join(','));
+  if (f.from) query.set('from', f.from);
+  if (f.to) query.set('to', f.to);
+  if (f.collectionOnly) query.set('collection', '1');
+  return query.toString();
+}
+
+/** True when anything is narrowing the count, for the "clear" affordance. */
+export function hasMyFilters(f: MyGamesFilters): boolean {
+  return Boolean(f.side || f.outcome || f.speeds?.length || f.from || f.to || f.collectionOnly);
+}
+
+/** The active source, resolving the persisted choice against what exists. */
 export function activeBook(s: Pick<ExplorerState, 'book' | 'books'>): string | null {
-  if (isRemoteDb(s.book)) return s.book;
+  if (isRemoteDb(s.book) || isMyGames(s.book)) return s.book;
   if (s.book && s.books.some((b) => b.name === s.book)) return s.book;
   return s.books[0]?.name ?? null;
 }
@@ -111,11 +172,13 @@ export const useExplorer = create<ExplorerState>()(
         controller?.abort();
         controller = new AbortController();
         const book = activeBook(get());
-        const url = isRemoteDb(book)
-          ? `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`
-          : book
-            ? `/api/books/${encodeURIComponent(book)}?fen=${encodeURIComponent(fen)}`
-            : `/api/opening?fen=${encodeURIComponent(fen)}`;
+        const url = isMyGames(book)
+          ? `/api/mygames?${myGamesQuery(fen, get().myFilters)}`
+          : isRemoteDb(book)
+            ? `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`
+            : book
+              ? `/api/books/${encodeURIComponent(book)}?fen=${encodeURIComponent(fen)}`
+              : `/api/opening?fen=${encodeURIComponent(fen)}`;
         try {
           const res = await fetch(url, { signal: controller.signal });
           if (fen !== latestFen) return; // user has moved on
@@ -152,6 +215,8 @@ export const useExplorer = create<ExplorerState>()(
         book: null,
         books: [],
         booksLoaded: false,
+        myFilters: {},
+        myStats: null,
         resultFen: null,
         moves: [],
         topGames: [],
@@ -164,8 +229,33 @@ export const useExplorer = create<ExplorerState>()(
 
         selectBook: (name) => {
           set({ book: name });
-          // Refetch the position on screen under the new book.
+          // Refetch the position on screen under the new source.
           if (latestFen) get().lookup(latestFen);
+          if (isMyGames(name)) void get().refreshMyStats();
+        },
+
+        setMyFilters: (patch) => {
+          // Undefined means "no longer filtering on this", so the key goes
+          // rather than persisting as a key with no value.
+          const next = { ...get().myFilters, ...patch };
+          for (const key of Object.keys(next) as (keyof MyGamesFilters)[]) {
+            const value = next[key];
+            if (value === undefined || (Array.isArray(value) && value.length === 0)) {
+              delete next[key];
+            }
+          }
+          set({ myFilters: next });
+          if (latestFen) get().lookup(latestFen);
+        },
+
+        refreshMyStats: async () => {
+          try {
+            const res = await fetch('/api/mygames/status');
+            if (!res.ok) return;
+            set({ myStats: (await res.json()) as { games: number; positions: number } });
+          } catch {
+            // The footer line simply does not appear.
+          }
         },
 
         refreshBooks: async () => {
@@ -216,9 +306,10 @@ export const useExplorer = create<ExplorerState>()(
     },
     {
       name: 'chess-vault:explorer',
-      // Only the book choice persists — visibility is session state, and
-      // the app aims to be stateless apart from data (lanph3re's call).
-      partialize: (s) => ({ book: s.book }),
+      // The source and its filters persist — visibility is session state,
+      // and the app aims to be stateless apart from data (lanph3re's call).
+      // A filter is a question the user asked, so it outlives the tab.
+      partialize: (s) => ({ book: s.book, myFilters: s.myFilters }),
     },
   ),
 );

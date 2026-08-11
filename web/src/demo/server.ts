@@ -27,6 +27,8 @@ const PUZZLES_DB = '/demo/puzzles.sqlite';
 const REFGAMES_DB = '/demo/refgames.sqlite';
 /** The curated opening book, at the path books.ts resolves for a book named 'demo'. */
 const BOOK_DB = `${DATA_BOOKS}/demo.sqlite`;
+/** Built in the page rather than fetched — see the sqlite shim's write path. */
+const MYGAMES_DB = '/demo/mygames.sqlite';
 
 function buildApp(): Hono {
   // Before the routes run: they reference Buffer free, to size a document
@@ -50,6 +52,9 @@ function buildApp(): Hono {
     puzzlesDb: PUZZLES_DB,
     puzzlesState: `${VAULT}/puzzles`,
     refgamesDb: REFGAMES_DB,
+    // Nothing is fetched for this one: it is built in the page from the
+    // seeded vault, the same way the real server builds it from disk.
+    myGamesDb: MYGAMES_DB,
   });
 
   app.get('/api/health', (c) => c.json({ ok: true, crossOriginIsolated: false, demo: true }));

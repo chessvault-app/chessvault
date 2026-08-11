@@ -7,13 +7,18 @@ import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
 import {
   activeBook,
+  hasMyFilters,
+  isMyGames,
   isRemoteDb,
+  MY_GAMES,
   REMOTE_DBS,
   useExplorer,
   type BookInfo,
   type BuildStatus,
   type ExplorerMove,
+  type MyGamesFilters,
   type Opening,
+  type Speed,
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
@@ -58,6 +63,8 @@ export function ExplorerPane({
   const openingsSeen = useExplorer((s) => s.openingsSeen);
   const loading = useExplorer((s) => s.loading);
   const error = useExplorer((s) => s.error);
+  const myFilters = useExplorer((s) => s.myFilters);
+  const refreshMyStats = useExplorer((s) => s.refreshMyStats);
 
   const [showManager, setShowManager] = useState(false);
   // Rare continuations are noise most of the time — show the top handful
@@ -66,10 +73,16 @@ export function ExplorerPane({
 
   const node = getNode(tree, cursorId);
   const book = activeBook({ book: selectedBook, books });
+  const mine = isMyGames(book);
+  const filtered = hasMyFilters(myFilters);
 
   useEffect(() => {
     void refreshBooks();
   }, [refreshBooks]);
+
+  useEffect(() => {
+    if (enabled && mine) void refreshMyStats();
+  }, [enabled, mine, refreshMyStats]);
 
   useEffect(() => {
     if (enabled) lookup(node.fen);
@@ -102,16 +115,26 @@ export function ExplorerPane({
         title={t('Explorer')}
         actions={
           <>
-            {enabled && (books.length > 0 || isRemoteDb(book)) && (
+            {enabled && (
               <Select
                 value={book ?? ''}
                 onChange={selectBook}
-                ariaLabel={t('Opening book')}
+                ariaLabel={t('Explorer source')}
                 size="sm"
                 align="end"
                 className="max-w-[8rem]"
                 groups={[
-                  { label: 'Local books', options: books.map((b) => ({ value: b.name, label: b.name })) },
+                  // First, and always present: it needs no build step, so
+                  // it is the one source a new vault can already explore.
+                  { label: 'Your vault', options: [{ value: MY_GAMES, label: 'My games' }] },
+                  ...(books.length > 0
+                    ? [
+                        {
+                          label: 'Local books',
+                          options: books.map((b) => ({ value: b.name, label: b.name })),
+                        },
+                      ]
+                    : []),
                   // The online databases are proxied through the server with
                   // its Lichess token. The demo has no server and cannot
                   // carry a token in a bundle everyone can read, so the
@@ -173,19 +196,25 @@ export function ExplorerPane({
             {loading && <Loader2 className="text-subtle ml-auto size-3 shrink-0 animate-spin" />}
           </div>
 
+          {mine && <MyGamesFilterBar />}
+
           {error ? (
             <p className="text-bad px-3 py-3 text-xs">{error}</p>
-          ) : booksLoaded && books.length === 0 && !isRemoteDb(book) ? (
+          ) : booksLoaded && books.length === 0 && !isRemoteDb(book) && !mine ? (
             <EmptyBooks onOpenManager={() => setShowManager(true)} />
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
               {moves.length === 0 && fresh ? (
                 <p className="text-subtle px-3 py-3 text-xs">
-                  {t('No games from this position in “{book}”.', { book: book ?? '' })}
+                  {mine
+                    ? filtered
+                      ? t('None of your games reached this position under these filters.')
+                      : t('None of your games reached this position.')
+                    : t('No games from this position in “{book}”.', { book: book ?? '' })}
                   {/* In the demo, running out of book is the expected edge of
                       a curated file rather than a gap in the data — say which,
                       or it reads as the app failing to answer. */}
-                  {isDemo() && (
+                  {isDemo() && !mine && (
                     <>
                       {' '}
                       {t('The demo book covers the first {plies} plies.', {
@@ -214,12 +243,164 @@ export function ExplorerPane({
                   )}
                 </>
               )}
-              {topGames.length > 0 && <TopGamesList games={topGames} onPlay={playUci} />}
+              {topGames.length > 0 && (
+                <TopGamesList games={topGames} onPlay={playUci} mine={mine} />
+              )}
             </div>
           )}
         </>
       )}
     </Panel>
+  );
+}
+
+/**
+ * The filters that make your own games worth exploring.
+ *
+ * Chips rather than a form: every one is a single-tap question ("as Black",
+ * "blitz", "only games I lost"), and a filter you cannot see is a filter
+ * you forget is on — which would quietly make every number wrong. The row
+ * scrolls sideways rather than wrapping, so the pane's height stays the
+ * moves' to spend.
+ *
+ * Deliberately NOT offered: rating bands. Your own rating moves with you,
+ * so "against 1800+" means something different in January and December,
+ * and a filter whose meaning drifts is worse than no filter.
+ */
+function MyGamesFilterBar() {
+  const filters = useExplorer((s) => s.myFilters);
+  const setFilters = useExplorer((s) => s.setMyFilters);
+  const stats = useExplorer((s) => s.myStats);
+
+  const SIDES: { id: MyGamesFilters['side']; label: string }[] = [
+    { id: 'white', label: 'As white' },
+    { id: 'black', label: 'As black' },
+  ];
+  const OUTCOMES: { id: MyGamesFilters['outcome']; label: string }[] = [
+    { id: 'win', label: 'Won' },
+    { id: 'draw', label: 'Drew' },
+    { id: 'loss', label: 'Lost' },
+  ];
+  const SPEEDS: { id: Speed; label: string }[] = [
+    { id: 'bullet', label: 'Bullet' },
+    { id: 'blitz', label: 'Blitz' },
+    { id: 'rapid', label: 'Rapid' },
+    { id: 'classical', label: 'Classical' },
+  ];
+
+  const speeds = filters.speeds ?? [];
+  const toggleSpeed = (id: Speed): void =>
+    setFilters({ speeds: speeds.includes(id) ? speeds.filter((s) => s !== id) : [...speeds, id] });
+
+  return (
+    <div className="border-line flex shrink-0 flex-col gap-1 border-b px-3 py-2">
+      <div className="scrollbar-none flex items-center gap-1 overflow-x-auto">
+        {SIDES.map(({ id, label }) => (
+          <Chip
+            key={id}
+            label={label}
+            active={filters.side === id}
+            onClick={() => setFilters({ side: filters.side === id ? undefined : id })}
+          />
+        ))}
+        <span className="bg-line mx-0.5 h-3.5 w-px shrink-0" />
+        {OUTCOMES.map(({ id, label }) => (
+          <Chip
+            key={id}
+            label={label}
+            active={filters.outcome === id}
+            onClick={() => setFilters({ outcome: filters.outcome === id ? undefined : id })}
+          />
+        ))}
+        <span className="bg-line mx-0.5 h-3.5 w-px shrink-0" />
+        {SPEEDS.map(({ id, label }) => (
+          <Chip
+            key={id}
+            label={label}
+            active={speeds.includes(id)}
+            onClick={() => toggleSpeed(id)}
+          />
+        ))}
+        <span className="bg-line mx-0.5 h-3.5 w-px shrink-0" />
+        <Chip
+          label="Kept only"
+          title={t('Only the games in your collection, not every archived game')}
+          active={filters.collectionOnly === true}
+          onClick={() => setFilters({ collectionOnly: filters.collectionOnly ? undefined : true })}
+        />
+      </div>
+
+      <div className="text-subtle flex items-center gap-2 text-[0.625rem]">
+        <Input
+          type="date"
+          value={filters.from ?? ''}
+          onChange={(e) => setFilters({ from: e.target.value || undefined })}
+          aria-label={t('From date')}
+          className="h-6 w-[7.5rem] px-1.5 text-[0.625rem]"
+        />
+        <span aria-hidden>–</span>
+        <Input
+          type="date"
+          value={filters.to ?? ''}
+          onChange={(e) => setFilters({ to: e.target.value || undefined })}
+          aria-label={t('To date')}
+          className="h-6 w-[7.5rem] px-1.5 text-[0.625rem]"
+        />
+        {hasMyFilters(filters) && (
+          <button
+            type="button"
+            onClick={() =>
+              setFilters({
+                side: undefined,
+                outcome: undefined,
+                speeds: [],
+                from: undefined,
+                to: undefined,
+                collectionOnly: undefined,
+              })
+            }
+            className="hover:text-fg transition-colors duration-100"
+          >
+            {t('Clear')}
+          </button>
+        )}
+        {stats && (
+          <span className="ml-auto shrink-0 tabular-nums">
+            {t('{n} games indexed', { n: exact.format(stats.games) })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Chip({
+  label,
+  active,
+  onClick,
+  title,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  title?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-pressed={active}
+      className={cn(
+        'shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-medium',
+        'transition-colors duration-100',
+        active
+          ? 'border-primary bg-primary-soft text-primary'
+          : 'border-line text-muted hover:text-fg',
+      )}
+    >
+      {t(label)}
+    </button>
   );
 }
 
@@ -271,33 +452,59 @@ function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
   );
 }
 
-function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: string) => boolean }) {
+function TopGamesList({
+  games,
+  onPlay,
+  mine = false,
+}: {
+  games: TopGame[];
+  onPlay: (uci: string) => boolean;
+  /** Your own games are listed newest first, so "top" would be a lie. */
+  mine?: boolean;
+}) {
   /**
    * A top game is a reference into the reference-games database when one
    * is built from the same sources: clicking opens the WHOLE game on the
    * board (lanph3re's call). When the game isn't indexed there, fall back to
    * the old behaviour and just play the move.
    */
+  /**
+   * The explorer also lives inside study and game views, which keep their
+   * document in the SAME analysis store with dirty-tracking autosave.
+   * Detach (saving real edits) BEFORE loading another game, or the autosave
+   * would write it over the open document.
+   */
+  const loadPgn = async (pgn: string): Promise<boolean> => {
+    if (useStudy.getState().openId) await useStudy.getState().close();
+    if (!useAnalysis.getState().loadPgn(pgn)) return false;
+    useAnalysis.setState({ handoff: true });
+    navigate('analysis');
+    return true;
+  };
+
   const open = async (g: TopGame): Promise<void> => {
     try {
-      const query = new URLSearchParams({ white: g.white, black: g.black });
-      if (g.date) query.set('date', g.date);
-      if (g.result) query.set('result', g.result);
-      const found = await fetch(`/api/refgames/find?${query}`);
-      if (found.ok) {
-        const { id } = (await found.json()) as { id: number };
-        const res = await fetch(`/api/refgames/${id}/pgn`);
+      // One of your own games says where it lives, so it opens directly —
+      // no search, and it works for a game no reference database has ever
+      // heard of, which is every game you have played.
+      if (g.file !== undefined && g.index !== undefined) {
+        const query = new URLSearchParams({ file: g.file, index: String(g.index) });
+        const res = await fetch(`/api/games/pgn?${query}`);
         if (res.ok) {
           const { pgn } = (await res.json()) as { pgn: string };
-          // The explorer also lives inside study/game views, which keep
-          // their document in the SAME analysis store with dirty-tracking
-          // autosave. Detach (saving real edits) BEFORE loading the elite
-          // game, or the autosave would write it over the open document.
-          if (useStudy.getState().openId) await useStudy.getState().close();
-          if (useAnalysis.getState().loadPgn(pgn)) {
-            useAnalysis.setState({ handoff: true });
-            navigate('analysis');
-            return;
+          if (await loadPgn(pgn)) return;
+        }
+      } else {
+        const query = new URLSearchParams({ white: g.white, black: g.black });
+        if (g.date) query.set('date', g.date);
+        if (g.result) query.set('result', g.result);
+        const found = await fetch(`/api/refgames/find?${query}`);
+        if (found.ok) {
+          const { id } = (await found.json()) as { id: number };
+          const res = await fetch(`/api/refgames/${id}/pgn`);
+          if (res.ok) {
+            const { pgn } = (await res.json()) as { pgn: string };
+            if (await loadPgn(pgn)) return;
           }
         }
       }
@@ -310,7 +517,7 @@ function TopGamesList({ games, onPlay }: { games: TopGame[]; onPlay: (uci: strin
   return (
     <div className="border-line border-t px-1.5 pb-2">
       <p className="text-subtle px-1.5 pb-1 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
-        {t('Top games')}
+        {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
         {games.map((g, i) => {
@@ -406,7 +613,6 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
   const fetchBuildStatus = useExplorer((s) => s.fetchBuildStatus);
 
   const [sources, setSources] = useState<{ name: string; bytes: number }[]>([]);
-  const [games, setGames] = useState<{ id: string; name: string; bytes: number }[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [name, setName] = useState('');
   const [status, setStatus] = useState<BuildStatus | null>(null);
@@ -414,26 +620,22 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
   const [uploading, setUploading] = useState<string | null>(null);
 
   /**
-   * Say what a small collection will and will not give you.
+   * Say when a collection is too small to be worth consulting.
    *
-   * NOT a warning, because small is only wrong for one of the two things a
-   * book is for. As a REFERENCE — what do strong players do here — a
-   * handful of games answers every position with one move at 100%, which
-   * reads as authority and is noise. As YOUR OWN game database it is the
-   * point: three games is three games you actually played, and "you have
-   * been here twice and lost both" is worth knowing.
+   * A book is a reference — what do strong players do here — and a handful
+   * of games answers every position with one move at 100%, which reads as
+   * authority and is noise. This warning used to be hedged, because vault
+   * games were buildable into books and a three-game answer about YOUR
+   * games is the point. They are not anymore: your own games are indexed
+   * live and queried with filters (see server/myGames.ts), so the only
+   * thing a book is now for is the case where small is simply wrong.
    *
    * Judged on bytes because that is all we know before parsing: a game is
    * roughly a kilobyte or two, so this is about three thousand games.
    */
   const BOOK_MIN_BYTES = 4_000_000;
-  /** Uploaded collections and the vault's own games, as one pickable list. */
-  const everySource = [
-    ...sources.map((s) => ({ id: s.name, label: s.name, bytes: s.bytes, mine: false })),
-    ...games.map((g) => ({ id: g.id, label: g.name, bytes: g.bytes, mine: true })),
-  ];
-  const pickedBytes = everySource
-    .filter((s) => picked.has(s.id))
+  const pickedBytes = sources
+    .filter((s) => picked.has(s.name))
     .reduce((sum, s) => sum + s.bytes, 0);
   const tooSmall = picked.size > 0 && pickedBytes < BOOK_MIN_BYTES;
   const wasRunning = useRef(false);
@@ -441,12 +643,8 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
   const refreshSources = useCallback(async (): Promise<void> => {
     try {
       const res = await fetch('/api/sources');
-      const body = (await res.json()) as {
-        sources: { name: string; bytes: number }[];
-        games?: { id: string; name: string; bytes: number }[];
-      };
+      const body = (await res.json()) as { sources: { name: string; bytes: number }[] };
       setSources(body.sources);
-      setGames(body.games ?? []);
     } catch {
       setError(t('could not list the PGN collections'));
     }
@@ -550,48 +748,46 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
         <p className="text-subtle font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
           {t('Build a book')}
         </p>
-        {everySource.length === 0 ? (
+        {/* Where your own games went. Books used to be able to index them,
+            which is what people reach for here first — say plainly that the
+            thing they wanted exists and is better, rather than letting them
+            conclude the feature was dropped. */}
+        <p className="text-muted leading-relaxed">
+          {t('For your own games, pick “My games” in the explorer instead — they are always up to date and can be filtered by side, result, speed and date. A book is for a large reference database.')}
+        </p>
+        {sources.length === 0 ? (
           <p className="text-muted leading-relaxed">
             {t('No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.')}
           </p>
         ) : (
           <>
-            {(['collections', 'mine'] as const).map((group) => {
-              const rows = everySource.filter((s) => (group === 'mine') === s.mine);
-              if (!rows.length) return null;
-              return (
-                <div key={group} className="flex flex-col gap-1">
-                  <p className="text-subtle mt-1 font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
-                    {group === 'mine' ? t('Your games in this vault') : t('Uploaded collections')}
-                  </p>
-                  {rows.map((s) => (
-                    <label key={s.id} className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={picked.has(s.id)}
-                        onChange={(e) => {
-                          const next = new Set(picked);
-                          if (e.target.checked) next.add(s.id);
-                          else next.delete(s.id);
-                          setPicked(next);
-                        }}
-                        className="accent-primary"
-                      />
-                      <span className="text-fg min-w-0 flex-1 truncate font-mono">{s.label}</span>
-                      <span className="text-subtle shrink-0 tabular-nums">
-                        {s.bytes < 1e6
-                          ? `${Math.max(1, Math.round(s.bytes / 1e3))} KB`
-                          : `${(s.bytes / 1e6).toFixed(0)} MB`}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              );
-            })}
+            <div className="flex flex-col gap-1">
+              {sources.map((s) => (
+                <label key={s.name} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={picked.has(s.name)}
+                    onChange={(e) => {
+                      const next = new Set(picked);
+                      if (e.target.checked) next.add(s.name);
+                      else next.delete(s.name);
+                      setPicked(next);
+                    }}
+                    className="accent-primary"
+                  />
+                  <span className="text-fg min-w-0 flex-1 truncate font-mono">{s.name}</span>
+                  <span className="text-subtle shrink-0 tabular-nums">
+                    {s.bytes < 1e6
+                      ? `${Math.max(1, Math.round(s.bytes / 1e3))} KB`
+                      : `${(s.bytes / 1e6).toFixed(0)} MB`}
+                  </span>
+                </label>
+              ))}
+            </div>
             {tooSmall && (
               <p className="text-muted mt-1 leading-relaxed">
                 {t(
-                  'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.',
+                  'Small collection. A book is a reference for what is normally played, and too few games will mislead: every position answers with one move at 100%.',
                 )}
               </p>
             )}

@@ -39,7 +39,7 @@ describe('books api', () => {
     });
     mkdirSync(join(dir, 'games', 'chesscom', 'someone'), { recursive: true });
     writeFileSync(join(dir, 'games', 'chesscom', 'someone', '2026-08.pgn'), PGN);
-    app = new Hono().route('/api', booksApi({ books: dir, sources: dir, games: join(dir, 'games') }));
+    app = new Hono().route('/api', booksApi({ books: dir, sources: dir }));
   });
 
   afterAll(() => {
@@ -129,14 +129,26 @@ describe('books api', () => {
     expect((await app.request('/api/sources/uploaded.pgn', { method: 'DELETE' })).status).toBe(404);
   });
 
-  it('offers the vault own games as book sources', async () => {
+  it('does not offer the vault own games as book sources', async () => {
+    // They are indexed live and queried with filters instead — see
+    // server/myGames.ts. Offering them here produced books that could
+    // never be rebuilt, because /books reports sources through basename()
+    // and that threw the games/ prefix away.
     const res = await app.request('/api/sources');
-    const { games } = await res.json();
-    expect(games.map((g: { id: string }) => g.id)).toEqual(['games/chesscom/someone/2026-08.pgn']);
+    const body = await res.json();
+    expect(body.games).toBeUndefined();
+    expect(body.sources.map((s: { name: string }) => s.name)).not.toContain('2026-08.pgn');
   });
 
-  it('refuses a source that climbs out of its directory', async () => {
-    for (const source of ['games/../../escape.pgn', '../escape.pgn', 'games/', 'games/x.txt']) {
+  it('refuses a source that is not a plain file in the sources directory', async () => {
+    for (const source of [
+      'games/chesscom/someone/2026-08.pgn',
+      'games/../../escape.pgn',
+      '../escape.pgn',
+      'games/',
+      'games/x.txt',
+      'sub/nested.pgn',
+    ]) {
       const res = await app.request('/api/books/build', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -146,11 +158,22 @@ describe('books api', () => {
     }
   });
 
-  it('builds a book from the vault own games', async () => {
+  it('reports sources a rebuild can resolve', async () => {
+    // The Rebuild button posts back exactly what /books reported, so the
+    // two have to speak the same ids. They did not: a book built from a
+    // vault game came back basenamed and rebuilt with 400.
+    const { books } = (await (await app.request('/api/books')).json()) as {
+      books: { name: string; sources: string[] }[];
+    };
+    const testbook = books.find((b) => b.name === 'testbook')!;
+    expect(testbook.sources).toEqual(['test-source.pgn']);
+    // Built under another name so the running job does not hold "testbook"
+    // open against the delete test below. What is being proved is that the
+    // reported ids resolve, which does not depend on the target's name.
     const res = await app.request('/api/books/build', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: 'mygames', sources: ['games/chesscom/someone/2026-08.pgn'] }),
+      body: JSON.stringify({ name: 'rebuildcheck', sources: testbook.sources }),
     });
     expect(res.status).toBe(200);
   });

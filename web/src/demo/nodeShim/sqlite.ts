@@ -115,12 +115,26 @@ export default class Database {
   readonly name: string;
   private readonly db: SqlJsDatabase;
 
-  constructor(path: string, _options?: { readonly?: boolean; fileMustExist?: boolean }) {
-    const db = opened.get(path);
+  constructor(path: string, options?: { readonly?: boolean; fileMustExist?: boolean }) {
+    let db = opened.get(path);
     if (!db) {
-      // The routes treat a throw here as "no database", which is the honest
-      // answer and the state they already draw for it.
-      throw Object.assign(new Error(`demo: database not loaded: ${path}`), { code: 'SQLITE_CANTOPEN' });
+      // A route that opens a database for WRITING is building derived data
+      // from the vault — the my-games index does exactly this. On disk that
+      // is `new Database(path)` creating an empty file; here it is an empty
+      // in-memory database, which is the same thing for as long as the tab
+      // lives. Without this the demo could not show a feature that has no
+      // prebuilt file to ship, only a vault to index.
+      if (SQL && !options?.readonly && !options?.fileMustExist) {
+        db = new SQL.Database();
+        opened.set(path, db);
+        seedFile(path, '', Date.now());
+      } else {
+        // The routes treat a throw here as "no database", which is the
+        // honest answer and the state they already draw for it.
+        throw Object.assign(new Error(`demo: database not loaded: ${path}`), {
+          code: 'SQLITE_CANTOPEN',
+        });
+      }
     }
     this.name = path;
     this.db = db;

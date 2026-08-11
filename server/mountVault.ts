@@ -2,6 +2,7 @@ import type { Hono } from 'hono';
 import { resolve } from 'node:path';
 import { booksApi } from './books.ts';
 import { gamesApi } from './games.ts';
+import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { refGamesApi } from './refgames.ts';
@@ -39,6 +40,8 @@ export interface VaultRoutes {
   puzzlesState?: string;
   /** The reference-game database file. */
   refgamesDb?: string;
+  /** The live index over the vault's own games. Derived, rebuildable. */
+  myGamesDb?: string;
 }
 
 export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
@@ -48,8 +51,8 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
 
   // Given the caller's paths, not the module defaults: the demo mounts a
   // vault at /vault, and booksApi() with no arguments looked at the real
-  // one instead — so its own games were invisible as book sources.
-  app.route('/api', booksApi({ books: DATA_BOOKS, sources: paths.sources ?? VAULT_SOURCES, games }));
+  // one instead — so its own uploads were invisible as book sources.
+  app.route('/api', booksApi({ books: DATA_BOOKS, sources: paths.sources ?? VAULT_SOURCES }));
   app.route('/api', openingsApi());
   app.route('/api', studiesApi(studies));
   // The games collection speaks the same document API as studies: an
@@ -58,6 +61,9 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // Notes: the same document API over markdown files.
   app.route('/api', studiesApi(notes, 'notes', '.md'));
   app.route('/api', gamesApi(games));
+  // The vault's own games, explorable under filters. Not a book: see
+  // server/myGames.ts for why they are indexed rather than compiled.
+  app.route('/api', paths.myGamesDb ? myGamesApi(games, paths.myGamesDb) : myGamesApi(games));
   app.route(
     '/api',
     paths.puzzlesDb || paths.puzzlesState
