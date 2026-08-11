@@ -1,0 +1,44 @@
+[Event "Rook endings - Lucena and Philidor: Chapter 1"]
+[ChapterName "Main line"]
+[Date "2026.01.13"]
+[Round "4"]
+[White "Carlsen, M"]
+[Black "Abdusattorov, N"]
+[Result "1-0"]
+[WhiteElo "3066"]
+[BlackElo "2986"]
+[ECO "A21"]
+[Opening "English Opening: King's English Variation, Kramnik-Shirov Counterattack"]
+
+{English Opening: King's English Variation, Kramnik-Shirov Counterattack. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. c4 e5 2. Nc3 Bb4 3. d3 Nf6 4. Nf3 e4 5. dxe4 Nxe4 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Qd4 Nxc3 7. Bd2 O-O 8. Bxc3 ! Bxc3+ {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Ba3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. Qxc3 Nc6 10. e3 d6 11. Bd3 Re8 ?! 12. O-O a5 13. b3 Ne5 14. Nd4 Nxd3 15. Qxd3 Bd7 16. Ne2 Bc6 17. Nc3 Qd7 18. Nd5 Re5 19. Rfd1 h6 20. h3 Rae8 21. Rac1 b6 22. Qc2 Bb7 23. Qc3 f5 24. Rd3 Qf7 25. Rcd1 Kh7 26. Rd4 Rg8 27. a3 Ra8 28. Nf4 Be4 29. b4 Rae8 30. Rc1 Bb7 31. Kh2 Ra8 32. Nd3 Qg6 33. Rg1 Re7 34. Nf4 Qf6 35. Rc1 Re5 36. Qd2 Bc6 37. Kg1 Ra7 38. Nd5 Qf7 39. b5 Bb7 40. Qc2 Ra8 41. a4 Rf8 42. Rcd1 Kg8 43. R1d2 Rb8 44. Rf4 Rf8 45. Rf3 g5 46. Rd4 Qg7 47. Rg3 Rf7 48. Qd1 Bxd5 49. cxd5 Rfe7 50. Qh5 Qf6 51. Rh4 Rg7 52. Qxh6 Qxh6 53. Rxh6 Rxd5 54. Rf3 g4 55. Rf4 g3 56. fxg3 Rxg3 57. Kf2 Rg7 58. g3 Rd2+ 59. Kf3 Rd1 60. Kg2 Rd3 61. Re6 Kf7 62. Ree4 Kg6 63. Re8 Kf7 64. Ree4 Kg6 65. Re8 Kf7 66. Rc8 Ke6 67. Rf8 Rd2+ 68. Kf3 Rd5 69. h4 Rc5 70. Kg2 Re5 71. Kh3 Rh7 72. Re8+ Kf6 73. Rxe5 Kxe5 74. Kg2 d5 75. Kf2 Rh8 76. Ke2 Rh7 77. Rf1 Rg7 78. Kf3 Rg4 79. h5 Kf6 80. Rh1 Kg7 81. Rh4 Rc4 82. Rd4 Rb4 83. Kf4 Kf6 84. h6 Rb1 85. Kf3 Kg6 86. Rh4 Kh7 87. Kf4 c5 88. bxc6 Rc1 89. Kxf5 Rxc6 90. g4 Rc5 91. Ke5 Rc4 92. Kxd5 Rxa4 93. e4 Ra2 94. g5 Rd2+ 95. Ke6 Rg2 96. e5 b5 97. Kf5 b4 98. Rd4 Rf2+ 99. Ke6 Kg6 100. Rd8 a4 101. Rg8+ Kh7 102. Rg7+ Kh8 103. Rd7 a3 104. g6 Kg8 105. h7+ Kh8 106. Rd8+ Rf8 107. Rxf8+ Kg7 108. h8=Q+ Kxg6 {The rest is technique, which is another way of saying it still has to be played accurately.} 109. Rg8# 1-0
+
+[Event "Rook endings - Lucena and Philidor: Chapter 2"]
+[ChapterName "The critical sideline"]
+[Date "2026.02.14"]
+[Round "5"]
+[White "Nakamura, H"]
+[Black "Tan Zhongyi"]
+[Result "1-0"]
+[WhiteElo "2677"]
+[BlackElo "2657"]
+[ECO "E59"]
+[Opening "Nimzo-Indian Defense: Normal Variation, Bernstein Defense"]
+
+{Nimzo-Indian Defense: Normal Variation, Bernstein Defense. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. d4 d5 2. c4 e6 3. Nf3 Nf6 4. Nc3 Bb4 5. e3 O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Bd3 c5 7. O-O Nc6 8. a3 ! Bxc3 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... Bxa3 Rb1 Bxb2 {was the alternative — playable, but it hands over the initiative.}) 9. bxc3 dxc4 10. Bxc4 b6 11. Re1 Bb7 ?! 12. e4 Ne7 13. Bd3 Ng6 14. a4 Rc8 15. Bd2 Qd7 16. Qb1 Rfd8 17. a5 Qc7 18. axb6 axb6 19. Ra2 Nf4 20. Bf1 Ng6 21. Rb2 cxd4 22. cxd4 Nxe4 23. Rxe4 Bxe4 24. Qxe4 Qc6 25. Qb1 Qd5 26. Bd3 Rc6 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 27. Be4 1-0
+
+[Event "Rook endings - Lucena and Philidor: Chapter 3"]
+[ChapterName "A model game"]
+[Date "2026.03.15"]
+[Round "6"]
+[White "Ju Wenjun"]
+[Black "Giri, A"]
+[Result "1/2-1/2"]
+[WhiteElo "2991"]
+[BlackElo "3058"]
+[ECO "E14"]
+[Opening "Queen's Indian Defense: Spassky System"]
+
+{Queen's Indian Defense: Spassky System. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. e3 Nf6 2. d4 b6 3. Nf3 e6 4. c4 d5 5. Nc3 Bd6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. b3 O-O 7. h3 Nbd7 8. Be2 ! Ne4 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... dxc4 Rb1 cxb3 {was the alternative — playable, but it hands over the initiative.}) 9. Bb2 Nxc3 10. Bxc3 Bb7 11. O-O Qe7 ?! 12. Bb2 f5 13. Qc2 a5 14. Rac1 Kh8 15. c5 bxc5 16. Ba3 c6 17. dxc5 Bb8 18. Nd4 Qf6 19. Nb5 Ba6 20. Nd6 Bxe2 21. Qxe2 h6 22. Bb2 Qe7 23. Qc2 Kh7 24. Rfe1 Ra6 25. Qd3 Ra7 26. Qc2 Kg8 27. Re2 Ra6 28. Ba3 Bc7 29. f3 Bb8 30. Qc3 Qf6 31. Qd3 Ra7 32. f4 Qh4 33. Kh2 Nf6 34. g3 Qh5 35. Bb2 Ng4+ 36. Kg2 Nf6 37. Kh2 Ng4+ 38. Kg2 Nf6 39. Rec2 Ne4 40. Kh2 Qf3 41. Rg2 h5 42. Bd4 h4 43. Rcg1 Nxg3 44. Qc2 Qh5 45. Rxg3 hxg3+ 46. Rxg3 Kh7 47. Rg5 Qh4 48. Qg2 Qh6 49. Qe2 g6 50. h4 Qxh4+ 51. Kg1 Qh3 52. Rg2 Kg8 53. Rh2 Qg3+ 54. Rg2 Qh3 55. Qf1 Qh5 56. Rh2 Qg4+ 57. Rg2 Qh4 58. Rh2 Qg3+ 59. Rg2 Qh4 60. Rxg6+ Kh7 61. Qg2 Qe1+ 62. Kh2 Qh4+ 63. Kg1 Qe1+ 64. Kh2 Qh4+ {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 65. Kg1 1/2-1/2

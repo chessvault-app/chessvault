@@ -1,0 +1,14 @@
+[Event "Online rapid arena"]
+[Site "Chess Vault demo"]
+[Date "2026.07.07"]
+[Round "7"]
+[White "Nepomniachtchi, I"]
+[Black "Niemann, H"]
+[Result "1/2-1/2"]
+[WhiteElo "3043"]
+[BlackElo "3020"]
+[ECO "A30"]
+[Opening "English Opening: Symmetrical Variation"]
+
+{English Opening: Symmetrical Variation. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. Nf3 c5 2. c4 Nc6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 Qb6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nf3 e6 7. a3 Be7 8. b4 ! d5 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Qxf2+ Kd2 Qe1+ {was the alternative — playable, but it hands over the initiative.}) 9. e3 Qc7 10. cxd5 exd5 11. Bb2 O-O ?! 12. Be2 Be6 13. O-O a5 14. b5 Nb8 15. Rc1 Qd6 16. Bd3 Nbd7 17. Qe2 Rfe8 18. h3 Rac8 19. Rfd1 h6 20. Nd4 Bf8 21. Bc2 Nb6 22. Nxe6 Qxe6 23. Bb3 Bd6 24. Qd3 Be5 25. a4 h5 26. Rc2 Rcd8 27. Bc1 Qe7 28. Bd2 Bb8 29. Kf1 Qd6 30. Ne2 Nbd7 31. Bxa5 b6 32. Rc6 Qh2 33. Bc3 Be5 34. Bd4 Qh1+ 35. Ng1 Bh2 36. Bxf6 Nxf6 37. Rxf6 gxf6 38. Bxd5 Kg7 39. g4 Qxg1+ 40. Ke2 Qxd1+ 41. Kxd1 hxg4 42. hxg4 Bg1 43. g5 fxg5 44. Qd4+ f6 45. Kc2 Rd6 46. e4 Rc8+ 47. Kd1 Bh2 48. Qd3 Be5 49. Qh3 Rc3 50. Qh5 Rd8 51. Ke2 Rc2+ 52. Kf3 Rf8 53. Kg2 Rc7 54. a5 Rh8 55. Qd1 bxa5 56. Bc6 Rh2+ 57. Kg1 Kh6 58. Qd5 g4 59. b6 Rg7 60. Qd8 g3 61. Qh8+ Rh7 62. Qf8+ Rg7 63. fxg3 Rb2 64. Bd7 Rxb6 65. Qh8+ Rh7 66. Qf8+ Rg7 67. Qh8+ Rh7 68. Qf8+ {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Rg7 1/2-1/2

@@ -1,0 +1,44 @@
+[Event "Queens Gambit Declined: Chapter 1"]
+[ChapterName "Main line"]
+[Date "2026.07.07"]
+[Round "7"]
+[White "Nepomniachtchi, I"]
+[Black "Niemann, H"]
+[Result "1-0"]
+[WhiteElo "3635"]
+[BlackElo "3100"]
+[ECO "B10"]
+[Opening "Caro-Kann Defense: Two Knights Attack"]
+
+{Caro-Kann Defense: Two Knights Attack. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. e4 c6 2. Nf3 d5 3. Nc3 dxe4 4. Nxe4 Nf6 5. Nxf6+ exf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Bc4 Be7 7. d4 O-O 8. O-O ! Nd7 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... c5 Rb1 cxd4 {was the alternative — playable, but it hands over the initiative.}) 9. Re1 Re8 10. c3 Nf8 11. Bf4 Bd7 ?! 12. Qb3 b6 13. Bxf7+ Kh8 14. Bxe8 Qxe8 15. Bd6 Bxd6 16. Rxe8 Bxe8 17. Re1 Bd7 18. h3 h6 19. Qf7 a6 20. Nh4 Rb8 21. Ng6+ Nxg6 22. Qxd7 Bf4 23. g3 Bg5 24. h4 Bxh4 25. gxh4 Nxh4 26. Re7 Ng6 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} 27. Rxg7 1-0
+
+[Event "Queens Gambit Declined: Chapter 2"]
+[ChapterName "The critical sideline"]
+[Date "2026.08.08"]
+[Round "8"]
+[White "Ding Liren"]
+[Black "Duda, J-K"]
+[Result "1-0"]
+[WhiteElo "3294"]
+[BlackElo "2910"]
+[ECO "B03"]
+[Opening "Alekhine Defense"]
+
+{Alekhine Defense. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. e4 Nf6 2. e5 Nd5 3. d4 c5 4. dxc5 Qa5+ 5. c3 Qxc5 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Nf3 f6 7. b4 Qc6 8. b5 ! Qe6 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... Nxc3 Nbd2 Nb1 {was the alternative — playable, but it hands over the initiative.}) 9. Bc4 Nxc3 10. Bxe6 Nxd1 11. Bb3 Nxf2 ?! 12. Kxf2 fxe5 13. Be3 d6 14. Ng5 h6 15. Ne6 Bxe6 16. Bxe6 Nd7 17. Nc3 b6 18. Nd5 Kd8 19. Rhc1 Nc5 20. Bxc5 bxc5 21. Ke2 Rb8 22. a4 g6 23. Rf1 h5 24. a5 Bh6 25. b6 a6 26. Nc7 Rb7 27. Nxa6 Bf4 28. Nc7 Rxc7 29. a6 Ra7 30. bxa7 Kc7 31. Rfb1 d5 32. Rb8 Kd6 33. Bxd5 e6 34. Be4 Re8 35. Rxe8 c4 36. a8=Q Kc5 37. Qa7+ Kb4 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 38. Qb6+ 1-0
+
+[Event "Queens Gambit Declined: Chapter 3"]
+[ChapterName "A model game"]
+[Date "2026.09.09"]
+[Round "9"]
+[White "Rapport, R"]
+[Black "Vaishali R"]
+[Result "1-0"]
+[WhiteElo "2588"]
+[BlackElo "2853"]
+[ECO "D82"]
+[Opening "Grünfeld Defense: Brinckmann Attack"]
+
+{Grünfeld Defense: Brinckmann Attack. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. Bf4 Bg7 5. e3 c5 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. dxc5 Qa5 7. cxd5 Nxd5 8. Qxd5 ! Bxc3+ {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... Qxa2 Rb1 Qa1 {was the alternative — playable, but it hands over the initiative.}) 9. bxc3 Qxc3+ 10. Ke2 Qxa1 11. Be5 Qb1 ?! 12. Bxh8 Be6 13. Qd3 Qxa2+ 14. Kf3 f6 15. Bg7 Nd7 16. Kg3 Rc8 17. c6 Rxc6 18. Qd4 Rd6 19. Qb4 Rd1 20. Nf3 Qc2 21. Nd4 Qc7+ 22. f4 Qc1 23. Bh6 Bd5 24. Kf2 Rd2+ 25. Ne2 Bc6 26. h3 Nc5 27. Kg3 Rxe2 28. Bxe2 Qxh1 29. Bf3 Bxf3 30. Kxf3 Qd1+ 31. Kg3 b6 32. Kh2 Qh5 33. Qa3 Qxh6 34. Qxa7 Qh5 35. Qxb6 Kf7 36. Qd8 Qf5 37. Qh8 g5 38. fxg5 fxg5 39. Kg1 Qb1+ 40. Kh2 Qe4 41. Qc3 Nd7 42. Qb3+ Qe6 43. Qd3 Qd6+ 44. Qxd6 exd6 45. Kg3 Ne5 46. e4 Kf6 47. Kf2 h5 48. Ke3 Nd7 49. Kd4 Ke6 50. g3 Nf6 51. Ke3 Ke5 {The rest is technique, which is another way of saying it still has to be played accurately.} 52. Ke2 1-0

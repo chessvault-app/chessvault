@@ -1,15 +1,15 @@
-# Endgame drills for the week 2
+# Thinking process 3
 
-*Twenty minutes a day*
+*A written version*
 
-- Lucena and Philidor until they are automatic.
-- King and pawn versus king from every square.
-- Rook behind the passed pawn — mine and theirs.
+- What changed with the last move?
+- What is the opponent threatening?
+- What is my worst piece, and where does it want to be?
 
 ## A position to remember
 
 ```chess
-r2q1rk1/pp2bppp/2n1bn2/2pp4/3P4/2N1PN2/PPQ1BPPP/R1B2RK1 w - - 0 10
+6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1
 ```
 
 The board above is live — step through it, try a move, and it stays in the note.

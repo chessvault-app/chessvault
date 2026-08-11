@@ -1,0 +1,44 @@
+[Event "Ruy Lopez - the Berlin: Chapter 1"]
+[ChapterName "Main line"]
+[Date "2026.01.01"]
+[Round "1"]
+[White "Carlsen, M"]
+[Black "Abdusattorov, N"]
+[Result "1/2-1/2"]
+[WhiteElo "2954"]
+[BlackElo "2779"]
+[ECO "E42"]
+[Opening "Nimzo-Indian Defense: Rubinstein System, Rubinstein Variation, Main Line"]
+
+{Nimzo-Indian Defense: Rubinstein System, Rubinstein Variation, Main Line. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. d4 Nf6 2. c4 e6 3. Nc3 Bb4 4. e3 c5 5. Ne2 cxd4 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. exd4 O-O 7. a3 Be7 8. d5 ! exd5 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... e5 Rb1 e4 {was the alternative — playable, but it hands over the initiative.}) 9. cxd5 Re8 10. d6 Bf8 11. g3 Qb6 ?! 12. Bg2 Bxd6 13. Be3 Qa6 14. O-O Be5 15. Re1 d5 16. Bg5 Be6 17. Bxf6 Bxf6 18. Nf4 Bxc3 19. bxc3 Nc6 20. Nxe6 fxe6 21. Qg4 Na5 22. Re3 Nc4 23. Rxe6 Qxe6 24. Qxe6+ Rxe6 25. Bxd5 Kf7 26. Re1 Re8 27. Bxc4 b5 28. Bxe6+ Rxe6 29. Rb1 a6 30. Kf1 Rc6 31. Rc1 h5 32. Ke2 g5 33. f3 h4 34. Rc2 Rc4 35. Kd3 Ra4 36. Ra2 Ke7 37. Re2+ Kf6 38. Ra2 Ke7 39. Re2+ Kf6 40. Ra2 {The rest is technique, which is another way of saying it still has to be played accurately.} Ke7 1/2-1/2
+
+[Event "Ruy Lopez - the Berlin: Chapter 2"]
+[ChapterName "The critical sideline"]
+[Date "2026.02.02"]
+[Round "2"]
+[White "Nakamura, H"]
+[Black "Tan Zhongyi"]
+[Result "0-1"]
+[WhiteElo "2763"]
+[BlackElo "2785"]
+[ECO "C81"]
+[Opening "Ruy Lopez: Open, Howell Attack"]
+
+{Ruy Lopez: Open, Howell Attack. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Nxe4 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. d4 b5 7. Bb3 d5 8. dxe5 ! Be6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... Nd2 Nbxd2 b4 {was the alternative — playable, but it hands over the initiative.}) 9. Qe2 Be7 10. Rd1 O-O 11. c4 bxc4 ?! 12. Bxc4 f5 13. Nc3 Nxc3 14. bxc3 Qd7 15. Bf4 Na5 16. Bd3 c5 17. Rab1 h6 18. Bxa6 Qa4 19. Be3 Rab8 20. Bb5 Qg4 21. h3 Qh5 22. a4 f4 23. Bd2 Qg6 24. Bd3 Bf5 25. Bxf5 Qxf5 26. Rb5 Nc4 27. Bc1 Qe4 28. Qa2 Kh8 29. Re1 Qd3 30. Bd2 Ra8 31. Rb7 Rfe8 32. Qb1 Qxb1 33. Rexb1 Rxa4 34. Rd7 Bg5 35. Be1 Nxe5 36. Rxd5 Nxf3+ 37. gxf3 Rc4 38. Kg2 Bf6 39. Rb7 Kh7 40. Bd2 Re2 41. Rd3 Kg6 42. Rbd7 Bg5 43. Kf1 Re6 44. R7d5 Rf6 45. Rd6 Ra4 46. Rxf6+ Bxf6 47. Kg2 Rc4 48. Rd5 Bxc3 49. h4 Bf6 50. Bxf4 Kf7 51. Bd2 Be7 52. Rd3 Rd4 53. f4 Rxd3 54. Be3 Rd5 55. Kf3 g6 56. Ke4 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} Rf5 0-1
+
+[Event "Ruy Lopez - the Berlin: Chapter 3"]
+[ChapterName "A model game"]
+[Date "2026.03.03"]
+[Round "3"]
+[White "Ju Wenjun"]
+[Black "Giri, A"]
+[Result "0-1"]
+[WhiteElo "2769"]
+[BlackElo "2965"]
+[ECO "E64"]
+[Opening "King's Indian Defense: Fianchetto Variation, Double Fianchetto Attack"]
+
+{King's Indian Defense: Fianchetto Variation, Double Fianchetto Attack. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. g3 g6 2. Bg2 Bg7 3. Nf3 Nf6 4. d4 O-O 5. O-O d6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. c4 Nbd7 7. b3 e5 8. Nc3 ! Re8 {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... exd4 Rb1 dxc3 {was the alternative — playable, but it hands over the initiative.}) 9. e3 c6 10. Bb2 e4 11. Ng5 d5 ?! 12. cxd5 cxd5 13. a4 Nf8 14. Qd2 h6 15. Nh3 g5 16. Ba3 Ng6 17. a5 Bg4 18. Rfb1 Qd7 19. Qe1 Bxh3 20. Bxh3 Qxh3 21. Qf1 Qe6 22. Nb5 Qd7 23. Rc1 Rec8 24. Rxc8+ Rxc8 25. Nxa7 Ra8 26. Nb5 Rxa5 27. Nc3 h5 28. b4 Ra8 29. b5 h4 30. Bc5 Rxa1 31. Qxa1 h3 32. Na4 Qxb5 33. Bb6 Bf8 34. Ba7 Be7 35. Qc1 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Qxa4 0-1

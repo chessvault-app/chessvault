@@ -1,0 +1,44 @@
+[Event "Pawn endings - opposition: Chapter 1"]
+[ChapterName "Main line"]
+[Date "2026.04.16"]
+[Round "7"]
+[White "Firouzja, A"]
+[Black "Muzychuk, A"]
+[Result "1-0"]
+[WhiteElo "2727"]
+[BlackElo "2771"]
+[ECO "D94"]
+[Opening "Grünfeld Defense: Opocensky Variation"]
+
+{Grünfeld Defense: Opocensky Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. d4 Nf6 2. c4 g6 3. Nc3 d5 4. Nf3 Bg7 5. e3 O-O {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. Bd2 c6 7. Bd3 Bf5 8. Qe2 ! Bxd3 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... dxc4 Rb1 cxd3 {was the alternative — playable, but it hands over the initiative.}) 9. Qxd3 Nbd7 10. O-O Re8 11. b4 Nb6 ?! 12. c5 Nc4 13. Bc1 e5 14. Nxe5 Nxe5 15. dxe5 Rxe5 16. a4 Ne4 17. Ne2 Rh5 18. Ra2 Qh4 19. h3 Rg5 20. Nf4 Be5 21. Qc2 Re8 22. Bb2 Rf5 23. b5 g5 24. Nd3 Bxb2 25. Rxb2 g4 26. Nf4 Rg5 27. bxc6 bxc6 28. Qd1 gxh3 29. g3 h2+ 30. Kh1 Rxg3 31. Re1 Rg1+ 32. Rxg1+ hxg1=Q+ 33. Kxg1 Re5 34. Qf3 Rg5+ 35. Kf1 Kg7 36. Ke2 Qh2 37. Nd3 Rg6 38. Nf4 Rg5 39. Nd3 Nc3+ 40. Kd2 Ne4+ 41. Kc2 Rg2 42. Kb3 Qb8+ 43. Ka3 Qh2 44. Rb7 Ng5 45. Qf4 Qxf4 46. exf4 Ne6 47. Rxa7 Rh2 48. f3 Rh3 49. Ne5 Nxc5 50. Rxf7+ Kg8 51. a5 Nd3 52. Rf6 Nxe5 53. fxe5 Rh1 54. Rxc6 Ra1+ 55. Kb4 d4 56. Rd6 Rb1+ 57. Kc5 Ra1 58. Kb6 Rb1+ 59. Kc7 Rb4 60. Kd7 Ra4 61. a6 Kf8 62. e6 Kg7 63. e7 d3 64. e8=Q Rxa6 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} 65. Qe7+ 1-0
+
+[Event "Pawn endings - opposition: Chapter 2"]
+[ChapterName "The critical sideline"]
+[Date "2026.05.17"]
+[Round "8"]
+[White "Gukesh D"]
+[Black "Wei Yi"]
+[Result "1/2-1/2"]
+[WhiteElo "2996"]
+[BlackElo "2972"]
+[ECO "D49"]
+[Opening "Semi-Slav Defense: Meran Variation, Blumenfeld Variation"]
+
+{Semi-Slav Defense: Meran Variation, Blumenfeld Variation. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 c6 5. e3 Nbd7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Bd3 dxc4 7. Bxc4 b5 8. Bd3 ! a6 {Here the exchange is tempting and wrong: trading the good bishop leaves the dark squares bare.} (8... b4 Rb1 b3 {was the alternative — playable, but it hands over the initiative.}) 9. e4 c5 10. e5 cxd4 11. Nxb5 axb5 ?! 12. exf6 gxf6 13. O-O Qb6 14. Qe2 b4 15. Bf4 Bc5 16. Nd2 Bb7 17. a4 e5 18. Ne4 Rg8 19. a5 Qe6 20. Bg3 Be7 21. a6 Bd5 22. a7 f5 23. Ra6 Nb6 24. Nd2 Kf8 25. Bxf5 Qxf5 26. Rxb6 Rxa7 27. Rb8+ Kg7 28. Bxe5+ f6 29. Bxd4 Rd7 30. Rxg8+ Kxg8 31. Ra1 h5 32. Be3 Qg6 33. f3 Qc2 34. Qb5 Bc6 35. Qc4+ Qxc4 36. Nxc4 Kf7 37. Ra5 Rd5 38. Ra7 Rd7 39. Ra5 Rd5 40. Ra7 Rd7 {The rest is technique, which is another way of saying it still has to be played accurately.} 41. Ra5 1/2-1/2
+
+[Event "Pawn endings - opposition: Chapter 3"]
+[ChapterName "A model game"]
+[Date "2026.06.18"]
+[Round "9"]
+[White "Caruana, F"]
+[Black "Erigaisi, A"]
+[Result "1-0"]
+[WhiteElo "2698"]
+[BlackElo "2664"]
+[ECO "C86"]
+[Opening "Ruy Lopez: Closed, Worrall Attack, Delayed Castling Line"]
+
+{Ruy Lopez: Closed, Worrall Attack, Delayed Castling Line. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Qe2 b5 7. Bb3 d6 8. c3 ! O-O {Prophylaxis. The move looks slow, and it takes away every active idea the opponent had.} (8... b4 Na3 bxa3 {was the alternative — playable, but it hands over the initiative.}) 9. d4 Bg4 10. Be3 Na5 11. Bc2 Nc4 ?! 12. b3 Nxe3 13. Qxe3 Nd7 14. Nbd2 c5 15. dxe5 dxe5 16. h3 Be6 17. Rfd1 h6 18. g4 Qc7 19. Nf1 c4 20. b4 a5 21. a3 Ra7 22. Qe1 axb4 23. axb4 Rfa8 24. Rac1 Nf8 25. Ne3 Ng6 26. Nd5 Qd8 27. Nf6+ Bxf6 28. Rxd8+ Bxd8 29. Rd1 Be7 30. Qe3 Ra3 31. Rb1 Bg5 32. Nxg5 hxg5 33. Rd1 Nf4 34. Rd2 Rxc3 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 35. Qxc3 1-0

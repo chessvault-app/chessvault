@@ -1,9 +1,0 @@
-[Event "Online rapid arena — a rather long event name to test truncation"]
-[Site "Test fixture"]
-[Date "2026.12.12"]
-[Round "3"]
-[White "Nakamura, H"]
-[Black "Praggnanandhaa R"]
-[Result "1/2-1/2"]
-
-1. c4 e5 2. Nc3 Nf6 3. Nf3 Nc6 4. g3 d5 5. cxd5 Nxd5 6. Bg2 Nb6 7. O-O Be7 1/2-1/2

@@ -1,4 +1,4 @@
-# Endgame drills for the week 2
+# Endgame drills for the week 4
 
 *Twenty minutes a day*
 

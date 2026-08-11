@@ -1,0 +1,14 @@
+[Event "Tata Steel Masters"]
+[Site "Chess Vault demo"]
+[Date "2026.05.02"]
+[Round "2"]
+[White "Gukesh D"]
+[Black "Wei Yi"]
+[Result "1-0"]
+[WhiteElo "3043"]
+[BlackElo "2842"]
+[ECO "C74"]
+[Opening "Ruy Lopez: Morphy Defense, Modern Steinitz Defense"]
+
+{Ruy Lopez: Morphy Defense, Modern Steinitz Defense. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 d6 5. c3 f5 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. exf5 Bxf5 7. O-O b5 8. Bb3 ! Bd3 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... b4 Na3 bxa3 {was the alternative — playable, but it hands over the initiative.}) 9. Re1 Nf6 10. Ng5 Qe7 11. a4 h6 ?! 12. Nh3 b4 13. Nf4 Bf5 14. d4 Qd7 15. a5 Ne7 16. dxe5 dxe5 17. Qf3 e4 18. Qe2 c6 19. Nd2 bxc3 20. bxc3 Qd6 21. Nc4 Qc7 22. Nb6 Ra7 23. g3 Ned5 24. Nbxd5 cxd5 25. Nxd5 Nxd5 26. Bxd5 Qc5 27. Bxe4 Re7 28. Ba3 Rxe4 29. Qxe4+ Bxe4 30. Rxe4+ Kd7 31. Rd1+ Kc6 32. Bxc5 Bxc5 33. c4 Rf8 34. Re6+ Kc7 35. Rd2 Bb4 36. Rd5 Rf6 37. Rxf6 gxf6 38. Kf1 Bd6 39. Ke2 Bb4 40. h4 Be7 41. h5 Bb4 42. g4 Kc6 43. Kd3 Ba3 44. Ke4 Bc1 45. Kf5 Bb2 46. Kg6 Bc1 47. Kxf6 Kb7 48. Kf5 Bb2 49. f4 Ba1 50. g5 Bb2 51. g6 Bc3 52. Ke6 Kc6 53. Kf7 Ba1 54. g7 Bxg7 55. Kxg7 Kc7 56. f5 Kc8 57. f6 Kb7 58. f7 Kc8 59. f8=Q+ Kb7 60. Qe7+ Kc8 {The rest is technique, which is another way of saying it still has to be played accurately.} 61. Rd8# 1-0

@@ -1,15 +1,15 @@
-# Endgame drills for the week 2
+# What to review after each game 3
 
-*Twenty minutes a day*
+*Not the whole game*
 
-- Lucena and Philidor until they are automatic.
-- King and pawn versus king from every square.
-- Rook behind the passed pawn — mine and theirs.
+- The move where I first felt uncomfortable.
+- The move the engine hates most.
+- Whether the opening gave me a position I understood.
 
 ## A position to remember
 
 ```chess
-r2q1rk1/pp2bppp/2n1bn2/2pp4/3P4/2N1PN2/PPQ1BPPP/R1B2RK1 w - - 0 10
+r1bq1rk1/pp1nbppp/2p1pn2/3p4/2PP4/2N1PN2/PPQ1BPPP/R1B2RK1 w - - 0 9
 ```
 
 The board above is live — step through it, try a move, and it stays in the note.

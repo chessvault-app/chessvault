@@ -1,0 +1,14 @@
+[Event "FIDE Grand Swiss"]
+[Site "Chess Vault demo"]
+[Date "2026.07.19"]
+[Round "1"]
+[White "Nepomniachtchi, I"]
+[Black "Niemann, H"]
+[Result "1/2-1/2"]
+[WhiteElo "2971"]
+[BlackElo "2935"]
+[ECO "A42"]
+[Opening "Modern Defense: Averbakh System"]
+
+{Modern Defense: Averbakh System. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. c4 g6 2. d4 Bg7 3. e4 d6 4. Nc3 c5 5. Nge2 cxd4 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. Nxd4 Qa5 7. Be2 Nc6 8. Be3 ! Bxd4 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... Qxa2 Rb1 Qa1 {was the alternative — playable, but it hands over the initiative.}) 9. Bxd4 Nxd4 10. Qxd4 Nf6 11. O-O O-O ?! 12. f4 Rd8 13. h3 Bd7 14. a3 Bc6 15. b4 Qb6 16. Qxb6 axb6 17. Bf3 Rac8 18. Rac1 Kf8 19. e5 dxe5 20. fxe5 Nd7 21. Bg4 Ra8 22. b5 Nxe5 23. bxc6 bxc6 24. a4 Nxc4 25. Be2 Nb2 26. Ne4 Ra5 27. Rxc6 Re5 28. Bf3 Nxa4 29. Rb1 Rd4 30. Ng3 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} Kg7 1/2-1/2

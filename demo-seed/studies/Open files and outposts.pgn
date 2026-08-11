@@ -1,0 +1,44 @@
+[Event "Open files and outposts: Chapter 1"]
+[ChapterName "Main line"]
+[Date "2026.10.07"]
+[Round "7"]
+[White "Vachier-Lagrave, M"]
+[Black "Praggnanandhaa R"]
+[Result "1-0"]
+[WhiteElo "2763"]
+[BlackElo "2667"]
+[ECO "A72"]
+[Opening "Benoni Defense: Classical Variation"]
+
+{Benoni Defense: Classical Variation. Theory ends about here. From this point the game is decided by understanding rather than memory.}
+1. d4 Nf6 2. c4 c5 3. d5 g6 4. Nc3 Bg7 5. e4 O-O {Both sides have what they wanted from the opening. The middlegame will be about the centre.} 6. Nf3 e6 7. Be2 exd5 8. cxd5 ! d6 {The point of the whole plan. Material is level, but only one side has a target to attack.} (8... c4 Rb1 Nxe4 {was the alternative — playable, but it hands over the initiative.}) 9. Nd2 Na6 10. O-O Nc7 11. a4 Rb8 ?! 12. f3 b6 13. Nb5 a6 14. Nxc7 Qxc7 15. Qc2 Nd7 16. Rb1 b5 17. b4 c4 18. a5 Ne5 19. Kh1 f5 20. Bb2 fxe4 21. Nxe4 Bf5 22. Rbd1 Rbe8 23. Bc3 Bxe4 24. fxe4 Qe7 25. Qd2 Qh4 26. Qd4 Rxf1+ 27. Rxf1 Rf8 28. Rxf8+ Bxf8 29. g3 Qf6 30. Qb6 h5 31. Kg2 h4 32. Qxa6 h3+ 33. Kxh3 Qf2 34. Bxe5 Qxe2 35. Bxd6 Qf1+ 36. Kg4 Qf6 37. Qxb5 Bxd6 38. Qxc4 Qe7 39. a6 Qd7+ 40. Kf3 Qf7+ 41. Kg2 Qe7 42. b5 Bc5 {The endgame is winning but not simple — the passed pawn needs its king, not just its rook.} 43. d6+ 1-0
+
+[Event "Open files and outposts: Chapter 2"]
+[ChapterName "The critical sideline"]
+[Date "2026.11.08"]
+[Round "8"]
+[White "Aronian, L"]
+[Black "Kosteniuk, A"]
+[Result "1/2-1/2"]
+[WhiteElo "3036"]
+[BlackElo "3027"]
+[ECO "C00"]
+[Opening "French Defense: St. George Defense"]
+
+{French Defense: St. George Defense. Book so far. The plan is the usual one: finish development, then decide which side to open.}
+1. e4 a6 2. d4 e6 3. Be3 d5 4. Nd2 c5 5. dxc5 Nf6 {A slight inaccuracy in move order — the bishop is better placed before this pawn commits.} 6. a3 Nc6 7. b4 Be7 8. Bd3 ! a5 {A long think. Both continuations are playable; this one keeps more pieces on, which suits the attacker.} (8... d4 Rb1 dxe3 {was the alternative — playable, but it hands over the initiative.}) 9. b5 Ne5 10. Ngf3 Neg4 11. Bd4 dxe4 ?! 12. Nxe4 e5 13. Bb2 Nxe4 14. Bxe4 Qxd1+ 15. Rxd1 Bxc5 16. O-O Nf6 17. Nd2 O-O 18. Bf3 Bg4 19. Nc4 Rac8 20. Bxe5 Bxf2+ 21. Rxf2 Rxc4 22. Bxf6 Bxf3 23. gxf3 gxf6 24. Rg2+ Kh8 25. Rd7 b6 26. Rb7 Ra4 27. h4 Rxa3 28. Rxb6 Ra1+ 29. Kh2 Ra4 30. Rg4 Ra2 31. Rc4 a4 32. Rxf6 a3 33. Ra6 Rg8 34. Rc5 Ra1 35. b6 Rb1 36. c4 a2 37. Rxa2 Rxb6 38. Rf5 Rd6 39. Rxf7 Rd4 40. Kh3 Rd1 41. Rf4 Rh1+ 42. Rh2 Rhg1 43. Rc2 Rh1+ 44. Rh2 Rf1 45. h5 {Precise to the end. A pawn move here instead would have let the defence build a fortress.} h6 1/2-1/2
+
+[Event "Open files and outposts: Chapter 3"]
+[ChapterName "A model game"]
+[Date "2026.12.09"]
+[Round "9"]
+[White "So, W"]
+[Black "Keymer, V"]
+[Result "1/2-1/2"]
+[WhiteElo "3021"]
+[BlackElo "2999"]
+[ECO "E17"]
+[Opening "Queen's Indian Defense: Fianchetto Variation, Kramnik Variation"]
+
+{Queen's Indian Defense: Fianchetto Variation, Kramnik Variation. Both sides have what they wanted from the opening. The middlegame will be about the centre.}
+1. d4 Nf6 2. Nf3 b6 3. g3 e6 4. Bg2 Be7 5. c4 Bb7 {Theory ends about here. From this point the game is decided by understanding rather than memory.} 6. O-O O-O 7. Re1 d5 8. cxd5 ! exd5 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... b5 Nbd2 b4 {was the alternative — playable, but it hands over the initiative.}) 9. Nc3 Nbd7 10. Bf4 c5 11. h4 Ne4 ?! 12. Rc1 Ndf6 13. e3 c4 14. a4 Re8 15. Qc2 Rc8 16. Ne5 Bd6 17. Nb5 Bb4 18. Red1 a6 19. Nc3 Bd6 20. Bg5 Qc7 21. Bxf6 Nxf6 22. f4 h5 23. Bf3 Qe7 24. Qg2 Qe6 25. Rd2 Rc7 26. Rf1 Rd8 27. Re2 Kh7 28. Kh1 Kh8 29. Kg1 Kh7 30. Ref2 {Resignation is timely: the king cannot be defended and the counterplay is one move too slow.} Kg8 1/2-1/2

@@ -1,0 +1,14 @@
+[Event "Online rapid arena"]
+[Site "Chess Vault demo"]
+[Date "2026.09.21"]
+[Round "3"]
+[White "Rapport, R"]
+[Black "Vaishali R"]
+[Result "1-0"]
+[WhiteElo "2679"]
+[BlackElo "2827"]
+[ECO "C46"]
+[Opening "Three Knights Opening: Steinitz Defense"]
+
+{Three Knights Opening: Steinitz Defense. A slight inaccuracy in move order — the bishop is better placed before this pawn commits.}
+1. e4 e5 2. Nf3 Nc6 3. Nc3 g6 4. d4 exd4 5. Nxd4 Bg7 {Book so far. The plan is the usual one: finish development, then decide which side to open.} 6. Nde2 Nf6 7. g3 d6 8. Bg2 ! h5 {The critical moment. The pieces are as good as they are going to get; something has to happen now.} (8... Nb4 Rb1 Nxa2 {was the alternative — playable, but it hands over the initiative.}) 9. h3 Be6 10. Bg5 Qd7 11. Qd2 Nh7 ?! 12. Be3 Ne5 13. b3 a6 14. f4 Nc6 15. O-O-O O-O 16. g4 hxg4 17. f5 gxf5 18. exf5 Bxf5 19. hxg4 Bg6 20. Nf4 Ne5 21. Nxg6 Nxg6 22. Bxb7 Rae8 23. Bh6 f6 24. Bd5+ Kh8 25. Bxg7+ Qxg7 26. Rh2 Rf7 27. Bxf7 Qxf7 28. Rdh1 Nf8 29. Qd3 Re5 30. Qxa6 d5 31. Qd3 c5 32. Ne2 c4 33. Qd2 Qa7 34. Kb1 cxb3 35. axb3 Re6 36. Nd4 Ra6 37. Qc3 Kg8 38. Nf5 Qb7 39. Rh5 Qd7 40. Ne3 d4 41. Qc4+ Qe6 42. Nd5 d3 43. Qxd3 Ra7 44. g5 Qe5 45. Nc3 fxg5 46. Qd5+ Qxd5 47. Nxd5 Rg7 48. c4 Nd7 49. b4 g4 50. c5 Nhf6 51. Nxf6+ Nxf6 52. Rf5 Ne4 53. c6 Nc3+ 54. Kc2 Ne2 55. Kd3 Ng3 56. Rhf1 Nxf1 57. Rxf1 g3 58. b5 g2 59. Rg1 Rg3+ 60. Kc4 Rg5 61. c7 Rg4+ 62. Kc5 Rg5+ 63. Kb6 Kg7 64. c8=Q Rg6+ 65. Qc6 Rg5 66. Qxg2 Kh6 67. Qxg5+ Kh7 {The rest is technique, which is another way of saying it still has to be played accurately.} 68. Qg7# 1-0
