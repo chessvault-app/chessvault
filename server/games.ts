@@ -271,29 +271,51 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
   });
 
   /** Promote one archived game into the collection. */
+  /**
+   * Add games from an archive file to the collection.
+   *
+   * One game (`index`), several (`indexes`), or the lot (`all`). The file is
+   * parsed ONCE regardless — it is a whole month, and parsing it per game
+   * turned adding fifty games into fifty parses of the same text.
+   */
   api.post('/games/collect', async (c) => {
     const body = await c.req
-      .json<{ file?: string; index?: number }>()
+      .json<{ file?: string; index?: number; indexes?: number[]; all?: boolean }>()
       .catch(() => null);
-    if (!body?.file || !Number.isInteger(body.index) || body.index! < 0) {
-      return c.json({ error: 'need file and index' }, 400);
-    }
+    if (!body?.file) return c.json({ error: 'need file' }, 400);
+
     const path = safeResolve(dir, body.file);
     if (!path || !existsSync(path)) return c.json({ error: 'no such file' }, 404);
 
-    const game = parseGames(path)[body.index!];
-    if (!game) return c.json({ error: 'no such game' }, 404);
+    const games = parseGames(path);
 
-    // Record which side the vault owner played, for board orientation.
+    let wanted: number[];
+    if (body.all) wanted = games.map((_, i) => i);
+    else if (Array.isArray(body.indexes)) wanted = body.indexes;
+    else if (Number.isInteger(body.index)) wanted = [body.index!];
+    else return c.json({ error: 'need index, indexes or all' }, 400);
+
+    if (!wanted.length) return c.json({ error: 'no games chosen' }, 400);
+    if (wanted.some((i) => !Number.isInteger(i) || i < 0 || i >= games.length)) {
+      return c.json({ error: 'index out of range' }, 400);
+    }
+
+    // Which side the vault owner played, for board orientation.
     const pathUser = body.file.startsWith('chesscom/')
       ? (body.file.split('/')[1]?.toLowerCase() ?? null)
       : null;
-    const white = (game.headers.get('White') ?? '').toLowerCase();
-    const black = (game.headers.get('Black') ?? '').toLowerCase();
-    if (pathUser === white) game.headers.set('VaultSide', 'white');
-    else if (pathUser === black) game.headers.set('VaultSide', 'black');
 
-    return c.json({ id: addToCollection(game) });
+    const ids: string[] = [];
+    for (const index of wanted) {
+      const game = games[index]!;
+      const white = (game.headers.get('White') ?? '').toLowerCase();
+      const black = (game.headers.get('Black') ?? '').toLowerCase();
+      if (pathUser === white) game.headers.set('VaultSide', 'white');
+      else if (pathUser === black) game.headers.set('VaultSide', 'black');
+      ids.push(addToCollection(game));
+    }
+
+    return c.json({ id: ids[0], ids, added: ids.length });
   });
 
   /** The default document name for a game: "White vs Black YYYY-MM-DD". */

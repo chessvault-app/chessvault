@@ -799,12 +799,19 @@ function ArchiveBrowser({
     }
   };
 
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
   const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
   const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
   const visibleMonthGames = monthGames.filter(
     (g) =>
       (sideFilter === 'any' || g.userSide === sideFilter) &&
       (resultFilter === 'any' || g.result === resultFilter),
+  );
+
+  /** Shown by the current filters and not already collected. */
+  const pickable = visibleMonthGames.filter(
+    (g) => !added.has(gameKey(g)) && !collectionKeys.has(`${g.white}|${g.black}|${g.date}`),
   );
 
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
@@ -814,6 +821,39 @@ function ArchiveBrowser({
     setMonth('');
     setMonthGames([]);
     setError(null);
+  };
+
+  /**
+   * Add many games in one request.
+   *
+   * One call rather than one per game: a month is hundreds of games, and
+   * the server parses the archive file once for the whole batch. `all`
+   * means the whole file, whatever the current filters show — it is sent
+   * as explicit indexes so what you ticked is what you get.
+   */
+  const collectMany = async (games: GameSummary[]): Promise<void> => {
+    if (!games.length) return;
+    const file = games[0]!.file;
+    setBusy(true);
+    setError(null);
+    const res = await fetch('/api/games/collect', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ file, indexes: games.map((g) => g.index) }),
+    });
+    setBusy(false);
+    if (res.ok) {
+      setAdded((prev) => {
+        const next = new Set(prev);
+        for (const g of games) next.add(gameKey(g));
+        return next;
+      });
+      setPicked(new Set());
+      onCollected();
+    } else {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(body?.error ?? t('could not add those games'));
+    }
   };
 
   const collect = async (game: GameSummary): Promise<void> => {
@@ -947,6 +987,43 @@ function ArchiveBrowser({
         </div>
       )}
 
+      {month && visibleMonthGames.length > 0 && loading !== 'games' && (
+        <div className="border-line flex flex-wrap items-center gap-2 border-t px-3 py-1.5 text-xs">
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              className="accent-primary"
+              checked={pickable.length > 0 && picked.size === pickable.length}
+              // Indeterminate is the honest state for a partial selection:
+              // an unchecked box next to eight ticked rows reads as a bug.
+              ref={(el) => {
+                if (el) el.indeterminate = picked.size > 0 && picked.size < pickable.length;
+              }}
+              disabled={pickable.length === 0}
+              onChange={(e) =>
+                setPicked(e.target.checked ? new Set(pickable.map(gameKey)) : new Set())
+              }
+            />
+            <span className="text-muted">{t('Select all')}</span>
+          </label>
+          {picked.size > 0 && (
+            <>
+              <span className="text-subtle tabular-nums">
+                {t('{n} selected', { n: picked.size })}
+              </span>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={busy}
+                onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}
+              >
+                {busy ? t('Adding…') : t('Add selected')}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
       {month && (
         <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
           {loading === 'games' ? (
@@ -968,6 +1045,22 @@ function ArchiveBrowser({
                   onOpen={() => void openInAnalysis(game)}
                   onPreview={onPreview}
                   actions={
+                    <>
+                    {!inCollection && (
+                      <input
+                        type="checkbox"
+                        className="accent-primary mr-1 shrink-0"
+                        aria-label={t('Select this game')}
+                        checked={picked.has(gameKey(game))}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          const next = new Set(picked);
+                          if (e.target.checked) next.add(gameKey(game));
+                          else next.delete(gameKey(game));
+                          setPicked(next);
+                        }}
+                      />
+                    )}
                     <Button
                       variant={inCollection ? 'ghost' : 'secondary'}
                       size="sm"
@@ -987,6 +1080,7 @@ function ArchiveBrowser({
                         </>
                       )}
                     </Button>
+                    </>
                   }
                 />
               );

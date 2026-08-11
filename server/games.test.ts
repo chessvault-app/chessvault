@@ -153,4 +153,35 @@ describe('games api (collection model)', () => {
     expect(keys).toHaveLength(1);
     expect(((await (await toggle()).json()) as { bookmarked: boolean }).bookmarked).toBe(false);
   });
+  it('adds several archive games at once, and the whole file', async () => {
+    const post = async (payload: object): Promise<Response> =>
+      app.request('/api/games/collect', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ file: 'chesscom/lanph3re/2026-07.pgn', ...payload }),
+      });
+
+    const many = await post({ indexes: [0, 1] });
+    expect(many.status).toBe(200);
+    expect((await many.json()).added).toBe(2);
+
+    // `all` is the point of the feature: a whole month in one action.
+    const whole = await post({ all: true });
+    expect(whole.status).toBe(200);
+    const body = await whole.json();
+    expect(body.added).toBeGreaterThanOrEqual(2);
+    expect(body.ids).toHaveLength(body.added);
+
+    // Names already taken get a suffix rather than overwriting a game.
+    expect(new Set(body.ids).size).toBe(body.ids.length);
+  });
+
+  it('refuses an out-of-range index instead of adding what it can', async () => {
+    const res = await app.request('/api/games/collect', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ file: 'chesscom/lanph3re/2026-07.pgn', indexes: [0, 999] }),
+    });
+    expect(res.status).toBe(400);
+  });
 });

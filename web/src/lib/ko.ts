@@ -153,6 +153,12 @@ export const ko: Record<string, string> = {
   'Elite games': '엘리트 게임',
   'offline — cached months only': '오프라인 — 저장된 달만',
   'Add to collection': '모음에 추가',
+  'Select all': '전체 선택',
+  'Select this game': '이 게임 선택',
+  '{n} selected': '{n}개 선택됨',
+  'Add selected': '선택한 게임 추가',
+  'Adding…': '추가하는 중…',
+  'could not add those games': '그 게임들을 추가하지 못했습니다',
 
   // --- notes ---------------------------------------------------------------
   'Search notes…': '노트 검색…',
