@@ -57,131 +57,167 @@ JSON으로 당신이 소유한 폴더 하나에 저장됩니다.
   하단 바가 현재 페이지의 조작(수 이동, 퍼즐 동작)으로 바뀝니다 —
   chess.com·Lichess와 같은 방식입니다.
 
-## 빠른 시작 (개발)
+## 실행하는 두 가지 방법
+
+둘 다 같은 코드를 돌립니다. 차이는 **보관함이 어디 있느냐**뿐입니다 —
+게임, 스터디, 노트, 퍼즐이 담긴 그 폴더 말입니다.
+
+| | **이 기기에서** | **서버에서** |
+| --- | --- | --- |
+| 보관함 위치 | 내 컴퓨터 | 작은 리눅스 서버 한 대 |
+| 접근하는 곳 | 그 컴퓨터 | 휴대폰·노트북·데스크톱 모두 클라이언트 |
+| 필요한 것 | 없음 | 계속 켜 둘 기계, 그리고 HTTPS |
+| 갱신 방법 | 새 앱 설치 | `bash scripts/deploy.sh` |
+
+여러 기기에서 같은 보관함을 쓰고 싶을 때만 두 번째를 고르세요. 첫
+번째로 시작해도 잃는 것은 없습니다. 보관함은 폴더이므로, 나중에 서버로
+옮기는 일은 그 폴더를 복사하는 것입니다.
+
+### A · 이 기기에서
+
+데스크톱 앱의 **로컬** 모드면 끝입니다. 서버를 대신 띄워 주고 보관함을
+사용자 프로필에 둡니다:
+
+```bash
+npm run desktop:package        # 또는 :mac / :linux — 설치 후 "로컬" 선택
+```
+
+소스 트리에서 바로 돌리려면:
 
 ```bash
 npm install
-npm run dev          # 서버 + 웹, http://localhost:5173
+npm run build                  # 웹 앱 -> dist/
+npm start                      # http://127.0.0.1:8787
 ```
 
-처음 실행하면 Stockfish 엔진 자산을 내려받습니다(7 MB 경량 빌드,
-`npm run setup:engine -- --full`을 쓰면 최대 강도 빌드로 바뀝니다).
+보관함은 `CHESS_VAULT_DIR`로 달리 지정하지 않는 한 저장소의 `vault/`
+입니다. 비밀번호는 필요 없습니다 — 이 기기 밖으로는 아무것도 듣고 있지
+않으니까요.
+
+### B · 서버에서
+
+한 대가 보관함을 갖고, 모든 기기가 클라이언트가 됩니다.
+
+```bash
+# 서버에서 한 번
+npm install
+npm run build                          # 웹 앱 -> dist/
+CHESS_VAULT_DIR=/srv/chess-vault npm run start
+```
+
+한 포트가 빌드된 앱과 HTTP API를 함께 서빙합니다. 그다음:
+
+1. **앞에 HTTPS를 두세요.** 리버스 프록시는 사실상 필수입니다. PWA
+   설치와 Stockfish의 멀티스레딩 둘 다 보안 컨텍스트이면서 교차 출처
+   격리된 페이지를 요구합니다.
+2. **잠금 화면을 켜세요.** 설정에서 앱 비밀번호를 정하고(또는
+   `vault/config.json`의 `appPassword`), 인증 앱 2단계 인증도 함께
+   켜세요. 인터넷에서 닿는 것이라면 반드시 필요합니다.
+3. **기기를 연결하세요.** 휴대폰은 URL을 열고 홈 화면에 추가하면 오프라인
+   셸을 갖춘 PWA로 설치됩니다. 데스크톱은 앱을 설치하고 *원격* 모드에서
+   서버 주소를 넣으세요.
+
+설정에는 버전이 두 개 보이는데, 서로 다른 것입니다. **서버** 버전은
+지금 연결된 웹 앱과 API이고, **데스크톱 앱** 버전은 그것을 감싼 Electron
+창입니다. 로컬 모드에서는 설치 파일 하나에 둘 다 들어 있으므로 언제나
+같습니다. 원격 모드에서는 서로 독립적이며, 달라도 정상입니다.
+
+**서버 갱신**은 작업용 컴퓨터에서 명령 하나입니다:
+
+```bash
+cp scripts/deploy.env.example scripts/deploy.env   # CHESS_VAULT_HOST 설정
+bash scripts/deploy.sh
+```
+
+웹 앱은 로컬에서 빌드하고(가장 무거운 단계입니다 — 2GB 기계는 여기서
+메모리가 터질 수 있습니다), 커밋과 빌드된 `dist/`를 보내고, `npm ci`를
+돌리고, 데이터베이스 인덱스를 최신으로 맞추고, 서비스를 재시작한 뒤 다시
+살아났는지 확인합니다. 보관함은 건드리지 않습니다.
+
+SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22번 포트를 닫은
+채 [Tailscale](https://tailscale.com) 테일넷 위에서 돌아가고, `deploy.sh`가
+테일넷을 통해 접근합니다.
+
+백업은 여러 겹입니다. 서버가 보관함의 모든 변경을 `vault/.history.git`에
+자동 커밋하고(세밀한 되돌리기), 호스트의 스냅샷이 인스턴스 손실을 막고,
+`scripts/backup-vault.sh`가 히스토리까지 포함한 보관함 전체를 아무 기계로나
+내려받습니다.
+
+## 선택 데이터
+
+앱은 `data/`가 비어 있어도 돌아갑니다. 아래 네 가지는 특정 기능을 켜 주는
+것들이며, `data/` 아래는 전부 파생물이라 git에서 제외되고 다시 만들 수
+있습니다. 원하는 것만, 기기마다 만드세요.
+
+| 데이터 | 켜지는 기능 | 만드는 방법 |
+| --- | --- | --- |
+| `data/puzzles.sqlite` | 퍼즐 트레이너 | `npm run build:puzzles` |
+| `data/refgames.sqlite` | 엘리트 게임 브라우저 | `npm run build:refgames` |
+| `data/books/*.sqlite` | 로컬 오프닝 탐색기 | 앱 안에서, 또는 `npm run build:book` |
+| `data/openings.json` | ECO 오프닝 이름 | `npm run build:openings` |
+
+**오프닝 북에는 셸이 필요 없습니다.** 탐색기의 북 관리자를 열어 PGN
+모음을 올리고, 합칠 것을 골라 만들기를 누르면 됩니다. 무료로 쓸 만한
+출처: [Lumbra's Gigabase](https://lumbrasgigabase.com/en/)의 "OTB Elite",
+[Lichess Elite Database](https://database.nikonoel.fr/). 국면은 64비트
+Zobrist 해시로 키를 만들고 메모리를 제한한 채 스트리밍합니다 — Lichess
+Elite 한 달치(280,246 게임)에서 361k 국면을 47초에 색인해 69MB가 됩니다.
+
+### 큰 둘은 작업용 컴퓨터에서 만듭니다
+
+`puzzles.sqlite`(~2.5GB)와 `refgames.sqlite`는 앱이 스스로 만들지 **못하는
+유일한** 것들이고, 배포의 일부가 아니라 일회성 작업입니다:
+
+```bash
+# 퍼즐 트레이너 — Lichess 덤프(CC0, ~304MB), 한 번만
+curl -L -o data/lichess_db_puzzle.csv.zst \
+  https://database.lichess.org/lichess_db_puzzle.csv.zst
+npm run build:puzzles          # -> data/puzzles.sqlite
+
+# 엘리트 게임 브라우저 — 갖고 있는 PGN 모음으로
+npm run build:refgames         # -> data/refgames.sqlite
+```
+
+**이 기기에서** 돌린다면 이걸로 끝입니다 — 앱이 찾는 자리에 이미 있습니다.
+**서버에서** 돌린다면 둘 다 서버의 데이터 디렉터리(`CHESS_VAULT_DATA`,
+기본값은 앱 옆의 `data/`)로 `scp` 하세요. 작은 서버에서는 절대 만들지
+마세요. 퍼즐 빌드는 한 번 2GB 기계의 메모리를 터뜨린 적이 있습니다. 이후
+배포는 인덱스를 알아서 최신으로 유지하므로, 더 새 덤프나 더 많은 게임이
+필요할 때만 다시 만들면 됩니다.
+
+왜 이것들을 앱 안에서 하지 않는지, 그 답이 바뀌려면 무엇이 달라져야 하는지는
+[docs/databases.md](docs/databases.md)에 있습니다.
+
+## 모든 것이 오프라인에서 동작합니다
+
+런타임에 CDN을 부르지 않습니다. 글꼴, 아이콘, WASM, CSS가 전부 함께
+들어 있습니다. 네트워크가 필요한 기능은 *가져오기*(본래 일회성)와 선택
+사항인 Lichess 탐색기 보강뿐입니다.
 
 ## 구조
 
 ```
 shared/     순수 TS: 수 트리 + PGN 코덱 (모두가 재사용하는 핵심)
-server/     Hono 서버: 보관함 입출력, 인증 게이트 + 2FA, 설정, 프록시
+server/     Hono 서버: 보관함 I/O, 인증 게이트 + 2FA, 설정, 프록시
 web/        Vite + React UI
 desktop/    Electron 셸 (원격 클라이언트 또는 자체 호스팅)
 scripts/    빌더: 엔진 설치, 오프닝 북, 참고 게임 색인, ML 파이프라인
-data/       파생물 — 다시 만들 수 있고, git에서 제외됨
-vault/      당신의 데이터 — 평범한 파일, git과 잘 맞음
+data/       파생물 — 다시 만들 수 있음, git에서 제외
+vault/      당신의 데이터 — 평범한 파일, git 친화적
 ```
 
-**`vault/`가 대체 불가능한 부분입니다.** `data/` 안의 것은 전부 지우고
-다시 만들 수 있습니다. 백업이나 이전은 폴더 하나를 복사하는 일입니다.
+**`vault/`가 대체 불가능한 부분입니다.** `data/` 안의 것은 지우고 다시
+만들 수 있습니다. 백업이나 이전은 폴더 하나를 복사하는 일입니다.
 
-## 배포
-
-의도한 모습은 이렇습니다. 작은 리눅스 서버 하나가 보관함을 소유하고,
-나머지 모든 기기는 클라이언트입니다.
+## 개발하기
 
 ```bash
-# 서버에서
 npm install
-npm run build                      # 웹 앱 -> dist/
-CHESS_VAULT_DIR=/srv/chess-vault npm run start
+npm run dev          # 서버 + 웹, 핫 리로드, http://localhost:5173
 ```
 
-포트 하나가 빌드된 앱과 HTTP API를 함께 제공합니다. 앞에 HTTPS 리버스
-프록시를 두세요 — PWA 설치와 Stockfish의 멀티스레드(SharedArrayBuffer는
-교차 출처 격리된 보안 페이지를 요구합니다) 둘 다 그것을 필요로 합니다.
-공개 배포라면 `vault/config.json`에 `appPassword`를 설정하거나 설정
-페이지에서 지정해 잠금 화면을 켜세요. 인증 앱 2단계 인증도 같은 곳에서
-추가합니다. 그다음:
-
-- **휴대폰**: URL을 열고 홈 화면에 추가하면 오프라인 셸과 스플래시
-  화면을 갖춘 온전한 PWA가 됩니다.
-- **데스크톱**: 앱을 설치하고(`npm run desktop:package`가 Windows
-  설치 프로그램을 만듭니다) 서버 URL과 함께 *원격* 모드를 고르거나,
-  그 기기의 아무 폴더나 직접 호스팅하는 *로컬* 모드를 고르세요.
-
-SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22번 포트를 닫은
-채 [Tailscale](https://tailscale.com) 테일넷 위에서 서버를 돌리고,
-`scripts/deploy.sh`(번들 → 전송 → 재빌드 → 재시작)가 테일넷을 통해
-접근합니다. `scripts/deploy.env.example`을 `scripts/deploy.env`(gitignore
-대상)로 복사해 `CHESS_VAULT_HOST`를 채우세요. 서버의 디렉터리와 서비스
-이름은 이 문서의 배치를 기본값으로 쓰며, 같은 파일에서 바꿀 수 있습니다.
-
-### 배포 시점에 한 번 하는 작업
-
-데이터베이스 두 개는 앱이 만드는 것이 아니라 **당신의 기기에서 만들어
-서버로 복사**합니다. 유일한 예외이고, 일회성이라 평소 배포의 일부가
-아닙니다:
-
-```bash
-# 퍼즐 트레이너의 문제 풀: Lichess 덤프를 한 번 내려받습니다 (CC0, 약 304 MB)
-curl -o data/lichess_db_puzzle.csv.zst https://database.lichess.org/lichess_db_puzzle.csv.zst
-npm run build:puzzles              # -> data/puzzles.sqlite (약 2.5 GB)
-
-# 참고 게임 브라우저: vault/sources/에 넣어 둔 PGN이라면 무엇이든
-npm run build:refgames             # -> data/refgames.sqlite
-```
-
-둘 다 서버의 data 디렉터리로 복사하세요. 이후의 배포는 알아서 색인을
-최신으로 유지합니다. 더 새로운 퍼즐 덤프가 나오거나 참고 게임을 늘릴
-때만 다시 만들면 됩니다 — 왜 이것을 앱 안에서 하지 않는지, 그리고 그
-답이 바뀌려면 무엇이 달라져야 하는지는
-[docs/databases.ko.md](docs/databases.ko.md)를 보세요.
-
-백업은 층으로 되어 있습니다. 서버가 보관함의 모든 변경을
-`vault/.history.git`에 자동으로 커밋하고(세밀한 되돌리기), 호스트의
-스냅숏이 인스턴스 유실에 대비하며, `scripts/backup-vault.sh`가 히스토리를
-포함한 보관함 전체를 아무 기기로나 내려받아 클라우드 밖 사본을
-만듭니다.
-
-## 모든 것이 오프라인에서 동작합니다
-
-런타임에 CDN을 호출하지 않습니다. 글꼴, 아이콘, WASM, CSS가 모두 함께
-번들됩니다. 네트워크가 필요한 기능은 *가져오기*(본래 일회성인 작업)와
-선택 사항인 Lichess 탐색기 보강뿐입니다.
-
-오프닝 탐색기는 **로컬 우선**입니다. 북은 `vault/sources/`에 넣어 둔
-PGN에서 만들어지며, 탐색기 창의 북 관리자에서 하거나 다음처럼 할 수
-있습니다:
-
-```bash
-npm run build:book                          # vault/sources의 모든 .pgn을 각각 하나의 북으로
-npm run build:book -- a.pgn b.pgn --name elite    # 여러 파일을 북 하나로 합치기
-npm run build:openings                      # ECO 이름 (동봉한 TSV, 완전 오프라인)
-```
-
-국면은 64비트 Zobrist 해시로 키를 잡고 메모리 사용량을 묶어 둔 채
-스트리밍합니다. Lichess Elite Database 한 달치(280,246 게임)로 측정한
-결과: 361 k개 국면을 47초에 색인했고, SQLite 69 MB, 조회는 1밀리초
-미만이었습니다. 추천하는 출처는 둘 다 무료입니다 —
-[Lumbra's Gigabase](https://lumbrasgigabase.com/en/)의 "OTB Elite"와
-[Lichess Elite Database](https://database.nikonoel.fr/).
-
-## 참고 데이터 (전부 선택 사항, 전부 무료)
-
-`data/`가 비어 있어도 앱은 돌아갑니다. 이 데이터셋들은 특정 기능을
-켜 줄 뿐입니다. `data/` 아래의 모든 것은 다시 만들 수 있고 git에서
-제외되므로 저장소에 실려 나가지 않습니다. 기기마다 만들거나 받으세요.
-
-- **퍼즐 트레이너** — [Lichess 퍼즐 데이터베이스](https://database.lichess.org/#puzzles)
-  (CC0). 한 번 받아서 만들면 됩니다:
-  ```bash
-  curl -L -o data/lichess_db_puzzle.csv.zst \
-    https://database.lichess.org/lichess_db_puzzle.csv.zst
-  npm run build:puzzles          # -> data/puzzles.sqlite
-  ```
-- **엘리트 게임 브라우저** — 위의 Lumbra / Lichess Elite 같은 PGN 덤프를
-  `npm run build:refgames`로 색인해 `data/refgames.sqlite`를 만듭니다.
-- **오프닝 탐색기 (로컬)** — `vault/sources/`에 넣은 PGN에 대해
-  `npm run build:book`을 돌립니다. `npm run build:openings`는 동봉한
-  TSV에서 ECO 이름을 컴파일합니다(완전 오프라인).
+처음 실행하면 Stockfish 엔진 자산을 받습니다(7MB 라이트 빌드.
+`npm run setup:engine -- --full`로 full 빌드로 바꿀 수 있습니다).
 
 ## Lichess 토큰 (선택 사항)
 
@@ -213,6 +249,7 @@ npm run setup:engine   # Stockfish를 web/public/engine/으로 복사
 npm run build:book     # vault/sources의 PGN을 오프닝 북으로 색인
 npm run build:openings # ECO 오프닝 이름 컴파일
 npm run build:refgames # 엘리트 브라우저용 참고 게임 색인
+npm run build:puzzles  # Lichess 덤프로 퍼즐 트레이너 풀 만들기
 npm run desktop:package        # Windows 설치 프로그램
 npm run desktop:package:mac    # macOS dmg (Mac 또는 GitHub Actions 필요)
 npm run desktop:package:linux  # Linux AppImage + deb

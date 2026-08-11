@@ -59,15 +59,144 @@ stored as PGN, markdown and JSON in one folder you own.
   server. On a phone the bottom bar turns into the open page's controls
   (move navigation, puzzle actions), chess.com/Lichess-style.
 
-## Quick start (development)
+## Two ways to run it
+
+Both run the same code. The only question is **where the vault lives** —
+the folder holding your games, studies, notes and puzzles.
+
+| | **On this machine** | **On a server** |
+| --- | --- | --- |
+| vault lives | on your computer | on one small Linux box |
+| you reach it from | that computer | phone, laptop, desktop — all clients |
+| needs | nothing | a machine that stays on, and HTTPS |
+| updating it | install a new app | `bash scripts/deploy.sh` |
+
+Pick the second only if you want the same vault from more than one device.
+Nothing is lost by starting with the first: the vault is a folder, so
+moving to a server later is copying it there.
+
+### A · On this machine
+
+The desktop app in **local** mode is the whole answer — it starts the
+server for you and keeps the vault in your user profile:
+
+```bash
+npm run desktop:package        # or :mac / :linux — installs, then pick "local"
+```
+
+To run it from the source tree instead:
 
 ```bash
 npm install
-npm run dev          # server + web, http://localhost:5173
+npm run build                  # web app -> dist/
+npm start                      # http://127.0.0.1:8787
 ```
 
-First run downloads the Stockfish engine assets (7 MB lite build;
-`npm run setup:engine -- --full` swaps in the full-strength one).
+The vault is `vault/` in the repo unless `CHESS_VAULT_DIR` says otherwise.
+No password is needed — nothing is listening beyond your machine.
+
+### B · On a server
+
+One box owns the vault; every device is a client.
+
+```bash
+# on the server, once
+npm install
+npm run build                          # web app -> dist/
+CHESS_VAULT_DIR=/srv/chess-vault npm run start
+```
+
+One port serves the built app and the HTTP API together. Then:
+
+1. **Put HTTPS in front.** A reverse proxy is not optional in practice:
+   the PWA install and Stockfish's multi-threading both need a secure,
+   cross-origin-isolated page.
+2. **Turn on the lock screen.** Set an app password in Settings (or
+   `appPassword` in `vault/config.json`), and add authenticator 2FA
+   while you are there. Anything reachable from the internet needs this.
+3. **Connect your devices.** Phone: open the URL and Add to Home Screen —
+   it installs as a PWA with an offline shell. Desktop: install the app
+   and choose *remote* mode with your server's URL.
+
+Settings shows two version numbers, and they are different things: the
+**server** version is the web app and API you are connected to; the
+**desktop app** version is the Electron window around it. In local mode
+they always match, because one installer contains both. In remote mode
+they are independent, and differing is normal.
+
+**Updating the server** is one command from your workstation:
+
+```bash
+cp scripts/deploy.env.example scripts/deploy.env   # set CHESS_VAULT_HOST
+bash scripts/deploy.sh
+```
+
+It builds the web app locally (the heaviest step — a 2 GB box can OOM
+under it), ships the commit and the built `dist/`, runs `npm ci`, refreshes
+database indexes, restarts the service and asserts it came back. It never
+touches the vault.
+
+Keep SSH off the public internet. The reference deployment runs on a
+[Tailscale](https://tailscale.com) tailnet with port 22 closed at the
+firewall, and `deploy.sh` reaches it over the tailnet.
+
+Backups are layered: the server auto-commits every vault change to
+`vault/.history.git` (fine-grained undo), your host's snapshots guard
+against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
+— history included — to any machine for an off-cloud copy.
+
+## Optional data
+
+The app runs with an empty `data/`. These four datasets light up specific
+features; everything under `data/` is derived, gitignored and rebuildable,
+so it never ships in the repo. Build what you want, per machine.
+
+| Dataset | Lights up | Built by |
+| --- | --- | --- |
+| `data/puzzles.sqlite` | the puzzle trainer | `npm run build:puzzles` |
+| `data/refgames.sqlite` | the elite game browser | `npm run build:refgames` |
+| `data/books/*.sqlite` | the local opening explorer | in the app, or `npm run build:book` |
+| `data/openings.json` | ECO opening names | `npm run build:openings` |
+
+**Opening books need no shell.** Open the explorer's book manager, upload
+your PGN collections, tick the ones to merge and press Build. Good free
+sources: [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite"
+and the [Lichess Elite Database](https://database.nikonoel.fr/). Positions
+are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
+month of Lichess Elite (280,246 games) indexes 361 k positions in 47 s into
+69 MB.
+
+### The two big ones are built on a workstation
+
+`puzzles.sqlite` (~2.5 GB) and `refgames.sqlite` are the **only** things
+the app cannot make for itself, and they are one-offs rather than part of
+any deploy:
+
+```bash
+# puzzle trainer — the Lichess dump (CC0, ~304 MB), once
+curl -L -o data/lichess_db_puzzle.csv.zst \
+  https://database.lichess.org/lichess_db_puzzle.csv.zst
+npm run build:puzzles          # -> data/puzzles.sqlite
+
+# elite game browser — over any PGN collections you have
+npm run build:refgames         # -> data/refgames.sqlite
+```
+
+Running **on this machine**: that is all — they are already where the app
+looks. Running **on a server**: copy both into its data directory
+(`CHESS_VAULT_DATA`, default `data/` beside the app) with `scp`. Never
+build them on a small server; the puzzle build once OOM-killed a 2 GB box.
+Every later deploy keeps their indexes current on its own, so rebuild only
+for a newer dump or more games.
+
+[docs/databases.md](docs/databases.md) explains why these are not done in
+the app, and what would have to change for that to stop being the answer.
+
+## Everything works offline
+
+No runtime CDN calls: fonts, icons, WASM and CSS are all bundled. The only
+features needing network are *imports* — one-time by nature — and the
+optional Lichess explorer augmentation.
 
 ## Layout
 
@@ -84,106 +213,15 @@ vault/      YOUR DATA — plain files, git-friendly
 **`vault/` is the irreplaceable part.** Everything in `data/` can be
 deleted and rebuilt. Backing up or migrating is copying a folder.
 
-## Deployment
-
-The intended shape: one small Linux server owns the vault; every device
-is a client.
+## Developing
 
 ```bash
-# on the server
 npm install
-npm run build                      # web app -> dist/
-CHESS_VAULT_DIR=/srv/chess-vault npm run start
+npm run dev          # server + web with hot reload, http://localhost:5173
 ```
 
-One port serves both the built app and the HTTP API. Put a reverse
-proxy with HTTPS in front — the PWA install and Stockfish's threads
-(SharedArrayBuffer needs a cross-origin-isolated, secure page) both
-want it. For a public deployment, set `appPassword` in
-`vault/config.json` (or from the Settings page) to turn on the lock
-screen; add authenticator 2FA there too. Then:
-
-- **Phone**: open the URL, Add to Home Screen — full PWA with offline
-  shell and splash screens.
-- **Desktop**: install the app (`npm run desktop:package` builds the
-  Windows installer) and choose *remote* mode with your server URL — or
-  *local* mode to self-host against any folder on that machine.
-
-Keep SSH off the public internet: the reference deployment runs the box
-on a [Tailscale](https://tailscale.com) tailnet with port 22 closed at
-the firewall, and `scripts/deploy.sh` (bundle → push → rebuild →
-restart) reaches it over the tailnet. Copy
-`scripts/deploy.env.example` to `scripts/deploy.env` (gitignored) and set
-`CHESS_VAULT_HOST`; the directory and service name have defaults matching
-this layout and can be overridden there too.
-
-### Deploy-time jobs
-
-Two databases are **built on your machine and copied to the server**,
-rather than by anything the app does. They are the only such exception,
-and they are one-offs — not part of a normal deploy:
-
-```bash
-# the puzzle trainer's pool: download the Lichess dump (CC0, ~304 MB) once
-curl -o data/lichess_db_puzzle.csv.zst https://database.lichess.org/lichess_db_puzzle.csv.zst
-npm run build:puzzles              # -> data/puzzles.sqlite (~2.5 GB)
-
-# the reference-game browser: any PGNs you drop in vault/sources/
-npm run build:refgames             # -> data/refgames.sqlite
-```
-
-Copy both to the server's data directory. Every later deploy keeps their
-indexes current on its own. Rebuild only for a newer puzzle dump or more
-reference games — see [docs/databases.md](docs/databases.md) for why these
-are not done in the app, and what would have to change for that to stop
-being the right answer.
-
-Backups are layered: the server auto-commits every vault change to
-`vault/.history.git` (fine-grained undo), your host's snapshots guard
-against instance loss, and `scripts/backup-vault.sh` pulls the whole
-vault — history included — down to any machine for an off-cloud copy.
-
-## Everything works offline
-
-No runtime CDN calls: fonts, icons, WASM and CSS are all bundled. The
-only features needing network are *imports* (one-time by nature) and
-the optional Lichess explorer augmentation.
-
-The opening explorer is **local-first**: books are built from PGN you
-drop into `vault/sources/` — from the book manager inside the explorer
-pane, or:
-
-```bash
-npm run build:book                          # every .pgn in vault/sources, one book each
-npm run build:book -- a.pgn b.pgn --name elite    # merge several files into one book
-npm run build:openings                      # ECO names (vendored TSVs, fully offline)
-```
-
-Positions are keyed by a 64-bit Zobrist hash, streamed with bounded
-memory. Measured on one month of the Lichess Elite Database (280,246
-games): 361 k positions indexed in 47 s, 69 MB SQLite, sub-millisecond
-lookups. Recommended sources (both free):
-[Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite" and
-the [Lichess Elite Database](https://database.nikonoel.fr/).
-
-## Reference data (all optional, all free)
-
-The app runs with an empty `data/` — these datasets just light up
-specific features, and everything under `data/` is rebuildable and
-gitignored, so it never ships in the repo; build or fetch it per machine.
-
-- **Puzzle trainer** — the [Lichess puzzle database](https://database.lichess.org/#puzzles)
-  (CC0). Download and build once:
-  ```bash
-  curl -L -o data/lichess_db_puzzle.csv.zst \
-    https://database.lichess.org/lichess_db_puzzle.csv.zst
-  npm run build:puzzles          # -> data/puzzles.sqlite
-  ```
-- **Elite game browser** — index PGN dumps (the Lumbra / Lichess Elite
-  sources above) with `npm run build:refgames` → `data/refgames.sqlite`.
-- **Opening explorer (local)** — `npm run build:book` over PGNs you drop
-  in `vault/sources/`; `npm run build:openings` compiles ECO names from
-  vendored TSVs (fully offline).
+First run downloads the Stockfish engine assets (7 MB lite build;
+`npm run setup:engine -- --full` swaps in the full-strength one).
 
 ## Lichess token (optional)
 
@@ -214,10 +252,15 @@ npm run setup:engine   # copy Stockfish into web/public/engine/
 npm run build:book     # index vault/sources PGNs into opening books
 npm run build:openings # compile ECO opening names
 npm run build:refgames # index reference games for the elite browser
+npm run build:puzzles  # build the puzzle trainer's pool from the Lichess dump
 npm run desktop:package        # Windows installer
 npm run desktop:package:mac    # macOS dmg (needs a Mac, or GitHub Actions)
 npm run desktop:package:linux  # Linux AppImage + deb
+npm run desktop:release        # check, tag, push — GitHub builds the installers
 ```
+
+Server-side, from your workstation: `bash scripts/deploy.sh` updates a
+server, `bash scripts/backup-vault.sh` pulls its vault down.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
 end · `f` flip board.
