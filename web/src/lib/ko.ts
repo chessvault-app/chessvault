@@ -423,4 +423,34 @@ export const ko: Record<string, string> = {
   Copy: '복사',
   Browse: '둘러보기',
   All: '전체',
+
+  // --- counts, times and the sentences that wrap a path -------------------
+  'just now': '방금',
+  '{n} min ago': '{n}분 전',
+  '{n} h ago': '{n}시간 전',
+  yesterday: '어제',
+  '{n} days ago': '{n}일 전',
+  'edited {when}': '{when} 수정',
+  '{n} chapters': '챕터 {n}개',
+  'not parseable': '읽을 수 없음',
+  'that PGN parses into zero chapters': '이 PGN에서 챕터를 하나도 읽지 못했습니다',
+  'No notes yet. A note is plain markdown in': '아직 노트가 없습니다. 노트는',
+  'with interactive chess boards embedded anywhere in the text.':
+    '에 저장되는 평범한 마크다운이며, 본문 어디에나 체스 보드를 넣을 수 있습니다.',
+  "No PGN files found. Put game collections (e.g. Lichess Elite months, Lumbra's Gigabase exports) into":
+    'PGN 파일이 없습니다. 기보 모음(예: Lichess Elite 월별 파일, Lumbra Gigabase 내보내기)을',
+  'then come back here.': '에 넣은 뒤 다시 오세요.',
+  'Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:':
+    'PGN 모음(Lichess Elite 월별 파일, TWIC, Lumbra 내보내기)을 vault/sources에 넣고 한 번만 색인하세요:',
+  'Vault:': '보관함:',
+  '— every game, study and puzzle lives there as plain files. Display settings live on this device.':
+    '— 모든 게임, 스터디, 퍼즐이 평범한 파일로 그곳에 저장됩니다. 화면 설정은 이 기기에만 저장됩니다.',
+  'solutions page': '정답 페이지',
+  'book page': '책 페이지',
+  'book diagram in its page': '페이지 안의 책 다이어그램',
+  'book diagram': '책 다이어그램',
+  'book name': '북 이름',
+  Training: '훈련',
+  'TOTP enrolment QR code': 'TOTP 등록 QR 코드',
+  'Book title, e.g. “1001 Winning Chess Sacrifices”': '책 제목, 예: “1001 Winning Chess Sacrifices”',
 };

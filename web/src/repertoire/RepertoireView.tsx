@@ -110,14 +110,16 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
 function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
   const toMove = (fen.split(' ')[1] === 'b' ? 'black' : 'white') === side;
   return (
-    // Hidden on stacked layouts: two more rows around the board pushed the
-    // New game panel off the bottom of a phone, and a label naming the
-    // colour of the pieces you can already see is the first thing that
-    // should go when height is short.
-    <div className="hidden h-6 w-full items-center gap-2 px-0.5 wide:flex">
+    // Shown at every width, like the Board tab's. These were hidden on
+    // phones while the New game panel was being cut off, on the theory that
+    // two more rows around the board were what pushed it over. They were
+    // not: the panel's own column was a nested scroll container that
+    // clipped what its min-height under-measured. With that fixed the rows
+    // cost nothing but the height they occupy, and the page scrolls.
+    <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
       <span className={cn('min-w-0 flex-1 truncate text-sm', toMove ? 'text-fg font-medium' : 'text-subtle')}>
-        {side === 'white' ? 'White' : 'Black'}
+        {side === 'white' ? t('White') : t('Black')}
       </span>
     </div>
   );
@@ -591,7 +593,11 @@ export function RepertoireView() {
                     key={c}
                     size="sm"
                     variant={userColor === c ? 'primary' : 'secondary'}
-                    className="flex-1 capitalize"
+                    // Shorter than a normal sm button, coarse pointers
+                    // included: these two are a segmented control, not
+                    // actions, and at full touch height they were the
+                    // tallest thing in a panel of one-line fields.
+                    className="h-7 flex-1 capitalize pointer-coarse:h-8"
                     onClick={() => setUserColor(c)}
                   >
                     {c}

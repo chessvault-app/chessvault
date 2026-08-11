@@ -190,7 +190,7 @@ export function PdfImport({
         {reading && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
-            reading the book&rsquo;s solutions
+            {t("reading the book’s solutions")}
           </p>
         )}
         {solve && (

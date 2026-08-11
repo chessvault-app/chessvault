@@ -447,9 +447,9 @@ function BooksManager({ onClose }: { onClose: () => void }) {
         </p>
         {sources.length === 0 ? (
           <p className="text-muted leading-relaxed">
-            No PGN files found. Put game collections (e.g. Lichess Elite months, Lumbra's
-            Gigabase exports) into <code className="font-mono">vault/sources/</code>, then come
-            back here.
+            {t("No PGN files found. Put game collections (e.g. Lichess Elite months, Lumbra's Gigabase exports) into")}{' '}
+            <code className="font-mono">vault/sources/</code>{' '}
+            {t('then come back here.')}
           </p>
         ) : (
           <>
@@ -477,7 +477,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="book name"
+                placeholder={t('book name')}
                 inputSize="sm"
                 className="flex-1 font-mono"
               />

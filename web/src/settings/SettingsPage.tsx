@@ -80,8 +80,8 @@ export function SettingsPage() {
         <VersionCard />
 
         <p className="text-subtle text-xs leading-relaxed">
-          Vault: <span className="font-mono">{settings.vaultPath}</span> — every game, study and
-          puzzle lives there as plain files. Display settings live on this device.
+          {t('Vault:')} <span className="font-mono">{settings.vaultPath}</span>{' '}
+          {t('— every game, study and puzzle lives there as plain files. Display settings live on this device.')}
         </p>
       </div>
     </div>
@@ -586,7 +586,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
           <p className="text-subtle text-xs">
             {t('Scan with your authenticator app, then enter the code it shows. Nothing is saved until the code checks out.')}
           </p>
-          <img src={enroll.qr} alt="TOTP enrolment QR code" className="size-40 rounded-lg bg-white p-1.5" />
+          <img src={enroll.qr} alt={t('TOTP enrolment QR code')} className="size-40 rounded-lg bg-white p-1.5" />
           <p className="text-subtle break-all text-xs">
             Manual entry key: <span className="font-mono">{enroll.secret}</span>
           </p>

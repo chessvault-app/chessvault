@@ -554,7 +554,7 @@ function Trainer({
         {mode !== 'fresh' && (
         <Panel flush className="shrink-0">
           <PanelHeader
-            title="Training"
+            title={t('Training')}
             actions={
               <Button
                 variant="ghost"

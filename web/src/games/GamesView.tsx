@@ -335,8 +335,7 @@ function EliteBrowser() {
         <div className="max-w-md text-center">
           <p className="text-fg mb-2 text-sm font-semibold">{t('No reference games yet')}</p>
           <p className="text-muted text-xs leading-relaxed">
-            Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into
-            vault/sources and index them once:
+            {t('Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:')}
           </p>
           <code className="bg-surface-inset border-line text-subtle mt-3 block rounded-md border p-3 text-left font-mono text-[0.6875rem]">
             npm run build:refgames

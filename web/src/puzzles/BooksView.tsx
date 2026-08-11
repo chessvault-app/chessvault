@@ -834,7 +834,7 @@ function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }
       ) : tab === 'solutions' && evidence.solutionPage ? (
         <ZoomablePage
           src={diagramUrl(slug, evidence.solutionPage)}
-          alt="solutions page"
+          alt={t('solutions page')}
           width={width - 32}
         />
       ) : null}
@@ -1516,7 +1516,7 @@ function SourceCrop({
           className="border-line max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
         >
           <div className="relative" style={{ width: Math.round(width * zoom) }}>
-            <img src={src} alt="book page" className="w-full" />
+            <img src={src} alt={t('book page')} className="w-full" />
             <div
               className="border-primary pointer-events-none absolute rounded-sm border-2"
               style={{
@@ -1564,7 +1564,7 @@ function SourceCrop({
         >
           <img
             src={src}
-            alt="book diagram in its page"
+            alt={t('book diagram in its page')}
             onLoad={(e) =>
               setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })
             }
@@ -1721,7 +1721,7 @@ function PuzzleEntry({
             <SourcePane slug={slug} evidence={evidence} />
           ) : draft ? (
             <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
-              <img src={draft.imageUrl} alt="book diagram" className="border-line rounded-md border" />
+              <img src={draft.imageUrl} alt={t('book diagram')} className="border-line rounded-md border" />
               <p className="text-subtle text-xs leading-relaxed">
                 {t('The diagram from the book — make the board match it, then record the solution.')}
               </p>
@@ -1758,7 +1758,7 @@ function PuzzleEntry({
                     width={stackedPaneW - 32}
                   />
                 ) : draft ? (
-                  <img src={draft.imageUrl} alt="book diagram" className="border-line w-full rounded-md border" />
+                  <img src={draft.imageUrl} alt={t('book diagram')} className="border-line w-full rounded-md border" />
                 ) : null}
               </div>
             ) : evidence?.solutionPage ? (
@@ -1766,7 +1766,7 @@ function PuzzleEntry({
                 {stackedPaneW > 0 && (
                   <ZoomablePage
                     src={diagramUrl(slug, evidence.solutionPage)}
-                    alt="solutions page"
+                    alt={t('solutions page')}
                     width={stackedPaneW - 32}
                   />
                 )}

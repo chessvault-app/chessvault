@@ -97,9 +97,9 @@ function NoteList() {
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <NotebookPen className="text-subtle size-6" strokeWidth={1.5} />
           <p className="text-muted max-w-sm text-sm leading-relaxed">
-            No notes yet. A note is plain markdown in{' '}
-            <code className="font-mono text-xs">vault/notes/</code> with interactive chess boards
-            embedded anywhere in the text.
+            {t('No notes yet. A note is plain markdown in')}{' '}
+            <code className="font-mono text-xs">vault/notes/</code>{' '}
+            {t('with interactive chess boards embedded anywhere in the text.')}
           </p>
         </div>
       ) : (
@@ -368,7 +368,7 @@ function NoteCard({
           <p className="text-fg truncate text-sm font-semibold">{name}</p>
           )}
           <p className="text-subtle text-xs" title={formatWhen(note.updatedAt)}>
-            {(note.bytes / 1024).toFixed(1)} KB · edited {formatAgo(note.updatedAt)}
+            {(note.bytes / 1024).toFixed(1)} KB · {t('edited {when}', { when: formatAgo(note.updatedAt) })}
           </p>
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>

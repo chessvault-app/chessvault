@@ -126,7 +126,7 @@ function CreateMenu() {
       return;
     }
     if (mode === 'import' && chapterCount === 0) {
-      setFailure('that PGN parses into zero chapters');
+      setFailure(t('that PGN parses into zero chapters'));
       return;
     }
     const id = folder ? `${folder}/${trimmed}` : trimmed;
@@ -264,8 +264,8 @@ function CreateMenu() {
                 {pgnText.trim() && (
                   <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
                     {chapterCount > 0
-                      ? `${chapterCount} chapter${chapterCount === 1 ? '' : 's'}`
-                      : 'not parseable'}
+                      ? t('{n} chapters', { n: chapterCount })
+                      : t('not parseable')}
                   </span>
                 )}
               </div>
@@ -603,8 +603,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             <p className="text-fg truncate text-sm font-semibold">{name}</p>
           )}
           <p className="text-subtle text-xs" title={formatWhen(study.updatedAt)}>
-            {study.chapters} chapter{study.chapters === 1 ? '' : 's'} · edited{' '}
-            {formatAgo(study.updatedAt)}
+            {t('{n} chapters', { n: study.chapters })} · {t('edited {when}', { when: formatAgo(study.updatedAt) })}
           </p>
           {failure && <p className="text-bad text-xs">{failure}</p>}
         </div>
