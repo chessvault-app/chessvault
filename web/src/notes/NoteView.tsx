@@ -212,7 +212,7 @@ function NoteTitle({ id }: { id: string }) {
     if (res.ok) navigate('notes', encodeURIComponent(to));
     else {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setFailure(body?.error ?? 'could not rename');
+      setFailure(t(body?.error ?? 'could not rename'));
     }
   };
 

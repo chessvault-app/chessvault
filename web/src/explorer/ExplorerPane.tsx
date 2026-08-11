@@ -481,7 +481,7 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
         });
         if (!res.ok) {
           const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          setError(`${file.name}: ${body?.error ?? res.statusText}`); // server's own words
+          setError(`${file.name}: ${t(body?.error ?? res.statusText)}`);
         }
       } catch {
         setError(t('{name}: upload failed', { name: file.name }));

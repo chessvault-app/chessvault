@@ -948,7 +948,7 @@ function ArchiveBrowser({
       onCollected();
     } else {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(body?.error ?? t('could not add that game'));
+      setError(t(body?.error ?? 'could not add that game'));
     }
   };
 
@@ -1439,7 +1439,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
       onDone();
     } else {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setFailure(body?.error ?? 'could not import that game');
+      setFailure(t(body?.error ?? 'could not import that game'));
     }
   };
 

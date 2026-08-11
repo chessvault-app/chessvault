@@ -421,7 +421,7 @@ export function RepertoireView() {
         if (token !== runId.current) return;
         const body = (await res.json().catch(() => null)) as { moves?: ExplorerMove[]; error?: string } | null;
         if (!res.ok || !body?.moves) {
-          setError(body?.error ?? t('Could not reach the Lichess database.'));
+          setError(t(body?.error ?? 'Could not reach the Lichess database.'));
           setPhase('playing');
           return;
         }

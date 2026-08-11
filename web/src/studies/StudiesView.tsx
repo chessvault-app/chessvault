@@ -329,7 +329,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
       | null;
     setBusy(false);
     if (!res.ok || !body?.studies) {
-      setFailure(body?.error ?? 'could not reach Lichess');
+      setFailure(t(body?.error ?? 'could not reach Lichess'));
       return;
     }
     setList(body.studies);
@@ -352,7 +352,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
       | null;
     setBusy(false);
     if (!res.ok || !body?.imported) {
-      setFailure(body?.error ?? 'import failed');
+      setFailure(t(body?.error ?? 'import failed'));
       return;
     }
     await refresh();

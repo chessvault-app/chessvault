@@ -428,7 +428,7 @@ function Shelf() {
     });
     const body = (await res.json()) as { slug?: string; error?: string };
     if (!res.ok || !body.slug) {
-      setError(body.error ?? t('could not create the book'));
+      setError(t(body.error ?? 'could not create the book'));
       return;
     }
     navigate('puzzles', 'books', body.slug);
