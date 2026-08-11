@@ -12,6 +12,7 @@ import {
 } from 'chessops/pgn';
 import { parseSan } from 'chessops/san';
 import { hashSetup } from '../shared/zobrist.ts';
+import { pathUser, userSideOf } from '../shared/gameIndex.ts';
 import { openingsIndex, type Opening } from './openings.ts';
 import { VAULT_GAMES } from './paths.ts';
 
@@ -106,7 +107,7 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
 
   // Archive files live at chesscom/<user>/<month>.pgn — the path names the
   // player, which is what lets every row know which side they played.
-  const pathUser = /^(chesscom|lichess)\//.test(rel) ? (rel.split('/')[1]?.toLowerCase() ?? null) : null;
+  const user = pathUser(rel);
 
   const games: GameSummary[] = [];
   const parser = new PgnParser((game, err) => {
@@ -114,15 +115,7 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
     const h = (key: string): string | undefined => game.headers.get(key);
     const white = h('White') ?? '?';
     const black = h('Black') ?? '?';
-    const vaultSide = h('VaultSide');
-    const userSide =
-      vaultSide === 'white' || vaultSide === 'black'
-        ? vaultSide
-        : pathUser && white.toLowerCase() === pathUser
-          ? 'white'
-          : pathUser && black.toLowerCase() === pathUser
-            ? 'black'
-            : null;
+    const userSide = userSideOf(white, black, h('VaultSide'), user);
     games.push({
       file: rel,
       index: games.length,
