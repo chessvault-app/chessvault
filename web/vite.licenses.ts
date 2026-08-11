@@ -226,7 +226,18 @@ const unescapeHtml = (s: string): string =>
     .replace(/&amp;/g, '&');
 
 function chromium(): Chromium | null {
-  if (!existsSync(CHROMIUM_HTML)) return null;
+  if (!existsSync(CHROMIUM_HTML)) {
+    // Loudly, because the failure is invisible in the output: the page
+    // still builds, still looks complete, and quietly omits 773 of the
+    // things a desktop install contains. Electron's dist is downloaded by
+    // its install script, so a pruned or script-blocked install loses it.
+    console.warn(
+      `licenses: WARNING — ${CHROMIUM_HTML} is missing, so Chromium's components are NOT listed.
+` +
+        "           Run `node node_modules/electron/install.js` and build again.",
+    );
+    return null;
+  }
   const html = readFileSync(CHROMIUM_HTML, 'utf8');
   const texts: string[] = [];
   const seen = new Map<string, number>();
