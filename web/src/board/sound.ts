@@ -1,11 +1,9 @@
 /**
  * Move sounds.
  *
- * Synthesised from scratch by chessvault-app/chesssounds-gen and therefore
+ * Synthesised from scratch by chessvault-app/chess-sounds-gen and therefore
  * ours outright — no recording is sampled and nothing here carries anyone
- * else's licence. They replaced lichess's `standard` set, which was
- * non-free and had no business being in a public build; see THIRD-PARTY.md
- * for the hashes that identified it.
+ * else's licence.
  *
  * Lichess has no distinct check sound and neither does the generator, so
  * check plays the move sample plus a short synthesised accent.

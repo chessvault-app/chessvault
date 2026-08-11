@@ -46,7 +46,7 @@ installed app.
 The piece sets are vendored from lila as base64 in `web/src/piece-sets.css`.
 
 The sounds are synthesised by
-[chesssounds-gen](https://github.com/chessvault-app/chesssounds-gen) — no
+[chess-sounds-gen](https://github.com/chessvault-app/chess-sounds-gen) — no
 recording is sampled or redistributed. Nineteen takes ship, selectable in
 Settings.
 

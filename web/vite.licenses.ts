@@ -62,7 +62,7 @@ const ASSETS: { name: string; version: string; license: string; url: string; fil
   { name: 'Reference games (derived from the Lichess database)', version: '—', license: 'CC0-1.0',
     url: 'https://database.lichess.org/', file: null },
   { name: 'Move and capture sounds', version: '—', license: 'GPL-3.0-only (ours)',
-    url: 'https://github.com/chessvault-app/chesssounds-gen', file: null },
+    url: 'https://github.com/chessvault-app/chess-sounds-gen', file: null },
   { name: 'CellNet board-recognition weights', version: 'v1', license: 'GPL-3.0-only (ours)',
     url: REPO_URL, file: null },
 ];

@@ -72,12 +72,10 @@ export const PIECE_SETS: { id: PieceSet; label: string }[] = [
 /**
  * The move and capture samples, and what they sound like.
  *
- * Filenames are the generator's own (chessvault-app/chesssounds-gen), kept
- * exactly so a file can be traced back to the run that produced it. The
- * labels are what the setting shows, and they are not decoration: each was
- * assigned from the measured spectral centroid of that file, so "Bright"
- * really is brighter than "Standard" rather than being a guess about a
- * sound nobody could describe.
+ * Filenames are the generator's own (chessvault-app/chess-sounds-gen), kept
+ * exactly so a file can be traced back to the run that produced it — which
+ * is also why `move-opponent-*` appear here despite the app drawing no
+ * distinction between whose move it is. They are simply more takes.
  *
  * `rotate` is the default and the reason the variations exist — a move
  * repeated fifty times in an analysis session should not sound like one
