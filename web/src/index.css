@@ -11,10 +11,24 @@
 @import 'tailwindcss';
 
 /* Fonts are installed as packages and bundled, never fetched from a CDN — the
-   app has to render correctly with the network cable pulled. `wght.css` is the
-   weight-axis-only Inter build (smaller than the optical-size one); the files
-   carry unicode-range, so browsers still only pull the subset they need. */
-@import '@fontsource-variable/inter/wght.css';
+   app has to render correctly with the network cable pulled.
+
+   Pretendard replaced Inter because half this app's UI is Korean and Inter has
+   no hangul: every Korean string fell through to whatever the OS happened to
+   have, so the same screen mixed two typefaces at two different apparent
+   sizes, differently on every machine. Pretendard draws both, and its Latin is
+   deliberately Inter-shaped, so nothing about the English UI moved.
+
+   The DYNAMIC SUBSET build, not the single 2 MB file: it splits into 92
+   unicode-range chunks totalling 2.8 MB, and the browser fetches only the
+   ones it needs to draw what is on screen. Measured against this app's own
+   strings: the English UI pulls ONE chunk, 37 KB — less than the 48 KB of
+   Inter latin it replaces — and the entire Korean dictionary pulls 25
+   chunks, 640 KB, spread across whatever the user actually opens. That
+   suits the service worker exactly: it is network-first and caches what it
+   fetches (web/public/sw.js), so the chunks a user reads become the chunks
+   they have offline, and nobody pays for the ones they never see. */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/600.css';
 
@@ -244,7 +258,22 @@
   --radius-lg: calc(var(--radius) + 0.25rem);
   --radius-xl: calc(var(--radius) + 0.5rem);
 
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Three roles, deliberately not two.
+
+     sans  — the whole UI.
+     mono  — anything the eye scans as a COLUMN or copies as a literal:
+             evaluations, clocks, ratings, counts, FEN, PGN. Tabular figures
+             and a fixed advance are the point.
+     moves — SAN. It is prose, not data: "Nf3" read aloud is a word, and the
+             move lists it sits in already align by cell, not by character.
+             Mono made every move list look like a terminal.
+
+     `moves` resolving to the same family as `sans` is not an accident to be
+     collapsed away — the two answer different questions, and a move list is
+     exactly the place someone will want to change one without the other. */
+  --font-sans: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-moves: var(--font-sans);
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --shadow-panel: 0 1px 2px -1px hsl(var(--shadow-color) / 12%), 0 4px 16px -6px hsl(var(--shadow-color) / 14%);

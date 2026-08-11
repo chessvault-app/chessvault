@@ -410,7 +410,7 @@ function MoveRow({ move, onPlay }: { move: ExplorerMove; onPlay: () => void }) {
       onClick={onPlay}
       className="hover:bg-surface-2 cursor-pointer transition-colors duration-100"
     >
-      <td className="text-fg w-14 py-1 pl-3 pr-1 font-mono font-semibold">{move.san}</td>
+      <td className="text-fg font-moves w-14 py-1 pl-3 pr-1 font-semibold">{move.san}</td>
       <td
         className="text-muted w-14 py-1 pr-2 text-right font-mono tabular-nums"
         title={`${exact.format(move.total)} games`}
