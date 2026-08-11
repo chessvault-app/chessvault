@@ -40,6 +40,145 @@ export const REPO_URL = pkg.repository?.url ?? '';
 
 const md = new MarkdownIt({ html: false, linkify: true });
 
+/**
+ * Every production dependency, with its own licence text.
+ *
+ * MIT and ISC both require their notice "in all copies", and the fonts are
+ * OFL, which has to travel with the font files. That is 130-odd notices,
+ * which nobody can maintain by hand and which go stale the first time a
+ * dependency is added — so they are read from node_modules at build time
+ * instead. The copyright lines are the part that matters, and they come
+ * from each package's own file rather than a template.
+ *
+ * The list is the production closure, which is a SUPERSET of what any one
+ * build bundles: the web build does not include the desktop updater's
+ * dependencies, and vice versa. Over-inclusion is harmless — an extra
+ * notice costs a few lines — and under-inclusion is the failure that
+ * matters, so no attempt is made to narrow it.
+ */
+interface Dep {
+  name: string;
+  version: string;
+  license: string;
+  text: string | null;
+}
+
+function readJson(file: string): Record<string, unknown> | null {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve like Node does: the requiring package's own node_modules first,
+ * then upward to the root. Looking only at the top level silently skipped
+ * anything npm had to nest on a version conflict — which is a quiet
+ * omission in exactly the file that exists to have no omissions.
+ */
+function packageDir(name: string, from: string): string | null {
+  let dir = from;
+  for (;;) {
+    const candidate = resolve(dir, 'node_modules', ...name.split('/'));
+    if (existsSync(resolve(candidate, 'package.json'))) return candidate;
+    const parent = resolve(dir, '..');
+    if (parent === dir || !dir.startsWith(repo.replace(/[\\/]$/, ''))) return null;
+    dir = parent;
+  }
+}
+
+/**
+ * Peer and optional dependencies count too. Following only `dependencies`
+ * missed @floating-ui/* and immer — reached through tiptap's and zustand's
+ * peer sets, and both genuinely in the web bundle. Anything not actually
+ * installed is skipped by packageDir, so unmet peers cost nothing.
+ */
+const edges = (pkg: Record<string, unknown> | null): string[] => [
+  ...Object.keys((pkg?.dependencies as Record<string, string>) ?? {}),
+  ...Object.keys((pkg?.optionalDependencies as Record<string, string>) ?? {}),
+  ...Object.keys((pkg?.peerDependencies as Record<string, string>) ?? {}),
+];
+
+function collect(): Dep[] {
+  const root = readJson(resolve(repo, 'package.json'));
+  const queue: { name: string; from: string }[] = edges(root).map((name) => ({
+    name,
+    from: repo,
+  }));
+  const seen = new Set<string>();
+  const out: Dep[] = [];
+
+  while (queue.length) {
+    const { name, from } = queue.shift()!;
+    const dir = packageDir(name, from);
+    // Keyed by resolved directory, so the same name nested at two versions
+    // is reported twice rather than one of them being lost.
+    if (!dir || seen.has(dir)) continue;
+    seen.add(dir);
+
+    const pkg = readJson(resolve(dir, 'package.json'));
+    if (!pkg) continue;
+
+    const declared = pkg.license;
+    const license =
+      typeof declared === 'string'
+        ? declared
+        : ((declared as { type?: string } | undefined)?.type ?? 'see package');
+
+    let text: string | null = null;
+    try {
+      const file = readdirSync(dir).find((f) => /^(LICEN[CS]E|COPYING)/i.test(f));
+      if (file) text = readFileSync(resolve(dir, file), 'utf8').trim();
+    } catch {
+      // Unreadable is the same as absent here: the SPDX id below still names
+      // the terms, and the shipped canonical texts cover the wording.
+    }
+
+    out.push({ name, version: String(pkg.version ?? '?'), license, text });
+    queue.push(...edges(pkg).map((dep) => ({ name: dep, from: dir })));
+  }
+
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function dependencyNotice(deps: Dep[]): string {
+  const head = [
+    'Third-party dependencies',
+    '========================',
+    '',
+    'Generated at build time from node_modules — see web/vite.licenses.ts.',
+    'This is the production dependency closure, which is a superset of what',
+    'any single build bundles.',
+    '',
+    `${deps.length} packages.`,
+    '',
+  ];
+
+  const counts = new Map<string, number>();
+  for (const d of deps) counts.set(d.license, (counts.get(d.license) ?? 0) + 1);
+  for (const [license, n] of [...counts].sort((a, b) => b[1] - a[1])) {
+    head.push(`  ${String(n).padStart(4)}  ${license}`);
+  }
+  head.push('');
+
+  const body = deps.map((d) => {
+    const bar = '-'.repeat(76);
+    return [
+      bar,
+      `${d.name} ${d.version}  (${d.license})`,
+      bar,
+      '',
+      d.text ??
+        `No licence file is included in this package. It declares ${d.license}; ` +
+          'the full text of that licence is alongside this file.',
+      '',
+    ].join('\n');
+  });
+
+  return [...head, ...body].join('\n');
+}
+
 function indexPage(files: string[]): string {
   const notice = md
     .render(readFileSync(NOTICE, 'utf8'))
@@ -83,6 +222,8 @@ function indexPage(files: string[]): string {
     </p>
     <ul class="texts">
 ${list}
+      <li><a href="dependencies.txt">dependencies.txt</a> — every npm package
+      this app depends on, with its own licence text and copyright line</li>
     </ul>
 ${notice}
   </body>
@@ -125,7 +266,11 @@ export function licenses(): Plugin {
       const target = resolve(outDir, 'licenses');
       mkdirSync(target, { recursive: true });
       for (const name of files) copyFileSync(resolve(SOURCE, name), resolve(target, name));
+
+      const deps = collect();
+      writeFileSync(resolve(target, 'dependencies.txt'), dependencyNotice(deps));
       writeFileSync(resolve(target, 'index.html'), indexPage(files));
+      console.log(`licenses: ${files.length} texts + ${deps.length} dependency notices`);
     },
   };
 }

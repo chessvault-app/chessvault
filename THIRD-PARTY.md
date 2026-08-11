@@ -11,6 +11,15 @@ directory into the output and generates `licenses/index.html` from this
 file, which Settings links to beside the version, and the landing page from
 its footer.
 
+It also generates `licenses/dependencies.txt` — every installed production
+npm package, with its version, its licence, and that package's own licence
+text. This table below covers what we chose deliberately; that file covers
+the ~140 packages underneath, which MIT and ISC both require ("shall be
+included in all copies") and which no one could maintain by hand. It is
+read from `node_modules` at build time, so it cannot go stale when a
+dependency is added, and the copyright lines are each package's own rather
+than a template.
+
 What this app ships that somebody else made, and under what terms. Kept
 because "we are GPL-3.0" covers our own code and says nothing about a
 bundled engine's obligations or an artist's attribution.
