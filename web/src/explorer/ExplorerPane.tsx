@@ -406,12 +406,17 @@ function BooksManager({ onClose }: { onClose: () => void }) {
   const [uploading, setUploading] = useState<string | null>(null);
 
   /**
-   * Warn before building a book out of almost nothing.
+   * Say what a small collection will and will not give you.
    *
-   * A PGN of a few games produces a book that answers every position with
-   * one move at 100%, which reads as authority and is noise. Judged on
-   * bytes because that is all we know before parsing: a game is roughly a
-   * kilobyte or two, so this is about three thousand games.
+   * NOT a warning, because small is only wrong for one of the two things a
+   * book is for. As a REFERENCE — what do strong players do here — a
+   * handful of games answers every position with one move at 100%, which
+   * reads as authority and is noise. As YOUR OWN game database it is the
+   * point: three games is three games you actually played, and "you have
+   * been here twice and lost both" is worth knowing.
+   *
+   * Judged on bytes because that is all we know before parsing: a game is
+   * roughly a kilobyte or two, so this is about three thousand games.
    */
   const BOOK_MIN_BYTES = 4_000_000;
   const pickedBytes = sources
@@ -550,7 +555,7 @@ function BooksManager({ onClose }: { onClose: () => void }) {
             {tooSmall && (
               <p className="text-muted mt-1 leading-relaxed">
                 {t(
-                  'That is a small collection. A book is a statistical picture of how a position is actually played, so it wants thousands of games — a handful gives one line per position and no sense of what is common.',
+                  'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.',
                 )}
               </p>
             )}
