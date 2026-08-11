@@ -154,9 +154,10 @@ export const ko: Record<string, string> = {
   'offline — cached months only': '오프라인 — 저장된 달만',
   'Add to collection': '모음에 추가',
   'Select all': '전체 선택',
+  'Select all new': '새 게임 전체 선택',
   'All dates': '전체 기간',
-  'Showing the first {shown} of {total}. Select all still takes every one.':
-    '{total}개 중 처음 {shown}개만 표시합니다. 전체 선택은 그래도 전부 선택합니다.',
+  'Showing the first {shown} of {total}. Select all new still takes every one.':
+    '{total}개 중 처음 {shown}개만 표시합니다. 새 게임 전체 선택은 그래도 전부 선택합니다.',
   'Select…': '선택…',
   'Month {at} of {total} · {added} added': '{total}개월 중 {at}번째 · {added}개 추가됨',
   Stop: '중지',

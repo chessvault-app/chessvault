@@ -860,15 +860,25 @@ function ArchiveBrowser({
   );
 
   /**
-   * Everything the current filters show.
-   *
-   * Deliberately NOT filtered to "not already collected". Adding a game
-   * twice writes a second file with a "(2)" suffix rather than overwriting
-   * anything, so the cost of a stray double-click is one duplicate the user
-   * can delete — cheaper than a checkbox that refuses to tick and does not
-   * say why.
+   * Everything the current filters show. Any row can be ticked, including
+   * one already collected — adding a game twice writes a "(2)" file rather
+   * than overwriting anything, and refusing silently is worse than a
+   * duplicate the user can delete.
    */
   const pickable = visibleMonthGames;
+
+  /**
+   * What "Select all" takes: the ones not already collected.
+   *
+   * Not a refusal — each of those rows still has a working checkbox, and
+   * ticking one is how you deliberately take a second copy. It is about
+   * what ONE click should mean. Under All dates, "all" spans a decade, and
+   * a Select all that included everything already imported would re-add an
+   * entire history as "(2)" files from a single press.
+   */
+  const uncollected = visibleMonthGames.filter(
+    (g) => !added.has(gameKey(g)) && !collectionKeys.has(`${g.white}|${g.black}|${g.date}`),
+  );
 
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
     if (next === provider) return;
@@ -1094,18 +1104,18 @@ function ArchiveBrowser({
                 <input
                   type="checkbox"
                   className="accent-primary"
-                  checked={pickable.length > 0 && picked.size === pickable.length}
+                  checked={uncollected.length > 0 && picked.size === uncollected.length}
                   // Indeterminate is the honest state for a partial
                   // selection: an unchecked box next to eight ticked rows
                   // reads as a bug.
                   ref={(el) => {
-                    if (el) el.indeterminate = picked.size > 0 && picked.size < pickable.length;
+                    if (el) el.indeterminate = picked.size > 0 && picked.size < uncollected.length;
                   }}
                   onChange={(e) =>
-                    setPicked(e.target.checked ? new Set(pickable.map(gameKey)) : new Set())
+                    setPicked(e.target.checked ? new Set(uncollected.map(gameKey)) : new Set())
                   }
                 />
-                <span className="text-muted">{t('Select all')}</span>
+                <span className="text-muted">{t('Select all new')}</span>
               </label>
               <span className="text-subtle tabular-nums">
                 {t('{n} selected', { n: picked.size })}
@@ -1200,7 +1210,7 @@ function ArchiveBrowser({
 
       {month && visibleMonthGames.length > MAX_ROWS && (
         <p className="text-subtle border-line border-t px-3 py-1.5 text-xs">
-          {t('Showing the first {shown} of {total}. Select all still takes every one.', {
+          {t('Showing the first {shown} of {total}. Select all new still takes every one.', {
             shown: MAX_ROWS,
             total: visibleMonthGames.length,
           })}
