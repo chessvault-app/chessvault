@@ -636,4 +636,10 @@ export const ko: Record<string, string> = {
   // --- the demo ------------------------------------------------------------
   'Demo — everyone shares this vault and it resets regularly. Do not put anything private here.':
     '데모 — 이 보관함은 모두가 함께 쓰며 주기적으로 초기화됩니다. 개인적인 내용은 넣지 마세요.',
+  // --- demo ----------------------------------------------------------------
+  'This is a demo': '이것은 데모입니다',
+  'Everything you change here lives in this browser tab and disappears when you reload. Your profile, password, two-factor authentication, the Lichess token and the vault itself need a server of your own — install the app or host it, and this page becomes the real thing.':
+    '여기서 바꾼 것은 모두 이 브라우저 탭에만 남고 새로고침하면 사라집니다. 프로필, 비밀번호, 2단계 인증, Lichess 토큰, 그리고 보관함 자체는 당신의 서버가 있어야 합니다 — 앱을 설치하거나 직접 호스팅하면 이 페이지가 진짜가 됩니다.',
+  'No games from this position in “{book}”.': '“{book}”에는 이 국면의 기보가 없습니다.',
+  'The demo book covers the first {plies} plies.': '데모 북은 처음 {plies}수까지만 담고 있습니다.',
 };

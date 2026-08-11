@@ -25,6 +25,7 @@ import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { t, useLang } from '@/lib/i18n';
+import { isDemo, noteServerDemo } from '@/lib/demo';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -87,11 +88,15 @@ export function App() {
  * warned before rather than after.
  */
 function DemoBanner() {
-  const [demo, setDemo] = useState(false);
+  const [demo, setDemo] = useState(isDemo);
   useEffect(() => {
     void fetch('/api/health')
       .then((r) => r.json() as Promise<{ demo?: boolean }>)
-      .then((h) => setDemo(!!h.demo))
+      .then((h) => {
+        // Recorded so every other surface can name the demo too.
+        noteServerDemo(!!h.demo);
+        setDemo(!!h.demo || isDemo());
+      })
       .catch(() => setDemo(false));
   }, []);
   if (!demo) return null;

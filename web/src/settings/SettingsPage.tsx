@@ -10,6 +10,7 @@ import { useTheme, type ThemePreference } from '@/store/theme';
 import { cn } from '@/lib/cn';
 import { BOARD_THEMES, CASTLE_STYLES, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet } from '@/store/prefs';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
+import { isDemo } from '@/lib/demo';
 
 interface Settings {
   profile: { name?: string; chesscom?: string; lichess?: string };
@@ -71,18 +72,41 @@ export function SettingsPage() {
           </div>
         </header>
 
-        <ProfileCard settings={settings} onSaved={refresh} />
-        <DesktopCard />
-        <AppearanceCard />
-        <SecurityCard settings={settings} onChanged={refresh} />
-        <LichessCard settings={settings} onChanged={refresh} />
-        <DangerCard gate={settings.gate} />
-        <VersionCard />
+        {/* Appearance is the only card that works without a server: it
+            writes to this device, not to a vault. The rest change a vault or
+            a secret, so in the demo they are described rather than shown —
+            a disabled form a visitor can fill in and not submit is a worse
+            explanation than a sentence. */}
+        {isDemo() ? (
+          <>
+            <AppearanceCard />
+            <Card icon={Info} title={t('This is a demo')}>
+              <p className="text-subtle text-xs leading-relaxed">
+                {t(
+                  'Everything you change here lives in this browser tab and disappears when you reload. Your profile, password, two-factor authentication, the Lichess token and the vault itself need a server of your own — install the app or host it, and this page becomes the real thing.',
+                )}
+              </p>
+            </Card>
+            <VersionCard />
+          </>
+        ) : (
+          <>
+            <ProfileCard settings={settings} onSaved={refresh} />
+            <DesktopCard />
+            <AppearanceCard />
+            <SecurityCard settings={settings} onChanged={refresh} />
+            <LichessCard settings={settings} onChanged={refresh} />
+            <DangerCard gate={settings.gate} />
+            <VersionCard />
+          </>
+        )}
 
-        <p className="text-subtle text-xs leading-relaxed">
-          {t('Vault:')} <span className="font-mono">{settings.vaultPath}</span>{' '}
-          {t('— every game, study and puzzle lives there as plain files. Display settings live on this device.')}
-        </p>
+        {!isDemo() && (
+          <p className="text-subtle text-xs leading-relaxed">
+            {t('Vault:')} <span className="font-mono">{settings.vaultPath}</span>{' '}
+            {t('— every game, study and puzzle lives there as plain files. Display settings live on this device.')}
+          </p>
+        )}
       </div>
     </div>
   );

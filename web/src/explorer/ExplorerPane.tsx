@@ -24,6 +24,7 @@ import { SideDot } from '@/ui/SideDot';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Switch } from '@/ui/Switch';
 import { t } from '@/lib/i18n';
+import { isDemo, DEMO_BOOK_PLIES } from '@/lib/demo';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -111,10 +112,18 @@ export function ExplorerPane({
                 className="max-w-[8rem]"
                 groups={[
                   { label: 'Local books', options: books.map((b) => ({ value: b.name, label: b.name })) },
-                  {
-                    label: 'Online (via proxy)',
-                    options: REMOTE_DBS.map((db) => ({ value: db.id, label: db.label })),
-                  },
+                  // The online databases are proxied through the server with
+                  // its Lichess token. The demo has no server and cannot
+                  // carry a token in a bundle everyone can read, so the
+                  // option is not offered rather than offered and broken.
+                  ...(isDemo()
+                    ? []
+                    : [
+                        {
+                          label: 'Online (via proxy)',
+                          options: REMOTE_DBS.map((db) => ({ value: db.id, label: db.label })),
+                        },
+                      ]),
                 ]}
               />
             )}
@@ -172,7 +181,18 @@ export function ExplorerPane({
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
               {moves.length === 0 && fresh ? (
                 <p className="text-subtle px-3 py-3 text-xs">
-                  No games from this position in “{book}”.
+                  {t('No games from this position in “{book}”.', { book: book ?? '' })}
+                  {/* In the demo, running out of book is the expected edge of
+                      a curated file rather than a gap in the data — say which,
+                      or it reads as the app failing to answer. */}
+                  {isDemo() && (
+                    <>
+                      {' '}
+                      {t('The demo book covers the first {plies} plies.', {
+                        plies: DEMO_BOOK_PLIES,
+                      })}
+                    </>
+                  )}
                 </p>
               ) : (
                 <>
