@@ -1,10 +1,8 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
@@ -337,6 +335,15 @@ export function booksApi(dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAUL
     // .part behind rather than a truncated PGN that looks importable.
     const part = `${target}.part`;
     try {
+      // Imported here rather than at the top because the static demo runs
+      // these same route modules in the browser with node:fs aliased to an
+      // in-memory shim, and a top-level `createWriteStream` import fails its
+      // build outright. The demo never reaches this line — it has no server
+      // to upload to — so a lazy import costs nothing and keeps the shim
+      // from having to fake a write stream.
+      const { createWriteStream } = await import('node:fs');
+      const { Readable } = await import('node:stream');
+      const { pipeline } = await import('node:stream/promises');
       await pipeline(Readable.fromWeb(c.req.raw.body as NodeReadableStream), createWriteStream(part));
       renameSync(part, target);
     } catch (error) {

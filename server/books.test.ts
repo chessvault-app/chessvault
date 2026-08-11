@@ -100,7 +100,7 @@ describe('books api', () => {
   });
 
   it('uploads a pgn collection, and refuses one that is already there', async () => {
-    const upload = (name: string, body: string): Promise<Response> =>
+    const upload = async (name: string, body: string): Promise<Response> =>
       app.request(`/api/sources?name=${encodeURIComponent(name)}`, { method: 'POST', body });
 
     expect((await upload('uploaded.pgn', PGN)).status).toBe(200);
