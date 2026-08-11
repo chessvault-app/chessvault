@@ -448,7 +448,7 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
       setSources(body.sources);
       setGames(body.games ?? []);
     } catch {
-      setError('could not list the PGN collections');
+      setError(t('could not list the PGN collections'));
     }
   }, []);
 
@@ -470,7 +470,7 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
     setError(null);
     for (const file of Array.from(files)) {
       if (!file.name.toLowerCase().endsWith('.pgn')) {
-        setError(`${file.name} is not a .pgn`);
+        setError(t('{name} is not a .pgn', { name: file.name }));
         continue;
       }
       setUploading(file.name);
@@ -481,10 +481,10 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
         });
         if (!res.ok) {
           const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          setError(`${file.name}: ${body?.error ?? res.statusText}`);
+          setError(`${file.name}: ${body?.error ?? res.statusText}`); // server's own words
         }
       } catch {
-        setError(`${file.name}: upload failed`);
+        setError(t('{name}: upload failed', { name: file.name }));
       }
     }
     setUploading(null);

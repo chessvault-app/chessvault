@@ -182,7 +182,7 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
 
   const save = async (): Promise<void> => {
     const res = await json('PUT', '/api/settings/profile', { name, chesscom, lichess });
-    setNote(res.ok ? { kind: 'ok', text: 'Saved.' } : { kind: 'error', text: 'Could not save.' });
+    setNote(res.ok ? { kind: 'ok', text: t('Saved.') } : { kind: 'error', text: t('Could not save.') });
     if (res.ok) await onSaved();
   };
 
@@ -591,16 +591,16 @@ function PasswordBlock({ gate }: { gate: boolean }) {
 
   const change = async (): Promise<void> => {
     if (next !== confirm) {
-      setNote({ kind: 'error', text: 'New passwords do not match.' });
+      setNote({ kind: 'error', text: t('New passwords do not match.') });
       return;
     }
     const res = await json('POST', '/api/settings/password', { current, next });
     const body = (await res.json()) as { error?: string };
     if (!res.ok) {
-      setNote({ kind: 'error', text: body.error ?? 'Could not change the password.' });
+      setNote({ kind: 'error', text: body.error ?? t('Could not change the password.') });
       return;
     }
-    setNote({ kind: 'ok', text: 'Password changed — signing you out to the lock screen…' });
+    setNote({ kind: 'ok', text: t('Password changed — signing you out to the lock screen…') });
     reauth();
   };
 
@@ -644,7 +644,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
     const res = await json('POST', '/api/settings/2fa/start');
     const body = (await res.json()) as { secret?: string; otpauth?: string; error?: string };
     if (!res.ok || !body.secret || !body.otpauth) {
-      setNote({ kind: 'error', text: body.error ?? 'Could not start 2FA enrolment.' });
+      setNote({ kind: 'error', text: body.error ?? t('Could not start 2FA enrolment.') });
       return;
     }
     const qr = await QRCode.toDataURL(body.otpauth, { margin: 1, width: 192 });
@@ -658,11 +658,11 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
     const res = await json('POST', '/api/settings/2fa/enable', { secret: enroll.secret, code });
     const body = (await res.json()) as { error?: string };
     if (!res.ok) {
-      setNote({ kind: 'error', text: body.error ?? 'Could not enable 2FA.' });
+      setNote({ kind: 'error', text: body.error ?? t('Could not enable 2FA.') });
       return;
     }
     setEnroll(null);
-    setNote({ kind: 'ok', text: '2FA is on — signing you out to the lock screen…' });
+    setNote({ kind: 'ok', text: t('2FA is on — signing you out to the lock screen…') });
     await onChanged();
     reauth();
   };
@@ -671,10 +671,10 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
     const res = await json('POST', '/api/settings/2fa/disable', { code });
     const body = (await res.json()) as { error?: string };
     if (!res.ok) {
-      setNote({ kind: 'error', text: body.error ?? 'Could not turn 2FA off.' });
+      setNote({ kind: 'error', text: body.error ?? t('Could not turn 2FA off.') });
       return;
     }
-    setNote({ kind: 'ok', text: '2FA is off — signing you out to the lock screen…' });
+    setNote({ kind: 'ok', text: t('2FA is off — signing you out to the lock screen…') });
     await onChanged();
     reauth();
   };
@@ -762,17 +762,17 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
     const res = await json('PUT', '/api/settings/lichess', { token });
     const body = (await res.json()) as { error?: string };
     if (!res.ok) {
-      setNote({ kind: 'error', text: body.error ?? 'Could not save the token.' });
+      setNote({ kind: 'error', text: body.error ?? t('Could not save the token.') });
       return;
     }
     setToken('');
-    setNote({ kind: 'ok', text: 'Token saved.' });
+    setNote({ kind: 'ok', text: t('Token saved.') });
     await onChanged();
   };
 
   const clear = async (): Promise<void> => {
     await json('DELETE', '/api/settings/lichess');
-    setNote({ kind: 'ok', text: 'Token removed.' });
+    setNote({ kind: 'ok', text: t('Token removed.') });
     await onChanged();
   };
 
@@ -876,11 +876,11 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => ({}))) as { error?: string };
-      setNote({ kind: 'error', text: body.error ?? 'That did not match.' });
+      setNote({ kind: 'error', text: body.error ?? t('That did not match.') });
       setBusy(false);
       return;
     }
-    setNote({ kind: 'ok', text: 'Vault wiped — reloading…' });
+    setNote({ kind: 'ok', text: t('Vault wiped — reloading…') });
     setTimeout(() => window.location.reload(), 900);
   };
 

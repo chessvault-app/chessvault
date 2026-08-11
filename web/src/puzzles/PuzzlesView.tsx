@@ -205,7 +205,7 @@ function Trainer({
       }
       const res = await fetch(url);
       if (!res.ok) {
-        setError(((await res.json()) as { error?: string }).error ?? `HTTP ${res.status}`);
+        setError(((await res.json()) as { error?: string }).error ?? t('Request failed ({status})', { status: res.status }));
         return;
       }
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };

@@ -421,7 +421,7 @@ export function RepertoireView() {
         if (token !== runId.current) return;
         const body = (await res.json().catch(() => null)) as { moves?: ExplorerMove[]; error?: string } | null;
         if (!res.ok || !body?.moves) {
-          setError(body?.error ?? 'Could not reach the Lichess database.');
+          setError(body?.error ?? t('Could not reach the Lichess database.'));
           setPhase('playing');
           return;
         }
@@ -445,7 +445,7 @@ export function RepertoireView() {
         setPhase('playing');
       } catch {
         if (token === runId.current) {
-          setError('Could not reach the Lichess database.');
+          setError(t('Could not reach the Lichess database.'));
           setPhase('playing');
         }
       }

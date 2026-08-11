@@ -677,4 +677,27 @@ export const ko: Record<string, string> = {
   'The demo book covers the first {plies} plies.': '데모 북은 처음 {plies}수까지만 담고 있습니다.',
   'Demo — this is a sample vault of your own. Edit anything; a reload puts it back.':
     '데모 — 당신만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.',
+
+  // --- status and error messages -------------------------------------------
+  'reading the book’s solutions': '책의 정답을 읽는 중', 
+  '{name} is not a .pgn': '{name}은(는) .pgn 파일이 아닙니다',
+  '{name}: upload failed': '{name}: 올리지 못했습니다',
+  'Request failed ({status})': '요청이 실패했습니다 ({status})',
+  "Saved.": "저장했습니다.",
+  "Could not save.": "저장하지 못했습니다.",
+  "New passwords do not match.": "새 비밀번호가 서로 다릅니다.",
+  "Could not change the password.": "비밀번호를 바꾸지 못했습니다.",
+  "Password changed — signing you out to the lock screen…": "비밀번호를 바꿨습니다 — 잠금 화면으로 보냅니다…",
+  "Could not start 2FA enrolment.": "2단계 인증 등록을 시작하지 못했습니다.",
+  "Could not enable 2FA.": "2단계 인증을 켜지 못했습니다.",
+  "2FA is on — signing you out to the lock screen…": "2단계 인증을 켰습니다 — 잠금 화면으로 보냅니다…",
+  "Could not turn 2FA off.": "2단계 인증을 끄지 못했습니다.",
+  "2FA is off — signing you out to the lock screen…": "2단계 인증을 껐습니다 — 잠금 화면으로 보냅니다…",
+  "Could not save the token.": "토큰을 저장하지 못했습니다.",
+  "Token saved.": "토큰을 저장했습니다.",
+  "Token removed.": "토큰을 삭제했습니다.",
+  "That did not match.": "입력이 일치하지 않습니다.",
+  "Vault wiped — reloading…": "보관함을 비웠습니다 — 다시 불러옵니다…",
+  "could not list the PGN collections": "PGN 모음 목록을 불러오지 못했습니다",
+  "Could not reach the Lichess database.": "Lichess 데이터베이스에 접속하지 못했습니다.",
 };

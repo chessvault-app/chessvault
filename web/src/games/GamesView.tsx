@@ -535,7 +535,7 @@ function CollectionView() {
       body: JSON.stringify({ from, to: next }),
     });
     if (!res.ok) {
-      setError(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'rename failed');
+      setError(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? t('rename failed'));
     }
     void load();
   };
@@ -948,7 +948,7 @@ function ArchiveBrowser({
       onCollected();
     } else {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(body?.error ?? 'could not add that game');
+      setError(body?.error ?? t('could not add that game'));
     }
   };
 
