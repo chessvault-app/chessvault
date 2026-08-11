@@ -103,16 +103,27 @@
 
       .split { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
       @media (min-width: 48rem) { .split { grid-template-columns: 1fr 1fr; } }
-      /* One shape for both, so the two sections do not step. The ratio is
-         the WIDER screenshot's own (2880x1480), so that one is untouched
-         and only the taller one is cropped — from the bottom, where its
-         content is a list that visibly continues. Cropping the sides
-         instead would have cut into a sidebar. */
-      .split img {
-        width: 100%; aspect-ratio: 2880 / 1480; object-fit: cover; object-position: top;
-        border-radius: 0.8rem; border: 1px solid var(--line);
+      /* A DETAIL of the app, not the whole window.
+         These sit in a half-width column — 464px on a desktop — and the
+         sources are 2880px wide, a 1440px window captured at 2x. Showing
+         the whole frame scaled the UI by 0.16 and nothing in it could be
+         read. The app's text is 12px, so it needs roughly 0.75x to stay
+         legible, which means showing at most ~1240 of those 2880 pixels.
+         So each is positioned inside a fixed box showing a 1480px window
+         onto the source — half of it — placed so a WHOLE panel fits with
+         its edges inside the frame. Tighter than this reads as a broken
+         zoom, because the crop starts cutting labels mid-word. One box, one shape,
+         so the two sections still do not step. */
+      .split .shot-crop {
+        position: relative; overflow: hidden; aspect-ratio: 8 / 5;
+        border-radius: 0.8rem; border: 1px solid var(--line); background: var(--bg);
+      }
+      .split .shot-crop img {
+        position: absolute; width: 194.6%; max-width: none;
+        left: var(--x); top: var(--y);
       }
       .split p { color: var(--muted); }
+      .split figure { margin: 0; }
 
       /* 18rem, not 16: three OS buttons have to sit on one line inside the
          first card, and 16rem left them wrapping. Three 18rem cards plus
@@ -275,13 +286,25 @@
               goes away, your chess opens in something else.
             </p>
           </div>
-          <img src="shots/games.png" alt="The games collection with filters and a preview" />
+          <figure class="shot-crop">
+            <img
+              src="shots/games.png"
+              alt="The games collection: two annotated games with their openings and results"
+              style="--x: -41.9%; --y: 0%"
+            />
+          </figure>
         </div>
       </section>
 
       <section class="wrap">
         <div class="split">
-          <img src="shots/dashboard.png" alt="The puzzle dashboard" />
+          <figure class="shot-crop">
+            <img
+              src="shots/dashboard.png"
+              alt="The puzzle dashboard: solved, attempts, win rate and a breakdown by difficulty"
+              style="--x: -47.3%; --y: -4.3%"
+            />
+          </figure>
           <div>
             <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
             <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 원격 서버에 올릴 수도 있습니다. 작은 리눅스 서버 하나가 보관함을 소유하면 나머지는 전부 클라이언트가 됩니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서 씁니다. 어느 기기에서 열어도 같은 기보와 같은 진행 상황입니다. 비밀번호와 2단계 인증은 선택 사항입니다.">
