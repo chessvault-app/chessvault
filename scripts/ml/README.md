@@ -1,5 +1,7 @@
 # Diagram-OCR model pipeline
 
+*English · [한국어](README.ko.md)*
+
 > **This is the laboratory, not the way in.** Importing a book is something
 > the app does: upload a PDF and it works the rest out (see
 > [docs/book-import-pipeline.md](../../docs/book-import-pipeline.md)).

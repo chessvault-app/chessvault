@@ -1,5 +1,7 @@
 # ML history
 
+*English · [한국어](ml-history.ko.md)*
+
 How the book reader got good, in order, with the numbers. The recurring
 theme: **the books label their own training data** — every stage mines
 supervision from what the pipeline already validated, so accuracy

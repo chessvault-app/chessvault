@@ -1,5 +1,7 @@
 # The prepared databases
 
+*English · [한국어](databases.ko.md)*
+
 Two of the app's features read databases that are **built once and copied
 to the server**, rather than being produced by anything the app does:
 

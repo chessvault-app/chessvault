@@ -1,5 +1,7 @@
 # Architecture
 
+*English · [한국어](architecture.ko.md)*
+
 Chess Vault is a private, offline-first chess workbench: analysis board,
 position editor, studies, notes, a curated game collection, and puzzle
 training (lichess-style themes plus paper books imported by ML). One

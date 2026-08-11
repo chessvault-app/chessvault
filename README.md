@@ -1,5 +1,7 @@
 # Chess Vault
 
+*English · [한국어](README.ko.md)*
+
 Your chess, in plain files. A private, self-hosted chess workbench:
 engine analysis, opening explorer, studies, notes, a curated game
 collection, and a puzzle trainer fed by real paper books — everything

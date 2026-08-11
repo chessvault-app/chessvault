@@ -1,5 +1,7 @@
 # Book import pipeline
 
+*English · [한국어](book-import-pipeline.ko.md)*
+
 Turns a scanned tactics-book PDF into a vault puzzle book: positions,
 verified solutions, per-puzzle evidence images, and honest fidelity
 tiers. Everything runs locally; only the resulting vault files matter.

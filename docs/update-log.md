@@ -1,5 +1,7 @@
 # Update log
 
+*English · [한국어](update-log.ko.md)*
+
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 

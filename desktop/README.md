@@ -1,5 +1,7 @@
 # Desktop shell
 
+*English · [한국어](README.ko.md)*
+
 Two modes, chosen on first launch (Vault → Switch vault… to change):
 
 - **remote** — a window onto a Chess Vault server somewhere else. Pure

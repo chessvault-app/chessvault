@@ -1,5 +1,7 @@
 # Design principles
 
+*English · [한국어](design-principles.ko.md)*
+
 Decisions that recur across the app, with the reasoning that produced
 them. When in doubt, these win over novelty.
 
