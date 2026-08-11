@@ -82,6 +82,19 @@ const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
 
 const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
 
+/** Sentinel month meaning "every month this player has". */
+const ALL_MONTHS = '*';
+
+/**
+ * How many archive rows to put in the DOM at once.
+ *
+ * "All dates" over a decade is tens of thousands of games, and rendering
+ * every one freezes the tab for seconds. The cap is display only —
+ * selecting all still selects every game that was loaded, so nothing the
+ * user asked for is withheld, and the count below the list says so.
+ */
+const MAX_ROWS = 1000;
+
 /** Collection file -> document id (the path the studies-style API speaks). */
 const docId = (g: Pick<GameSummary, 'file'>): string =>
   g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
@@ -762,7 +775,39 @@ function ArchiveBrowser({
     }
   };
 
+  /**
+   * Every month at once.
+   *
+   * Newest first, so the list opens on recent play; each month is fetched
+   * in turn and the server caches it, so a second visit is instant. The
+   * count climbs as they arrive rather than showing nothing for a minute —
+   * a decade is dozens of requests.
+   */
+  const loadAllMonths = async (): Promise<void> => {
+    setMonth(ALL_MONTHS);
+    setError(null);
+    stopRef.current = false;
+    const user = username.trim();
+    const newestFirst = months.map((m) => m.month).sort().reverse();
+    const all: GameSummary[] = [];
+    for (const [at, m] of newestFirst.entries()) {
+      if (stopRef.current) break;
+      setBulk({ month: at + 1, months: newestFirst.length, added: all.length });
+      try {
+        const res = await fetch(`${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`);
+        if (!res.ok) continue;
+        const body = (await res.json()) as { games?: GameSummary[] };
+        all.push(...(body.games ?? []).slice().reverse());
+        setMonthGames([...all]);
+      } catch {
+        // One unreachable month should not lose the rest of a decade.
+      }
+    }
+    setBulk(null);
+  };
+
   const loadMonth = async (m: string): Promise<void> => {
+    if (m === ALL_MONTHS) return loadAllMonths();
     setMonth(m);
     setLoading('games');
     setError(null);
@@ -815,57 +860,6 @@ function ArchiveBrowser({
   );
 
   /**
-   * Import every game this player ever played, month by month.
-   *
-   * Driven from here rather than as a server job: fetching an archive month
-   * is already a client call, the server caches each month as it goes, and
-   * a loop with a visible count and a Stop button is honest about a job
-   * that can take minutes over dozens of months. Nothing is lost by
-   * stopping — the months already imported stay imported, and running it
-   * again skips what is there.
-   *
-   * Oldest first, so an interrupted run leaves a contiguous history rather
-   * than a hole in the middle.
-   *
-   * Running it twice adds everything twice, as "… (2)" files. Nothing is
-   * overwritten and nothing is refused — the button says what it does and
-   * the count says what it did.
-   */
-  const importEverything = async (): Promise<void> => {
-    const user = username.trim();
-    if (!user || !months.length) return;
-    stopRef.current = false;
-    setBulk({ month: 0, months: months.length, added: 0 });
-
-    let added = 0;
-    const oldestFirst = months.map((m) => m.month).sort();
-    for (const [at, m] of oldestFirst.entries()) {
-      if (stopRef.current) break;
-      setBulk({ month: at + 1, months: oldestFirst.length, added });
-      try {
-        // Caches the month on the server if it is not there yet.
-        const got = await fetch(
-          `${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`,
-        );
-        if (!got.ok) continue;
-        const res = await fetch('/api/games/collect', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ file: `chesscom/${user.toLowerCase()}/${m}.pgn`, all: true }),
-        });
-        if (res.ok) added += ((await res.json()) as { added?: number }).added ?? 0;
-      } catch {
-        // One unreachable month should not abandon the rest of a decade.
-      }
-      setBulk({ month: at + 1, months: oldestFirst.length, added });
-    }
-
-    setBulk(null);
-    onCollected();
-    if (month) await loadMonth(month);
-  };
-
-  /**
    * Everything the current filters show.
    *
    * Deliberately NOT filtered to "not already collected". Adding a game
@@ -895,28 +889,42 @@ function ArchiveBrowser({
    */
   const collectMany = async (games: GameSummary[]): Promise<void> => {
     if (!games.length) return;
-    const file = games[0]!.file;
     setBusy(true);
     setError(null);
-    const res = await fetch('/api/games/collect', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ file, indexes: games.map((g) => g.index) }),
-    });
-    setBusy(false);
-    if (res.ok) {
-      setAdded((prev) => {
-        const next = new Set(prev);
-        for (const g of games) next.add(gameKey(g));
-        return next;
+
+    // Grouped by archive file: under "All dates" a selection spans many
+    // months, and the server parses one file per request. One request per
+    // month, not one per game.
+    const byFile = new Map<string, GameSummary[]>();
+    for (const g of games) byFile.set(g.file, [...(byFile.get(g.file) ?? []), g]);
+
+    const done: GameSummary[] = [];
+    let failure: string | null = null;
+    for (const [file, group] of byFile) {
+      setBulk({ month: byFile.size - [...byFile.keys()].indexOf(file), months: byFile.size, added: done.length });
+      const res = await fetch('/api/games/collect', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ file, indexes: group.map((g) => g.index) }),
       });
-      setPicked(new Set());
-      setSelecting(false);
-      onCollected();
-    } else {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(body?.error ?? t('could not add those games'));
+      if (res.ok) done.push(...group);
+      else {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        failure = body?.error ?? t('could not add those games');
+      }
     }
+
+    setBulk(null);
+    setBusy(false);
+    setAdded((prev) => {
+      const next = new Set(prev);
+      for (const g of done) next.add(gameKey(g));
+      return next;
+    });
+    setPicked(new Set());
+    setSelecting(false);
+    onCollected();
+    if (failure) setError(failure);
   };
 
   const collect = async (game: GameSummary): Promise<void> => {
@@ -1011,10 +1019,13 @@ function ArchiveBrowser({
             className="shrink-0"
             groups={[
               {
-                options: months.map((m) => ({
-                  value: m.month,
-                  label: `${m.month}${m.cached ? ` · ${m.games} games` : offline ? ' · needs internet' : ''}`,
-                })),
+                options: [
+                  { value: ALL_MONTHS, label: t('All dates') },
+                  ...months.map((m) => ({
+                    value: m.month,
+                    label: `${m.month}${m.cached ? ` · ${m.games} games` : offline ? ' · needs internet' : ''}`,
+                  })),
+                ],
               },
             ]}
           />
@@ -1061,15 +1072,6 @@ function ArchiveBrowser({
                 onClick={() => setSelecting(true)}
               >
                 {t('Select…')}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={bulk !== null || !months.length}
-                onClick={() => void importEverything()}
-                title={t('Add every game this player has ever played')}
-              >
-                {t('Import all games')}
               </Button>
               {bulk && (
                 <>
@@ -1141,7 +1143,7 @@ function ArchiveBrowser({
               <SkeletonGameRows rows={6} />
             </li>
           ) : (
-            visibleMonthGames.map((game) => {
+            visibleMonthGames.slice(0, MAX_ROWS).map((game) => {
               const inCollection =
                 added.has(gameKey(game)) ||
                 collectionKeys.has(`${game.white}|${game.black}|${game.date}`);
@@ -1194,6 +1196,15 @@ function ArchiveBrowser({
             })
           )}
         </ul>
+      )}
+
+      {month && visibleMonthGames.length > MAX_ROWS && (
+        <p className="text-subtle border-line border-t px-3 py-1.5 text-xs">
+          {t('Showing the first {shown} of {total}. Select all still takes every one.', {
+            shown: MAX_ROWS,
+            total: visibleMonthGames.length,
+          })}
+        </p>
       )}
 
       {/* Nothing browsed yet: fill the panel with a prompt instead of
