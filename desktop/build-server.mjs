@@ -20,21 +20,16 @@ import pngToIco from 'png-to-ico';
  * the shell at spawn time.
  */
 
-// The publish URL is an environment value, not a repo value: it names
-// somebody's server. Without it electron-builder would happily write an
-// app-update.yml with an empty address, producing an installer that can
-// never update and gives no clue why.
-if (!process.env.CHESS_UPDATE_URL) {
-  console.error(
-    [
-      'CHESS_UPDATE_URL is not set.',
-      '  It is where the built app will look for updates, e.g.',
-      '    CHESS_UPDATE_URL=https://<your-server>/updates npm run desktop:package',
-      '  The same files go to that path on the server; see desktop/README.md.',
-    ].join('\n'),
-  );
-  process.exit(1);
-}
+// Updates come from this project's GitHub releases, which is a repo value
+// and needs no environment. The check that used to stand here existed for
+// the `generic` provider, whose URL named somebody's server: unset, it wrote
+// an app-update.yml with an empty address and produced an installer that
+// could never update and said nothing about why. The github provider takes
+// its address from build.publish in package.json, so there is nothing left
+// to forget.
+//
+// CHESS_UPDATE_URL still works for anyone self-hosting a feed — point
+// build.publish back at `generic` and it is read again.
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..');

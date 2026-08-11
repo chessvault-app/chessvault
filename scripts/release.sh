@@ -1,86 +1,75 @@
 #!/usr/bin/env bash
-# Cut a desktop release: build it, publish it, and deploy the server.
-# Usage: CHESS_UPDATE_URL=https://<host>/updates bash scripts/release.sh
+# Cut a release: deploy the server, verify it, then tag — and the tag makes
+# GitHub build and draft the installers.
+#
+# Usage: bash scripts/release.sh
 #
 # Configure the target in scripts/deploy.env, which is gitignored, so this
-# file carries no personal infrastructure:
+# file carries no personal infrastructure (see scripts/deploy.env.example):
 #   CHESS_VAULT_HOST=ubuntu@<host>
 #   CHESS_VAULT_KEY=~/.ssh/<key>.pem      # optional; omit to use an agent
-#   CHESS_UPDATE_URL=https://<host>/updates
 #
-# All three steps or none. Publishing an installer without deploying the
-# server leaves them disagreeing about what version this is — and in remote
-# mode the desktop app runs the SERVER's web build, so the mismatch is real
-# and not merely cosmetic. electron-builder cannot do this itself: its
-# `generic` provider is download-only, so `--publish always` has nothing to
-# upload with, which is why releases were being done by hand.
+# This used to build the installer here and scp it to the server, because
+# electron-builder's `generic` provider is download-only and had nothing to
+# upload with. Publishing now goes through GitHub releases, so the halves
+# separate:
+#
+#   here    deploy the server, prove it is serving this version, push the tag
+#   Actions build Windows, macOS and Linux, and put them on ONE draft release
+#   you    check both, then press Publish
+#
+# They stay connected by the tag and by the draft. In remote mode the desktop
+# app runs the SERVER's web build, so an installer released without a
+# matching deploy leaves the two disagreeing about what version this is. The
+# deploy happens first and the draft holds the installers back until a human
+# agrees, which is the same guarantee the old all-or-nothing script gave.
 set -euo pipefail
 
 [ -f "$(dirname "$0")/deploy.env" ] && . "$(dirname "$0")/deploy.env"
 HOST="${CHESS_VAULT_HOST:?set CHESS_VAULT_HOST=user@host (see scripts/deploy.env)}"
 KEY="${CHESS_VAULT_KEY:-}"
-UPDATE_URL="${CHESS_UPDATE_URL:?set CHESS_UPDATE_URL=https://<host>/updates}"
-UPDATES_DIR="${CHESS_UPDATES_DIR:-/srv/chess-vault-updates}"
 SSH_KEY=(); [ -n "$KEY" ] && SSH_KEY=(-i "$KEY")
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 VERSION="$(node -p "require('./package.json').version")"
-INSTALLER="release/installer/Chess Vault Setup ${VERSION}.exe"
+TAG="v${VERSION}"
 
-# A dirty tree means the build would not match the commit it claims to be.
+# A dirty tree means what gets built would not match the commit it claims to
+# be — and here the commit is all GitHub has to build from.
 if [ -n "$(git status --porcelain)" ]; then
   echo "release: working tree is dirty — commit first, so the build matches a commit" >&2
   exit 1
 fi
 
-echo "release: building ${VERSION}"
-CHESS_UPDATE_URL="$UPDATE_URL" npm run desktop:package >/dev/null
+# Stop before touching the server if the tag is already taken: the build is
+# triggered by pushing it, so an existing tag means there is nothing to
+# trigger and the version was probably not bumped.
+if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+  echo "release: tag ${TAG} already exists — bump the version in package.json first" >&2
+  exit 1
+fi
 
-[ -f "$INSTALLER" ] || { echo "release: no installer at ${INSTALLER}" >&2; exit 1; }
-[ -f release/installer/latest.yml ] || { echo "release: no latest.yml" >&2; exit 1; }
-
-echo "release: publishing to ${HOST}:${UPDATES_DIR}"
-scp "${SSH_KEY[@]}" \
-  "$INSTALLER" \
-  "${INSTALLER}.blockmap" \
-  release/installer/latest.yml \
-  "$HOST:$UPDATES_DIR/"
-
-echo "release: deploying the server"
+echo "release: deploying ${VERSION} to the server"
 bash "$ROOT/scripts/deploy.sh"
 
-# Prove it rather than assume it: the feed and the server must both say the
-# version we just built, or the release is half-done.
-FEED="$(ssh "${SSH_KEY[@]}" "$HOST" "curl -s http://127.0.0.1:8787/updates/latest.yml | head -1")"
+# Prove it rather than assume it.
 SERVED="$(ssh "${SSH_KEY[@]}" "$HOST" "curl -s http://127.0.0.1:8787/api/health")"
-echo
-echo "release: ${VERSION} done"
-echo "  feed    ${FEED}"
-echo "  server  ${SERVED}"
-case "$FEED" in *"$VERSION"*) ;; *) echo "release: FEED DOES NOT NAME ${VERSION}" >&2; exit 1;; esac
-case "$SERVED" in *"$VERSION"*) ;; *) echo "release: SERVER DOES NOT REPORT ${VERSION}" >&2; exit 1;; esac
+case "$SERVED" in
+  *"$VERSION"*) echo "release: server reports ${VERSION}" ;;
+  *) echo "release: SERVER DOES NOT REPORT ${VERSION} — got: ${SERVED}" >&2; exit 1 ;;
+esac
 
-# Tag the release and push it, which is what rebuilds the public demo.
-#
-# Deliberately LAST, and deliberately after the two checks above: a tag is a
-# claim that this version shipped, and the demo built from it will be shown
-# to strangers. A release that failed to verify must not produce either.
-#
-# Also deliberately NOT fatal, which is a departure from this file's "all
-# steps or none" rule and worth saying why. The three steps above are one
-# act because an installer without a matching server disagree about what
-# version this is — a real inconsistency. The demo is downstream: if the tag
-# does not reach GitHub, the release is still whole and the demo is merely a
-# version behind. That earns a loud message, not a failure that suggests
-# something needs undoing.
-TAG="v${VERSION}"
-if git -C "$ROOT" rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
-  echo "release: tag ${TAG} already exists — not re-tagging"
-elif git -C "$ROOT" tag -a "${TAG}" -m "Release ${VERSION}" &&
-     git -C "$ROOT" push origin "${TAG}"; then
-  echo "release: tagged ${TAG} — the demo rebuilds from it"
-else
-  echo "release: could not push ${TAG}; the release is fine, the demo is not rebuilt." >&2
-  echo "release: push it yourself with: git push origin ${TAG}" >&2
-fi
+# The tag is now load-bearing: it is what starts the desktop build and the
+# demo rebuild. Failing to push it is a failed release, not a footnote —
+# which is why this is fatal where the old script's tagging was not.
+git tag -a "${TAG}" -m "Release ${VERSION}"
+git push origin "${TAG}"
+
+echo
+echo "release: ${VERSION} deployed and tagged"
+echo "  the desktop workflow is now building all three platforms onto a DRAFT release"
+echo "  watch:   gh run watch \$(gh run list --workflow=desktop --limit 1 --json databaseId -q '.[0].databaseId')"
+echo "  then:    gh release view ${TAG} --web    # check the assets, press Publish"
+echo
+echo "  Nothing updates for anyone until that draft is published."

@@ -128,8 +128,10 @@
     ],
     "npmRebuild": false,
     "publish": {
-      "provider": "generic",
-      "url": "${env.CHESS_UPDATE_URL}"
+      "provider": "github",
+      "owner": "chessvault-app",
+      "repo": "chessvault",
+      "releaseType": "draft"
     },
     "win": {
       "target": "nsis",

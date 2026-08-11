@@ -6,21 +6,34 @@
 # matrix — and unlike macOS it needs no signing, no developer account and no
 # Gatekeeper exception, so its output is usable the moment it is built.
 #
-# This builds and uploads installers as workflow artifacts. It does NOT
-# publish them to the update feed — that is scripts/release.sh, which also
-# deploys the server, because in remote mode the desktop app runs the
-# SERVER's web build and an installer published without a matching deploy
-# leaves the two disagreeing about what version this is.
+# Run on a tag, this also PUBLISHES: each platform uploads its installers
+# and its own manifest to one GitHub release for that tag. Run by hand, it
+# only builds, and the installers come back as workflow artifacts.
 #
-# So: use this to get the Mac and Linux builds you cannot make locally, and
-# to prove all three platforms still compile. Publishing stays one
-# deliberate act.
+# The three manifests — latest.yml (Windows), latest-mac.yml, latest-linux.yml
+# — must land on the SAME release, because electron-updater fetches the one
+# for its own platform from a single address. Three jobs finishing at
+# different times would ordinarily race to create it; they do not, because
+# the release is a DRAFT (build.publish.releaseType in package.json).
+# electron-builder finds an existing draft for the tag and adds to it rather
+# than creating a second one.
+#
+# A draft is also the approval gate. Nothing is visible, and no installed app
+# is offered the update, until a human presses Publish — which is the moment
+# to have checked that the server deploy landed too. In remote mode the
+# desktop app runs the SERVER's web build, so an installer released without a
+# matching deploy leaves the two disagreeing about what version this is.
+# scripts/release.sh does the deploy half and pushes the tag that starts this.
 name: desktop
 
 on:
   workflow_dispatch:
   push:
     tags: ['v*']
+
+# Publishing a release is a write to this repository.
+permissions:
+  contents: write
 
 jobs:
   package:
@@ -71,14 +84,15 @@ jobs:
       # this needs no network beyond the install above.
       - run: npm run setup:engine
 
-      # The build refuses to run without an update URL, because an installer
-      # built with an empty address can never update and gives no clue why.
-      # A workflow build is not published, so the value only has to be a real
-      # URL — the vars entry is there for when it should point somewhere.
+      # On a tag: build and upload to the draft release for that tag.
+      # By hand: build only. `--publish never` is explicit rather than
+      # implied, so a dispatch run can never surprise anyone by publishing.
       - name: Package
         env:
-          CHESS_UPDATE_URL: ${{ vars.CHESS_UPDATE_URL || 'https://example.invalid/updates' }}
-        run: npm run ${{ matrix.script }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          npm run ${{ matrix.script }} --
+          --publish ${{ startsWith(github.ref, 'refs/tags/v') && 'always' || 'never' }}
 
       - uses: actions/upload-artifact@v4
         with:

@@ -51,50 +51,82 @@ wanted.
 
 The shell updates itself from a feed it fetches on launch: a `latest.yml`
 naming the newest version and the installer to fetch, plus that installer.
-Both are built here and uploaded to a server — there is no GitHub in the
-loop, so the source repository can stay private.
+Both come from this repository's GitHub releases.
 
 Two files with confusingly similar names are involved, at opposite ends:
 
 | | `app-update.yml` | `latest.yml` |
 | --- | --- | --- |
-| lives | inside the installed app | on the server |
+| lives | inside the installed app | on the release |
 | says | "ask this address" | "newest is 0.2.0, here it is" |
 | written by | electron-builder, into the bundle | electron-builder, beside the installer |
 | changes | never after install | every release |
 
-Both come from `build.publish` in the root `package.json`, which reads its
-URL from the environment rather than naming anybody's server in the repo:
+Both come from `build.publish` in the root `package.json`:
 
 ```
-"publish": { "provider": "generic", "url": "${env.CHESS_UPDATE_URL}" }
+"publish": {
+  "provider": "github", "owner": "chessvault-app", "repo": "chessvault",
+  "releaseType": "draft"
+}
 ```
+
+There are three `latest.yml`s, not one — `latest.yml` for Windows,
+`latest-mac.yml`, `latest-linux.yml` — and each platform's updater fetches
+only its own. All three must land on the SAME release, which is what
+`releaseType: draft` buys: three matrix jobs finishing minutes apart would
+otherwise race to create the release, and electron-builder instead finds the
+existing draft and adds to it.
+
+> **Upgrading from a build made before this change.** Apps installed then
+> have an `app-update.yml` baked in pointing at a self-hosted `/updates`
+> address, and `app-update.yml` never changes after install. They will keep
+> asking that address forever and will never be offered a GitHub release.
+> There is no way to redirect them remotely — the fix is to install the new
+> version once by hand, after which updates follow GitHub.
+
+Self-hosting the feed instead still works: point `build.publish` back at
+`{ "provider": "generic", "url": "${env.CHESS_UPDATE_URL}" }` and the
+server's `/updates` route (below) serves it. Nothing else in the app knows
+where updates come from.
 
 ### Cutting a release
 
 ```
 # 1. bump "version" in package.json, and commit
-# 2. one command: build, publish, deploy, verify
+# 2. deploy the server, verify it, push the tag
 npm run desktop:release
+# 3. when the workflow finishes, check the draft and press Publish
+gh release view v0.2.4 --web
 ```
 
-It reads the target from `scripts/deploy.env` (`CHESS_VAULT_HOST`,
-`CHESS_UPDATE_URL`), refuses to run on a dirty tree, and finishes by
-asking the server what it is serving — the feed and `/api/health` must
-both name the version just built, or it exits non-zero.
+Three parties, in order:
 
-The deploy is part of it on purpose. In remote mode the desktop app runs
-the SERVER's web build, so an installer published without a matching
-deploy leaves the two disagreeing about what version this is. They are one
-act, not two.
+| | does what |
+| --- | --- |
+| `release.sh` | deploys the server, proves `/api/health` names this version, pushes the tag |
+| the `desktop` workflow | builds Windows, macOS and Linux onto one **draft** release |
+| you | check both, publish the draft |
 
-electron-builder cannot do the publishing itself: the `generic` provider
-is download-only, so `--publish always` has nothing to upload with.
+It reads the target from `scripts/deploy.env` (`CHESS_VAULT_HOST`), refuses
+to run on a dirty tree, and refuses if the tag already exists — the tag is
+what triggers the build, so a tag that is already there means nothing would
+happen.
 
-The build refuses to run without `CHESS_UPDATE_URL`, because an installer
-built with an empty address can never update and gives no clue why.
+The server deploy and the installers stay tied together on purpose. In
+remote mode the desktop app runs the SERVER's web build, so an installer
+released without a matching deploy leaves the two disagreeing about what
+version this is. The deploy goes first, and the draft holds the installers
+back until someone agrees — the same guarantee the old all-or-nothing
+script gave, with a person where the `&&` used to be.
+
+Nothing is offered to any installed app until the draft is published.
 
 ### Serving the feed
+
+Only for a self-hosted feed — releases go to GitHub now, and this route is
+what makes the `generic` provider an option for anyone who would rather not
+use it.
 
 The server exposes `/updates/:file` from `CHESS_VAULT_UPDATES` (default
 `<repo>/updates`, gitignored). It is deliberately outside `/api` and
@@ -105,7 +137,10 @@ installer anyway, and every download is verified against the sha512 in
 `latest.yml`. Only release-shaped filenames are served and there is no
 directory listing.
 
-### Going public later
+### Building without releasing
 
-Change `build.publish` back to the GitHub provider and cut a release the
-same way. Nothing else in the app knows where updates come from.
+Run the `desktop` workflow by hand (`workflow_dispatch`) to get all three
+platforms as workflow artifacts without publishing anything: it passes
+`--publish never` unless the ref is a `v*` tag. That is how to get a macOS
+build — electron-builder cannot produce a dmg anywhere but a Mac — or to
+prove all three still compile.
