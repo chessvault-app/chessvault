@@ -681,19 +681,19 @@ function Trainer({
               <div className="flex flex-col gap-0.5">
                 {puzzle && phase !== 'loading' && (
                   <p className="text-fg text-xl font-bold tracking-tight">
-                    {solverSide === 'white' ? 'White' : 'Black'} to play
+                    {solverSide === 'white' ? t('White to play') : t('Black to play')}
                   </p>
                 )}
                 <p className={cn('text-xs leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
                   {phase === 'wrong'
-                    ? 'That is not it — it rolls back, try again.'
+                    ? t('That is not it — it rolls back, try again.')
                     : phase === 'setup' || phase === 'opponent'
-                    ? 'Opponent is moving…'
+                    ? t('Opponent is moving…')
                     : phase === 'loading'
-                    ? 'Finding a puzzle…'
+                    ? t('Finding a puzzle…')
                     : failed
-                      ? 'Keep looking — find the best move.'
-                      : 'Find the best move. The difficulty and themes stay hidden until you finish.'}
+                      ? t('Keep looking — find the best move.')
+                      : t('Find the best move. The difficulty and themes stay hidden until you finish.')}
                 </p>
               </div>
             )}

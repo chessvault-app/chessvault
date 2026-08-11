@@ -96,13 +96,13 @@ const LABELS: Record<string, string> = {
 
 /** camelCase theme id → human label ("hangingPiece" → "Hanging piece"). */
 export function themeLabel(theme: string): string {
-  if (LABELS[theme]) return LABELS[theme];
+  if (LABELS[theme]) return t(LABELS[theme]);
   const spaced = theme
     .replace(/([A-Z])/g, ' $1')
     .replace(/(\d+)/g, ' $1')
     .toLowerCase()
     .trim();
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  return t(spaced.charAt(0).toUpperCase() + spaced.slice(1));
 }
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });

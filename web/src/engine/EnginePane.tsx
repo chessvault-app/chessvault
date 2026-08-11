@@ -61,10 +61,10 @@ export function EngineBlock({ className }: { className?: string }) {
       <PanelHeader
         title={
           <span className="flex items-center gap-1.5">
-            Engine
+            {t('Engine')}
             {enabled && top && (
               <span className="text-subtle font-mono normal-case tracking-normal">
-                depth {top.depth}
+                {t('depth')} {top.depth}
                 {top.selDepth ? `/${top.selDepth}` : ''}
                 {finished ? '' : '…'}
               </span>

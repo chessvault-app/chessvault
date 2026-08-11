@@ -173,8 +173,8 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
         <div className="border-line bg-surface absolute right-0 top-9 z-40 w-44 rounded-lg border p-1 shadow-[var(--shadow-pop)]">
           {(
             [
-              ['note', 'New note', NotebookPen],
-              ['folder', 'New collection', FolderIcon],
+              ['note', t('New note'), NotebookPen],
+              ['folder', t('New collection'), FolderIcon],
             ] as const
           ).map(([kind, label, Icon]) => (
             <button
@@ -198,7 +198,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
       {mode && (
         <div className="border-line bg-surface absolute right-0 top-9 z-40 flex w-72 flex-col gap-2 rounded-lg border p-3 shadow-[var(--shadow-pop)]">
           <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-            {mode === 'note' ? 'New note' : 'New collection'}
+            {mode === 'note' ? t('New note') : t('New collection')}
           </p>
           {mode === 'note' && folders.length > 0 && (
             <Select
@@ -208,7 +208,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
               groups={[
                 {
                   options: [
-                    { value: '', label: '(no collection)' },
+                    { value: '', label: t('(no collection)') },
                     ...folders.map((f) => ({ value: f, label: f })),
                   ],
                 },
@@ -224,7 +224,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
               if (e.key === 'Enter') void submit();
               if (e.key === 'Escape') setMode(null);
             }}
-            placeholder={mode === 'note' ? 'Note name' : 'Collection name'}
+            placeholder={mode === 'note' ? t('Note name') : t('Collection name')}
           />
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">

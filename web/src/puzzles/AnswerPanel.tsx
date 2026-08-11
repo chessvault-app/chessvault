@@ -19,7 +19,7 @@ export function AnswerPanel({
   cursorId,
   onSelect,
   onPromote,
-  title = 'Moves',
+  title = t('Moves'),
   emptyText = 'Play a move on the board.',
 }: {
   tree: MoveTree;

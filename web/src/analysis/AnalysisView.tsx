@@ -103,7 +103,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           value={pane}
           onChange={setPane}
           tabs={[
-            { id: 'moves', label: 'Moves', icon: ListOrdered },
+            { id: 'moves', label: t('Moves'), icon: ListOrdered },
             { id: 'engine', label: 'Engine', icon: Cpu },
             { id: 'explorer', label: 'Explorer', icon: Compass },
           ]}

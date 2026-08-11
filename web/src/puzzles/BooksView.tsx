@@ -1160,7 +1160,7 @@ function PuzzleList({
         ).map(([id, label]) => (
           <FilterChip
             key={id}
-            label={label}
+            label={t(label)}
             count={stateCounts[id]}
             active={stateFilter === id}
             onClick={() => setStateFilter(id)}
@@ -2473,27 +2473,27 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
             <div className="flex flex-col gap-0.5">
               {phase === 'done' ? (
                 <p className={cn('text-sm font-semibold', won ? 'text-good' : 'text-bad')}>
-                  {won ? 'Solved!' : helped ? 'Solved with help.' : 'Not this time.'}
+                  {won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.')}
                 </p>
               ) : (
                 <p className="text-fg text-xl font-bold tracking-tight">
-                  {solverSide === 'white' ? 'White' : 'Black'} to play
+                  {solverSide === 'white' ? t('White to play') : t('Black to play')}
                 </p>
               )}
               <p className="text-muted text-xs leading-relaxed">
                 {phase === 'checking'
-                  ? 'Checking your answer…'
+                  ? t('Checking your answer…')
                   : phase === 'done'
                     ? helped
-                      ? 'That is the book line. Retry it clean later.'
+                      ? t('That is the book line. Retry it clean later.')
                       : won
                         ? engineApproved
-                          ? 'Off the book at the end — but the engine approves. Solved.'
-                          : 'Exactly as the book has it.'
+                          ? t('Off the book at the end — but the engine approves. Solved.')
+                          : t('Exactly as the book has it.')
                         : wrong
-                          ? 'Not quite — the marked move is where it goes wrong.'
-                          : 'Correct so far, but the book line goes further.'
-                    : 'Explore freely — only the mainline is judged on submit.'}
+                          ? t('Not quite — the marked move is where it goes wrong.')
+                          : t('Correct so far, but the book line goes further.')
+                    : t('Explore freely — only the mainline is judged on submit.')}
               </p>
             </div>
 

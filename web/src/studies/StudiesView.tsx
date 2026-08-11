@@ -170,8 +170,8 @@ function CreateMenu() {
         >
           {(
             [
-              ['study', 'New study', Library],
-              ['folder', 'New collection', FolderIcon],
+              ['study', t('New study'), Library],
+              ['folder', t('New collection'), FolderIcon],
               ['import', 'Import PGN', FileUp],
               ['lichess', 'From Lichess', CloudDownload],
             ] as const
@@ -216,7 +216,7 @@ function CreateMenu() {
           )}
         >
           <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-            {mode === 'study' ? 'New study' : mode === 'import' ? 'Import PGN as study' : 'New collection'}
+            {mode === 'study' ? t('New study') : mode === 'import' ? t('Import PGN as study') : t('New collection')}
           </p>
           {mode !== 'folder' && folders.length > 0 && (
             <Select
@@ -226,7 +226,7 @@ function CreateMenu() {
               groups={[
                 {
                   options: [
-                    { value: '', label: '(no collection)' },
+                    { value: '', label: t('(no collection)') },
                     ...folders.map((f) => ({ value: f, label: f })),
                   ],
                 },
@@ -242,7 +242,7 @@ function CreateMenu() {
               if (e.key === 'Enter') void submit();
               if (e.key === 'Escape') setMode(null);
             }}
-            placeholder={mode === 'folder' ? 'Collection name' : 'Study name'}
+            placeholder={mode === 'folder' ? t('Collection name') : t('Study name')}
           />
           {mode === 'import' && (
             <>
@@ -417,7 +417,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               groups={[
                 {
                   options: [
-                    { value: '', label: '(no collection)' },
+                    { value: '', label: t('(no collection)') },
                     ...folders.map((f) => ({ value: f, label: f })),
                   ],
                 },

@@ -201,7 +201,7 @@ function LoadDialog({
               }}
             >
               <ImagePlus className="size-4" />
-              …or read the position from a picture
+              {t('…or read the position from a picture')}
               <span className="text-[0.6875rem]">{t('click to choose, drop a file, or paste an image')}</span>
               <input
                 type="file"

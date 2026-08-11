@@ -58,7 +58,7 @@ type Tool =
 
 export function EditorView({
   onUse,
-  useLabel = 'Analyse',
+  useLabel = t('Analyse'),
   initialFen,
 }: {
   /** Embedded mode: hand the legal position back instead of navigating. */
@@ -206,9 +206,9 @@ export function EditorView({
                     size="sm"
                     variant={state.turn === color ? 'primary' : 'secondary'}
                     onClick={() => patch({ turn: color })}
-                    className="flex-1 capitalize"
+                    className="flex-1"
                   >
-                    {color}
+                    {color === 'white' ? t('White') : t('Black')}
                   </Button>
                 ))}
               </div>
@@ -228,7 +228,7 @@ export function EditorView({
                     key={flag}
                     size="sm"
                     variant={state.castling.has(flag) ? 'primary' : 'secondary'}
-                    title={title}
+                    title={t(title)}
                     onClick={() => {
                       const castling = new Set(state.castling);
                       if (castling.has(flag)) castling.delete(flag);

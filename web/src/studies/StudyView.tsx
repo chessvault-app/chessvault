@@ -151,11 +151,11 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         variant={editing ? 'primary' : 'secondary'}
         size="sm"
         className="shrink-0"
-        title={editing ? 'Back to reading' : 'Edit moves, NAGs and comments'}
+        title={editing ? t('Back to reading') : t('Edit moves, NAGs and comments')}
         onClick={() => setEditing((v) => !v)}
       >
         <Pencil className="size-3.5 md:mr-1" />
-        <span className="max-md:hidden">{editing ? 'Done' : 'Edit'}</span>
+        <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
       <SaveIndicator state={saveState} error={error} />
     </div>

@@ -175,7 +175,7 @@ function NoteEditor({
           onClick={() => setEditable((v) => !v)}
         >
           <Pencil className="size-3.5 md:mr-1" />
-          <span className="max-md:hidden">{editable ? 'Done' : 'Edit'}</span>
+          <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
         <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc))} />
       </header>

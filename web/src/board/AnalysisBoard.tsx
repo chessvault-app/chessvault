@@ -296,7 +296,7 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
           key={name}
           type="text"
           defaultValue={name === '?' ? '' : name}
-          placeholder={side === 'white' ? 'White' : 'Black'}
+          placeholder={side === 'white' ? t('White') : t('Black')}
           spellCheck={false}
           onClick={(e) => e.stopPropagation()}
           onBlur={(e) => setName(e.target.value)}

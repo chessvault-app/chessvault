@@ -379,7 +379,7 @@ function EliteBrowser() {
       />
 
       <Panel flush className="min-h-0 flex-1">
-        <PanelHeader title={loading && rows.length === 0 ? 'Searching…' : `${total.toLocaleString()} games`} />
+        <PanelHeader title={loading && rows.length === 0 ? t('Searching…') : t('{n} games', { n: total.toLocaleString() })} />
         {searching && <SkeletonGameRows rows={8} />}
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
           {rows.map((g) => (
@@ -619,7 +619,7 @@ function CollectionView() {
         // panel — the page column scrolls instead.
         <Panel flush className="shrink-0 sm:min-h-0">
           <PanelHeader
-            title={`Collection · ${visible.length}`}
+            title={`${t('Collection')} · ${visible.length}`}
             actions={
               <Button
                 variant="ghost"
@@ -636,9 +636,9 @@ function CollectionView() {
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <BookOpen className="text-subtle size-6" strokeWidth={1.5} />
               <p className="text-muted max-w-md text-sm leading-relaxed">
-                Your collection is empty. It's meant to hold the games worth keeping — each one
-                annotatable like a study. Browse your chess.com history below and add the ones
-                you want to study.
+                {t(
+                  "Your collection is empty. It's meant to hold the games worth keeping — each one annotatable like a study. Browse your chess.com history below and add the ones you want to study.",
+                )}
               </p>
             </div>
           ) : (
@@ -677,7 +677,7 @@ function CollectionView() {
                       triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
                       items={[
                         {
-                          label: 'Rename',
+                          label: t('Rename'),
                           icon: Pencil,
                           onSelect: () => setRenamingKey(gameKey(game)),
                         },
@@ -685,7 +685,7 @@ function CollectionView() {
                           ? [{ label: 'View online', icon: ExternalLink, href: game.link }]
                           : []),
                         {
-                          label: 'Remove',
+                          label: t('Remove'),
                           icon: Trash2,
                           confirm: 'Remove this game from the collection?',
                           onSelect: () => void removeGame(game),
@@ -979,7 +979,7 @@ function ArchiveBrowser({
                       /* lichess's knight mark */
                       <KnightIcon className="size-3.5 fill-current" />
                     )}
-                    Browse {label}
+                    {t('Browse {site}', { site: label })}
                   </span>
                 }
                 active={provider === id}
@@ -1033,7 +1033,13 @@ function ArchiveBrowser({
                   { value: ALL_MONTHS, label: t('All dates') },
                   ...months.map((m) => ({
                     value: m.month,
-                    label: `${m.month}${m.cached ? ` · ${m.games} games` : offline ? ' · needs internet' : ''}`,
+                    label: `${m.month}${
+                      m.cached
+                        ? ` · ${t('{n} games', { n: m.games ?? 0 })}`
+                        : offline
+                          ? ` · ${t('needs internet')}`
+                          : ''
+                    }`,
                   })),
                 ],
               },
@@ -1047,7 +1053,7 @@ function ArchiveBrowser({
               ['black', 'Black'],
             ] as const
           ).map(([id, label]) => (
-            <FilterChip key={id} label={label} active={sideFilter === id} onClick={() => setSideFilter(id)} />
+            <FilterChip key={id} label={t(label)} active={sideFilter === id} onClick={() => setSideFilter(id)} />
           ))}
           <span className="bg-line mx-1 h-4 w-px" />
           {(
@@ -1058,7 +1064,7 @@ function ArchiveBrowser({
               ['1/2-1/2', '½-½'],
             ] as const
           ).map(([id, label]) => (
-            <FilterChip key={id} label={label} active={resultFilter === id} onClick={() => setResultFilter(id)} />
+            <FilterChip key={id} label={t(label)} active={resultFilter === id} onClick={() => setResultFilter(id)} />
           ))}
         </ChipRow>
       )}
@@ -1223,8 +1229,10 @@ function ArchiveBrowser({
         <div className="border-line flex min-h-0 flex-1 flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
           <Globe className="text-subtle size-8" strokeWidth={1.5} />
           <p className="text-muted max-w-xs text-sm leading-relaxed">
-            Browse your games. Type your {provider === 'chesscom' ? 'chess.com' : 'Lichess'} username
-            above and pick a month — then add the ones worth keeping to your collection.
+            {t(
+              'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
+              { site: provider === 'chesscom' ? 'chess.com' : 'Lichess' },
+            )}
           </p>
         </div>
       )}
@@ -1456,7 +1464,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           onChange={(e) => setPgn(e.target.value)}
           rows={5}
           spellCheck={false}
-          placeholder={'Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026'}
+          placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}
           className="w-full resize-none font-mono placeholder:font-sans"
         />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1480,11 +1488,11 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
                 key={value}
                 size="sm"
                 variant={result === value ? 'primary' : 'secondary'}
-                title={hint}
+                title={t(hint)}
                 className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
                 onClick={() => setResult(value)}
               >
-                {label}
+                {t(label)}
               </Button>
             ))}
           </div>
