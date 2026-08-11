@@ -78,13 +78,6 @@ only its own. All three must land on the SAME release, which is what
 otherwise race to create the release, and electron-builder instead finds the
 existing draft and adds to it.
 
-> **Upgrading from a build made before this change.** Apps installed then
-> have an `app-update.yml` baked in pointing at a self-hosted `/updates`
-> address, and `app-update.yml` never changes after install. They will keep
-> asking that address forever and will never be offered a GitHub release.
-> There is no way to redirect them remotely — the fix is to install the new
-> version once by hand, after which updates follow GitHub.
-
 Self-hosting the feed instead still works: point `build.publish` back at
 `{ "provider": "generic", "url": "${env.CHESS_UPDATE_URL}" }` and the
 server's `/updates` route (below) serves it. Nothing else in the app knows

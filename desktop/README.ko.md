@@ -82,13 +82,6 @@ Node로(`ELECTRON_RUN_AS_NODE`) 돌리며, `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA`�
 매트릭스 잡이 그냥 두면 릴리스를 만들려고 경쟁하지만, 초안이 있으면
 electron-builder가 그것을 찾아 덧붙입니다.
 
-> **이 변경 이전에 만든 빌드에서 올라올 때.** 그때 설치된 앱 안에는
-> 자체 호스팅 `/updates` 주소를 가리키는 `app-update.yml`이 구워져 있고,
-> `app-update.yml`은 설치 후 절대 바뀌지 않습니다. 그 앱들은 영원히 그
-> 주소에만 묻고 GitHub 릴리스를 받지 못합니다. 원격으로 돌릴 방법은
-> 없으며, 새 버전을 한 번 직접 설치하는 것이 해결책입니다. 그 뒤로는
-> GitHub을 따라갑니다.
-
 피드를 직접 호스팅하는 것도 여전히 됩니다. `build.publish`를
 `{ "provider": "generic", "url": "${env.CHESS_UPDATE_URL}" }`로 되돌리면
 아래의 서버 `/updates` 경로가 서빙합니다. 앱의 다른 어떤 부분도
