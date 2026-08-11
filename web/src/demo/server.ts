@@ -8,7 +8,7 @@ import { studiesApi } from '../../../server/studies.ts';
 import { installBuffer } from './nodeShim/buffer.ts';
 import { seedFile } from './nodeShim/fs.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
-import { DATA_OPENINGS } from '../../../server/paths.ts';
+import { DATA_BOOKS, DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
 
 /**
@@ -30,6 +30,8 @@ const VAULT = '/vault';
 /** Keys the sqlite shim resolves; the routes only ever see these as paths. */
 const PUZZLES_DB = '/demo/puzzles.sqlite';
 const REFGAMES_DB = '/demo/refgames.sqlite';
+/** The curated opening book, at the path books.ts resolves for a book named 'demo'. */
+const BOOK_DB = `${DATA_BOOKS}/demo.sqlite`;
 
 function buildApp(): Hono {
   // Before the routes run: they reference Buffer free, to size a document
@@ -69,27 +71,31 @@ function buildApp(): Hono {
     }),
   );
   /**
-   * The opening explorer is not available without a server.
+   * The opening explorer, served from the curated book.
    *
-   * Calling Lichess directly from the page was the plan, on the assumption
-   * that the explorer's public endpoints work unauthenticated. Measured:
-   * they do not — explorer.lichess.org and explorer.lichess.ovh both answer
-   * 401 with no token. CORS is not the obstacle; authentication is.
+   * Calling Lichess from the page was the plan and it does not work:
+   * measured, explorer.lichess.org answers 401 without a token, and a token
+   * cannot be shipped in a bundle every visitor can read. So the demo
+   * answers the question locally instead — which is what the app's own
+   * local-first explorer does anyway, and needs no network at all.
    *
-   * A token cannot be shipped instead. A static bundle is readable by
-   * everyone who loads it, so embedding one would publish it — the same
-   * leak that closed this route on the hosted demo, except worse, because
-   * there it was at least behind a server.
-   *
-   * So this says what is true, in the shape the client already handles,
-   * and the repertoire trainer reports it instead of hanging.
+   * Delegated to the real /api/books route rather than reimplemented: it
+   * already returns moves with w/d/b/total and its hash-collision guard,
+   * and its shape is what the client expects.
    */
-  app.get('/api/explorer/:db', (c) =>
-    c.json(
-      { error: 'The opening explorer needs a server with a Lichess token, so it is off in this demo.' },
-      503,
-    ),
-  );
+  app.get('/api/explorer/:db', async (c) => {
+    const fen = c.req.query('fen') ?? '';
+    const answer = await app.request(
+      `/api/books/demo?fen=${encodeURIComponent(fen)}`,
+    );
+    if (!answer.ok) {
+      // Past the book's depth is not an error — it is the position the
+      // repertoire trainer calls "out of book", and it expects no moves.
+      return c.json({ opening: null, moves: [], topGames: [] });
+    }
+    const book = (await answer.json()) as { moves?: unknown[]; topGames?: unknown[] };
+    return c.json({ opening: null, moves: book.moves ?? [], topGames: book.topGames ?? [] });
+  });
 
   // Book puzzles are read from commercial books and are not in the demo at
   // all. The dashboard still draws a shelf, so this answers with the shape
@@ -125,6 +131,17 @@ export async function installDemoBackend(): Promise<void> {
   try {
     const eco = await fetch(new URL('demo/openings.json', document.baseURI));
     if (eco.ok) seedFile(DATA_OPENINGS, await eco.text(), Date.now());
+    // The opening PICKER is a different file again: openings.ts reads the
+    // vendored ECO tsvs directly, so the searchable list of 3,800 openings
+    // needs them present, not just the position lookup.
+    await Promise.all(
+      ['a', 'b', 'c', 'd', 'e'].map(async (letter) => {
+        const res = await fetch(new URL(`demo/eco/${letter}.tsv`, document.baseURI));
+        if (res.ok) {
+          seedFile(`${REPO_ROOT}/scripts/vendor/chess-openings/${letter}.tsv`, await res.text(), Date.now());
+        }
+      }),
+    );
   } catch {
     // Names are a nicety; the boards still work without them.
   }
@@ -133,6 +150,7 @@ export async function installDemoBackend(): Promise<void> {
     await loadDemoDatabases({
       [PUZZLES_DB]: 'demo/puzzles.sqlite',
       [REFGAMES_DB]: 'demo/refgames.sqlite',
+      [BOOK_DB]: 'demo/book.sqlite',
     });
   } catch (error) {
     console.warn('demo: puzzles and reference games unavailable —', error);

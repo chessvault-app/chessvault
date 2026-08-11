@@ -73,7 +73,11 @@ class Statement {
       const named = params[0] as Record<string, unknown>;
       return Object.fromEntries(Object.entries(named).map(([k, v]) => [`@${k}`, v as unknown]));
     }
-    return params as unknown[];
+    // sql.js has no BigInt in its JS API, and the opening book is keyed by
+    // a 64-bit Zobrist hash. Converting to Number would silently lose the
+    // low bits and match the wrong position; the decimal string is exact,
+    // and the demo databases store these keys as text to match.
+    return params.map((p) => (typeof p === 'bigint' ? p.toString() : p));
   }
 
   all(...params: unknown[]): Record<string, unknown>[] {
