@@ -23,22 +23,43 @@ this machine.
 | Reference games | `data/refgames.sqlite`, demo subset | derived from the Lichess database (CC0) | Not Lumbra's Gigabase, which is CC BY-NC-SA and would restrict a public demo |
 | CellNet weights | `web/public/models/cellnet-v1.bin` | ours (GPL-3.0) | Trained partly on scans of commercial books; the weights carry none of their content, and no book content is redistributed |
 
-## Bundled, and NOT yet cleared — see below
+## Piece sets and sounds — checked against lila's COPYING.md
 
-| What | Where | Status |
-| --- | --- | --- |
-| Piece sets: Merida, Chessnut, Pirouetti | `web/src/piece-sets.css` (inline SVG) | **Unverified.** Vendored from lila, whose sets are individually licensed — some CC BY-SA, some free for non-commercial use only |
-| cburnett knight (app icon, favicon, landing mark) | `web/public/`, `web/src/ui/KnightIcon.tsx`, `web/landing/` | Colin M.L. Burnett, CC BY-SA 3.0 / GFDL / BSD. Usable with attribution; used here as a brand mark, which is a stronger claim than using it as a board piece |
-| Move and capture sounds | `web/public/sound/` | **Unverified.** Provenance not recorded |
+| What | Author | Licence | Verdict |
+| --- | --- | --- | --- |
+| cburnett (board pieces, app icon, favicon, landing mark) | Colin M.L. Burnett | GPLv2+ | Fine. GPLv2+ combines with our GPL-3.0, and attribution is here |
+| merida | Armando Hernandez Marroquin | GPLv2+ | Fine |
+| chessnut | Alexis Luengas | Apache 2.0 | Fine |
+| pirouetti | pirouetti | **AGPLv3+** | See below |
+| move / capture sounds | unknown | **unknown** | See below |
 
-### What has to happen before a public release
+### pirouetti is AGPL, and this app is served over a network
 
-1. Check each piece set against lila's own `COPYING.md` and either record the
-   licence here or remove the set. A set licensed for non-commercial use only
-   is a problem for a public demo, not merely an attribution gap.
-2. Do the same for the sounds.
-3. Decide whether the cburnett knight stays as the brand mark. It may, with
-   attribution; an original mark avoids the question entirely.
+AGPLv3 §13 requires that users interacting with the software *over a
+network* be offered its source. A self-hosted vault reachable by its owner
+is arguable; a public demo on the open web is not. Shipping the pirouetti
+set from a public deployment while this repository is private is the one
+combination that does not work.
+
+Three ways out, any of which is fine:
+
+1. publish the source — already the plan, and it settles this completely;
+2. drop pirouetti and keep the other three, which are GPLv2+ and Apache;
+3. keep it and put a visible source offer in the app.
+
+Until one of those is done, **the static demo should not ship pirouetti**.
+
+### The sounds are not accounted for
+
+lila licenses its sound *collections* individually — futuristic, nes, piano
+and sfx are AGPLv3+ by Enigmahack, lisp is CC BY-NC-SA 4.0 — and lists
+others under "Exceptions (non-free)". Our `Move.mp3` and `Capture.mp3` match
+none of those names, and where they came from was never written down.
+
+An unattributable asset that may be non-free is worse than no sound at all
+on a public site. Either identify them against lila's list and record it
+here, or replace them: two short clicks are trivial to synthesise or to take
+from a CC0 source, and that ends the question permanently.
 
 ## Development only — never shipped
 
