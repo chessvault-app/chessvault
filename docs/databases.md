@@ -11,7 +11,9 @@ to the server**, rather than being produced by anything the app does:
 | `data/refgames.sqlite` | the elite-games browser in Games | ~160 MB per month indexed |
 
 Everything else — books, studies, notes, imported puzzle books — is made
-inside the app. These two are the exception, and deliberately: their
+inside the app, and `data/mygames.sqlite` is not even that: the explorer's
+My games index builds and maintains itself from the vault's PGN files, so
+there is no step for it at all. These two are the exception, and deliberately: their
 inputs are multi-hundred-megabyte public dumps that nobody wants to upload
 through a browser, and the build is a one-off that pins a snapshot rather
 than something a user does.

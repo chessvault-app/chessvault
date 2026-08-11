@@ -29,6 +29,15 @@ import { DATA_MYGAMES, VAULT_GAMES } from './paths.ts';
  *
  * The index is derived data. Deleting data/mygames.sqlite costs one
  * reindex and nothing else; the games themselves are the PGN files.
+ *
+ * COST, measured on this machine at ~300 µs per game: 84 games 70 ms,
+ * 1k 228 ms, 5k 1.2 s, 20k 5.9 s, and about 2 KB of index per game. Only
+ * the FIRST sync pays it — once the `files` table matches the directory a
+ * pass is 2–5 ms. It runs inside the request that asks, so a vault in the
+ * tens of thousands stalls the server for those seconds once. That is
+ * acceptable at the scale this is for and would not be beyond it: the fix,
+ * if a vault ever gets there, is to walk the file list across ticks and let
+ * lookups answer from what is indexed so far.
  */
 
 export interface MyGamesFilters {

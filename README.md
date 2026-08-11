@@ -49,6 +49,12 @@ stored as PGN, markdown and JSON in one folder you own.
   a **Repertoire** trainer that spars an opening against the Lichess
   database (weighted-random replies filtered to a rating band, seamless
   hand-off to the engine when the line leaves book).
+- **Your own games, in the explorer.** Alongside opening books and the
+  Lichess databases, the explorer has a **My games** source: every game
+  in the vault, answering *what have I played here, and how did it go* —
+  filtered by which side you had, whether you won, the speed, and the
+  date. There is nothing to build and nothing to rebuild; games count
+  the moment you collect them, and a listed game opens on the board.
 - **Settings** — change the app password, turn on authenticator 2FA,
   set your display name and platform usernames, pick a board theme and
   piece set, manage the Lichess token, or wipe the vault — all in the
@@ -158,6 +164,10 @@ so it never ships in the repo. Build what you want, per machine.
 | `data/books/*.sqlite` | the local opening explorer | in the app, or `npm run build:book` |
 | `data/openings.json` | ECO opening names | `npm run build:openings` |
 
+`data/mygames.sqlite` is not in the table because you never build it: the
+explorer's **My games** source indexes the vault's own games itself and
+keeps up as you collect more.
+
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free
 sources: [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite"
@@ -165,6 +175,9 @@ and the [Lichess Elite Database](https://database.nikonoel.fr/). Positions
 are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
 month of Lichess Elite (280,246 games) indexes 361 k positions in 47 s into
 69 MB.
+
+**A book is for a large reference database, not for your own games.** Your
+games are answered live instead — see below.
 
 ### The two big ones are built once, not by the app
 

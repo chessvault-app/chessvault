@@ -5,6 +5,31 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **Your own games are explorable, and no longer a book.** 0.2.4 let you
+  build an opening book from the vault's games. It did not work: a book
+  reports its sources through `basename()`, which threw away the prefix
+  that said "this is a vault game", so Rebuild answered 400 for every one
+  of them. It could not have worked either — a book's source list is
+  frozen, so rebuilding it re-reads the same games and never the ones you
+  played since. And it was the wrong shape: a book sums the results away
+  at build time, so it can only ever answer one question. The explorer
+  now has a **My games** source that indexes the vault directly and
+  filters at query time — by which side you had, whether you won *(read
+  against your side, not the result string)*, the speed, and the date.
+  Nothing is built and nothing is rebuilt; a game counts the moment you
+  collect it, and a listed game opens on the board.
+- **Pretendard is the app's typeface.** Inter has no hangul, so every
+  Korean string fell through to whatever the OS carried and one screen
+  mixed two typefaces at two apparent sizes, differently per machine.
+  The English UI now pulls one 37 KB subset — less than the Inter it
+  replaces — and Korean pulls only the blocks it draws. Moves are no
+  longer monospaced: SAN is a word, not a column.
+- **The rest of the UI speaks Korean.** Navigation, puzzle prompts,
+  filter chips, board player placeholders, the editor's side-to-move
+  buttons, and all 73 puzzle themes.
+
 ## 0.2.4
 
 - **The sounds are ours.** The move and capture samples were lichess's
