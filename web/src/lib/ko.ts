@@ -178,6 +178,7 @@ export const ko: Record<string, string> = {
   Result: '결과',
   'No reference games yet': '아직 참고 게임이 없습니다',
   'Elite games': '엘리트 게임',
+  'Search the reference database': '참고 게임 데이터베이스 검색',
   'offline — cached months only': '오프라인 — 저장된 달만',
   'Add to collection': '모음에 추가',
   'Select all': '전체 선택',

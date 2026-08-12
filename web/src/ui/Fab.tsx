@@ -9,8 +9,6 @@ import { t } from '@/lib/i18n';
 export interface FabAction {
   label: string;
   icon: LucideIcon;
-  /** For an action that only belongs at some sizes — see SheetAction. */
-  className?: string;
   onSelect: () => void;
 }
 
@@ -147,7 +145,7 @@ export function Fab({
       )}
     >
       {open &&
-        actions.map(({ label: itemLabel, icon: Icon, className: itemClass, onSelect }) => (
+        actions.map(({ label: itemLabel, icon: Icon, onSelect }) => (
           <button
             key={itemLabel}
             type="button"
@@ -158,10 +156,6 @@ export function Fab({
             className={cn(
               'bg-surface border-line text-fg flex items-center gap-2 rounded-full border py-2 pl-3 pr-4',
               'text-sm shadow-[var(--shadow-pop)] transition-colors duration-100 hover:bg-surface-2',
-              // For an action that only belongs at some sizes — the games
-              // archive is a panel of its own from lg, and must not also
-              // be offered here.
-              itemClass,
             )}
           >
             <Icon className="text-subtle size-4 shrink-0" />

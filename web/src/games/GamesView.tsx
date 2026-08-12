@@ -25,6 +25,7 @@ import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { sanitizeSegment } from '@shared/vaultNames';
 import { cn } from '@/lib/cn';
+import { useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
@@ -223,7 +224,7 @@ function formatTimeControl(tc: string | null): string | null {
 export function GamesView({ params }: { params: string[] }) {
   // 'elite' is reserved for the reference-games browser; everything else
   // is a collection document id.
-  if (params[0] === 'elite') return <EliteBrowser />;
+  if (params[0] === 'elite') return <EliteGames page />;
   const id = params[0] ? decodeURIComponent(params[0]) : null;
   return id ? <StudyView id={id} kind="game" /> : <CollectionView />;
 }
@@ -245,8 +246,16 @@ interface RefGame {
  * Browse the reference database (data/refgames.sqlite — Lichess Elite or
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
+ *
+ * A page at lg, where it is opened from the column of places a game can
+ * come from and there is room for a 2M-row browser to be a browser. A
+ * WINDOW below that — a bottom sheet on a phone — because it is one of the
+ * ways to add a game, like the online archive beside it, and a phone that
+ * navigates away to a screen of its own has lost the collection it was
+ * about to add to. Same component either way; `page` is the difference
+ * between owning the frame and being handed one.
  */
-function EliteBrowser() {
+function EliteGames({ page = false }: { page?: boolean }) {
   const [meta, setMeta] = useState<{ ready: boolean; games?: number; sources?: string } | null>(
     null,
   );
@@ -388,7 +397,7 @@ function EliteBrowser() {
 
   if (meta && !meta.ready) {
     return (
-      <div className="grid h-full place-items-center p-8">
+      <div className={cn('grid place-items-center p-8', page && 'h-full')}>
         <div className="max-w-md text-center">
           <p className="text-fg mb-2 text-sm font-semibold">{t('No reference games yet')}</p>
           <p className="text-muted text-xs leading-relaxed">
@@ -402,19 +411,8 @@ function EliteBrowser() {
     );
   }
 
-  return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-4 p-4 lg:p-6">
-      <div className="flex shrink-0 items-center gap-2">
-        <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
-          <ChevronLeft className="size-3.5" />
-        </Button>
-        <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-          {meta?.games
-            ? `${t('Elite games')} (${t('{n} games', { n: meta.games.toLocaleString() })})`
-            : t('Elite games')}
-        </h1>
-      </div>
-
+  const body = (
+    <>
       <SearchInput
         inputSize="lg"
         value={query}
@@ -424,7 +422,12 @@ function EliteBrowser() {
         className="w-full shrink-0"
       />
 
-      <Panel flush className="mt-1 min-h-0 flex-1">
+      {/* A page gives this the height it has left and the list scrolls
+          inside it. A window has no height to give — it is as tall as what
+          is in it, up to a cap — so the panel takes its natural size below
+          sm and the window scrolls instead. Exactly what the archive
+          browser does in the same window. */}
+      <Panel flush className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
         <PanelHeader title={loading && rows.length === 0 ? t('Searching…') : t('{n} games', { n: total.toLocaleString() })} />
         {searching && <SkeletonGameRows rows={8} />}
         {/* The same stripe the collection list has: at three lines a row is
@@ -526,6 +529,27 @@ function EliteBrowser() {
         </ul>
       </Panel>
       <GamePreview preview={preview} onClose={hidePreview} />
+    </>
+  );
+
+  // In a window the frame and the title belong to the window; only a page
+  // has to draw its own, and a page is also the only one of the two that
+  // needs a way back to where it came from.
+  if (!page) return body;
+
+  return (
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-4 p-4 lg:p-6">
+      <div className="flex shrink-0 items-center gap-2">
+        <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
+          <ChevronLeft className="size-3.5" />
+        </Button>
+        <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+          {meta?.games
+            ? `${t('Elite games')} (${t('{n} games', { n: meta.games.toLocaleString() })})`
+            : t('Elite games')}
+        </h1>
+      </div>
+      {body}
     </div>
   );
 }
@@ -543,8 +567,15 @@ function CollectionView() {
   const [starredOnly, setStarredOnly] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
-  /** The archive browser as a full-screen window — phones only. */
+  /** The archive browser as a window — below lg, where it has no column. */
   const [browsing, setBrowsing] = useState(false);
+  /** The reference browser as a window, for the same reason. */
+  const [elite, setElite] = useState(false);
+  // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
+  // many items, so at lg the Add games button drew a chevron and a popover
+  // to offer a single row. The list has to know the width, not just the
+  // rows in it.
+  const wide = useMediaQuery('(min-width: 64rem)');
 
   // A write invalidates, so `load` always goes to the server; the cached
   // copy is what fills the screen while it does.
@@ -701,32 +732,22 @@ function CollectionView() {
             placeholder={t('Search collection…')}
             className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
           />
-          {/* Every way to get a game, in one place. Two of these used to
-              be somewhere else entirely: Elite games was a button inside
-              the collection's own header, and the online archive was a
-              whole second panel stacked under the collection on a phone —
-              half the page, permanently, for something used occasionally.
-              They are both "find a game to keep", which is what this
-              button means. */}
+          {/* Every way to get a game, in one place — but only while there
+              is nowhere better for them. At lg the two browsers live in
+              the column to the right, where they are on screen rather
+              than behind a press, and offering a window over a panel you
+              can already see is worse than not offering it. So at lg this
+              is what it says on it: import a game. */}
           <CreateControl
             label="Add games"
             actions={[
               { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
-              {
-                // Only where the archive is not already on screen. At lg
-                // it is the column to the right, and a menu item that
-                // opens a window over a panel you can already see is a
-                // menu item that should not be there.
-                label: 'Browse an online archive',
-                icon: Globe,
-                className: 'lg:hidden',
-                onSelect: () => setBrowsing(true),
-              },
-              {
-                label: 'Elite games',
-                icon: Trophy,
-                onSelect: () => navigate('games', 'elite'),
-              },
+              ...(wide
+                ? []
+                : [
+                    { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
+                    { label: 'Elite games', icon: Trophy, onSelect: () => setElite(true) },
+                  ]),
             ]}
           />
         </div>
@@ -886,12 +907,37 @@ function CollectionView() {
         </Panel>
       }
 
-      {/* Beside the collection where there is width for it, and nowhere at
-          all below lg — on a phone it was the bottom half of the page
-          whether or not anybody was browsing. It opens from Add games
-          there instead, full screen, which is the size it wanted anyway. */}
-      <div className="hidden min-h-0 lg:flex lg:flex-col">
+      {/* Where a game comes from, as a column: your own online archive,
+          and the reference database under it. Beside the collection where
+          there is width for it, and nowhere at all below lg — on a phone
+          the archive was the bottom half of the page whether or not
+          anybody was browsing. Both open from Add games there instead. */}
+      <div className="hidden min-h-0 gap-3 lg:flex lg:flex-col">
         <ArchiveBrowser collectionKeys={collectionKeys} onCollected={() => void load()} onPreview={setPreview} />
+        {/* A row, not a panel: it is one press with nothing to configure,
+            and a second bordered box with a header would claim the same
+            weight as the archive above it for a fraction of the content.
+            Here rather than in the Add games menu because this column is
+            already the answer to "where do I get a game" — and because a
+            menu hides it, while a row in the column is a standing offer. */}
+        <button
+          type="button"
+          onClick={() => navigate('games', 'elite')}
+          className={cn(
+            'bg-surface border-line hover:bg-surface-2 hover:border-line-strong flex shrink-0 items-center gap-2.5',
+            'rounded-xl border px-3 py-2.5 text-left shadow-[var(--shadow-panel)]',
+            'transition-colors duration-100',
+          )}
+        >
+          <Trophy className="text-subtle size-4 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <span className="text-fg block truncate text-sm font-medium">{t('Elite games')}</span>
+            <span className="text-subtle block truncate text-xs">
+              {t('Search the reference database')}
+            </span>
+          </span>
+          <ChevronRight className="text-muted size-3.5 shrink-0" />
+        </button>
       </div>
       </div>
 
@@ -903,6 +949,12 @@ function CollectionView() {
       {browsing && (
         <Modal title="Online archives" onClose={() => setBrowsing(false)} full>
           <ArchiveBrowser collectionKeys={collectionKeys} onCollected={() => void load()} onPreview={setPreview} />
+        </Modal>
+      )}
+
+      {elite && (
+        <Modal title="Elite games" onClose={() => setElite(false)} full>
+          <EliteGames />
         </Modal>
       )}
 
