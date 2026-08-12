@@ -676,6 +676,7 @@ function StudyCard({
         </span>
       }
       tags={study.tags}
+      fen={study.fen}
       pinned={pinned}
       onTogglePin={onTogglePin}
       layout={layout}

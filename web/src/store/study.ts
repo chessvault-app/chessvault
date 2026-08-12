@@ -13,6 +13,8 @@ export interface StudyMeta {
   updatedAt: string;
   /** From the `Tags` header the study carries on every chapter. */
   tags?: string[];
+  /** Where the first chapter's mainline ends — the card's thumbnail. */
+  fen?: string | null;
 }
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';

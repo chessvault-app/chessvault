@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+﻿import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -310,21 +310,43 @@ describe('notes list excerpts', () => {
     expect(studies.find((s) => s.id === 'Hash')!.tags).toEqual([]);
   });
 
-  it('takes the first board’s opening position off its fence', async () => {
-    const custom = '4k3/8/8/8/8/8/8/4K2R w K - 0 1';
-    write('Lucena', `# Lucena\n\n\`\`\`chess\n[FEN "${custom}"]\n[SetUp "1"]\n\n1. Rh8 *\n\`\`\`\n`);
-    // No FEN header means the fence starts from the standard position.
+  it('replays the first board to where its moves end', async () => {
+    // A bare move list: the thumbnail is the position AFTER 1.e4 e5, not
+    // the starting position every game shares.
     write('FromStart', '# Opening\n\n```chess\n1. e4 e5 *\n```\n');
+    // A set-up position, played on.
+    write('Lucena', '# Lucena\n\n```chess\n[FEN "4k3/8/8/8/8/8/8/4K2R w K - 0 1"]\n[SetUp "1"]\n\n1. Rh8+ *\n```\n');
     write('NoBoard', '# Plain\n\nJust words.\n');
     const { studies } = (await (await app.request('/api/notes')).json()) as {
       studies: { id: string; fen: string | null }[];
     };
     const fen = (id: string): string | null => studies.find((s) => s.id === id)!.fen;
-    expect(fen('Lucena')).toBe(custom);
     expect(fen('FromStart')).toBe(
-      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
     );
+    expect(fen('Lucena')).toBe('4k2R/8/8/8/8/8/8/4K3 b - - 1 1');
     expect(fen('NoBoard')).toBeNull();
+  });
+
+  it('draws no board for a position that has not moved', async () => {
+    // The picture every game shares is not a thumbnail. Without this the
+    // studies shelf drew the same starting board on 32 of 33 cards.
+    write('Unplayed', '# Empty board\n\n```chess\n*\n```\n');
+    write('BackToStart', '# There and back\n\n```chess\n1. Nf3 Nf6 2. Ng1 Ng8 *\n```\n');
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string; fen: string | null }[];
+    };
+    expect(studies.find((s) => s.id === 'Unplayed')!.fen).toBeNull();
+    expect(studies.find((s) => s.id === 'BackToStart')!.fen).toBeNull();
+  });
+
+  it('draws no board for a fence that never closes', async () => {
+    // Truncation would give a position that is wrong rather than partial.
+    write('Unclosed', '# Cut\n\n```chess\n1. e4 e5\n');
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string; fen: string | null }[];
+    };
+    expect(studies.find((s) => s.id === 'Unclosed')!.fen).toBeNull();
   });
 
   it('pins are kept in the vault and follow a rename', async () => {
@@ -362,14 +384,37 @@ describe('notes list excerpts', () => {
     expect(studies.some((s) => s.id.includes('pins'))).toBe(false);
   });
 
-  it('leaves study listings alone — a PGN header is not a preview', async () => {
+  it('gives a study a board too, from its first chapter', async () => {
     const pgnDir = mkdtempSync(join(tmpdir(), 'studies-excerpt-'));
     const pgnApp = new Hono().route('/api', studiesApi(pgnDir));
-    writeFileSync(join(pgnDir, 'Game.pgn'), '[Event "x"]\n\n1. e4 *\n', 'utf-8');
+    writeFileSync(
+      join(pgnDir, 'Game.pgn'),
+      '[Event "x"]\n[Tags "opening"]\n\n1. e4 e5 *\n\n[Event "y"]\n\n1. d4 *\n',
+      'utf-8',
+    );
     const { studies } = (await (await pgnApp.request('/api/studies')).json()) as {
-      studies: { excerpt: string | null }[];
+      studies: { excerpt: string | null; tags: string[]; fen: string | null }[];
     };
+    // Prose is a note's business; a study has its chapter count instead.
     expect(studies[0]!.excerpt).toBeNull();
+    expect(studies[0]!.tags).toEqual(['opening']);
+    // The FIRST chapter, played out — not the second, and not the start.
+    expect(studies[0]!.fen).toBe('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
+    rmSync(pgnDir, { recursive: true, force: true });
+  });
+
+  it('draws no board for a study cut off mid-chapter', async () => {
+    const pgnDir = mkdtempSync(join(tmpdir(), 'studies-cut-'));
+    const pgnApp = new Hono().route('/api', studiesApi(pgnDir));
+    // One chapter, longer than the read window and with no terminator
+    // inside it: the moves that were read are real, but they are not the
+    // whole game, so the position they reach is not this study's.
+    const long = Array.from({ length: 900 }, () => '1. Nf3 Nf6 2. Ng1 Ng8').join(' ');
+    writeFileSync(join(pgnDir, 'Long.pgn'), `[Event "x"]\n\n${long} *\n`, 'utf-8');
+    const { studies } = (await (await pgnApp.request('/api/studies')).json()) as {
+      studies: { fen: string | null }[];
+    };
+    expect(studies[0]!.fen).toBeNull();
     rmSync(pgnDir, { recursive: true, force: true });
   });
 });

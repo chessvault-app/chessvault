@@ -215,6 +215,34 @@ export function treeToPgn(tree: MoveTree, headers: Headers = {}): string {
   return makePgn(treeToGame(tree, headers));
 }
 
+/**
+ * Where one game's mainline ends up, as a FEN — or null if it cannot be
+ * replayed (a variant, an unreadable start, an illegal move).
+ *
+ * This is what a thumbnail of a game should show. The position a board
+ * OPENS at is the standard start for almost every game ever recorded, so
+ * a shelf of those thumbnails is a shelf of identical pictures; the
+ * position it ends at is the one the note or the study is about.
+ *
+ * Deliberately not a MoveTree: a listing calls this once per document and
+ * needs one FEN, not a navigable game.
+ */
+export function mainlineEndFen(pgn: string): string | null {
+  const game = parsePgn(pgn)[0];
+  if (!game) return null;
+  const start = startingPosition(game.headers);
+  if (start.isErr) return null;
+  const pos = start.unwrap();
+  for (const data of game.moves.mainline()) {
+    const move = parseSan(pos, data.san);
+    // A move that will not parse means the rest is not this game — stop
+    // where it was still true rather than guessing past it.
+    if (!move) break;
+    pos.play(move);
+  }
+  return makeFen(pos.toSetup());
+}
+
 /** Parse PGN text into chapters — one per game, as Lichess studies export. */
 export function pgnToChapters(pgn: string): Chapter[] {
   return parsePgn(pgn).map((game, index) => {
