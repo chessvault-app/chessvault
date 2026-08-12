@@ -88,7 +88,12 @@ export function ShelfCard({
           // A pinned card says so before it is read: a warm edge down the
           // left, which survives being one of forty cards in a grid where
           // an icon in the corner does not.
-          pinned && 'border-l-warn border-l-2',
+          //
+          // The hover colour has to be re-stated for that edge, or it is
+          // lost exactly when you reach for the card: `hover:border-line-
+          // strong` sets ALL FOUR sides, so pointing at a pinned card
+          // repainted its amber edge the same grey as the rest of it.
+          pinned && 'border-l-warn hover:border-l-warn border-l-2',
         )}
       >
         {/* The card stays; its contents slide off it. */}
