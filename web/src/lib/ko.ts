@@ -196,6 +196,7 @@ export const ko: Record<string, string> = {
   // --- notes ---------------------------------------------------------------
   'Search notes…': '노트 검색…',
   'Rename this note': '이 노트 이름 바꾸기',
+  'Rename this game': '이 게임 이름 바꾸기',
   'All notes': '모든 노트',
   Saved: '저장됨',
   'Saving…': '저장 중…',
@@ -694,6 +695,21 @@ export const ko: Record<string, string> = {
   'Positions are unread for now: confirming the first draft teaches this book’s font.':
     '아직 포지션을 읽지 못했습니다. 첫 초안을 확인해 주면 이 책의 글꼴을 배웁니다.',
   '— still scanning': '— 아직 스캔 중',
+  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles and took twenty minutes.': 
+    '인쇄된 정답이 재생되지 않는 포지션마다 잘못 읽은 칸 하나를 찾아 다시 읽습니다. 퍼즐 1,000개짜리 책에서 26개를 더 건졌고 20분이 걸렸습니다.',
+  'page {page}/{pages} — {n} diagrams so far': '{page}/{pages}쪽 — 지금까지 다이어그램 {n}개',
+  '{n} puzzles imported with their solutions': '정답과 함께 퍼즐 {n}개를 가져왔습니다',
+  '{n} had a square misread, found by the book’s own solution.': 
+    '{n}개는 칸을 잘못 읽었고, 책의 정답으로 찾아냈습니다.',
+  '{n} numbered diagrams had no solution we could read.': 
+    '번호가 붙은 다이어그램 {n}개는 정답을 읽지 못했습니다.',
+  'Answers found on {pages}.': '정답을 찾은 곳: {pages}.',
+  'no page we could identify': '알아낼 수 있는 쪽 없음',
+  '{n} diagrams found — untick any false positives, then add the rest as drafts.': 
+    '다이어그램 {n}개를 찾았습니다 — 잘못 잡힌 것을 체크 해제하고 나머지를 초안으로 추가하세요.',
+  '{n} unsure': '{n}개 불확실',
+  '{n} puzzles': '퍼즐 {n}개',
+  read: '읽음',
   Hide: '숨기기',
   'No attempts yet — go solve something.': '아직 시도가 없습니다 — 뭐라도 풀어 보세요.',
   'Nothing matches this filter.': '이 조건에 맞는 것이 없습니다.',

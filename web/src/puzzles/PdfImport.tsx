@@ -2,6 +2,7 @@ import { FileUp, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
+import { Modal } from '@/ui/Modal';
 import { useImportJob } from './importJob';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
@@ -91,12 +92,12 @@ export function PdfImport({
   const selectedCount = found.filter((f) => f.selected).length;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
-      <div className="bg-surface border-line flex max-h-full w-full max-w-[44rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4">
-        <div className="flex items-center gap-2">
-          <FileUp className="text-subtle size-3.5 shrink-0" />
-          <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t('Import a book PDF')}</p>
-        </div>
+    <Modal
+      title="Import a book PDF"
+      icon={FileUp}
+      onClose={onClose}
+      className="max-w-[44rem]"
+    >
 
         {!mine && existing > 0 && (
           <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">
@@ -120,8 +121,8 @@ export function PdfImport({
                   className="mt-0.5"
                 />
                 <span className="text-sm">
-                  {label}
-                  <span className="text-subtle block text-xs">{blurb}</span>
+                  {t(label)}
+                  <span className="text-subtle block text-xs">{t(blurb)}</span>
                 </span>
               </label>
             ))}
@@ -137,11 +138,11 @@ export function PdfImport({
               className="mt-0.5"
             />
             <span>
-              Try harder on boards that fail
+              {t('Try harder on boards that fail')}
               <span className="text-subtle block">
-                Re-reads each position whose printed solution would not replay, looking for a
-                single misread square. On a 1,000-puzzle book this recovered about 26 more
-                puzzles and took twenty minutes.
+                {t(
+                  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles and took twenty minutes.',
+                )}
               </span>
             </span>
           </label>
@@ -176,7 +177,11 @@ export function PdfImport({
         {scanning && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
-            page {job.page}/{job.pages || '…'} — {found.length} diagrams so far
+            {t('page {page}/{pages} — {n} diagrams so far', {
+              page: job.page,
+              pages: job.pages || '…',
+              n: found.length,
+            })}
           </p>
         )}
         {reading && (
@@ -193,25 +198,28 @@ export function PdfImport({
             )}
           >
             <p className="text-fg text-sm font-medium">
-              {solve.solved} puzzle{solve.solved === 1 ? '' : 's'} imported with their solutions
+              {t('{n} puzzles imported with their solutions', { n: solve.solved })}
             </p>
             <p className="text-muted pt-1">
               {solve.confident
-                ? 'Each one replays the move the book prints, from the position on the page.'
-                : 'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.'}
+                ? t('Each one replays the move the book prints, from the position on the page.')
+                : t(
+                    'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.',
+                  )}
               {solve.repaired > 0 &&
-                ` ${solve.repaired} had a square misread, found by the book's own solution.`}
+                ` ${t('{n} had a square misread, found by the book’s own solution.', { n: solve.repaired })}`}
               {solve.unresolved > 0 &&
-                ` ${solve.unresolved} numbered diagram${solve.unresolved === 1 ? '' : 's'} had no solution we could read.`}
+                ` ${t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })}`}
             </p>
             <p className="text-subtle pt-1">
-              Answers found on{' '}
-              {solve.answerRanges.length > 0
-                ? solve.answerRanges
-                    .map(([a, b]) => (a === b ? `p.${a}` : `p.${a}–${b}`))
-                    .join(', ')
-                : 'no page we could identify'}
-              .
+              {t('Answers found on {pages}.', {
+                pages:
+                  solve.answerRanges.length > 0
+                    ? solve.answerRanges
+                        .map(([a, b]) => (a === b ? `p.${a}` : `p.${a}–${b}`))
+                        .join(', ')
+                    : t('no page we could identify'),
+              })}
             </p>
           </div>
         )}
@@ -221,10 +229,11 @@ export function PdfImport({
         {found.length > 0 && (
           <>
             <p className="text-subtle text-xs">
-              {found.length} diagram{found.length === 1 ? '' : 's'} found — untick any false
-              positives, then add the rest as drafts.
+              {t('{n} diagrams found — untick any false positives, then add the rest as drafts.', {
+                n: found.length,
+              })}
               {found.every((f) => f.fen === null) &&
-                ' Positions are unread for now: confirming the first draft teaches this book’s font.'}
+                ` ${t('Positions are unread for now: confirming the first draft teaches this book’s font.')}`}
             </p>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {found.map((f, i) => (
@@ -243,39 +252,47 @@ export function PdfImport({
                     {f.solved && <span className="text-good ml-1">{t('solved')}</span>}
                     {!f.solved && f.fen !== null && (
                       <span className={cn('ml-1', f.uncertain > 0 ? 'text-warn' : 'text-good')}>
-                        {f.uncertain > 0 ? `${f.uncertain} unsure` : 'read'}
+                        {f.uncertain > 0 ? t('{n} unsure', { n: f.uncertain }) : t('read')}
                       </span>
                     )}
                   </span>
                 </button>
               ))}
             </div>
-            <div className="flex items-center justify-end gap-2">
-              <span className="text-subtle mr-auto text-xs">
-                {t('{n} selected', { n: selectedCount })}
-                {scanning ? t(' — still scanning') : ''}
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                title={scanning ? t('The scan keeps running') : undefined}
-                onClick={onClose}
-              >
-                {t(scanning ? 'Hide' : 'Cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={saving || scanning || selectedCount === 0}
-                onClick={() => void save()}
-              >
-                {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
-                {t('Add {n} as drafts', { n: selectedCount })}
-              </Button>
-            </div>
           </>
         )}
-      </div>
-    </div>
+
+        {/* The footer is NOT part of the results: it used to be, so a window
+            that had not scanned anything yet — or was still scanning its
+            first page — had no button at all, and no X either. Cancel is
+            always here; Add appears once there is something to add. */}
+        <div className="flex items-center justify-end gap-2">
+          {found.length > 0 && (
+            <span className="text-subtle mr-auto text-xs">
+              {t('{n} selected', { n: selectedCount })}
+              {scanning ? t(' — still scanning') : ''}
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            title={scanning ? t('The scan keeps running') : undefined}
+            onClick={onClose}
+          >
+            {t(scanning ? 'Hide' : 'Cancel')}
+          </Button>
+          {found.length > 0 && (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={saving || scanning || selectedCount === 0}
+              onClick={() => void save()}
+            >
+              {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
+              {t('Add {n} as drafts', { n: selectedCount })}
+            </Button>
+          )}
+        </div>
+    </Modal>
   );
 }

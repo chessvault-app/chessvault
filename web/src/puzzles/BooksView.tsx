@@ -516,7 +516,7 @@ function Shelf() {
                     <span className="min-w-0 pr-7">
                       <span className="text-fg block truncate text-sm font-medium">{b.title}</span>
                       <span className="text-subtle block text-xs">
-                        {b.puzzles} puzzle{b.puzzles === 1 ? '' : 's'}
+                        {t('{n} puzzles', { n: b.puzzles })}
                       </span>
                     </span>
                     <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} />
@@ -2089,9 +2089,9 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   // The list entry knows the puzzle's identity; its position and line come
   // from the solutions request, which is cached per book — so this is one
   // fetch when the first puzzle opens, not one per puzzle.
-  const [solutions, setSolutions] = useState<Record<string, PuzzleSolution>>({});
+  const [solutions, setSolutions] = useState<Record<string, PuzzleSolution> | null>(null);
   const entry = index >= 0 ? book!.puzzles[index]! : null;
-  const answer = entry ? solutions[entry.id] : undefined;
+  const answer = entry && solutions ? solutions[entry.id] : undefined;
   // The scan this puzzle came off, for the peek button beside the board.
   // It travels separately from the book now, so the solver asks for its
   // own — without this the button vanished from every layout.
@@ -2318,13 +2318,14 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   }, [node?.fen]);
 
   if (book === null || !puzzle || !tree || !node || !pos) {
+    // A puzzle needs BOTH the book and the solutions, which arrive in two
+    // requests — so "no such puzzle" may only be said once both are in.
+    // Judging it on `puzzle` alone flashed the message at every puzzle
+    // that does exist, in the gap between the two.
+    const missing = book !== null && solutions !== null && (index < 0 || !answer);
     return (
       <div className="text-subtle grid h-full place-items-center text-sm">
-        {!puzzle && book !== null ? (
-          t('That puzzle does not exist.')
-        ) : (
-          <Loader2 className="size-5 animate-spin" />
-        )}
+        {missing ? t('That puzzle does not exist.') : <Loader2 className="size-5 animate-spin" />}
       </div>
     );
   }
