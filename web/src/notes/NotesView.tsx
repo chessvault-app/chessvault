@@ -16,6 +16,7 @@ import { Button } from '@/ui/Button';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { Select } from '@/ui/Select';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { Input, SearchInput } from '@/ui/Input';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
@@ -80,6 +81,7 @@ function NoteList() {
         <div className="flex items-center gap-2">
           <SearchInput
             type="text"
+            inputSize="sm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search notes…')}
@@ -114,12 +116,12 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
   // Either popover (the menu or the name form) dismisses on outside click.
   const menuHost = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'note' | 'folder' | null>(null);
-  const [name, setName] = useState('');
   const [folder, setFolder] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
 
-  const submit = async (): Promise<void> => {
-    const trimmed = name.trim();
+  // The name comes from the prompt sheet, which owns its own draft.
+  const submit = async (raw: string): Promise<void> => {
+    const trimmed = raw.trim();
     if (!trimmed || !mode) return;
     if (mode === 'folder') {
       const res = await fetch(`${API}/folders`, {
@@ -128,11 +130,12 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
         body: JSON.stringify({ name: trimmed }),
       });
       if (!res.ok) {
-        setFailure(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+        setFailure(
+        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
+      );
         return;
       }
       setMode(null);
-      setName('');
       await onDone();
       return;
     }
@@ -143,7 +146,9 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
       body: JSON.stringify({ name: id }),
     });
     if (!res.ok) {
-      setFailure(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+      setFailure(
+        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
+      );
       return;
     }
     navigate('notes', encodeURIComponent(id));
@@ -183,7 +188,6 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
               onClick={() => {
                 setMode(kind);
                 setMenuOpen(false);
-                setName('');
                 setFailure(null);
               }}
               className="hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-100"
@@ -195,47 +199,36 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
         </div>
       )}
 
+      {/* The same one-line prompt the studies list uses — a note and a
+          collection each ask for one name, and two different popovers for
+          the same question was two things to learn. */}
       {mode && (
-        <div className="border-line bg-surface absolute right-0 top-9 z-40 flex w-72 flex-col gap-2 rounded-lg border p-3 shadow-[var(--shadow-pop)]">
-          <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-            {mode === 'note' ? t('New note') : t('New collection')}
-          </p>
-          {mode === 'note' && folders.length > 0 && (
-            <Select
-              value={folder}
-              onChange={setFolder}
-              ariaLabel={t('Collection')}
-              groups={[
-                {
-                  options: [
-                    { value: '', label: t('(no collection)') },
-                    ...folders.map((f) => ({ value: f, label: f })),
-                  ],
-                },
-              ]}
-            />
-          )}
-          <Input
-            autoFocus
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void submit();
-              if (e.key === 'Escape') setMode(null);
-            }}
-            placeholder={mode === 'note' ? t('Note name') : t('Collection name')}
-          />
-          {failure && <p className="text-bad text-xs">{failure}</p>}
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
-              {t('Cancel')}
-            </Button>
-            <Button variant="primary" size="sm" disabled={!name.trim()} onClick={() => void submit()}>
-              {t('Create')}
-            </Button>
-          </div>
-        </div>
+        <PromptSheet
+          label={mode === 'note' ? t('New note') : t('New collection')}
+          initial=""
+          submitLabel={t('Create')}
+          closeOnSubmit={false}
+          error={failure}
+          extra={
+            mode === 'note' && folders.length > 0 ? (
+              <Select
+                value={folder}
+                onChange={setFolder}
+                ariaLabel={t('Collection')}
+                groups={[
+                  {
+                    options: [
+                      { value: '', label: t('(no collection)') },
+                      ...folders.map((f) => ({ value: f, label: f })),
+                    ],
+                  },
+                ]}
+              />
+            ) : undefined
+          }
+          onSubmit={(value) => void submit(value)}
+          onClose={() => setMode(null)}
+        />
       )}
     </div>
   );
@@ -317,7 +310,9 @@ function NoteCard({
       body: JSON.stringify({ from: note.id, to: folder ? `${folder}/${next}` : next }),
     });
     if (!res.ok) {
-      setFailure(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+      setFailure(
+        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
+      );
     }
     await onChanged();
   };
@@ -329,7 +324,9 @@ function NoteCard({
       body: JSON.stringify({ from: note.id, to }),
     });
     if (!res.ok) {
-      setFailure(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+      setFailure(
+        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
+      );
     }
     await onChanged();
   };

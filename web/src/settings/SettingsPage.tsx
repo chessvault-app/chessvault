@@ -784,19 +784,20 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
 
   return (
     <Card icon={KeyRound} title={t('Lichess token')}>
+      {/* One sentence, one string. Assembling it around the link left the
+          tail in English while the head was Korean, and no translator can
+          fix a sentence that is three fragments in the source. */}
       <p className="text-subtle text-xs">
-        {t('Powers the online opening-explorer augmentation and Lichess puzzle history. Create one with')}{' '}
-        <em>{t('no scopes')}</em> at{' '}
-        <a
-          className="text-primary underline underline-offset-2"
-          href="https://lichess.org/account/oauth/token/create"
-          target="_blank"
-          rel="noreferrer"
-        >
-          lichess.org/account/oauth/token/create
-        </a>
-        . The token is stored in the vault and never shown again.
+        {t('Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.')}
       </p>
+      <a
+        className="text-primary text-xs underline underline-offset-2"
+        href="https://lichess.org/account/oauth/token/create"
+        target="_blank"
+        rel="noreferrer"
+      >
+        lichess.org/account/oauth/token/create
+      </a>
       {settings.lichess.configured && (
         <p className="text-muted text-xs">
           {t('A token ending in {last4} is configured.', { last4: `…${settings.lichess.last4}` })}
@@ -850,7 +851,7 @@ function DangerCard({ gate }: { gate: boolean }) {
       <div className="flex items-center gap-2">
         <Input
           inputSize="lg"
-          placeholder={`Type “${WIPE_PHRASE}” to arm`}
+          placeholder={t('Type “{phrase}” to arm', { phrase: WIPE_PHRASE })}
           className="flex-1"
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}

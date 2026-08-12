@@ -8,7 +8,7 @@ import { Suspense, lazy } from 'react';
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Modal } from '@/ui/Modal';
 import { t } from '@/lib/i18n';
 
 /**
@@ -145,87 +145,80 @@ function LoadDialog({
   };
 
   return (
-    <>
-      <div className="bg-scrim fixed inset-0 z-40" onClick={onClose} />
-      <div className="fixed inset-x-4 top-[15dvh] z-50 mx-auto max-w-md">
-        <Panel flush>
-          <PanelHeader
-            title={t('Load position')}
-            onClose={onClose}
-            actions={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void pasteFromClipboard()}
-                title={t('Paste from clipboard')}
-              >
-                <ClipboardPaste className="size-3.5" />
-                {t('Paste')}
-              </Button>
-            }
-          />
-          <div className="flex flex-col gap-2 p-3">
-            <TextArea
-              ref={textarea}
-              autoFocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                // Enter submits; Shift+Enter keeps a newline for multi-line PGN.
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  submit();
-                }
-              }}
-              rows={5}
-              spellCheck={false}
-              placeholder={t('Paste a FEN or PGN, then press Enter')}
-              className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
-            />
+    <Modal
+      title="Load position"
+      onClose={onClose}
+      className="max-w-md"
+      actions={
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => void pasteFromClipboard()}
+          title={t('Paste from clipboard')}
+        >
+          <ClipboardPaste className="size-3.5" />
+          {t('Paste')}
+        </Button>
+      }
+    >
+      <TextArea
+        ref={textarea}
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          // Enter submits; Shift+Enter keeps a newline for multi-line PGN.
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            submit();
+          }
+        }}
+        rows={5}
+        spellCheck={false}
+        placeholder={t('Paste a FEN or PGN, then press Enter')}
+        className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
+      />
 
-            {error && (
-              <p className="text-bad flex items-start gap-1.5 text-xs">
-                <AlertCircle className="mt-px size-3.5 shrink-0" />
-                {error}
-              </p>
-            )}
+      {error && (
+        <p className="text-bad flex items-start gap-1.5 text-xs">
+          <AlertCircle className="mt-px size-3.5 shrink-0" />
+          {error}
+        </p>
+      )}
 
-            {/* The photo half of the ONE load dialog (lanph3re's call): click,
-                drop, or paste an image; the corner-adjust flow takes over. */}
-            <label
-              className="border-line hover:border-line-strong text-subtle flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-xs transition-colors"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/'));
-                if (file) onImage(file);
-              }}
-            >
-              <ImagePlus className="size-4" />
-              {t('…or read the position from a picture')}
-              <span className="text-[0.6875rem]">{t('click to choose, drop a file, or paste an image')}</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = '';
-                  if (file) onImage(file);
-                }}
-              />
-            </label>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                {t('Cancel')}
-              </Button>
-              <Button variant="primary" size="sm" onClick={submit} disabled={!text.trim()}>
-                {t('Load')}
-              </Button>
-            </div>
-          </div>
-        </Panel>
+      {/* The photo half of the ONE load dialog (lanph3re's call): click,
+          drop, or paste an image; the corner-adjust flow takes over. */}
+      <label
+        className="border-line hover:border-line-strong text-subtle flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-xs transition-colors"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/'));
+          if (file) onImage(file);
+        }}
+      >
+        <ImagePlus className="size-4" />
+        {t('…or read the position from a picture')}
+        <span className="text-[0.6875rem]">{t('click to choose, drop a file, or paste an image')}</span>
+        <input
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (file) onImage(file);
+          }}
+        />
+      </label>
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          {t('Cancel')}
+        </Button>
+        <Button variant="primary" size="sm" onClick={submit} disabled={!text.trim()}>
+          {t('Load')}
+        </Button>
       </div>
-    </>
+    </Modal>
   );
 }

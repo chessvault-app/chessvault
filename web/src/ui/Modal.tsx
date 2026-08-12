@@ -2,7 +2,7 @@ import type { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
-import { Panel, PanelHeader } from './Panel';
+import { useKeyboardInset } from '@/lib/keyboardInset';
 
 /**
  * A centred window over the app.
@@ -13,14 +13,13 @@ import { Panel, PanelHeader } from './Panel';
  * own import form — and a panel that grows has no obvious way out, while a
  * modal always has the same one.
  *
- * Escape and a click on the backdrop close it, because a window that can
- * only be closed by finding its button is a window people feel stuck in.
+ * It is PromptSheet at a larger size, deliberately: a quiet label, no rule
+ * under it, no X in the corner, and the way out is the Cancel button next
+ * to whatever the window is for. Two closing idioms in one app meant every
+ * window had to be read before it could be dismissed.
  *
- * It is a Panel wearing a PanelHeader — the same surface, the same header
- * height, the same close button as the dialogs that were written before
- * this component existed (Load position, Import a game). A modal that
- * styled its own title and its own X read as a different app's window
- * sitting on top of this one.
+ * Escape and a click on the backdrop close it too, for the same reason
+ * PromptSheet's scrim does — but neither is the advertised way out.
  */
 export function Modal({
   title,
@@ -29,16 +28,14 @@ export function Modal({
   onClose,
   children,
   className,
-  bodyClassName,
 }: {
   title: string;
   icon?: typeof X;
-  /** Header controls, left of the close button. */
+  /** One control on the title line — Paste, say. Never a close button. */
   actions?: ReactNode;
   onClose: () => void;
   children: ReactNode;
   className?: string;
-  bodyClassName?: string;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -48,9 +45,14 @@ export function Modal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // A window with a field in it is a window the keyboard covers. Same fix
+  // as PromptSheet: give the centring box back the height the keyboard took.
+  const inset = useKeyboardInset();
+
   return (
     <div
       className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      style={{ paddingBottom: inset ? inset + 16 : undefined }}
       onClick={onClose}
       role="presentation"
     >
@@ -61,27 +63,18 @@ export function Modal({
         // The backdrop closes; the window itself must not, or every click
         // inside the form would dismiss it.
         onClick={(e) => e.stopPropagation()}
-        className={cn('flex max-h-full w-full max-w-[32rem] flex-col', className)}
+        className={cn(
+          'bg-surface border-line flex max-h-full w-full max-w-[32rem] flex-col gap-3',
+          'overflow-y-auto rounded-xl border p-3 shadow-[var(--shadow-pop)]',
+          className,
+        )}
       >
-        <Panel flush className="min-h-0">
-          <PanelHeader
-            title={
-              Icon ? (
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Icon className="size-3.5 shrink-0" />
-                  <span className="truncate">{t(title)}</span>
-                </span>
-              ) : (
-                title
-              )
-            }
-            actions={actions}
-            onClose={onClose}
-          />
-          <div className={cn('flex min-h-0 flex-col gap-3 overflow-y-auto p-3', bodyClassName)}>
-            {children}
-          </div>
-        </Panel>
+        <div className="flex items-center gap-2">
+          {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
+          <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
+          {actions}
+        </div>
+        {children}
       </div>
     </div>
   );

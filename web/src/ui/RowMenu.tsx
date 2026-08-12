@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
+import { Modal } from './Modal';
 import { t } from '@/lib/i18n';
 
 export interface RowMenuItem {
@@ -48,10 +49,11 @@ export function RowMenu({
   };
   useEffect(() => cancelClose, []);
   useEffect(() => {
-    if (!open) {
-      setConfirming(null);
-      return;
-    }
+    if (!open) return;
+    // Opening the menu clears a question left over from last time. It is NOT
+    // cleared on close, because asking one now CLOSES the menu: the question
+    // outlives the popover it was chosen from.
+    setConfirming(null);
     const close = (): void => setOpen(false);
     // touchstart too: iOS taps on dead space never synthesize mousedown for
     // document-level listeners, so touch alone could not close the menu.
@@ -119,66 +121,72 @@ export function RowMenu({
           onMouseLeave={scheduleClose}
           onClick={(e) => e.stopPropagation()}
         >
-          {confirming ? (
-            <div className="flex flex-col gap-2 p-2">
-              {/* Translated here, like every other label this menu renders:
-                  the callers pass the English sentence as the key. */}
-              <p className="text-fg text-xs font-medium">{t(confirming.confirm ?? 'Are you sure?')}</p>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
-                  {t('Cancel')}
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => {
-                    setOpen(false);
-                    confirming.onSelect?.();
-                  }}
-                >
-                  {t(confirming.label)}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            items.map((item) =>
-              item.href ? (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  role="menuitem"
-                  onClick={() => setOpen(false)}
-                  className="hover:bg-surface-2 text-fg flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors duration-100"
-                >
-                  <item.icon className="text-subtle size-3.5" />
-                  {t(item.label)}
-                </a>
-              ) : (
-                <button
-                  key={item.label}
-                  type="button"
-                  role="menuitem"
-                  onClick={() => {
-                    if (item.confirm) setConfirming(item);
-                    else {
-                      setOpen(false);
-                      item.onSelect?.();
-                    }
-                  }}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors duration-100',
-                    item.confirm ? 'text-bad hover:bg-bad/10' : 'text-fg hover:bg-surface-2',
-                  )}
-                >
-                  <item.icon className={cn('size-3.5', item.confirm ? '' : 'text-subtle')} />
-                  {t(item.label)}
-                </button>
-              ),
-            )
+          {items.map((item) =>
+            item.href ? (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="hover:bg-surface-2 text-fg flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors duration-100"
+              >
+                <item.icon className="text-subtle size-3.5" />
+                {t(item.label)}
+              </a>
+            ) : (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  if (item.confirm) setConfirming(item);
+                  else item.onSelect?.();
+                }}
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors duration-100',
+                  item.confirm ? 'text-bad hover:bg-bad/10' : 'text-fg hover:bg-surface-2',
+                )}
+              >
+                <item.icon className={cn('size-3.5', item.confirm ? '' : 'text-subtle')} />
+                {t(item.label)}
+              </button>
+            ),
           )}
         </div>
+      )}
+
+      {/* The question is a window of its own, not a panel inside the menu:
+          a menu that turned into a confirmation left people confirming
+          something they could no longer see the name of. */}
+      {confirming && (
+        <Modal
+          title={confirming.label}
+          onClose={() => setConfirming(null)}
+          className="max-w-sm"
+        >
+          {/* Translated here, like every other label this menu renders:
+              the callers pass the English sentence as the key. */}
+          <p className="text-fg text-sm">{t(confirming.confirm ?? 'Are you sure?')}</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => {
+                const item = confirming;
+                setConfirming(null);
+                item.onSelect?.();
+              }}
+            >
+              {t(confirming.label)}
+            </Button>
+          </div>
+        </Modal>
       )}
     </>
   );

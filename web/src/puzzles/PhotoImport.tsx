@@ -1,4 +1,4 @@
-import { ClipboardPaste, ImageUp, ScanSearch, X } from 'lucide-react';
+import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
@@ -266,11 +266,10 @@ export function PhotoImport({
           </div>
         )}
         <div className="flex items-center gap-2">
-          <ImageUp className="text-subtle size-4" />
-          <h2 className="text-fg flex-1 text-sm font-semibold">{t('Position from an image')}</h2>
-          <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={onClose}>
-            <X className="size-3.5" />
-          </Button>
+          <ImageUp className="text-subtle size-3.5 shrink-0" />
+          <p className="text-subtle min-w-0 flex-1 truncate text-xs">
+            {t('Position from an image')}
+          </p>
         </div>
 
         {!img ? (
@@ -374,7 +373,10 @@ export function PhotoImport({
                 )}
               </>
             )}
-            <div className="mt-2">
+            <div className="mt-2 flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                {t('Cancel')}
+              </Button>
               <Button
                 variant="primary"
                 size="sm"
@@ -386,7 +388,7 @@ export function PhotoImport({
                   })
                 }
               >
-                {reading.fen === null ? 'Set up by hand' : 'Load into the editor'}
+                {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
               </Button>
             </div>
           </div>

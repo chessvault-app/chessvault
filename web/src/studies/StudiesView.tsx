@@ -17,7 +17,7 @@ import { pgnToChapters } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { Input, SearchInput } from '@/ui/Input';
+import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { Globe, Loader2 } from 'lucide-react';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Modal } from '@/ui/Modal';
@@ -59,6 +59,7 @@ function StudyList() {
         <div className="flex items-center gap-2">
           <SearchInput
             type="text"
+            inputSize="sm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search studies…')}
@@ -124,7 +125,7 @@ function CreateMenu() {
     if (!trimmed || !mode) return;
     if (mode === 'folder') {
       const err = await createFolder(trimmed);
-      setFailure(err);
+      setFailure(err && t(err));
       if (!err) {
         setMode(null);
         setName('');
@@ -137,7 +138,7 @@ function CreateMenu() {
     }
     const id = folder ? `${folder}/${trimmed}` : trimmed;
     const err = await create(id, mode === 'import' ? pgnText : undefined);
-    setFailure(err);
+    setFailure(err && t(err));
     if (!err) navigate('studies', encodeURIComponent(id));
   };
 
@@ -270,15 +271,15 @@ function CreateMenu() {
             }}
             placeholder={t('Study name')}
           />
-          <textarea
+          {/* The shared TextArea, not a hand-rolled one: it is where the
+              autofill-off attributes live, and this is the field iOS was
+              offering to complete with a contact. */}
+          <TextArea
             value={pgnText}
             onChange={(e) => setPgnText(e.target.value)}
             placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
             spellCheck={false}
-            className={cn(
-              'bg-surface-inset border-line text-fg placeholder:text-subtle h-28 w-full resize-none',
-              'rounded-md border p-2 font-mono text-xs outline-none focus:border-primary/50',
-            )}
+            className="h-28 w-full resize-none p-2 font-mono"
           />
           <div className="flex items-center justify-between gap-2">
             <Button variant="secondary" size="sm" onClick={() => filePick.current?.click()}>
@@ -524,7 +525,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
           onBlur={async () => {
             setRenaming(false);
             if (draft.trim() && draft.trim() !== folder) {
-              setFailure(await moveFolder(folder, draft.trim()));
+              setFailure(await moveFolder(folder, draft.trim()).then((e) => e && t(e)));
             }
           }}
           onKeyDown={(e) => {
@@ -562,10 +563,13 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            title={empty ? 'Delete this empty collection' : 'Only empty collections can be deleted'}
+            title={t(empty ? 'Delete this empty collection' : 'Only empty collections can be deleted')}
             onClick={async () => {
               const err = await removeFolder(folder);
-              setFailure(err);
+              // Translated HERE: the server answers in English, and this is
+              // the boundary where a server string becomes something a
+              // person reads.
+              setFailure(err && t(err));
               // A refusal is worth reading once, not forever: it sits under
               // a row that is still there, so left alone it reads as the
               // row's permanent state rather than as an answer to a click.
@@ -597,7 +601,9 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
     setRenaming(false);
     const next = draft.trim();
     if (!next || next === name) return;
-    setFailure(await move(study.id, folder ? `${folder}/${next}` : next));
+    setFailure(
+      await move(study.id, folder ? `${folder}/${next}` : next).then((e) => e && t(e)),
+    );
   };
 
   return (

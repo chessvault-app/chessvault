@@ -23,7 +23,7 @@ import {
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { Input } from '@/ui/Input';
+import { DateInput, Input } from '@/ui/Input';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
@@ -190,7 +190,10 @@ export function ExplorerPane({
 
       {showFilters && (
         <Modal title="Filters" icon={SlidersHorizontal} onClose={() => setShowFilters(false)}>
-          <MyGamesFilterBar />
+          {/* Every chip applies as it is tapped, so there is nothing to
+              confirm — but a window still needs a stated way out, and it
+              belongs on the same line as Clear rather than below it. */}
+          <MyGamesFilterBar onDone={() => setShowFilters(false)} />
         </Modal>
       )}
 
@@ -290,16 +293,23 @@ export function ExplorerPane({
  * so "against 1800+" means something different in January and December,
  * and a filter whose meaning drifts is worse than no filter.
  */
-function MyGamesFilterBar() {
+function MyGamesFilterBar({ onDone }: { onDone: () => void }) {
   const filters = useExplorer((s) => s.myFilters);
   const setFilters = useExplorer((s) => s.setMyFilters);
   const stats = useExplorer((s) => s.myStats);
 
+  // Same words as the game browser's row, and an explicit Any/All chip
+  // rather than "click the lit one again": one vocabulary for one question.
   const SIDES: { id: MyGamesFilters['side']; label: string }[] = [
-    { id: 'white', label: 'As white' },
-    { id: 'black', label: 'As black' },
+    { id: undefined, label: 'Any' },
+    { id: 'white', label: 'White' },
+    { id: 'black', label: 'Black' },
   ];
+  // The browser filters a raw score (it browses anyone's archive); these are
+  // YOUR games, so the question is what you did with them. 1-0 would be a
+  // lie on the games you played black.
   const OUTCOMES: { id: MyGamesFilters['outcome']; label: string }[] = [
+    { id: undefined, label: 'All' },
     { id: 'win', label: 'Won' },
     { id: 'draw', label: 'Drew' },
     { id: 'loss', label: 'Lost' },
@@ -320,10 +330,10 @@ function MyGamesFilterBar() {
       <FilterGroup label="Side">
         {SIDES.map(({ id, label }) => (
           <FilterChip
-            key={id}
+            key={label}
             label={label}
             active={filters.side === id}
-            onClick={() => setFilters({ side: filters.side === id ? undefined : id })}
+            onClick={() => setFilters({ side: id })}
           />
         ))}
       </FilterGroup>
@@ -331,10 +341,10 @@ function MyGamesFilterBar() {
       <FilterGroup label="Result">
         {OUTCOMES.map(({ id, label }) => (
           <FilterChip
-            key={id}
+            key={label}
             label={label}
             active={filters.outcome === id}
-            onClick={() => setFilters({ outcome: filters.outcome === id ? undefined : id })}
+            onClick={() => setFilters({ outcome: id })}
           />
         ))}
       </FilterGroup>
@@ -360,8 +370,7 @@ function MyGamesFilterBar() {
       </FilterGroup>
 
       <FilterGroup label="Played between">
-        <Input
-          type="date"
+        <DateInput
           value={filters.from ?? ''}
           onChange={(e) => setFilters({ from: e.target.value || undefined })}
           aria-label={t('From date')}
@@ -370,8 +379,7 @@ function MyGamesFilterBar() {
         <span className="text-subtle" aria-hidden>
           –
         </span>
-        <Input
-          type="date"
+        <DateInput
           value={filters.to ?? ''}
           onChange={(e) => setFilters({ to: e.target.value || undefined })}
           aria-label={t('To date')}
@@ -381,9 +389,9 @@ function MyGamesFilterBar() {
 
       {/* The count is what makes the filters legible: it says what the row
           above just did to the corpus the explorer is answering from. */}
-      <div className="border-line text-subtle flex items-center gap-3 border-t pt-3 text-xs">
+      <div className="border-line text-subtle flex items-center gap-2 border-t pt-3 text-xs">
         {stats && (
-          <span className="tabular-nums">
+          <span className="mr-auto tabular-nums">
             {t('{n} games indexed', { n: exact.format(stats.games) })}
           </span>
         )}
@@ -406,6 +414,9 @@ function MyGamesFilterBar() {
             {t('Clear filters')}
           </Button>
         )}
+        <Button variant="primary" size="sm" onClick={onDone}>
+          {t('Done')}
+        </Button>
       </div>
     </div>
   );

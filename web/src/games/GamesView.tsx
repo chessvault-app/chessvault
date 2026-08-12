@@ -33,6 +33,7 @@ import { SideDot } from '@/ui/SideDot';
 import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { Modal } from '@/ui/Modal';
 import { t } from '@/lib/i18n';
 
 export interface GameSummary {
@@ -441,7 +442,7 @@ function EliteBrowser() {
                 onClick={() => void collect(g)}
               >
                 {inCollection(g) ? (
-                  'Added'
+                  t('Added')
                 ) : (
                   <>
                     <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
@@ -749,6 +750,20 @@ function ArchiveBrowser({
   }, [provider]);
   const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
   const [loading, setLoading] = useState<'months' | 'games' | null>(null);
+  // On a phone this panel sits under the collection, so an archive that has
+  // just arrived is off the bottom of the screen. Scrolled to, once, when it
+  // appears — not on every re-render, which would fight the finger.
+  const archiveTop = useRef<HTMLDivElement>(null);
+  const hadMonths = useRef(false);
+  useEffect(() => {
+    if (months.length === 0) {
+      hadMonths.current = false;
+      return;
+    }
+    if (hadMonths.current) return;
+    hadMonths.current = true;
+    archiveTop.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [months.length]);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
@@ -968,10 +983,10 @@ function ArchiveBrowser({
       <PanelHeader
         className="max-[560px]:h-auto max-[560px]:min-h-10 max-[560px]:flex-wrap max-[560px]:py-1.5"
         title={
-          /* Wrapping here, not shrinking the chips: the header truncates its
-             title, so two provider chips that do not fit on a phone had the
-             second one cut in half. They take a second line instead. */
-          <span className="flex flex-wrap items-center gap-1 normal-case tracking-normal">
+          /* The two provider chips stay on one line together — they are the
+             choice being made. What moves to a second line on a narrow
+             screen is the username field below them (actionsClassName). */
+          <span className="flex items-center gap-1 normal-case tracking-normal">
             {(
               [
                 ['chesscom', 'chess.com'],
@@ -1000,6 +1015,7 @@ function ArchiveBrowser({
             ))}
           </span>
         }
+        actionsClassName="max-[560px]:w-full max-[560px]:justify-start"
         actions={
           <>
             <Input
@@ -1034,6 +1050,7 @@ function ArchiveBrowser({
 
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (
+        <div ref={archiveTop}>
         <ChipRow className="border-line border-t px-3 py-2">
           <Select
             value={month}
@@ -1081,6 +1098,7 @@ function ArchiveBrowser({
             <FilterChip key={id} label={t(label)} active={resultFilter === id} onClick={() => setResultFilter(id)} />
           ))}
         </ChipRow>
+        </div>
       )}
       {((offline && months.length > 0) || error) && (
         <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
@@ -1211,7 +1229,7 @@ function ArchiveBrowser({
                       }}
                     >
                       {inCollection ? (
-                        'Added'
+                        t('Added')
                       ) : (
                         <>
                           <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
@@ -1235,6 +1253,16 @@ function ArchiveBrowser({
             total: visibleMonthGames.length,
           })}
         </p>
+      )}
+
+      {/* Looking one up is a wait, and the wait used to EMPTY the panel:
+          the prompt vanished, the panel collapsed to its bar, and the
+          results arrived somewhere below the fold. Rows in the same box
+          instead, so the panel keeps its size and its place. */}
+      {!month && loading === 'months' && (
+        <div className="border-line min-h-0 flex-1 border-t">
+          <SkeletonGameRows rows={6} />
+        </div>
       )}
 
       {/* Nothing browsed yet: fill the panel with a prompt instead of
@@ -1466,65 +1494,57 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   };
 
   return (
-    <>
-      <div className="bg-scrim fixed inset-0 z-40" onClick={onCancel} />
-      <div className="fixed inset-x-4 top-[8dvh] z-50 mx-auto max-h-[84dvh] max-w-lg overflow-y-auto rounded-xl">
-    <Panel flush className="shrink-0">
-      <PanelHeader title={t('Import a game')} onClose={onCancel} />
-      <div className="flex flex-col gap-2 p-3">
-        <TextArea
-          autoFocus
-          value={pgn}
-          onChange={(e) => setPgn(e.target.value)}
-          rows={5}
-          spellCheck={false}
-          placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}
-          className="w-full resize-none font-mono placeholder:font-sans"
-        />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          <Input value={white} onChange={(e) => setWhite(e.target.value)} placeholder={t('White (optional)')} />
-          <Input value={black} onChange={(e) => setBlack(e.target.value)} placeholder={t('Black (optional)')} />
-          <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder={t('Date, e.g. 2026-08-08')} />
-          <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder={t('White rating')} inputMode="numeric" />
-          <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder={t('Black rating')} inputMode="numeric" />
-          <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder={t('Event / tournament (optional)')} />
-          {/* Segmented, not a dropdown: four states, all visible at once. */}
-          <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
-            {(
-              [
-                ['', 'Auto', 'Result from the pasted moves'],
-                ['1-0', '1-0', 'White won'],
-                ['0-1', '0-1', 'Black won'],
-                ['1/2-1/2', '½-½', 'Draw'],
-              ] as const
-            ).map(([value, label, hint]) => (
-              <Button
-                key={value}
-                size="sm"
-                variant={result === value ? 'primary' : 'secondary'}
-                title={t(hint)}
-                className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
-                onClick={() => setResult(value)}
-              >
-                {t(label)}
-              </Button>
-            ))}
-          </div>
-        </div>
-        {failure && <p className="text-bad text-xs">{failure}</p>}
-        <div className="flex justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            {t('Cancel')}
-          </Button>
-          <Button variant="primary" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
-            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-            {t('Add to collection')}
-          </Button>
+    <Modal title="Import a game" onClose={onCancel} className="max-w-lg">
+      <TextArea
+        autoFocus
+        value={pgn}
+        onChange={(e) => setPgn(e.target.value)}
+        rows={5}
+        spellCheck={false}
+        placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}
+        className="w-full resize-none font-mono placeholder:font-sans"
+      />
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Input value={white} onChange={(e) => setWhite(e.target.value)} placeholder={t('White (optional)')} />
+        <Input value={black} onChange={(e) => setBlack(e.target.value)} placeholder={t('Black (optional)')} />
+        <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder={t('Date, e.g. 2026-08-08')} />
+        <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder={t('White rating')} inputMode="numeric" />
+        <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder={t('Black rating')} inputMode="numeric" />
+        <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder={t('Event / tournament (optional)')} />
+        {/* Segmented, not a dropdown: four states, all visible at once. */}
+        <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
+          {(
+            [
+              ['', 'Auto', 'Result from the pasted moves'],
+              ['1-0', '1-0', 'White won'],
+              ['0-1', '0-1', 'Black won'],
+              ['1/2-1/2', '½-½', 'Draw'],
+            ] as const
+          ).map(([value, label, hint]) => (
+            <Button
+              key={value}
+              size="sm"
+              variant={result === value ? 'primary' : 'secondary'}
+              title={t(hint)}
+              className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
+              onClick={() => setResult(value)}
+            >
+              {t(label)}
+            </Button>
+          ))}
         </div>
       </div>
-    </Panel>
+      {failure && <p className="text-bad text-xs">{failure}</p>}
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t('Cancel')}
+        </Button>
+        <Button variant="primary" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
+          <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+          {t('Add to collection')}
+        </Button>
       </div>
-    </>
+    </Modal>
   );
 }
 

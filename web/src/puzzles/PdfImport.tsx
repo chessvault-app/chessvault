@@ -1,4 +1,4 @@
-import { FileUp, Loader2, X } from 'lucide-react';
+import { FileUp, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
@@ -94,16 +94,8 @@ export function PdfImport({
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
       <div className="bg-surface border-line flex max-h-full w-full max-w-[44rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4">
         <div className="flex items-center gap-2">
-          <FileUp className="text-subtle size-4" />
-          <h2 className="text-fg flex-1 text-sm font-semibold">{t('Import a book PDF')}</h2>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={scanning ? t('Close — the scan keeps running') : t('Close')}
-            onClick={onClose}
-          >
-            <X className="size-3.5" />
-          </Button>
+          <FileUp className="text-subtle size-3.5 shrink-0" />
+          <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t('Import a book PDF')}</p>
         </div>
 
         {!mine && existing > 0 && (
@@ -260,10 +252,16 @@ export function PdfImport({
             </div>
             <div className="flex items-center justify-end gap-2">
               <span className="text-subtle mr-auto text-xs">
-                {selectedCount} selected{scanning ? ' — still scanning' : ''}
+                {t('{n} selected', { n: selectedCount })}
+                {scanning ? t(' — still scanning') : ''}
               </span>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                {scanning ? 'Hide' : 'Cancel'}
+              <Button
+                variant="ghost"
+                size="sm"
+                title={scanning ? t('The scan keeps running') : undefined}
+                onClick={onClose}
+              >
+                {t(scanning ? 'Hide' : 'Cancel')}
               </Button>
               <Button
                 variant="primary"
