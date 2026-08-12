@@ -5,6 +5,9 @@
   "author": "the Chess Vault authors",
   "version": "0.2.4",
   "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
   "description": "A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles.",
   "repository": {
     "type": "git",

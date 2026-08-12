@@ -83,41 +83,96 @@ JSON으로 당신이 소유한 폴더 하나에 저장됩니다.
 
 ### A · 이 기기에서
 
-데스크톱 앱의 **로컬** 모드면 끝입니다. 서버를 대신 띄워 주고 보관함을
-사용자 프로필에 둡니다:
+Windows·macOS·Linux용
+[릴리스](https://github.com/chessvault-app/chessvault/releases/latest)에서
+**앱을 내려받아** 설치하세요. 그 밖에는 아무것도 필요 없습니다 — Node도,
+터미널도요.
 
-```bash
-npm run desktop:package        # 또는 :mac / :linux — 설치 후 "로컬" 선택
-```
+처음 실행하면 보관함이 어디 있는지 묻습니다. **로컬**을 고르세요. 앱이
+서버를 직접 띄우고 모든 것이 이 기기에 남습니다. (다른 답인 *원격*을
+고르면 같은 앱이 직접 운영하는 서버를 바라보는 창이 됩니다 — B를
+보세요.) 그다음 어떤 폴더를 쓸지 묻습니다:
 
-소스 트리에서 바로 돌리려면:
+- **앱이 관리하는 보관함** — 사용자 프로필 안에 폴더를 잡고 바로
+  시작합니다.
+- **폴더 열기…** — 아무 폴더나 보관함이 됩니다. 이미 쓰던 폴더도
+  됩니다. 파생 데이터(오프닝 북, 색인)도 그 폴더 안에 들어가므로, 폴더를
+  옮기거나 동기화하면 전부 함께 따라갑니다.
+
+업데이트도 같은 릴리스에서 앱이 알아서 받아 옵니다.
+
+설치 프로그램을 직접 만들거나 소스 트리에서 돌리려면:
 
 ```bash
 npm install
+npm run desktop:package        # 또는 :mac / :linux — 설치 프로그램
+# ...설치 프로그램 없이 그냥 돌리려면:
 npm run build                  # 웹 앱 -> dist/
 npm start                      # http://127.0.0.1:8787
 ```
 
-보관함은 `CHESS_VAULT_DIR`로 달리 지정하지 않는 한 저장소의 `vault/`
-입니다. 비밀번호는 필요 없습니다 — 이 기기 밖으로는 아무것도 듣고 있지
-않으니까요.
+소스에서 돌릴 때 보관함은 `CHESS_VAULT_DIR`로 달리 지정하지 않는 한
+저장소의 `vault/`입니다. 비밀번호는 필요 없습니다 — 이 기기 밖으로는
+아무것도 듣고 있지 않으니까요.
 
 ### B · 서버에서
 
-한 대가 보관함을 갖고, 모든 기기가 클라이언트가 됩니다.
+한 대가 보관함을 갖고, 모든 기기가 클라이언트가 됩니다. **Node 22.12
+이상**(CI와 참조 배포는 24를 씁니다)과, 오래 둘 자리에 만든 git 체크아웃이
+필요합니다:
 
 ```bash
 # 서버에서 한 번
-npm install
+sudo git clone https://github.com/chessvault-app/chessvault /srv/chess-vault-app
+cd /srv/chess-vault-app
+npm ci
 npm run build                          # 웹 앱 -> dist/
-CHESS_VAULT_DIR=/srv/chess-vault npm run start
+CHESS_VAULT_DIR=/srv/chess-vault npm run start   # 우선 포그라운드로 확인
+```
+
+마지막 줄은 셸에서 그대로 돌아갑니다. 처음 확인할 때는 괜찮지만 그 뒤로는
+곤란합니다. 서비스로 만들어 주세요. `scripts/deploy.sh`가 이름으로 서비스를
+재시작하며, 아래 경로들이 그 기본값입니다:
+
+```ini
+# /etc/systemd/system/chess-vault.service
+[Unit]
+Description=Chess Vault server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/srv/chess-vault-app
+Environment=CHESS_VAULT_DIR=/srv/chess-vault
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now chess-vault
 ```
 
 한 포트가 빌드된 앱과 HTTP API를 함께 서빙합니다. 그다음:
 
 1. **앞에 HTTPS를 두세요.** 리버스 프록시는 사실상 필수입니다. PWA
    설치와 Stockfish의 멀티스레딩 둘 다 보안 컨텍스트이면서 교차 출처
-   격리된 페이지를 요구합니다.
+   격리된 페이지를 요구합니다. 어떤 프록시든 됩니다. Caddy라면 두 줄이면
+   되고 인증서도 알아서 처리됩니다:
+
+   ```caddy
+   vault.example.com {
+       reverse_proxy 127.0.0.1:8787
+   }
+   ```
+
+   [Tailscale](https://tailscale.com) 테일넷은 다른 길입니다. 인터넷에
+   노출하지 않고도 HTTPS 이름을 갖게 해 주며, 참조 배포가 쓰는 방식입니다.
 2. **잠금 화면을 켜세요.** 설정에서 앱 비밀번호를 정하고(또는
    `vault/config.json`의 `appPassword`), 인증 앱 2단계 인증도 함께
    켜세요. 인터넷에서 닿는 것이라면 반드시 필요합니다.

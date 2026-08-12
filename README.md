@@ -85,40 +85,96 @@ moving to a server later is copying it there.
 
 ### A · On this machine
 
-The desktop app in **local** mode is the whole answer — it starts the
-server for you and keeps the vault in your user profile:
+**Download the app** for Windows, macOS or Linux from
+[Releases](https://github.com/chessvault-app/chessvault/releases/latest)
+and install it. Nothing else is needed — no Node, no terminal.
 
-```bash
-npm run desktop:package        # or :mac / :linux — installs, then pick "local"
-```
+On first run it asks where your vault lives. Choose **local** — the app
+starts the server itself and everything stays on this machine. (The other
+answer, *remote*, makes the same app a window onto a server you host; see
+B.) Then it asks which folder:
 
-To run it from the source tree instead:
+- **App-managed vault** — it picks one in your user profile and gets on
+  with it.
+- **Open a folder…** — any folder becomes your vault, including one you
+  already have. Derived data (opening books, indexes) lives inside that
+  folder too, so moving or syncing the folder takes everything with it.
+
+Updates arrive through the app itself, from those same releases.
+
+To build the installer yourself, or run from the source tree:
 
 ```bash
 npm install
+npm run desktop:package        # or :mac / :linux — the installer
+# ...or no installer at all:
 npm run build                  # web app -> dist/
 npm start                      # http://127.0.0.1:8787
 ```
 
-The vault is `vault/` in the repo unless `CHESS_VAULT_DIR` says otherwise.
-No password is needed — nothing is listening beyond your machine.
+From source the vault is `vault/` in the repo unless `CHESS_VAULT_DIR`
+says otherwise. No password is needed — nothing is listening beyond your
+machine.
 
 ### B · On a server
 
-One box owns the vault; every device is a client.
+One box owns the vault; every device is a client. Needs **Node 22.12 or
+newer** (24 is what CI and the reference deployment run) and a git
+checkout somewhere durable:
 
 ```bash
 # on the server, once
-npm install
+sudo git clone https://github.com/chessvault-app/chessvault /srv/chess-vault-app
+cd /srv/chess-vault-app
+npm ci
 npm run build                          # web app -> dist/
-CHESS_VAULT_DIR=/srv/chess-vault npm run start
+CHESS_VAULT_DIR=/srv/chess-vault npm run start   # try it in the foreground
+```
+
+That last line runs it in your shell, which is fine for a first look and
+no good afterwards. Give it a service — `scripts/deploy.sh` restarts one
+by name, and these paths are the defaults it expects:
+
+```ini
+# /etc/systemd/system/chess-vault.service
+[Unit]
+Description=Chess Vault server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/srv/chess-vault-app
+Environment=CHESS_VAULT_DIR=/srv/chess-vault
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable --now chess-vault
 ```
 
 One port serves the built app and the HTTP API together. Then:
 
 1. **Put HTTPS in front.** A reverse proxy is not optional in practice:
    the PWA install and Stockfish's multi-threading both need a secure,
-   cross-origin-isolated page.
+   cross-origin-isolated page. Any proxy does; with Caddy it is two lines
+   and the certificate is automatic:
+
+   ```caddy
+   vault.example.com {
+       reverse_proxy 127.0.0.1:8787
+   }
+   ```
+
+   A [Tailscale](https://tailscale.com) tailnet is the other way — it
+   gives the machine an HTTPS name without exposing it to the internet at
+   all, which is what the reference deployment uses.
 2. **Turn on the lock screen.** Set an app password in Settings (or
    `appPassword` in `vault/config.json`), and add authenticator 2FA
    while you are there. Anything reachable from the internet needs this.
