@@ -1097,7 +1097,7 @@ function ArchiveBrowser({
           a 30%-wide column wants. */}
       <PanelHeader title={t('Online archives')} />
 
-      <div className="border-line flex flex-col gap-2 border-b px-3 py-2">
+      <div className="flex flex-col gap-2 px-3 pb-3">
         {/* The two provider chips stay on one line together — they are the
             choice being made. */}
         <div className="flex items-center gap-1">
@@ -1170,7 +1170,7 @@ function ArchiveBrowser({
                   setUsername(who);
                   void loadMonths(who);
                 }}
-                className="border-line text-muted hover:border-line-strong hover:text-fg rounded-full border px-2 py-0.5 font-mono text-[0.6875rem] transition-colors duration-100"
+                className="border-line text-muted hover:border-line-strong hover:text-fg w-fit shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 font-mono text-xs transition-colors duration-100"
               >
                 {who}
               </button>
