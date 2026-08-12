@@ -1,19 +1,16 @@
 import {
   Folder as FolderIcon,
   FolderInput,
-  MoreHorizontal,
   NotebookPen,
   Pencil,
   Trash2,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { Button } from '@/ui/Button';
-import { ActionSheet } from '@/ui/ActionSheet';
-import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
+import { ShelfCard } from '@/ui/ShelfCard';
+import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
@@ -31,9 +28,28 @@ interface NoteMeta {
   id: string;
   bytes: number;
   updatedAt: string;
+  /** The note's first line of prose, if the server could find one. */
+  excerpt?: string | null;
 }
 
 const API = '/api/notes';
+
+/**
+ * POST json, and give back the message to show — or null if it worked.
+ *
+ * The same eight lines of "read the body, find .error, translate it, else
+ * 'failed'" were written out at every call site, and one of them had lost
+ * its indentation and half its meaning.
+ */
+async function post(url: string, body: unknown): Promise<string | null> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (res.ok) return null;
+  return t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+}
 
 /** Router shell for Notes: the list, or one open note. */
 export function NotesView({ params }: { params: string[] }) {
@@ -101,7 +117,9 @@ function NoteList() {
   };
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
+    // The studies shelf's shell, exactly: the two shelves hold the same kind
+    // of thing and had no business being different sizes.
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{t('Notes')}</h1>
         <div className="flex items-center gap-2">
@@ -167,18 +185,9 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
     const taken = new Set(notes.map((n: NoteMeta) => n.id));
     let id = base;
     for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: id }),
-    });
-    if (!res.ok) {
-      setFailure(
-        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
-      );
-      return;
-    }
-    navigate('notes', encodeURIComponent(id));
+    const err = await post(API, { name: id });
+    if (err) setFailure(err);
+    else navigate('notes', encodeURIComponent(id));
   };
 
   // The name comes from the prompt sheet, which owns its own draft.
@@ -186,34 +195,17 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
     const trimmed = raw.trim();
     if (!trimmed || !mode) return;
     if (mode === 'folder') {
-      const res = await fetch(`${API}/folders`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      if (!res.ok) {
-        setFailure(
-        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
-      );
-        return;
+      const err = await post(`${API}/folders`, { name: trimmed });
+      setFailure(err);
+      if (!err) {
+        setMode(null);
+        await onDone();
       }
-      setMode(null);
-      await onDone();
       return;
     }
-    const id = trimmed;
-    const res = await fetch(API, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: id }),
-    });
-    if (!res.ok) {
-      setFailure(
-        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
-      );
-      return;
-    }
-    navigate('notes', encodeURIComponent(id));
+    const err = await post(API, { name: trimmed });
+    if (err) setFailure(err);
+    else navigate('notes', encodeURIComponent(trimmed));
   };
 
   useEffect(() => {
@@ -285,15 +277,39 @@ function GroupedNotes({
       {folders.map((folder) => (
         <section key={folder || '(root)'} className="flex flex-col gap-2">
           {folder && (
-            <h2 className="text-subtle flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]">
-              <FolderIcon className="size-3.5" />
-              {folder}
-            </h2>
+            // Not a bare heading any more: a notes collection could be made
+            // but never renamed or removed, which left the only way to do
+            // either outside the app.
+            <ShelfFolderHeader
+              folder={folder}
+              empty={groups.get(folder)!.length === 0}
+              onRename={async (next) => {
+                // folders/move, not move: the document route appends the
+                // extension, so renaming a collection through it looked for
+                // a file called "Scratch.md" and reported no such note.
+                const err = await post(`${API}/folders/move`, { from: folder, to: next });
+                await onChanged();
+                return err;
+              }}
+              onDelete={async () => {
+                const res = await fetch(`${API}/folders/${encodeURIComponent(folder)}`, {
+                  method: 'DELETE',
+                });
+                const err = res.ok
+                  ? null
+                  : t(
+                      ((await res.json().catch(() => null)) as { error?: string } | null)?.error ??
+                        'failed',
+                    );
+                await onChanged();
+                return err;
+              }}
+            />
           )}
           {groups.get(folder)!.length === 0 ? (
             <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {groups.get(folder)!.map((note) => (
                 <NoteCard
                   key={note.id}
@@ -324,10 +340,7 @@ function NoteCard({
 }) {
   const [moving, setMoving] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const menuTrigger = useRef<HTMLButtonElement>(null);
-  const swipe = useSwipeAway(onRemove);
 
   const name = note.id.split('/').at(-1)!;
   const folder = note.id.includes('/') ? note.id.slice(0, note.id.lastIndexOf('/')) : '';
@@ -336,113 +349,58 @@ function NoteCard({
     setRenaming(false);
     const next = value.trim();
     if (!next || next === name) return;
-    const res = await fetch(`${API}/move`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ from: note.id, to: folder ? `${folder}/${next}` : next }),
-    });
-    if (!res.ok) {
-      setFailure(
-        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
-      );
-    }
+    setFailure(await post(`${API}/move`, { from: note.id, to: folder ? `${folder}/${next}` : next }));
     await onChanged();
   };
 
   const move = async (to: string): Promise<void> => {
-    const res = await fetch(`${API}/move`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ from: note.id, to }),
-    });
-    if (!res.ok) {
-      setFailure(
-        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
-      );
-    }
+    setFailure(await post(`${API}/move`, { from: note.id, to }));
     await onChanged();
   };
 
   return (
-    <li>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => navigate('notes', encodeURIComponent(note.id))}
-        {...swipe.handlers}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') navigate('notes', encodeURIComponent(note.id));
-        }}
-        className={cn(
-          'bg-surface border-line hover:border-line-strong group relative flex cursor-pointer',
-          'items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
-        )}
-      >
-        {/* The card stays; its contents slide off it. */}
-        <SwipeTrack dx={swipe.dx} />
-        <div className="min-w-0 flex-1" style={swipe.style}>
-          <p className="text-fg truncate text-sm font-semibold">{name}</p>
-          <p className="text-subtle text-xs" title={formatWhen(note.updatedAt)}>
-            {(note.bytes / 1024).toFixed(1)} KB · {t('edited {when}', { when: formatAgo(note.updatedAt) })}
-          </p>
-          {failure && <p className="text-bad text-xs">{failure}</p>}
-        </div>
+    <ShelfCard
+      icon={NotebookPen}
+      title={name}
+      meta={
+        <span title={formatWhen(note.updatedAt)}>
+          {t('{n} KB', { n: (note.bytes / 1024).toFixed(1) })} ·{' '}
+          {t('edited {when}', { when: formatAgo(note.updatedAt) })}
+        </span>
+      }
+      // What the note is actually about. A shelf of markdown files whose
+      // names are all "Opening prep checklist 3" tells you nothing; its
+      // first sentence does.
+      preview={note.excerpt}
+      error={failure}
+      onOpen={() => navigate('notes', encodeURIComponent(note.id))}
+      onSwipeAway={onRemove}
+      actions={[
+        { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+        { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+        { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
+      ]}
+    >
+      {renaming && (
+        <PromptSheet
+          label={t('Rename this note')}
+          initial={name}
+          onSubmit={(value) => void rename(value)}
+          onClose={() => setRenaming(false)}
+        />
+      )}
 
-        {(
-          <div
-            style={swipe.style}
-            className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-          >
-            <Button
-              ref={menuTrigger}
-              variant="ghost"
-              size="icon-sm"
-              title={t('More')}
-              active={menuOpen}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen(true);
-              }}
-            >
-              <MoreHorizontal className="size-3.5" />
-            </Button>
-          </div>
-        )}
-
-        {menuOpen && (
-          <ActionSheet
-            title={name}
-            anchor={menuTrigger}
-            onClose={() => setMenuOpen(false)}
-            actions={[
-              { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-              { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
-              { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
-            ]}
-          />
-        )}
-
-        {renaming && (
-          <PromptSheet
-            label={t('Rename this note')}
-            initial={name}
-            onSubmit={(value) => void rename(value)}
-            onClose={() => setRenaming(false)}
-          />
-        )}
-
-        {moving && (
-          <MoveToPopover
-            currentFolder={folder}
-            folders={allFolders}
-            onPick={(target) => {
-              setMoving(false);
-              void move(target ? `${target}/${name}` : name);
-            }}
-            onClose={() => setMoving(false)}
-          />
-        )}
-      </div>
-    </li>
+      {moving && (
+        <MoveToPopover
+          currentFolder={folder}
+          folders={allFolders}
+          onPick={(target) => {
+            setMoving(false);
+            void move(target ? `${target}/${name}` : name);
+          }}
+          onClose={() => setMoving(false)}
+        />
+      )}
+    </ShelfCard>
   );
 }

@@ -1,6 +1,5 @@
 import {
   CloudDownload,
-  MoreHorizontal,
   FileUp,
   Folder as FolderIcon,
   FolderInput,
@@ -21,8 +20,8 @@ import { Field } from '@/ui/Field';
 import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
-import { ActionSheet } from '@/ui/ActionSheet';
-import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
+import { ShelfCard } from '@/ui/ShelfCard';
+import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { CreateControl } from '@/ui/Fab';
@@ -85,7 +84,7 @@ function StudyList() {
     // studies as the single file did — and a ceiling on the width, because a
     // card stretched across a 1400px monitor is a line of text with a title
     // at one end and a date at the other.
-    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{t('Studies')}</h1>
         <div className="flex items-center gap-2">
@@ -557,8 +556,10 @@ function GroupedStudies({
           ) : (
             // Two abreast from lg, one below it: the cards are a fixed
             // height and read left to right, so a second column costs
-            // nothing and halves the scrolling.
-            <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+            // nothing and halves the scrolling. Both columns are 1fr, so
+            // the pair stretches with the container rather than leaving a
+            // gutter down the right.
+            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {groups.get(folder)!.map((study) => (
                 <StudyCard
                   key={study.id}
@@ -578,82 +579,13 @@ function GroupedStudies({
 function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
   const moveFolder = useStudy((s) => s.moveFolder);
   const removeFolder = useStudy((s) => s.removeFolder);
-  const [renaming, setRenaming] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
-  const folderTrigger = useRef<HTMLButtonElement>(null);
-
   return (
-    <div className="group/folder flex h-6 items-center gap-1.5">
-      <FolderIcon className="text-subtle size-3.5 shrink-0" />
-      <button
-        type="button"
-        onDoubleClick={() => setRenaming(true)}
-        title={t('Double-click to rename')}
-        className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]"
-      >
-        {folder}
-      </button>
-      {renaming && (
-        <PromptSheet
-          label={t('Rename this collection')}
-          initial={folder}
-          onSubmit={(value) => {
-            setRenaming(false);
-            if (value !== folder) {
-              void moveFolder(folder, value).then((e) => setFailure(e && t(e)));
-            }
-          }}
-          onClose={() => setRenaming(false)}
-        />
-      )}
-      <Button
-        ref={folderTrigger}
-        variant="ghost"
-        size="icon-sm"
-        title={t('More')}
-        active={menuOpen}
-        className="opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100"
-        onClick={() => setMenuOpen(true)}
-      >
-        <MoreHorizontal className="size-3" />
-      </Button>
-
-      {menuOpen && (
-        <ActionSheet
-          title={folder}
-          anchor={folderTrigger}
-          onClose={() => setMenuOpen(false)}
-          actions={[
-            { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-            ...(empty
-              ? [
-                  {
-                    label: 'Delete this collection',
-                    icon: Trash2,
-                    danger: true,
-                    onSelect: () => {
-                      void removeFolder(folder).then((err) => {
-                        setFailure(err && t(err));
-                        // A refusal is worth reading once, not forever.
-                        if (err) setTimeout(() => setFailure(null), 5000);
-                      });
-                    },
-                  },
-                ]
-              : []),
-          ]}
-        >
-          {!empty && (
-            <p className="text-subtle px-3 pb-2 text-xs">
-              {t('Only empty collections can be deleted')}
-            </p>
-          )}
-        </ActionSheet>
-      )}
-
-      {failure && <span className="text-bad text-xs">{failure}</span>}
-    </div>
+    <ShelfFolderHeader
+      folder={folder}
+      empty={empty}
+      onRename={(next) => moveFolder(folder, next).then((e) => e && t(e))}
+      onDelete={() => removeFolder(folder).then((e) => e && t(e))}
+    />
   );
 }
 
@@ -669,10 +601,7 @@ function StudyCard({
   const move = useStudy((s) => s.move);
   const [renaming, setRenaming] = useState(false);
   const [moving, setMoving] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const menuTrigger = useRef<HTMLButtonElement>(null);
-  const swipe = useSwipeAway(onRemove);
 
   const name = study.id.split('/').at(-1)!;
   const folder = study.id.includes('/') ? study.id.slice(0, study.id.lastIndexOf('/')) : '';
@@ -687,94 +616,50 @@ function StudyCard({
   };
 
   return (
-    <li>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => {
-          if (!renaming) navigate('studies', encodeURIComponent(study.id));
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !renaming) navigate('studies', encodeURIComponent(study.id));
-        }}
-        {...swipe.handlers}
-        className={cn(
-          'bg-surface border-line hover:border-line-strong group relative flex cursor-pointer',
-          'items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
-        )}
-      >
-        {/* The card stays; its contents slide off it. */}
-        <SwipeTrack dx={swipe.dx} />
-        <div className="min-w-0 flex-1" style={swipe.style}>
-          <p className="text-fg truncate text-sm font-semibold">{name}</p>
-          <p className="text-subtle text-xs" title={formatWhen(study.updatedAt)}>
-            {t('{n} chapters', { n: study.chapters })} · {t('edited {when}', { when: formatAgo(study.updatedAt) })}
-          </p>
-          {failure && <p className="text-bad text-xs">{failure}</p>}
-        </div>
+    // The card's verbs live in one ⋯ rather than as three icons on every
+    // row: each action gets a name and a whole row to be tapped in.
+    <ShelfCard
+      icon={Library}
+      title={name}
+      meta={
+        <span title={formatWhen(study.updatedAt)}>
+          {t('{n} chapters', { n: study.chapters })} ·{' '}
+          {t('edited {when}', { when: formatAgo(study.updatedAt) })}
+        </span>
+      }
+      error={failure}
+      onOpen={() => navigate('studies', encodeURIComponent(study.id))}
+      onSwipeAway={onRemove}
+      actions={[
+        { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+        { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+        { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
+      ]}
+    >
+      {/* Renaming and moving both ask one question, and both used to ask it
+          inside the row — an input where the title was, a popover pinned to
+          a button. They are sheets now, like every other one-question
+          window. */}
+      {renaming && (
+        <PromptSheet
+          label={t('Rename this study')}
+          initial={name}
+          onSubmit={(value) => void rename(value)}
+          onClose={() => setRenaming(false)}
+        />
+      )}
 
-        {(
-          <div
-            style={swipe.style}
-            className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-          >
-            <Button
-              ref={menuTrigger}
-              variant="ghost"
-              size="icon-sm"
-              title={t('More')}
-              active={menuOpen}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMenuOpen(true);
-              }}
-            >
-              <MoreHorizontal className="size-3.5" />
-            </Button>
-          </div>
-        )}
-
-        {/* The card's verbs live here rather than as three icons on every
-            row: one ⋯, and each action gets a name and a whole row to be
-            tapped in. */}
-        {menuOpen && (
-          <ActionSheet
-            title={name}
-            anchor={menuTrigger}
-            onClose={() => setMenuOpen(false)}
-            actions={[
-              { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-              { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
-              { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
-            ]}
-          />
-        )}
-
-        {/* Renaming and moving both ask one question, and both used to ask
-            it inside the row — an input where the title was, a popover
-            pinned to a button. They are sheets now, like every other
-            one-question window. */}
-        {renaming && (
-          <PromptSheet
-            label={t('Rename this study')}
-            initial={name}
-            onSubmit={(value) => void rename(value)}
-            onClose={() => setRenaming(false)}
-          />
-        )}
-
-        {moving && (
-          <MoveToPopover
-            currentFolder={folder}
-            folders={allFolders}
-            onPick={(target) => {
-              setMoving(false);
-              void move(study.id, target ? `${target}/${name}` : name).then(setFailure);
-            }}
-            onClose={() => setMoving(false)}
-          />
-        )}
-      </div>
-    </li>
+      {moving && (
+        <MoveToPopover
+          currentFolder={folder}
+          folders={allFolders}
+          onPick={(target) => {
+            setMoving(false);
+            void move(study.id, target ? `${target}/${name}` : name).then(setFailure);
+          }}
+          onClose={() => setMoving(false)}
+        />
+      )}
+    </ShelfCard>
   );
 }

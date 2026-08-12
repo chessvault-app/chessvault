@@ -223,6 +223,7 @@ export const ko: Record<string, string> = {
   '{n} of {total} selected': '{total}개 중 {n}개 선택',
   'Double-click to rename': '더블클릭하면 이름을 바꿉니다',
   'Rename this collection': '이 모음 이름 바꾸기',
+  '{n} KB': '{n} KB',
   'Rename this study': '이 스터디 이름 바꾸기',
   'Choose file': '파일 선택',
   'Import from Lichess': 'Lichess에서 가져오기',
