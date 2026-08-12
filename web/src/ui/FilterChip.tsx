@@ -30,17 +30,18 @@ export function FilterChip({
       className={cn(
         // inline-flex so an icon-bearing label and the count share one
         // centreline instead of fighting over baselines.
-        // nowrap so a Korean label is never split between syllables, and
-        // min-w-0 + a truncating label so a row of chips that cannot fit
-        // shortens instead of being cut off at the screen edge — which is
-        // what "Lichess 둘러보기" did on a phone once nowrap arrived.
-        'inline-flex min-w-0 shrink items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+        // nowrap AND shrink-0: a chip is its label. Letting chips shrink so
+        // one crowded row would fit made every chip inside a ChipRow — a
+        // scroller, where shrinking is exactly wrong — collapse to "X…" on
+        // the puzzles dashboard. A row that cannot fit its chips scrolls or
+        // wraps; the chip itself never shortens.
+        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
         active
           ? 'bg-primary-soft border-primary/40 text-primary'
           : 'border-line text-muted hover:border-line-strong',
       )}
     >
-      <span className="min-w-0 truncate">{typeof label === 'string' ? t(label) : label}</span>
+      {typeof label === 'string' ? t(label) : label}
       {count !== undefined && <span className="ml-1 opacity-60">{count}</span>}
     </button>
   );

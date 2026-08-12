@@ -1,8 +1,8 @@
-import { X } from 'lucide-react';
+import type { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
-import { Button } from './Button';
+import { Panel, PanelHeader } from './Panel';
 
 /**
  * A centred window over the app.
@@ -15,19 +15,30 @@ import { Button } from './Button';
  *
  * Escape and a click on the backdrop close it, because a window that can
  * only be closed by finding its button is a window people feel stuck in.
+ *
+ * It is a Panel wearing a PanelHeader — the same surface, the same header
+ * height, the same close button as the dialogs that were written before
+ * this component existed (Load position, Import a game). A modal that
+ * styled its own title and its own X read as a different app's window
+ * sitting on top of this one.
  */
 export function Modal({
   title,
   icon: Icon,
+  actions,
   onClose,
   children,
   className,
+  bodyClassName,
 }: {
   title: string;
   icon?: typeof X;
+  /** Header controls, left of the close button. */
+  actions?: ReactNode;
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  bodyClassName?: string;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -46,23 +57,31 @@ export function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={title}
+        aria-label={t(title)}
         // The backdrop closes; the window itself must not, or every click
         // inside the form would dismiss it.
         onClick={(e) => e.stopPropagation()}
-        className={cn(
-          'bg-surface border-line flex max-h-full w-full max-w-[32rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4',
-          className,
-        )}
+        className={cn('flex max-h-full w-full max-w-[32rem] flex-col', className)}
       >
-        <div className="flex items-center gap-2">
-          {Icon && <Icon className="text-subtle size-4 shrink-0" />}
-          <h2 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">{t(title)}</h2>
-          <Button variant="ghost" size="icon-sm" title={t('Close')} onClick={onClose}>
-            <X className="size-3.5" />
-          </Button>
-        </div>
-        {children}
+        <Panel flush className="min-h-0">
+          <PanelHeader
+            title={
+              Icon ? (
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <Icon className="size-3.5 shrink-0" />
+                  <span className="truncate">{t(title)}</span>
+                </span>
+              ) : (
+                title
+              )
+            }
+            actions={actions}
+            onClose={onClose}
+          />
+          <div className={cn('flex min-h-0 flex-col gap-3 overflow-y-auto p-3', bodyClassName)}>
+            {children}
+          </div>
+        </Panel>
       </div>
     </div>
   );

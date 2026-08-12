@@ -151,6 +151,7 @@ function LoadDialog({
         <Panel flush>
           <PanelHeader
             title={t('Load position')}
+            onClose={onClose}
             actions={
               <Button
                 variant="ghost"

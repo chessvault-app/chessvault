@@ -919,7 +919,7 @@ function PuzzleGrid({
                 type="button"
                 onClick={() => go(i)}
                 title={[
-                  meta ? `${meta.label} — ${meta.title}` : null,
+                  meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
                   prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
                 ]
                   .filter(Boolean)
@@ -1175,7 +1175,7 @@ function PuzzleList({
             label={
               <span className="inline-flex items-center gap-1">
                 <meta.icon className={cn('size-3', meta.iconClass)} aria-hidden />
-                {meta.label}
+                {t(meta.label)}
               </span>
             }
             count={count}
@@ -1208,7 +1208,7 @@ function PuzzleList({
                 else navigate('puzzles', 'books', slug, p.id);
               }}
               title={[
-                meta ? `${meta.label} — ${meta.title}` : null,
+                meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
                 prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
               ]
                 .filter(Boolean)
@@ -2357,7 +2357,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           (() => {
             const meta = PROVENANCE_META[puzzle.provenance as keyof typeof PROVENANCE_META];
             return (
-              <span title={`${meta.label} — ${meta.title}`} className="shrink-0 cursor-help">
+              <span title={`${t(meta.label)} — ${t(meta.title)}`} className="shrink-0 cursor-help">
                 <meta.icon className={cn('size-3.5', meta.iconClass)} aria-hidden />
               </span>
             );

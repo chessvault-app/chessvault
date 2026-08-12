@@ -915,6 +915,12 @@ export const ko: Record<string, string> = {
   "From date": "시작일",
   "To date": "종료일",
   "Clear": "지우기",
+  // The filter window's group headings. Close, Result and Games are already
+  // above — one entry each, whatever screen asks for them.
+  "Side": "색",
+  "Time control": "시간제",
+  "Played between": "대국 기간",
+  "Clear filters": "필터 지우기",
   "{n} games indexed": "{n}개 게임 색인됨",
   "Recent games": "최근 게임",
   "None of your games reached this position.": "이 포지션에 도달한 내 게임이 없습니다.",

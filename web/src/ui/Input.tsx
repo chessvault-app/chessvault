@@ -11,9 +11,14 @@ import { cn } from '@/lib/cn';
 
 type InputSize = 'sm' | 'md' | 'lg';
 
-/** Heights follow the Button scale so mixed rows line up. */
+/**
+ * Heights follow the Button scale so mixed rows line up — including on a
+ * touch screen, where a small Button grows to h-9 for the finger. An input
+ * that stayed h-7 there left the Games header with a search field visibly
+ * shorter than the Import button beside it.
+ */
 const sizes: Record<InputSize, string> = {
-  sm: 'h-7 px-2 text-xs',
+  sm: 'h-7 px-2 text-xs pointer-coarse:h-9 pointer-coarse:px-3',
   md: 'h-8 px-2.5 text-xs',
   lg: 'h-9 px-3 text-sm',
 };

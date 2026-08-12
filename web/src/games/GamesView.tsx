@@ -589,6 +589,7 @@ function CollectionView() {
           </Button>
           <SearchInput
             type="text"
+            inputSize="sm"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search collection…')}
@@ -967,7 +968,10 @@ function ArchiveBrowser({
       <PanelHeader
         className="max-[560px]:h-auto max-[560px]:min-h-10 max-[560px]:flex-wrap max-[560px]:py-1.5"
         title={
-          <span className="flex items-center gap-1 normal-case tracking-normal">
+          /* Wrapping here, not shrinking the chips: the header truncates its
+             title, so two provider chips that do not fit on a phone had the
+             second one cut in half. They take a second line instead. */
+          <span className="flex flex-wrap items-center gap-1 normal-case tracking-normal">
             {(
               [
                 ['chesscom', 'chess.com'],
@@ -1466,7 +1470,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
       <div className="bg-scrim fixed inset-0 z-40" onClick={onCancel} />
       <div className="fixed inset-x-4 top-[8dvh] z-50 mx-auto max-h-[84dvh] max-w-lg overflow-y-auto rounded-xl">
     <Panel flush className="shrink-0">
-      <PanelHeader title={t('Import a game')} />
+      <PanelHeader title={t('Import a game')} onClose={onCancel} />
       <div className="flex flex-col gap-2 p-3">
         <TextArea
           autoFocus

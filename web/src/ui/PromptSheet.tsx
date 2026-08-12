@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
 import { Input } from './Input';
@@ -21,12 +21,28 @@ export function PromptSheet({
   label,
   initial,
   submitLabel = 'Done',
+  extra,
+  error,
+  closeOnSubmit = true,
   onSubmit,
   onClose,
 }: {
   label: string;
   initial: string;
   submitLabel?: string;
+  /** One control above the field — a collection picker, say. Anything
+      taller than that belongs in a Modal, not in a prompt. */
+  extra?: ReactNode;
+  /** Shown under the field. Needs closeOnSubmit={false} to be readable. */
+  error?: string | null;
+  /**
+   * Whether submitting dismisses the sheet.
+   *
+   * A rename cannot fail, so it closes and gets on with it. A create can —
+   * the name is taken, the server said no — and closing on the way out
+   * would throw away both the message and what was typed.
+   */
+  closeOnSubmit?: boolean;
   /** Called with the trimmed value (unchanged value included — the caller
       decides whether that is a no-op). */
   onSubmit: (value: string) => void;
@@ -45,7 +61,8 @@ export function PromptSheet({
     return () => vv.removeEventListener('resize', measure);
   }, []);
   const submit = (): void => {
-    onClose();
+    if (!draft.trim()) return;
+    if (closeOnSubmit) onClose();
     onSubmit(draft.trim());
   };
   return (
@@ -62,6 +79,7 @@ export function PromptSheet({
         onPointerDown={(e) => e.stopPropagation()}
       >
         <p className="text-subtle text-xs">{label}</p>
+        {extra}
         <Input
           autoFocus
           value={draft}
@@ -72,6 +90,7 @@ export function PromptSheet({
             if (e.key === 'Escape') onClose();
           }}
         />
+        {error && <p className="text-bad text-xs">{error}</p>}
         <div className="flex justify-end gap-2">
           {/* A way out that is not the scrim. Tapping outside works, but a
               dialog asking for one value should say so rather than expect
@@ -79,8 +98,8 @@ export function PromptSheet({
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t('Cancel')}
           </Button>
-          <Button variant="primary" size="sm" onClick={submit}>
-            {submitLabel}
+          <Button variant="primary" size="sm" disabled={!draft.trim()} onClick={submit}>
+            {t(submitLabel)}
           </Button>
         </div>
       </div>

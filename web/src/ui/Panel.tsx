@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
@@ -143,10 +144,19 @@ interface PanelHeaderProps {
   title: ReactNode;
   /** Right-aligned controls. */
   actions?: ReactNode;
+  /**
+   * Adds THE close button — last in the header, after any actions.
+   *
+   * Defined here rather than at each dialog because every window in the app
+   * wears this header, and a dialog that closed differently from the one
+   * beside it (an X here, only a Cancel there) is a window people hunt for
+   * the way out of.
+   */
+  onClose?: () => void;
   className?: string;
 }
 
-export function PanelHeader({ title, actions, className }: PanelHeaderProps) {
+export function PanelHeader({ title, actions, onClose, className }: PanelHeaderProps) {
   return (
     <header
       className={cn(
@@ -166,7 +176,22 @@ export function PanelHeader({ title, actions, className }: PanelHeaderProps) {
           rest. They used to `grow` while the title merely `shrink`: on a
           phone the buttons — every one of them shrink-0 — overflowed their
           box and painted over the opening name instead of squeezing it. */}
-      {actions ? <div className="flex shrink-0 items-center justify-end gap-1">{actions}</div> : null}
+      {actions || onClose ? (
+        <div className="flex shrink-0 items-center justify-end gap-1">
+          {actions}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title={t('Close')}
+              aria-label={t('Close')}
+              className="text-subtle hover:text-fg hover:bg-surface-2 -mr-1 grid size-6 place-items-center rounded-md transition-colors duration-100"
+            >
+              <X className="size-3.5" />
+            </button>
+          )}
+        </div>
+      ) : null}
     </header>
   );
 }

@@ -24,6 +24,7 @@ import {
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
+import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { SideDot } from '@/ui/SideDot';
@@ -278,9 +279,12 @@ export function ExplorerPane({
  *
  * Chips rather than a form: every one is a single-tap question ("as Black",
  * "blitz", "only games I lost"), and a filter you cannot see is a filter
- * you forget is on — which would quietly make every number wrong. The row
- * scrolls sideways rather than wrapping, so the pane's height stays the
- * moves' to spend.
+ * you forget is on — which would quietly make every number wrong. That is
+ * also why the icon that opens this window lights up while anything is set.
+ *
+ * It lives in a modal, so it is laid out for a window rather than for the
+ * strip of pane it used to be crammed into: one labelled group per thing
+ * being filtered, chips that wrap, dates at their normal size.
  *
  * Deliberately NOT offered: rating bands. Your own rating moves with you,
  * so "against 1800+" means something different in January and December,
@@ -312,63 +316,82 @@ function MyGamesFilterBar() {
     setFilters({ speeds: speeds.includes(id) ? speeds.filter((s) => s !== id) : [...speeds, id] });
 
   return (
-    <div className="flex flex-col">
-      <div className="flex flex-col gap-1 px-3 pb-2">
-      <div className="scrollbar-none flex items-center gap-1 overflow-x-auto">
+    <div className="flex flex-col gap-3">
+      <FilterGroup label="Side">
         {SIDES.map(({ id, label }) => (
-          <Chip
+          <FilterChip
             key={id}
             label={label}
             active={filters.side === id}
             onClick={() => setFilters({ side: filters.side === id ? undefined : id })}
           />
         ))}
-        <span className="bg-line mx-0.5 h-3.5 w-px shrink-0" />
+      </FilterGroup>
+
+      <FilterGroup label="Result">
         {OUTCOMES.map(({ id, label }) => (
-          <Chip
+          <FilterChip
             key={id}
             label={label}
             active={filters.outcome === id}
             onClick={() => setFilters({ outcome: filters.outcome === id ? undefined : id })}
           />
         ))}
-        <span className="bg-line mx-0.5 h-3.5 w-px shrink-0" />
+      </FilterGroup>
+
+      <FilterGroup label="Time control">
         {SPEEDS.map(({ id, label }) => (
-          <Chip
+          <FilterChip
             key={id}
             label={label}
             active={speeds.includes(id)}
             onClick={() => toggleSpeed(id)}
           />
         ))}
-        <span className="bg-line mx-0.5 h-3.5 w-px shrink-0" />
-        <Chip
+      </FilterGroup>
+
+      <FilterGroup label="Games">
+        <FilterChip
           label="Kept only"
-          title={t('Only the games in your collection, not every archived game')}
+          title="Only the games in your collection, not every archived game"
           active={filters.collectionOnly === true}
           onClick={() => setFilters({ collectionOnly: filters.collectionOnly ? undefined : true })}
         />
-      </div>
+      </FilterGroup>
 
-      <div className="text-subtle flex items-center gap-2 text-[0.625rem]">
+      <FilterGroup label="Played between">
         <Input
           type="date"
           value={filters.from ?? ''}
           onChange={(e) => setFilters({ from: e.target.value || undefined })}
           aria-label={t('From date')}
-          className="h-6 w-[7.5rem] px-1.5 text-[0.625rem]"
+          className="w-[9.5rem]"
         />
-        <span aria-hidden>–</span>
+        <span className="text-subtle" aria-hidden>
+          –
+        </span>
         <Input
           type="date"
           value={filters.to ?? ''}
           onChange={(e) => setFilters({ to: e.target.value || undefined })}
           aria-label={t('To date')}
-          className="h-6 w-[7.5rem] px-1.5 text-[0.625rem]"
+          className="w-[9.5rem]"
         />
+      </FilterGroup>
+
+      {/* The count is what makes the filters legible: it says what the row
+          above just did to the corpus the explorer is answering from. */}
+      <div className="border-line text-subtle flex items-center gap-3 border-t pt-3 text-xs">
+        {stats && (
+          <span className="tabular-nums">
+            {t('{n} games indexed', { n: exact.format(stats.games) })}
+          </span>
+        )}
         {hasMyFilters(filters) && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
             onClick={() =>
               setFilters({
                 side: undefined,
@@ -379,49 +402,26 @@ function MyGamesFilterBar() {
                 collectionOnly: undefined,
               })
             }
-            className="hover:text-fg transition-colors duration-100"
           >
-            {t('Clear')}
-          </button>
-        )}
-        {stats && (
-          <span className="ml-auto shrink-0 tabular-nums">
-            {t('{n} games indexed', { n: exact.format(stats.games) })}
-          </span>
+            {t('Clear filters')}
+          </Button>
         )}
       </div>
-    </div>
     </div>
   );
 }
 
-function Chip({
-  label,
-  active,
-  onClick,
-  title,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  title?: string;
-}) {
+/** One labelled row of the filter window: what it filters, then the chips. */
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      aria-pressed={active}
-      className={cn(
-        'shrink-0 rounded-full border px-2 py-0.5 text-[0.625rem] font-medium',
-        'transition-colors duration-100',
-        active
-          ? 'border-primary bg-primary-soft text-primary'
-          : 'border-line text-muted hover:text-fg',
-      )}
-    >
-      {t(label)}
-    </button>
+    <div className="flex flex-col gap-1.5">
+      <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        {t(label)}
+      </span>
+      {/* Wrapping, not scrolling sideways: the window has the width now, and
+          a chip half off the edge of a scroller is a filter nobody finds. */}
+      <div className="flex flex-wrap items-center gap-1.5">{children}</div>
+    </div>
   );
 }
 

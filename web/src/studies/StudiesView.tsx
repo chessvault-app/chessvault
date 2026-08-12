@@ -21,6 +21,7 @@ import { Input, SearchInput } from '@/ui/Input';
 import { Globe, Loader2 } from 'lucide-react';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Modal } from '@/ui/Modal';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
@@ -115,8 +116,11 @@ function CreateMenu() {
     [mode, pgnText],
   );
 
-  const submit = async (): Promise<void> => {
-    const trimmed = name.trim();
+  // The name is passed in rather than read from state: the prompt sheet owns
+  // its own draft and hands it over on submit, and reading `name` here would
+  // see the value from before the last keystroke.
+  const submit = async (raw: string): Promise<void> => {
+    const trimmed = raw.trim();
     if (!trimmed || !mode) return;
     if (mode === 'folder') {
       const err = await createFolder(trimmed);
@@ -205,14 +209,42 @@ function CreateMenu() {
         </Modal>
       )}
 
-      {mode && mode !== 'lichess' && (
-        <Modal
-          title={
-            mode === 'study' ? 'New study' : mode === 'import' ? 'Import PGN as study' : 'New collection'
+      {/* A new study or collection asks for one name, so it gets the prompt
+          sheet, not a window: a modal around a single field is a lot of
+          chrome for a question a popover answers. Import needs a PGN, a file
+          picker and a chapter count — that is a window. */}
+      {(mode === 'study' || mode === 'folder') && (
+        <PromptSheet
+          label={mode === 'folder' ? t('New collection') : t('New study')}
+          initial=""
+          submitLabel={t('Create')}
+          closeOnSubmit={false}
+          error={failure}
+          extra={
+            mode === 'study' && folders.length > 0 ? (
+              <Select
+                value={folder}
+                onChange={setFolder}
+                ariaLabel={t('Collection')}
+                groups={[
+                  {
+                    options: [
+                      { value: '', label: t('(no collection)') },
+                      ...folders.map((f) => ({ value: f, label: f })),
+                    ],
+                  },
+                ]}
+              />
+            ) : undefined
           }
+          onSubmit={(value) => void submit(value)}
           onClose={() => setMode(null)}
-        >
-          {mode !== 'folder' && folders.length > 0 && (
+        />
+      )}
+
+      {mode === 'import' && (
+        <Modal title="Import PGN as study" onClose={() => setMode(null)}>
+          {folders.length > 0 && (
             <Select
               value={folder}
               onChange={setFolder}
@@ -233,45 +265,39 @@ function CreateMenu() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') void submit();
+              if (e.key === 'Enter') void submit(name);
               if (e.key === 'Escape') setMode(null);
             }}
-            placeholder={mode === 'folder' ? t('Collection name') : t('Study name')}
+            placeholder={t('Study name')}
           />
-          {mode === 'import' && (
-            <>
-              <textarea
-                value={pgnText}
-                onChange={(e) => setPgnText(e.target.value)}
-                placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
-                spellCheck={false}
-                className={cn(
-                  'bg-surface-inset border-line text-fg placeholder:text-subtle h-28 w-full resize-none',
-                  'rounded-md border p-2 font-mono text-xs outline-none focus:border-primary/50',
-                )}
-              />
-              <div className="flex items-center justify-between gap-2">
-                <Button variant="secondary" size="sm" onClick={() => filePick.current?.click()}>
-                  <FileUp className="mr-1 size-3.5" />
-                  {t('Choose file')}
-                </Button>
-                {pgnText.trim() && (
-                  <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
-                    {chapterCount > 0
-                      ? t('{n} chapters', { n: chapterCount })
-                      : t('not parseable')}
-                  </span>
-                )}
-              </div>
-              <input
-                ref={filePick}
-                type="file"
-                accept=".pgn,application/x-chess-pgn,text/plain"
-                className="hidden"
-                onChange={(e) => void pickFile(e.target.files?.[0])}
-              />
-            </>
-          )}
+          <textarea
+            value={pgnText}
+            onChange={(e) => setPgnText(e.target.value)}
+            placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
+            spellCheck={false}
+            className={cn(
+              'bg-surface-inset border-line text-fg placeholder:text-subtle h-28 w-full resize-none',
+              'rounded-md border p-2 font-mono text-xs outline-none focus:border-primary/50',
+            )}
+          />
+          <div className="flex items-center justify-between gap-2">
+            <Button variant="secondary" size="sm" onClick={() => filePick.current?.click()}>
+              <FileUp className="mr-1 size-3.5" />
+              {t('Choose file')}
+            </Button>
+            {pgnText.trim() && (
+              <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
+                {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
+              </span>
+            )}
+          </div>
+          <input
+            ref={filePick}
+            type="file"
+            accept=".pgn,application/x-chess-pgn,text/plain"
+            className="hidden"
+            onChange={(e) => void pickFile(e.target.files?.[0])}
+          />
           {failure && <p className="text-bad text-xs">{failure}</p>}
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
@@ -280,10 +306,10 @@ function CreateMenu() {
             <Button
               variant="primary"
               size="sm"
-              disabled={!name.trim() || (mode === 'import' && chapterCount === 0)}
-              onClick={() => void submit()}
+              disabled={!name.trim() || chapterCount === 0}
+              onClick={() => void submit(name)}
             >
-              {mode === 'import' ? t('Import') : t('Create')}
+              {t('Import')}
             </Button>
           </div>
         </Modal>
