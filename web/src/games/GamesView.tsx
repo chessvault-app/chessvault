@@ -1,4 +1,5 @@
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -369,13 +370,15 @@ function EliteBrowser() {
   }
 
   return (
-    <div className="mx-auto flex h-full min-h-0 max-w-3xl flex-col gap-3 p-4">
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-4 p-4 lg:p-6">
       <div className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
           <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-          Elite games{meta?.games ? ` (${meta.games.toLocaleString()} games)` : ''}
+          {meta?.games
+            ? `${t('Elite games')} (${t('{n} games', { n: meta.games.toLocaleString() })})`
+            : t('Elite games')}
         </h1>
       </div>
 
@@ -388,7 +391,7 @@ function EliteBrowser() {
         className="w-full shrink-0"
       />
 
-      <Panel flush className="min-h-0 flex-1">
+      <Panel flush className="mt-1 min-h-0 flex-1">
         <PanelHeader title={loading && rows.length === 0 ? t('Searching…') : t('{n} games', { n: total.toLocaleString() })} />
         {searching && <SkeletonGameRows rows={8} />}
         <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
@@ -400,7 +403,7 @@ function EliteBrowser() {
                 type="button"
                 onClick={() => void openGame(g)}
                 title={t('Open on the analysis board')}
-                className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-left transition-colors duration-100"
+                className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-3.5 text-left transition-colors duration-100"
               >
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate text-sm">
@@ -445,12 +448,15 @@ function EliteBrowser() {
               <Button
                 variant={inCollection(g) ? 'ghost' : 'secondary'}
                 size="sm"
-                className="w-16 shrink-0"
+                className="w-20 shrink-0"
                 disabled={inCollection(g)}
                 onClick={() => void collect(g)}
               >
                 {inCollection(g) ? (
-                  t('Added')
+                  <>
+                    <Check className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+                    {t('Added')}
+                  </>
                 ) : (
                   <>
                     <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
