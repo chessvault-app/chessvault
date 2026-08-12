@@ -59,7 +59,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { Fab } from '@/ui/Fab';
+import { CreateControl } from '@/ui/Fab';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -459,7 +459,6 @@ function Shelf() {
 
   return (
     <div className="h-full min-h-0 overflow-y-auto">
-      <Fab actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]} />
       {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
       <div className="mx-auto max-w-3xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
@@ -473,6 +472,9 @@ function Shelf() {
             <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg flex-1 text-base font-semibold">{t('Puzzle books')}</h1>
+          <CreateControl
+            actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
+          />
         </div>
 
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}

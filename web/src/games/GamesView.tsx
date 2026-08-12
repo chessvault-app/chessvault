@@ -35,7 +35,7 @@ import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
-import { Fab } from '@/ui/Fab';
+import { CreateControl } from '@/ui/Fab';
 import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -598,7 +598,6 @@ function CollectionView() {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:p-6">
-      <Fab actions={[{ label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) }]} />
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -620,6 +619,10 @@ function CollectionView() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search collection…')}
             className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
+          />
+          <CreateControl
+            label="Import"
+            actions={[{ label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) }]}
           />
 
         </div>

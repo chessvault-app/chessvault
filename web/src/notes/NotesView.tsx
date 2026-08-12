@@ -18,7 +18,7 @@ import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { PromptSheet } from '@/ui/PromptSheet';
-import { Fab } from '@/ui/Fab';
+import { CreateControl } from '@/ui/Fab';
 import { SearchInput } from '@/ui/Input';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
@@ -224,7 +224,7 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
 
   return (
     <>
-      <Fab
+      <CreateControl
         actions={[
           { label: 'New note', icon: NotebookPen, onSelect: () => void createNote() },
           { label: 'New collection', icon: FolderIcon, onSelect: () => setMode('folder') },

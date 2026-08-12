@@ -24,7 +24,7 @@ import { ActionSheet } from '@/ui/ActionSheet';
 import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
-import { Fab } from '@/ui/Fab';
+import { CreateControl } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
@@ -216,7 +216,7 @@ function CreateMenu() {
 
   return (
     <>
-      <Fab
+      <CreateControl
         actions={[
           { label: 'New study', icon: Library, onSelect: () => void createStudy() },
           { label: 'New collection', icon: FolderIcon, onSelect: () => setMode('folder') },

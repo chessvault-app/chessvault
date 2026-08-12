@@ -1,7 +1,9 @@
-import { Plus, X } from 'lucide-react';
+import { ChevronDown, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ActionSheet } from './ActionSheet';
+import { Button } from './Button';
 import { t } from '@/lib/i18n';
 
 export interface FabAction {
@@ -11,18 +13,63 @@ export interface FabAction {
 }
 
 /**
- * The one way to make something new: a round button in the bottom-right
- * corner, on every shelf that holds a list.
+ * Making something new: a button in the page header on a desktop, a round
+ * one in the bottom-right corner on a phone.
  *
- * It replaced a [Create ▾] in the page header. A header is where you look
- * to know WHERE you are, not to act, and on a phone that button was in the
- * hardest corner to reach — the top of the screen, opposite the thumb.
+ * Both, from one list of actions. A header is where a mouse expects the
+ * page's own controls and there is no reach to worry about; a thumb has
+ * the opposite problem, and the top corner of a phone is the worst place
+ * on the screen for the button people press most.
+ */
+export function CreateControl({ actions, label = 'Create' }: { actions: FabAction[]; label?: string }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const single = actions.length === 1 ? actions[0] : null;
+
+  return (
+    <>
+      <Button
+        ref={trigger}
+        variant="primary"
+        size="sm"
+        className="hidden md:inline-flex"
+        onClick={() => (single ? single.onSelect() : setMenuOpen(true))}
+      >
+        <Plus className="mr-1 size-3.5" />
+        {single ? t(single.label) : t(label)}
+        {!single && <ChevronDown className="ml-1 size-3" />}
+      </Button>
+
+      {menuOpen && (
+        <ActionSheet
+          title={label}
+          anchor={trigger}
+          onClose={() => setMenuOpen(false)}
+          actions={actions.map((a) => ({ ...a }))}
+        />
+      )}
+
+      <Fab actions={actions} label={label} className="md:hidden" />
+    </>
+  );
+}
+
+/**
+ * The round button in the corner, phones only (see CreateControl).
  *
  * One action fires on tap. Several fan upwards as labelled buttons, so the
  * choice reads as a list of things you can make rather than a menu to open
  * and then read.
  */
-export function Fab({ actions, label = 'Create' }: { actions: FabAction[]; label?: string }) {
+export function Fab({
+  actions,
+  label = 'Create',
+  className,
+}: {
+  actions: FabAction[];
+  label?: string;
+  className?: string;
+}) {
   const [open, setOpen] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const single = actions.length === 1 ? actions[0] : null;
@@ -48,11 +95,14 @@ export function Fab({ actions, label = 'Create' }: { actions: FabAction[]; label
   return (
     <div
       ref={host}
-      // Above the phone's bottom bar and its home indicator, clear of the
-      // desktop layout's own edge. Fixed, so a scrolling list never takes
-      // it away — making something new is available from anywhere in the
-      // list, not only from the top of it.
-      className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30 flex flex-col items-end gap-2 md:bottom-6 md:right-6"
+      // Above the phone's bottom bar and its home indicator. Fixed, so a
+      // scrolling list never takes it away — making something new is
+      // available from anywhere in the list, not only from the top of it.
+      className={cn(
+        'fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
+        'flex flex-col items-end gap-2',
+        className,
+      )}
     >
       {open &&
         actions.map(({ label: itemLabel, icon: Icon, onSelect }) => (
