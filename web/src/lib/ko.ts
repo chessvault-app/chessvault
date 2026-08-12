@@ -912,8 +912,8 @@ export const ko: Record<string, string> = {
   "Zugzwang": "추크츠방",
 
   // --- nav, puzzle prompts, board and editor labels ------------------------
-  "White to play": "백이 둘 차례",
-  "Black to play": "흑이 둘 차례",
+  "White to play": "백 차례",
+  "Black to play": "흑 차례",
   "Find the best move. The difficulty and themes stay hidden until you finish.": "최선의 수를 찾으세요. 난이도와 테마는 끝낼 때까지 숨겨집니다.",
   "New": "새로운",
   "Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.": "내 게임을 살펴봅니다. 위에 {site} 사용자 이름을 입력하고 월을 고른 다음, 남길 만한 게임을 모음에 추가하세요.",

@@ -67,7 +67,9 @@ export function Sheet({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-subtle text-xs">{t(label)}</p>
+        {/* The same rule every other window and panel draws under its
+            title; full-bleed against the card's own padding. */}
+        <p className="border-line -mx-3 border-b px-3 pb-2 text-subtle text-xs">{t(label)}</p>
         {children}
       </div>
     </div>

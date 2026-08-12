@@ -12,6 +12,7 @@ import { getNode, legalDests, pathTo, positionAt } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
+import { noAutofill, noAutofillClass } from '@/ui/Input';
 import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
@@ -294,7 +295,7 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
       {editable ? (
         <input
           key={name}
-          type="text"
+          {...noAutofill}
           defaultValue={name === '?' ? '' : name}
           placeholder={side === 'white' ? t('White') : t('Black')}
           spellCheck={false}
@@ -303,7 +304,10 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
           onKeyDown={(e) => {
             if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           }}
-          className="text-fg placeholder:text-subtle min-w-0 flex-1 truncate bg-transparent text-sm font-medium outline-none"
+          className={cn(
+            'text-fg placeholder:text-subtle min-w-0 flex-1 truncate bg-transparent text-sm font-medium outline-none',
+            noAutofillClass,
+          )}
         />
       ) : (
         <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>

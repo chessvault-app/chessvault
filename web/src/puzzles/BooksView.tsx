@@ -59,7 +59,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { Input } from '@/ui/Input';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
@@ -354,7 +354,6 @@ function Shelf() {
   // loading, because the content was already on screen a moment ago.
   const [books, setBooks] = useState<BookSummary[] | null>(shelfCache);
   const [creating, setCreating] = useState(false);
-  const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   /**
    * The shelf waits for its covers.
@@ -420,11 +419,11 @@ function Shelf() {
   };
 
 
-  const create = async (): Promise<void> => {
+  const create = async (name: string): Promise<void> => {
     const res = await fetch('/api/puzzlebooks', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title: name }),
     });
     const body = (await res.json()) as { slug?: string; error?: string };
     if (!res.ok || !body.slug) {
@@ -454,29 +453,20 @@ function Shelf() {
           </Button>
         </div>
 
+        {/* One name, so the same prompt sheet as a new study or note — it
+            used to be a bar that pushed the shelf down while you typed. */}
         {creating && (
-          <div className="bg-surface border-line mb-4 flex items-center gap-2 rounded-xl border p-3">
-            <Input
-              autoFocus
-              inputSize="lg"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void create();
-                if (e.key === 'Escape') setCreating(false);
-              }}
-              placeholder={t('Book title, e.g. “1001 Winning Chess Sacrifices”')}
-              className="flex-1"
-            />
-            <Button variant="primary" size="sm" disabled={!title.trim()} onClick={() => void create()}>
-              {t('Create')}
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => setCreating(false)}>
-              {t('Cancel')}
-            </Button>
-          </div>
+          <PromptSheet
+            label={t('New book')}
+            initial=""
+            submitLabel={t('Create')}
+            closeOnSubmit={false}
+            error={error}
+            onSubmit={(value: string) => void create(value)}
+            onClose={() => setCreating(false)}
+          />
         )}
-        {error && <p className="text-bad mb-3 text-xs">{error}</p>}
+        {error && !creating && <p className="text-bad mb-3 text-xs">{error}</p>}
 
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null

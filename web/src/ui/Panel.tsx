@@ -152,6 +152,8 @@ interface PanelHeaderProps {
 export function PanelHeader({ title, actions, actionsClassName, className }: PanelHeaderProps) {
   return (
     <header
+      // The rule under a title is the app's one way of separating a header
+      // from what it heads — panels and windows alike (lanph3re's call).
       className={cn(
         'border-line flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3',
         className,

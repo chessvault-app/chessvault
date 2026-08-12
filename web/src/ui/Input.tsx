@@ -33,6 +33,28 @@ const base =
   'outline-none transition-colors duration-100 focus:border-primary/50 ' +
   'disabled:pointer-events-none disabled:opacity-45';
 
+/**
+ * What it takes to keep a browser's autofill out of a field.
+ *
+ * Exported because a few inputs are styled bare rather than as an Input —
+ * the player names over the board — and "no autofill" must not be a thing
+ * each of them remembers separately. `type="search"` is the load-bearing
+ * part: Safari ignores autocomplete="off" and decides from the field's own
+ * words, but it never offers contacts for a search box.
+ */
+export const noAutofill = {
+  type: 'search',
+  autoComplete: 'off',
+  autoCorrect: 'off',
+  autoCapitalize: 'none',
+  enterKeyHint: 'done',
+  'data-1p-ignore': true,
+  'data-form-type': 'other',
+} as const;
+
+/** Undoes what type="search" looks like: the clear button and the pill. */
+export const noAutofillClass = 'appearance-none [&::-webkit-search-cancel-button]:hidden';
+
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   inputSize?: InputSize;
 }

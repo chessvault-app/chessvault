@@ -69,7 +69,9 @@ export function Modal({
           className,
         )}
       >
-        <div className="flex items-center gap-2">
+        {/* Full-bleed rule: the card pads by 3, so the row un-pads itself
+            and the line reaches both edges, as it does in a Panel. */}
+        <div className="border-line -mx-3 flex items-center gap-2 border-b px-3 pb-2">
           {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
           <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
           {actions}

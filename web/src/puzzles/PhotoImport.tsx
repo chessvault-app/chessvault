@@ -265,7 +265,7 @@ export function PhotoImport({
             <p className="text-primary text-sm font-semibold">{t('Drop the image')}</p>
           </div>
         )}
-        <div className="flex items-center gap-2">
+        <div className="border-line -mx-4 flex items-center gap-2 border-b px-4 pb-3">
           <ImageUp className="text-subtle size-3.5 shrink-0" />
           <p className="text-subtle min-w-0 flex-1 truncate text-xs">
             {t('Position from an image')}
