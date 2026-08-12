@@ -19,13 +19,23 @@ export interface FabAction {
  * the Fab floats 4.5rem off the bottom of the WINDOW and stands 3.5rem
  * tall, which puts its top 8rem up — about 4rem into a page whose own
  * bottom edge is the top of the phone's tab bar. Without this the last
- * row of every shelf sat under it, and the last row is exactly where you
- * end up after scrolling.
+ * row of every shelf sits under it, and the last row is exactly where
+ * you end up after scrolling.
  *
- * Restored to the ordinary page padding from md, where the Fab is hidden
- * and the header's Create button takes over.
+ * An ELEMENT, not padding-bottom on the scroll container. Browsers drop
+ * the bottom padding of a `flex-col` + `overflow-y-auto` box once its
+ * content overflows — so the first version of this worked on whichever
+ * shelf happened to be short enough not to scroll and silently did
+ * nothing on the rest. lanph3re saw the gap on notes and nowhere else,
+ * which is exactly that shape. A real box in the flow cannot be dropped.
+ *
+ * shrink-0 because it lives in a flex column, which would otherwise
+ * squash it back to nothing. Gone from md, where the Fab is hidden and
+ * the header's Create button takes over.
  */
-export const FAB_CLEARANCE = 'pb-[5.5rem] md:pb-4 lg:pb-6';
+export function FabSpacer() {
+  return <div aria-hidden className="h-[5.5rem] w-full shrink-0 md:hidden" />;
+}
 
 /**
  * Making something new: a button in the page header on a desktop, a round

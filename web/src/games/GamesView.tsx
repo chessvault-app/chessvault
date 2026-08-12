@@ -40,7 +40,7 @@ import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
-import { CreateControl, FAB_CLEARANCE } from '@/ui/Fab';
+import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
@@ -666,7 +666,7 @@ function CollectionView() {
   });
 
   return (
-    <div className={cn('mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:max-w-7xl lg:p-6', FAB_CLEARANCE)}>
+    <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:max-w-7xl lg:p-6">
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -899,6 +899,8 @@ function CollectionView() {
           onUndo={undoable.undo}
         />
       )}
+
+      <FabSpacer />
     </div>
   );
 }

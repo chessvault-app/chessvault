@@ -6,7 +6,6 @@ import {
   Trash2,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { cn } from '@/lib/cn';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -17,7 +16,7 @@ import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { PromptSheet } from '@/ui/PromptSheet';
-import { CreateControl, FAB_CLEARANCE } from '@/ui/Fab';
+import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
@@ -148,7 +147,7 @@ function NoteList() {
   return (
     // The studies shelf's shell, exactly: the two shelves hold the same kind
     // of thing and had no business being different sizes.
-    <div className={cn('mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6', FAB_CLEARANCE)}>
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <ShelfToolbar
         title={t('Notes')}
         query={query}
@@ -194,6 +193,8 @@ function NoteList() {
           onUndo={undoable.undo}
         />
       )}
+
+      <FabSpacer />
     </div>
   );
 }

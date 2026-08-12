@@ -59,7 +59,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { CreateControl, FAB_CLEARANCE } from '@/ui/Fab';
+import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -466,7 +466,7 @@ function Shelf() {
           onUndo={undoable.undo}
         />
       )}
-      <div className={cn('mx-auto max-w-3xl p-4 pb-8', FAB_CLEARANCE)}>
+      <div className="mx-auto max-w-3xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
           <Button
             variant="ghost"
@@ -546,6 +546,8 @@ function Shelf() {
             ))}
           </div>
         )}
+
+        <FabSpacer />
       </div>
     </div>
   );

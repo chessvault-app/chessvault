@@ -209,12 +209,21 @@ export function ActionSheet({
             <div className="bg-line mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
             <div className="flex items-center gap-2 pb-1 pl-3 pr-1">
               <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
+              {/* Glass: a translucent disc that takes its colour from the
+                  sheet it floats on, with a hairline of light along the
+                  edge. backdrop-blur is what makes it read as glass
+                  rather than as a grey circle — without it the tint is
+                  just a lighter fill. */}
               <button
                 type="button"
                 title={t('Close')}
                 aria-label={t('Close')}
                 onClick={onClose}
-                className="text-subtle hover:bg-surface-2 hover:text-fg grid size-9 shrink-0 place-items-center rounded-full transition-colors duration-100"
+                className={cn(
+                  'text-muted hover:text-fg grid size-9 shrink-0 place-items-center rounded-full',
+                  'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
+                  'transition-colors duration-100',
+                )}
               >
                 <X className="size-4" />
               </button>

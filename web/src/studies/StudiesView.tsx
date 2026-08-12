@@ -25,7 +25,7 @@ import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfSort } from '@/ui/ShelfToolbar';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
-import { CreateControl, FAB_CLEARANCE } from '@/ui/Fab';
+import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
@@ -108,7 +108,7 @@ function StudyList() {
     // studies as the single file did — and a ceiling on the width, because a
     // card stretched across a 1400px monitor is a line of text with a title
     // at one end and a date at the other.
-    <div className={cn('mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6', FAB_CLEARANCE)}>
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <ShelfToolbar
         title={t('Studies')}
         query={query}
@@ -154,6 +154,8 @@ function StudyList() {
           onUndo={undoable.undo}
         />
       )}
+
+      <FabSpacer />
     </div>
   );
 }
