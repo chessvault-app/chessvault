@@ -21,6 +21,14 @@ export default defineConfig({
   root,
   publicDir: `${root}public`,
   plugins: [react(), tailwindcss(), licenses()],
+  // Stated false so it FOLDS. `isDemo()` guards on
+  // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
+  // absent but cannot be evaluated at build time — so the demo's dynamic
+  // import survived, and every production build emitted the in-page demo
+  // server and its seed vault as a 229 KB chunk no real user ever fetches.
+  // Defining it lets the branch fold away, which is what web/src/lib/demo.ts
+  // has always claimed happens.
+  define: { __DEMO__: 'false' },
   resolve: {
     alias: {
       '@shared': `${repo}shared`,
