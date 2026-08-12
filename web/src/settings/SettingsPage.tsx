@@ -43,9 +43,14 @@ export function SettingsPage() {
   // scroll box ran on underneath it: a field near the bottom — the wipe
   // confirmation — was inside the box but behind the keyboard, and Safari
   // revealed the caret the only way left to it, by shoving the whole
-  // window up. Padding the box did not help (it was still as TALL as the
-  // screen); ending it at the top of the keyboard does, because then
-  // scrolling the box is enough to bring the caret into view.
+  // window up.
+  //
+  // The box used to SHRINK by the inset. That works, and it fails badly:
+  // an inset that is stale or wrong for a platform leaves a band of dead
+  // page between the content and the tab bar, and a wrong height is
+  // visible in a way a wrong padding is not. Padding degrades to nothing
+  // worse than some extra scroll room, so the bottom is reachable by
+  // scrolling either way. Same reasoning the note editor already used.
   const inset = useKeyboardInset();
 
   const refresh = async (): Promise<void> => {
@@ -66,8 +71,8 @@ export function SettingsPage() {
 
   return (
     <div
-      className="overflow-y-auto"
-      style={{ height: inset ? `calc(100% - ${inset}px)` : '100%' }}
+      className="h-full overflow-y-auto"
+      style={inset ? { paddingBottom: `${inset}px` } : undefined}
     >
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
         <header className="flex items-center justify-between gap-2">
