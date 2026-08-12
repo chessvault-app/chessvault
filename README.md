@@ -163,7 +163,7 @@ so it never ships in the repo. Build what you want, per machine.
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
 | `data/refgames.sqlite` | the elite game browser | `npm run build:refgames` |
-| `data/books/*.sqlite` | the local opening explorer | in the app, or `npm run build:book` |
+| `data/books/*.sqlite` | the local opening explorer | one comes with the app; more in the app, or `npm run build:book` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
 `data/mygames.sqlite` is not in the table because you never build it: the
@@ -171,6 +171,13 @@ explorer's **My games** source indexes the vault's own games itself and
 keeps up as you collect more. `data/openings.json` is in it only to say
 where the names come from — the server compiles it from the ECO tables it
 ships with, the first time something asks for a name.
+
+**One book comes with the app.** A new install already has a curated walk
+of a Lichess Elite month — 29,297 positions to move 12, 1.5 MB, CC0 — so
+the explorer and the repertoire trainer answer from the first move you
+play instead of showing nothing. It is copied into `data/books/` the first
+time the app runs and is an ordinary book after that: delete it, rename
+it, build over it. Deleting it is final; it is not put back.
 
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free

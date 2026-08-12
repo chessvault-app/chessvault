@@ -3,7 +3,7 @@
  *
  *   npm run build:book                          all vault/sources/*.pgn, one book per file
  *   npm run build:book -- elite-*.pgn --name elite    merge files into one book
- *   flags: --name --max-ply 24 --min-games 2 --top-games 3
+ *   flags: --name --max-ply 24 --min-games 2 --top-games 8
  *
  * Books land in data/books/<name>.sqlite. Sources may be absolute paths,
  * cwd-relative, or names of files in vault/sources/.

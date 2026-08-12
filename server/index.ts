@@ -8,6 +8,7 @@ import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
+import { seedBundledBook } from './books.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
@@ -22,6 +23,12 @@ const PORT = Number(process.env.PORT ?? 8787);
 for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) {
   mkdirSync(d, { recursive: true });
 }
+
+// The opening book that ships with the app, copied in the first time this
+// data directory is used — so the explorer and the repertoire trainer have
+// something to answer from on a fresh install. Deletable like any other
+// book, and it does not come back once it has been.
+seedBundledBook();
 
 const app = new Hono();
 app.use('*', logger());

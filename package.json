@@ -131,6 +131,10 @@
       {
         "from": "scripts/vendor/chess-openings",
         "to": "scripts/vendor/chess-openings"
+      },
+      {
+        "from": "assets",
+        "to": "assets"
       }
     ],
     "npmRebuild": false,

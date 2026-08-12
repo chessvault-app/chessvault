@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { Chess } from 'chessops/chess';
@@ -68,6 +68,52 @@ export interface BooksApiDirs {
   books: string;
   sources: string;
 }
+
+/**
+ * The book that comes with the app, copied in on first run.
+ *
+ * Without it a new install's explorer is not sparse but EMPTY, and so is
+ * the repertoire trainer: both answer "what is played here?", and with no
+ * book and no Lichess token there is nothing to answer from — the online
+ * explorer refuses anonymous requests. A curated walk of a CC0 Lichess
+ * Elite month (1.5 MB, 29,297 positions to ply 24) is enough for both to
+ * work the moment the app opens.
+ *
+ * COPIED, not mounted read-only from the installation: a bundled book the
+ * user cannot delete would be the app keeping a file in their vault's data
+ * against their wishes. Once seeded it is an ordinary book — rename it,
+ * delete it, build over it. The marker is what stops a deleted one coming
+ * back on the next launch; it records the decision, not the file.
+ *
+ * Called from server/index.ts at startup rather than from booksApi(),
+ * because it is a property of running the app and not of the routes: the
+ * static demo mounts these same routes over an in-memory filesystem, and
+ * every books test would otherwise start with a book it did not create.
+ */
+const SEED_MARKER = '.seeded';
+
+export function seedBundledBook(booksDir: string = DATA_BOOKS): void {
+  mkdirSync(booksDir, { recursive: true });
+  const marker = resolve(booksDir, SEED_MARKER);
+  if (existsSync(marker)) return;
+  const bundled = resolve(REPO_ROOT, 'assets', `${BUNDLED_BOOK}.sqlite`);
+  // Written first: a copy that fails should not be retried on every launch,
+  // and an install with no bundled file (a source checkout that never built
+  // one) should not look for it again either.
+  writeFileSync(marker, `${new Date().toISOString()}\n`);
+  if (!existsSync(bundled)) return;
+  const target = resolve(booksDir, `${BUNDLED_BOOK}.sqlite`);
+  if (existsSync(target)) return;
+  try {
+    copyFileSync(bundled, target);
+    console.log(`books: seeded ${BUNDLED_BOOK} (${(statSync(target).size / 1e6).toFixed(1)} MB)`);
+  } catch (error) {
+    console.warn(`books: could not seed the bundled book (${(error as Error).message})`);
+  }
+}
+
+/** Name of the book that ships with the app, in assets/ and once seeded. */
+const BUNDLED_BOOK = 'lichess-elite-2025-11';
 
 export function booksApi(
   dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAULT_SOURCES },
