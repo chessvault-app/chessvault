@@ -246,7 +246,18 @@ export function PdfImport({
                     f.selected ? 'border-primary/60' : 'border-line opacity-40',
                   )}
                 >
-                  <img src={f.dataUrl} alt={`page ${f.page}`} className="w-full rounded" />
+                  {/* lazy + async decode: a thousand-diagram scan holds a
+                      thousand data URLs, and decoding them all at once is
+                      hundreds of megabytes of bitmap in one go — enough to
+                      take the renderer with it. content-visibility already
+                      skips the paint; this skips the decode. */}
+                  <img
+                    src={f.dataUrl}
+                    alt={`page ${f.page}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full rounded"
+                  />
                   <span className="text-subtle block pt-0.5 text-[0.625rem]">
                     {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
                     {f.solved && <span className="text-good ml-1">{t('solved')}</span>}

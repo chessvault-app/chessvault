@@ -174,6 +174,25 @@ function createWindow() {
   // in-page link navigate it to an arbitrary origin that would then inherit
   // that bridge — remote mode loads its server once, and that's the only
   // top-level navigation allowed.
+  /**
+   * A renderer that dies leaves the window painted in `backgroundColor` —
+   * a black screen with no message, which is exactly what a user reports
+   * and exactly what nobody can diagnose. Say what happened, and come
+   * back: reloading costs a page load and beats quitting the app.
+   *
+   * `reason` is Chromium's own: 'crashed', 'oom', 'killed', …
+   */
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error(`[desktop] renderer gone: ${details.reason} (exit ${details.exitCode})`);
+    if (details.reason !== 'clean-exit' && !win.isDestroyed()) win.reload();
+  });
+  win.webContents.on('unresponsive', () => {
+    console.error('[desktop] renderer unresponsive');
+  });
+  win.webContents.on('preload-error', (_event, path, error) => {
+    console.error(`[desktop] preload failed (${path}):`, error?.message ?? error);
+  });
+
   win.webContents.on('will-navigate', (event, url) => {
     const settings = readSettings();
     const allowed =
