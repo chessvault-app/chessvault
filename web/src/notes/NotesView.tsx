@@ -5,7 +5,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -200,9 +200,6 @@ function NoteList() {
 }
 
 function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promise<void> }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  // Either popover (the menu or the name form) dismisses on outside click.
-  const menuHost = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'note' | 'folder' | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -239,17 +236,9 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
     else navigate('notes', encodeURIComponent(trimmed));
   };
 
-  useEffect(() => {
-    if (!menuOpen && !mode) return;
-    const onDown = (e: MouseEvent): void => {
-      if (!menuHost.current?.contains(e.target as Node)) {
-        setMenuOpen(false);
-        setMode(null);
-      }
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [menuOpen, mode]);
+  // No outside-click handler here — see the note in StudiesView. The one
+  // that used to be here closed the prompt before its own Create button
+  // could fire, so a collection could not be made.
 
   return (
     <>

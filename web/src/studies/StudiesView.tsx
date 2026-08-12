@@ -168,9 +168,6 @@ function CreateMenu() {
   const create = useStudy((s) => s.create);
   const createFolder = useStudy((s) => s.createFolder);
 
-  const [menuOpen, setMenuOpen] = useState(false);
-  // Either popover (the menu or the name form) dismisses on outside click.
-  const menuHost = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'study' | 'folder' | 'import' | 'lichess' | null>(null);
   const [name, setName] = useState('');
   const [folder, setFolder] = useState('');
@@ -235,17 +232,13 @@ function CreateMenu() {
     if (!name.trim()) setName(file.name.replace(/\.pgn$/i, ''));
   };
 
-  useEffect(() => {
-    if (!menuOpen && !mode) return;
-    const onDown = (e: MouseEvent): void => {
-      if (!menuHost.current?.contains(e.target as Node)) {
-        setMenuOpen(false);
-        setMode(null);
-      }
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [menuOpen, mode]);
+  // No outside-click handler here. There used to be one, closing over a
+  // `menuHost` ref that stopped being attached to anything when the
+  // dropdown became CreateControl — so `menuHost.current` was null, every
+  // mousedown counted as outside, and pressing Create inside the prompt
+  // unmounted the prompt before its own click could fire. Collections
+  // could not be made at all. Both windows dismiss themselves: Sheet has
+  // a scrim, ActionSheet has a scrim.
 
   return (
     <>
