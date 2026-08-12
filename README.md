@@ -182,11 +182,14 @@ is final; it is not put back.
 
 It is built when a release is cut, not kept in the repo, so each release
 carries a book made from a month that was current then. **A server install
-and a source checkout therefore have none** — they take the commit, not
-the release artefacts — and start with an empty explorer until a book is
-built. On a server that is the normal way round anyway: you upload your
-own collections and press Build. `npm run build:bundled-book` makes the
-same curated book from whatever book is already in `data/books/`.
+and a source checkout have none** — they take the commit, not the release
+artefacts — and start with an empty explorer. Getting a book there is the
+ordinary way round: upload your PGN collections in the book manager and
+press Build, which produces a fuller book than the bundled one anyway.
+Neither `deploy.sh` nor the app downloads games for this; only the release
+workflow does. (`npm run build:bundled-book` shrinks a book you already
+have into a small one — it is for packaging installers by hand, not for
+getting your first book.)
 
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free
