@@ -1,6 +1,7 @@
 import { LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { SearchInput } from './Input';
+import { Segmented } from './Segmented';
 import { Select } from './Select';
 import type { ShelfLayout } from './ShelfCard';
 import { t } from '@/lib/i18n';
@@ -131,31 +132,19 @@ export function ShelfToolbar({
             { options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
           ]}
         />
-        {/* Two states, so a switch rather than a menu: the icon shown is
-            the layout you are IN, the way a toggle is normally read. */}
-        <div className="border-line hidden shrink-0 items-center rounded-md border p-0.5 sm:flex">
-          {(
-            [
-              ['grid', LayoutGrid, 'Grid view'],
-              ['list', List, 'List view'],
-            ] as const
-          ).map(([id, Icon, label]) => (
-            <button
-              key={id}
-              type="button"
-              title={t(label)}
-              aria-pressed={layout === id}
-              onClick={() => onLayout(id)}
-              className={
-                layout === id
-                  ? 'bg-surface-2 text-fg rounded p-1 transition-colors duration-100'
-                  : 'text-subtle hover:text-fg rounded p-1 transition-colors duration-100'
-              }
-            >
-              <Icon className="size-3.5" />
-            </button>
-          ))}
-        </div>
+        {/* Two states, so a switch rather than a menu — the same segmented
+            control the archive panel picks its site with. */}
+        <Segmented
+          value={layout}
+          onChange={onLayout}
+          ariaLabel="Layout"
+          size="sm"
+          className="hidden sm:flex"
+          segments={[
+            { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
+            { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
+          ]}
+        />
         {create}
       </div>
     </header>
