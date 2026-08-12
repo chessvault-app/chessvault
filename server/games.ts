@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { sanitizeSegment } from '../shared/vaultNames.ts';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 import { Chess } from 'chessops/chess';
@@ -314,9 +315,14 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
   /** The default document name for a game: "White vs Black YYYY-MM-DD". */
   function collectionBaseName(game: Game<PgnNodeData>): string {
     const date = (game.headers.get('UTCDate') ?? game.headers.get('Date') ?? '').replaceAll('.', '-');
-    return `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`
-      .replace(/[^A-Za-z0-9 ()_.-]/g, '')
-      .trim();
+    // sanitizeSegment, not a strip-to-ASCII: player names are names, and
+    // dropping every non-Latin character left "  vs   2026-01-01" for two
+    // Korean players. The browser rebuilds this exact string to tell an
+    // auto name from a chosen one, so both call the shared rule.
+    return sanitizeSegment(
+      `${game.headers.get('White') ?? '?'} vs ${game.headers.get('Black') ?? '?'} ${date}`,
+      'Game',
+    );
   }
 
   /** Write a parsed game into the collection under a readable, unique name. */

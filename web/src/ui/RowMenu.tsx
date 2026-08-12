@@ -121,7 +121,9 @@ export function RowMenu({
         >
           {confirming ? (
             <div className="flex flex-col gap-2 p-2">
-              <p className="text-fg text-xs font-medium">{confirming.confirm}</p>
+              {/* Translated here, like every other label this menu renders:
+                  the callers pass the English sentence as the key. */}
+              <p className="text-fg text-xs font-medium">{t(confirming.confirm ?? 'Are you sure?')}</p>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setConfirming(null)}>
                   {t('Cancel')}
@@ -134,7 +136,7 @@ export function RowMenu({
                     confirming.onSelect?.();
                   }}
                 >
-                  {confirming.label}
+                  {t(confirming.label)}
                 </Button>
               </div>
             </div>
@@ -151,7 +153,7 @@ export function RowMenu({
                   className="hover:bg-surface-2 text-fg flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors duration-100"
                 >
                   <item.icon className="text-subtle size-3.5" />
-                  {item.label}
+                  {t(item.label)}
                 </a>
               ) : (
                 <button
@@ -171,7 +173,7 @@ export function RowMenu({
                   )}
                 >
                   <item.icon className={cn('size-3.5', item.confirm ? '' : 'text-subtle')} />
-                  {item.label}
+                  {t(item.label)}
                 </button>
               ),
             )

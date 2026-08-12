@@ -74,6 +74,8 @@ export const ko: Record<string, string> = {
   'New collection…': '새 모음…',
   'Move into this new collection': '이 새 모음으로 옮기기',
   'Move to a collection': '모음으로 옮기기',
+  'Delete “{name}”?': '“{name}”을(를) 지울까요?',
+  'Are you sure?': '정말 진행할까요?',
   Collection: '모음',
   'Empty collection.': '빈 모음입니다.',
 
@@ -84,23 +86,23 @@ export const ko: Record<string, string> = {
   'Play a move on the board, or load a FEN or PGN.':
     '보드에서 수를 두거나, FEN 또는 PGN을 불러오세요.',
   'Make mainline': '주 변화로 지정',
-  'Load a position — FEN, PGN, or image': '국면 불러오기 — FEN, PGN 또는 이미지',
-  'Load position': '국면 불러오기',
+  'Load a position — FEN, PGN, or image': '포지션 불러오기 — FEN, PGN 또는 이미지',
+  'Load position': '포지션 불러오기',
   'Paste from clipboard': '클립보드에서 붙여넣기',
   'Paste a FEN or PGN, then press Enter': 'FEN 또는 PGN을 붙여넣고 Enter를 누르세요',
   'click to choose, drop a file, or paste an image':
     '클릭해 선택하거나, 파일을 끌어놓거나, 이미지를 붙여넣으세요',
-  Position: '국면',
+  Position: '포지션',
   'Side to move': '둘 차례',
   'Castling rights': '캐슬링 권리',
   'En passant target': '앙파상 대상',
   'Halfmove clock': '하프무브 카운터',
   'Move number': '수 번호',
-  'Legal position': '합법적인 국면',
+  'Legal position': '합법적인 포지션',
   'Move: drag pieces around the board': '이동: 기물을 끌어 옮깁니다',
   'Erase: click a square to remove its piece': '지우기: 칸을 클릭하면 그 기물이 사라집니다',
-  'Reset to the starting position': '시작 국면으로 되돌리기',
-  'Position details (side to move, castling, FEN)': '국면 세부 정보 (둘 차례, 캐슬링, FEN)',
+  'Reset to the starting position': '시작 포지션으로 되돌리기',
+  'Position details (side to move, castling, FEN)': '포지션 세부 정보 (둘 차례, 캐슬링, FEN)',
   Move: '이동',
   Erase: '지우기',
 
@@ -135,7 +137,7 @@ export const ko: Record<string, string> = {
   'Search players, openings, or ECO (e.g. Najdorf, B90)…':
     '선수, 오프닝 또는 ECO 검색 (예: Najdorf, B90)…',
   'Open on the analysis board': '분석 보드에서 열기',
-  'Preview the final position': '최종 국면 미리 보기',
+  'Preview the final position': '최종 포지션 미리 보기',
   'Search collection…': '모음 검색…',
   'Browse the indexed reference games': '색인된 참고 게임 둘러보기',
   'Game actions': '게임 동작',
@@ -204,7 +206,7 @@ export const ko: Record<string, string> = {
   'Back to the dashboard': '대시보드로',
   'Back to the puzzle': '퍼즐로',
   'Back to the book': '책으로',
-  'Back to the position': '국면으로',
+  'Back to the position': '포지션으로',
   'Back to the diagram': '다이어그램으로',
   'All books': '모든 책',
   'All themes': '모든 테마',
@@ -253,7 +255,7 @@ export const ko: Record<string, string> = {
   'Review failed puzzles': '실패한 퍼즐 복습',
   'By difficulty': '난이도별',
   'All puzzle books': '모든 퍼즐 책',
-  'Preview the position': '국면 미리 보기',
+  'Preview the position': '포지션 미리 보기',
   Shelf: '책장',
   'Import a book': '책 가져오기',
   Difficulty: '난이도',
@@ -280,7 +282,7 @@ export const ko: Record<string, string> = {
   'Try harder on boards that fail': '실패한 보드에 더 공을 들이기',
   'clearing the book': '책을 비우는 중',
   "reading the book's solutions": '책의 정답을 읽는 중',
-  'Position from an image': '이미지에서 국면 읽기',
+  'Position from an image': '이미지에서 포지션 읽기',
   'Choose an image of the diagram': '다이어그램 이미지 선택',
   'a screenshot or scan works best': '스크린샷이나 스캔이 가장 잘 됩니다',
   'Paste image': '이미지 붙여넣기',
@@ -291,7 +293,7 @@ export const ko: Record<string, string> = {
     'Ctrl+V를 눌러도 되고, 파일을 여기에 끌어놓아도 됩니다',
   'Drag the four handles onto the corners of the diagram.':
     '네 모서리 손잡이를 다이어그램의 모서리에 맞추세요.',
-  'Read position': '국면 읽기',
+  'Read position': '포지션 읽기',
   'Black at the bottom': '흑이 아래쪽',
 
   // --- repertoire ----------------------------------------------------------
@@ -407,13 +409,13 @@ export const ko: Record<string, string> = {
   // --- home cards and the More page ---------------------------------------
   App: '앱',
   'Free board with engine and explorer': '엔진과 탐색기가 있는 자유 보드',
-  'Set up any position': '원하는 국면 만들기',
+  'Set up any position': '원하는 포지션 만들기',
   'Openings and ideas, in chapters': '오프닝과 아이디어를, 챕터로',
   'Markdown with live boards': '살아 있는 보드가 있는 마크다운',
   'Your collection, annotated': '주석이 달린 나의 모음',
   'Train tactics offline': '오프라인으로 전술 훈련',
-  'Analyse any position with the engine': '엔진으로 어떤 국면이든 분석',
-  'Set up any position from scratch': '처음부터 국면 만들기',
+  'Analyse any position with the engine': '엔진으로 어떤 포지션이든 분석',
+  'Set up any position from scratch': '처음부터 포지션 만들기',
   'Browse opening statistics move by move': '한 수씩 오프닝 통계 보기',
   'Practise an opening against real games': '실제 기보를 상대로 오프닝 연습',
   'Password, 2FA, themes, tokens': '비밀번호, 2단계 인증, 테마, 토큰',
@@ -424,7 +426,7 @@ export const ko: Record<string, string> = {
   'Strong (1800–2200)': '상급 (1800–2200)',
   'Master (2200+)': '마스터 (2200+)',
   'All ratings': '전체',
-  'Start position': '시작 국면',
+  'Start position': '시작 포지션',
 
   // --- difficulty and the dashboard hub -----------------------------------
   Train: '훈련',
@@ -455,7 +457,7 @@ export const ko: Record<string, string> = {
     '책의 다이어그램입니다 — 보드를 여기에 맞춘 다음, 정답을 기록하세요.',
   'The book’s own scan — make the board match it.': '책의 스캔 원본입니다 — 보드를 여기에 맞추세요.',
   'Empty book. “Add puzzle” sets up the position on a board and records the full solution — both sides’ moves.':
-    '빈 책입니다. “퍼즐 추가”로 보드에 국면을 만들고 양쪽의 수를 모두 포함한 정답을 기록하세요.',
+    '빈 책입니다. “퍼즐 추가”로 보드에 포지션을 만들고 양쪽의 수를 모두 포함한 정답을 기록하세요.',
   'Tip: click an opponent move to mark it “any move” (the book’s ~).':
     '팁: 상대의 수를 클릭하면 “아무 수나”로 표시됩니다 (책의 ~ 표기).',
   'No studies yet. A study is a set of annotated chapters — lines, comments, arrows — saved as plain PGN in':
@@ -495,7 +497,7 @@ export const ko: Record<string, string> = {
   'Your games in this vault': '이 보관함의 내 기보',
   'Uploaded collections': '올린 모음',
   'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.':
-    '작은 모음입니다. 내 기보 데이터베이스로는 괜찮습니다 — 무엇을 뒀고 결과가 어땠는지 알려 줍니다. 다만 일반적으로 어떻게 두는지에 대한 참고 자료로는 오해를 부릅니다. 판수가 적어 국면마다 한 수가 100%로 나오기 때문입니다.',
+    '작은 모음입니다. 내 기보 데이터베이스로는 괜찮습니다 — 무엇을 뒀고 결과가 어땠는지 알려 줍니다. 다만 일반적으로 어떻게 두는지에 대한 참고 자료로는 오해를 부릅니다. 판수가 적어 포지션마다 한 수가 100%로 나오기 때문입니다.',
   'Uploading {name}…': '{name} 올리는 중…',
   'Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:':
     'PGN 모음(Lichess Elite 월별 파일, TWIC, Lumbra 내보내기)을 vault/sources에 넣고 한 번만 색인하세요:',
@@ -516,13 +518,13 @@ export const ko: Record<string, string> = {
   'Could not add this game': '이 게임을 추가할 수 없습니다',
   'Add this game to the collection': '이 게임을 모음에 추가',
   'In the collection': '모음에 있음',
-  'Starting position': '시작 국면',
+  'Starting position': '시작 포지션',
   Engine: '엔진',
   'Turn the engine off': '엔진 끄기',
   'Turn the engine on': '엔진 켜기',
   'Hide the evaluation graph': '평가 그래프 숨기기',
   'Show the evaluation graph': '평가 그래프 보기',
-  'Analyse this position': '이 국면 분석',
+  'Analyse this position': '이 포지션 분석',
   'That PGN could not be read.': 'PGN을 읽을 수 없습니다.',
   'That FEN could not be read.': 'FEN을 읽을 수 없습니다.',
   'vault server unreachable': '보관함 서버에 연결할 수 없습니다',
@@ -658,11 +660,11 @@ export const ko: Record<string, string> = {
   'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.':
     '책을 먼저 비워서 이번 가져오기의 결과만 담기게 합니다. 어느 쪽이든 시도 기록은 유지됩니다.',
   'Each one replays the move the book prints, from the position on the page.':
-    '하나하나가 페이지의 국면에서 책이 인쇄한 수를 재생한 것입니다.',
+    '하나하나가 페이지의 포지션에서 책이 인쇄한 수를 재생한 것입니다.',
   'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.':
     '재생된 정답이 너무 적어 신뢰하기 어렵습니다 — 출발점으로 삼고 직접 확인하세요.',
   'Positions are unread for now: confirming the first draft teaches this book’s font.':
-    '아직 국면을 읽지 못했습니다. 첫 초안을 확인해 주면 이 책의 글꼴을 배웁니다.',
+    '아직 포지션을 읽지 못했습니다. 첫 초안을 확인해 주면 이 책의 글꼴을 배웁니다.',
   '— still scanning': '— 아직 스캔 중',
   Hide: '숨기기',
   'No attempts yet — go solve something.': '아직 시도가 없습니다 — 뭐라도 풀어 보세요.',
@@ -693,7 +695,7 @@ export const ko: Record<string, string> = {
   'This is a demo': '이것은 데모입니다',
   'Everything you change here lives in this browser tab and disappears when you reload. Your profile, password, two-factor authentication, the Lichess token and the vault itself need a server of your own — install the app or host it, and this page becomes the real thing.':
     '여기서 바꾼 것은 모두 이 브라우저 탭에만 남고 새로고침하면 사라집니다. 프로필, 비밀번호, 2단계 인증, Lichess 토큰, 그리고 보관함 자체는 당신의 서버가 있어야 합니다 — 앱을 설치하거나 직접 호스팅하면 이 페이지가 진짜가 됩니다.',
-  'No games from this position in “{book}”.': '“{book}”에는 이 국면의 기보가 없습니다.',
+  'No games from this position in “{book}”.': '“{book}”에는 이 포지션의 기보가 없습니다.',
   'The demo book covers the first {plies} plies.': '데모 북은 처음 {plies}수까지만 담고 있습니다.',
   'Demo — this is a sample vault of your own. Edit anything; a reload puts it back.':
     '데모 — 당신만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.',
@@ -792,7 +794,7 @@ export const ko: Record<string, string> = {
   "(no collection)": "(모음 없음)",
   "{n} games": "{n}개 게임",
   "depth": "깊이",
-  "…or read the position from a picture": "…또는 사진에서 국면을 읽어 옵니다",
+  "…or read the position from a picture": "…또는 사진에서 포지션을 읽어 옵니다",
   "Advanced pawn": "전진한 폰",
   "Advantage": "우세",
   "Anastasia mate": "아나스타샤 메이트",
@@ -898,10 +900,10 @@ export const ko: Record<string, string> = {
   "Clear": "지우기",
   "{n} games indexed": "{n}개 게임 색인됨",
   "Recent games": "최근 게임",
-  "None of your games reached this position.": "이 국면에 도달한 내 게임이 없습니다.",
-  "None of your games reached this position under these filters.": "이 조건에서 이 국면에 도달한 내 게임이 없습니다.",
+  "None of your games reached this position.": "이 포지션에 도달한 내 게임이 없습니다.",
+  "None of your games reached this position under these filters.": "이 조건에서 이 포지션에 도달한 내 게임이 없습니다.",
   "For your own games, pick “My games” in the explorer instead — they are always up to date and can be filtered by side, result, speed and date. A book is for a large reference database.": "내 게임은 탐색기에서 “내 게임”을 고르세요. 항상 최신이고 색·결과·시간제·날짜로 걸러 볼 수 있습니다. 북은 큰 참고 데이터베이스를 위한 것입니다.",
-  "Small collection. A book is a reference for what is normally played, and too few games will mislead: every position answers with one move at 100%.": "적은 모음입니다. 북은 보통 어떤 수를 두는지를 보는 참고 자료라, 게임이 너무 적으면 오해를 부릅니다. 모든 국면이 한 수 100%로 답하게 됩니다.",
+  "Small collection. A book is a reference for what is normally played, and too few games will mislead: every position answers with one move at 100%.": "적은 모음입니다. 북은 보통 어떤 수를 두는지를 보는 참고 자료라, 게임이 너무 적으면 오해를 부릅니다. 모든 포지션이 한 수 100%로 답하게 됩니다.",
 
   // --- translated at the component boundary, and the last stragglers ------
   "Delete this study": "이 스터디 삭제",
@@ -932,5 +934,5 @@ export const ko: Record<string, string> = {
   "Replay #{id}": "#{id} 다시 풀기",
   "Nothing attempted yet": "아직 시도한 것이 없습니다",
   "{solved} solved · {failed} failed · {left} remaining": "{solved}개 해결 · {failed}개 실패 · {left}개 남음",
-  "{games} games · {positions} positions · {mb} MB": "{games}개 게임 · {positions}개 국면 · {mb} MB",
+  "{games} games · {positions} positions · {mb} MB": "{games}개 게임 · {positions}개 포지션 · {mb} MB",
 };

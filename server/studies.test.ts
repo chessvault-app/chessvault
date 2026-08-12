@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chaptersToPgn, pgnToChapters } from '../shared/pgn.ts';
-import { studiesApi } from './studies.ts';
+import { sanitizeSegment, studiesApi, validId } from './studies.ts';
 
 describe('studies api', () => {
   let dir: string;
@@ -114,12 +114,33 @@ describe('studies api', () => {
     expect((await make("London System - Black's Answer")).status).toBe(200);
     expect((await make('Reti — Move by Move')).status).toBe(200);
     expect((await app.request(`/api/studies/${encodeURIComponent("London System - Black's Answer")}`)).status).toBe(200);
-    // Windows-illegal and traversal-shaped names stay out.
-    for (const bad of ['a:b', 'a?b', 'a*b', 'a<b', 'a|b', '..', '.hidden', 'trailing.']) {
+    // Names people actually give things: Korean, accents, punctuation. The
+    // rule used to start [A-Za-z0-9], so a Korean title could not be saved
+    // at all and half of Lichess would not import.
+    for (const good of ['시칠리안 방어', 'Ruy López', 'Tactics!', 'Endgame #1', '[Study] Openings']) {
+      expect((await make(good)).status, good).toBe(200);
+    }
+    // Windows-illegal, device names, and traversal shapes stay out.
+    for (const bad of ['a:b', 'a?b', 'a*b', 'a<b', 'a|b', '..', '.hidden', 'trailing.', 'CON', 'nul.pgn']) {
       expect((await make(bad)).status, bad).toBe(400);
     }
     // Surrounding whitespace is trimmed before validation, not rejected.
     expect((await make('  spaced  ')).status).toBe(200);
+  });
+
+  it('sanitises names that arrive from outside instead of refusing them', () => {
+    // What an import gets: a title it did not choose. Colons cannot be a
+    // filename, so they become spaces; everything else survives.
+    expect(sanitizeSegment('Sicilian: Najdorf')).toBe('Sicilian Najdorf');
+    expect(sanitizeSegment('시칠리안 방어')).toBe('시칠리안 방어');
+    expect(sanitizeSegment('Ruy López')).toBe('Ruy López');
+    expect(sanitizeSegment('  ..trailing.  ')).toBe('trailing');
+    expect(sanitizeSegment('///', 'Study')).toBe('Study');
+    expect(sanitizeSegment('CON')).toBe('CON_');
+    // And whatever comes out is a name the vault will accept.
+    for (const raw of ['Sicilian: Najdorf', '시칠리안 방어', '///', 'CON']) {
+      expect(validId(sanitizeSegment(raw, 'Study')), raw).toBe(true);
+    }
   });
 
   it('deletes a study', async () => {

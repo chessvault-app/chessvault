@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { VAULT_STUDIES } from './paths.ts';
+import { validId } from '../shared/vaultNames.ts';
 
 /**
  * Studies are plain multi-game PGN files in vault/studies/ — one game per
@@ -27,28 +28,9 @@ import { VAULT_STUDIES } from './paths.ts';
  * segment must be a plain name — no leading dots, no empty segments — which
  * rules out traversal by construction.
  */
-// Parentheses are in the set because the games collection generates
-// "White vs Black date (2)" names for duplicates — documents must be
-// addressable under the names the app itself writes.
-//
-// Apostrophes, commas, ampersands and dashes are in the set because chess
-// names are full of them ("Queen's Gambit", "King's Indian", "Reti - Move
-// by Move"), and a study you cannot open is worse than one with a plain
-// name. Every character Windows forbids in a filename (\ / : * ? " < > |)
-// stays out, as does anything that could form a traversal: the segment is
-// split on / before this test, must START alphanumeric, and cannot end in
-// a dot, so ".." and hidden files remain unreachable.
-const SEGMENT_RE = /^[A-Za-z0-9][A-Za-z0-9 (),'’&+_.–—-]*$/;
-const MAX_DEPTH = 4;
-const MAX_PGN_BYTES = 20 * 1024 * 1024;
+export { sanitizeSegment, validId } from '../shared/vaultNames.ts';
 
-function validId(id: string): boolean {
-  const segments = id.split('/');
-  return (
-    segments.length <= MAX_DEPTH &&
-    segments.every((s) => SEGMENT_RE.test(s) && !s.endsWith('.') && s.trim() === s)
-  );
-}
+const MAX_PGN_BYTES = 20 * 1024 * 1024;
 
 /** Count chapters without parsing: every game carries an Event header. */
 function countChapters(pgn: string): number {

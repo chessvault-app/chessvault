@@ -403,7 +403,7 @@ function NoteCard({
             <ConfirmPopover
               icon={Trash2}
               triggerTitle="Delete this note"
-              question={`Delete “${name}”?`}
+              question={t('Delete “{name}”?', { name })}
               confirmLabel="Delete"
               onConfirm={() => {
                 void fetch(`${API}/${encodeURIComponent(note.id)}`, { method: 'DELETE' }).then(

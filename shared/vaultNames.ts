@@ -1,0 +1,72 @@
+/**
+ * What a vault may call a file, and what it may not.
+ *
+ * Shared because three places need the SAME answer: the routes that accept
+ * a name, the importers that invent one from a Lichess title or a pair of
+ * player names, and the games list in the browser, which rebuilds the
+ * auto-generated name to tell it apart from one somebody chose. When those
+ * three disagreed, every collected game with a non-Latin player looked
+ * custom-named.
+ */
+/**
+ * What a filesystem cannot take. Everything else is allowed.
+ *
+ * This was an allowlist of characters, and an allowlist is the wrong shape
+ * for names people choose: it began `[A-Za-z0-9]`, so it rejected every
+ * Korean title outright — a Korean user could not name a study at all —
+ * along with "Ruy López", "Sicilian: Najdorf", "Tactics!" and half the
+ * Lichess studies anybody would import. Widening it one character at a
+ * time is a losing game; the set of characters a name may contain is not
+ * knowable, while the set a path may not is.
+ *
+ * So: the characters Windows forbids, control characters, and the shapes
+ * that mean something to a path — traversal, hidden files, the trailing
+ * dots and spaces Windows silently strips, and its reserved device names,
+ * which fail as filenames even with an extension.
+ */
+const FORBIDDEN_CHARS = /[\\/:*?"<>|\x00-\x1f]/;
+const FORBIDDEN_CHARS_G = /[\\/:*?"<>|\x00-\x1f]+/g;
+const RESERVED_DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
+const MAX_SEGMENT = 120;
+const MAX_DEPTH = 4;
+
+function validSegment(s: string): boolean {
+  return (
+    s.length > 0 &&
+    s.length <= MAX_SEGMENT &&
+    !FORBIDDEN_CHARS.test(s) &&
+    !RESERVED_DEVICE.test(s) &&
+    !s.startsWith('.') && // hidden files, and "." / ".." with them
+    !s.endsWith('.') &&
+    s.trim() === s
+  );
+}
+
+export function validId(id: string): boolean {
+  const segments = id.split('/');
+  return segments.length <= MAX_DEPTH && segments.every(validSegment);
+}
+
+/**
+ * Turn a name from OUTSIDE — a Lichess study title, a PGN header, a pair of
+ * player names — into one this vault can hold.
+ *
+ * Refusing is right for a name somebody typed, and wrong for one that
+ * arrives with the thing it names: an import that drops half a Lichess
+ * account because the titles have colons in them is not protecting
+ * anybody. So the same forbidden set is REPLACED here rather than
+ * rejected, and everything else — Korean, accents, punctuation — is left
+ * exactly as its author wrote it.
+ */
+export function sanitizeSegment(name: string, fallback = 'Untitled'): string {
+  const cleaned = name
+    .replace(FORBIDDEN_CHARS_G, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[.\s]+/, '')
+    .replace(/[.\s]+$/, '')
+    .slice(0, MAX_SEGMENT)
+    .trim();
+  if (!cleaned) return fallback;
+  // A name that is a Windows device is a file that cannot be created.
+  return RESERVED_DEVICE.test(cleaned) ? `${cleaned}_` : cleaned;
+}

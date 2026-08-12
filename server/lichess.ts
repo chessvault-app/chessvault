@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
+import { sanitizeSegment, validId } from './studies.ts';
 import { Chess } from 'chessops/chess';
 import { makeFen, parseFen } from 'chessops/fen';
 import { DATA_EXPLORER_CACHE, VAULT_CONFIG, VAULT_STUDIES } from './paths.ts';
@@ -203,15 +204,22 @@ export function lichessExplorerApi(): Hono {
 
 const USERNAME_RE = /^[A-Za-z0-9_-]{2,30}$/;
 const STUDY_ID_RE = /^[A-Za-z0-9]{8}$/;
-const FOLDER_RE = /^[A-Za-z0-9][A-Za-z0-9 ()_.-]*$/;
+// The collection a Lichess import lands in is a vault path segment like
+// any other, so it answers to the same rule (see server/studies.ts).
+const validFolder = (name: string): boolean => validId(name);
 const MAX_IMPORTS = 50;
 const MAX_STUDY_BYTES = 20 * 1024 * 1024;
 
-/** Flatten a Lichess study name into a legal vault document segment. */
-function sanitizeName(name: string): string {
-  const cleaned = name.replace(/[^A-Za-z0-9 ()_.-]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
-  return /^[A-Za-z0-9]/.test(cleaned) ? cleaned : `Study ${cleaned}`.trim();
-}
+/**
+ * Flatten a Lichess study name into a legal vault document segment.
+ *
+ * Shared with the vault routes rather than spelled out again here: this
+ * used to keep only `[A-Za-z0-9 ()_.-]`, which turned a Korean study title
+ * into a row of spaces and then into "Study", and cut "Sicilian: Najdorf"
+ * down to "Sicilian Najdorf" — for the second one that is right, for the
+ * first it lost the name entirely.
+ */
+const sanitizeName = (name: string): string => sanitizeSegment(name, 'Study');
 
 export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fetch = fetch): Hono {
   const api = new Hono();
@@ -255,7 +263,7 @@ export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fe
       return c.json({ error: `pick between 1 and ${MAX_IMPORTS} studies` }, 400);
     }
     const folder = body?.folder?.trim() ?? '';
-    if (folder && !FOLDER_RE.test(folder)) return c.json({ error: 'invalid collection name' }, 400);
+    if (folder && !validFolder(folder)) return c.json({ error: 'invalid collection name' }, 400);
 
     const token = readToken();
     const dir = folder ? resolve(studiesDir, folder) : studiesDir;

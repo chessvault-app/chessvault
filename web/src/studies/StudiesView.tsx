@@ -638,7 +638,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             <ConfirmPopover
               icon={Trash2}
               triggerTitle="Delete this study"
-              question={`Delete “${name}”?`}
+              question={t('Delete “{name}”?', { name })}
               confirmLabel="Delete"
               onConfirm={() => void remove(study.id)}
             />

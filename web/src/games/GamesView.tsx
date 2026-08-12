@@ -18,6 +18,7 @@ import { create } from 'zustand';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
+import { sanitizeSegment } from '@shared/vaultNames';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -556,7 +557,8 @@ function CollectionView() {
   // IS the title the user chose — lead with it.
   const customName = (g: GameSummary): string | null => {
     const name = docId(g);
-    const autoPrefix = `${g.white} vs ${g.black}`.replace(/[^A-Za-z0-9 _.-]/g, '').trim();
+    // The same rule the server named the file with — see shared/vaultNames.
+    const autoPrefix = sanitizeSegment(`${g.white} vs ${g.black}`, '');
     return name.startsWith(autoPrefix) ? null : name;
   };
 
