@@ -57,9 +57,13 @@ digit is also bold, tier marks also differ by icon shape.
   board-colour presets ride the same OKLCH tokens, and piece sets are
   vendored from lila. This is orthogonal to the semantic colour grammar
   below — the hues there dress the UI, not the board.
-- Filter rows are single-line and scroll sideways at every width
-  (`ChipRow`): touch pans, fine pointers get chevron nudges and
-  wheel-to-horizontal scrolling. No wrapping chip rows.
+- Filter rows inside a panel are single-line and scroll sideways at
+  every width (`ChipRow`): touch pans, fine pointers get chevron nudges
+  and wheel-to-horizontal scrolling. Chips are `shrink-0` — a chip that
+  shrinks inside a scroller collapses to an ellipsis. A filter WINDOW is
+  the exception: given the width, it groups its chips under labels and
+  wraps them, because a chip half off the edge of a scroller is a filter
+  nobody finds.
 - Touch has no hover: anything hover-revealed must also work by tap
   (preview eyes toggle on tap; `pointer-coarse:` sizes tap targets up).
 
@@ -92,6 +96,29 @@ or image via the corner-adjust photo flow) is a single component used
 by the Board, studies/games, and the editor — only the destination
 differs. Modals use the same scrim + panel pattern, close on Escape and
 scrim-click.
+
+Three sizes, one look. `Sheet` is the small centred card every
+one-question window is built from; `PromptSheet` is Sheet plus a field
+(new study, new note, new book, every rename); `Modal` is the same card
+at window width for anything larger (import PGN, the PDF import, the
+explorer's filters). Anything that is not a single line is one of these
+rather than a panel that grows in place.
+
+Every one of them — and every `PanelHeader` — draws the same thin rule
+under its title. Windows once had no rule while panels did, which made
+the same app look like two.
+
+The way out is a **Cancel**, never an X in the corner: one closing
+idiom, stated in words, next to the thing it cancels. Escape and the
+scrim also close, but neither is advertised. A window whose changes
+apply as you make them (the filters) offers Cancel — restoring what was
+there when it opened — beside Done.
+
+Autofill is off in every field (`Input`, `TextArea`, or the exported
+`noAutofill` props for the few bare inputs). `autocomplete="off"` is not
+enough: Safari decides from the field's own words and offers to complete
+a "name" with a contact, so a plain text field is rendered as
+`type="search"`, which it never offers contacts for.
 
 ## iOS keyboard: do not fight it
 

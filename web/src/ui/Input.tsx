@@ -47,6 +47,10 @@ export const noAutofill = {
   autoComplete: 'off',
   autoCorrect: 'off',
   autoCapitalize: 'none',
+  // Not autofill, but the other thing that appears over an iOS keyboard:
+  // the predictive-text strip. A study is not a word anyone can spell for
+  // you, so nothing here wants either.
+  spellCheck: false,
   enterKeyHint: 'done',
   'data-1p-ignore': true,
   'data-form-type': 'other',
@@ -87,6 +91,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="none"
+      spellCheck={false}
       data-1p-ignore
       data-form-type="other"
       className={cn(
