@@ -162,11 +162,13 @@ SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22
 | `data/puzzles.sqlite` | 퍼즐 트레이너 | `npm run build:puzzles` |
 | `data/refgames.sqlite` | 엘리트 게임 브라우저 | `npm run build:refgames` |
 | `data/books/*.sqlite` | 로컬 오프닝 탐색기 | 앱 안에서, 또는 `npm run build:book` |
-| `data/openings.json` | ECO 오프닝 이름 | `npm run build:openings` |
+| `data/openings.json` | ECO 오프닝 이름 | 앱이 처음 쓸 때 스스로 |
 
 `data/mygames.sqlite`가 표에 없는 이유는 만들 필요가 없기 때문입니다.
 탐색기의 **내 게임** 소스가 보관함의 게임을 스스로 색인하고, 게임을
-모을수록 알아서 따라옵니다.
+모을수록 알아서 따라옵니다. `data/openings.json`이 표에 있는 것은 이름이
+어디서 오는지 밝히기 위해서일 뿐입니다. 서버가 함께 딸려 오는 ECO 표에서,
+이름이 처음 필요해진 순간에 직접 컴파일합니다.
 
 **오프닝 북에는 셸이 필요 없습니다.** 탐색기의 북 관리자를 열어 PGN
 모음을 올리고, 합칠 것을 골라 만들기를 누르면 됩니다. 무료로 쓸 만한
@@ -277,7 +279,7 @@ npm test               # 단위 테스트
 npm run typecheck      # tsc --noEmit
 npm run setup:engine   # Stockfish를 web/public/engine/으로 복사
 npm run build:book     # vault/sources의 PGN을 오프닝 북으로 색인
-npm run build:openings # ECO 오프닝 이름 컴파일
+npm run build:openings # ECO 이름 재컴파일 (앱이 알아서 합니다)
 npm run build:refgames # 엘리트 브라우저용 참고 게임 색인
 npm run build:puzzles  # Lichess 덤프로 퍼즐 트레이너 풀 만들기
 npm run desktop:package        # Windows 설치 프로그램 (:mac, :linux도 있습니다)

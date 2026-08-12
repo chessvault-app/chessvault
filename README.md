@@ -164,11 +164,13 @@ so it never ships in the repo. Build what you want, per machine.
 | `data/puzzles.sqlite` | the puzzle trainer | `npm run build:puzzles` |
 | `data/refgames.sqlite` | the elite game browser | `npm run build:refgames` |
 | `data/books/*.sqlite` | the local opening explorer | in the app, or `npm run build:book` |
-| `data/openings.json` | ECO opening names | `npm run build:openings` |
+| `data/openings.json` | ECO opening names | the app, on first use |
 
 `data/mygames.sqlite` is not in the table because you never build it: the
 explorer's **My games** source indexes the vault's own games itself and
-keeps up as you collect more.
+keeps up as you collect more. `data/openings.json` is in it only to say
+where the names come from — the server compiles it from the ECO tables it
+ships with, the first time something asks for a name.
 
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free
@@ -283,7 +285,7 @@ npm test               # unit tests
 npm run typecheck      # tsc --noEmit
 npm run setup:engine   # copy Stockfish into web/public/engine/
 npm run build:book     # index vault/sources PGNs into opening books
-npm run build:openings # compile ECO opening names
+npm run build:openings # recompile ECO names (the app does this itself)
 npm run build:refgames # index reference games for the elite browser
 npm run build:puzzles  # build the puzzle trainer's pool from the Lichess dump
 npm run desktop:package        # Windows installer (:mac, :linux for the others)

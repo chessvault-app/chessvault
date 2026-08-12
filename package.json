@@ -126,6 +126,10 @@
       {
         "from": "dist",
         "to": "dist"
+      },
+      {
+        "from": "scripts/vendor/chess-openings",
+        "to": "scripts/vendor/chess-openings"
       }
     ],
     "npmRebuild": false,
