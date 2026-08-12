@@ -799,7 +799,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
       </p>
       {settings.lichess.configured && (
         <p className="text-muted text-xs">
-          A token ending in <span className="font-mono">…{settings.lichess.last4}</span> {t('is configured.')}
+          {t('A token ending in {last4} is configured.', { last4: `…${settings.lichess.last4}` })}
         </p>
       )}
       <div className="flex items-center gap-2">

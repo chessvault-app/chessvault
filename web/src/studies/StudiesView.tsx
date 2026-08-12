@@ -18,6 +18,7 @@ import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
+import { Globe, Loader2 } from 'lucide-react';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Modal } from '@/ui/Modal';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
@@ -374,8 +375,14 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           placeholder={t('Lichess username')}
           className="flex-1"
         />
-        <Button variant="secondary" size="sm" disabled={!user.trim() || busy} onClick={() => void load()}>
-          {t('List')}
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          disabled={!user.trim() || busy}
+          onClick={() => void load()}
+          title={t('List this account’s studies')}
+        >
+          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Globe className="size-3.5" />}
         </Button>
       </div>
       {note && <p className="text-subtle text-xs">{note}</p>}

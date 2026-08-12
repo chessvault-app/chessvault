@@ -88,6 +88,8 @@ export const ko: Record<string, string> = {
   'Nothing entered yet — find the first move on the board.':
     '아직 입력한 수가 없습니다. 보드에서 첫 수를 찾아보세요.',
   Submit: '제출',
+  'A token ending in {last4} is configured.': '{last4}로 끝나는 토큰이 설정되어 있습니다.',
+  'List this account’s studies': '이 계정의 스터디 목록 보기',
   'Add {n} as drafts': '{n}개를 초안으로 추가',
   'Rebuilds from {sources}': '다시 만들 때 읽는 파일: {sources}',
   'Came with the app — nothing to rebuild from': '앱과 함께 온 북입니다 — 다시 만들 원본이 없습니다',
@@ -371,7 +373,7 @@ export const ko: Record<string, string> = {
   'New password': '새 비밀번호',
   'Repeat new password': '새 비밀번호 확인',
   'Lichess token': 'Lichess 토큰',
-  'Danger zone': '위험 구역',
+  'Danger zone': '보관함 내 데이터 초기화',
   Server: '서버',
   Vault: '보관함',
   'Point this window at a server, or host a folder on this machine.':
