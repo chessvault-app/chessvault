@@ -201,6 +201,35 @@ are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
 month of Lichess Elite (280,059 games) indexes 361 k positions in 97 s into
 125 MB.
 
+**From a terminal, if you prefer one.** The same builder, with the knobs
+the app does not offer yet. This is exactly what the release workflow runs
+to make the bundled book, so it doubles as a worked example of where the
+games come from:
+
+```bash
+# one month of Lichess Elite — CC0, ~80 MB zipped, ~280 k games
+curl -O https://database.nikonoel.fr/lichess_elite_2025-11.zip
+unzip lichess_elite_2025-11.zip -d vault/sources/
+
+# the full book: 361 k positions, 125 MB, ~100 s
+npm run build:book -- lichess_elite_2025-11.pgn --name elite
+
+# optional: shrink it to the 1.5 MB book an installer carries
+npm run build:bundled-book
+```
+
+Anything in `vault/sources/` is fair game, and a bare `npm run build:book`
+indexes every PGN there, one book each. The flags, all optional:
+
+| flag | default | what it changes |
+| --- | --- | --- |
+| `--name` | the file's name | what the book is called |
+| `--max-ply` | 24 | how deep each game is read — 24 plies is move 12 |
+| `--min-games` | 2 | drop a position reached by fewer games than this |
+| `--top-games` | 8 | games kept for a position too busy for a full list |
+| `--all-below` | worked out | keep EVERY game of a position reached by this many or fewer |
+| `--stage-cap` | 200 | ceiling on the worked-out threshold, and on games staged per position |
+
 A book also keeps the games themselves, so the explorer can list who played
 a position and open any of them on the board. Every game is kept where a
 position is quiet enough for a full list to mean something, and only the
@@ -310,6 +339,7 @@ npm test               # unit tests
 npm run typecheck      # tsc --noEmit
 npm run setup:engine   # copy Stockfish into web/public/engine/
 npm run build:book     # index vault/sources PGNs into opening books
+npm run build:bundled-book     # shrink the biggest book into the one an installer ships
 npm run build:openings # recompile ECO names (the app does this itself)
 npm run build:refgames # index reference games for the elite browser
 npm run build:puzzles  # build the puzzle trainer's pool from the Lichess dump

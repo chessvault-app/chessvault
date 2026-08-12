@@ -196,6 +196,35 @@ Lichess Elite 한 달치를 추려 걸어 놓은 북이 이미 들어 있습니�
 Zobrist 해시로 키를 만들고 메모리를 제한한 채 스트리밍합니다 — Lichess
 Elite 한 달치(280,059 게임)에서 361k 국면을 97초에 색인해 125MB가 됩니다.
 
+**터미널이 편하다면.** 같은 빌더를, 앱이 아직 열어 주지 않는 손잡이까지
+써서 돌립니다. 릴리스 워크플로가 함께 딸려 오는 북을 만들 때 돌리는 것과
+똑같으므로, 기보를 어디서 구하는지에 대한 예제이기도 합니다:
+
+```bash
+# Lichess Elite 한 달치 — CC0, 압축 ~80MB, 기보 약 28만 판
+curl -O https://database.nikonoel.fr/lichess_elite_2025-11.zip
+unzip lichess_elite_2025-11.zip -d vault/sources/
+
+# 전체 북: 국면 361k개, 125MB, 약 100초
+npm run build:book -- lichess_elite_2025-11.pgn --name elite
+
+# 선택: 설치 프로그램이 담는 1.5MB 북으로 추리기
+npm run build:bundled-book
+```
+
+`vault/sources/`에 있는 것은 무엇이든 쓸 수 있고, 인자 없이
+`npm run build:book`을 돌리면 거기 있는 PGN마다 북을 하나씩 만듭니다.
+플래그는 전부 선택 사항입니다:
+
+| 플래그 | 기본값 | 무엇이 달라지나 |
+| --- | --- | --- |
+| `--name` | 파일 이름 | 북의 이름 |
+| `--max-ply` | 24 | 각 기보를 어디까지 읽을지 — 24플라이는 12수째 |
+| `--min-games` | 2 | 이보다 적은 기보가 지나간 국면은 버립니다 |
+| `--top-games` | 8 | 목록을 다 담기엔 붐비는 국면에서 남길 기보 수 |
+| `--all-below` | 스스로 정함 | 이 수 이하의 기보가 지나간 국면은 **전부** 담습니다 |
+| `--stage-cap` | 200 | 스스로 정하는 값의 상한이자, 국면당 쌓아 두는 기보 수의 상한 |
+
 북은 게임 자체도 담습니다. 그래서 탐색기가 이 국면을 누가 뒀는지 보여 주고,
 그중 아무 게임이나 보드에 열 수 있습니다. 목록이 의미를 가질 만큼 한산한
 국면에서는 게임을 전부 담고, 그렇지 않은 국면에서는 강한 몇 판만 남깁니다.
@@ -303,6 +332,7 @@ npm test               # 단위 테스트
 npm run typecheck      # tsc --noEmit
 npm run setup:engine   # Stockfish를 web/public/engine/으로 복사
 npm run build:book     # vault/sources의 PGN을 오프닝 북으로 색인
+npm run build:bundled-book     # 가장 큰 북을 설치 프로그램용으로 추리기
 npm run build:openings # ECO 이름 재컴파일 (앱이 알아서 합니다)
 npm run build:refgames # 엘리트 브라우저용 참고 게임 색인
 npm run build:puzzles  # Lichess 덤프로 퍼즐 트레이너 풀 만들기
