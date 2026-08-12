@@ -237,6 +237,20 @@ export const ko: Record<string, string> = {
   // Games: the row toolbar and the archive panel.
   Bookmarked: '북마크',
   'Preview the board': '보드 미리보기',
+  // Games: the three empty states, each ending on the press that fixes it.
+  'Your collection is empty': '모음이 비어 있습니다',
+  'The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study.':
+    '모음에는 남길 만한 게임이 들어갑니다 — 스터디처럼 주석을 달 수 있습니다. 게임을 가져오거나, 온라인 기보를 둘러보고 공부할 게임을 추가하세요.',
+  'No bookmarked games yet': '즐겨찾기한 게임이 없습니다',
+  'Star a game from the list and it is kept here, one press from wherever you are.':
+    '목록에서 게임에 별을 달면 여기에 모입니다. 어디서든 한 번에 열 수 있습니다.',
+  'Browse all games': '모든 게임 보기',
+  'Nothing matches that search': '검색 결과가 없습니다',
+  'No bookmarked game in your collection matches it. Clearing the search shows every bookmark again.':
+    '모음의 즐겨찾기 중 일치하는 게임이 없습니다. 검색을 지우면 모든 즐겨찾기가 다시 보입니다.',
+  'No game in your collection matches it. Clearing the search shows the whole collection again.':
+    '모음에 일치하는 게임이 없습니다. 검색을 지우면 모음 전체가 다시 보입니다.',
+  'Clear search': '검색 지우기',
   'Which site to browse': '둘러볼 사이트',
   'Recent searches': '최근 검색',
   'Forget this search': '이 검색 지우기',

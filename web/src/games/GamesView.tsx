@@ -10,7 +10,6 @@ import {
   NotebookPen,
   Pencil,
   Plus,
-  Search,
   Star,
   BookOpen,
   Trash2,
@@ -34,6 +33,8 @@ import { ChipRow } from '@/ui/ChipRow';
 import { FilterChip } from '@/ui/FilterChip';
 import { Segmented } from '@/ui/Segmented';
 import { CloudBoardArt } from '@/ui/CloudBoardArt';
+import { EmptyState } from '@/ui/EmptyState';
+import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
@@ -709,38 +710,59 @@ function CollectionView() {
             }
           />
           {loaded && games.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <BookOpen className="text-subtle size-6" strokeWidth={1.5} />
-              <p className="text-muted max-w-md text-sm leading-relaxed">
-                {t(
-                  "Your collection is empty. It's meant to hold the games worth keeping — each one annotatable like a study. Browse your chess.com history below and add the ones you want to study.",
-                )}
-              </p>
-            </div>
+            <EmptyState
+              // Centred in the PANEL, not parked under its header: an empty
+              // state pinned to the top of a full-height box is the thing
+              // that leaves a reader looking at dead space below it.
+              className="min-h-0 flex-1"
+              art={<CollectionArt />}
+              title="Your collection is empty"
+              body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
+              action={
+                <Button variant="primary" size="sm" onClick={() => setImporting(true)}>
+                  <Plus className="mr-1 size-3.5" />
+                  {t('Import a game')}
+                </Button>
+              }
+            />
           ) : loaded && visible.length === 0 ? (
             /* The collection HAS games; this search or the bookmark toggle
                just matches none of them. Saying so beats a box with nothing
                under its header, which reads as the collection having been
-               emptied. */
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              {starredOnly && !needle ? (
-                <>
-                  <Star className="text-subtle size-6" strokeWidth={1.5} />
-                  <p className="text-muted max-w-md text-sm leading-relaxed">
-                    {t('No bookmarked games yet — the star on a row keeps it here.')}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Search className="text-subtle size-6" strokeWidth={1.5} />
-                  <p className="text-muted max-w-md text-sm leading-relaxed">
-                    {starredOnly
-                      ? t('No bookmarked game matches “{query}”.', { query: query.trim() })
-                      : t('No game in your collection matches “{query}”.', { query: query.trim() })}
-                  </p>
-                </>
-              )}
-            </div>
+               emptied. Each of these ends on the press that undoes it —
+               an empty state whose only advice is "go and do something
+               else" leaves the reader looking at dead space. */
+            starredOnly && !needle ? (
+              <EmptyState
+                className="min-h-0 flex-1"
+                art={<BookmarkArt />}
+                title="No bookmarked games yet"
+                body="Star a game from the list and it is kept here, one press from wherever you are."
+                action={
+                  <Button variant="primary" size="sm" onClick={() => setStarredOnly(false)}>
+                    <BookOpen className="mr-1 size-3.5" />
+                    {t('Browse all games')}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                className="min-h-0 flex-1"
+                art={<NoMatchArt />}
+                title="Nothing matches that search"
+                body={
+                  starredOnly
+                    ? 'No bookmarked game in your collection matches it. Clearing the search shows every bookmark again.'
+                    : 'No game in your collection matches it. Clearing the search shows the whole collection again.'
+                }
+                action={
+                  <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
+                    <X className="mr-1 size-3.5" />
+                    {t('Clear search')}
+                  </Button>
+                }
+              />
+            )
           ) : (
           // Dividers AND a faint stripe on every other row: at two lines a
           // row is tall enough that a hairline alone left the list reading
