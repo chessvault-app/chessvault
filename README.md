@@ -40,7 +40,8 @@ stored as PGN, markdown and JSON in one folder you own.
   scanned tactics book PDF and an ML pipeline reads the diagrams,
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
-  original page scan. Three books and ~3,150 puzzles imported so far.
+  original page scan. No book is bundled: you supply the PDF of a book
+  you own, and the puzzles it yields stay in your vault.
 
   ![Puzzle dashboard](docs/screenshots/dashboard.png)
 

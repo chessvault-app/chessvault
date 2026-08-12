@@ -129,6 +129,11 @@ validation reruns.
 
 ## Results so far (bootstrap phase)
 
+These are the importer's benchmark, measured against scans of books
+supplied by whoever ran it. The books are commercial and none of them —
+no page, no diagram, no puzzle — is in this repository or ships with the
+app; what a book yields stays in that person's vault.
+
 | Book | Imported | Book solutions | Drafts |
 | --- | --- | --- | --- |
 | 1001 Chess Exercises for Beginners | 970 / 1001 | 739 | 10 |

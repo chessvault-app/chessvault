@@ -198,11 +198,11 @@ configuration at all.
 
 ## 2026-08-08
 
-- **Second and third books imported** — per-book import configs, an
-  engine pool with a persistent search cache, and solution-constrained
-  board repair (the book's own line fixes misread diagrams). The
-  Complete Chess Workout and The Woodpecker Method joined the shelf,
-  ~3,150 verified puzzles across three books.
+- **Two more books read** — per-book import configs, an engine pool
+  with a persistent search cache, and solution-constrained board repair
+  (the book's own line fixes misread diagrams). The benchmark scans
+  reached ~3,150 verified puzzles across three books; what a book
+  yields lives in the vault of whoever imported it, never here.
 - **Fidelity tiers** — every imported puzzle wears an honest
   provenance mark (book solution → engine-verified → unverified), with
   plain-words labels and shape-coded icons.
