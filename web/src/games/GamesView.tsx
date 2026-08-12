@@ -1,5 +1,4 @@
 import {
-  Check,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -224,7 +223,7 @@ function formatTimeControl(tc: string | null): string | null {
 export function GamesView({ params }: { params: string[] }) {
   // 'elite' is reserved for the reference-games browser; everything else
   // is a collection document id.
-  if (params[0] === 'elite') return <EliteGames page />;
+  if (params[0] === 'elite') return <EliteGames variant="page" />;
   const id = params[0] ? decodeURIComponent(params[0]) : null;
   return id ? <StudyView id={id} kind="game" /> : <CollectionView />;
 }
@@ -247,15 +246,23 @@ interface RefGame {
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
  *
- * A page at lg, where it is opened from the column of places a game can
- * come from and there is room for a 2M-row browser to be a browser. A
- * WINDOW below that — a bottom sheet on a phone — because it is one of the
- * ways to add a game, like the online archive beside it, and a phone that
- * navigates away to a screen of its own has lost the collection it was
- * about to add to. Same component either way; `page` is the difference
- * between owning the frame and being handed one.
+ * Three shapes, one component, because it is one thing:
+ *
+ * `column` — the second half of the column that finds games, behind the
+ * tab beside Online archives. Where it belongs on a desktop: the archive
+ * and the reference database answer the same question, so they take turns
+ * in one panel rather than each taking a box.
+ *
+ * `window` — below lg, where there is no column. A bottom sheet on a
+ * phone, like the archive. It used to navigate to a page of its own,
+ * which loses the collection you were about to add to.
+ *
+ * `page` — its own route, still reachable and still where a 2M-row
+ * browser has the most room. The only shape that draws its own frame, its
+ * own title and a way back.
  */
-function EliteGames({ page = false }: { page?: boolean }) {
+function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'column' }) {
+  const page = variant === 'page';
   const [meta, setMeta] = useState<{ ready: boolean; games?: number; sources?: string } | null>(
     null,
   );
@@ -411,28 +418,17 @@ function EliteGames({ page = false }: { page?: boolean }) {
     );
   }
 
-  const body = (
-    <>
-      <SearchInput
-        inputSize="lg"
-        value={query}
-        onChange={(e) => onQuery(e.target.value)}
-        placeholder={t('Search players, openings, or ECO (e.g. Najdorf, B90)…')}
-        spellCheck={false}
-        className="w-full shrink-0"
-      />
+  const count =
+    loading && rows.length === 0
+      ? t('Searching…')
+      : t('{n} games', { n: total.toLocaleString() });
 
-      {/* A page gives this the height it has left and the list scrolls
-          inside it. A window has no height to give — it is as tall as what
-          is in it, up to a cap — so the panel takes its natural size below
-          sm and the window scrolls instead. Exactly what the archive
-          browser does in the same window. */}
-      <Panel flush className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
-        <PanelHeader title={loading && rows.length === 0 ? t('Searching…') : t('{n} games', { n: total.toLocaleString() })} />
-        {searching && <SkeletonGameRows rows={8} />}
-        {/* The same stripe the collection list has: at three lines a row is
-            tall enough that a hairline between rows disappears. */}
-        <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022]">
+  const list = (
+    <>
+      {searching && <SkeletonGameRows rows={8} />}
+      {/* The same stripe the collection list has: at three lines a row is
+          tall enough that a hairline between rows disappears. */}
+      <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022]">
           {rows.map((g) => (
             <li key={g.id} className="group hover:bg-surface-2 flex items-center gap-1 pr-2 transition-colors duration-100">
               {/* Mirrors the collection's GameRow — same bold names, same
@@ -500,18 +496,19 @@ function EliteGames({ page = false }: { page?: boolean }) {
                 </Button>
               </span>
 
+              {/* w-16 and a bare word when it is done, exactly like the
+                  archive's rows: the two lists now take turns in one 210px
+                  column, and 20 characters of player name is worth more
+                  than a tick beside a word that is already past tense. */}
               <Button
                 variant={inCollection(g) ? 'ghost' : 'secondary'}
                 size="sm"
-                className="w-20 shrink-0"
+                className="w-16 shrink-0"
                 disabled={inCollection(g)}
                 onClick={() => void collect(g)}
               >
                 {inCollection(g) ? (
-                  <>
-                    <Check className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-                    {t('Added')}
-                  </>
+                  t('Added')
                 ) : (
                   <>
                     <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
@@ -526,14 +523,61 @@ function EliteGames({ page = false }: { page?: boolean }) {
               <Loader2 className="text-subtle size-4 animate-spin" />
             </li>
           )}
-        </ul>
+      </ul>
+    </>
+  );
+
+  // In the column the panel and the tab that named it are already drawn:
+  // this is only the field and the list, laid out like the archive's own
+  // body so the two read as one panel that changed its mind.
+  if (variant === 'column') {
+    return (
+      <>
+        <div className="flex flex-col gap-2 px-3 pb-3 pt-3">
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
+            placeholder={t('Search players, openings, or ECO')}
+            spellCheck={false}
+            className="w-full"
+          />
+        </div>
+        <div className="border-line text-subtle shrink-0 border-t px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          {count}
+        </div>
+        {list}
+        <GamePreview preview={preview} onClose={hidePreview} />
+      </>
+    );
+  }
+
+  const body = (
+    <>
+      <SearchInput
+        inputSize="lg"
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        placeholder={t('Search players, openings, or ECO (e.g. Najdorf, B90)…')}
+        spellCheck={false}
+        className="w-full shrink-0"
+      />
+
+      {/* A page gives this the height it has left and the list scrolls
+          inside it. A window has no height to give — it is as tall as what
+          is in it, up to a cap — so the panel takes its natural size below
+          sm and the window scrolls instead. Exactly what the archive
+          browser does in the same window. */}
+      <Panel flush className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
+        <PanelHeader title={count} />
+        {list}
       </Panel>
       <GamePreview preview={preview} onClose={hidePreview} />
     </>
   );
 
   // In a window the frame and the title belong to the window; only a page
-  // has to draw its own, and a page is also the only one of the two that
+  // has to draw its own, and a page is also the only one of the three that
   // needs a way back to where it came from.
   if (!page) return body;
 
@@ -554,6 +598,13 @@ function EliteGames({ page = false }: { page?: boolean }) {
   );
 }
 
+/** The two places a game can be found, and the column's two tabs. */
+type SourceId = 'archive' | 'elite';
+const SOURCES: { id: SourceId; label: string }[] = [
+  { id: 'archive', label: 'Online archives' },
+  { id: 'elite', label: 'Elite games' },
+];
+
 /**
  * The collection: games deliberately kept for reference, each annotatable.
  * chess.com history is browsed month by month below and promoted per game.
@@ -571,6 +622,8 @@ function CollectionView() {
   const [browsing, setBrowsing] = useState(false);
   /** The reference browser as a window, for the same reason. */
   const [elite, setElite] = useState(false);
+  /** Which of the two the column is showing. */
+  const [source, setSource] = useState<SourceId>('archive');
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
   // many items, so at lg the Add games button drew a chevron and a popover
   // to offer a single row. The list has to know the width, not just the
@@ -769,7 +822,11 @@ function CollectionView() {
           full height (it showed four rows when the archive browser sat
           under it), and the browser is a tool beside it. One under the
           other below lg, where there is no width to split. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[7fr_3fr] lg:items-stretch">
+      {/* minmax(0,…), not a bare 7fr/3fr: an fr track is min-content wide
+          at its narrowest, so the column silently widened to fit the
+          longest opening name in whichever list it was showing — the two
+          panels changed width when the tab was switched. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:items-stretch">
       {
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
@@ -907,37 +964,64 @@ function CollectionView() {
         </Panel>
       }
 
-      {/* Where a game comes from, as a column: your own online archive,
-          and the reference database under it. Beside the collection where
-          there is width for it, and nowhere at all below lg — on a phone
-          the archive was the bottom half of the page whether or not
-          anybody was browsing. Both open from Add games there instead. */}
-      <div className="hidden min-h-0 gap-3 lg:flex lg:flex-col">
-        <ArchiveBrowser collectionKeys={collectionKeys} onCollected={() => void load()} onPreview={setPreview} />
-        {/* A row, not a panel: it is one press with nothing to configure,
-            and a second bordered box with a header would claim the same
-            weight as the archive above it for a fraction of the content.
-            Here rather than in the Add games menu because this column is
-            already the answer to "where do I get a game" — and because a
-            menu hides it, while a row in the column is a standing offer. */}
-        <button
-          type="button"
-          onClick={() => navigate('games', 'elite')}
-          className={cn(
-            'bg-surface border-line hover:bg-surface-2 hover:border-line-strong flex shrink-0 items-center gap-2.5',
-            'rounded-xl border px-3 py-2.5 text-left shadow-[var(--shadow-panel)]',
-            'transition-colors duration-100',
+      {/* Where a game comes from, as ONE panel with two answers: the games
+          you have played, and the games masters have. They are the same
+          question — find a game worth keeping — so they take turns in one
+          box rather than each taking a box and halving the other's height.
+          Beside the collection where there is width for it, and nowhere at
+          all below lg, where both open from Add games as windows. */}
+      <div className="hidden min-h-0 lg:flex lg:flex-col">
+        <Panel flush className="min-h-0 flex-1">
+          {/* The panel's TITLE is the switch. A pill track here would be
+              the second one in this panel — the provider tabs are eight
+              pixels below it — and two stacked tracks read as one
+              two-storey control. Naming the panel is what a header does,
+              so the live tab is the header's own rule, thickened and lit
+              under the name that is showing. */}
+          <header
+            role="tablist"
+            aria-label={t('Where to find a game')}
+            className="border-line flex h-10 shrink-0 items-center gap-1 border-b px-2"
+          >
+            {SOURCES.map(({ id, label }) => {
+              const on = source === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
+                  onClick={() => setSource(id)}
+                  // No icon, and not the header's uppercase micro-caps:
+                  // measured, the pair came to 256px that way and this
+                  // column is 210px wide at the narrowest lg. Plain text
+                  // at text-xs is 178. min-w-0 so a longer translation
+                  // truncates rather than pushing the second tab out.
+                  className={cn(
+                    'relative flex h-10 min-w-0 items-center px-1.5 text-xs font-semibold',
+                    'transition-colors duration-100',
+                    on
+                      ? 'text-fg after:bg-primary after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full'
+                      : 'text-subtle hover:text-fg',
+                  )}
+                >
+                  <span className="truncate">{t(label)}</span>
+                </button>
+              );
+            })}
+          </header>
+
+          {source === 'archive' ? (
+            <ArchiveBrowser
+              framed={false}
+              collectionKeys={collectionKeys}
+              onCollected={() => void load()}
+              onPreview={setPreview}
+            />
+          ) : (
+            <EliteGames variant="column" />
           )}
-        >
-          <Trophy className="text-subtle size-4 shrink-0" />
-          <span className="min-w-0 flex-1">
-            <span className="text-fg block truncate text-sm font-medium">{t('Elite games')}</span>
-            <span className="text-subtle block truncate text-xs">
-              {t('Search the reference database')}
-            </span>
-          </span>
-          <ChevronRight className="text-muted size-3.5 shrink-0" />
-        </button>
+        </Panel>
       </div>
       </div>
 
@@ -1003,10 +1087,13 @@ function ArchiveBrowser({
   collectionKeys,
   onCollected,
   onPreview,
+  framed = true,
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
+  /** Off in the column, where it shares a panel with Elite games. */
+  framed?: boolean;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -1352,17 +1439,8 @@ function ArchiveBrowser({
     }
   };
 
-  return (
-    <Panel flush className="shrink-0 sm:min-h-0 sm:flex-1">
-      {/* Narrow screens can't fit tabs + username + Browse on one line;
-          the band relaxes its fixed height and lets the actions wrap. */}
-      {/* A plain title, the same h-10 the collection's header is: the two
-          panels sit side by side, and a header that grew to fit its
-          controls started this one's contents 35px below the other's. The
-          controls live in the body instead, stacked, which is also what
-          a 30%-wide column wants. */}
-      <PanelHeader title={t('Online archives')} />
-
+  const body = (
+    <>
       {/* pt-3, not flush under the header's rule: the tab bar is a raised
           control and sitting it straight against the line made the two
           read as one stuck-together thing. */}
@@ -1769,6 +1847,23 @@ function ArchiveBrowser({
           </p>
         </div>
       )}
+    </>
+  );
+
+  // In the column it shares a panel with Elite games, and the tab that
+  // switched to it has already said which one this is. Everywhere else it
+  // brings its own box and its own title.
+  if (!framed) return body;
+
+  return (
+    <Panel flush className="shrink-0 sm:min-h-0 sm:flex-1">
+      {/* A plain title, the same h-10 the collection's header is: the two
+          panels sit side by side, and a header that grew to fit its
+          controls started this one's contents 35px below the other's. The
+          controls live in the body instead, stacked, which is also what
+          a 30%-wide column wants. */}
+      <PanelHeader title={t('Online archives')} />
+      {body}
     </Panel>
   );
 }
