@@ -1,5 +1,6 @@
 import type { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { useKeyboardInset } from '@/lib/keyboardInset';
@@ -60,7 +61,10 @@ export function Modal({
   // as PromptSheet: give the centring box back the height the keyboard took.
   const inset = useKeyboardInset();
 
-  return (
+  // On the body, not wherever it was written: a window is a floating layer
+  // and must not inherit a containing block from whatever opened it — a
+  // transformed ancestor turns `fixed` into "fixed inside that element".
+  return createPortal(
     <div
       className={cn(
         'fixed inset-0 z-50 grid place-items-center bg-black/60',
@@ -102,6 +106,7 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

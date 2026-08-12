@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
@@ -46,7 +47,11 @@ export function Sheet({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  // Portalled for the same reason ActionSheet is: a rename opened from a
+  // shelf card is a child of that card, and a card that lifts under the
+  // pointer is a containing block for `fixed` — so the sheet was laid out
+  // inside the card and clipped by its overflow.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
       style={{ paddingBottom: covered ? covered + 12 : undefined }}
@@ -72,6 +77,7 @@ export function Sheet({
         <p className="border-line -mx-3 border-b px-3 pb-2 text-subtle text-xs">{t(label)}</p>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

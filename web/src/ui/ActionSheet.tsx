@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -70,7 +71,14 @@ export function ActionSheet({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  // Portalled to the body, because `position: fixed` is only relative to
+  // the viewport while no ancestor has a transform, a filter or
+  // containment — and a shelf card has a transform: it lifts a pixel under
+  // the pointer, which is exactly when this menu opens. The card became
+  // the containing block, its `overflow-hidden` clipped the menu to a
+  // 60px strip, and the menu appeared to blink and do nothing. A floating
+  // layer has no business living inside the thing it floats over.
+  return createPortal(
     <div
       className={cn(
         'fixed inset-0 z-50',
@@ -141,6 +149,7 @@ export function ActionSheet({
           </button>
         ))}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
