@@ -296,19 +296,26 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               key={section}
               type="button"
               onClick={() => navigate(section)}
-              title={t(label)}
+              // aria-label, not title: the label is written beside the icon
+              // at lg, so the native tooltip only ever repeated what was
+              // already on screen — and it popped over the item below it.
+              // Screen readers still get the name in the collapsed rail.
+              aria-label={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
                 'transition-colors duration-150',
                 'justify-center lg:justify-start',
                 isActive
-                  ? 'bg-primary-soft text-primary'
+                  ? // Fill, outline and rail together: on the darker page
+                    // the soft fill alone was close enough to the sidebar
+                    // that the current section had to be looked for.
+                    'bg-primary-soft text-primary ring-primary/30 font-semibold ring-1 ring-inset'
                   : 'text-muted hover:bg-surface-2 hover:text-fg',
               )}
             >
               {isActive && (
-                <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />
+                <span className="bg-primary absolute left-0 h-6 w-[3px] rounded-r-full" />
               )}
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
               <span className="hidden lg:block">{t(label)}</span>
