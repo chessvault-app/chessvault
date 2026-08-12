@@ -21,7 +21,7 @@ import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { ActionSheet } from '@/ui/ActionSheet';
-import { SwipeRow } from '@/ui/SwipeRow';
+import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { Fab } from '@/ui/Fab';
@@ -527,6 +527,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
   const [renaming, setRenaming] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const folderTrigger = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="group/folder flex h-6 items-center gap-1.5">
@@ -553,6 +554,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
         />
       )}
       <Button
+        ref={folderTrigger}
         variant="ghost"
         size="icon-sm"
         title={t('More')}
@@ -566,6 +568,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
       {menuOpen && (
         <ActionSheet
           title={folder}
+          anchor={folderTrigger}
           onClose={() => setMenuOpen(false)}
           actions={[
             { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
@@ -614,6 +617,8 @@ function StudyCard({
   const [moving, setMoving] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const swipe = useSwipeAway(onRemove);
 
   const name = study.id.split('/').at(-1)!;
   const folder = study.id.includes('/') ? study.id.slice(0, study.id.lastIndexOf('/')) : '';
@@ -629,7 +634,6 @@ function StudyCard({
 
   return (
     <li>
-      <SwipeRow onSwipe={onRemove}>
       <div
         role="button"
         tabIndex={0}
@@ -639,12 +643,15 @@ function StudyCard({
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !renaming) navigate('studies', encodeURIComponent(study.id));
         }}
+        {...swipe.handlers}
         className={cn(
           'bg-surface border-line hover:border-line-strong group relative flex cursor-pointer',
-          'items-center gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
+          'items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
         )}
       >
-        <div className="min-w-0 flex-1">
+        {/* The card stays; its contents slide off it. */}
+        <SwipeTrack dx={swipe.dx} />
+        <div className="min-w-0 flex-1" style={swipe.style}>
           <p className="text-fg truncate text-sm font-semibold">{name}</p>
           <p className="text-subtle text-xs" title={formatWhen(study.updatedAt)}>
             {t('{n} chapters', { n: study.chapters })} · {t('edited {when}', { when: formatAgo(study.updatedAt) })}
@@ -653,8 +660,12 @@ function StudyCard({
         </div>
 
         {(
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+          <div
+            style={swipe.style}
+            className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+          >
             <Button
+              ref={menuTrigger}
               variant="ghost"
               size="icon-sm"
               title={t('More')}
@@ -675,6 +686,7 @@ function StudyCard({
         {menuOpen && (
           <ActionSheet
             title={name}
+            anchor={menuTrigger}
             onClose={() => setMenuOpen(false)}
             actions={[
               { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
@@ -709,7 +721,6 @@ function StudyCard({
           />
         )}
       </div>
-      </SwipeRow>
     </li>
   );
 }

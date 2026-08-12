@@ -83,7 +83,12 @@ export function Modal({
           full
             ? // Edge to edge on a phone — no corners to round against the
               // screen edge — and a large, still-bounded sheet on desktop.
-              'h-full max-h-full rounded-none sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl'
+              // The insets keep the title out from under a notch and the
+              // last button off the home indicator.
+              'h-full max-h-full rounded-none pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
+              'pl-[calc(0.75rem+env(safe-area-inset-left))] pr-[calc(0.75rem+env(safe-area-inset-right))] ' +
+              'pt-[calc(0.75rem+env(safe-area-inset-top))] ' +
+              'sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl sm:p-3'
             : 'max-h-full max-w-[32rem] rounded-xl',
           className,
         )}

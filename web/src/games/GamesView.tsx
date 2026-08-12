@@ -36,7 +36,7 @@ import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { Fab } from '@/ui/Fab';
-import { SwipeRow } from '@/ui/SwipeRow';
+import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { PromptSheet } from '@/ui/PromptSheet';
@@ -694,8 +694,9 @@ function CollectionView() {
           ) : (
           <ul className="divide-line min-h-0 divide-y overflow-y-auto sm:max-h-[38dvh]">
             {visible.map((game) => (
-              <SwipeRow key={gameKey(game)} onSwipe={() => dropGame(game)}>
               <GameRow
+                key={gameKey(game)}
+                onSwipeAway={() => dropGame(game)}
                 game={game}
                 customName={customName(game)}
                 renaming={renamingKey === gameKey(game)}
@@ -745,7 +746,6 @@ function CollectionView() {
                 }
                 showLink={false}
               />
-              </SwipeRow>
             ))}
           </ul>
           )}
@@ -1339,6 +1339,7 @@ function GameRow({
   renaming = false,
   onRename,
   showLink = true,
+  onSwipeAway,
 }: {
   game: GameSummary;
   onOpen: () => void;
@@ -1350,10 +1351,13 @@ function GameRow({
   onRename?: (to: string) => void;
   /** Collection rows fold the external link into their row menu. */
   showLink?: boolean;
+  /** Touch: swiping the row's contents left removes it (undoably). */
+  onSwipeAway?: () => void;
 }) {
   // The eye pops the final position. Fine pointers hover a popover beside
   // the row; coarse pointers TAP for a centred overlay (dismissed by its
   // scrim) — a beside-row popover on a phone would cover the row itself.
+  const swipe = useSwipeAway(() => onSwipeAway?.());
   const coarse = isCoarsePointer;
   const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
     if (!game.finalFen) return;
@@ -1378,9 +1382,11 @@ function GameRow({
   return (
     <li
       onClick={onOpen}
-      className="group hover:bg-surface-2 flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors duration-100"
+      {...(onSwipeAway ? swipe.handlers : {})}
+      className="group hover:bg-surface-2 relative flex cursor-pointer items-center gap-3 overflow-hidden px-3 py-2 transition-colors duration-100"
     >
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      {onSwipeAway && <SwipeTrack dx={swipe.dx} />}
+      <div className="flex min-w-0 flex-1 items-center gap-3" style={swipe.style}>
         {/* The name is asked for in a sheet, like every other rename; the
             row keeps showing what it is called meanwhile. */}
         {renaming && (

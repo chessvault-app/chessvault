@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -22,22 +22,33 @@ export interface SheetAction {
  * One ⋯ opens this instead, where each action has a name and a whole row
  * to be tapped in.
  *
- * Bottom-anchored on purpose: the sheet arrives where the thumb already
- * is, and lists read downwards from the title, so nothing has to move to
- * be read.
+ * On a phone it rises from the bottom, where the thumb already is. On a
+ * desktop it is a popover under the ⋯ it came from: a bar sliding up from
+ * the bottom of a 1400px window is a long way from a button in the middle
+ * of it, and a mouse has no reach problem to solve.
  */
 export function ActionSheet({
   title,
   actions,
   onClose,
   children,
+  anchor,
 }: {
   title: string;
   actions: SheetAction[];
   onClose: () => void;
   /** Anything above the actions — a detail line, say. */
   children?: ReactNode;
+  /** The control this came from; a desktop popover hangs under it. */
+  anchor?: React.RefObject<HTMLElement | null>;
 }) {
+  // Read once, when it opens: a menu that re-anchored itself mid-gesture
+  // because the window was being resized would be a menu that moves under
+  // the pointer.
+  const [rect] = useState<DOMRect | null>(() => anchor?.current?.getBoundingClientRect() ?? null);
+  const [wide] = useState(() => window.matchMedia('(min-width: 40rem)').matches);
+  const popover = wide && rect !== null;
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
@@ -48,7 +59,10 @@ export function ActionSheet({
 
   return (
     <div
-      className="bg-scrim fixed inset-0 z-50 flex items-end justify-center"
+      className={cn(
+        'fixed inset-0 z-50',
+        popover ? '' : 'bg-scrim flex items-end justify-center',
+      )}
       onPointerDown={() => {
         onClose();
         suppressNextClick();
@@ -61,16 +75,28 @@ export function ActionSheet({
         aria-label={t(title)}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
+        style={
+          popover
+            ? {
+                position: 'fixed',
+                top: rect.bottom + 4,
+                right: Math.max(8, window.innerWidth - rect.right),
+              }
+            : undefined
+        }
         className={cn(
-          'bg-surface border-line w-full max-w-lg rounded-t-2xl border p-2',
-          'pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-[var(--shadow-pop)]',
-          // Desktop has no bottom edge worth hugging; it floats clear of it.
-          'sm:mb-6 sm:rounded-2xl',
+          'bg-surface border-line border p-2 shadow-[var(--shadow-pop)]',
+          popover
+            ? 'w-56 rounded-lg'
+            : // The phone's home indicator lives under the sheet's last row.
+              'w-full max-w-lg rounded-t-2xl pb-[calc(0.5rem+env(safe-area-inset-bottom))]',
         )}
       >
-        {/* The grab handle every bottom sheet has: it says which way this
-            came from, and which way it goes. */}
-        <div className="bg-line mx-auto mb-2 mt-1 h-1 w-9 shrink-0 rounded-full" aria-hidden />
+        {/* The grab handle a bottom sheet needs to say which way it came
+            from — a popover already says that by where it hangs. */}
+        {!popover && (
+          <div className="bg-line mx-auto mb-2 mt-1 h-1 w-9 shrink-0 rounded-full" aria-hidden />
+        )}
         <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
         {children}
         {actions.map(({ label, icon: Icon, danger, onSelect }) => (
@@ -82,12 +108,13 @@ export function ActionSheet({
               onSelect();
             }}
             className={cn(
-              'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm',
-              'transition-colors duration-100',
+              'flex w-full items-center gap-3 rounded-lg text-left transition-colors duration-100',
+              // A popover row is a menu item; a sheet row is a touch target.
+              popover ? 'px-3 py-1.5 text-xs' : 'px-3 py-3 text-sm',
               danger ? 'text-bad hover:bg-bad/10' : 'text-fg hover:bg-surface-2',
             )}
           >
-            <Icon className={cn('size-4 shrink-0', !danger && 'text-subtle')} />
+            <Icon className={cn(popover ? 'size-3.5' : 'size-4', 'shrink-0', !danger && 'text-subtle')} />
             {t(label)}
           </button>
         ))}

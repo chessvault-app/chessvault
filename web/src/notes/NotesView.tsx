@@ -13,7 +13,7 @@ import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { ActionSheet } from '@/ui/ActionSheet';
-import { SwipeRow } from '@/ui/SwipeRow';
+import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
@@ -320,6 +320,8 @@ function NoteCard({
   const [renaming, setRenaming] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const swipe = useSwipeAway(onRemove);
 
   const name = note.id.split('/').at(-1)!;
   const folder = note.id.includes('/') ? note.id.slice(0, note.id.lastIndexOf('/')) : '';
@@ -357,20 +359,22 @@ function NoteCard({
 
   return (
     <li>
-      <SwipeRow onSwipe={onRemove}>
       <div
         role="button"
         tabIndex={0}
         onClick={() => navigate('notes', encodeURIComponent(note.id))}
+        {...swipe.handlers}
         onKeyDown={(e) => {
           if (e.key === 'Enter') navigate('notes', encodeURIComponent(note.id));
         }}
         className={cn(
           'bg-surface border-line hover:border-line-strong group relative flex cursor-pointer',
-          'items-center gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
+          'items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)] transition-colors',
         )}
       >
-        <div className="min-w-0 flex-1">
+        {/* The card stays; its contents slide off it. */}
+        <SwipeTrack dx={swipe.dx} />
+        <div className="min-w-0 flex-1" style={swipe.style}>
           <p className="text-fg truncate text-sm font-semibold">{name}</p>
           <p className="text-subtle text-xs" title={formatWhen(note.updatedAt)}>
             {(note.bytes / 1024).toFixed(1)} KB · {t('edited {when}', { when: formatAgo(note.updatedAt) })}
@@ -379,8 +383,12 @@ function NoteCard({
         </div>
 
         {(
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+          <div
+            style={swipe.style}
+            className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+          >
             <Button
+              ref={menuTrigger}
               variant="ghost"
               size="icon-sm"
               title={t('More')}
@@ -398,6 +406,7 @@ function NoteCard({
         {menuOpen && (
           <ActionSheet
             title={name}
+            anchor={menuTrigger}
             onClose={() => setMenuOpen(false)}
             actions={[
               { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
@@ -428,7 +437,6 @@ function NoteCard({
           />
         )}
       </div>
-      </SwipeRow>
     </li>
   );
 }
