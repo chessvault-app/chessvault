@@ -83,8 +83,34 @@ const parser = new MarkdownParser(noteSchema, md, {
   code_inline: { mark: 'code', noCloseToken: true },
 });
 
+/**
+ * A leading `---` block, and the note after it.
+ *
+ * Front matter is not markdown, and CommonMark has never pretended it is:
+ * `---` opens a horizontal rule, and the `tags: …` line under it becomes a
+ * setext heading underlined by the closing `---`. So a note written in
+ * Obsidian and opened here came back with its front matter turned into a
+ * rule and an H2 — and the next autosave wrote that to disk. The metadata
+ * was gone, silently, from opening the note and touching nothing.
+ *
+ * It is kept out of the document entirely rather than modelled as a node:
+ * it is metadata about the note, not part of what somebody is writing, and
+ * a block nobody can edit is better than one that can be half-deleted.
+ *
+ * The ambiguity with a document that genuinely opens on a horizontal rule
+ * is resolved the way every other markdown tool resolves it — in favour of
+ * front matter.
+ */
+const FRONT_MATTER = /^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
+
+export function splitFrontMatter(markdown: string): { front: string; body: string } {
+  const found = FRONT_MATTER.exec(markdown);
+  if (!found) return { front: '', body: markdown };
+  return { front: found[0], body: markdown.slice(found[0].length) };
+}
+
 export function markdownToDoc(markdown: string): PmNode {
-  return parser.parse(markdown);
+  return parser.parse(splitFrontMatter(markdown).body);
 }
 
 // --- ProseMirror -> markdown -------------------------------------------------
@@ -135,8 +161,13 @@ const serializer = new MarkdownSerializer(
   },
 );
 
-export function docToMarkdown(doc: PmNode): string {
+/** `front` is what splitFrontMatter took off, put back verbatim. */
+export function docToMarkdown(doc: PmNode, front = ''): string {
   // prosemirror-markdown escapes [ ] defensively; wiki links must stay
   // literal [[...]] on disk (backlinks scan them, Obsidian reads them).
-  return `${serializer.serialize(doc).trimEnd()}\n`.replace(/\\\[\\\[([^[\]]+)\\\]\\\]/g, '[[$1]]');
+  const body = `${serializer.serialize(doc).trimEnd()}\n`.replace(
+    /\\\[\\\[([^[\]]+)\\\]\\\]/g,
+    '[[$1]]',
+  );
+  return front.trim() ? `${front.trimEnd()}\n\n${body}` : body;
 }

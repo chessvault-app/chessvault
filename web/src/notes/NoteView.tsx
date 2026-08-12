@@ -13,7 +13,7 @@ import { useKeyboardInset } from '@/lib/keyboardInset';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
-import { docToMarkdown, markdownToDoc, noteExtensions } from './markdown';
+import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { t } from '@/lib/i18n';
@@ -29,16 +29,27 @@ export function NoteView({ id }: { id: string }) {
   const [failed, setFailed] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * The note's front matter, held aside for the whole visit.
+   *
+   * It is deliberately not in the document — see splitFrontMatter — so
+   * every write has to put it back, or opening a note would silently strip
+   * its metadata.
+   */
+  const [frontMatter, setFrontMatter] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     setInitialDoc(null);
     setFailed(null);
+    setFrontMatter('');
     void fetch(`/api/notes/${encodeURIComponent(id)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`could not open “${id}”`);
         const { pgn } = (await res.json()) as { pgn: string };
-        if (!cancelled) setInitialDoc(markdownToDoc(pgn).toJSON() as object);
+        if (cancelled) return;
+        setFrontMatter(splitFrontMatter(pgn).front);
+        setInitialDoc(markdownToDoc(pgn).toJSON() as object);
       })
       .catch((error: Error) => {
         if (!cancelled) setFailed(error.message);
@@ -81,6 +92,7 @@ export function NoteView({ id }: { id: string }) {
       key={id}
       id={id}
       initialDoc={initialDoc}
+      frontMatter={frontMatter}
       saveState={saveState}
       setSaveState={setSaveState}
       saveTimer={saveTimer}
@@ -91,12 +103,15 @@ export function NoteView({ id }: { id: string }) {
 function NoteEditor({
   id,
   initialDoc,
+  frontMatter,
   saveState,
   setSaveState,
   saveTimer,
 }: {
   id: string;
   initialDoc: object;
+  /** Put back on every write; it is not part of the document. */
+  frontMatter: string;
   saveState: SaveState;
   setSaveState: (s: SaveState) => void;
   saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
@@ -119,16 +134,16 @@ function NoteEditor({
     // a transaction, so onUpdate fired on a note nobody had touched and the
     // badge announced 저장 중… over an unedited note.
     onCreate: ({ editor }) => {
-      lastSaved.current = docToMarkdown(editor.state.doc);
+      lastSaved.current = docToMarkdown(editor.state.doc, frontMatter);
     },
     onUpdate: ({ editor }) => {
       // Compare rather than trust the event: only a real difference is an
       // edit worth saving (and worth telling the reader about).
-      if (docToMarkdown(editor.state.doc) === lastSaved.current) return;
+      if (docToMarkdown(editor.state.doc, frontMatter) === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        void save(docToMarkdown(editor.state.doc));
+        void save(docToMarkdown(editor.state.doc, frontMatter));
       }, AUTOSAVE_MS);
     },
   });
@@ -154,7 +169,7 @@ function NoteEditor({
       if (saveTimer.current) {
         clearTimeout(saveTimer.current);
         if (editor && !editor.isDestroyed) {
-          void save(docToMarkdown(editor.state.doc));
+          void save(docToMarkdown(editor.state.doc, frontMatter));
         }
       }
     };
@@ -200,7 +215,7 @@ function NoteEditor({
           <Pencil className="size-3.5 md:mr-1" />
           <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
-        <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc))} />
+        <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc, frontMatter))} />
       </header>
       <EditorPalette editor={editor} editable={editable} />
       </div>

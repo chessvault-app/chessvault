@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { docToMarkdown, markdownToDoc } from './markdown';
+import { docToMarkdown, markdownToDoc, splitFrontMatter } from './markdown';
 
 const roundTrip = (md: string): string => docToMarkdown(markdownToDoc(md));
 
@@ -88,5 +88,38 @@ describe('note markdown codec', () => {
     const once = roundTrip(md);
     expect(once).toContain('[FEN "4k3/8/8/8/8/8/8/4K2R w K - 0 1"]');
     expect(roundTrip(once)).toBe(once);
+  });
+
+  describe('front matter', () => {
+    const md = ['---', 'tags: endgame, rook', 'title: Lucena', '---', '', '# Lucena', '', 'Body.', ''].join('\n');
+
+    it('is split off rather than parsed as a rule and a heading', () => {
+      const { front, body } = splitFrontMatter(md);
+      expect(front).toBe('---\ntags: endgame, rook\ntitle: Lucena\n---\n');
+      expect(body).toBe('\n# Lucena\n\nBody.\n');
+      // The bug this exists for: CommonMark reads that block as an <hr>
+      // followed by a setext H2, and the next autosave wrote it back that
+      // way — so the document must not contain it at all.
+      const doc = markdownToDoc(md);
+      expect(doc.textContent).not.toContain('tags:');
+    });
+
+    it('survives a round trip verbatim', () => {
+      const { front } = splitFrontMatter(md);
+      const out = docToMarkdown(markdownToDoc(md), front);
+      expect(out).toBe('---\ntags: endgame, rook\ntitle: Lucena\n---\n\n# Lucena\n\nBody.\n');
+      // And again, so an untouched note that is opened twice is unchanged.
+      expect(docToMarkdown(markdownToDoc(out), splitFrontMatter(out).front)).toBe(out);
+    });
+
+    it('leaves a note that merely starts with a rule alone', () => {
+      const ruled = '---\n\nAfter a rule.\n';
+      expect(splitFrontMatter(ruled).front).toBe('');
+      expect(roundTrip(ruled)).toContain('After a rule.');
+    });
+
+    it('adds nothing to a note that has none', () => {
+      expect(docToMarkdown(markdownToDoc('# Plain\n\nBody.\n'))).toBe('# Plain\n\nBody.\n');
+    });
   });
 });
