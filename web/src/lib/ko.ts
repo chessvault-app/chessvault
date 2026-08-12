@@ -385,7 +385,7 @@ export const ko: Record<string, string> = {
   'Usernames pre-fill the archive browser on the Games page.':
     '사용자명은 게임 페이지의 보관함 검색에 미리 채워집니다.',
   'Save profile': '프로필 저장',
-  'Play a click on moves, captures and checks.': '수, 기물 잡기, 체크에 소리를 냅니다.',
+  'Play a click on moves and captures.': '수와 기물 잡기에 소리를 냅니다.',
   'Two-factor authentication': '2단계 인증',
   'Turning it off needs a current code from your authenticator app.':
     '끄려면 인증 앱의 현재 코드가 필요합니다.',

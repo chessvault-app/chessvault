@@ -509,7 +509,7 @@ function SoundCard() {
       <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
         <div className="min-w-0">
           <div className="text-sm font-medium">{t('Move sounds')}</div>
-          <div className="text-subtle text-xs">{t('Play a click on moves, captures and checks.')}</div>
+          <div className="text-subtle text-xs">{t('Play a click on moves and captures.')}</div>
         </div>
         <Switch checked={sound} onToggle={() => setSound(!sound)} label={t('Move sounds')} />
       </div>
