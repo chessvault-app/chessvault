@@ -265,6 +265,9 @@ export const ko: Record<string, string> = {
   '{n} games · {at} of {total} months': '게임 {n}개 · {total}달 중 {at}달',
   '{n} games · all {total} months': '게임 {n}개 · {total}달 전체',
   'Adding {done}/{total}…': '추가 중 {done}/{total}…',
+  // Every way to get a game, gathered behind one button.
+  'Add games': '게임 추가',
+  'Browse an online archive': '온라인 기보 둘러보기',
   'Which site to browse': '둘러볼 사이트',
   'Recent searches': '최근 검색',
   'Forget this search': '이 검색 지우기',

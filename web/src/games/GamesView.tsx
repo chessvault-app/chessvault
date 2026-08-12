@@ -543,6 +543,8 @@ function CollectionView() {
   const [starredOnly, setStarredOnly] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
+  /** The archive browser as a full-screen window — phones only. */
+  const [browsing, setBrowsing] = useState(false);
 
   // A write invalidates, so `load` always goes to the server; the cached
   // copy is what fills the screen while it does.
@@ -655,6 +657,10 @@ function CollectionView() {
     return loose(name).startsWith(loose(autoPrefix)) ? null : name;
   };
 
+  // Built once and shared: the archive renders twice (beside the
+  // collection, and in the phone's window) and each copy needs it.
+  const collectionKeys = new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`));
+
   const needle = query.trim().toLowerCase();
   const visible = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
@@ -695,11 +701,34 @@ function CollectionView() {
             placeholder={t('Search collection…')}
             className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
           />
+          {/* Every way to get a game, in one place. Two of these used to
+              be somewhere else entirely: Elite games was a button inside
+              the collection's own header, and the online archive was a
+              whole second panel stacked under the collection on a phone —
+              half the page, permanently, for something used occasionally.
+              They are both "find a game to keep", which is what this
+              button means. */}
           <CreateControl
-            label="Import"
-            actions={[{ label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) }]}
+            label="Add games"
+            actions={[
+              { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
+              {
+                // Only where the archive is not already on screen. At lg
+                // it is the column to the right, and a menu item that
+                // opens a window over a panel you can already see is a
+                // menu item that should not be there.
+                label: 'Browse an online archive',
+                icon: Globe,
+                className: 'lg:hidden',
+                onSelect: () => setBrowsing(true),
+              },
+              {
+                label: 'Elite games',
+                icon: Trophy,
+                onSelect: () => navigate('games', 'elite'),
+              },
+            ]}
           />
-
         </div>
       </header>
 
@@ -724,20 +753,11 @@ function CollectionView() {
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
         <Panel flush className="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch">
-          <PanelHeader
-            title={`${t('Collection')} · ${visible.length}`}
-            actions={
-              <Button
-                variant="ghost"
-                size="sm"
-                title={t('Browse the indexed reference games')}
-                onClick={() => navigate('games', 'elite')}
-              >
-                <Trophy className="size-3.5" />
-                {t('Elite games')}
-              </Button>
-            }
-          />
+          {/* No Elite games button here any more: it is one of the ways to
+              ADD a game, and every one of those is behind the header's
+              Add games now. A panel header should say what the panel
+              holds, not offer a way somewhere else. */}
+          <PanelHeader title={`${t('Collection')} · ${visible.length}`} />
           {loaded && games.length === 0 ? (
             <EmptyState
               // Centred in the PANEL, not parked under its header: an empty
@@ -866,8 +886,25 @@ function CollectionView() {
         </Panel>
       }
 
-      <ArchiveBrowser collectionKeys={new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))} onCollected={() => void load()} onPreview={setPreview} />
+      {/* Beside the collection where there is width for it, and nowhere at
+          all below lg — on a phone it was the bottom half of the page
+          whether or not anybody was browsing. It opens from Add games
+          there instead, full screen, which is the size it wanted anyway. */}
+      <div className="hidden min-h-0 lg:flex lg:flex-col">
+        <ArchiveBrowser collectionKeys={collectionKeys} onCollected={() => void load()} onPreview={setPreview} />
       </div>
+      </div>
+
+      {/* No lg:hidden on the window itself: that would hide the CARD and
+          leave its scrim behind, dimming the page with nothing on it and
+          nothing to press. The menu item is what disappears at lg — see
+          below — so this can only be opened where it belongs, and a
+          window left open across a resize stays usable. */}
+      {browsing && (
+        <Modal title="Online archives" onClose={() => setBrowsing(false)} full>
+          <ArchiveBrowser collectionKeys={collectionKeys} onCollected={() => void load()} onPreview={setPreview} />
+        </Modal>
+      )}
 
       {context && (
         <ActionSheet
