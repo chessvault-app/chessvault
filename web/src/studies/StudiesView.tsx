@@ -17,6 +17,7 @@ import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
+import { Field } from '@/ui/Field';
 import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
@@ -80,7 +81,11 @@ function StudyList() {
     : studies;
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
+    // Two columns of cards on a desktop, so the shelf shows twice as many
+    // studies as the single file did — and a ceiling on the width, because a
+    // card stretched across a 1400px monitor is a line of text with a title
+    // at one end and a date at the other.
+    <div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{t('Studies')}</h1>
         <div className="flex items-center gap-2">
@@ -119,7 +124,11 @@ function StudyList() {
       )}
 
       {undoable.pending && (
-        <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+        />
       )}
     </div>
   );
@@ -226,7 +235,9 @@ function CreateMenu() {
       />
 
       {mode === 'lichess' && (
-        <Modal title="Import from Lichess" onClose={() => setMode(null)} full>
+        // Same width as the PGN window: two ways in to the same shelf that
+        // opened at two different sizes looked like two different features.
+        <Modal title="Import from Lichess" onClose={() => setMode(null)} full className="sm:max-w-lg">
           <LichessImportForm folders={folders} onClose={() => setMode(null)} />
         </Modal>
       )}
@@ -248,54 +259,76 @@ function CreateMenu() {
       )}
 
       {mode === 'import' && (
-        <Modal title="Import PGN as study" onClose={() => setMode(null)} full>
+        // The width every import window is: full screen on a phone, and a
+        // single readable column on a desktop rather than the 4xl sheet
+        // `full` gives by default, which for three fields was mostly margin.
+        <Modal title="Import PGN as study" onClose={() => setMode(null)} full className="sm:max-w-lg">
           {folders.length > 0 && (
-            <Select
-              value={folder}
-              onChange={setFolder}
-              ariaLabel={t('Collection')}
-              groups={[
-                {
-                  options: [
-                    { value: '', label: t('(no collection)') },
-                    ...folders.map((f) => ({ value: f, label: f })),
-                  ],
-                },
-              ]}
-            />
+            <Field label="Target collection">
+              <Select
+                value={folder}
+                onChange={setFolder}
+                ariaLabel={t('Target collection')}
+                groups={[
+                  {
+                    options: [
+                      { value: '', label: t('(no collection)') },
+                      ...folders.map((f) => ({ value: f, label: f })),
+                    ],
+                  },
+                ]}
+              />
+            </Field>
           )}
-          <Input
-            autoFocus
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void submit(name);
-              if (e.key === 'Escape') setMode(null);
-            }}
-            placeholder={t('Study name')}
-          />
-          {/* The shared TextArea, not a hand-rolled one: it is where the
-              autofill-off attributes live, and this is the field iOS was
-              offering to complete with a contact. */}
-          <TextArea
-            value={pgnText}
-            onChange={(e) => setPgnText(e.target.value)}
-            placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
-            spellCheck={false}
-            className="h-28 w-full resize-none p-2 font-mono"
-          />
-          <div className="flex items-center justify-between gap-2">
-            <Button variant="secondary" size="sm" onClick={() => filePick.current?.click()}>
+          <Field label="Study title">
+            <Input
+              autoFocus
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void submit(name);
+                if (e.key === 'Escape') setMode(null);
+              }}
+              placeholder={t('Study name')}
+            />
+          </Field>
+          {/* The chapter count belongs on the PGN's own label line, beside
+              what it is counting — under the field it read as a message
+              about the window. */}
+          <Field
+            label="PGN"
+            hint={
+              pgnText.trim() ? (
+                <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
+                  {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
+                </span>
+              ) : null
+            }
+          >
+            {/* The shared TextArea, not a hand-rolled one: it is where the
+                autofill-off attributes live, and this is the field iOS was
+                offering to complete with a contact. */}
+            <TextArea
+              value={pgnText}
+              onChange={(e) => setPgnText(e.target.value)}
+              placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
+              spellCheck={false}
+              className="h-28 w-full resize-none p-2 font-mono"
+            />
+            {/* Under the field it belongs to, left-aligned with it: it is
+                the other way to fill that box, not an action of the window,
+                and it sat in a row of its own arguing with Cancel/Import. */}
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-1 self-start"
+              onClick={() => filePick.current?.click()}
+            >
               <FileUp className="mr-1 size-3.5" />
               {t('Choose file')}
             </Button>
-            {pgnText.trim() && (
-              <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
-                {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
-              </span>
-            )}
-          </div>
+          </Field>
           <input
             ref={filePick}
             type="file"
@@ -304,7 +337,9 @@ function CreateMenu() {
             onChange={(e) => void pickFile(e.target.files?.[0])}
           />
           {failure && <p className="text-bad text-xs">{failure}</p>}
-          <div className="flex justify-end gap-2">
+          {/* mt-1 on top of the window's own gap-3: the fields are a group,
+              and what commits them should not look like another one. */}
+          <div className="mt-1 flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
               {t('Cancel')}
             </Button>
@@ -391,72 +426,88 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
   return (
     <>
       {/* No heading here: the window it opens in is already called this. */}
-      <div className="flex gap-2">
-        <Input
-          autoFocus
-          type="text"
-          value={user}
-          onChange={(e) => setUser(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && user.trim()) void load();
-            if (e.key === 'Escape') onClose();
-          }}
-          placeholder={t('Lichess username')}
-          className="flex-1"
-        />
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          disabled={!user.trim() || busy}
-          onClick={() => void load()}
-          title={t('List this account’s studies')}
-        >
-          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Globe className="size-3.5" />}
-        </Button>
-      </div>
+      <Field label="Lichess username">
+        <div className="flex gap-2">
+          <Input
+            autoFocus
+            type="text"
+            value={user}
+            onChange={(e) => setUser(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && user.trim()) void load();
+              if (e.key === 'Escape') onClose();
+            }}
+            placeholder={t('Lichess username')}
+            className="flex-1"
+          />
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            disabled={!user.trim() || busy}
+            onClick={() => void load()}
+            title={t('List this account’s studies')}
+          >
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Globe className="size-3.5" />}
+          </Button>
+        </div>
+      </Field>
       {note && <p className="text-subtle text-xs">{note}</p>}
       {list && list.length === 0 && <p className="text-subtle text-xs">{t('No studies found.')}</p>}
       {list && list.length > 0 && (
         <>
-          <div className="border-line max-h-52 overflow-y-auto rounded-md border">
-            {list.map(({ id, name }) => (
-              <label
-                key={id}
-                className="hover:bg-surface-2 flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={checked.has(id)}
-                  onChange={(e) => {
-                    const next = new Set(checked);
-                    if (e.target.checked) next.add(id);
-                    else next.delete(id);
-                    setChecked(next);
-                  }}
-                />
-                <span className="truncate">{name}</span>
-              </label>
-            ))}
-          </div>
+          {/* The count is on the label line rather than in the list, so the
+              window says how many are ticked without the list having to
+              scroll to show it. */}
+          <Field
+            label="Studies to import"
+            hint={
+              <span className="text-subtle text-xs">
+                {t('{n} of {total} selected', { n: checked.size, total: list.length })}
+              </span>
+            }
+          >
+            <div className="border-line max-h-60 overflow-y-auto rounded-md border">
+              {list.map(({ id, name }) => (
+                <label
+                  key={id}
+                  className="hover:bg-surface-2 flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked.has(id)}
+                    onChange={(e) => {
+                      const next = new Set(checked);
+                      if (e.target.checked) next.add(id);
+                      else next.delete(id);
+                      setChecked(next);
+                    }}
+                  />
+                  <span className="truncate">{name}</span>
+                </label>
+              ))}
+            </div>
+          </Field>
           {folders.length > 0 && (
-            <Select
-              value={folder}
-              onChange={setFolder}
-              ariaLabel={t('Collection')}
-              groups={[
-                {
-                  options: [
-                    { value: '', label: t('(no collection)') },
-                    ...folders.map((f) => ({ value: f, label: f })),
-                  ],
-                },
-              ]}
-            />
+            <Field label="Target collection">
+              <Select
+                value={folder}
+                onChange={setFolder}
+                ariaLabel={t('Target collection')}
+                groups={[
+                  {
+                    options: [
+                      { value: '', label: t('(no collection)') },
+                      ...folders.map((f) => ({ value: f, label: f })),
+                    ],
+                  },
+                ]}
+              />
+            </Field>
           )}
         </>
       )}
       {failure && <p className="text-bad text-xs">{failure}</p>}
-      <div className="flex justify-end gap-2">
+      <div className="mt-1 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}
         </Button>
@@ -504,7 +555,10 @@ function GroupedStudies({
           {groups.get(folder)!.length === 0 ? (
             <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            // Two abreast from lg, one below it: the cards are a fixed
+            // height and read left to right, so a second column costs
+            // nothing and halves the scrolling.
+            <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
               {groups.get(folder)!.map((study) => (
                 <StudyCard
                   key={study.id}

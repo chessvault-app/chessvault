@@ -216,6 +216,11 @@ export const ko: Record<string, string> = {
   'Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.':
     '여기에 PGN을 붙여넣으세요 — Lichess 스터디 내보내기는 모든 챕터, 주석, 화살표와 함께 들어옵니다.',
   'Lichess username': 'Lichess 사용자명',
+  // Labels on the import windows' fields.
+  'Target collection': '대상 모음',
+  'Study title': '스터디 제목',
+  'Studies to import': '가져올 스터디',
+  '{n} of {total} selected': '{total}개 중 {n}개 선택',
   'Double-click to rename': '더블클릭하면 이름을 바꿉니다',
   'Rename this collection': '이 모음 이름 바꾸기',
   'Rename this study': '이 스터디 이름 바꾸기',
