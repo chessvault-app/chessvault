@@ -206,7 +206,7 @@ npm run build:refgames         # vault/sources -> data/refgames.sqlite
 이후 배포는 인덱스를 알아서 최신으로 유지하므로, 더 새 덤프나 더 많은
 게임이 필요할 때만 다시 만들면 됩니다.
 
-왜 이것들을 앱 안에서 하지 않는지, 그 답이 바뀌려면 무엇이 달라져야 하는지는
+다시 만드는 방법과, 왜 참고 게임만 아직 터미널을 필요로 하는지는
 [docs/databases.md](docs/databases.md)에 있습니다.
 
 ## 당신의 서버 말고는 아무 데도 연결하지 않습니다

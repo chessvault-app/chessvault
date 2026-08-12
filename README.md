@@ -209,8 +209,8 @@ about the machine, not about servers.
 Every later deploy keeps their indexes current on its own, so rebuild only
 for a newer dump or more games.
 
-[docs/databases.md](docs/databases.md) explains why these are not done in
-the app, and what would have to change for that to stop being the answer.
+[docs/databases.md](docs/databases.md) covers rebuilding them, and why
+reference games are the one thing here that still wants a terminal.
 
 ## It never calls anyone but your own server
 
