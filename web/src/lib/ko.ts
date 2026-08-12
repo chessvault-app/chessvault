@@ -255,6 +255,15 @@ export const ko: Record<string, string> = {
   Tag: '태그',
   'Remove this tag': '이 태그 제거',
   'endgame, sicilian…': '엔드게임, 시실리안…',
+  // Archive filters: three selects where there were eight chips on a rail.
+  // Side, White won and Black won already have entries further down.
+  Outcome: '결과',
+  'Either side': '양쪽 모두',
+  'As White': '백으로',
+  'As Black': '흑으로',
+  'Any result': '모든 결과',
+  Drawn: '무승부',
+  'First {shown} of {total}': '{total}개 중 처음 {shown}개',
   'Which site to browse': '둘러볼 사이트',
   'Recent searches': '최근 검색',
   'Forget this search': '이 검색 지우기',

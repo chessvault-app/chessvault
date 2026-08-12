@@ -5,6 +5,7 @@ import {
   ExternalLink,
   Eye,
   Globe,
+  Info,
   Loader2,
   MoreHorizontal,
   NotebookPen,
@@ -29,8 +30,6 @@ import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
 import { Button } from '@/ui/Button';
 import { KnightIcon } from '@/ui/KnightIcon';
-import { ChipRow } from '@/ui/ChipRow';
-import { FilterChip } from '@/ui/FilterChip';
 import { Segmented } from '@/ui/Segmented';
 import { CloudBoardArt } from '@/ui/CloudBoardArt';
 import { EmptyState } from '@/ui/EmptyState';
@@ -1300,13 +1299,20 @@ function ArchiveBrowser({
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (
         <div ref={archiveTop}>
-        <ChipRow className="border-line border-t px-3 py-2">
+        {/* Three selects, not eight chips on a rail.
+            Seven chips and a select never fit the 30% column this panel
+            lives in, so the row scrolled sideways behind a pair of arrows
+            — which hides filters behind a gesture and gives no clue what
+            is currently set without scrolling to look. A select states
+            its own value, takes one line whatever the options are, and
+            wraps onto a second when the column is narrow. */}
+        <div className="border-line flex flex-wrap items-center gap-1.5 border-t px-3 py-2">
           <Select
             value={month}
             onChange={(m) => void loadMonth(m)}
             ariaLabel={t('Archive month')}
             size="sm"
-            className="shrink-0"
+            className="min-w-0 flex-1"
             groups={[
               {
                 options: [
@@ -1325,28 +1331,40 @@ function ArchiveBrowser({
               },
             ]}
           />
-          <span className="bg-line mx-1 h-4 w-px" />
-          {(
-            [
-              ['any', 'Any'],
-              ['white', 'White'],
-              ['black', 'Black'],
-            ] as const
-          ).map(([id, label]) => (
-            <FilterChip key={id} label={t(label)} active={sideFilter === id} onClick={() => setSideFilter(id)} />
-          ))}
-          <span className="bg-line mx-1 h-4 w-px" />
-          {(
-            [
-              ['any', 'All'],
-              ['1-0', '1-0'],
-              ['0-1', '0-1'],
-              ['1/2-1/2', '½-½'],
-            ] as const
-          ).map(([id, label]) => (
-            <FilterChip key={id} label={t(label)} active={resultFilter === id} onClick={() => setResultFilter(id)} />
-          ))}
-        </ChipRow>
+          <Select
+            value={sideFilter}
+            onChange={(v) => setSideFilter(v as typeof sideFilter)}
+            ariaLabel={t('Side')}
+            size="sm"
+            className="min-w-0 flex-1"
+            groups={[
+              {
+                options: [
+                  { value: 'any', label: t('Either side') },
+                  { value: 'white', label: t('As White') },
+                  { value: 'black', label: t('As Black') },
+                ],
+              },
+            ]}
+          />
+          <Select
+            value={resultFilter}
+            onChange={(v) => setResultFilter(v as typeof resultFilter)}
+            ariaLabel={t('Outcome')}
+            size="sm"
+            className="min-w-0 flex-1"
+            groups={[
+              {
+                options: [
+                  { value: 'any', label: t('Any result') },
+                  { value: '1-0', label: t('White won') },
+                  { value: '0-1', label: t('Black won') },
+                  { value: '1/2-1/2', label: t('Drawn') },
+                ],
+              },
+            ]}
+          />
+        </div>
         </div>
       )}
       {((offline && months.length > 0) || error) && (
@@ -1386,11 +1404,15 @@ function ArchiveBrowser({
               )}
             </>
           ) : (
+            /* What is selected on the left, what to do with it on the
+               right. Four controls in one wrapping run gave the count the
+               same weight as the buttons and put Cancel wherever the text
+               happened to end. */
             <>
-              <label className="flex cursor-pointer items-center gap-1.5">
+              <label className="flex min-w-0 cursor-pointer items-center gap-1.5">
                 <input
                   type="checkbox"
-                  className="accent-primary"
+                  className="accent-primary shrink-0"
                   checked={uncollected.length > 0 && picked.size === uncollected.length}
                   // Indeterminate is the honest state for a partial
                   // selection: an unchecked box next to eight ticked rows
@@ -1402,29 +1424,38 @@ function ArchiveBrowser({
                     setPicked(e.target.checked ? new Set(uncollected.map(gameKey)) : new Set())
                   }
                 />
-                <span className="text-muted">{t('Select all new')}</span>
+                <span className="text-muted truncate">{t('Select all new')}</span>
               </label>
-              <span className="text-subtle tabular-nums">
+              {/* A badge, not another grey sentence: it is the one number
+                  that changes as you tick rows. */}
+              <span
+                className={cn(
+                  'shrink-0 rounded-full px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums',
+                  picked.size > 0 ? 'bg-primary-soft text-primary' : 'bg-surface-3 text-subtle',
+                )}
+              >
                 {t('{n} selected', { n: picked.size })}
               </span>
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={picked.size === 0}
-                onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}
-              >
-                {busy ? t('Adding…') : t('Add selected')}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelecting(false);
-                  setPicked(new Set());
-                }}
-              >
-                {t('Cancel')}
-              </Button>
+              <div className="ml-auto flex shrink-0 items-center gap-1.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelecting(false);
+                    setPicked(new Set());
+                  }}
+                >
+                  {t('Cancel')}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={picked.size === 0}
+                  onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}
+                >
+                  {busy ? t('Adding…') : t('Add selected')}
+                </Button>
+              </div>
             </>
           )}
         </div>
@@ -1496,11 +1527,22 @@ function ArchiveBrowser({
       )}
 
       {month && visibleMonthGames.length > MAX_ROWS && (
-        <p className="text-subtle border-line border-t px-3 py-1.5 text-xs">
-          {t('Showing the first {shown} of {total}. Select all new still takes every one.', {
+        // The short version on the line, the whole sentence on hover. It
+        // was two clauses of body text across the foot of the panel, which
+        // reads as an error rather than as a footnote about a list that is
+        // longer than its box — and the reassuring half ("Select all new
+        // still takes every one") was the half nobody finished reading.
+        <p
+          className="text-subtle border-line flex items-center gap-1.5 border-t px-3 py-2 text-[0.6875rem]"
+          title={t('Showing the first {shown} of {total}. Select all new still takes every one.', {
             shown: MAX_ROWS,
             total: visibleMonthGames.length,
           })}
+        >
+          <Info className="size-3 shrink-0" />
+          <span className="truncate">
+            {t('First {shown} of {total}', { shown: MAX_ROWS, total: visibleMonthGames.length })}
+          </span>
         </p>
       )}
 
@@ -1651,22 +1693,41 @@ function GameRow({
             // One line per player: names never fight each other for width,
             // so narrow screens truncate each side independently.
             <>
-              <p className="text-fg truncate text-sm">
-                <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-                <span className={cn('font-semibold', game.userSide === 'white' && 'text-primary')}>
+              {/* A flex row, not one inline run: with the rating inline
+                  after the name, `truncate` on the line clipped whichever
+                  came last — so an archive of long handles showed two
+                  names and no ratings at all. The name is the only part
+                  that gives way. */}
+              <p className="text-fg flex items-baseline gap-1.5 text-sm">
+                <SideDot side="white" className="shrink-0 translate-y-[-1px]" />
+                <span
+                  className={cn(
+                    'min-w-0 truncate font-semibold',
+                    game.userSide === 'white' && 'text-primary',
+                  )}
+                >
                   {game.white}
                 </span>
-                {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
+                {game.whiteElo ? (
+                  <span className="text-subtle shrink-0 text-xs tabular-nums">{game.whiteElo}</span>
+                ) : null}
                 {game.annotated && (
-                  <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
+                  <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
                 )}
               </p>
-              <p className="text-fg truncate text-sm">
-                <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-                <span className={cn('font-semibold', game.userSide === 'black' && 'text-primary')}>
+              <p className="text-fg flex items-baseline gap-1.5 text-sm">
+                <SideDot side="black" className="shrink-0 translate-y-[-1px]" />
+                <span
+                  className={cn(
+                    'min-w-0 truncate font-semibold',
+                    game.userSide === 'black' && 'text-primary',
+                  )}
+                >
                   {game.black}
                 </span>
-                {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
+                {game.blackElo ? (
+                  <span className="text-subtle shrink-0 text-xs tabular-nums">{game.blackElo}</span>
+                ) : null}
               </p>
             </>
           )}
