@@ -19,7 +19,7 @@
  *   the book bundled with the app --depth 24 --width 8 --min 10   1.5 MB
  *
  *   npx tsx scripts/build-demo-book.ts [--depth 16] [--width 6] [--min 20]
- *                                      [--out path] [--games N]
+ *                                      [--out path] [--games N] [--from book]
  *
  * Width past 8 buys almost nothing at these depths: measured on a Lichess
  * Elite month, width 16 found 30,336 positions against width 8's 29,297,
@@ -50,11 +50,34 @@ const OUT =
     ? resolve(REPO_ROOT, 'web/demo-assets/book.sqlite')
     : resolve(process.cwd(), process.argv[outFlag + 1]!);
 
-const source = readdirSync(DATA_BOOKS).find((n) => n.endsWith('.sqlite'));
+/**
+ * Which book to walk: the BIGGEST one, or `--from <name>`.
+ *
+ * It used to take the first file in the directory, which is a trap once a
+ * curated book is sitting in there too — on a machine holding both, the
+ * first name alphabetically was the 1.5 MB walk rather than the 125 MB book
+ * it came from, and walking a walk produces a smaller book, quietly. Size
+ * is the honest signal: a curated book is by construction a fraction of its
+ * source.
+ */
+const fromFlag = process.argv.indexOf('--from');
+const candidates = readdirSync(DATA_BOOKS).filter((n) => n.endsWith('.sqlite'));
+const source =
+  fromFlag < 0
+    ? candidates.sort(
+        (a, b) =>
+          statSync(resolve(DATA_BOOKS, b)).size - statSync(resolve(DATA_BOOKS, a)).size,
+      )[0]
+    : candidates.find((n) => n === process.argv[fromFlag + 1] || n === `${process.argv[fromFlag + 1]}.sqlite`);
 if (!source) {
-  console.error(`no opening book in ${DATA_BOOKS} — run npm run build:book first`);
+  console.error(
+    fromFlag < 0
+      ? `no opening book in ${DATA_BOOKS} — run npm run build:book first`
+      : `no book named ${process.argv[fromFlag + 1]} in ${DATA_BOOKS}`,
+  );
   process.exit(1);
 }
+console.log(`walking ${source} (${(statSync(resolve(DATA_BOOKS, source)).size / 1e6).toFixed(1)} MB)`);
 
 const from = new Database(resolve(DATA_BOOKS, source), { readonly: true });
 rmSync(OUT, { force: true });
