@@ -38,12 +38,22 @@ export function UndoBar({
           was the last thing making this read as one more panel. */}
       <div
         className={cn(
-          'bg-toast text-toast-fg flex max-w-full items-center gap-3 rounded-full',
+          'bg-toast text-toast-fg flex items-center gap-3 rounded-full',
+          // ONE WIDTH, whatever was removed. Sized to its own text, the
+          // chip was a different object every time: measured at 166px for
+          // a one-character name, 276 for a study, 520 for a long note
+          // title. On a phone that also moved the Undo button, because the
+          // box is centred there — 222px from the left edge or 318px,
+          // depending on what you had just deleted. It is the same chip
+          // now, and the one thing in here that gets pressed is always in
+          // the same place. A name too long for it truncates, which is
+          // what the width above the ellipsis was buying.
+          'w-full max-w-[22rem] md:w-[22rem]',
           'py-1.5 pl-4 pr-1.5 shadow-[var(--shadow-pop)]',
           leaving ? 'animate-sink' : 'animate-rise pointer-events-auto',
         )}
       >
-        <span className="min-w-0 truncate text-sm">
+        <span className="min-w-0 flex-1 truncate text-sm">
           {t('Removed “{name}”', { name: label })}
         </span>
         {/* The ghost button's own colours are page colours — muted grey on
