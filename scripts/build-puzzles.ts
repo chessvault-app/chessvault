@@ -1,13 +1,19 @@
 /**
  * Build the puzzle database from the Lichess puzzle dump.
  *
- *   npm run build:puzzles                     uses data/lichess_db_puzzle.csv.zst
+ *   npm run build:puzzles                     downloads the dump if it is missing
  *   npm run build:puzzles -- path/to/file.csv.zst
+ *   npm run build:puzzles -- --progress-json  one JSON event per line (the app)
  *
  * The dump (https://database.lichess.org/lichess_db_puzzle.csv.zst, CC0,
- * ~304 MB, 3.08 M puzzles) must be downloaded first. Output lands at
- * data/puzzles.sqlite via a temp file + rename, so a running server keeps
- * serving the old database until the build completes.
+ * ~304 MB, 6.1 M puzzles) is fetched here rather than by the reader: a
+ * desktop user has no shell to curl it with, and the server spawns this
+ * same file to answer the app's "build the puzzle database" button. What it
+ * downloads itself, it deletes afterwards; a dump that was already on disk
+ * is left alone, because it is somebody's file and not ours.
+ *
+ * Output lands at data/puzzles.sqlite via a temp file + rename, so a running
+ * server keeps serving the old database until the build completes.
  *
  * CSV columns (no quoting — lichess guarantees comma-free fields):
  *   PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,
@@ -17,9 +23,10 @@
  * first move is the opponent's setup move and the solver answers from the
  * second move on.
  */
-import { spawn } from 'node:child_process';
-import { createInterface } from 'node:readline';
-import { existsSync, renameSync, rmSync } from 'node:fs';
+import { createReadStream, createWriteStream, existsSync, renameSync, rmSync, statSync } from 'node:fs';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { Decompress } from 'fzstd';
 import Database from 'better-sqlite3';
 import { DATA, DATA_PUZZLES } from '../server/paths.ts';
 import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
@@ -27,17 +34,82 @@ import { resolve } from 'node:path';
 
 export const PUZZLE_SCHEMA_VERSION = 1;
 
-const source = process.argv[2]
-  ? resolve(process.cwd(), process.argv[2])
-  : resolve(DATA, 'lichess_db_puzzle.csv.zst');
+const DUMP_URL = 'https://database.lichess.org/lichess_db_puzzle.csv.zst';
 
-if (!existsSync(source)) {
-  console.error(
-    `source not found: ${source}\n` +
-      'download it first:\n' +
-      '  curl -L -o data/lichess_db_puzzle.csv.zst https://database.lichess.org/lichess_db_puzzle.csv.zst',
+/** What the app's progress bar is drawn from. One per line on stdout. */
+type Event =
+  | { phase: 'downloading'; bytes: number; total: number }
+  | { phase: 'building'; rows: number }
+  | { phase: 'indexing' }
+  | { phase: 'done'; puzzles: number; seconds: number };
+
+const args = process.argv.slice(2);
+const JSON_PROGRESS = args.includes('--progress-json');
+const positional = args.find((a) => !a.startsWith('--'));
+
+const report = (event: Event): void => {
+  if (JSON_PROGRESS) {
+    console.log(JSON.stringify(event));
+    return;
+  }
+  if (event.phase === 'downloading') {
+    const mb = (n: number): string => (n / 1e6).toFixed(0);
+    console.log(`  downloaded ${mb(event.bytes)} / ${event.total ? mb(event.total) : '?'} MB`);
+  } else if (event.phase === 'building') {
+    console.log(`  ${event.rows.toLocaleString()} puzzles…`);
+  } else if (event.phase === 'indexing') {
+    console.log('indexing…');
+  } else {
+    console.log(`done: ${event.puzzles.toLocaleString()} puzzles in ${event.seconds.toFixed(1)}s`);
+  }
+};
+
+const source = positional ? resolve(process.cwd(), positional) : resolve(DATA, 'lichess_db_puzzle.csv.zst');
+
+/**
+ * Fetch the dump beside its target and rename it into place, so an
+ * interrupted download is never mistaken for a complete one.
+ *
+ * Progress is emitted at most every 2 MB: a 304 MB download would otherwise
+ * produce tens of thousands of lines for a bar that moves in percent.
+ */
+async function downloadDump(to: string): Promise<void> {
+  const response = await fetch(DUMP_URL);
+  if (!response.ok || !response.body) {
+    throw new Error(`could not download the puzzle dump (HTTP ${response.status})`);
+  }
+  const total = Number(response.headers.get('content-length') ?? 0);
+  const part = `${to}.part`;
+  rmSync(part, { force: true });
+
+  let bytes = 0;
+  let reported = 0;
+  report({ phase: 'downloading', bytes: 0, total });
+  await pipeline(
+    Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]),
+    async function* (chunks) {
+      for await (const chunk of chunks) {
+        bytes += (chunk as Buffer).length;
+        if (bytes - reported >= 2e6) {
+          reported = bytes;
+          report({ phase: 'downloading', bytes, total });
+        }
+        yield chunk;
+      }
+    },
+    createWriteStream(part),
   );
-  process.exit(1);
+  report({ phase: 'downloading', bytes, total: total || bytes });
+  renameSync(part, to);
+}
+
+const fetched = !existsSync(source);
+if (fetched) {
+  if (positional) {
+    console.error(`source not found: ${source}`);
+    process.exit(1);
+  }
+  await downloadDump(source);
 }
 
 const tmp = `${DATA_PUZZLES}.building`;
@@ -73,31 +145,27 @@ const insert = db.prepare(
 );
 const insertTheme = db.prepare('INSERT INTO themes (theme, rating, id) VALUES (?, ?, ?)');
 
-const zstd = spawn('zstd', ['-dc', source], { stdio: ['ignore', 'pipe', 'inherit'] });
-const lines = createInterface({ input: zstd.stdout, crlfDelay: Infinity });
-
 let rows = 0;
 let skipped = 0;
 let themeRows = 0;
 let header = true;
 const started = Date.now();
 
-db.exec('BEGIN');
-for await (const line of lines) {
+const takeLine = (line: string): void => {
   if (header) {
     header = false;
     if (!line.startsWith('PuzzleId,FEN,Moves,Rating')) {
       console.error(`unexpected header: ${line}`);
       process.exit(1);
     }
-    continue;
+    return;
   }
-  if (!line) continue;
+  if (!line) return;
 
   const f = line.split(',');
   if (f.length < 10) {
     skipped++;
-    continue;
+    return;
   }
   const [id, fen, moves, rating, rd, popularity, plays, themes, gameUrl, openingTags] = f;
   insert.run(
@@ -121,18 +189,43 @@ for await (const line of lines) {
   rows++;
   if (rows % 200_000 === 0) {
     db.exec('COMMIT; BEGIN');
-    console.log(`  ${rows.toLocaleString()} puzzles…`);
+    report({ phase: 'building', rows });
   }
-}
-db.exec('COMMIT');
+};
 
-await new Promise<void>((res, rej) => {
-  zstd.on('close', (code) =>
-    code === 0 ? res() : rej(new Error(`zstd exited with ${code}`)),
-  );
+/**
+ * Decompression, in JavaScript.
+ *
+ * It was `spawn('zstd', …)`, which meant the build could only run where
+ * somebody had installed the zstd command — true of a Linux server, false
+ * of the Windows and macOS machines this app is installed on.
+ *
+ * node:zlib gained zstd and looked like the answer; it is not, for THIS
+ * file. The Lichess dump is in the seekable zstd format: a skippable frame
+ * first, then many frames. Measured against node:zlib, a leading skippable
+ * frame decodes to nothing at all (silently — no error, no rows), and
+ * concatenated frames yield only the first. fzstd reads the whole thing:
+ * 6,100,961 lines in 13.8 s, matching the database the zstd command built.
+ *
+ * Lines are cut inside the decoder's callback and handed straight to the
+ * inserts, so nothing buffers: the source stream is only pulled as fast as
+ * sqlite writes.
+ */
+const decoder = new TextDecoder('utf-8');
+let carry = '';
+const decompress = new Decompress((chunk) => {
+  const parts = (carry + decoder.decode(chunk, { stream: true })).split('\n');
+  carry = parts.pop() ?? '';
+  for (const part of parts) takeLine(part.endsWith('\r') ? part.slice(0, -1) : part);
 });
 
-console.log('indexing…');
+db.exec('BEGIN');
+for await (const chunk of createReadStream(source)) decompress.push(chunk as Uint8Array);
+decompress.push(new Uint8Array(0), true);
+if (carry) takeLine(carry);
+db.exec('COMMIT');
+
+report({ phase: 'indexing' });
 db.exec(`
   CREATE INDEX idx_puzzles_rating ON puzzles (rating);
   CREATE INDEX idx_themes ON themes (theme, rating);
@@ -154,10 +247,25 @@ setMeta.run('source', source);
 
 db.exec('VACUUM');
 db.close();
-renameSync(tmp, DATA_PUZZLES);
+try {
+  renameSync(tmp, DATA_PUZZLES);
+} catch (error) {
+  // Windows: a server holding the old database open blocks the rename
+  // (EPERM). Leave the .building file — the server that spawned this build
+  // closes its handle and finishes the swap itself.
+  if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error;
+  if (!JSON_PROGRESS) console.log('  rename deferred (target busy) — server will swap the file in');
+}
 
-const seconds = ((Date.now() - started) / 1000).toFixed(1);
-console.log(
-  `done: ${rows.toLocaleString()} puzzles, ${themeRows.toLocaleString()} theme rows, ${skipped} skipped, ${seconds}s`,
-);
-console.log(`  → ${DATA_PUZZLES}`);
+// Only what this run fetched: a dump the user put there is theirs.
+if (fetched) rmSync(source, { force: true });
+
+const seconds = (Date.now() - started) / 1000;
+report({ phase: 'done', puzzles: rows, seconds });
+if (!JSON_PROGRESS) {
+  console.log(
+    `  ${themeRows.toLocaleString()} theme rows, ${skipped} skipped, ` +
+      `${(statSync(existsSync(DATA_PUZZLES) ? DATA_PUZZLES : tmp).size / 1e9).toFixed(2)} GB`,
+  );
+  console.log(`  → ${DATA_PUZZLES}`);
+}

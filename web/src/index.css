@@ -698,3 +698,20 @@ cg-board square.check {
   --board-light: oklch(87% 0.006 260);
   --board-dark: oklch(55% 0.018 260);
 }
+
+/* An indeterminate progress bar: a segment that sweeps the track.
+   For work whose total is genuinely unknown — the puzzle build knows how
+   many rows it has read, never how many are left. A part-filled static bar
+   would be read as a percentage, which would be a lie. */
+@keyframes sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(410%);
+  }
+}
+
+.bar-sweep {
+  animation: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}

@@ -80,6 +80,22 @@ await build({
 });
 console.log('book builder bundled');
 
+// Same story for the puzzle database: the Puzzles page asks the server to
+// build it, the server spawns this, and an installed app has no scripts/.
+await build({
+  entryPoints: [join(repo, 'scripts', 'build-puzzles.ts')],
+  outfile: join(out, 'build-puzzles.mjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['better-sqlite3'],
+  banner: {
+    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+  },
+});
+console.log('puzzle builder bundled');
+
 // better-sqlite3 v13 ships Node-API prebuilds (prebuilds/<platform>.node),
 // ABI-stable across Node and Electron — a plain copy is the whole story.
 const sqliteOut = join(out, 'node_modules', 'better-sqlite3');

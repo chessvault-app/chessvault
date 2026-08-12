@@ -259,8 +259,19 @@ export const ko: Record<string, string> = {
     '한 번 누르면 기물을, 두 번 누르면 수를 알려줍니다 (실패로 세지 않음)',
   'First move': '첫 수',
   'No puzzle database yet': '아직 퍼즐 데이터베이스가 없습니다',
-  'Download the Lichess dump and build it once:':
-    'Lichess 덤프를 내려받아 한 번만 만들면 됩니다:',
+  'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.':
+    '트레이너는 Lichess 퍼즐 데이터베이스로 돌아갑니다 — 자유롭게 쓸 수 있는 610만 개의 퍼즐입니다. 앱이 대신 내려받아 만들어 줍니다. 내려받기는 약 300MB, 다 만들면 약 2.5GB를 씁니다.',
+  'Download and build': '내려받아 만들기',
+  'Downloading the puzzle dump': '퍼즐 덤프를 내려받는 중',
+  'Building the database': '데이터베이스를 만드는 중',
+  Indexing: '색인하는 중',
+  'Almost done': '거의 다 됐습니다',
+  '{rows} puzzles read': '퍼즐 {rows}개를 읽었습니다',
+  'This keeps running if you leave the page. It takes a few minutes.':
+    '페이지를 떠나도 계속됩니다. 몇 분 걸립니다.',
+  'The build could not be started.': '만들기를 시작하지 못했습니다.',
+  'No puzzle database yet — build it from the Puzzles page.':
+    '아직 퍼즐 데이터베이스가 없습니다 — 퍼즐 페이지에서 만들 수 있습니다.',
   Theme: '테마',
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',

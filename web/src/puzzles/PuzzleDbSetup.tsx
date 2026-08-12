@@ -1,0 +1,160 @@
+import { Download, Loader2, TriangleAlert } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
+import { Button } from '@/ui/Button';
+
+/**
+ * Getting the puzzle database, from inside the app.
+ *
+ * This page used to print two shell commands. A chess player installing a
+ * desktop app has no shell, no repository and no `zstd` — so the commands
+ * were not a workaround, they were the feature being unavailable. The
+ * server builds it now; this is the button and the bar.
+ *
+ * The job lives on the SERVER, not in this component: closing the page,
+ * navigating away or reloading does not stop it, and coming back finds it
+ * still running. So the first thing this does is ask whether one is already
+ * in progress, rather than assuming it started here.
+ */
+
+interface BuildStatus {
+  running: boolean;
+  phase?: 'downloading' | 'building' | 'indexing' | 'done';
+  bytes?: number;
+  total?: number;
+  rows?: number;
+  puzzles?: number;
+  seconds?: number;
+  error?: string | null;
+}
+
+const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
+
+export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
+  const [status, setStatus] = useState<BuildStatus | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  // So the finish is noticed once, rather than on every poll afterwards.
+  const wasRunning = useRef(false);
+
+  const poll = useCallback(async () => {
+    try {
+      const res = await fetch('/api/puzzles/build');
+      const next = (await res.json()) as BuildStatus;
+      setStatus(next);
+      if (wasRunning.current && !next.running) {
+        wasRunning.current = false;
+        if (next.error) setFailed(next.error);
+        else onReady();
+      }
+      if (next.running) wasRunning.current = true;
+      return next.running;
+    } catch {
+      return false; // the server will be there on the next tick
+    }
+  }, [onReady]);
+
+  useEffect(() => {
+    void poll();
+    const timer = setInterval(() => void poll(), 1000);
+    return () => clearInterval(timer);
+  }, [poll]);
+
+  const start = async (): Promise<void> => {
+    setStarting(true);
+    setFailed(null);
+    try {
+      const res = await fetch('/api/puzzles/build', { method: 'POST' });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setFailed(body?.error ?? t('The build could not be started.'));
+        return;
+      }
+      wasRunning.current = true;
+      await poll();
+    } finally {
+      setStarting(false);
+    }
+  };
+
+  const running = status?.running === true;
+  const phase = status?.phase;
+  // Only the download knows its size. The rest reports what it has done so
+  // far, which is honest — a bar that invents a total is worse than a count.
+  const fraction =
+    running && phase === 'downloading' && status?.total
+      ? Math.min(1, (status.bytes ?? 0) / status.total)
+      : null;
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
+      <div className="flex w-full max-w-md flex-col gap-3 text-center">
+        <p className="text-fg text-sm font-semibold">{t('No puzzle database yet')}</p>
+
+        {running ? (
+          <>
+            <p className="text-muted text-xs leading-relaxed">
+              {phase === 'downloading'
+                ? t('Downloading the puzzle dump')
+                : phase === 'indexing'
+                  ? t('Indexing')
+                  : t('Building the database')}
+            </p>
+
+            <span className="bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border">
+              <span
+                className={cn(
+                  'bg-primary h-full',
+                  // Nothing to measure against: a segment that sweeps the
+                  // track says "working" without claiming a percentage. A
+                  // part-filled static bar would be read as one.
+                  fraction === null && 'bar-sweep w-1/4',
+                )}
+                style={fraction === null ? undefined : { width: `${100 * fraction}%` }}
+              />
+            </span>
+
+            <p className="text-subtle font-mono text-[0.6875rem]">
+              {phase === 'downloading'
+                ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
+                : phase === 'indexing'
+                  ? t('Almost done')
+                  : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })}
+            </p>
+
+            <p className="text-subtle text-xs leading-relaxed">
+              {t('This keeps running if you leave the page. It takes a few minutes.')}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-muted text-xs leading-relaxed">
+              {t(
+                'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.',
+              )}
+            </p>
+
+            {failed && (
+              <p className="text-warn flex items-start gap-2 text-left text-xs leading-relaxed">
+                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                <span>{failed}</span>
+              </p>
+            )}
+
+            <div className="flex justify-center">
+              <Button variant="primary" onClick={() => void start()} disabled={starting}>
+                {starting ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Download className="size-3.5" />
+                )}
+                {failed ? t('Try again') : t('Download and build')}
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

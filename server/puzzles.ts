@@ -1,12 +1,13 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { DATA_PUZZLES, VAULT } from './paths.ts';
+import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
 
 /**
  * Puzzle trainer backed by the local Lichess dump (data/puzzles.sqlite,
- * built by `npm run build:puzzles`). Single-user by design: no rating
+ * built in the app or by `npm run build:puzzles`). Single-user by design: no rating
  * system (lanph3re's call) — difficulty is an explicit range filter, progress
  * is counters, and every attempt lands in an append-only history.jsonl
  * that drives two rules:
@@ -291,6 +292,123 @@ export function puzzlesApi(
 
   const api = new Hono();
 
+  /**
+   * Building the puzzle database, from inside the app.
+   *
+   * This is the one dataset the app could not make for itself, and the
+   * answer used to be two shell commands — which an installed desktop app
+   * cannot offer: there is no repository, no npm, and on Windows and macOS
+   * no `zstd` either. The build is a child process for the same reason the
+   * book build is: it holds a write transaction over millions of rows for
+   * minutes, and better-sqlite3 is synchronous, so in-process it would stop
+   * the server answering anything at all.
+   *
+   * The child reports one JSON event per line; this keeps the last one, so
+   * the UI can draw a bar without the server parsing a log.
+   */
+  interface BuildProgress {
+    phase: 'downloading' | 'building' | 'indexing' | 'done';
+    bytes?: number;
+    total?: number;
+    rows?: number;
+    puzzles?: number;
+    seconds?: number;
+  }
+  let build: {
+    startedAt: number;
+    running: boolean;
+    progress: BuildProgress;
+    error: string | null;
+  } | null = null;
+
+  const startBuild = (): void => {
+    const current = {
+      startedAt: Date.now(),
+      running: true,
+      progress: { phase: 'downloading', bytes: 0, total: 0 } as BuildProgress,
+      error: null as string | null,
+    };
+    build = current;
+
+    // A packaged build has no scripts/ and no tsx, so it ships the builder
+    // as a bundle beside the server; the repo runs the source directly.
+    const bundled = resolve(REPO_ROOT, 'server', 'build-puzzles.mjs');
+    const args = existsSync(bundled)
+      ? [bundled, '--progress-json']
+      : ['--import', 'tsx', 'scripts/build-puzzles.ts', '--progress-json'];
+    const child = spawn(process.execPath, args, {
+      cwd: REPO_ROOT,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let pending = '';
+    child.stdout.on('data', (chunk: Buffer) => {
+      pending += chunk.toString();
+      const lines = pending.split('\n');
+      pending = lines.pop() ?? '';
+      for (const line of lines) {
+        if (!line.startsWith('{')) continue;
+        try {
+          current.progress = JSON.parse(line) as BuildProgress;
+        } catch {
+          // A partial or unexpected line is not worth failing a build over.
+        }
+      }
+    });
+    // Kept only to explain a failure: the last stderr line is what the user
+    // is shown when the child dies, and it beats "exit code 1".
+    let lastError = '';
+    child.stderr.on('data', (chunk: Buffer) => {
+      const text = chunk.toString().trim();
+      if (text) lastError = text.split('\n').pop() ?? text;
+    });
+
+    child.on('error', (error) => {
+      current.running = false;
+      current.error = error.message;
+    });
+    child.on('close', (code) => {
+      current.running = false;
+      if (code !== 0) {
+        current.error = lastError || `the build stopped unexpectedly (exit ${code})`;
+        return;
+      }
+      // Windows: our own read handle blocks the child's rename-over, so it
+      // leaves the fresh file beside the target and we swap it in here.
+      closeDb();
+      const building = `${dbPath}.building`;
+      if (existsSync(building)) {
+        try {
+          renameSync(building, dbPath);
+        } catch (error) {
+          current.error = `the database was built but could not be swapped in (${(error as Error).message})`;
+          return;
+        }
+      }
+      // The next request opens the new file; nothing has to be restarted.
+      themesCache = null;
+    });
+  };
+
+  api.get('/puzzles/build', (c) =>
+    c.json(
+      build
+        ? {
+            running: build.running,
+            seconds: (Date.now() - build.startedAt) / 1000,
+            error: build.error,
+            ...build.progress,
+          }
+        : { running: false },
+    ),
+  );
+
+  api.post('/puzzles/build', (c) => {
+    if (build?.running) return c.json({ error: 'a build is already running' }, 409);
+    startBuild();
+    return c.json({ running: true });
+  });
+
   // Theme counts never change while the process lives (a rebuild replaces
   // the file and the server restarts), so compute once and keep. Newer
   // databases carry a precomputed theme_counts table; older ones pay one
@@ -335,7 +453,7 @@ export function puzzlesApi(
     const db = puzzleDb();
     if (!db) {
       return c.json(
-        { error: 'No puzzle database. Run: npm run build:puzzles (see docs/databases.md)' },
+        { error: 'No puzzle database yet — build it from the Puzzles page.' },
         503,
       );
     }

@@ -161,7 +161,7 @@ so it never ships in the repo. Build what you want, per machine.
 
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
-| `data/puzzles.sqlite` | the puzzle trainer | `npm run build:puzzles` |
+| `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
 | `data/refgames.sqlite` | the elite game browser | `npm run build:refgames` |
 | `data/books/*.sqlite` | the local opening explorer | in the app, or `npm run build:book` |
 | `data/openings.json` | ECO opening names | the app, on first use |
@@ -183,31 +183,27 @@ month of Lichess Elite (280,246 games) indexes 361 k positions in 47 s into
 **A book is for a large reference database, not for your own games.** Your
 games are answered live instead — see below.
 
-### The two big ones are built once, not by the app
+### The two big ones
 
-`puzzles.sqlite` (~2.5 GB) and `refgames.sqlite` are the **only** things
-the app cannot make for itself, and they are one-offs rather than part of
-any deploy:
+**The puzzle trainer builds itself, in the app.** Open Puzzles with no
+database and it offers to fetch one: the CC0 Lichess dump (~304 MB, 6.1 M
+puzzles) downloads with a progress bar and becomes a 2.6 GB database — 115 s
+of building here, after the download. Nothing to install, nothing to type,
+and it keeps going if you leave the page. `npm run build:puzzles` does the
+same thing from a terminal if you prefer one.
+
+**Reference games still need the shell**, because their input is your own
+PGN collections rather than one public dump:
 
 ```bash
-# puzzle trainer — the Lichess dump (CC0, ~304 MB), once
-curl -L -o data/lichess_db_puzzle.csv.zst \
-  https://database.lichess.org/lichess_db_puzzle.csv.zst
-npm run build:puzzles          # -> data/puzzles.sqlite
-
-# elite game browser — over any PGN collections you have
-npm run build:refgames         # -> data/refgames.sqlite
+npm run build:refgames         # over vault/sources -> data/refgames.sqlite
 ```
 
-Running **on this machine**: that is all — they are already where the app
-looks.
-
-Running **on a server**: build them wherever the memory is. If the server
-has room, build there and skip the transfer; otherwise build on your
-workstation and `scp` both into its data directory (`CHESS_VAULT_DATA`,
-default `data/` beside the app). The puzzle build is the demanding one —
-it streams a 304 MB compressed dump into a 2.5 GB database — and it will
-OOM on a small instance; it did on a 2 GB one here. That is a question
+Running **on a server**: the puzzle build streams a 304 MB compressed dump
+into a 2.6 GB database, and it will OOM on a small instance — it did on a
+2 GB one here. Press the button on a machine with the memory, or build on
+your workstation and `scp` the file into the server's data directory
+(`CHESS_VAULT_DATA`, default `data/` beside the app). That is a question
 about the machine, not about servers.
 
 Every later deploy keeps their indexes current on its own, so rebuild only

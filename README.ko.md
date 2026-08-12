@@ -159,7 +159,7 @@ SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22
 
 | 데이터 | 켜지는 기능 | 만드는 방법 |
 | --- | --- | --- |
-| `data/puzzles.sqlite` | 퍼즐 트레이너 | `npm run build:puzzles` |
+| `data/puzzles.sqlite` | 퍼즐 트레이너 | 앱 안에서, 또는 `npm run build:puzzles` |
 | `data/refgames.sqlite` | 엘리트 게임 브라우저 | `npm run build:refgames` |
 | `data/books/*.sqlite` | 로컬 오프닝 탐색기 | 앱 안에서, 또는 `npm run build:book` |
 | `data/openings.json` | ECO 오프닝 이름 | 앱이 처음 쓸 때 스스로 |
@@ -180,30 +180,28 @@ Elite 한 달치(280,246 게임)에서 361k 국면을 47초에 색인해 69MB가
 **북은 큰 참고 데이터베이스를 위한 것이지, 내 게임을 위한 것이 아닙니다.**
 내 게임은 위에서 말한 대로 그때그때 답합니다.
 
-### 큰 둘은 한 번만 만들며, 앱이 만들지 않습니다
+### 큰 둘
 
-`puzzles.sqlite`(~2.5GB)와 `refgames.sqlite`는 앱이 스스로 만들지 **못하는
-유일한** 것들이고, 배포의 일부가 아니라 일회성 작업입니다:
+**퍼즐 트레이너는 앱이 스스로 만듭니다.** 데이터베이스가 없는 상태로
+퍼즐을 열면 만들어 주겠다고 제안합니다. CC0 Lichess 덤프(~304MB, 퍼즐
+610만 개)를 진행 표시줄과 함께 내려받아 2.6GB 데이터베이스로 만듭니다 —
+내려받은 뒤 만드는 데 여기서 115초 걸렸습니다. 설치할 것도, 입력할 것도
+없고, 페이지를 떠나도 계속됩니다. 터미널이 편하면
+`npm run build:puzzles`가 똑같은 일을 합니다.
+
+**참고 게임은 아직 셸이 필요합니다.** 입력이 공개 덤프 하나가 아니라 각자
+갖고 있는 PGN 모음이기 때문입니다:
 
 ```bash
-# 퍼즐 트레이너 — Lichess 덤프(CC0, ~304MB), 한 번만
-curl -L -o data/lichess_db_puzzle.csv.zst \
-  https://database.lichess.org/lichess_db_puzzle.csv.zst
-npm run build:puzzles          # -> data/puzzles.sqlite
-
-# 엘리트 게임 브라우저 — 갖고 있는 PGN 모음으로
-npm run build:refgames         # -> data/refgames.sqlite
+npm run build:refgames         # vault/sources -> data/refgames.sqlite
 ```
 
-**이 기기에서** 돌린다면 이걸로 끝입니다 — 앱이 찾는 자리에 이미 있습니다.
-
-**서버에서** 돌린다면 메모리가 넉넉한 쪽에서 만드세요. 서버에 여유가
-있으면 거기서 만들고 전송을 건너뛰면 되고, 아니면 작업용 컴퓨터에서 만든
-뒤 서버의 데이터 디렉터리(`CHESS_VAULT_DATA`, 기본값은 앱 옆의 `data/`)로
-`scp` 하세요. 부담이 큰 쪽은 퍼즐 빌드입니다 — 304MB 압축 덤프를 흘려
-넣어 2.5GB 데이터베이스를 만듭니다 — 작은 인스턴스에서는 메모리가
-터집니다. 여기서도 2GB 기계에서 그랬습니다. 이것은 서버냐 아니냐가 아니라
-그 기계의 메모리 문제입니다.
+**서버에서** 돌린다면, 퍼즐 빌드는 304MB 압축 덤프를 흘려 넣어 2.6GB
+데이터베이스를 만들기 때문에 작은 인스턴스에서는 메모리가 터집니다.
+여기서도 2GB 기계에서 그랬습니다. 메모리가 넉넉한 기계에서 버튼을 누르거나,
+작업용 컴퓨터에서 만든 뒤 서버의 데이터
+디렉터리(`CHESS_VAULT_DATA`, 기본값은 앱 옆의 `data/`)로 `scp` 하세요.
+이것은 서버냐 아니냐가 아니라 그 기계의 메모리 문제입니다.
 
 이후 배포는 인덱스를 알아서 최신으로 유지하므로, 더 새 덤프나 더 많은
 게임이 필요할 때만 다시 만들면 됩니다.

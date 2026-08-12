@@ -19,6 +19,7 @@ Anything here travels with the app to whoever installs or visits it.
 | chessops | npm, bundled into `dist/` | GPL-3.0-or-later |
 | pdf.js | `web/public/pdfjs-wasm/`, npm | Apache-2.0 |
 | sql.js (static demo only) | `web/public/sqljs/` | MIT |
+| fzstd (reads the zstd puzzle dump) | npm, bundled into the puzzle builder | MIT |
 | lucide icons | npm, bundled | ISC |
 | Inter, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | CC0-1.0 |

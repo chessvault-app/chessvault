@@ -37,6 +37,7 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
+import { PuzzleDbSetup } from './PuzzleDbSetup';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
 import { bandOf } from './bands';
@@ -430,22 +431,7 @@ function Trainer({
       : [];
 
   if (meta && !meta.ready) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
-        <div className="w-full max-w-md text-center">
-          <p className="text-fg mb-2 text-sm font-semibold">{t('No puzzle database yet')}</p>
-          <p className="text-muted text-xs leading-relaxed">
-            {t('Download the Lichess dump and build it once:')}
-          </p>
-          <code className="bg-surface-inset border-line text-subtle mt-3 block overflow-x-auto rounded-md border p-3 text-left font-mono text-[0.6875rem] leading-relaxed">
-            curl -L -o data/lichess_db_puzzle.csv.zst \<br />
-            &nbsp;&nbsp;https://database.lichess.org/lichess_db_puzzle.csv.zst
-            <br />
-            npm run build:puzzles
-          </code>
-        </div>
-      </div>
-    );
+    return <PuzzleDbSetup onReady={() => void refreshMeta()} />;
   }
 
   if (analysing && puzzle) {
