@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
+import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 
 /** Past this much of a drag, letting go removes the row. */
@@ -80,17 +81,42 @@ export function useSwipeAway(onSwipe: () => void): {
   };
 }
 
-/** What the sliding contents uncover: a red edge that names what happens. */
+/**
+ * What the sliding contents uncover: a red panel that names what happens.
+ *
+ * The panel is the colour, not the words. Red text on the card's own
+ * background read as an error message printed on the row — the row still
+ * looked like itself, with a warning in it. Filling the uncovered strip
+ * makes the gesture legible as one thing: the card is sliding off
+ * something, and the something is red.
+ *
+ * Its width follows the finger exactly, so the fill IS the strip the
+ * contents have vacated — no red showing where the card still is, none
+ * missing where it is not. Past the threshold it goes solid and says so;
+ * before it, it is dimmer, which is the only cue that letting go now
+ * would do nothing.
+ */
 export function SwipeTrack({ dx }: { dx: number }) {
   if (dx >= 0) return null;
+  const armed = dx <= -THRESHOLD;
   return (
     <div
-      className="text-bad absolute inset-y-0 right-0 flex items-center gap-2 px-4"
+      className={cn(
+        'absolute inset-y-0 right-0 flex items-center justify-end gap-2 overflow-hidden',
+        'text-bad-fg transition-colors duration-100',
+        armed ? 'bg-bad' : 'bg-bad/55',
+      )}
+      style={{ width: -dx }}
       aria-hidden
     >
-      <Trash2 className="size-4" />
-      <span className="text-xs font-medium">
-        {dx <= -THRESHOLD ? t('Release to remove') : t('Remove')}
+      {/* Pinned to the right edge of the strip so the icon and its word
+          stay together and stay visible as the strip narrows, instead of
+          sliding out of their own panel. */}
+      <span className="flex shrink-0 items-center gap-2 px-4">
+        <Trash2 className="size-4" />
+        <span className="whitespace-nowrap text-xs font-semibold">
+          {armed ? t('Release to remove') : t('Remove')}
+        </span>
       </span>
     </div>
   );

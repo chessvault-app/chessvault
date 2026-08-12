@@ -13,6 +13,21 @@ export interface FabAction {
 }
 
 /**
+ * The room a scrolling page has to leave at its bottom for the Fab.
+ *
+ * A fixed button cannot push anything, so the page has to know about it:
+ * the Fab floats 4.5rem off the bottom of the WINDOW and stands 3.5rem
+ * tall, which puts its top 8rem up — about 4rem into a page whose own
+ * bottom edge is the top of the phone's tab bar. Without this the last
+ * row of every shelf sat under it, and the last row is exactly where you
+ * end up after scrolling.
+ *
+ * Restored to the ordinary page padding from md, where the Fab is hidden
+ * and the header's Create button takes over.
+ */
+export const FAB_CLEARANCE = 'pb-[5.5rem] md:pb-4 lg:pb-6';
+
+/**
  * Making something new: a button in the page header on a desktop, a round
  * one in the bottom-right corner on a phone.
  *

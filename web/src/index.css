@@ -112,6 +112,11 @@
   --bad: oklch(56% 0.2 25);
   --warn: oklch(70% 0.15 75);
   --info: oklch(60% 0.13 230);
+  /* What reads ON a filled --bad panel, in both themes: the dark red is
+     dark enough for white in light mode, and the light red of dark mode
+     wants near-black. Only the swipe-to-remove strip fills --bad; every
+     other use is text or a tint, which keeps the page colour behind it. */
+  --bad-fg: oklch(99% 0 0);
 
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
   --board-light: oklch(91% 0.035 84);
@@ -192,6 +197,8 @@
   --bad: oklch(69% 0.18 25);
   --warn: oklch(80% 0.15 80);
   --info: oklch(72% 0.13 232);
+  /* Dark mode's --bad is a light red; white on it is unreadable. */
+  --bad-fg: oklch(18% 0.03 25);
 
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light: oklch(60% 0.024 250);
@@ -235,6 +242,7 @@
 
   --color-good: var(--good);
   --color-bad: var(--bad);
+  --color-bad-fg: var(--bad-fg);
   --color-warn: var(--warn);
   --color-info: var(--info);
 
