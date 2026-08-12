@@ -251,10 +251,6 @@ export const ko: Record<string, string> = {
   'No game in your collection matches it. Clearing the search shows the whole collection again.':
     '모음에 일치하는 게임이 없습니다. 검색을 지우면 모음 전체가 다시 보입니다.',
   'Clear search': '검색 지우기',
-  // Tagging a note or a study, in edit mode.
-  Tag: '태그',
-  'Remove this tag': '이 태그 제거',
-  'endgame, sicilian…': '엔드게임, 시실리안…',
   // Archive filters: three selects where there were eight chips on a rail.
   // Side, White won and Black won already have entries further down.
   Outcome: '결과',

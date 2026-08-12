@@ -16,7 +16,6 @@ import {
 import { resolve, sep } from 'node:path';
 import { VAULT_STUDIES } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
-import { tagsFromFrontMatter, tagsFromPgnText } from '../shared/tags.ts';
 import { mainlineEndFen } from '../shared/pgn.ts';
 
 /**
@@ -82,9 +81,7 @@ function meaningfulFen(fen: string | null): string | null {
 export interface DocPreview {
   /** The first line somebody actually wrote. */
   excerpt: string | null;
-  /** Front-matter tags, lower-cased and de-duplicated. */
-  tags: string[];
-  /** Where the note's first embedded board starts. */
+  /** Where the document's first board ends up. */
   fen: string | null;
 }
 
@@ -188,15 +185,8 @@ function firstChapterFen(head: string, read: number): string | null {
 
 /** Everything a note's card shows beyond its name, size and time. */
 export function readPreview(head: string): DocPreview {
-  const { front, body } = splitFrontMatter(head);
-  return {
-    excerpt: firstProseLine(body),
-    // Front matter only — an inline #hashtag is indistinguishable from a
-    // markdown heading and from "#1 priority", and guessing wrong puts a
-    // badge on a card the note never asked for.
-    tags: tagsFromFrontMatter(front),
-    fen: firstBoardFen(body),
-  };
+  const { body } = splitFrontMatter(head);
+  return { excerpt: firstProseLine(body), fen: firstBoardFen(body) };
 }
 
 /**
@@ -229,7 +219,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
   const previewCached = (path: string, mtimeMs: number): DocPreview => {
     const hit = previewCache.get(path);
     if (hit && hit.mtimeMs === mtimeMs) return hit.preview;
-    let preview: DocPreview = { excerpt: null, tags: [], fen: null };
+    let preview: DocPreview = { excerpt: null, fen: null };
     try {
       const fd = openSync(path, 'r');
       try {
@@ -239,13 +229,12 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
         // becomes a replacement char; dropping the last line loses nothing
         // a first sentence needs.
         const head = buf.subarray(0, read).toString('utf-8');
-        // A study is PGN: no prose to excerpt, but its tags sit in a
-        // header on the first chapter and that chapter IS a game, so it
-        // gets a board the same way a note's fence does.
+        // A study is PGN: no prose to excerpt, but its first chapter IS a
+        // game, so it gets a board the same way a note's fence does.
         preview =
           ext === '.md'
             ? readPreview(head)
-            : { excerpt: null, tags: tagsFromPgnText(head), fen: firstChapterFen(head, read) };
+            : { excerpt: null, fen: firstChapterFen(head, read) };
       } finally {
         closeSync(fd);
       }

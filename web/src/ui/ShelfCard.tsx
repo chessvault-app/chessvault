@@ -5,7 +5,6 @@ import { Button } from './Button';
 import { ActionSheet, type SheetAction } from './ActionSheet';
 import { MiniBoard } from './MiniBoard';
 import { SwipeTrack, useSwipeAway } from './SwipeRow';
-import { TagPill } from './TagPill';
 import { t } from '@/lib/i18n';
 
 /** Grid: cards side by side. List: one dense row each, no thumbnail. */
@@ -25,7 +24,6 @@ export function ShelfCard({
   title,
   meta,
   preview,
-  tags,
   fen,
   pinned = false,
   onTogglePin,
@@ -44,7 +42,6 @@ export function ShelfCard({
   meta: ReactNode;
   /** Two lines of the note's own words. */
   preview?: string | null;
-  tags?: string[];
   /** Where the document's first embedded board starts, if it has one. */
   fen?: string | null;
   pinned?: boolean;
@@ -110,10 +107,16 @@ export function ShelfCard({
                 corner rather than sharing the row. In the flex row it used
                 to sit in, it took its width from every line of the card
                 whether it was showing or not. */}
+            {/* The right padding reserves the corner strip, so it has to
+                count what is actually IN it: one ⋯ is 28px, a pin beside
+                it is 58, and on a touch screen both grow to 36 so the pair
+                is 74. `pr-7` counted the ⋯ alone, and a long name — a
+                Lichess export keeps its whole slug — ran under the pin. */}
             <p
               className={cn(
                 'text-fg truncate font-semibold',
-                layout === 'grid' ? 'pr-7 text-[0.9375rem] leading-5' : 'pr-7 text-sm',
+                layout === 'grid' ? 'text-[0.9375rem] leading-5' : 'text-sm',
+                onTogglePin ? 'pr-14 pointer-coarse:pr-[4.5rem]' : 'pr-7 pointer-coarse:pr-9',
               )}
             >
               {title}
@@ -126,13 +129,6 @@ export function ShelfCard({
               <p className="text-muted mt-1 line-clamp-2 text-xs leading-[1.35rem] opacity-90">
                 {preview}
               </p>
-            )}
-            {tags && tags.length > 0 && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                {tags.map((tag) => (
-                  <TagPill key={tag} tag={tag} />
-                ))}
-              </div>
             )}
             {error && <p className="text-bad text-xs">{error}</p>}
           </div>

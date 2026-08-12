@@ -30,8 +30,6 @@ interface NoteMeta {
   updatedAt: string;
   /** The note's first line of prose, if the server could find one. */
   excerpt?: string | null;
-  /** Front-matter tags. */
-  tags?: string[];
   /** Where the note's first embedded board starts. */
   fen?: string | null;
 }
@@ -413,7 +411,6 @@ function NoteCard({
       // names are all "Opening prep checklist 3" tells you nothing; its
       // first sentence, its tags and the board it opens with do.
       preview={note.excerpt}
-      tags={note.tags}
       fen={note.fen}
       pinned={pinned}
       onTogglePin={onTogglePin}

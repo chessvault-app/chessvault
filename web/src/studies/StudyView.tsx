@@ -36,8 +36,6 @@ import { Input } from '@/ui/Input';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { TagEditor } from '@/ui/TagEditor';
-import { tagsFromPgnHeaders } from '@shared/tags';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { AnnotationPane } from './AnnotationPane';
@@ -56,8 +54,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   // title is already in the header above. A game has one chapter named
   // after the document, so it takes the opening instead, like the Board.
   const chapterName = useStudy((s) => s.chapters[s.chapterIndex]?.name ?? '');
-  const chapters = useStudy((s) => s.chapters);
-  const setTags = useStudy((s) => s.setTags);
   const analysisTree = useAnalysis((s) => s.tree);
   const analysisCursor = useAnalysis((s) => s.cursorId);
   const openingName = useOpeningName(
@@ -165,23 +161,9 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     </div>
   );
 
-  // Only while editing, like the note's — and only for a real study: a
-  // collection game's PGN belongs to the game it came from, and stamping
-  // a Tags header onto it would be this app writing into somebody's
-  // downloaded chess.com file.
-  const tagRow =
-    editing && kind === 'study' ? (
-      <TagEditor
-        className="shrink-0"
-        tags={tagsFromPgnHeaders(chapters[0]?.headers ?? {})}
-        onChange={setTags}
-      />
-    ) : null;
-
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
       {titleRow('wide:hidden')}
-      <div className="wide:hidden">{tagRow}</div>
       {/* Reading locks the pieces: studies and games open as documents to
           step through; the pencil switches to annotating/recording. */}
       <AnalysisBoard locked={!editing} />
@@ -190,7 +172,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           height under the board and scrolls internally (see AnalysisView). */}
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
         {titleRow('stacked:hidden')}
-        <div className="stacked:hidden">{tagRow}</div>
 
         <PaneTabs
           className="lg:hidden"

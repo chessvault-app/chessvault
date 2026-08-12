@@ -289,27 +289,6 @@ describe('notes list excerpts', () => {
     expect((await listed())['Edited']).toBe('After.');
   });
 
-  it('reads front-matter tags, inline or as a list', async () => {
-    write('Inline', '---\ntags: Opening, Sicilian\n---\n\nBody.\n');
-    write('Block', '---\ntitle: x\ntags:\n  - endgame\n  - "rook"\n---\n\nBody.\n');
-    const tags = async (id: string): Promise<string[]> => {
-      const { studies } = (await (await app.request('/api/notes')).json()) as {
-        studies: { id: string; tags: string[] }[];
-      };
-      return studies.find((s) => s.id === id)!.tags;
-    };
-    expect(await tags('Inline')).toEqual(['opening', 'sicilian']);
-    expect(await tags('Block')).toEqual(['endgame', 'rook']);
-  });
-
-  it('has no tags without front matter — a heading is not a hashtag', async () => {
-    write('Hash', '# Hash\n\n#1 priority is not a tag.\n');
-    const { studies } = (await (await app.request('/api/notes')).json()) as {
-      studies: { id: string; tags: string[] }[];
-    };
-    expect(studies.find((s) => s.id === 'Hash')!.tags).toEqual([]);
-  });
-
   it('replays the first board to where its moves end', async () => {
     // A bare move list: the thumbnail is the position AFTER 1.e4 e5, not
     // the starting position every game shares.
@@ -393,11 +372,10 @@ describe('notes list excerpts', () => {
       'utf-8',
     );
     const { studies } = (await (await pgnApp.request('/api/studies')).json()) as {
-      studies: { excerpt: string | null; tags: string[]; fen: string | null }[];
+      studies: { excerpt: string | null; fen: string | null }[];
     };
     // Prose is a note's business; a study has its chapter count instead.
     expect(studies[0]!.excerpt).toBeNull();
-    expect(studies[0]!.tags).toEqual(['opening']);
     // The FIRST chapter, played out — not the second, and not the start.
     expect(studies[0]!.fen).toBe('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
     rmSync(pgnDir, { recursive: true, force: true });
