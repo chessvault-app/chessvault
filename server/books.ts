@@ -96,20 +96,41 @@ export function seedBundledBook(booksDir: string = DATA_BOOKS): void {
   mkdirSync(booksDir, { recursive: true });
   const marker = resolve(booksDir, SEED_MARKER);
   if (existsSync(marker)) return;
+
   const bundled = resolve(REPO_ROOT, 'assets', `${BUNDLED_BOOK}.sqlite`);
-  // Written first: a copy that fails should not be retried on every launch,
-  // and an install with no bundled file (a source checkout that never built
-  // one) should not look for it again either.
-  writeFileSync(marker, `${new Date().toISOString()}\n`);
-  if (!existsSync(bundled)) return;
   const target = resolve(booksDir, `${BUNDLED_BOOK}.sqlite`);
-  if (existsSync(target)) return;
-  try {
-    copyFileSync(bundled, target);
-    console.log(`books: seeded ${BUNDLED_BOOK} (${(statSync(target).size / 1e6).toFixed(1)} MB)`);
-  } catch (error) {
-    console.warn(`books: could not seed the bundled book (${(error as Error).message})`);
+  // No bundled file (a source checkout that never built one): leave no
+  // marker, so an install that gains one later still gets it. The cost of
+  // being wrong is one existsSync per launch.
+  if (!existsSync(bundled)) return;
+  // Somebody's own book already has the name. Theirs wins, and the marker
+  // stops this from being reconsidered every launch.
+  if (existsSync(target)) {
+    writeFileSync(marker, `${new Date().toISOString()}\n`);
+    return;
   }
+
+  // Copy beside the target and rename, the same way every other write in
+  // this codebase lands: a copy interrupted halfway — a crash, a full disk —
+  // would otherwise leave a truncated file that IS the book from then on.
+  // Seen for real: a dev server restarted while the asset was still being
+  // written and seeded 4,462 of its 42,564 rows.
+  const part = `${target}.part`;
+  try {
+    rmSync(part, { force: true });
+    copyFileSync(bundled, part);
+    renameSync(part, target);
+  } catch (error) {
+    rmSync(part, { force: true });
+    // Deliberately no marker: a failure that can be recovered from should
+    // be retried on the next launch rather than remembered as a decision.
+    console.warn(`books: could not seed the bundled book (${(error as Error).message})`);
+    return;
+  }
+  // Written only now, so it records "this vault has been given its book"
+  // and nothing else. Deleting the book after this is final.
+  writeFileSync(marker, `${new Date().toISOString()}\n`);
+  console.log(`books: seeded ${BUNDLED_BOOK} (${(statSync(target).size / 1e6).toFixed(1)} MB)`);
 }
 
 /** Name of the book that ships with the app, in assets/ and once seeded. */
