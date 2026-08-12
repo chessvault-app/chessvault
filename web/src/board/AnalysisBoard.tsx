@@ -323,6 +323,43 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
   );
 }
 
+/**
+ * Hold a step button to keep stepping.
+ *
+ * A keyboard repeats ← and → on its own; a finger had to tap once per
+ * ply, which is the wrong amount of work for walking through a game on a
+ * phone. Starts after a pause long enough that an ordinary tap is never
+ * a repeat, then accelerates to a readable pace.
+ *
+ * The click handler still fires for the tap itself, so this only ever
+ * ADDS the repeats: `onClick` moves one, the timer moves the rest.
+ */
+function repeatOn(step: () => void): {
+  onPointerDown: () => void;
+  onPointerUp: () => void;
+  onPointerLeave: () => void;
+  onPointerCancel: () => void;
+} {
+  let delay: ReturnType<typeof setTimeout> | null = null;
+  let tick: ReturnType<typeof setInterval> | null = null;
+  const stop = (): void => {
+    if (delay) clearTimeout(delay);
+    if (tick) clearInterval(tick);
+    delay = tick = null;
+  };
+  return {
+    onPointerDown: () => {
+      stop();
+      delay = setTimeout(() => {
+        tick = setInterval(step, 90);
+      }, 400);
+    },
+    onPointerUp: stop,
+    onPointerLeave: stop,
+    onPointerCancel: stop,
+  };
+}
+
 export function BoardControls({
   className,
   keyboard = true,
@@ -380,10 +417,10 @@ export function BoardControls({
       <Button variant="ghost" size="icon" onClick={goToStart} title={t('Start (↑)')}>
         <ChevronFirst className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')}>
+      <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')} {...repeatOn(goBack)}>
         <ChevronLeft className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')}>
+      <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')} {...repeatOn(goForward)}>
         <ChevronRight className="size-[1.1rem]" />
       </Button>
       <Button variant="ghost" size="icon" onClick={goToEnd} title={t('End (↓)')}>

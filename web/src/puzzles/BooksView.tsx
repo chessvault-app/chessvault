@@ -2537,7 +2537,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
                     ) : (
                       <Check className="size-3.5" />
                     )}
-                    Submit
+                    {t('Submit')}
                   </Button>
                   <Button
                     variant="ghost"
@@ -2570,7 +2570,7 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
           onPromote={
             phase === 'solving' ? (id) => setTree(promoteToMainline(tree, id)) : undefined
           }
-          emptyText="Nothing entered yet — find the first move on the board."
+          emptyText={t('Nothing entered yet — find the first move on the board.')}
         />
       </div>
 

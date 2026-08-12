@@ -109,8 +109,9 @@ export function PdfImport({
         {!mine && existing > 0 && (
           <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">
             <p className="text-fg text-xs font-medium">
-              This book already holds {existing} puzzle{existing === 1 ? '' : 's'}. What should the
-              import do with them?
+              {t('This book already holds {n} puzzles. What should the import do with them?', {
+                n: existing,
+              })}
             </p>
             {(
               [
@@ -168,8 +169,7 @@ export function PdfImport({
             <span className="text-muted text-sm">
               {t('Choose the book’s PDF')}
             <span className="text-subtle block text-xs">
-                every page is scanned for diagrams; nothing leaves this machine — and you can
-                keep using the app while it runs
+                {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
               </span>
             </span>
           </label>

@@ -77,6 +77,19 @@ export const ko: Record<string, string> = {
   'Delete “{name}”?': '“{name}”을(를) 지울까요?',
   'Are you sure?': '정말 진행할까요?',
   Filters: '필터',
+  'This book already holds {n} puzzles. What should the import do with them?':
+    '이 책에는 이미 퍼즐 {n}개가 있습니다. 가져오기에서 어떻게 할까요?',
+  'every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs':
+    '모든 페이지에서 다이어그램을 찾습니다. 이 기기 밖으로는 아무것도 나가지 않으며, 도는 동안에도 앱을 계속 쓸 수 있습니다',
+  'Wipe every game, study, note, puzzle and imported book from the vault — including its change history. The app password, 2FA and tokens survive. There is no undo; if the vault matters, back it up first.':
+    '보관함의 모든 게임, 스터디, 노트, 퍼즐, 가져온 책을 변경 이력까지 지웁니다. 앱 비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니, 보관함이 소중하다면 먼저 백업하세요.',
+  'Wiping…': '지우는 중…',
+  'Wipe everything': '전부 지우기',
+  'Nothing entered yet — find the first move on the board.':
+    '아직 입력한 수가 없습니다. 보드에서 첫 수를 찾아보세요.',
+  Submit: '제출',
+  'Powers the online opening-explorer augmentation and Lichess puzzle history. Create one with':
+    '온라인 오프닝 탐색기 보강과 Lichess 퍼즐 기록에 쓰입니다. 토큰을 만들 때는',
   Collection: '모음',
   'Empty collection.': '빈 모음입니다.',
 
@@ -86,7 +99,7 @@ export const ko: Record<string, string> = {
   'Has a comment': '주석 있음',
   'Play a move on the board, or load a FEN or PGN.':
     '보드에서 수를 두거나, FEN 또는 PGN을 불러오세요.',
-  'Make mainline': '주 변화로 지정',
+  'Make mainline': '메인 라인으로 지정',
   'Load a position — FEN, PGN, or image': '포지션 불러오기 — FEN, PGN 또는 이미지',
   'Load position': '포지션 불러오기',
   'Paste from clipboard': '클립보드에서 붙여넣기',
@@ -203,11 +216,12 @@ export const ko: Record<string, string> = {
   'Add a sub-chapter': '하위 챕터 추가',
 
   // --- puzzles -------------------------------------------------------------
-  'End of line': '변화 끝',
+  'End of line': '라인 끝',
   'Back to the dashboard': '대시보드로',
   'Back to the puzzle': '퍼즐로',
   'Back to the book': '책으로',
   'Back to the position': '포지션으로',
+  'Back to the board': '보드로',
   'Back to the diagram': '다이어그램으로',
   'All books': '모든 책',
   'All themes': '모든 테마',
@@ -236,10 +250,8 @@ export const ko: Record<string, string> = {
   'Next unsolved': '다음 미해결',
   'Start over': '처음부터',
   'Grade the mainline — this is the only judged moment':
-    '주 변화를 채점합니다 — 평가되는 순간은 여기뿐입니다',
+    '메인 라인을 채점합니다 — 평가되는 순간은 여기뿐입니다',
   'Counts as a failed attempt': '실패한 시도로 기록됩니다',
-  'Nothing entered yet — find the first move on the board.':
-    '아직 입력이 없습니다 — 보드에서 첫 수를 찾으세요.',
   'Puzzle not found.': '퍼즐을 찾을 수 없습니다.',
   'That book does not exist.': '그런 책이 없습니다.',
   'Nothing matches these filters.': '이 조건에 맞는 것이 없습니다.',
@@ -673,7 +685,6 @@ export const ko: Record<string, string> = {
   'Wipe attempts, history and the review pool': '시도, 기록, 복습 대상을 모두 지우기',
   'Wipe all attempts, history and the review pool?':
     '시도, 기록, 복습 대상을 모두 지울까요?',
-  'Wipe everything': '전부 지우기',
 
   // --- position from an image ----------------------------------------------
   'No image in the clipboard — copy or snip one first.':

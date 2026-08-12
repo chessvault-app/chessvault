@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, Compass, ExternalLink, Hammer, Loader2, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
+import { BookOpen, ChevronDown, ChevronLeft, Compass, ExternalLink, Hammer, Loader2, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
@@ -785,6 +785,23 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
           : 'border-line bg-surface-inset flex min-h-0 flex-col gap-3 overflow-y-auto border-b px-3 py-3 text-xs'
       }
     >
+      {/* As a page this is the whole screen, and it had no title and no way
+          back — every other page in the app has both. In the explorer's
+          panel the surrounding header already says where you are. */}
+      {page && (
+        <header className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Back to the board')}
+            onClick={() => navigate('analysis', 'explorer')}
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Opening books')}</h1>
+        </header>
+      )}
+
       {books.length > 0 && (
         <ul className="flex flex-col gap-1">
           {books.map((b) => (

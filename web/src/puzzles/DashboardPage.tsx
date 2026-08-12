@@ -412,7 +412,7 @@ function ResetButton({ onDone }: { onDone: () => void }) {
       triggerTitle="Wipe attempts, history and the review pool"
       triggerClassName="text-subtle ml-auto"
       question="Wipe all attempts, history and the review pool?"
-      confirmLabel="Wipe everything"
+      confirmLabel={t('Wipe everything')}
       onConfirm={() => {
         void fetch('/api/puzzles/reset', { method: 'POST' }).then(onDone);
       }}

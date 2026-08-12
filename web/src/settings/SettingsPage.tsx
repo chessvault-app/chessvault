@@ -689,7 +689,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
     return (
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-medium">
-          Two-factor authentication
+          {t('Two-factor authentication')}
           <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-[0.625rem] font-semibold">{t('On')}</span>
         </div>
         <p className="text-subtle text-xs">{t('Turning it off needs a current code from your authenticator app.')}</p>
@@ -785,7 +785,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
   return (
     <Card icon={KeyRound} title={t('Lichess token')}>
       <p className="text-subtle text-xs">
-        Powers the online opening-explorer augmentation and Lichess puzzle history. Create one with{' '}
+        {t('Powers the online opening-explorer augmentation and Lichess puzzle history. Create one with')}{' '}
         <em>{t('no scopes')}</em> at{' '}
         <a
           className="text-primary underline underline-offset-2"
@@ -845,9 +845,7 @@ function DangerCard({ gate }: { gate: boolean }) {
   return (
     <Card icon={Trash2} title={t('Danger zone')}>
       <p className="text-subtle text-xs leading-relaxed">
-        Wipe every game, study, note, puzzle and imported book from the vault — including its
-        change history. The app password, 2FA and tokens survive. There is no undo; if the vault
-        matters, back it up first.
+        {t('Wipe every game, study, note, puzzle and imported book from the vault — including its change history. The app password, 2FA and tokens survive. There is no undo; if the vault matters, back it up first.')}
       </p>
       <div className="flex items-center gap-2">
         <Input
@@ -924,7 +922,7 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
           <Button variant="danger" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
-            {busy ? 'Wiping…' : 'Wipe everything'}
+            {busy ? t('Wiping…') : t('Wipe everything')}
           </Button>
         </div>
       </div>
