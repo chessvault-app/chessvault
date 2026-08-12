@@ -5,6 +5,7 @@ import QRCode from 'qrcode';
 import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
+import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
@@ -74,6 +75,15 @@ export function SettingsPage() {
       className="h-full overflow-y-auto"
       style={inset ? { paddingBottom: `${inset}px` } : undefined}
     >
+      {/* While the keyboard is up, iOS shoves the whole window upwards to
+          reveal the caret — main.tsx explains why that shove is left
+          alone rather than fought. The tab bar rides up with it and ends
+          up floating across the middle of the screen, which is the part
+          that reads as broken. The note editor already claims the bottom
+          bar while editing for exactly this reason; settings does the
+          same now. It does not move the window, and it cannot: what is
+          below the shoved page is the webview's own canvas. */}
+      {inset > 0 && <MobileActionBar>{null}</MobileActionBar>}
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
