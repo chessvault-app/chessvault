@@ -40,28 +40,101 @@ function countChapters(pgn: string): number {
   return pgn.match(/^\[Event /gm)?.length ?? (pgn.trim() ? 1 : 0);
 }
 
-/** How much of a note is read to find its first sentence. */
-const EXCERPT_BYTES = 1024;
+/**
+ * How much of a note is read for its card.
+ *
+ * Enough for front matter, a heading, a first paragraph and an early
+ * board — a listing must never depend on how long the longest note is.
+ */
+const PREVIEW_BYTES = 2048;
+
+/** The position a `chess` fence with no FEN header opens at. */
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+export interface DocPreview {
+  /** The first line somebody actually wrote. */
+  excerpt: string | null;
+  /** Front-matter tags, lower-cased and de-duplicated. */
+  tags: string[];
+  /** Where the note's first embedded board starts. */
+  fen: string | null;
+}
+
+/** Split the head into its front matter (if any) and the body after it. */
+function splitFrontMatter(head: string): { front: string[]; body: string[] } {
+  const lines = head.split('\n');
+  // Front matter is a BLOCK, not a rule, and only if it opens the file:
+  // skipping just its `---` fences left "tags: endgame" standing there as
+  // the note's first sentence.
+  if (lines[0]?.trim() === '---') {
+    const close = lines.findIndex((line, at) => at > 0 && line.trim() === '---');
+    if (close > 0) return { front: lines.slice(1, close), body: lines.slice(close + 1) };
+  }
+  return { front: [], body: lines };
+}
 
 /**
- * A note's first line of prose, for the shelf.
+ * `tags: opening, sicilian` or a YAML list under `tags:`.
+ *
+ * Only front matter — an inline #hashtag is indistinguishable from a
+ * markdown heading and from "#1 priority", and guessing wrong puts a
+ * badge on a card that the note never asked for.
+ */
+function frontMatterTags(front: string[]): string[] {
+  const at = front.findIndex((line) => /^tags\s*:/i.test(line.trim()));
+  if (at < 0) return [];
+  const found: string[] = [];
+  const inline = front[at]!.replace(/^\s*tags\s*:/i, '').trim();
+  if (inline) found.push(...inline.replace(/^\[|\]$/g, '').split(','));
+  // A block list: the indented `- item` lines that follow.
+  for (let i = at + 1; i < front.length; i += 1) {
+    const line = front[i]!;
+    if (!/^\s+-\s+/.test(line)) break;
+    found.push(line.replace(/^\s+-\s+/, ''));
+  }
+  const seen = new Set<string>();
+  return found
+    .map((tag) => tag.trim().replace(/^['"]|['"]$/g, '').toLowerCase())
+    .filter((tag) => tag && tag.length <= 24 && !seen.has(tag) && seen.add(tag) !== undefined)
+    .slice(0, 4);
+}
+
+/**
+ * Where the note's first board opens.
+ *
+ * A `chess` fence declares its start with a FEN header, or omits it and
+ * means the standard position — so this is read off the fence rather than
+ * worked out. The server still never parses move text: the position after
+ * the moves is the client's business, and it is the OPENING position that
+ * says what the board is about anyway.
+ */
+function firstBoardFen(body: string[]): string | null {
+  for (let i = 0; i < body.length; i += 1) {
+    if (body[i]!.trim() !== '```chess') continue;
+    for (let j = i + 1; j < body.length; j += 1) {
+      const line = body[j]!.trim();
+      if (line.startsWith('```')) break;
+      const fen = /^\[FEN\s+"([^"]+)"\]$/.exec(line);
+      if (fen) return fen[1]!;
+      // Headers come first; once move text starts there will be no FEN.
+      if (line && !line.startsWith('[')) break;
+    }
+    return START_FEN;
+  }
+  return null;
+}
+
+/**
+ * The note's first line of prose.
  *
  * Skips the heading — that is the note's name, which the card already
  * shows — and anything that is punctuation rather than words: a rule, a
- * front-matter block, a bullet's dash, an embedded board. What is left is
- * the sentence somebody actually wrote, flattened to one line.
+ * bullet's dash, an embedded board. What is left is the sentence somebody
+ * actually wrote, flattened to one line.
  */
-function firstProseLine(head: string): string | null {
-  const lines = head.split('\n');
-  // YAML front matter is a BLOCK, not a rule: skipping only its `---`
-  // fences left "tags: endgame" standing there as the note's first
-  // sentence. It only counts as front matter if it opens the file.
-  if (lines[0]?.trim() === '---') {
-    const close = lines.findIndex((line, at) => at > 0 && line.trim() === '---');
-    if (close > 0) lines.splice(0, close + 1);
-  }
+function firstProseLine(body: string[]): string | null {
   let inFence = false;
-  for (const raw of lines) {
+  for (const raw of body) {
     const line = raw.trim();
     if (line.startsWith('```') || line.startsWith('~~~')) {
       inFence = !inFence;
@@ -78,6 +151,16 @@ function firstProseLine(head: string): string | null {
     if (text) return text.length > 140 ? `${text.slice(0, 139)}…` : text;
   }
   return null;
+}
+
+/** Everything a note's card shows beyond its name, size and time. */
+export function readPreview(head: string): DocPreview {
+  const { front, body } = splitFrontMatter(head);
+  return {
+    excerpt: firstProseLine(body),
+    tags: frontMatterTags(front),
+    fen: firstBoardFen(body),
+  };
 }
 
 /**
@@ -102,33 +185,91 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     return chapters;
   };
 
-  // The same cache, for the line of a note the shelf shows under its name.
+  // The same cache, for everything a note's card shows beyond its stat.
   // Only the head of the file is read — a listing must never depend on how
   // long the longest note is.
-  const excerptCache = new Map<string, { mtimeMs: number; excerpt: string | null }>();
+  const previewCache = new Map<string, { mtimeMs: number; preview: DocPreview }>();
 
-  const excerptCached = (path: string, mtimeMs: number): string | null => {
-    const hit = excerptCache.get(path);
-    if (hit && hit.mtimeMs === mtimeMs) return hit.excerpt;
-    let excerpt: string | null = null;
+  const previewCached = (path: string, mtimeMs: number): DocPreview => {
+    const hit = previewCache.get(path);
+    if (hit && hit.mtimeMs === mtimeMs) return hit.preview;
+    let preview: DocPreview = { excerpt: null, tags: [], fen: null };
     try {
       const fd = openSync(path, 'r');
       try {
-        const buf = Buffer.alloc(EXCERPT_BYTES);
-        const read = readSync(fd, buf, 0, EXCERPT_BYTES, 0);
+        const buf = Buffer.alloc(PREVIEW_BYTES);
+        const read = readSync(fd, buf, 0, PREVIEW_BYTES, 0);
         // A multi-byte character cut in half at the end of the window
         // becomes a replacement char; dropping the last line loses nothing
         // a first sentence needs.
-        excerpt = firstProseLine(buf.subarray(0, read).toString('utf-8'));
+        preview = readPreview(buf.subarray(0, read).toString('utf-8'));
       } finally {
         closeSync(fd);
       }
     } catch {
       /* unreadable between readdir and here — the card just has no preview */
     }
-    excerptCache.set(path, { mtimeMs, excerpt });
-    return excerpt;
+    previewCache.set(path, { mtimeMs, preview });
+    return preview;
   };
+
+  /**
+   * Which documents are pinned, as plain JSON beside them.
+   *
+   * The same shape the games shelf already uses for its bookmarks: the
+   * vault holds the answer, so a pin survives a browser, a device and a
+   * reinstall. The leading dot keeps it out of the way of somebody looking
+   * at the folder in a file manager, and it is not a `.md` so it is never
+   * listed as a note.
+   */
+  const pinsPath = resolve(dir, '.pins.json');
+  const readPins = (): string[] => {
+    try {
+      const parsed = JSON.parse(readFileSync(pinsPath, 'utf-8')) as { ids?: string[] };
+      return Array.isArray(parsed.ids) ? parsed.ids : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const writePins = (ids: string[]): void => {
+    const tmp = `${pinsPath}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify({ ids }, null, 2)}\n`);
+    renameSync(tmp, pinsPath);
+  };
+
+  /**
+   * Follow a pinned document through a rename, or drop it on a delete.
+   *
+   * Without this a pin is a name, not a thing: renaming a pinned note
+   * silently unpinned it, and deleting one left an id in the file that
+   * would re-pin whatever was next created under that name.
+   */
+  const repin = (from: string, to: string | null): void => {
+    const ids = readPins();
+    const at = ids.indexOf(from);
+    if (at < 0) return;
+    if (to === null) ids.splice(at, 1);
+    else ids[at] = to;
+    writePins(ids);
+  };
+
+  api.get(`/${base}/pins`, (c) => c.json({ ids: readPins() }));
+
+  api.post(`/${base}/pins/toggle`, async (c) => {
+    const body = await c.req.json<{ id?: string }>().catch(() => null);
+    const id = body?.id?.trim();
+    if (!id || !validId(id)) return c.json({ error: 'invalid study id' }, 400);
+    const ids = readPins();
+    const at = ids.indexOf(id);
+    const pinned = at < 0;
+    if (pinned) ids.unshift(id);
+    else ids.splice(at, 1);
+    // Atomic, like every other vault write: a crash mid-write must not
+    // leave a truncated file that reads as "nothing is pinned".
+    writePins(ids);
+    return c.json({ id, pinned });
+  });
 
   api.get(`/${base}`, (c) => {
     const entries = readdirSync(dir, { recursive: true, encoding: 'utf-8' });
@@ -149,15 +290,19 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
       .filter(({ file, isFile }) => isFile && file.endsWith(ext))
       .map(({ file, size, mtime }) => {
         const path = resolve(dir, file);
+        // Markdown only: a PGN's "first line" is a header nobody wants to
+        // read, and the study card has its chapter count instead.
+        const preview =
+          ext === '.md'
+            ? previewCached(path, mtime.getTime())
+            : { excerpt: null, tags: [], fen: null };
         return {
           // Ids always use forward slashes, whatever the OS separator is.
           id: file.slice(0, -ext.length).split(sep).join('/'),
           chapters: ext === '.pgn' ? countChaptersCached(path, mtime.getTime()) : 1,
           bytes: size,
           updatedAt: mtime.toISOString(),
-          // Markdown only: a PGN's "first line" is a header nobody wants
-          // to read, and the study card has its chapter count instead.
-          excerpt: ext === '.md' ? excerptCached(path, mtime.getTime()) : null,
+          ...preview,
         };
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
@@ -190,6 +335,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     if (existsSync(pathOf(to))) return c.json({ error: 'a study with that name exists' }, 409);
     mkdirSync(resolve(pathOf(to), '..'), { recursive: true });
     renameSync(pathOf(from), pathOf(to));
+    repin(from, to);
     return c.json({ moved: to });
   });
 
@@ -208,6 +354,10 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     if (existsSync(toPath)) return c.json({ error: 'a collection with that name exists' }, 409);
     mkdirSync(resolve(toPath, '..'), { recursive: true });
     renameSync(fromPath, toPath);
+    // The documents inside went with the directory, so their pins must too.
+    const ids = readPins();
+    const moved = ids.map((id) => (id.startsWith(`${from}/`) ? `${to}${id.slice(from.length)}` : id));
+    if (moved.some((id, at) => id !== ids[at])) writePins(moved);
     return c.json({ moved: to });
   });
 
@@ -286,6 +436,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     const path = pathOf(id);
     if (!existsSync(path)) return c.json({ error: 'no such study' }, 404);
     rmSync(path);
+    repin(id, null);
     return c.json({ deleted: id });
   });
 

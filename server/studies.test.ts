@@ -289,6 +289,79 @@ describe('notes list excerpts', () => {
     expect((await listed())['Edited']).toBe('After.');
   });
 
+  it('reads front-matter tags, inline or as a list', async () => {
+    write('Inline', '---\ntags: Opening, Sicilian\n---\n\nBody.\n');
+    write('Block', '---\ntitle: x\ntags:\n  - endgame\n  - "rook"\n---\n\nBody.\n');
+    const tags = async (id: string): Promise<string[]> => {
+      const { studies } = (await (await app.request('/api/notes')).json()) as {
+        studies: { id: string; tags: string[] }[];
+      };
+      return studies.find((s) => s.id === id)!.tags;
+    };
+    expect(await tags('Inline')).toEqual(['opening', 'sicilian']);
+    expect(await tags('Block')).toEqual(['endgame', 'rook']);
+  });
+
+  it('has no tags without front matter — a heading is not a hashtag', async () => {
+    write('Hash', '# Hash\n\n#1 priority is not a tag.\n');
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string; tags: string[] }[];
+    };
+    expect(studies.find((s) => s.id === 'Hash')!.tags).toEqual([]);
+  });
+
+  it('takes the first board’s opening position off its fence', async () => {
+    const custom = '4k3/8/8/8/8/8/8/4K2R w K - 0 1';
+    write('Lucena', `# Lucena\n\n\`\`\`chess\n[FEN "${custom}"]\n[SetUp "1"]\n\n1. Rh8 *\n\`\`\`\n`);
+    // No FEN header means the fence starts from the standard position.
+    write('FromStart', '# Opening\n\n```chess\n1. e4 e5 *\n```\n');
+    write('NoBoard', '# Plain\n\nJust words.\n');
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string; fen: string | null }[];
+    };
+    const fen = (id: string): string | null => studies.find((s) => s.id === id)!.fen;
+    expect(fen('Lucena')).toBe(custom);
+    expect(fen('FromStart')).toBe(
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+    );
+    expect(fen('NoBoard')).toBeNull();
+  });
+
+  it('pins are kept in the vault and follow a rename', async () => {
+    write('Pinned', '# Pinned\n\nBody.\n');
+    const toggle = async (id: string): Promise<Response> =>
+      app.request('/api/notes/pins/toggle', {
+        method: 'POST',
+        body: JSON.stringify({ id }),
+        headers: { 'content-type': 'application/json' },
+      });
+    const pins = async (): Promise<string[]> =>
+      ((await (await app.request('/api/notes/pins')).json()) as { ids: string[] }).ids;
+
+    expect(await pins()).toEqual([]);
+    expect(((await (await toggle('Pinned')).json()) as { pinned: boolean }).pinned).toBe(true);
+    expect(await pins()).toEqual(['Pinned']);
+
+    // A rename must not silently unpin.
+    await app.request('/api/notes/move', {
+      method: 'POST',
+      body: JSON.stringify({ from: 'Pinned', to: 'Renamed' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(await pins()).toEqual(['Renamed']);
+
+    // Nor may a delete leave an id that re-pins the next note of that name.
+    await app.request('/api/notes/Renamed', { method: 'DELETE' });
+    expect(await pins()).toEqual([]);
+  });
+
+  it('the pins file is not itself listed as a note', async () => {
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string }[];
+    };
+    expect(studies.some((s) => s.id.includes('pins'))).toBe(false);
+  });
+
   it('leaves study listings alone — a PGN header is not a preview', async () => {
     const pgnDir = mkdtempSync(join(tmpdir(), 'studies-excerpt-'));
     const pgnApp = new Hono().route('/api', studiesApi(pgnDir));
