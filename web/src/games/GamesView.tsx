@@ -787,8 +787,12 @@ function CollectionView() {
                 }
                 menu={[
                   {
+                    // Same rule as the preview: on a desktop the star is
+                    // already on the row, and repeating it here just makes
+                    // the menu longer to read.
                     label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
                     icon: Star,
+                    className: 'pointer-fine:hidden',
                     onSelect: () => void toggleBookmark(game),
                   },
                   { label: 'Rename', icon: Pencil, onSelect: () => setRenamingKey(gameKey(game)) },
@@ -1684,7 +1688,15 @@ function GameRow({
             onMouseLeave={() => {
               if (!coarse()) hidePreview();
             }}
-            onClick={(e) => e.stopPropagation()}
+            // A hover preview goes when the mouse does; clicking pins it,
+            // which is the difference between glancing at a position and
+            // looking at one. It used to do nothing at all here — the
+            // handler returned early on a fine pointer, and the click went
+            // on to open the game.
+            onClick={(e) => {
+              e.stopPropagation();
+              showPreview(e, true);
+            }}
           >
             <Eye className="size-3.5" />
           </Button>
@@ -1714,14 +1726,19 @@ function GameRow({
           anchor={menuTrigger}
           onClose={() => setMenuOpen(false)}
           actions={[
-            // The preview the eye gives a mouse, for a finger. Anchored to
-            // the row rather than to the ⋯, because by the time it opens
-            // the sheet is gone and the row is what you were looking at.
+            // The preview the eye gives a mouse, for a finger — and ONLY
+            // for a finger: on a desktop the eye is on the row, two
+            // centimetres from the ⋯ that opened this, and a menu that
+            // repeats the icons beside it is a menu nobody reads. Anchored
+            // to the row rather than to the ⋯, because by the time it
+            // opens the sheet is gone and the row is what was being
+            // looked at.
             ...(game.finalFen
               ? [
                   {
                     label: 'Preview the board',
                     icon: Eye,
+                    className: 'pointer-fine:hidden',
                     onSelect: () => {
                       const rect = row.current?.getBoundingClientRect();
                       if (rect) showPreviewAt(rect, true);

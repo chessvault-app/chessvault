@@ -9,6 +9,15 @@ export interface SheetAction {
   icon: LucideIcon;
   /** Destructive items are tinted and sit last, away from the thumb. */
   danger?: boolean;
+  /**
+   * On the item itself — for one that only belongs on some devices.
+   *
+   * A row whose icons are visible on a desktop should not list those same
+   * icons again inside its own overflow menu; `pointer-fine:hidden` drops
+   * the duplicate where the icon is already on screen, without the menu
+   * having to know what a pointer is.
+   */
+  className?: string;
   onSelect: () => void;
 }
 
@@ -111,7 +120,7 @@ export function ActionSheet({
         )}
         <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
         {children}
-        {actions.map(({ label, icon: Icon, danger, onSelect }) => (
+        {actions.map(({ label, icon: Icon, danger, className, onSelect }) => (
           <button
             key={label}
             type="button"
@@ -124,6 +133,7 @@ export function ActionSheet({
               // A popover row is a menu item; a sheet row is a touch target.
               popover ? 'px-3 py-1.5 text-xs' : 'px-3 py-3 text-sm',
               danger ? 'text-bad hover:bg-bad/10' : 'text-fg hover:bg-surface-2',
+              className,
             )}
           >
             <Icon className={cn(popover ? 'size-3.5' : 'size-4', 'shrink-0', !danger && 'text-subtle')} />
