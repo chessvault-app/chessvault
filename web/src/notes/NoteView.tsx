@@ -105,6 +105,8 @@ function NoteEditor({
   // Edit button switches the TipTap editor live.
   const [editable, setEditable] = useState(false);
   const keyboardInset = useKeyboardInset();
+  /** What is on the server, so an edit can be told from a settling node. */
+  const lastSaved = useRef('');
   const editor = useEditor({
     extensions: noteExtensions,
     content: initialDoc,
@@ -112,7 +114,17 @@ function NoteEditor({
     editorProps: {
       attributes: { class: 'note-editor focus:outline-none' },
     },
+    // The canonical serialisation of what was loaded. Node views settle
+    // after mount — a chess block normalises itself — and each settling is
+    // a transaction, so onUpdate fired on a note nobody had touched and the
+    // badge announced 저장 중… over an unedited note.
+    onCreate: ({ editor }) => {
+      lastSaved.current = docToMarkdown(editor.state.doc);
+    },
     onUpdate: ({ editor }) => {
+      // Compare rather than trust the event: only a real difference is an
+      // edit worth saving (and worth telling the reader about).
+      if (docToMarkdown(editor.state.doc) === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
@@ -123,6 +135,7 @@ function NoteEditor({
 
   const save = async (markdown: string): Promise<void> => {
     setSaveState('saving');
+    lastSaved.current = markdown;
     try {
       const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
         method: 'PUT',

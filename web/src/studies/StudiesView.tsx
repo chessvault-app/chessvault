@@ -19,6 +19,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
 import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { Modal } from '@/ui/Modal';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
@@ -198,26 +199,18 @@ function CreateMenu() {
       )}
 
       {mode === 'lichess' && (
-        <div
-          className={cn(
-            'border-line bg-surface absolute right-0 top-9 z-40 flex w-80 flex-col gap-2 rounded-lg',
-            'border p-3 shadow-[var(--shadow-pop)]',
-          )}
-        >
+        <Modal title="Import from Lichess" onClose={() => setMode(null)}>
           <LichessImportForm folders={folders} onClose={() => setMode(null)} />
-        </div>
+        </Modal>
       )}
 
       {mode && mode !== 'lichess' && (
-        <div
-          className={cn(
-            'border-line bg-surface absolute right-0 top-9 z-40 flex w-72 flex-col gap-2 rounded-lg',
-            'border p-3 shadow-[var(--shadow-pop)]',
-          )}
+        <Modal
+          title={
+            mode === 'study' ? 'New study' : mode === 'import' ? 'Import PGN as study' : 'New collection'
+          }
+          onClose={() => setMode(null)}
         >
-          <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-            {mode === 'study' ? t('New study') : mode === 'import' ? t('Import PGN as study') : t('New collection')}
-          </p>
           {mode !== 'folder' && folders.length > 0 && (
             <Select
               value={folder}
@@ -292,7 +285,7 @@ function CreateMenu() {
               {mode === 'import' ? t('Import') : t('Create')}
             </Button>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
@@ -537,7 +530,14 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
             variant="ghost"
             size="icon-sm"
             title={empty ? 'Delete this empty collection' : 'Only empty collections can be deleted'}
-            onClick={async () => setFailure(await removeFolder(folder))}
+            onClick={async () => {
+              const err = await removeFolder(folder);
+              setFailure(err);
+              // A refusal is worth reading once, not forever: it sits under
+              // a row that is still there, so left alone it reads as the
+              // row's permanent state rather than as an answer to a click.
+              if (err) setTimeout(() => setFailure(null), 5000);
+            }}
           >
             <Trash2 className="size-3" />
           </Button>
