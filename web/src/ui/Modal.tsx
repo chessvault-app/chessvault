@@ -1,9 +1,10 @@
-import type { X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { useKeyboardInset } from '@/lib/keyboardInset';
+import { useSheetDrag } from './sheetDrag';
 
 /**
  * A centred window over the app.
@@ -60,6 +61,8 @@ export function Modal({
   // A window with a field in it is a window the keyboard covers. Same fix
   // as PromptSheet: give the centring box back the height the keyboard took.
   const inset = useKeyboardInset();
+  // Only a `full` window is a sheet, and only a sheet can be pushed away.
+  const drag = useSheetDrag(onClose);
 
   // On the body, not wherever it was written: a window is a floating layer
   // and must not inherit a containing block from whatever opened it — a
@@ -67,8 +70,13 @@ export function Modal({
   return createPortal(
     <div
       className={cn(
+        // The desktop layer is exactly what it was — a centring grid.
+        // Only the phone changes: a `full` window packs to the bottom
+        // edge so it rises from the thumb. Expressed as max-sm rather
+        // than by swapping the base, because swapping it also swapped
+        // how the card sizes itself and collapsed a 600px window to 202.
         'fixed inset-0 z-50 grid place-items-center bg-black/60',
-        full ? 'p-0 sm:p-6' : 'p-4',
+        full ? 'p-0 max-sm:flex max-sm:items-end max-sm:justify-center sm:p-6' : 'p-4',
       )}
       style={{ paddingBottom: inset ? inset + 16 : undefined }}
       onClick={onClose}
@@ -81,28 +89,58 @@ export function Modal({
         // The backdrop closes; the window itself must not, or every click
         // inside the form would dismiss it.
         onClick={(e) => e.stopPropagation()}
+        style={full ? drag.style : undefined}
         className={cn(
           'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto',
           'border p-3 shadow-[var(--shadow-pop)]',
           full
-            ? // Edge to edge on a phone — no corners to round against the
-              // screen edge — and a large, still-bounded sheet on desktop.
-              // The insets keep the title out from under a notch and the
-              // last button off the home indicator.
-              'h-full max-h-full rounded-none pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
-              'pl-[calc(0.75rem+env(safe-area-inset-left))] pr-[calc(0.75rem+env(safe-area-inset-right))] ' +
-              'pt-[calc(0.75rem+env(safe-area-inset-top))] ' +
-              'sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl sm:p-3'
+            ? // A BOTTOM SHEET on a phone, not a full-screen card. Edge to
+              // edge meant a window that had replaced the app — no sense
+              // of what it was over, and nothing to push it away with.
+              // Rising from the thumb's own edge, stopping short of the
+              // top, it reads as a thing ON the page. Desktop keeps the
+              // large centred card.
+              'max-h-[88dvh] rounded-t-2xl pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
+              'sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl sm:pb-3'
             : 'max-h-full max-w-[32rem] rounded-xl',
           className,
         )}
       >
         {/* Full-bleed rule: the card pads by 3, so the row un-pads itself
             and the line reaches both edges, as it does in a Panel. */}
-        <div className="border-line -mx-3 flex items-center gap-2 border-b px-3 pb-2">
-          {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
-          <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
-          {actions}
+        <div
+          className="border-line -mx-3 shrink-0 border-b px-3 pb-2"
+          {...(full ? drag.handlers : {})}
+        >
+          {/* The grabber, phones only: the same handle the row menu has,
+              and the same drag, so every sheet in the app is pushed away
+              the same way. */}
+          {full && (
+            <div
+              className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab touch-none rounded-full sm:hidden"
+              aria-hidden
+            />
+          )}
+          <div className={cn('flex items-center gap-2', full && 'touch-none select-none sm:touch-auto')}>
+            {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
+            <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
+            {actions}
+            {full && (
+              <button
+                type="button"
+                title={t('Close')}
+                aria-label={t('Close')}
+                onClick={onClose}
+                className={cn(
+                  'text-muted hover:text-fg -my-1 grid size-8 shrink-0 place-items-center rounded-full sm:hidden',
+                  'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
+                  'transition-colors duration-100',
+                )}
+              >
+                <X className="size-3.5" />
+              </button>
+            )}
+          </div>
         </div>
         {children}
       </div>

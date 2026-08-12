@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { useSheetDrag } from './sheetDrag';
 import { t } from '@/lib/i18n';
 
 export interface SheetAction {
@@ -72,61 +73,8 @@ export function ActionSheet({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  /**
-   * Push the sheet away.
-   *
-   * Downwards only — a sheet that follows the finger upwards suggests it
-   * can be expanded, which is the same lie the bare handle used to tell.
-   * Past DISMISS_PX it goes; short of it, it springs back, and the spring
-   * is what teaches the gesture to anybody who tried it halfway.
-   *
-   * Pointer events rather than touch, so a mouse can do it too and the
-   * capture keeps tracking when the finger leaves the header.
-   */
-  const [dragY, setDragY] = useState(0);
-  const dragFrom = useRef<number | null>(null);
-  /**
-   * The live offset, for the release to judge by.
-   *
-   * NOT the state: if the last move and the release land in one React
-   * batch, the release handler still closes over the previous render's
-   * dragY — zero — and a long throw would spring back instead of
-   * dismissing. Reasoned, not observed: this environment cannot deliver
-   * a pointerdown to test the gesture end to end. The state is only what
-   * the sheet is painted from.
-   */
-  const dragNow = useRef(0);
-  const DISMISS_PX = 72;
-  const startDrag = (e: React.PointerEvent<HTMLElement>): void => {
-    dragFrom.current = e.clientY;
-    // Capture keeps the moves coming when the finger leaves the header,
-    // but it throws for a pointer the browser no longer considers active
-    // — and a throw here would take the whole gesture with it. The drag
-    // works without it as long as the finger stays on the grab area.
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      /* not capturable — track what we can */
-    }
-  };
-  const moveDrag = (e: React.PointerEvent<HTMLElement>): void => {
-    if (dragFrom.current === null) return;
-    // Downwards only: a sheet that follows the finger up suggests it can
-    // be expanded, which is the lie the bare handle used to tell.
-    const dy = Math.max(0, e.clientY - dragFrom.current);
-    dragNow.current = dy;
-    setDragY(dy);
-  };
-  const endDrag = (): void => {
-    if (dragFrom.current === null) return;
-    dragFrom.current = null;
-    if (dragNow.current > DISMISS_PX) {
-      onClose();
-      return;
-    }
-    dragNow.current = 0;
-    setDragY(0);
-  };
+  // The same gesture every bottom sheet in the app is pushed away with.
+  const drag = useSheetDrag(onClose);
 
   // Portalled to the body, because `position: fixed` is only relative to
   // the viewport while no ancestor has a transform, a filter or
@@ -155,13 +103,7 @@ export function ActionSheet({
         onClick={(e) => e.stopPropagation()}
         style={
           !popover
-            ? {
-                // Follows the finger while held, springs back when let go
-                // short of the threshold. No transition during the drag,
-                // or the sheet would lag behind the thumb by 180ms.
-                transform: dragY ? `translateY(${dragY}px)` : undefined,
-                transition: dragFrom.current === null ? 'transform 180ms cubic-bezier(0.4,0,0.2,1)' : undefined,
-              }
+            ? drag.style
             : at
               ? // A context menu opens AT the pointer, kept inside the
                 // window so a right-click near an edge is still readable.
@@ -200,10 +142,7 @@ export function ActionSheet({
             // The grab area is the header, not the whole sheet: below it
             // every row is a verb, and a drag that starts on one must not
             // have to decide whether it was a press.
-            onPointerDown={startDrag}
-            onPointerMove={moveDrag}
-            onPointerUp={endDrag}
-            onPointerCancel={endDrag}
+            {...drag.handlers}
             className="-mt-1 cursor-grab touch-none select-none pt-1 active:cursor-grabbing"
           >
             <div className="bg-line mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
