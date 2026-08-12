@@ -83,6 +83,22 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   );
   const headers = useRef<Headers>(initial.headers);
   const [orientation, setOrientation] = useState<Color>('white');
+  /**
+   * Whether this board is listening for touches yet.
+   *
+   * Chessground swallows any touch that lands on or near a piece — it has
+   * to, or a piece could never be dragged (`drag.ts`: preventDefault
+   * unless the touch is on empty board, far from any piece). In a note
+   * that is fatal: the board is the width of the column, so a finger
+   * placed almost anywhere in it scrolls nothing and the note appears
+   * stuck. Which is why it only happened sometimes — it depended on where
+   * the finger landed.
+   *
+   * So on a touch device the board starts inert, binds no listeners, and
+   * lets the page scroll under it until it is tapped once. A mouse has no
+   * such problem (the wheel is never captured), so it never waits.
+   */
+  const [awake, setAwake] = useState(() => !window.matchMedia('(pointer: coarse)').matches);
   const [pendingPromotion, setPendingPromotion] = useState<{
     orig: string;
     dest: string;
@@ -169,8 +185,16 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
       <div
         className="relative w-full shrink-0 sm:max-w-[19rem]"
         contentEditable={false}
+        // One tap wakes the board on a phone; see `awake` above. A tap is
+        // not a scroll, so this costs the reader nothing.
+        onPointerDown={() => setAwake(true)}
       >
         <Board
+          // Remounted when it wakes, because chessground binds its touch
+          // listeners once at construction and its own API refuses
+          // viewOnly in set().
+          key={awake ? 'live' : 'inert'}
+          viewOnly={!awake}
           fen={current.fen}
           orientation={orientation}
           dests={editable ? dests : new Map()}
