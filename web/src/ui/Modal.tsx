@@ -28,6 +28,7 @@ export function Modal({
   onClose,
   children,
   className,
+  full = false,
 }: {
   title: string;
   icon?: typeof X;
@@ -36,6 +37,16 @@ export function Modal({
   onClose: () => void;
   children: ReactNode;
   className?: string;
+  /**
+   * Fill the screen instead of floating in the middle.
+   *
+   * For the windows that are a task rather than a question — importing a
+   * PDF, a game, a Lichess study. A large floating card is the worst of
+   * both: too big to see what is behind it, too small for what is inside
+   * it, and on a phone it was a card with its own scrollbar inside a page
+   * with another one.
+   */
+  full?: boolean;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -51,7 +62,10 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      className={cn(
+        'fixed inset-0 z-50 grid place-items-center bg-black/60',
+        full ? 'p-0 sm:p-6' : 'p-4',
+      )}
       style={{ paddingBottom: inset ? inset + 16 : undefined }}
       onClick={onClose}
       role="presentation"
@@ -64,8 +78,13 @@ export function Modal({
         // inside the form would dismiss it.
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'bg-surface border-line flex max-h-full w-full max-w-[32rem] flex-col gap-3',
-          'overflow-y-auto rounded-xl border p-3 shadow-[var(--shadow-pop)]',
+          'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto',
+          'border p-3 shadow-[var(--shadow-pop)]',
+          full
+            ? // Edge to edge on a phone — no corners to round against the
+              // screen edge — and a large, still-bounded sheet on desktop.
+              'h-full max-h-full rounded-none sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl'
+            : 'max-h-full max-w-[32rem] rounded-xl',
           className,
         )}
       >

@@ -35,6 +35,10 @@ import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
+import { Fab } from '@/ui/Fab';
+import { SwipeRow } from '@/ui/SwipeRow';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { t } from '@/lib/i18n';
 
@@ -529,6 +533,20 @@ function CollectionView() {
   // Renaming, like notes and studies: a prompt sheet, and the doc id IS
   // the file name. An empty value is the sheet closing without an answer.
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
+  // The row goes at once; the DELETE waits for the undo to expire.
+  const undoable = useUndoable();
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const dropGame = (game: GameSummary): void => {
+    const key = gameKey(game);
+    const unhide = (): void =>
+      setHidden((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    setHidden((prev) => new Set(prev).add(key));
+    undoable.remove(customName(game) ?? docId(game), () => void removeGame(game).then(unhide), unhide);
+  };
   const renameGame = async (game: GameSummary, to: string): Promise<void> => {
     setRenamingKey(null);
     const from = docId(game);
@@ -570,6 +588,7 @@ function CollectionView() {
 
   const needle = query.trim().toLowerCase();
   const visible = games.filter((g) => {
+    if (hidden.has(gameKey(g))) return false;
     if (starredOnly && !bookmarks.has(gameKey(g))) return false;
     if (!needle) return true;
     return `${customName(g) ?? ''} ${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
@@ -579,6 +598,7 @@ function CollectionView() {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:p-6">
+      <Fab actions={[{ label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) }]} />
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -601,10 +621,7 @@ function CollectionView() {
             placeholder={t('Search collection…')}
             className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
           />
-          <Button variant="primary" size="sm" active={importing} onClick={() => setImporting((v) => !v)}>
-            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-            {t('Import')}
-          </Button>
+
         </div>
       </header>
 
@@ -677,8 +694,8 @@ function CollectionView() {
           ) : (
           <ul className="divide-line min-h-0 divide-y overflow-y-auto sm:max-h-[38dvh]">
             {visible.map((game) => (
+              <SwipeRow key={gameKey(game)} onSwipe={() => dropGame(game)}>
               <GameRow
-                key={gameKey(game)}
                 game={game}
                 customName={customName(game)}
                 renaming={renamingKey === gameKey(game)}
@@ -720,8 +737,7 @@ function CollectionView() {
                         {
                           label: t('Remove'),
                           icon: Trash2,
-                          confirm: 'Remove this game from the collection?',
-                          onSelect: () => void removeGame(game),
+                          onSelect: () => dropGame(game),
                         },
                       ]}
                     />
@@ -729,6 +745,7 @@ function CollectionView() {
                 }
                 showLink={false}
               />
+              </SwipeRow>
             ))}
           </ul>
           )}
@@ -738,6 +755,8 @@ function CollectionView() {
       <ArchiveBrowser collectionKeys={new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))} onCollected={() => void load()} onPreview={setPreview} />
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
+
+      {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
     </div>
   );
 }
@@ -1482,6 +1501,33 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel]);
 
+  /**
+   * A pasted PGN already says who played, when, and how it ended — so the
+   * fields fill themselves from its headers rather than asking for what is
+   * sitting in the box above them. Only EMPTY fields are filled: anything
+   * typed is the person's own answer and outranks the paste, which is the
+   * rule submit() already applies when it writes the headers back.
+   */
+  const readHeaders = (text: string): void => {
+    const header = (key: string): string => {
+      const found = new RegExp('^\\[' + key + '\\s+"([^"]*)"\\]', 'm').exec(text);
+      return found?.[1]?.trim() ?? '';
+    };
+    const fill = (value: string, current: string, set: (v: string) => void): void => {
+      // "?" and "*" are PGN's own way of writing "unknown" — not answers.
+      if (current.trim() || !value || value === '?' || value === '*') return;
+      set(value);
+    };
+    fill(header('White'), white, setWhite);
+    fill(header('Black'), black, setBlack);
+    fill(header('WhiteElo'), whiteElo, setWhiteElo);
+    fill(header('BlackElo'), blackElo, setBlackElo);
+    fill(header('UTCDate') || header('Date'), date, setDate);
+    fill(header('Event'), event, setEvent);
+    const outcome = header('Result');
+    if (!result && ['1-0', '0-1', '1/2-1/2'].includes(outcome)) setResult(outcome);
+  };
+
   const submit = async (): Promise<void> => {
     const withHeader = (text: string, key: string, value: string): string => {
       if (!value.trim()) return text;
@@ -1519,11 +1565,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   };
 
   return (
-    <Modal title="Import a game" onClose={onCancel} className="max-w-lg">
+    <Modal title="Import a game" onClose={onCancel} full>
       <TextArea
         autoFocus
         value={pgn}
-        onChange={(e) => setPgn(e.target.value)}
+        onChange={(e) => {
+          setPgn(e.target.value);
+          readHeaders(e.target.value);
+        }}
         rows={5}
         spellCheck={false}
         placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}

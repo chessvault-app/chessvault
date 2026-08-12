@@ -1,12 +1,10 @@
 import {
-  ChevronDown,
   CloudDownload,
   FileUp,
   Folder as FolderIcon,
   FolderInput,
   Library,
   Pencil,
-  Plus,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -19,9 +17,12 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { Globe, Loader2 } from 'lucide-react';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { SwipeRow } from '@/ui/SwipeRow';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
+import { Fab } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
@@ -42,6 +43,30 @@ function StudyList() {
 
   const [query, setQuery] = useState('');
   const pending = useSlowLoad(!listLoaded);
+  // Removal is immediate and undoable rather than confirmed — see
+  // useUndoable. `hidden` is what the list pretends is already gone.
+  const removeStudy = useStudy((s) => s.remove);
+  const undoable = useUndoable();
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const dropStudy = (id: string): void => {
+    setHidden((prev) => new Set(prev).add(id));
+    undoable.remove(
+      id.split('/').at(-1)!,
+      () => {
+        void removeStudy(id).then(() => setHidden((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        }));
+      },
+      () =>
+        setHidden((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        }),
+    );
+  };
 
   useEffect(() => {
     void refresh();
@@ -84,7 +109,15 @@ function StudyList() {
           </p>
         </div>
       ) : (
-        <GroupedStudies studies={visible} allFolders={needle ? [] : folders} />
+        <GroupedStudies
+          studies={visible.filter((st) => !hidden.has(st.id))}
+          allFolders={needle ? [] : folders}
+          onRemove={dropStudy}
+        />
+      )}
+
+      {undoable.pending && (
+        <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />
       )}
     </div>
   );
@@ -96,6 +129,7 @@ function StudyList() {
  */
 function CreateMenu() {
   const folders = useStudy((s) => s.folders);
+  const studies = useStudy((s) => s.studies);
   const create = useStudy((s) => s.create);
   const createFolder = useStudy((s) => s.createFolder);
 
@@ -116,6 +150,24 @@ function CreateMenu() {
     () => (mode === 'import' && pgnText.trim() ? pgnToChapters(pgnText).length : 0),
     [mode, pgnText],
   );
+
+  /**
+   * New study: made and opened, not asked about.
+   *
+   * A study is named by what ends up in it, which nobody knows at the
+   * moment of creating one — so the shelf hands you the thing itself, with
+   * a name you can change from its own header. "Untitled study 2" only
+   * appears when the first is still called that.
+   */
+  const createStudy = async (): Promise<void> => {
+    const base = t('Untitled study');
+    const taken = new Set(studies.map((st: StudyMeta) => st.id));
+    let id = base;
+    for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
+    const err = await create(id);
+    if (err) setFailure(t(err));
+    else navigate('studies', encodeURIComponent(id));
+  };
 
   // The name is passed in rather than read from state: the prompt sheet owns
   // its own draft and hands it over on submit, and reading `name` here would
@@ -161,51 +213,18 @@ function CreateMenu() {
   }, [menuOpen, mode]);
 
   return (
-    <div ref={menuHost} className="relative">
-      <Button variant="primary" size="sm" onClick={() => setMenuOpen((v) => !v)}>
-        <Plus className="mr-1 size-3.5" />
-        {t('Create')}
-        <ChevronDown className="ml-1 size-3" />
-      </Button>
-
-      {menuOpen && (
-        <div
-          className={cn(
-            'border-line bg-surface absolute right-0 top-9 z-40 w-40 rounded-lg border p-1',
-            'shadow-[var(--shadow-pop)]',
-          )}
-        >
-          {(
-            [
-              ['study', t('New study'), Library],
-              ['folder', t('New collection'), FolderIcon],
-              ['import', t('Import PGN'), FileUp],
-              ['lichess', t('From Lichess'), CloudDownload],
-            ] as const
-          ).map(([kind, label, Icon]) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => {
-                setMode(kind);
-                setMenuOpen(false);
-                setName('');
-                setFailure(null);
-              }}
-              className={cn(
-                'hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5',
-                'text-left text-sm transition-colors duration-100',
-              )}
-            >
-              <Icon className="text-subtle size-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+    <>
+      <Fab
+        actions={[
+          { label: 'New study', icon: Library, onSelect: () => void createStudy() },
+          { label: 'New collection', icon: FolderIcon, onSelect: () => setMode('folder') },
+          { label: 'Import PGN', icon: FileUp, onSelect: () => setMode('import') },
+          { label: 'From Lichess', icon: CloudDownload, onSelect: () => setMode('lichess') },
+        ]}
+      />
 
       {mode === 'lichess' && (
-        <Modal title="Import from Lichess" onClose={() => setMode(null)}>
+        <Modal title="Import from Lichess" onClose={() => setMode(null)} full>
           <LichessImportForm folders={folders} onClose={() => setMode(null)} />
         </Modal>
       )}
@@ -214,37 +233,20 @@ function CreateMenu() {
           sheet, not a window: a modal around a single field is a lot of
           chrome for a question a popover answers. Import needs a PGN, a file
           picker and a chapter count — that is a window. */}
-      {(mode === 'study' || mode === 'folder') && (
+      {mode === 'folder' && (
         <PromptSheet
-          label={mode === 'folder' ? t('New collection') : t('New study')}
+          label={t('New collection')}
           initial=""
           submitLabel={t('Create')}
           closeOnSubmit={false}
           error={failure}
-          extra={
-            mode === 'study' && folders.length > 0 ? (
-              <Select
-                value={folder}
-                onChange={setFolder}
-                ariaLabel={t('Collection')}
-                groups={[
-                  {
-                    options: [
-                      { value: '', label: t('(no collection)') },
-                      ...folders.map((f) => ({ value: f, label: f })),
-                    ],
-                  },
-                ]}
-              />
-            ) : undefined
-          }
           onSubmit={(value) => void submit(value)}
           onClose={() => setMode(null)}
         />
       )}
 
       {mode === 'import' && (
-        <Modal title="Import PGN as study" onClose={() => setMode(null)}>
+        <Modal title="Import PGN as study" onClose={() => setMode(null)} full>
           {folders.length > 0 && (
             <Select
               value={folder}
@@ -315,7 +317,7 @@ function CreateMenu() {
           </div>
         </Modal>
       )}
-    </div>
+    </>
   );
 }
 
@@ -472,7 +474,15 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
 }
 
 /** Studies grouped by folder; folders are just subdirectories in the vault. */
-function GroupedStudies({ studies, allFolders }: { studies: StudyMeta[]; allFolders: string[] }) {
+function GroupedStudies({
+  studies,
+  allFolders,
+  onRemove,
+}: {
+  studies: StudyMeta[];
+  allFolders: string[];
+  onRemove: (id: string) => void;
+}) {
   const groups = new Map<string, StudyMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
   for (const study of studies) {
@@ -494,7 +504,12 @@ function GroupedStudies({ studies, allFolders }: { studies: StudyMeta[]; allFold
           ) : (
             <ul className="flex flex-col gap-2">
               {groups.get(folder)!.map((study) => (
-                <StudyCard key={study.id} study={study} allFolders={folders.filter(Boolean)} />
+                <StudyCard
+                  key={study.id}
+                  study={study}
+                  allFolders={folders.filter(Boolean)}
+                  onRemove={() => onRemove(study.id)}
+                />
               ))}
             </ul>
           )}
@@ -569,8 +584,15 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
   );
 }
 
-function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string[] }) {
-  const remove = useStudy((s) => s.remove);
+function StudyCard({
+  study,
+  allFolders,
+  onRemove,
+}: {
+  study: StudyMeta;
+  allFolders: string[];
+  onRemove: () => void;
+}) {
   const move = useStudy((s) => s.move);
   const [renaming, setRenaming] = useState(false);
   const [moving, setMoving] = useState(false);
@@ -590,6 +612,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
 
   return (
     <li>
+      <SwipeRow onSwipe={onRemove}>
       <div
         role="button"
         tabIndex={0}
@@ -637,13 +660,17 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
             >
               <FolderInput className="size-3.5" />
             </Button>
-            <ConfirmPopover
-              icon={Trash2}
-              triggerTitle="Delete this study"
-              question={t('Delete “{name}”?', { name })}
-              confirmLabel="Delete"
-              onConfirm={() => void remove(study.id)}
-            />
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Remove this study')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
           </div>
         )}
 
@@ -672,6 +699,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
           />
         )}
       </div>
+      </SwipeRow>
     </li>
   );
 }

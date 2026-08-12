@@ -619,7 +619,16 @@ export const ko: Record<string, string> = {
   Draw: '무승부',
 
   // --- notes ---------------------------------------------------------------
+  'Removed “{name}”': '“{name}” 삭제됨',
+  Undo: '되돌리기',
+  'Release to remove': '놓으면 삭제',
+  'Remove this study': '이 스터디 삭제',
+  'Remove this note': '이 노트 삭제',
+  'Remove this book and its progress': '이 책과 진행 상황 삭제',
   'New note': '새 노트',
+  'Untitled study': '제목 없는 스터디',
+  'Untitled note': '제목 없는 노트',
+  'Untitled book': '제목 없는 책',
   'New collection': '새 모음',
   'Note name': '노트 이름',
   'Collection name': '모음 이름',

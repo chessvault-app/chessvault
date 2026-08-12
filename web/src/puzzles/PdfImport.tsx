@@ -92,12 +92,7 @@ export function PdfImport({
   const selectedCount = found.filter((f) => f.selected).length;
 
   return (
-    <Modal
-      title="Import a book PDF"
-      icon={FileUp}
-      onClose={onClose}
-      className="max-w-[44rem]"
-    >
+    <Modal title="Import a book PDF" icon={FileUp} onClose={onClose} full>
 
         {!mine && existing > 0 && (
           <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">

@@ -59,7 +59,9 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { PromptSheet } from '@/ui/PromptSheet';
+import { Fab } from '@/ui/Fab';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { SideDot } from '@/ui/SideDot';
 import { judgeBookMove, type BookSolution } from './bookJudge';
@@ -353,7 +355,8 @@ function Shelf() {
   // skeleton and redraws every cover — which reads as a blink, not as
   // loading, because the content was already on screen a moment ago.
   const [books, setBooks] = useState<BookSummary[] | null>(shelfCache);
-  const [creating, setCreating] = useState(false);
+  const undoable = useUndoable();
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   /**
    * The shelf waits for its covers.
@@ -418,12 +421,33 @@ function Shelf() {
     void load();
   };
 
+  // A book holds a lot of work, so removal is undoable rather than
+  // confirmed: it leaves the shelf at once and the DELETE waits.
+  const dropBook = (slug: string, title: string): void => {
+    const unhide = (): void =>
+      setHidden((prev) => {
+        const next = new Set(prev);
+        next.delete(slug);
+        return next;
+      });
+    setHidden((prev) => new Set(prev).add(slug));
+    undoable.remove(title, () => void removeBook(slug).then(unhide), unhide);
+  };
 
-  const create = async (name: string): Promise<void> => {
+
+  /**
+   * A book is made and opened, with a name its own header can change. What
+   * a book is called is on its cover, and you are about to go and look.
+   */
+  const create = async (): Promise<void> => {
+    const base = t('Untitled book');
+    const taken = new Set((books ?? []).map((b) => b.title));
+    let title = base;
+    for (let n = 2; taken.has(title); n += 1) title = `${base} ${n}`;
     const res = await fetch('/api/puzzlebooks', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: name }),
+      body: JSON.stringify({ title }),
     });
     const body = (await res.json()) as { slug?: string; error?: string };
     if (!res.ok || !body.slug) {
@@ -435,6 +459,8 @@ function Shelf() {
 
   return (
     <div className="h-full min-h-0 overflow-y-auto">
+      <Fab actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]} />
+      {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
       <div className="mx-auto max-w-3xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
           <Button
@@ -447,30 +473,13 @@ function Shelf() {
             <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg flex-1 text-base font-semibold">{t('Puzzle books')}</h1>
-          <Button variant="primary" size="sm" onClick={() => setCreating(true)}>
-            <Plus className="size-3.5" />
-            {t('New book')}
-          </Button>
         </div>
 
-        {/* One name, so the same prompt sheet as a new study or note — it
-            used to be a bar that pushed the shelf down while you typed. */}
-        {creating && (
-          <PromptSheet
-            label={t('New book')}
-            initial=""
-            submitLabel={t('Create')}
-            closeOnSubmit={false}
-            error={error}
-            onSubmit={(value: string) => void create(value)}
-            onClose={() => setCreating(false)}
-          />
-        )}
-        {error && !creating && <p className="text-bad mb-3 text-xs">{error}</p>}
+        {error && <p className="text-bad mb-3 text-xs">{error}</p>}
 
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
-        ) : books.length === 0 && !creating ? (
+        ) : books.filter((b) => !hidden.has(b.slug)).length === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle mx-auto mb-2 size-6" />
             <p className="text-muted text-sm">
@@ -481,7 +490,7 @@ function Shelf() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {books.map((b) => (
+            {books.filter((b) => !hidden.has(b.slug)).map((b) => (
               <div key={b.slug} className="group relative">
                 <button
                   type="button"
@@ -513,14 +522,18 @@ function Shelf() {
                   </span>
                 </button>
                 {/* Hover-revealed on mouse; always present under a thumb. */}
-                <ConfirmPopover
-                  icon={Trash2}
-                  triggerTitle="Delete this book and its progress"
-                  triggerClassName="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
-                  question="Delete this book and its progress?"
-                  confirmLabel="Delete"
-                  onConfirm={() => void removeBook(b.slug)}
-                />
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Remove this book and its progress')}
+                  className="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dropBook(b.slug, b.title);
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
               </div>
             ))}
           </div>

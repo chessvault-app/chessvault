@@ -1,10 +1,8 @@
 import {
-  ChevronDown,
   Folder as FolderIcon,
   FolderInput,
   NotebookPen,
   Pencil,
-  Plus,
   Trash2,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -13,10 +11,12 @@ import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { SwipeRow } from '@/ui/SwipeRow';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
-import { Select } from '@/ui/Select';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { Fab } from '@/ui/Fab';
 import { SearchInput } from '@/ui/Input';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
@@ -74,6 +74,30 @@ function NoteList() {
   const needle = query.trim().toLowerCase();
   const visible = needle ? notes.filter((n) => n.id.toLowerCase().includes(needle)) : notes;
 
+  // Removal is immediate and undoable: the row goes, and the DELETE waits
+  // until the undo has had its say (useUndoable).
+  const undoable = useUndoable();
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const unhide = (id: string): void =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  const dropNote = (id: string): void => {
+    setHidden((prev) => new Set(prev).add(id));
+    undoable.remove(
+      id.split('/').at(-1)!,
+      () => {
+        void fetch(`${API}/${encodeURIComponent(id)}`, { method: 'DELETE' }).then(async () => {
+          unhide(id);
+          await refresh();
+        });
+      },
+      () => unhide(id),
+    );
+  };
+
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
       <header className="flex items-center justify-between gap-3">
@@ -87,7 +111,7 @@ function NoteList() {
             placeholder={t('Search notes…')}
             className="w-48"
           />
-          <CreateMenu folders={folders} onDone={refresh} />
+          <CreateMenu notes={notes} onDone={refresh} />
         </div>
       </header>
 
@@ -105,19 +129,49 @@ function NoteList() {
           </p>
         </div>
       ) : (
-        <GroupedNotes notes={visible} allFolders={needle ? [] : folders} onChanged={refresh} />
+        <GroupedNotes
+          notes={visible.filter((n) => !hidden.has(n.id))}
+          allFolders={needle ? [] : folders}
+          onChanged={refresh}
+          onRemove={dropNote}
+        />
       )}
+
+      {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
     </div>
   );
 }
 
-function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Promise<void> }) {
+function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promise<void> }) {
   const [menuOpen, setMenuOpen] = useState(false);
   // Either popover (the menu or the name form) dismisses on outside click.
   const menuHost = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'note' | 'folder' | null>(null);
-  const [folder, setFolder] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
+
+  /**
+   * A new note is made and opened. Naming it first asked for the one thing
+   * you cannot know before writing any of it; the note's own header renames
+   * it whenever the subject becomes clear.
+   */
+  const createNote = async (): Promise<void> => {
+    const base = t('Untitled note');
+    const taken = new Set(notes.map((n: NoteMeta) => n.id));
+    let id = base;
+    for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: id }),
+    });
+    if (!res.ok) {
+      setFailure(
+        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed'),
+      );
+      return;
+    }
+    navigate('notes', encodeURIComponent(id));
+  };
 
   // The name comes from the prompt sheet, which owns its own draft.
   const submit = async (raw: string): Promise<void> => {
@@ -139,7 +193,7 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
       await onDone();
       return;
     }
-    const id = folder ? `${folder}/${trimmed}` : trimmed;
+    const id = trimmed;
     const res = await fetch(API, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -167,70 +221,29 @@ function CreateMenu({ folders, onDone }: { folders: string[]; onDone: () => Prom
   }, [menuOpen, mode]);
 
   return (
-    <div ref={menuHost} className="relative">
-      <Button variant="primary" size="sm" onClick={() => setMenuOpen((v) => !v)}>
-        <Plus className="mr-1 size-3.5" />
-        {t('Create')}
-        <ChevronDown className="ml-1 size-3" />
-      </Button>
-
-      {menuOpen && (
-        <div className="border-line bg-surface absolute right-0 top-9 z-40 w-44 rounded-lg border p-1 shadow-[var(--shadow-pop)]">
-          {(
-            [
-              ['note', t('New note'), NotebookPen],
-              ['folder', t('New collection'), FolderIcon],
-            ] as const
-          ).map(([kind, label, Icon]) => (
-            <button
-              key={kind}
-              type="button"
-              onClick={() => {
-                setMode(kind);
-                setMenuOpen(false);
-                setFailure(null);
-              }}
-              className="hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-100"
-            >
-              <Icon className="text-subtle size-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+    <>
+      <Fab
+        actions={[
+          { label: 'New note', icon: NotebookPen, onSelect: () => void createNote() },
+          { label: 'New collection', icon: FolderIcon, onSelect: () => setMode('folder') },
+        ]}
+      />
 
       {/* The same one-line prompt the studies list uses — a note and a
           collection each ask for one name, and two different popovers for
           the same question was two things to learn. */}
       {mode && (
         <PromptSheet
-          label={mode === 'note' ? t('New note') : t('New collection')}
+          label={t('New collection')}
           initial=""
           submitLabel={t('Create')}
           closeOnSubmit={false}
           error={failure}
-          extra={
-            mode === 'note' && folders.length > 0 ? (
-              <Select
-                value={folder}
-                onChange={setFolder}
-                ariaLabel={t('Collection')}
-                groups={[
-                  {
-                    options: [
-                      { value: '', label: t('(no collection)') },
-                      ...folders.map((f) => ({ value: f, label: f })),
-                    ],
-                  },
-                ]}
-              />
-            ) : undefined
-          }
           onSubmit={(value) => void submit(value)}
           onClose={() => setMode(null)}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -238,10 +251,12 @@ function GroupedNotes({
   notes,
   allFolders,
   onChanged,
+  onRemove,
 }: {
   notes: NoteMeta[];
   allFolders: string[];
   onChanged: () => Promise<void>;
+  onRemove: (id: string) => void;
 }) {
   const groups = new Map<string, NoteMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
@@ -272,7 +287,13 @@ function GroupedNotes({
           ) : (
             <ul className="flex flex-col gap-2">
               {groups.get(folder)!.map((note) => (
-                <NoteCard key={note.id} note={note} allFolders={allFolders} onChanged={onChanged} />
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  allFolders={allFolders}
+                  onChanged={onChanged}
+                  onRemove={() => onRemove(note.id)}
+                />
               ))}
             </ul>
           )}
@@ -286,10 +307,12 @@ function NoteCard({
   note,
   allFolders,
   onChanged,
+  onRemove,
 }: {
   note: NoteMeta;
   allFolders: string[];
   onChanged: () => Promise<void>;
+  onRemove: () => void;
 }) {
   const [moving, setMoving] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -331,6 +354,7 @@ function NoteCard({
 
   return (
     <li>
+      <SwipeRow onSwipe={onRemove}>
       <div
         role="button"
         tabIndex={0}
@@ -376,17 +400,17 @@ function NoteCard({
             >
               <FolderInput className="size-3.5" />
             </Button>
-            <ConfirmPopover
-              icon={Trash2}
-              triggerTitle="Delete this note"
-              question={t('Delete “{name}”?', { name })}
-              confirmLabel="Delete"
-              onConfirm={() => {
-                void fetch(`${API}/${encodeURIComponent(note.id)}`, { method: 'DELETE' }).then(
-                  () => void onChanged(),
-                );
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Remove this note')}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
               }}
-            />
+            >
+              <Trash2 className="size-3.5" />
+            </Button>
           </div>
         )}
 
@@ -411,6 +435,7 @@ function NoteCard({
           />
         )}
       </div>
+      </SwipeRow>
     </li>
   );
 }
