@@ -1,4 +1,4 @@
-import { Folder as FolderIcon, CornerDownRight } from 'lucide-react';
+import { Folder as FolderIcon, ChevronRight, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './Button';
@@ -44,16 +44,27 @@ export function MoveToPopover({
             type="button"
             onClick={() => onPick(target)}
             className={cn(
-              'hover:bg-surface-2 flex w-full items-center gap-2 rounded-md px-2 py-2',
+              'hover:bg-surface-2 group flex w-full items-center gap-2 rounded-md px-2 py-2',
               'text-left text-sm transition-colors duration-100',
             )}
           >
             <FolderIcon className="text-subtle size-3.5 shrink-0" />
-            <span className="min-w-0 truncate">{target || t('(no collection)')}</span>
+            <span className="min-w-0 flex-1 truncate">{target || t('(no collection)')}</span>
+            {/* These rows read as a list of places, not as a list of things
+                to press. The chevron says the row goes somewhere, and it
+                sharpens under the pointer rather than appearing from
+                nowhere — an icon that materialises on hover moves the text
+                it sits beside. */}
+            <ChevronRight className="text-subtle size-3.5 shrink-0 opacity-40 transition-opacity duration-100 group-hover:opacity-100" />
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-1">
+
+      {/* Naming a collection that does not exist yet is a different act from
+          picking one that does, so it is separated and says what it does.
+          The ↵ glyph that used to sit here was the only instruction, and it
+          only means "press enter" to somebody who already knew. */}
+      <div className="border-line flex items-center gap-1 border-t pt-2">
         <Input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -65,13 +76,14 @@ export function MoveToPopover({
           }}
         />
         <Button
-          variant="ghost"
-          size="icon-sm"
+          variant="secondary"
+          size="sm"
           title={t('Move into this new collection')}
           disabled={!draft.trim()}
           onClick={pickNew}
         >
-          <CornerDownRight className="size-3.5" />
+          <FolderPlus className="mr-1 size-3.5" />
+          {t('Create')}
         </Button>
       </div>
       <div className="flex justify-end">
