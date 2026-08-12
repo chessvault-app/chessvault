@@ -2,6 +2,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Compass,
   ExternalLink,
   Eye,
   Globe,
@@ -14,6 +15,7 @@ import {
   BookOpen,
   Trash2,
   Trophy,
+  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cachedCollection, forgetCollection, loadCollection } from './collection';
@@ -30,6 +32,8 @@ import { Button } from '@/ui/Button';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ChipRow } from '@/ui/ChipRow';
 import { FilterChip } from '@/ui/FilterChip';
+import { Segmented } from '@/ui/Segmented';
+import { CloudBoardArt } from '@/ui/CloudBoardArt';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
@@ -586,6 +590,28 @@ function CollectionView() {
     navigate('games', encodeURIComponent(id));
   };
 
+  /**
+   * Straight onto the analysis board, which is NOT where the row's own
+   * click goes — that opens the annotatable document. Two destinations, so
+   * the quicker one gets a button rather than being reachable only by
+   * opening the game and leaving again.
+   */
+  const analyseGame = async (game: GameSummary): Promise<void> => {
+    try {
+      const res = await fetch(
+        `/api/games/pgn?file=${encodeURIComponent(game.file)}&index=${game.index}`,
+      );
+      const { pgn } = (await res.json()) as { pgn: string };
+      if (useAnalysis.getState().loadPgn(pgn)) {
+        if (game.userSide) useAnalysis.setState({ orientation: game.userSide });
+        useAnalysis.setState({ handoff: true });
+        navigate('analysis');
+      }
+    } catch {
+      setError(t('could not load that game'));
+    }
+  };
+
   // A rename in the open-game view changes the document's file name; when
   // it no longer matches the auto "White vs Black date" pattern, that name
   // IS the title the user chose — lead with it.
@@ -593,7 +619,13 @@ function CollectionView() {
     const name = docId(g);
     // The same rule the server named the file with — see shared/vaultNames.
     const autoPrefix = sanitizeSegment(`${g.white} vs ${g.black}`, '');
-    return name.startsWith(autoPrefix) ? null : name;
+    // Compared loosely on punctuation and case. A file written as
+    // "Firouzja A vs Vaishali R 2026-12-24" from a header that reads
+    // "Firouzja, A" did not match its own auto name, so every reference
+    // game in the collection claimed to have been renamed — and led with
+    // its filename instead of showing the two players on their own lines.
+    const loose = (s: string): string => s.replace(/[,.]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+    return loose(name).startsWith(loose(autoPrefix)) ? null : name;
   };
 
   const needle = query.trim().toLowerCase();
@@ -613,14 +645,20 @@ function CollectionView() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
         <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          {/* A bordered control like the two beside it, not a bare glyph
+              floating at their left: it is a filter, and at h-7 with a
+              border it sits on the same baseline as the field and the
+              button instead of reading as a stray icon. */}
           <Button
-            variant="ghost"
-            size="icon-sm"
+            variant="secondary"
+            size="sm"
             active={starredOnly}
+            aria-pressed={starredOnly}
             title={starredOnly ? t('Show all games') : t('Show bookmarked games only')}
             onClick={() => setStarredOnly((v) => !v)}
           >
-            <Star className={cn('size-3.5', starredOnly && 'fill-current')} />
+            <Star className={cn('size-3.5', starredOnly && 'fill-warn text-warn')} />
+            <span className="max-sm:hidden">{t('Bookmarked')}</span>
           </Button>
           <SearchInput
             type="text"
@@ -707,7 +745,12 @@ function CollectionView() {
               )}
             </div>
           ) : (
-          <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto sm:max-h-[38dvh] lg:max-h-none">
+          // Dividers AND a faint stripe on every other row: at two lines a
+          // row is tall enough that a hairline alone left the list reading
+          // as one block of text. The stripe is 2% of the foreground —
+          // enough to group the two lines that belong together, not enough
+          // to read as a highlight.
+          <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022] sm:max-h-[38dvh] lg:max-h-none">
             {visible.map((game) => (
               <GameRow
                 key={gameKey(game)}
@@ -717,6 +760,7 @@ function CollectionView() {
                 renaming={renamingKey === gameKey(game)}
                 onRename={(to) => void renameGame(game, to)}
                 onOpen={() => openGame(game)}
+                onAnalyse={() => void analyseGame(game)}
                 onPreview={setPreview}
                 onContext={(x, y) => setContext({ game, x, y })}
                 actions={
@@ -866,6 +910,14 @@ function ArchiveBrowser({
   const rememberRecent = (who: string): void => {
     setRecents((prev) => {
       const next = [who, ...prev.filter((p) => p.toLowerCase() !== who.toLowerCase())].slice(0, 4);
+      localStorage.setItem(recentsKey, JSON.stringify(next));
+      return next;
+    });
+  };
+  /** A mistyped handle should not sit there for the next four searches. */
+  const forgetRecent = (who: string): void => {
+    setRecents((prev) => {
+      const next = prev.filter((p) => p !== who);
       localStorage.setItem(recentsKey, JSON.stringify(next));
       return next;
     });
@@ -1110,36 +1162,39 @@ function ArchiveBrowser({
       <PanelHeader title={t('Online archives')} />
 
       <div className="flex flex-col gap-2 px-3 pb-3">
-        {/* The two provider chips stay on one line together — they are the
-            choice being made. */}
-        <div className="flex items-center gap-1">
-          {(
-            [
-              ['chesscom', 'chess.com'],
-              ['lichess', 'Lichess'],
-            ] as const
-          ).map(([id, label]) => (
-            <FilterChip
-              key={id}
-              label={
-                <span className="inline-flex items-center gap-1.5">
-                  {id === 'chesscom' ? (
-                    /* chess.com's pawn, in its brand green */
-                    <svg viewBox="5 4.5 35 37" className="size-3.5" fill="#7fa650" aria-hidden>
-                      <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
-                    </svg>
-                  ) : (
-                    /* lichess's knight mark */
-                    <KnightIcon className="size-3.5 fill-current" />
-                  )}
-                  {t('Browse {site}', { site: label })}
-                </span>
-              }
-              active={provider === id}
-              onClick={() => switchProvider(id)}
-            />
-          ))}
-        </div>
+        {/* One track, one lit segment. As two chips it was impossible to
+            tell by looking whether they were a choice or two independent
+            toggles — and both being unlit is not a state this has. */}
+        <Segmented
+          value={provider}
+          onChange={switchProvider}
+          ariaLabel="Which site to browse"
+          className="w-full"
+          segments={[
+            {
+              value: 'chesscom',
+              label: (
+                <>
+                  {/* chess.com's pawn, in its brand green */}
+                  <svg viewBox="5 4.5 35 37" className="size-3.5 shrink-0" fill="#7fa650" aria-hidden>
+                    <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
+                  </svg>
+                  <span className="truncate">chess.com</span>
+                </>
+              ),
+            },
+            {
+              value: 'lichess',
+              label: (
+                <>
+                  {/* lichess's knight mark */}
+                  <KnightIcon className="size-3.5 shrink-0 fill-current" />
+                  <span className="truncate">Lichess</span>
+                </>
+              ),
+            },
+          ]}
+        />
 
         <div className="flex items-center gap-1">
           <Input
@@ -1170,23 +1225,42 @@ function ArchiveBrowser({
 
         {/* Who you have looked up before, on this provider. Typing a handle
             again is the one thing this panel asks for repeatedly, and the
-            empty space under it was doing nothing. */}
+            empty space under it was doing nothing. A list of names with no
+            heading read as a result, not as history — and there was no way
+            to drop one that had been mistyped. */}
         {months.length === 0 && recents.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1">
-            <span className="text-subtle text-[0.6875rem]">{t('Recent')}</span>
-            {recents.map((who) => (
-              <button
-                key={who}
-                type="button"
-                onClick={() => {
-                  setUsername(who);
-                  void loadMonths(who);
-                }}
-                className="border-line text-muted hover:border-line-strong hover:text-fg w-fit shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 font-mono text-xs transition-colors duration-100"
-              >
-                {who}
-              </button>
-            ))}
+          <div className="mt-1 flex flex-col gap-1.5">
+            <p className="text-subtle text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+              {t('Recent searches')}
+            </p>
+            <div className="flex flex-wrap items-center gap-1">
+              {recents.map((who) => (
+                <span
+                  key={who}
+                  className="border-line text-muted hover:border-line-strong hover:text-fg group/recent flex w-fit shrink-0 items-center rounded-full border pl-2.5 transition-colors duration-100"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsername(who);
+                      void loadMonths(who);
+                    }}
+                    className="max-w-[9rem] truncate py-1 font-mono text-xs"
+                  >
+                    {who}
+                  </button>
+                  <button
+                    type="button"
+                    title={t('Forget this search')}
+                    aria-label={t('Forget this search')}
+                    onClick={() => forgetRecent(who)}
+                    className="text-subtle hover:text-bad grid size-6 shrink-0 place-items-center rounded-full transition-colors duration-100"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1412,7 +1486,9 @@ function ArchiveBrowser({
           leaving a bare bar over blank space. */}
       {!month && loading !== 'months' && (
         <div className="border-line flex min-h-0 flex-1 flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
-          <Globe className="text-subtle size-8" strokeWidth={1.5} />
+          {/* What the panel does, drawn — rather than the same globe that
+              is already on the button two inches above it. */}
+          <CloudBoardArt className="w-20" />
           <p className="text-muted max-w-xs text-sm leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
@@ -1436,10 +1512,14 @@ function GameRow({
   showLink = true,
   onSwipeAway,
   onContext,
+  onAnalyse,
 }: {
   game: GameSummary;
   onOpen: () => void;
   onPreview: (preview: Preview | null) => void;
+  /** Load this game straight onto the analysis board. Distinct from the
+      row's own click, which opens the annotatable document. */
+  onAnalyse?: () => void;
   actions: React.ReactNode;
   /** A user-chosen document name (in-game rename), shown instead of the matchup. */
   customName?: string | null;
@@ -1507,7 +1587,7 @@ function GameRow({
           {customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
-            <p className="text-fg truncate text-sm font-medium">
+            <p className="text-fg truncate text-sm font-semibold">
               {customName}
               {game.annotated && (
                 <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
@@ -1519,7 +1599,7 @@ function GameRow({
             <>
               <p className="text-fg truncate text-sm">
                 <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-                <span className={cn('font-medium', game.userSide === 'white' && 'text-primary')}>
+                <span className={cn('font-semibold', game.userSide === 'white' && 'text-primary')}>
                   {game.white}
                 </span>
                 {game.whiteElo ? <span className="text-subtle text-xs"> {game.whiteElo}</span> : null}
@@ -1529,49 +1609,83 @@ function GameRow({
               </p>
               <p className="text-fg truncate text-sm">
                 <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-                <span className={cn('font-medium', game.userSide === 'black' && 'text-primary')}>
+                <span className={cn('font-semibold', game.userSide === 'black' && 'text-primary')}>
                   {game.black}
                 </span>
                 {game.blackElo ? <span className="text-subtle text-xs"> {game.blackElo}</span> : null}
               </p>
             </>
           )}
+          {/* The opening leads the detail line, because the code is what a
+              long list is scanned by; the date and the clock follow it in
+              the quietest colour on the row. */}
           <p className="text-subtle truncate text-xs" title={openingLabel}>
             {customName ? `${game.white} vs ${game.black} · ` : ''}
+            {game.opening ? (
+              <OpeningTag eco={game.opening.eco} name={game.opening.name} />
+            ) : game.eco ? (
+              <OpeningTag eco={game.eco} />
+            ) : null}
+            {(game.opening || game.eco) && ' · '}
             {game.date}
-            {openingLabel ? ` · ${openingLabel}` : ''}
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
           </p>
         </div>
         <ResultScore result={game.result} userSide={game.userSide} />
-        {/* The eye borrows the icon-sm footprint so the gaps to the star
-            and … buttons read evenly. */}
-        {game.finalFen ? (
-          <span className="grid size-7 shrink-0 place-items-center pointer-coarse:size-9">
-            <Eye
-              className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-5"
-              aria-label={t('Preview the final position')}
-              // Guarded like the other preview eyes: an unguarded mouseenter
-              // trips iOS's sticky-hover heuristic (first tap hovers only).
-              onMouseEnter={(e) => {
-                if (!coarse()) showPreview(e);
-              }}
-              onMouseLeave={() => {
-                if (!coarse()) hidePreview();
-              }}
-              onClick={(e) => {
-                if (!coarse()) return;
-                // Touch: open the centred overlay; its scrim dismisses it.
-                e.stopPropagation();
-                showPreview(e, true);
-              }}
-            />
-          </span>
-        ) : (
-          <span className="size-7 shrink-0 pointer-coarse:size-9" aria-hidden />
-        )}
       </div>
-      {actions}
+
+      {/* One strip, not three loose icons: the eye used to sit inside the
+          text block and the star and … outside it, so they read as three
+          unrelated marks rather than as this row's controls. They share a
+          tray now, which appears under the pointer and stays put on touch
+          — the space is reserved either way, so nothing shifts. */}
+      <div
+        style={swipe.style}
+        className={cn(
+          'flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
+          'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+          'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
+        )}
+      >
+        {game.finalFen && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Preview the final position')}
+            className="shrink-0"
+            // Guarded like the other preview eyes: an unguarded mouseenter
+            // trips iOS's sticky-hover heuristic (first tap hovers only).
+            onMouseEnter={(e) => {
+              if (!coarse()) showPreview(e);
+            }}
+            onMouseLeave={() => {
+              if (!coarse()) hidePreview();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              // Touch: open the centred overlay; its scrim dismisses it.
+              if (coarse()) showPreview(e, true);
+            }}
+          >
+            <Eye className="size-3.5" />
+          </Button>
+        )}
+        {onAnalyse && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Open on the analysis board')}
+            className="shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAnalyse();
+            }}
+          >
+            <Compass className="size-3.5" />
+          </Button>
+        )}
+        {actions}
+      </div>
       {showLink && !game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
       {showLink && game.link && (
         <a
@@ -1843,23 +1957,56 @@ function ResultScore({
   userSide: 'white' | 'black' | null;
 }) {
   const parts = result.split('-');
-  if (parts.length !== 2) {
-    return (
-      <span title={result} className="text-muted w-6 shrink-0 text-center font-mono text-xs">
-        {result}
-      </span>
-    );
-  }
   const winner = result === '1-0' ? 'white' : result === '0-1' ? 'black' : null;
-  const cls = (side: 'white' | 'black'): string => {
-    if (side !== winner) return 'text-muted';
-    if (!userSide) return 'text-fg font-semibold';
-    return cn('font-semibold', userSide === winner ? 'text-good' : 'text-bad');
-  };
+  // Read at a glance, in one tag, instead of two faint characters stacked
+  // in a 24px column: at that size neither the score nor which side got it
+  // survived, and the pair read as one smudge down the side of the list.
+  // Tinted from the player's own point of view where there is one — a win
+  // and a loss are not the same fact, and the list is mostly their games.
+  const tone =
+    parts.length !== 2 || !winner
+      ? 'bg-surface-3 text-muted'
+      : !userSide
+        ? 'bg-surface-3 text-fg'
+        : userSide === winner
+          ? 'bg-good/15 text-good'
+          : 'bg-bad/15 text-bad';
   return (
-    <span title={fmtResult(result)} className="w-6 shrink-0 text-center font-mono text-xs leading-5">
-      <span className={cn('block', cls('white'))}>{fmtResult(parts[0]!)}</span>
-      <span className={cn('block', cls('black'))}>{fmtResult(parts[1]!)}</span>
+    <span
+      title={fmtResult(result)}
+      className={cn(
+        'w-11 shrink-0 rounded px-1 py-0.5 text-center font-mono text-[0.6875rem] font-semibold',
+        'tabular-nums leading-4',
+        tone,
+      )}
+    >
+      {fmtResult(result)}
     </span>
+  );
+}
+
+/**
+ * Which opening, as a code you can scan a list by.
+ *
+ * The ECO letter is the family — A flank, B semi-open, C open and French,
+ * D closed, E Indian — so the badge takes its hue from the letter and the
+ * same family is the same colour everywhere. That is the whole point of a
+ * code in a list of two hundred games: you find the Sicilians by colour
+ * before you have read a word.
+ */
+const ECO_HUE: Record<string, number> = { A: 285, B: 232, C: 195, D: 152, E: 65 };
+
+function OpeningTag({ eco, name }: { eco: string; name?: string | null }) {
+  const hue = ECO_HUE[eco[0]?.toUpperCase() ?? ''] ?? 264;
+  return (
+    <>
+      <span
+        className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-[0.625rem] font-semibold leading-4"
+        style={{ color: `oklch(80% 0.08 ${hue})`, backgroundColor: `oklch(80% 0.08 ${hue} / 15%)` }}
+      >
+        {eco}
+      </span>
+      {name && <span style={{ color: `oklch(72% 0.045 ${hue})` }}>{name}</span>}
+    </>
   );
 }

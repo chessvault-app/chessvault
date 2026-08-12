@@ -233,6 +233,12 @@ export const ko: Record<string, string> = {
   'List view': '목록 보기',
   'Pin to the top': '위에 고정',
   Unpin: '고정 해제',
+  Layout: '보기 방식',
+  // Games: the row toolbar and the archive panel.
+  Bookmarked: '북마크',
+  'Which site to browse': '둘러볼 사이트',
+  'Recent searches': '최근 검색',
+  'Forget this search': '이 검색 지우기',
   'Rename this study': '이 스터디 이름 바꾸기',
   'Choose file': '파일 선택',
   'Import from Lichess': 'Lichess에서 가져오기',
