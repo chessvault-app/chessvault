@@ -173,7 +173,9 @@ SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22
 **오프닝 북에는 셸이 필요 없습니다.** 탐색기의 북 관리자를 열어 PGN
 모음을 올리고, 합칠 것을 골라 만들기를 누르면 됩니다. 무료로 쓸 만한
 출처: [Lumbra's Gigabase](https://lumbrasgigabase.com/en/)의 "OTB Elite",
-[Lichess Elite Database](https://database.nikonoel.fr/). 국면은 64비트
+[Lichess Elite Database](https://database.nikonoel.fr/) — 뒤엣것은 CC0,
+앞엣것은 CC BY-NC-SA 4.0입니다. 직접 쓰려고 만드는 북에는 괜찮지만, 그렇게
+만든 북을 남에게 넘기는 데는 쓸 수 없습니다. 국면은 64비트
 Zobrist 해시로 키를 만들고 메모리를 제한한 채 스트리밍합니다 — Lichess
 Elite 한 달치(280,246 게임)에서 361k 국면을 47초에 색인해 69MB가 됩니다.
 
@@ -313,5 +315,4 @@ npm run desktop:package:linux  # Linux AppImage + deb
 이 프로젝트는 **GPL-3.0**을 따릅니다([LICENSE](LICENSE) 참고). 사실상
 동봉한 의존성이 선택을 대신했습니다. Stockfish와 Stockfish.js가
 GPLv3이고, `chessops`와 `chessground`는 AGPL/GPL로 사정이 같습니다.
-Lichess 퍼즐 데이터베이스는 CC0, Lumbra's Gigabase는 CC BY-NC-SA
-4.0입니다.
+앱이 내려받는 Lichess 퍼즐 데이터베이스는 CC0입니다.

@@ -175,7 +175,9 @@ ships with, the first time something asks for a name.
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free
 sources: [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite"
-and the [Lichess Elite Database](https://database.nikonoel.fr/). Positions
+and the [Lichess Elite Database](https://database.nikonoel.fr/) — the
+second is CC0, the first CC BY-NC-SA 4.0, which is fine for a book you
+build for yourself and not for one you pass on. Positions
 are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
 month of Lichess Elite (280,246 games) indexes 361 k positions in 47 s into
 69 MB.
@@ -322,4 +324,4 @@ This project is licensed under **GPL-3.0** (see [LICENSE](LICENSE)) —
 the choice is effectively made by its bundled dependencies: Stockfish
 and Stockfish.js are GPLv3. `chessops` and
 `chessground` are AGPL/GPL — same caveat. The Lichess puzzle database
-is CC0; Lumbra's Gigabase is CC BY-NC-SA 4.0.
+the app downloads is CC0.
