@@ -172,12 +172,21 @@ keeps up as you collect more. `data/openings.json` is in it only to say
 where the names come from — the server compiles it from the ECO tables it
 ships with, the first time something asks for a name.
 
-**One book comes with the app.** A new install already has a curated walk
-of a Lichess Elite month — 29,297 positions to move 12, 1.5 MB, CC0 — so
-the explorer and the repertoire trainer answer from the first move you
-play instead of showing nothing. It is copied into `data/books/` the first
-time the app runs and is an ordinary book after that: delete it, rename
-it, build over it. Deleting it is final; it is not put back.
+**One book comes with the installer.** Install the desktop app and it
+already has a curated walk of a recent Lichess Elite month — 29,297
+positions to move 12, 1.5 MB, CC0 — so the explorer and the repertoire
+trainer answer from the first move you play instead of showing nothing.
+It is copied into `data/books/` the first time the app runs and is an
+ordinary book after that: delete it, rename it, build over it. Deleting it
+is final; it is not put back.
+
+It is built when a release is cut, not kept in the repo, so each release
+carries a book made from a month that was current then. **A server install
+and a source checkout therefore have none** — they take the commit, not
+the release artefacts — and start with an empty explorer until a book is
+built. On a server that is the normal way round anyway: you upload your
+own collections and press Build. `npm run build:bundled-book` makes the
+same curated book from whatever book is already in `data/books/`.
 
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free

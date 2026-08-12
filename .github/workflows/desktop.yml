@@ -36,7 +36,83 @@ permissions:
   contents: write
 
 jobs:
+  # The opening book that ships inside the installer, built here rather than
+  # committed. It is derived data — the repo's rule is that derived data is
+  # rebuildable and not tracked — and building it per release also keeps it
+  # from ageing into a snapshot of whichever month it was first made from.
+  #
+  # Built ONCE and passed to the three package jobs as an artefact: the walk
+  # is minutes of CPU, and doing it per platform would triple that for three
+  # identical files.
+  #
+  # A server deploy and a source checkout get no book from this, by design —
+  # they ship the commit, not the release artefacts. Both can build their own
+  # (npm run build:book, or the book manager in the app).
+  book:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      # Newest month first, falling back: the current month is not published
+      # until it is over, and a release cut on the 1st would otherwise fail
+      # on a URL that does not exist yet.
+      - name: Find the newest published Lichess Elite month
+        id: month
+        run: |
+          for back in 1 2 3; do
+            month=$(date -u -d "$back month ago" +%Y-%m)
+            url="https://database.nikonoel.fr/lichess_elite_${month}.zip"
+            if curl -sfIL "$url" -o /dev/null; then
+              echo "month=$month" >> "$GITHUB_OUTPUT"
+              echo "url=$url" >> "$GITHUB_OUTPUT"
+              echo "using $month"
+              exit 0
+            fi
+          done
+          echo "no Lichess Elite month found in the last three" >&2
+          exit 1
+
+      # Keyed by the month, so a second release in the same month reuses it
+      # instead of downloading 80 MB and spending the CPU again.
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: assets
+          key: bundled-book-${{ steps.month.outputs.month }}-v1
+
+      - name: Build the book
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl -sSL -o elite.zip "${{ steps.month.outputs.url }}"
+          unzip -o -q elite.zip -d elite
+          pgn=$(find elite -name '*.pgn' | head -1)
+          npx tsx scripts/build-book.ts "$pgn" --name elite
+          games=$(npx tsx -e "
+            import Database from 'better-sqlite3';
+            import { DATA_BOOKS } from './server/paths.ts';
+            import { resolve } from 'node:path';
+            const db = new Database(resolve(DATA_BOOKS, 'elite.sqlite'), { readonly: true });
+            process.stdout.write(db.prepare(\"SELECT value FROM meta WHERE key = 'games'\").get().value);
+          ")
+          npx tsx scripts/build-demo-book.ts --depth 24 --width 8 --min 10 \
+            --games "$games" \
+            --out "assets/lichess-elite-${{ steps.month.outputs.month }}.sqlite"
+          ls -la assets
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: bundled-book
+          path: assets/*.sqlite
+          if-no-files-found: error
+
   package:
+    needs: book
     strategy:
       # Don't cancel the other platform when one fails: knowing Windows is
       # fine while macOS is broken is more useful than one red X.
@@ -83,6 +159,13 @@ jobs:
       # The engine is copied from node_modules rather than downloaded, so
       # this needs no network beyond the install above.
       - run: npm run setup:engine
+
+      # The book built by the `book` job. package.json ships assets/ as an
+      # extraResource, so it has to be here before electron-builder runs.
+      - uses: actions/download-artifact@v7
+        with:
+          name: bundled-book
+          path: assets
 
       # On a tag: build and upload to the draft release for that tag.
       # By hand: build only. `--publish never` is explicit rather than

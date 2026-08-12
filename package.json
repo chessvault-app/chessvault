@@ -34,6 +34,7 @@
     "desktop:package:mac": "node desktop/build-server.mjs && npm run build && electron-builder --mac dmg",
     "build:demo": "tsx scripts/build-demo-seed.ts && vite build --config web/vite.demo.config.ts",
     "build:demo-dbs": "tsx scripts/build-demo-dbs.ts",
+    "build:bundled-book": "tsx scripts/build-demo-book.ts --depth 24 --width 8 --min 10 --out assets/bundled-book.sqlite",
     "build:site": "npm run build:demo && tsx scripts/build-landing.ts",
     "shots": "electron scripts/capture-screenshots.mjs",
     "desktop:package:linux": "node desktop/build-server.mjs && npm run build && electron-builder --linux AppImage deb"
