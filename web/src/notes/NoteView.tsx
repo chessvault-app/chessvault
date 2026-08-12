@@ -39,6 +39,8 @@ export function NoteView({ id }: { id: string }) {
    * its metadata.
    */
   const [frontMatter, setFrontMatter] = useState('');
+  /** The file as loaded, so a save can tell an edit from a settling node. */
+  const [loaded, setLoaded] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +53,7 @@ export function NoteView({ id }: { id: string }) {
         const { pgn } = (await res.json()) as { pgn: string };
         if (cancelled) return;
         setFrontMatter(splitFrontMatter(pgn).front);
+        setLoaded(pgn);
         setInitialDoc(markdownToDoc(pgn).toJSON() as object);
       })
       .catch((error: Error) => {
@@ -94,6 +97,7 @@ export function NoteView({ id }: { id: string }) {
       key={id}
       id={id}
       initialDoc={initialDoc}
+      loaded={loaded}
       frontMatter={frontMatter}
       onFrontMatter={setFrontMatter}
       saveState={saveState}
@@ -106,6 +110,7 @@ export function NoteView({ id }: { id: string }) {
 function NoteEditor({
   id,
   initialDoc,
+  loaded,
   frontMatter,
   onFrontMatter,
   saveState,
@@ -114,6 +119,8 @@ function NoteEditor({
 }: {
   id: string;
   initialDoc: object;
+  /** The file exactly as it came off the server, as the save baseline. */
+  loaded: string;
   /** Put back on every write; it is not part of the document. */
   frontMatter: string;
   /** Editing the tags rewrites it — see TagEditor. */
@@ -126,8 +133,31 @@ function NoteEditor({
   // Edit button switches the TipTap editor live.
   const [editable, setEditable] = useState(false);
   const keyboardInset = useKeyboardInset();
-  /** What is on the server, so an edit can be told from a settling node. */
-  const lastSaved = useRef('');
+  /**
+   * What is on the server, so an edit can be told from a settling node.
+   *
+   * Seeded from the FILE rather than left empty for onCreate to fill in.
+   * An empty baseline means "the server has nothing", so the first
+   * settling transaction — a chess block normalising itself, say — reads
+   * as an edit and writes the document back. Under StrictMode's double
+   * mount that is exactly what happened: two editors, and the one whose
+   * onCreate had not run for this ref saved a note nobody had touched.
+   * Dev-only in that instance, but a baseline that says the file is empty
+   * is the wrong thing to have lying around either way.
+   */
+  const lastSaved = useRef(loaded);
+  /**
+   * The front matter every write has to put back, in a ref.
+   *
+   * As a prop it was captured by the leaving-the-note effect, whose deps
+   * are [editor] — so that closure kept the value from load, which for a
+   * note with no front matter is the empty string. Tag a note, walk away,
+   * and the flush wrote the document back WITHOUT the block it had just
+   * been given. Tagging appeared not to work at all, because the tag only
+   * survived as long as you stayed on the page.
+   */
+  const front = useRef(frontMatter);
+  front.current = frontMatter;
   const editor = useEditor({
     extensions: noteExtensions,
     content: initialDoc,
@@ -140,16 +170,21 @@ function NoteEditor({
     // a transaction, so onUpdate fired on a note nobody had touched and the
     // badge announced 저장 중… over an unedited note.
     onCreate: ({ editor }) => {
-      lastSaved.current = docToMarkdown(editor.state.doc, frontMatter);
+      lastSaved.current = docToMarkdown(editor.state.doc, front.current);
     },
     onUpdate: ({ editor }) => {
       // Compare rather than trust the event: only a real difference is an
       // edit worth saving (and worth telling the reader about).
-      if (docToMarkdown(editor.state.doc, frontMatter) === lastSaved.current) return;
+      if (docToMarkdown(editor.state.doc, front.current) === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        void save(docToMarkdown(editor.state.doc, frontMatter));
+        // Cleared as it fires: a timer id left behind reads as "a save is
+        // still pending" forever, so leaving the note re-PUT the document
+        // every single time — touching its mtime, and reordering the shelf
+        // — for a note that had already been saved.
+        saveTimer.current = null;
+        void save(docToMarkdown(editor.state.doc, front.current));
       }, AUTOSAVE_MS);
     },
   });
@@ -174,8 +209,9 @@ function NoteEditor({
     return () => {
       if (saveTimer.current) {
         clearTimeout(saveTimer.current);
+        saveTimer.current = null;
         if (editor && !editor.isDestroyed) {
-          void save(docToMarkdown(editor.state.doc, frontMatter));
+          void save(docToMarkdown(editor.state.doc, front.current));
         }
       }
     };
@@ -221,7 +257,7 @@ function NoteEditor({
           <Pencil className="size-3.5 md:mr-1" />
           <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
-        <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc, frontMatter))} />
+        <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc, front.current))} />
       </header>
       {/* Only while editing: a reader has no use for a text field, and the
           tags are already on the note's shelf card. */}
@@ -230,6 +266,9 @@ function NoteEditor({
           tags={tagsFromFrontMatter(frontMatter)}
           onChange={(tags) => {
             const next = frontMatterWithTags(frontMatter, tags);
+            // The ref first: a state update has not flushed by the time an
+            // autosave already in flight reads it.
+            front.current = next;
             onFrontMatter(next);
             // Saved with the NEW front matter rather than waiting for the
             // autosave: that debounce is keyed to typing in the document,
