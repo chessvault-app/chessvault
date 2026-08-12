@@ -7,7 +7,9 @@
  *
  * --all-below keeps EVERY game of a position reached by that many games or
  * fewer, instead of only the best --top-games. Left out, the builder reads
- * the threshold off the book's own distribution.
+ * the threshold off the book's own distribution, up to --stage-cap (200) —
+ * on a corpus big enough to want more than that, it says so and stops
+ * there.
  *
  * Books land in data/books/<name>.sqlite. Sources may be absolute paths,
  * cwd-relative, or names of files in vault/sources/.
@@ -25,6 +27,7 @@ const { values, positionals } = parseArgs({
     'min-games': { type: 'string' },
     'top-games': { type: 'string' },
     'all-below': { type: 'string' },
+    'stage-cap': { type: 'string' },
   },
   allowPositionals: true,
 });
@@ -87,6 +90,7 @@ for (const job of jobs) {
       minGames: numberFlag(values['min-games'], 'min-games'),
       topGames: numberFlag(values['top-games'], 'top-games'),
       allBelow: numberFlag(values['all-below'], 'all-below'),
+      stageCap: numberFlag(values['stage-cap'], 'stage-cap'),
       onProgress: (p) => {
         const rate = Math.round(p.games / p.seconds);
         console.log(`  ${p.games.toLocaleString()} games  (${rate.toLocaleString()}/s, ${p.parseErrors} errors)`);

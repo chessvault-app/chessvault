@@ -154,6 +154,30 @@ describe('buildBook', () => {
     ]);
   });
 
+  it('stops at the staging ceiling rather than promising lists it never collected', async () => {
+    // The fixture's start position has four games; a ceiling of 2 is below
+    // what a 99% target would ask for, so the threshold is pinned there and
+    // the book records the coverage it actually reached.
+    const out = join(dir, 'capped-stage.sqlite');
+    await buildBook({
+      name: 'capped-stage',
+      sources: [join(dir, 'games.pgn')],
+      out,
+      topGames: 1,
+      stageCap: 2,
+    });
+    const db2 = new Database(out, { readonly: true });
+    const meta = Object.fromEntries(
+      (db2.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
+        (m) => [m.key, m.value],
+      ),
+    );
+    db2.close();
+    expect(Number(meta.allBelow)).toBe(2);
+    expect(Number(meta.listCoverage)).toBeGreaterThan(0);
+    expect(Number(meta.listCoverage)).toBeLessThan(1);
+  });
+
   it('falls back to the best few once a position is past the threshold', async () => {
     // Same fixture, but the threshold is forced under the start position's
     // four games, so only `topGames` of them survive — the behaviour every

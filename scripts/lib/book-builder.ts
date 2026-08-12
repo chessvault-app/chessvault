@@ -30,6 +30,12 @@ export interface BuildOptions {
    * fraction, when `allBelow` is not given (default 0.99).
    */
   listCoverage?: number;
+  /**
+   * Ceiling on the worked-out threshold, and on how many games are staged
+   * per position while indexing (default 200). Raise it for a corpus big
+   * enough that the coverage target lands above it.
+   */
+  stageCap?: number;
   /** Flush the in-memory tally to SQLite at this many rows (default 4M). */
   flushRows?: number;
   onProgress?: (p: BuildProgress) => void;
@@ -70,15 +76,22 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
   const flushRows = options.flushRows ?? 4_000_000;
   const listCoverage = options.listCoverage ?? 0.99;
   /**
-   * The most games ever staged for one position.
+   * The most games ever staged for one position, and so the highest
+   * threshold this build could honour.
    *
    * A position's final total is not known while indexing — that is the
-   * whole reason the threshold has to be worked out afterwards — so the
-   * staging cap has to be an upper bound on any threshold that could be
-   * chosen. Beyond it, a position is popular enough that nobody browses
-   * its game list anyway: after 1.e4 the honest answer is 47,080 games.
+   * whole reason the threshold is worked out afterwards — so the ceiling
+   * has to be picked before the distribution is known. 200 clears a month
+   * of Lichess Elite with room (its 99th percentile is 116, and 200 is the
+   * 99.44th), but a corpus a few times larger has a few times more games
+   * per position and WILL reach it, at which point the coverage target
+   * cannot be met and the book says so rather than pretending.
+   *
+   * Raising it costs staged rows and reduce time, not memory: what bounds
+   * memory is REF_FLUSH_ROWS below, which empties the staging map on its
+   * own schedule no matter how deep a single position's bench is.
    */
-  const STAGE_CAP = Math.max(topGames, options.allBelow ?? 200);
+  const STAGE_CAP = Math.max(topGames, options.allBelow ?? options.stageCap ?? 200);
   /** Stage this many (position, game) pairs before writing them out. */
   const REF_FLUSH_ROWS = 1_000_000;
 
@@ -300,12 +313,25 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
     }[]).map((r) => r.total);
     if (totals.length === 0) return topGames;
     const at = Math.min(totals.length - 1, Math.floor(listCoverage * totals.length));
-    // Never below the bench that would be kept anyway, never above what was
-    // staged — a threshold past STAGE_CAP would promise lists this build
-    // never collected.
-    return Math.min(STAGE_CAP, Math.max(topGames, totals[at]!));
+    const wanted = Math.max(topGames, totals[at]!);
+    // Never above what was staged: a threshold past STAGE_CAP would promise
+    // lists this build never collected. When that bites, the coverage
+    // target is simply not reachable from these staged games, and saying so
+    // is the whole difference between a limit and a silent shortfall.
+    if (wanted > STAGE_CAP) {
+      console.warn(
+        `books: wanted every game up to ${wanted} per position for ${(100 * listCoverage).toFixed(0)}% coverage, ` +
+          `but only ${STAGE_CAP} were staged — raise --stage-cap to go further`,
+      );
+      return STAGE_CAP;
+    }
+    return wanted;
   };
   const allBelow = chooseThreshold();
+  /** What the threshold actually achieved, which is what a reader needs. */
+  const coverage = (
+    db.prepare('SELECT COUNT(*) c FROM pos_total WHERE total <= ?').get(allBelow) as { c: number }
+  ).c;
 
   // Reduce the staged references: everything for a position at or under the
   // threshold, the best `topGames` for the rest.
@@ -337,8 +363,13 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
   setMeta.run('minGames', String(minGames));
   setMeta.run('topGames', String(topGames));
   // What the book actually did, not what was asked for: a reader looking at
-  // a game list needs to know whether it is all of them or the best of them.
+  // a game list needs to know whether it is all of them or the best of them,
+  // and how often it is all of them.
   setMeta.run('allBelow', String(allBelow));
+  setMeta.run(
+    'listCoverage',
+    counts.positions > 0 ? (coverage / counts.positions).toFixed(4) : '0',
+  );
   setMeta.run('games', String(progress.games));
   setMeta.run('positions', String(counts.positions));
   setMeta.run('rows', String(counts.rows));

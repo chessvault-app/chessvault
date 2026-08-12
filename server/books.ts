@@ -97,12 +97,14 @@ export function seedBundledBook(booksDir: string = DATA_BOOKS): void {
   const marker = resolve(booksDir, SEED_MARKER);
   if (existsSync(marker)) return;
 
-  const bundled = resolve(REPO_ROOT, 'assets', `${BUNDLED_BOOK}.sqlite`);
-  const target = resolve(booksDir, `${BUNDLED_BOOK}.sqlite`);
-  // No bundled file (a source checkout that never built one): leave no
-  // marker, so an install that gains one later still gets it. The cost of
-  // being wrong is one existsSync per launch.
-  if (!existsSync(bundled)) return;
+  // No bundled file — a source checkout, or a server deploy, which ships
+  // the commit and not the release artefacts. Leave no marker, so an
+  // install that gains one later still gets it; the cost of being wrong is
+  // one directory read per launch.
+  const bundled = bundledBookPath();
+  if (!bundled) return;
+  const name = basename(bundled, '.sqlite');
+  const target = resolve(booksDir, `${name}.sqlite`);
   // Somebody's own book already has the name. Theirs wins, and the marker
   // stops this from being reconsidered every launch.
   if (existsSync(target)) {
@@ -130,11 +132,28 @@ export function seedBundledBook(booksDir: string = DATA_BOOKS): void {
   // Written only now, so it records "this vault has been given its book"
   // and nothing else. Deleting the book after this is final.
   writeFileSync(marker, `${new Date().toISOString()}\n`);
-  console.log(`books: seeded ${BUNDLED_BOOK} (${(statSync(target).size / 1e6).toFixed(1)} MB)`);
+  console.log(`books: seeded ${name} (${(statSync(target).size / 1e6).toFixed(1)} MB)`);
 }
 
-/** Name of the book that ships with the app, in assets/ and once seeded. */
-const BUNDLED_BOOK = 'lichess-elite-2025-11';
+/**
+ * The book that ships with the app, whatever it is called.
+ *
+ * Found rather than named, because it is built at release time from
+ * whichever month of games was current then: a constant here would mean a
+ * code change every time the source data moved on, which is the sort of
+ * per-artefact knowledge this repo keeps in data instead. Returns null
+ * when there is nothing to seed — a source checkout, or a server deploy,
+ * neither of which carries one.
+ */
+function bundledBookPath(): string | null {
+  const dir = resolve(REPO_ROOT, 'assets');
+  try {
+    const file = readdirSync(dir).find((name) => name.endsWith('.sqlite'));
+    return file ? resolve(dir, file) : null;
+  } catch {
+    return null; // no assets directory at all
+  }
+}
 
 export function booksApi(
   dirs: BooksApiDirs = { books: DATA_BOOKS, sources: VAULT_SOURCES },

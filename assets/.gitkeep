@@ -1,0 +1,3 @@
+# The bundled opening book lands here at release time (see
+# .github/workflows/desktop.yml). Empty in a checkout, and that is fine:
+# the app seeds a book only if it finds one.
