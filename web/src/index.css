@@ -162,8 +162,14 @@
 .dark {
   color-scheme: dark;
 
-  --app-bg: oklch(17.5% calc(0.014 * var(--ui-tint)) var(--ui-hue));
-  --app-bg-accent: oklch(15% calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  /* The page sits further under the surfaces than it used to: at 17.5%
+     against a 21.5% surface there were four points of lightness between a
+     card and the page behind it, and a shelf of cards read as one flat
+     field. Six points is enough for a card to be a card without the page
+     turning into a hole. The surface LADDER is untouched — every panel,
+     popover and input keeps its relationship to the others. */
+  --app-bg: oklch(15.5% calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --app-bg-accent: oklch(13% calc(0.015 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(21.5% calc(0.017 * var(--ui-tint)) var(--ui-hue));
   --surface-2: oklch(25% calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --surface-3: oklch(29% calc(0.019 * var(--ui-tint)) var(--ui-hue));

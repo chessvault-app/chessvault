@@ -15,13 +15,14 @@ import { pgnToChapters } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { Input, SearchInput, TextArea } from '@/ui/Input';
+import { Input, TextArea } from '@/ui/Input';
 import { Field } from '@/ui/Field';
 import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
-import { ShelfCard } from '@/ui/ShelfCard';
+import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
+import { ShelfToolbar, sortDocs, useShelfView, type ShelfSort } from '@/ui/ShelfToolbar';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { CreateControl } from '@/ui/Fab';
@@ -45,6 +46,29 @@ function StudyList() {
 
   const [query, setQuery] = useState('');
   const pending = useSlowLoad(!listLoaded);
+  const view = useShelfView('studies');
+  // Pinned studies, kept in the vault the same way the games shelf keeps
+  // its bookmarks — a pin belongs to the shelf, not to a browser.
+  const [pinnedIds, setPinned] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    void fetch('/api/studies/pins')
+      .then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null))
+      .then((body) => setPinned(new Set(body?.ids ?? [])))
+      .catch(() => {});
+  }, []);
+  const togglePin = async (id: string): Promise<void> => {
+    setPinned((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    await fetch('/api/studies/pins/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+  };
   // Removal is immediate and undoable rather than confirmed — see
   // useUndoable. `hidden` is what the list pretends is already gone.
   const removeStudy = useStudy((s) => s.remove);
@@ -85,20 +109,17 @@ function StudyList() {
     // card stretched across a 1400px monitor is a line of text with a title
     // at one end and a date at the other.
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{t('Studies')}</h1>
-        <div className="flex items-center gap-2">
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Search studies…')}
-            className="w-48"
-          />
-          <CreateMenu />
-        </div>
-      </header>
+      <ShelfToolbar
+        title={t('Studies')}
+        query={query}
+        onQuery={setQuery}
+        placeholder={t('Search studies…')}
+        sort={view.sort}
+        onSort={view.setSort}
+        layout={view.layout}
+        onLayout={view.setLayout}
+        create={<CreateMenu />}
+      />
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
@@ -118,6 +139,10 @@ function StudyList() {
         <GroupedStudies
           studies={visible.filter((st) => !hidden.has(st.id))}
           allFolders={needle ? [] : folders}
+          pinnedIds={pinnedIds}
+          onTogglePin={(id) => void togglePin(id)}
+          sort={view.sort}
+          layout={view.layout}
           onRemove={dropStudy}
         />
       )}
@@ -529,15 +554,29 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
 function GroupedStudies({
   studies,
   allFolders,
+  pinnedIds,
+  onTogglePin,
+  sort,
+  layout,
   onRemove,
 }: {
   studies: StudyMeta[];
   allFolders: string[];
+  pinnedIds: Set<string>;
+  onTogglePin: (id: string) => void;
+  sort: ShelfSort;
+  layout: ShelfLayout;
   onRemove: (id: string) => void;
 }) {
   const groups = new Map<string, StudyMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
-  for (const study of studies) {
+  // Whatever the chosen order, a pinned study comes first: that is what
+  // pinning IS, and a pin that only added a star would be decoration.
+  const ordered = sortDocs(studies, sort);
+  for (const study of [
+    ...ordered.filter((s) => pinnedIds.has(s.id)),
+    ...ordered.filter((s) => !pinnedIds.has(s.id)),
+  ]) {
     const slash = study.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : study.id.slice(0, slash);
     const list = groups.get(folder);
@@ -559,12 +598,15 @@ function GroupedStudies({
             // nothing and halves the scrolling. Both columns are 1fr, so
             // the pair stretches with the container rather than leaving a
             // gutter down the right.
-            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 lg:grid-cols-2' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((study) => (
                 <StudyCard
                   key={study.id}
                   study={study}
                   allFolders={folders.filter(Boolean)}
+                  pinned={pinnedIds.has(study.id)}
+                  onTogglePin={() => onTogglePin(study.id)}
+                  layout={layout}
                   onRemove={() => onRemove(study.id)}
                 />
               ))}
@@ -592,10 +634,16 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
 function StudyCard({
   study,
   allFolders,
+  pinned,
+  onTogglePin,
+  layout,
   onRemove,
 }: {
   study: StudyMeta;
   allFolders: string[];
+  pinned: boolean;
+  onTogglePin: () => void;
+  layout: ShelfLayout;
   onRemove: () => void;
 }) {
   const move = useStudy((s) => s.move);
@@ -627,6 +675,9 @@ function StudyCard({
           {t('edited {when}', { when: formatAgo(study.updatedAt) })}
         </span>
       }
+      pinned={pinned}
+      onTogglePin={onTogglePin}
+      layout={layout}
       error={failure}
       onOpen={() => navigate('studies', encodeURIComponent(study.id))}
       onSwipeAway={onRemove}

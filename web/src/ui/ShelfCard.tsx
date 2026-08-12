@@ -1,26 +1,35 @@
-import { MoreHorizontal, type LucideIcon } from 'lucide-react';
+import { MoreHorizontal, Pin, type LucideIcon } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './Button';
 import { ActionSheet, type SheetAction } from './ActionSheet';
+import { MiniBoard } from './MiniBoard';
 import { SwipeTrack, useSwipeAway } from './SwipeRow';
+import { TagPill } from './TagPill';
 import { t } from '@/lib/i18n';
+
+/** Grid: cards side by side. List: one dense row each, no thumbnail. */
+export type ShelfLayout = 'grid' | 'list';
 
 /**
  * One card on a shelf: a study, a note.
  *
  * The two shelves had the same card written twice — the same frame, the
  * same swipe, the same ⋯, the same three actions — and they had already
- * drifted (one folder header could be renamed, the other could not). What
- * differs between a study and a note is what its actions DO, so that is
- * what stays with the caller; everything about how a card looks and how it
- * is dismissed lives here.
+ * drifted. What differs between a study and a note is what its actions DO,
+ * so that is what stays with the caller; everything about how a card looks
+ * and how it is dismissed lives here.
  */
 export function ShelfCard({
   icon: Icon,
   title,
   meta,
   preview,
+  tags,
+  fen,
+  pinned = false,
+  onTogglePin,
+  layout = 'grid',
   error,
   menuTitle,
   actions,
@@ -28,13 +37,20 @@ export function ShelfCard({
   onSwipeAway,
   children,
 }: {
-  /** A quiet mark at the left, so a card reads as a card and not a row. */
+  /** The mark shown when there is no board to show instead. */
   icon: LucideIcon;
   title: string;
   /** The second line: chapters and when, or size and when. */
   meta: ReactNode;
-  /** An optional third line — the note's first sentence. */
+  /** Two lines of the note's own words. */
   preview?: string | null;
+  tags?: string[];
+  /** Where the document's first embedded board starts, if it has one. */
+  fen?: string | null;
+  pinned?: boolean;
+  /** Omitted where pinning does not apply; the star only shows if given. */
+  onTogglePin?: () => void;
+  layout?: ShelfLayout;
   error?: string | null;
   /** What the ⋯ sheet is called; the title by default. */
   menuTitle?: string;
@@ -48,6 +64,7 @@ export function ShelfCard({
   const swipe = useSwipeAway(onSwipeAway);
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const board = layout === 'grid' && fen ? <MiniBoard fen={fen} size={64} /> : null;
 
   return (
     // h-full through both: in a two-column grid a card with a preview line
@@ -63,47 +80,108 @@ export function ShelfCard({
         }}
         {...swipe.handlers}
         className={cn(
-          'bg-surface border-line hover:border-line-strong group relative flex h-full cursor-pointer',
-          'items-center gap-3 overflow-hidden rounded-xl border px-4 py-3',
-          'shadow-[var(--shadow-panel)] transition-colors',
+          'bg-surface border-line group relative flex h-full cursor-pointer gap-3',
+          'overflow-hidden rounded-xl border shadow-[var(--shadow-panel)]',
+          // Lifts a little under the pointer, and the border comes up with
+          // it. A card that only changed its border read as selected; one
+          // that rises reads as reachable.
+          'transition-[border-color,box-shadow,transform] duration-150',
+          'hover:border-line-strong hover:shadow-[var(--shadow-pop)] md:hover:-translate-y-px',
+          layout === 'grid' ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
+          // A pinned card says so before it is read: a warm edge down the
+          // left, which survives being one of forty cards in a grid where
+          // an icon in the corner does not.
+          pinned && 'border-l-warn border-l-2',
         )}
       >
         {/* The card stays; its contents slide off it. */}
         <SwipeTrack dx={swipe.dx} />
 
-        <div className="flex min-w-0 flex-1 items-center gap-3" style={swipe.style}>
-          <Icon className="text-subtle size-4 shrink-0" strokeWidth={1.75} />
+        <div
+          className={cn('flex min-w-0 flex-1 gap-3', board ? 'items-start' : 'items-center')}
+          style={swipe.style}
+        >
+          {/* The board a note opens with, where it has one — the fastest
+              way to tell two notes apart is to show what is in them. */}
+          {board ?? <Icon className="text-subtle size-4 shrink-0" strokeWidth={1.75} />}
+
           <div className="min-w-0 flex-1">
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
                 corner rather than sharing the row. In the flex row it used
                 to sit in, it took its width from every line of the card
                 whether it was showing or not. */}
-            <p className="text-fg truncate pr-7 text-sm font-semibold">{title}</p>
-            <p className="text-subtle text-xs">{meta}</p>
-            {preview && <p className="text-muted mt-0.5 truncate text-xs">{preview}</p>}
+            <p
+              className={cn(
+                'text-fg truncate font-semibold',
+                layout === 'grid' ? 'pr-7 text-[0.9375rem] leading-5' : 'pr-7 text-sm',
+              )}
+            >
+              {title}
+            </p>
+            {/* Three steps, not two: the name is the brightest thing on the
+                card, the stat line is the quietest, and the note's own
+                words sit between them. */}
+            <p className="text-subtle text-[0.6875rem] leading-4">{meta}</p>
+            {preview && layout === 'grid' && (
+              <p className="text-muted mt-1 line-clamp-2 text-xs leading-[1.35rem] opacity-90">
+                {preview}
+              </p>
+            )}
+            {tags && tags.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                {tags.map((tag) => (
+                  <TagPill key={tag} tag={tag} />
+                ))}
+              </div>
+            )}
             {error && <p className="text-bad text-xs">{error}</p>}
           </div>
         </div>
 
-        <Button
-          ref={menuTrigger}
-          variant="ghost"
-          size="icon-sm"
-          title={t('More')}
-          active={menuOpen}
+        {/* Both corner controls in one strip, so they cannot overlap and
+            the pin does not move when the ⋯ appears. */}
+        <div
           style={swipe.style}
-          className={cn(
-            'absolute right-2 top-2 opacity-0 transition-opacity',
-            'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
-            menuOpen && 'opacity-100',
-          )}
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpen(true);
-          }}
+          className={cn('absolute right-2 flex items-center gap-0.5', layout === 'grid' ? 'top-2' : 'top-1.5')}
         >
-          <MoreHorizontal className="size-3.5" />
-        </Button>
+          {onTogglePin && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={pinned ? t('Unpin') : t('Pin to the top')}
+              className={cn(
+                'transition-opacity',
+                pinned
+                  ? 'text-warn opacity-100'
+                  : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin();
+              }}
+            >
+              <Pin className={cn('size-3.5', pinned && 'fill-current')} />
+            </Button>
+          )}
+          <Button
+            ref={menuTrigger}
+            variant="ghost"
+            size="icon-sm"
+            title={t('More')}
+            active={menuOpen}
+            className={cn(
+              'opacity-0 transition-opacity',
+              'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+              menuOpen && 'opacity-100',
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(true);
+            }}
+          >
+            <MoreHorizontal className="size-3.5" />
+          </Button>
+        </div>
 
         {menuOpen && (
           <ActionSheet

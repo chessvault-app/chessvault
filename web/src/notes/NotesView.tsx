@@ -9,14 +9,14 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { ShelfCard } from '@/ui/ShelfCard';
+import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
+import { ShelfToolbar, sortDocs, useShelfView, type ShelfSort } from '@/ui/ShelfToolbar';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { CreateControl } from '@/ui/Fab';
-import { SearchInput } from '@/ui/Input';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
@@ -30,6 +30,10 @@ interface NoteMeta {
   updatedAt: string;
   /** The note's first line of prose, if the server could find one. */
   excerpt?: string | null;
+  /** Front-matter tags. */
+  tags?: string[];
+  /** Where the note's first embedded board starts. */
+  fen?: string | null;
 }
 
 const API = '/api/notes';
@@ -66,17 +70,23 @@ export function NotesView({ params }: { params: string[] }) {
 function NoteList() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
+  const [pinnedIds, setPinned] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const pending = useSlowLoad(!loaded);
+  const view = useShelfView('notes');
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      const res = await fetch(API);
+      const [res, pins] = await Promise.all([
+        fetch(API),
+        fetch(`${API}/pins`).then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null)),
+      ]);
       const body = (await res.json()) as { studies: NoteMeta[]; folders: string[] };
       setNotes(body.studies);
       setFolders(body.folders);
+      setPinned(new Set(pins?.ids ?? []));
       setLoaded(true);
       setError(null);
     } catch {
@@ -84,6 +94,26 @@ function NoteList() {
       setError(t('vault server unreachable'));
     }
   }, []);
+
+  /**
+   * Pinned notes, kept in the vault rather than the browser — the same
+   * place the games shelf keeps its bookmarks. The state is optimistic:
+   * a star that waits for a round trip before it fills reads as broken.
+   */
+  const togglePin = async (id: string): Promise<void> => {
+    setPinned((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    const res = await fetch(`${API}/pins/toggle`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) await refresh();
+  };
 
   useEffect(() => {
     void refresh();
@@ -120,20 +150,17 @@ function NoteList() {
     // The studies shelf's shell, exactly: the two shelves hold the same kind
     // of thing and had no business being different sizes.
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
-      <header className="flex items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{t('Notes')}</h1>
-        <div className="flex items-center gap-2">
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Search notes…')}
-            className="w-48"
-          />
-          <CreateMenu notes={notes} onDone={refresh} />
-        </div>
-      </header>
+      <ShelfToolbar
+        title={t('Notes')}
+        query={query}
+        onQuery={setQuery}
+        placeholder={t('Search notes…')}
+        sort={view.sort}
+        onSort={view.setSort}
+        layout={view.layout}
+        onLayout={view.setLayout}
+        create={<CreateMenu notes={notes} onDone={refresh} />}
+      />
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
@@ -152,6 +179,10 @@ function NoteList() {
         <GroupedNotes
           notes={visible.filter((n) => !hidden.has(n.id))}
           allFolders={needle ? [] : folders}
+          pinnedIds={pinnedIds}
+          onTogglePin={(id) => void togglePin(id)}
+          sort={view.sort}
+          layout={view.layout}
           onChanged={refresh}
           onRemove={dropNote}
         />
@@ -250,19 +281,31 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
 function GroupedNotes({
   notes,
   allFolders,
+  pinnedIds,
+  onTogglePin,
+  sort,
+  layout,
   onChanged,
   onRemove,
 }: {
   notes: NoteMeta[];
   allFolders: string[];
+  pinnedIds: Set<string>;
+  onTogglePin: (id: string) => void;
+  sort: ShelfSort;
+  layout: ShelfLayout;
   onChanged: () => Promise<void>;
   onRemove: (id: string) => void;
 }) {
   const groups = new Map<string, NoteMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
-  // The server lists by last-modified, which reshuffles the shelf every time
-  // a note is touched. A shelf should be STABLE — sort by name instead.
-  const stable = [...notes].sort((a, b) => a.id.localeCompare(b.id, undefined, { sensitivity: 'base' }));
+  // Whatever the chosen order, a pinned note comes first: that is what
+  // pinning IS, and a pin that only added a star would be decoration.
+  const ordered = sortDocs(notes, sort);
+  const stable = [
+    ...ordered.filter((n) => pinnedIds.has(n.id)),
+    ...ordered.filter((n) => !pinnedIds.has(n.id)),
+  ];
   for (const note of stable) {
     const slash = note.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : note.id.slice(0, slash);
@@ -309,12 +352,15 @@ function GroupedNotes({
           {groups.get(folder)!.length === 0 ? (
             <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
           ) : (
-            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 lg:grid-cols-2' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((note) => (
                 <NoteCard
                   key={note.id}
                   note={note}
                   allFolders={allFolders}
+                  pinned={pinnedIds.has(note.id)}
+                  onTogglePin={() => onTogglePin(note.id)}
+                  layout={layout}
                   onChanged={onChanged}
                   onRemove={() => onRemove(note.id)}
                 />
@@ -330,11 +376,17 @@ function GroupedNotes({
 function NoteCard({
   note,
   allFolders,
+  pinned,
+  onTogglePin,
+  layout,
   onChanged,
   onRemove,
 }: {
   note: NoteMeta;
   allFolders: string[];
+  pinned: boolean;
+  onTogglePin: () => void;
+  layout: ShelfLayout;
   onChanged: () => Promise<void>;
   onRemove: () => void;
 }) {
@@ -370,8 +422,13 @@ function NoteCard({
       }
       // What the note is actually about. A shelf of markdown files whose
       // names are all "Opening prep checklist 3" tells you nothing; its
-      // first sentence does.
+      // first sentence, its tags and the board it opens with do.
       preview={note.excerpt}
+      tags={note.tags}
+      fen={note.fen}
+      pinned={pinned}
+      onTogglePin={onTogglePin}
+      layout={layout}
       error={failure}
       onOpen={() => navigate('notes', encodeURIComponent(note.id))}
       onSwipeAway={onRemove}
