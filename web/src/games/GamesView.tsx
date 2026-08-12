@@ -2,11 +2,11 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Compass,
   ExternalLink,
   Eye,
   Globe,
   Loader2,
+  MoreHorizontal,
   NotebookPen,
   Pencil,
   Plus,
@@ -37,12 +37,11 @@ import { CloudBoardArt } from '@/ui/CloudBoardArt';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { SideDot } from '@/ui/SideDot';
-import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { CreateControl } from '@/ui/Fab';
-import { ActionSheet } from '@/ui/ActionSheet';
+import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -609,27 +608,6 @@ function CollectionView() {
     navigate('games', encodeURIComponent(id));
   };
 
-  /**
-   * Straight onto the analysis board, which is NOT where the row's own
-   * click goes — that opens the annotatable document. Two destinations, so
-   * the quicker one gets a button rather than being reachable only by
-   * opening the game and leaving again.
-   */
-  const analyseGame = async (game: GameSummary): Promise<void> => {
-    try {
-      const res = await fetch(
-        `/api/games/pgn?file=${encodeURIComponent(game.file)}&index=${game.index}`,
-      );
-      const { pgn } = (await res.json()) as { pgn: string };
-      if (useAnalysis.getState().loadPgn(pgn)) {
-        if (game.userSide) useAnalysis.setState({ orientation: game.userSide });
-        useAnalysis.setState({ handoff: true });
-        navigate('analysis');
-      }
-    } catch {
-      setError(t('could not load that game'));
-    }
-  };
 
   // A rename in the open-game view changes the document's file name; when
   // it no longer matches the auto "White vs Black date" pattern, that name
@@ -779,50 +757,52 @@ function CollectionView() {
                 renaming={renamingKey === gameKey(game)}
                 onRename={(to) => void renameGame(game, to)}
                 onOpen={() => openGame(game)}
-                onAnalyse={() => void analyseGame(game)}
                 onPreview={setPreview}
                 onContext={(x, y) => setContext({ game, x, y })}
                 actions={
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      title={bookmarks.has(gameKey(game)) ? t('Remove bookmark') : t('Bookmark')}
-                      className="shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void toggleBookmark(game);
-                      }}
-                    >
-                      <Star
-                        className={cn(
-                          'size-3.5',
-                          bookmarks.has(gameKey(game)) && 'fill-warn text-warn',
-                        )}
-                      />
-                    </Button>
-                    {/* The … menu closes the line (lanph3re's call). */}
-                    <RowMenu
-                      ariaLabel={t('Game actions')}
-                      triggerClassName="shrink-0 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
-                      items={[
-                        {
-                          label: t('Rename'),
-                          icon: Pencil,
-                          onSelect: () => setRenamingKey(gameKey(game)),
-                        },
-                        ...(game.link
-                          ? [{ label: 'View online', icon: ExternalLink, href: game.link }]
-                          : []),
-                        {
-                          label: t('Remove'),
-                          icon: Trash2,
-                          onSelect: () => dropGame(game),
-                        },
-                      ]}
+                  // A bookmarked game must SAY so wherever it is read, so a
+                  // lit star stays on the row on every device. An unlit one
+                  // is only a control, and on a phone it belongs in the
+                  // sheet with the other controls.
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={bookmarks.has(gameKey(game)) ? t('Remove bookmark') : t('Bookmark')}
+                    className={cn(
+                      'shrink-0',
+                      !bookmarks.has(gameKey(game)) && 'pointer-coarse:hidden',
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void toggleBookmark(game);
+                    }}
+                  >
+                    <Star
+                      className={cn(
+                        'size-3.5',
+                        bookmarks.has(gameKey(game)) && 'fill-warn text-warn',
+                      )}
                     />
-                  </>
+                  </Button>
                 }
+                menu={[
+                  {
+                    label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
+                    icon: Star,
+                    onSelect: () => void toggleBookmark(game),
+                  },
+                  { label: 'Rename', icon: Pencil, onSelect: () => setRenamingKey(gameKey(game)) },
+                  ...(game.link
+                    ? [
+                        {
+                          label: 'View online',
+                          icon: ExternalLink,
+                          onSelect: () => window.open(game.link!, '_blank', 'noreferrer'),
+                        },
+                      ]
+                    : []),
+                  { label: 'Remove', icon: Trash2, danger: true, onSelect: () => dropGame(game) },
+                ]}
                 showLink={false}
               />
             ))}
@@ -1531,14 +1511,21 @@ function GameRow({
   showLink = true,
   onSwipeAway,
   onContext,
-  onAnalyse,
+  menu,
 }: {
   game: GameSummary;
   onOpen: () => void;
   onPreview: (preview: Preview | null) => void;
-  /** Load this game straight onto the analysis board. Distinct from the
-      row's own click, which opens the annotatable document. */
-  onAnalyse?: () => void;
+  /**
+   * The row's secondary actions, folded into one ⋯.
+   *
+   * A sheet from the bottom on a phone, a popover under the ⋯ on a
+   * desktop — the same ActionSheet the studies and notes shelves use. A
+   * phone gets ONLY this: three 36px icon buttons standing permanently at
+   * the end of a 390px row left the two player names about half the width
+   * they need.
+   */
+  menu?: SheetAction[];
   actions: React.ReactNode;
   /** A user-chosen document name (in-game rename), shown instead of the matchup. */
   customName?: string | null;
@@ -1556,6 +1543,20 @@ function GameRow({
   // scrim) — a beside-row popover on a phone would cover the row itself.
   const swipe = useSwipeAway(() => onSwipeAway?.());
   const coarse = isCoarsePointer;
+  const row = useRef<HTMLLIElement>(null);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const showPreviewAt = (rect: DOMRect, viaTap: boolean): void => {
+    if (!game.finalFen) return;
+    const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
+    onPreview({
+      fen: game.finalFen,
+      orientation: game.userSide ?? 'white',
+      top,
+      left: Math.max(rect.left - 192, 8),
+      pinned: viaTap,
+    });
+  };
   const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
     if (!game.finalFen) return;
     if (!viaTap && coarse()) return;
@@ -1578,6 +1579,7 @@ function GameRow({
 
   return (
     <li
+      ref={row}
       onClick={onOpen}
       onContextMenu={
         onContext
@@ -1666,12 +1668,14 @@ function GameRow({
           'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
         )}
       >
+        {/* Hidden on touch, where it lives in the ⋯ sheet instead: it is a
+            HOVER affordance, and a phone cannot hover. */}
         {game.finalFen && (
           <Button
             variant="ghost"
             size="icon-sm"
             title={t('Preview the final position')}
-            className="shrink-0"
+            className="shrink-0 pointer-coarse:hidden"
             // Guarded like the other preview eyes: an unguarded mouseenter
             // trips iOS's sticky-hover heuristic (first tap hovers only).
             onMouseEnter={(e) => {
@@ -1680,31 +1684,55 @@ function GameRow({
             onMouseLeave={() => {
               if (!coarse()) hidePreview();
             }}
-            onClick={(e) => {
-              e.stopPropagation();
-              // Touch: open the centred overlay; its scrim dismisses it.
-              if (coarse()) showPreview(e, true);
-            }}
+            onClick={(e) => e.stopPropagation()}
           >
             <Eye className="size-3.5" />
           </Button>
         )}
-        {onAnalyse && (
+        {actions}
+        {menu && menu.length > 0 && (
           <Button
+            ref={menuTrigger}
             variant="ghost"
             size="icon-sm"
-            title={t('Open on the analysis board')}
+            title={t('Game actions')}
+            active={menuOpen}
             className="shrink-0"
             onClick={(e) => {
               e.stopPropagation();
-              onAnalyse();
+              setMenuOpen(true);
             }}
           >
-            <Compass className="size-3.5" />
+            <MoreHorizontal className="size-3.5" />
           </Button>
         )}
-        {actions}
       </div>
+
+      {menuOpen && menu && (
+        <ActionSheet
+          title={customName ?? `${game.white} vs ${game.black}`}
+          anchor={menuTrigger}
+          onClose={() => setMenuOpen(false)}
+          actions={[
+            // The preview the eye gives a mouse, for a finger. Anchored to
+            // the row rather than to the ⋯, because by the time it opens
+            // the sheet is gone and the row is what you were looking at.
+            ...(game.finalFen
+              ? [
+                  {
+                    label: 'Preview the board',
+                    icon: Eye,
+                    onSelect: () => {
+                      const rect = row.current?.getBoundingClientRect();
+                      if (rect) showPreviewAt(rect, true);
+                    },
+                  },
+                ]
+              : []),
+            ...menu,
+          ]}
+        />
+      )}
       {showLink && !game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
       {showLink && game.link && (
         <a

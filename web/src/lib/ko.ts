@@ -236,6 +236,7 @@ export const ko: Record<string, string> = {
   Layout: '보기 방식',
   // Games: the row toolbar and the archive panel.
   Bookmarked: '북마크',
+  'Preview the board': '보드 미리보기',
   'Which site to browse': '둘러볼 사이트',
   'Recent searches': '최근 검색',
   'Forget this search': '이 검색 지우기',
