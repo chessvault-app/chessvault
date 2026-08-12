@@ -88,6 +88,9 @@ export const ko: Record<string, string> = {
   'Nothing entered yet — find the first move on the board.':
     '아직 입력한 수가 없습니다. 보드에서 첫 수를 찾아보세요.',
   Submit: '제출',
+  'Add {n} as drafts': '{n}개를 초안으로 추가',
+  'Rebuilds from {sources}': '다시 만들 때 읽는 파일: {sources}',
+  'Came with the app — nothing to rebuild from': '앱과 함께 온 북입니다 — 다시 만들 원본이 없습니다',
   'Powers the online opening-explorer augmentation and Lichess puzzle history. Create one with':
     '온라인 오프닝 탐색기 보강과 Lichess 퍼즐 기록에 쓰입니다. 토큰을 만들 때는',
   Collection: '모음',

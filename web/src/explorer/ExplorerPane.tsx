@@ -937,6 +937,15 @@ function BookRow({
     <li className="bg-surface border-line flex items-center gap-2 rounded-md border px-2 py-1.5">
       <div className="min-w-0 flex-1">
         <p className="text-fg truncate font-mono font-semibold">{book.name}</p>
+        {/* On screen, not only in the Rebuild tooltip: a phone has no hover,
+            and "rebuild" means nothing until you know it re-reads THESE
+            files — links into vault/sources, never copies, so a rebuild
+            picks up whatever they say now. */}
+        <p className="text-subtle truncate text-[0.625rem]">
+          {book.sources.length > 0
+            ? t('Rebuilds from {sources}', { sources: book.sources.join(', ') })
+            : t('Came with the app — nothing to rebuild from')}
+        </p>
         <p className="text-subtle tabular-nums">
           {t('{games} games · {positions} positions · {mb} MB', {
             games: compact.format(book.games),

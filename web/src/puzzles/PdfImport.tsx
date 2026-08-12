@@ -272,7 +272,7 @@ export function PdfImport({
                 onClick={() => void save()}
               >
                 {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
-                Add {selectedCount} as drafts
+                {t('Add {n} as drafts', { n: selectedCount })}
               </Button>
             </div>
           </>
