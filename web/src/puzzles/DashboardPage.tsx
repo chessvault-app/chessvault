@@ -316,7 +316,11 @@ export function DashboardPage() {
             pending ? <SkeletonRows rows={5} /> : null
           ) : puzzles.length === 0 ? (
             <p className="text-subtle px-3 py-3 text-xs">
-              {history.length === 0 ? 'No attempts yet — go solve something.' : 'Nothing matches this filter.'}
+              {t(
+                history.length === 0
+                  ? 'No attempts yet — go solve something.'
+                  : 'Nothing matches this filter.',
+              )}
             </p>
           ) : (
             <ul className="max-h-96 overflow-y-auto">

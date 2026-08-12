@@ -1702,7 +1702,7 @@ function PuzzleEntry({
           <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-          {replace ? 'Fix' : 'Add'} <span className="font-mono">#{number}</span>
+          {t(replace ? 'Fix' : 'Add')} <span className="font-mono">#{number}</span>
         </h1>
       </div>
       {wide ? (
@@ -1972,11 +1972,11 @@ function SolutionRecorder({
                       <button
                         type="button"
                         onClick={() => toggleWildcard(i)}
-                        title={
+                        title={t(
                           wildcards.has(i)
                             ? 'Any move accepted here (click to require this exact move)'
-                            : 'Click to accept ANY move here (the book\u2019s K~)'
-                        }
+                            : 'Click to accept ANY move here (the book\u2019s K~)',
+                        )}
                         className={cn(
                           'rounded px-1 transition-colors duration-100',
                           wildcards.has(i)

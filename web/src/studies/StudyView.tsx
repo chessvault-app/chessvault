@@ -63,7 +63,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     ),
   );
   const movesTitle =
-    kind === 'game' ? (openingName ?? 'Starting position') : chapterName || 'Moves';
+    kind === 'game' ? (openingName ?? t('Starting position')) : chapterName || t('Moves');
   const error = useStudy((s) => s.error);
   const [failed, setFailed] = useState(false);
   // Small screens show one pane at a time under the board.
@@ -116,7 +116,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           <p className="text-muted text-sm">{error ?? `Could not open “${id}”.`}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
             <ChevronLeft className="mr-1 size-3.5" />
-            {kind === 'game' ? 'All games' : 'All studies'}
+            {t(kind === 'game' ? 'All games' : 'All studies')}
           </Button>
         </div>
       </div>
@@ -137,7 +137,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       <Button
         variant="ghost"
         size="icon-sm"
-        title={kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)'}
+        title={t(kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)')}
         onClick={() => navigate(backSection)}
       >
         <ChevronLeft className="size-3.5" />
@@ -231,7 +231,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
           <AnnotationPane
             editing={editing}
-            rootPlaceholder={kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…'}
+            rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
           />
         </Panel>
         <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
@@ -337,7 +337,7 @@ function SaveIndicator({ state, error }: { state: string; error: string | null }
       <button
         type="button"
         onClick={() => void save()}
-        title={error ?? 'Save failed — click to retry'}
+        title={error ?? t('Save failed — click to retry')}
         className="text-bad flex items-center gap-1 text-xs"
       >
         <CircleAlert className="size-3.5" /> {t('Retry save')}
@@ -593,12 +593,12 @@ function ChapterRow({
           {chapters.length > 1 && (
             <ConfirmPopover
               icon={Trash2}
-              triggerTitle={
+              triggerTitle={t(
                 childCount > 0
                   ? 'Delete this chapter (its sub-chapters move to the top level)'
-                  : 'Delete this chapter'
-              }
-              question="Delete this chapter?"
+                  : 'Delete this chapter',
+              )}
+              question={t('Delete this chapter?')}
               confirmLabel="Delete"
               onConfirm={() => deleteChapter(index)}
             />

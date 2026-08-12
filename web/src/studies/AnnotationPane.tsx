@@ -114,7 +114,7 @@ export function AnnotationPane({
     <button
       type="button"
       aria-expanded={paletteOpen}
-      title={paletteOpen ? 'Hide glyphs' : 'Show glyphs'}
+      title={t(paletteOpen ? 'Hide glyphs' : 'Show glyphs')}
       onClick={() => setPaletteOpen((open) => !open)}
       className={cn(
         'text-muted hover:bg-surface-2 hover:text-fg flex shrink-0 items-center self-stretch',

@@ -641,7 +641,7 @@ function Trainer({
                       just solved one. The dashboard has always shown it
                       this way; this panel had not. */}
                   <dt className="text-subtle">{t('Difficulty')}</dt>
-                  <dd className="text-fg">{bandOf(puzzle.rating)}</dd>
+                  <dd className="text-fg">{t(bandOf(puzzle.rating))}</dd>
                   <dt className="text-subtle">{t('Played')}</dt>
                   <dd className="text-fg font-mono">{puzzle.plays.toLocaleString()}</dd>
                   <dt className="text-subtle">{t('Themes')}</dt>
@@ -699,7 +699,7 @@ function Trainer({
                     }
                   >
                     <RotateCw className="size-3.5" />
-                    {mode === 'single' ? 'Back to dashboard' : 'Next puzzle'}
+                    {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
                   </Button>
                   <Button variant="secondary" size="sm" onClick={analyse}>
                     <Swords className="size-3.5" />
