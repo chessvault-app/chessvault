@@ -84,6 +84,18 @@ interface ArchiveBrowseState {
   offline: boolean;
   month: string;
   monthGames: GameSummary[];
+  /** How many of the newest-first months have been pulled in already. */
+  cursor: number;
+  /**
+   * Months already fetched this session, keyed by provider|user|month.
+   *
+   * Purely a browsing cache: scrolling back up, flipping to a single
+   * month and returning to all dates, or looking the same player up
+   * twice all read from here instead of the network. Nothing in it is in
+   * the collection — adding a game is still the explicit Add, and this
+   * disappears with the tab.
+   */
+  cache: Record<string, GameSummary[]>;
 }
 const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
   provider: 'chesscom',
@@ -92,7 +104,25 @@ const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
   offline: false,
   month: '',
   monthGames: [],
+  cursor: 0,
+  cache: {},
 }));
+
+/**
+ * How many games a page of "all dates" is worth fetching for.
+ *
+ * Browsing used to mean every month the account has, newest to oldest,
+ * one request each, before the list settled — a decade is dozens of round
+ * trips and tens of thousands of rows for a question usually answered by
+ * the last fortnight. Months are pulled newest-first until this many
+ * games are in hand, and the next batch waits until the reader scrolls
+ * far enough to want it.
+ */
+const PAGE_GAMES = 40;
+
+/** Fetched months, per provider and player, for this session. */
+const monthKey = (provider: string, user: string, month: string): string =>
+  `${provider}|${user.toLowerCase()}|${month}`;
 
 const gameKey = (g: Pick<GameSummary, 'file' | 'index'>): string => `${g.file}#${g.index}`;
 
@@ -889,7 +919,7 @@ function ArchiveBrowser({
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
-  const { provider, username, months, offline, month, monthGames } = useArchiveBrowse();
+  const { provider, username, months, offline, month, monthGames, cursor } = useArchiveBrowse();
   const setUsername = (v: string | ((p: string) => string)): void =>
     useArchiveBrowse.setState((s) => ({ username: typeof v === 'function' ? v(s.username) : v }));
   const setProvider = (v: 'chesscom' | 'lichess'): void => useArchiveBrowse.setState({ provider: v });
@@ -982,11 +1012,10 @@ function ArchiveBrowser({
       else {
         setMonths(body.months);
         setOffline(body.offline);
-        // All dates, not the newest month: the question people open this
-        // page with is "have I played this before", which one month cannot
-        // answer. Months are cached server-side after the first pass, and
-        // the counter below the list has a Stop while it runs.
-        if (body.months.length) await loadAllMonths(body.months);
+        // All dates rather than one month — the question people open this
+        // page with is "have I played this before" — but only the newest
+        // page of it. The rest arrives as it is scrolled to.
+        if (body.months.length) await loadAllMonths(body.months, user);
       }
     } catch {
       setError(t('vault server unreachable'));
@@ -996,55 +1025,111 @@ function ArchiveBrowser({
   };
 
   /**
-   * Every month at once.
+   * One month, from the session cache if it has been seen before.
    *
-   * Newest first, so the list opens on recent play; each month is fetched
-   * in turn and the server caches it, so a second visit is instant. The
-   * count climbs as they arrive rather than showing nothing for a minute —
-   * a decade is dozens of requests.
+   * Newest game first, which is the order every list here is in. A month
+   * that cannot be reached yields nothing rather than throwing: one bad
+   * month must not lose the rest of a decade.
    */
-  const loadAllMonths = async (list: ArchiveMonth[] = months): Promise<void> => {
+  const fetchMonth = async (user: string, m: string): Promise<GameSummary[]> => {
+    const key = monthKey(provider, user, m);
+    const hit = useArchiveBrowse.getState().cache[key];
+    if (hit) return hit;
+    try {
+      const res = await fetch(`${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`);
+      if (!res.ok) return [];
+      const body = (await res.json()) as { games?: GameSummary[] };
+      const games = (body.games ?? []).slice().reverse();
+      useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
+      return games;
+    } catch {
+      return [];
+    }
+  };
+
+  /** The months this account has, newest first — the order they load in. */
+  const newestFirst = (list: ArchiveMonth[]): string[] =>
+    list.map((m) => m.month).sort().reverse();
+
+  /**
+   * The newest page of every month, and no more than that.
+   *
+   * `list` and `who` are taken as arguments because the first call happens
+   * in the same tick as setMonths()/setUsername(): reading them off the
+   * store there would find the previous lookup's values.
+   */
+  const loadAllMonths = async (list: ArchiveMonth[] = months, who?: string): Promise<void> => {
+    const user = (who ?? username).trim();
     setMonth(ALL_MONTHS);
     setError(null);
-    stopRef.current = false;
-    const user = username.trim();
-    // Taken as an argument because the first call happens in the same tick
-    // as setMonths(): reading `months` there would find the previous list.
-    const newestFirst = list.map((m) => m.month).sort().reverse();
-    const all: GameSummary[] = [];
-    for (const [at, m] of newestFirst.entries()) {
-      if (stopRef.current) break;
-      setBulk({ month: at + 1, months: newestFirst.length, added: all.length });
-      try {
-        const res = await fetch(`${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`);
-        if (!res.ok) continue;
-        const body = (await res.json()) as { games?: GameSummary[] };
-        all.push(...(body.games ?? []).slice().reverse());
-        setMonthGames([...all]);
-      } catch {
-        // One unreachable month should not lose the rest of a decade.
-      }
-    }
-    setBulk(null);
+    useArchiveBrowse.setState({ monthGames: [], cursor: 0 });
+    await loadMore(list, user);
   };
+
+  /**
+   * The next months, until a page is in hand or the account runs out.
+   *
+   * Re-entrancy matters: the sentinel can come back into view while a
+   * batch is still in flight, and asking twice for the same months would
+   * double every row. The ref is the gate.
+   */
+  const loadingMore = useRef(false);
+  const moreSentinel = useRef<HTMLLIElement>(null);
+  const loadMore = async (list: ArchiveMonth[] = months, who?: string): Promise<void> => {
+    if (loadingMore.current) return;
+    const user = (who ?? username).trim();
+    const all = newestFirst(list);
+    if (useArchiveBrowse.getState().cursor >= all.length) return;
+    loadingMore.current = true;
+    setLoading('games');
+    try {
+      let added = 0;
+      while (added < PAGE_GAMES) {
+        const { cursor } = useArchiveBrowse.getState();
+        if (cursor >= all.length) break;
+        const games = await fetchMonth(user, all[cursor]!);
+        added += games.length;
+        useArchiveBrowse.setState((s) => ({
+          monthGames: [...s.monthGames, ...games],
+          cursor: s.cursor + 1,
+        }));
+      }
+    } finally {
+      loadingMore.current = false;
+      setLoading(null);
+    }
+  };
+
+  /**
+   * The next page, when the bottom of the list comes into view.
+   *
+   * `rootMargin` fires it a screenful early, so scrolling is continuous
+   * rather than stopping at a spinner and waiting. Re-armed whenever the
+   * cursor moves, because the sentinel is a new element each time.
+   */
+  useEffect(() => {
+    const node = moreSentinel.current;
+    if (!node || month !== ALL_MONTHS || cursor >= months.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void loadMore();
+      },
+      { rootMargin: '400px' },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month, cursor, months.length]);
 
   const loadMonth = async (m: string): Promise<void> => {
     if (m === ALL_MONTHS) return loadAllMonths();
     setMonth(m);
     setLoading('games');
     setError(null);
-    try {
-      const res = await fetch(
-        `${apiBase}/month?user=${encodeURIComponent(username.trim())}&month=${m}`,
-      );
-      const body = (await res.json()) as { games: GameSummary[] } | { error: string };
-      if ('error' in body) setError(body.error);
-      else setMonthGames(body.games.slice().reverse()); // newest first
-    } catch {
-      setError(t('vault server unreachable'));
-    } finally {
-      setLoading(null);
-    }
+    // Through the same cache as the paged path, so flipping between a
+    // single month and all dates costs nothing after the first look.
+    setMonthGames(await fetchMonth(username.trim(), m));
+    setLoading(null);
   };
 
   // Row click: look at the game in Analysis (from the player's side) without
@@ -1070,9 +1155,8 @@ function ArchiveBrowser({
   // is clutter for the common case, which is picking out one game.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [bulk, setBulk] = useState<{ month: number; months: number; added: number } | null>(null);
-  const stopRef = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
   const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
   const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
   const visibleMonthGames = monthGames.filter(
@@ -1133,7 +1217,10 @@ function ArchiveBrowser({
     const done: GameSummary[] = [];
     let failure: string | null = null;
     for (const [file, group] of byFile) {
-      setBulk({ month: byFile.size - [...byFile.keys()].indexOf(file), months: byFile.size, added: done.length });
+      // Adding a hundred games is still one request per month, so the
+      // button counts them off rather than sitting on "Adding…" for a
+      // minute with nothing to show it is alive.
+      setAddProgress({ done: done.length, total: games.length });
       const res = await fetch('/api/games/collect', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -1146,7 +1233,7 @@ function ArchiveBrowser({
       }
     }
 
-    setBulk(null);
+    setAddProgress(null);
     setBusy(false);
     setAdded((prev) => {
       const next = new Set(prev);
@@ -1376,31 +1463,35 @@ function ArchiveBrowser({
         </div>
       )}
 
-      {month && visibleMonthGames.length > 0 && loading !== 'games' && (
+      {month && visibleMonthGames.length > 0 && (
         <div className="border-line flex flex-wrap items-center gap-2 border-t px-3 py-1.5 text-xs">
           {!selecting ? (
             <>
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={pickable.length === 0 || bulk !== null}
+                disabled={pickable.length === 0}
                 onClick={() => setSelecting(true)}
               >
                 {t('Select…')}
               </Button>
-              {bulk && (
-                <>
-                  <span className="text-muted tabular-nums">
-                    {t('Month {at} of {total} · {added} added', {
-                      at: bulk.month,
-                      total: bulk.months,
-                      added: bulk.added,
-                    })}
-                  </span>
-                  <Button variant="ghost" size="sm" onClick={() => (stopRef.current = true)}>
-                    {t('Stop')}
-                  </Button>
-                </>
+              {/* How much of the archive is in hand. It used to be all of
+                  it, so there was nothing to say; now the list grows as it
+                  is scrolled and the count is the only thing that tells
+                  you Select all does not mean the whole decade. */}
+              {month === ALL_MONTHS && (
+                <span className="text-subtle tabular-nums">
+                  {cursor >= months.length
+                    ? t('{n} games · all {total} months', {
+                        n: visibleMonthGames.length,
+                        total: months.length,
+                      })
+                    : t('{n} games · {at} of {total} months', {
+                        n: visibleMonthGames.length,
+                        at: cursor,
+                        total: months.length,
+                      })}
+                </span>
               )}
             </>
           ) : (
@@ -1453,7 +1544,11 @@ function ArchiveBrowser({
                   disabled={picked.size === 0}
                   onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}
                 >
-                  {busy ? t('Adding…') : t('Add selected')}
+                  {busy
+                    ? addProgress
+                      ? t('Adding {done}/{total}…', addProgress)
+                      : t('Adding…')
+                    : t('Add selected')}
                 </Button>
               </div>
             </>
@@ -1463,7 +1558,7 @@ function ArchiveBrowser({
 
       {month && (
         <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
-          {loading === 'games' ? (
+          {loading === 'games' && visibleMonthGames.length === 0 ? (
             // Rows, not a spinner on an empty box. Fetching a month used to
             // take the games away and leave one line of text where the list
             // had been, so the panel appeared to close and reopen.
@@ -1522,6 +1617,18 @@ function ArchiveBrowser({
                 />
               );
             })
+          )}
+
+          {/* The end of the list asks for the next months. Older play is
+              reached by scrolling towards it, which is the same gesture
+              that used to be a minute of waiting before anything showed. */}
+          {month === ALL_MONTHS && cursor < months.length && (
+            <li ref={moreSentinel} className="flex items-center justify-center gap-2 p-3">
+              <Loader2 className="text-subtle size-4 animate-spin" />
+              <span className="text-subtle text-xs">
+                {t('Loading older games…')}
+              </span>
+            </li>
           )}
         </ul>
       )}

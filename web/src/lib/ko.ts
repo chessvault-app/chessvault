@@ -260,6 +260,11 @@ export const ko: Record<string, string> = {
   'Any result': '모든 결과',
   Drawn: '무승부',
   'First {shown} of {total}': '{total}개 중 처음 {shown}개',
+  // Paged browsing: the newest games first, older ones as they are scrolled to.
+  'Loading older games…': '이전 게임 불러오는 중…',
+  '{n} games · {at} of {total} months': '게임 {n}개 · {total}달 중 {at}달',
+  '{n} games · all {total} months': '게임 {n}개 · {total}달 전체',
+  'Adding {done}/{total}…': '추가 중 {done}/{total}…',
   'Which site to browse': '둘러볼 사이트',
   'Recent searches': '최근 검색',
   'Forget this search': '이 검색 지우기',
