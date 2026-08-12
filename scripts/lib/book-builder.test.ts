@@ -134,7 +134,11 @@ describe('buildBook', () => {
     expect(row).toEqual({ w: 0, d: 0, b: 1 });
   });
 
-  it('stores top reference games ordered by rating', () => {
+  it('lists every game of a quiet position, ordered by rating', () => {
+    // Four games reach the start position, and `topGames: 3` would once
+    // have thrown the weakest away. It is under the threshold, so the list
+    // is complete — which is the point: a truncated list of four is a
+    // question the reader cannot answer any other way.
     const top = db
       .prepare(`
         SELECT g.white, g.black, t.uci, t.elo FROM top_games t
@@ -146,7 +150,35 @@ describe('buildBook', () => {
       ['Cy', 'e2e4', 2600],
       ['Ann', 'e2e4', 2450],
       ['Gil', 'd2d4', 2200],
+      ['Eve', 'e2e4', 2000],
     ]);
+  });
+
+  it('falls back to the best few once a position is past the threshold', async () => {
+    // Same fixture, but the threshold is forced under the start position's
+    // four games, so only `topGames` of them survive — the behaviour every
+    // busy position still gets.
+    const out = join(dir, 'capped.sqlite');
+    await buildBook({
+      name: 'capped',
+      sources: [join(dir, 'games.pgn')],
+      out,
+      topGames: 3,
+      allBelow: 2,
+    });
+    const capped = new Database(out, { readonly: true });
+    const elos = (
+      capped
+        .prepare('SELECT elo FROM top_games WHERE pos = ? ORDER BY elo DESC')
+        .all(keyAfter([])) as { elo: number }[]
+    ).map((r) => r.elo);
+    const meta = capped.prepare("SELECT value FROM meta WHERE key = 'allBelow'").get() as {
+      value: string;
+    };
+    capped.close();
+    expect(elos).toEqual([2600, 2450, 2200]);
+    // The book records what it did, so a reader knows which lists are whole.
+    expect(meta.value).toBe('2');
   });
 
   it('drops reference games for pruned positions and unreferenced game rows', () => {

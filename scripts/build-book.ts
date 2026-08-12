@@ -3,7 +3,11 @@
  *
  *   npm run build:book                          all vault/sources/*.pgn, one book per file
  *   npm run build:book -- elite-*.pgn --name elite    merge files into one book
- *   flags: --name --max-ply 24 --min-games 2 --top-games 8
+ *   flags: --name --max-ply 24 --min-games 2 --top-games 8 --all-below N
+ *
+ * --all-below keeps EVERY game of a position reached by that many games or
+ * fewer, instead of only the best --top-games. Left out, the builder reads
+ * the threshold off the book's own distribution.
  *
  * Books land in data/books/<name>.sqlite. Sources may be absolute paths,
  * cwd-relative, or names of files in vault/sources/.
@@ -20,6 +24,7 @@ const { values, positionals } = parseArgs({
     'max-ply': { type: 'string' },
     'min-games': { type: 'string' },
     'top-games': { type: 'string' },
+    'all-below': { type: 'string' },
   },
   allowPositionals: true,
 });
@@ -81,6 +86,7 @@ for (const job of jobs) {
       maxPly: numberFlag(values['max-ply'], 'max-ply'),
       minGames: numberFlag(values['min-games'], 'min-games'),
       topGames: numberFlag(values['top-games'], 'top-games'),
+      allBelow: numberFlag(values['all-below'], 'all-below'),
       onProgress: (p) => {
         const rate = Math.round(p.games / p.seconds);
         console.log(`  ${p.games.toLocaleString()} games  (${rate.toLocaleString()}/s, ${p.parseErrors} errors)`);

@@ -186,8 +186,16 @@ and the [Lichess Elite Database](https://database.nikonoel.fr/) — the
 second is CC0, the first CC BY-NC-SA 4.0, which is fine for a book you
 build for yourself and not for one you pass on. Positions
 are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
-month of Lichess Elite (280,246 games) indexes 361 k positions in 47 s into
-69 MB.
+month of Lichess Elite (280,059 games) indexes 361 k positions in 97 s into
+125 MB.
+
+A book also keeps the games themselves, so the explorer can list who played
+a position and open any of them on the board. Every game is kept where a
+position is quiet enough for a full list to mean something, and only the
+strongest few where it is not — the cutoff is read off each book's own
+distribution rather than fixed, because a month of elite games and your own
+thirty want opposite answers. On that month it settles at 116 games, which
+leaves 99% of positions with a complete list.
 
 **A book is for a large reference database, not for your own games.** Your
 games are answered live instead — see below.

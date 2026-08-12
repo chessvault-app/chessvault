@@ -482,6 +482,18 @@ function TopGamesList({
     return true;
   };
 
+  /**
+   * How many games the panel shows before asking.
+   *
+   * A book used to hold at most eight games per position, so the list was
+   * always short. It now keeps EVERY game of a quiet position — 116 of them
+   * on a Lichess Elite month — which is the point, and which would bury the
+   * moves above it if all of them rendered at once.
+   */
+  const VISIBLE = 8;
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? games : games.slice(0, VISIBLE);
+
   const open = async (g: TopGame): Promise<void> => {
     try {
       // One of your own games says where it lives, so it opens directly —
@@ -520,7 +532,7 @@ function TopGamesList({
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
-        {games.map((g, i) => {
+        {shown.map((g, i) => {
           const gameUrl = g.site?.startsWith('https://') ? g.site : null;
           return (
             <li key={i} className="flex items-center">
@@ -559,6 +571,15 @@ function TopGamesList({
           );
         })}
       </ul>
+      {games.length > VISIBLE && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="text-subtle hover:text-fg w-full px-1.5 pt-1 text-left text-[0.6875rem]"
+        >
+          {expanded ? t('Show fewer') : t('Show all {n}', { n: games.length })}
+        </button>
+      )}
     </div>
   );
 }

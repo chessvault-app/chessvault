@@ -125,6 +125,8 @@ export const ko: Record<string, string> = {
   'Explorer on/off': '탐색기 켜기/끄기',
   'Open this game': '이 게임 열기',
   'Top games': '주요 게임',
+  'Show all {n}': '{n}개 모두 보기',
+  'Show fewer': '줄여 보기',
   'Build a book': '북 만들기',
   'No opening books yet. Drop PGN files into': '아직 오프닝 북이 없습니다. PGN 파일을 넣어 주세요:',
 

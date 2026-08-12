@@ -17,8 +17,19 @@ export interface BuildOptions {
   maxPly?: number;
   /** Drop positions reached by fewer games than this (default 2). */
   minGames?: number;
-  /** Reference games kept per position, 0 disables (default 3). */
+  /** Reference games kept per position, 0 disables (default 8). */
   topGames?: number;
+  /**
+   * Keep EVERY game for a position reached by this many games or fewer,
+   * instead of only the `topGames` best. Worked out from the book itself
+   * when not given — see the coverage target below.
+   */
+  allBelow?: number;
+  /**
+   * How many positions should end up with a complete game list, as a
+   * fraction, when `allBelow` is not given (default 0.99).
+   */
+  listCoverage?: number;
   /** Flush the in-memory tally to SQLite at this many rows (default 4M). */
   flushRows?: number;
   onProgress?: (p: BuildProgress) => void;
@@ -57,6 +68,19 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
   // a position keeps a longer bench of its strongest games.
   const topGames = options.topGames ?? 8;
   const flushRows = options.flushRows ?? 4_000_000;
+  const listCoverage = options.listCoverage ?? 0.99;
+  /**
+   * The most games ever staged for one position.
+   *
+   * A position's final total is not known while indexing — that is the
+   * whole reason the threshold has to be worked out afterwards — so the
+   * staging cap has to be an upper bound on any threshold that could be
+   * chosen. Beyond it, a position is popular enough that nobody browses
+   * its game list anyway: after 1.e4 the honest answer is 47,080 games.
+   */
+  const STAGE_CAP = Math.max(topGames, options.allBelow ?? 200);
+  /** Stage this many (position, game) pairs before writing them out. */
+  const REF_FLUSH_ROWS = 1_000_000;
 
   const db = new Database(options.out);
   db.pragma('journal_mode = OFF');
@@ -109,9 +133,10 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
 
   // pos hash -> uci -> [white wins, draws, black wins]
   let tally = new Map<bigint, Map<string, [number, number, number]>>();
-  // pos hash -> up to `topGames` reference games, sorted by elo descending
+  // pos hash -> up to STAGE_CAP reference games, sorted by elo descending
   let refs = new Map<bigint, { gameId: number; uci: string; elo: number }[]>();
   let tallyRows = 0;
+  let refRows = 0;
 
   const progress: BuildProgress = { games: 0, skipped: 0, parseErrors: 0, seconds: 0 };
   const started = Date.now();
@@ -128,6 +153,7 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
     tally = new Map();
     refs = new Map();
     tallyRows = 0;
+    refRows = 0;
     db.exec('COMMIT; BEGIN');
   };
 
@@ -184,7 +210,7 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
 
       if (topGames > 0) {
         const candidates = refs.get(hash);
-        if (!candidates || candidates.length < topGames || gameElo > candidates.at(-1)!.elo) {
+        if (!candidates || candidates.length < STAGE_CAP || gameElo > candidates.at(-1)!.elo) {
           gameId ??= Number(
             insertGame.run(
               headers.get('White') ?? '?',
@@ -202,8 +228,9 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
           } else {
             const at = candidates.findIndex((c) => c.elo < gameElo);
             candidates.splice(at === -1 ? candidates.length : at, 0, entry);
-            if (candidates.length > topGames) candidates.pop();
+            if (candidates.length > STAGE_CAP) candidates.pop();
           }
+          refRows += 1;
         }
       }
 
@@ -216,7 +243,10 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
       progress.seconds = (Date.now() - started) / 1000;
       options.onProgress?.({ ...progress });
     }
-    if (tallyRows >= flushRows) flush();
+    // Two counters, because a book with few distinct moves can still stage
+    // a great many game references — staging every game of every quiet
+    // position is exactly what this build now does.
+    if (tallyRows >= flushRows || refRows >= REF_FLUSH_ROWS) flush();
   };
 
   db.exec('BEGIN');
@@ -236,15 +266,58 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
     'DELETE FROM book WHERE pos IN (SELECT pos FROM book GROUP BY pos HAVING SUM(w + d + b) < ?)',
   ).run(minGames);
 
-  // Reduce staged reference games to the best N per surviving position.
+  /**
+   * How many games reached each surviving position — the distribution the
+   * threshold is read off, and the join the reduce below needs anyway.
+   */
+  db.exec(`
+    CREATE TEMP TABLE pos_total AS
+    SELECT pos, SUM(w + d + b) AS total FROM book GROUP BY pos
+  `);
+
+  /**
+   * Work out where a complete game list stops being worth its bytes.
+   *
+   * Pruning to the best N per position throws away something real: deep in
+   * a line, a position with eleven games had three of them deleted, and
+   * those three are what somebody following that line wants to see. Keeping
+   * everything is not the answer either — measured on a month of Lichess
+   * Elite, complete lists everywhere cost 218 MB of bench against 61 MB at
+   * N=8, and almost all of that is spent on positions with thousands of
+   * games, whose list nobody opens.
+   *
+   * The knee is not a constant, though: it is a property of the corpus. A
+   * personal collection of 5,000 games is entirely below any sensible
+   * threshold and should simply keep everything. So the number is read off
+   * this book's own distribution — the smallest total that leaves
+   * `listCoverage` of positions with a complete list — rather than being
+   * a magic constant that happens to suit one dataset.
+   */
+  const chooseThreshold = (): number => {
+    if (options.allBelow !== undefined) return options.allBelow;
+    const totals = (db.prepare('SELECT total FROM pos_total ORDER BY total').all() as {
+      total: number;
+    }[]).map((r) => r.total);
+    if (totals.length === 0) return topGames;
+    const at = Math.min(totals.length - 1, Math.floor(listCoverage * totals.length));
+    // Never below the bench that would be kept anyway, never above what was
+    // staged — a threshold past STAGE_CAP would promise lists this build
+    // never collected.
+    return Math.min(STAGE_CAP, Math.max(topGames, totals[at]!));
+  };
+  const allBelow = chooseThreshold();
+
+  // Reduce the staged references: everything for a position at or under the
+  // threshold, the best `topGames` for the rest.
   db.prepare(`
     CREATE TABLE top_games_final AS
     SELECT pos, game_id, uci, elo FROM (
-      SELECT *, row_number() OVER (PARTITION BY pos ORDER BY elo DESC, game_id) AS rn
-      FROM (SELECT DISTINCT pos, game_id, uci, elo FROM top_games)
-      WHERE pos IN (SELECT DISTINCT pos FROM book)
-    ) WHERE rn <= ?
-  `).run(topGames);
+      SELECT t.*, p.total,
+             row_number() OVER (PARTITION BY t.pos ORDER BY t.elo DESC, t.game_id) AS rn
+      FROM (SELECT DISTINCT pos, game_id, uci, elo FROM top_games) t
+      JOIN pos_total p ON p.pos = t.pos
+    ) WHERE total <= ? OR rn <= ?
+  `).run(allBelow, topGames);
   db.exec(`
     DROP TABLE top_games;
     ALTER TABLE top_games_final RENAME TO top_games;
@@ -263,6 +336,9 @@ export async function buildBook(options: BuildOptions): Promise<BuildResult> {
   setMeta.run('maxPly', String(maxPly));
   setMeta.run('minGames', String(minGames));
   setMeta.run('topGames', String(topGames));
+  // What the book actually did, not what was asked for: a reader looking at
+  // a game list needs to know whether it is all of them or the best of them.
+  setMeta.run('allBelow', String(allBelow));
   setMeta.run('games', String(progress.games));
   setMeta.run('positions', String(counts.positions));
   setMeta.run('rows', String(counts.rows));
