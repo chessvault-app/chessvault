@@ -1,4 +1,5 @@
 import { Undo2 } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { Button } from './Button';
 import { t } from '@/lib/i18n';
 
@@ -14,7 +15,16 @@ import { t } from '@/lib/i18n';
  * as having arrived, where a thing that blinks into place reads as having
  * always been there and been missed.
  */
-export function UndoBar({ label, onUndo }: { label: string; onUndo: () => void }) {
+export function UndoBar({
+  label,
+  leaving = false,
+  onUndo,
+}: {
+  label: string;
+  /** Its time is up: fade out, and stop taking the press. */
+  leaving?: boolean;
+  onUndo: () => void;
+}) {
   return (
     <div
       className={
@@ -23,7 +33,13 @@ export function UndoBar({ label, onUndo }: { label: string; onUndo: () => void }
         'md:inset-x-auto md:bottom-6 md:right-6 md:px-0'
       }
     >
-      <div className="animate-rise bg-surface border-line pointer-events-auto flex max-w-full items-center gap-3 rounded-full border py-1.5 pl-4 pr-1.5 shadow-[var(--shadow-pop)]">
+      <div
+        className={cn(
+          'bg-surface border-line flex max-w-full items-center gap-3 rounded-full border',
+          'py-1.5 pl-4 pr-1.5 shadow-[var(--shadow-pop)]',
+          leaving ? 'animate-sink' : 'animate-rise pointer-events-auto',
+        )}
+      >
         <span className="text-fg min-w-0 truncate text-sm">
           {t('Removed “{name}”', { name: label })}
         </span>

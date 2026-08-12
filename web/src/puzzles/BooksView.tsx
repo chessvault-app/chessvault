@@ -459,7 +459,13 @@ function Shelf() {
 
   return (
     <div className="h-full min-h-0 overflow-y-auto">
-      {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+        />
+      )}
       <div className="mx-auto max-w-3xl p-4 pb-8">
         <div className="mb-4 flex items-center gap-2">
           <Button

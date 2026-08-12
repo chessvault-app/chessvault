@@ -794,7 +794,13 @@ function CollectionView() {
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
 
-      {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+        />
+      )}
     </div>
   );
 }

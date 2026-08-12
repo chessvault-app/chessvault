@@ -139,7 +139,13 @@ function NoteList() {
         />
       )}
 
-      {undoable.pending && <UndoBar label={undoable.pending.label} onUndo={undoable.undo} />}
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+        />
+      )}
     </div>
   );
 }

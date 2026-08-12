@@ -737,8 +737,32 @@ cg-board square.check {
   animation: rise 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* And leaving again. Without it the toast vanished between two frames,
+   which reads as a glitch rather than as the offer having expired — the
+   arrival was animated and the departure was not. `forwards` holds the
+   last frame for the few ms before it actually unmounts. */
+@keyframes sink {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+.animate-sink {
+  animation: sink 160ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise {
     animation: none;
+  }
+
+  .animate-sink {
+    animation: none;
+    opacity: 0;
   }
 }
