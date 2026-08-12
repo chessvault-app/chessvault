@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** How long the undo stands before the deletion actually happens. */
-const GRACE_MS = 6000;
+const GRACE_MS = 4500;
 
 export interface Undoable {
   /** What was removed, for the message: "Removed “x”". */

@@ -33,6 +33,7 @@ export function ActionSheet({
   onClose,
   children,
   anchor,
+  point,
 }: {
   title: string;
   actions: SheetAction[];
@@ -41,13 +42,16 @@ export function ActionSheet({
   children?: ReactNode;
   /** The control this came from; a desktop popover hangs under it. */
   anchor?: React.RefObject<HTMLElement | null>;
+  /** Where a right-click happened; the popover opens there instead. */
+  point?: { x: number; y: number } | null;
 }) {
   // Read once, when it opens: a menu that re-anchored itself mid-gesture
   // because the window was being resized would be a menu that moves under
   // the pointer.
   const [rect] = useState<DOMRect | null>(() => anchor?.current?.getBoundingClientRect() ?? null);
+  const [at] = useState(() => point ?? null);
   const [wide] = useState(() => window.matchMedia('(min-width: 40rem)').matches);
-  const popover = wide && rect !== null;
+  const popover = wide && (at !== null || rect !== null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -76,13 +80,21 @@ export function ActionSheet({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         style={
-          popover
-            ? {
-                position: 'fixed',
-                top: rect.bottom + 4,
-                right: Math.max(8, window.innerWidth - rect.right),
-              }
-            : undefined
+          !popover
+            ? undefined
+            : at
+              ? // A context menu opens AT the pointer, kept inside the
+                // window so a right-click near an edge is still readable.
+                {
+                  position: 'fixed',
+                  top: Math.min(at.y, window.innerHeight - 8 - 44 * actions.length - 32),
+                  left: Math.min(at.x, window.innerWidth - 232),
+                }
+              : {
+                  position: 'fixed',
+                  top: rect!.bottom + 4,
+                  right: Math.max(8, window.innerWidth - rect!.right),
+                }
         }
         className={cn(
           'bg-surface border-line border p-2 shadow-[var(--shadow-pop)]',

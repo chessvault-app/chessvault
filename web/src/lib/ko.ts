@@ -166,6 +166,7 @@ export const ko: Record<string, string> = {
   Annotated: '주석 있음',
   'View on chess.com (needs internet)': 'chess.com에서 보기 (인터넷 필요)',
   'Import a game': '게임 가져오기',
+  'Advanced details': '자세한 정보',
   'White (optional)': '백 (선택)',
   'Black (optional)': '흑 (선택)',
   'Date, e.g. 2026-08-08': '날짜, 예: 2026-08-08',

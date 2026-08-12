@@ -1,5 +1,6 @@
 import {
   ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Eye,
   Globe,
@@ -36,6 +37,7 @@ import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { CreateControl } from '@/ui/Fab';
+import { ActionSheet } from '@/ui/ActionSheet';
 import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -533,6 +535,8 @@ function CollectionView() {
   // Renaming, like notes and studies: a prompt sheet, and the doc id IS
   // the file name. An empty value is the sheet closing without an answer.
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
+  // Right-click opens the same actions the ⋯ offers, where the pointer is.
+  const [context, setContext] = useState<{ game: GameSummary; x: number; y: number } | null>(null);
   // The row goes at once; the DELETE waits for the undo to expire.
   const undoable = useUndoable();
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -597,7 +601,7 @@ function CollectionView() {
   });
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:p-6">
+    <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:max-w-7xl lg:p-6">
       {/* flex-wrap + the search field's narrow flex-1: phones drop the
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -640,13 +644,15 @@ function CollectionView() {
 
       {error && <p className="text-bad text-xs">{error}</p>}
 
-      {/* The collection panel is ALWAYS there — an empty collection shows its
-          placeholder inside the box, the same way the browser box below holds
-          its own idle prompt. */}
+      {/* Two columns on a desktop: the collection is the page and takes the
+          full height (it showed four rows when the archive browser sat
+          under it), and the browser is a tool beside it. One under the
+          other below lg, where there is no width to split. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[7fr_3fr] lg:items-stretch">
       {
-        // shrink-0: loading an archive month below must not squeeze this
+        // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
-        <Panel flush className="shrink-0 sm:min-h-0">
+        <Panel flush className="shrink-0 sm:min-h-0 lg:min-h-0 lg:shrink lg:self-stretch">
           <PanelHeader
             title={`${t('Collection')} · ${visible.length}`}
             actions={
@@ -695,7 +701,7 @@ function CollectionView() {
               )}
             </div>
           ) : (
-          <ul className="divide-line min-h-0 divide-y overflow-y-auto sm:max-h-[38dvh]">
+          <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto sm:max-h-[38dvh] lg:max-h-none">
             {visible.map((game) => (
               <GameRow
                 key={gameKey(game)}
@@ -706,6 +712,7 @@ function CollectionView() {
                 onRename={(to) => void renameGame(game, to)}
                 onOpen={() => openGame(game)}
                 onPreview={setPreview}
+                onContext={(x, y) => setContext({ game, x, y })}
                 actions={
                   <>
                     <Button
@@ -756,6 +763,28 @@ function CollectionView() {
       }
 
       <ArchiveBrowser collectionKeys={new Set(games.map((g) => `${g.white}|${g.black}|${g.date}`))} onCollected={() => void load()} onPreview={setPreview} />
+      </div>
+
+      {context && (
+        <ActionSheet
+          title={customName(context.game) ?? docId(context.game)}
+          point={{ x: context.x, y: context.y }}
+          onClose={() => setContext(null)}
+          actions={[
+            {
+              label: 'Rename',
+              icon: Pencil,
+              onSelect: () => setRenamingKey(gameKey(context.game)),
+            },
+            {
+              label: bookmarks.has(gameKey(context.game)) ? 'Remove bookmark' : 'Bookmark',
+              icon: Star,
+              onSelect: () => void toggleBookmark(context.game),
+            },
+            { label: 'Remove', icon: Trash2, danger: true, onSelect: () => dropGame(context.game) },
+          ]}
+        />
+      )}
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
 
@@ -1032,7 +1061,11 @@ function ArchiveBrowser({
       {/* Narrow screens can't fit tabs + username + Browse on one line;
           the band relaxes its fixed height and lets the actions wrap. */}
       <PanelHeader
-        className="max-[560px]:h-auto max-[560px]:min-h-10 max-[560px]:flex-wrap max-[560px]:py-1.5"
+        // Always wrapping, not only on a narrow VIEWPORT: this panel is a
+        // 30% column on a desktop now, so the width that matters is its
+        // own. Unwrapped, the second provider chip was cut off by the
+        // header's truncation.
+        className="h-auto min-h-10 flex-wrap py-1.5"
         title={
           /* The two provider chips stay on one line together — they are the
              choice being made. What moves to a second line on a narrow
@@ -1066,7 +1099,7 @@ function ArchiveBrowser({
             ))}
           </span>
         }
-        actionsClassName="max-[560px]:w-full max-[560px]:justify-start"
+        actionsClassName="w-full justify-start lg:w-full"
         actions={
           <>
             <Input
@@ -1079,7 +1112,7 @@ function ArchiveBrowser({
               placeholder={
                 provider === 'chesscom' ? t('chess.com username') : t('Lichess username')
               }
-              className="w-40 shrink-0 font-mono max-[560px]:w-auto max-[560px]:flex-1"
+              className="w-auto min-w-0 flex-1 font-mono"
               inputSize="sm"
             />
             <Button
@@ -1343,6 +1376,7 @@ function GameRow({
   onRename,
   showLink = true,
   onSwipeAway,
+  onContext,
 }: {
   game: GameSummary;
   onOpen: () => void;
@@ -1356,6 +1390,8 @@ function GameRow({
   showLink?: boolean;
   /** Touch: swiping the row's contents left removes it (undoably). */
   onSwipeAway?: () => void;
+  /** Desktop: a right-click asks for the row's actions at the pointer. */
+  onContext?: (x: number, y: number) => void;
 }) {
   // The eye pops the final position. Fine pointers hover a popover beside
   // the row; coarse pointers TAP for a centred overlay (dismissed by its
@@ -1385,6 +1421,14 @@ function GameRow({
   return (
     <li
       onClick={onOpen}
+      onContextMenu={
+        onContext
+          ? (e) => {
+              e.preventDefault();
+              onContext(e.clientX, e.clientY);
+            }
+          : undefined
+      }
       {...(onSwipeAway ? swipe.handlers : {})}
       className="group hover:bg-surface-2 relative flex cursor-pointer items-center gap-3 overflow-hidden px-3 py-2 transition-colors duration-100"
     >
@@ -1501,6 +1545,19 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   const [result, setResult] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const pgnField = useRef<HTMLTextAreaElement>(null);
+
+  /**
+   * iOS scrolls a focused field into view by shoving the whole window,
+   * which takes this window's header with it. Asking the field to centre
+   * itself inside the window's own scroller means there is nothing left
+   * for the browser to do.
+   */
+  const scrollFocusIntoView = (e: React.FocusEvent<HTMLElement>): void => {
+    const field = e.currentTarget;
+    setTimeout(() => field.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120);
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -1535,6 +1592,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
     fill(header('Event'), event, setEvent);
     const outcome = header('Result');
     if (!result && ['1-0', '0-1', '1/2-1/2'].includes(outcome)) setResult(outcome);
+    if (text.includes('[White ') || text.includes('[Event ')) setDetailsOpen(true);
   };
 
   const submit = async (): Promise<void> => {
@@ -1574,51 +1632,130 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   };
 
   return (
-    <Modal title="Import a game" onClose={onCancel} full>
+    <Modal
+      title="Import a game"
+      onClose={onCancel}
+      full
+      // Full screen on a phone; on a desktop a plain centred window of the
+      // width a form of this shape wants — a 4xl sheet was mostly margin.
+      className="sm:max-w-[37.5rem]"
+    >
       <TextArea
         autoFocus
+        ref={pgnField}
         value={pgn}
         onChange={(e) => {
           setPgn(e.target.value);
           readHeaders(e.target.value);
         }}
-        rows={5}
+        // The paste is read directly as well as through onChange: a paste
+        // is the moment the headers arrive, and reading them here means
+        // the fields are filled before the change has even settled.
+        onPaste={(e) => {
+          const text = e.clipboardData.getData('text');
+          if (text.includes('[')) readHeaders(text);
+        }}
+        onFocus={scrollFocusIntoView}
+        rows={6}
         spellCheck={false}
         placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}
         className="w-full resize-none font-mono placeholder:font-sans"
       />
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Input value={white} onChange={(e) => setWhite(e.target.value)} placeholder={t('White (optional)')} />
-        <Input value={black} onChange={(e) => setBlack(e.target.value)} placeholder={t('Black (optional)')} />
-        <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder={t('Date, e.g. 2026-08-08')} />
-        <Input value={whiteElo} onChange={(e) => setWhiteElo(e.target.value)} placeholder={t('White rating')} inputMode="numeric" />
-        <Input value={blackElo} onChange={(e) => setBlackElo(e.target.value)} placeholder={t('Black rating')} inputMode="numeric" />
-        <Input value={event} onChange={(e) => setEvent(e.target.value)} placeholder={t('Event / tournament (optional)')} />
-        {/* Segmented, not a dropdown: four states, all visible at once. */}
-        <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
-          {(
-            [
-              ['', 'Auto', 'Result from the pasted moves'],
-              ['1-0', '1-0', 'White won'],
-              ['0-1', '0-1', 'Black won'],
-              ['1/2-1/2', '½-½', 'Draw'],
-            ] as const
-          ).map(([value, label, hint]) => (
-            <Button
-              key={value}
-              size="sm"
-              variant={result === value ? 'primary' : 'secondary'}
-              title={t(hint)}
-              className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
-              onClick={() => setResult(value)}
-            >
-              {t(label)}
-            </Button>
-          ))}
+
+      {/* Everything a pasted PGN already knows lives behind one line. It
+          opens itself when a paste fills something in, so what was read
+          off the text is seen rather than taken on trust. */}
+      <button
+        type="button"
+        onClick={() => setDetailsOpen((v) => !v)}
+        aria-expanded={detailsOpen}
+        className="text-subtle hover:text-fg flex items-center gap-1.5 self-start text-xs transition-colors duration-100"
+      >
+        <ChevronRight
+          className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}
+        />
+        {t('Advanced details')}
+      </button>
+
+      {detailsOpen && (
+        <div className="flex flex-col gap-2">
+          {/* Paired left to right: the two players, their two ratings, then
+              when and where — so each row answers one question twice. */}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <Input
+              value={white}
+              onChange={(e) => setWhite(e.target.value)}
+              onFocus={scrollFocusIntoView}
+              placeholder={t('White (optional)')}
+            />
+            <Input
+              value={black}
+              onChange={(e) => setBlack(e.target.value)}
+              onFocus={scrollFocusIntoView}
+              placeholder={t('Black (optional)')}
+            />
+            <Input
+              value={whiteElo}
+              onChange={(e) => setWhiteElo(e.target.value)}
+              onFocus={scrollFocusIntoView}
+              placeholder={t('White rating')}
+              inputMode="numeric"
+            />
+            <Input
+              value={blackElo}
+              onChange={(e) => setBlackElo(e.target.value)}
+              onFocus={scrollFocusIntoView}
+              placeholder={t('Black rating')}
+              inputMode="numeric"
+            />
+            <Input
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              onFocus={scrollFocusIntoView}
+              placeholder={t('Date, e.g. 2026-08-08')}
+            />
+            <Input
+              value={event}
+              onChange={(e) => setEvent(e.target.value)}
+              onFocus={scrollFocusIntoView}
+              placeholder={t('Event / tournament (optional)')}
+            />
+          </div>
+
+          {/* Segmented, not a dropdown: four states, all visible at once.
+              Auto is the default and stays quiet — a blue chip beside a
+              blue Add button made the form look like it had two answers
+              waiting. */}
+          <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
+            {(
+              [
+                ['', 'Auto', 'Result from the pasted moves'],
+                ['1-0', '1-0', 'White won'],
+                ['0-1', '0-1', 'Black won'],
+                ['1/2-1/2', '\u00bd-\u00bd', 'Draw'],
+              ] as const
+            ).map(([value, label, hint]) => (
+              <Button
+                key={value}
+                size="sm"
+                variant="secondary"
+                active={result === value}
+                title={t(hint)}
+                className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
+                onClick={() => setResult(value)}
+              >
+                {t(label)}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
       {failure && <p className="text-bad text-xs">{failure}</p>}
-      <div className="flex justify-end gap-2">
+
+      {/* Sticky, so the keyboard cannot push the only way to submit off
+          the bottom of a phone screen. */}
+      <div className="bg-surface sticky bottom-0 -mb-1 flex justify-end gap-2 pt-1">
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}
         </Button>
