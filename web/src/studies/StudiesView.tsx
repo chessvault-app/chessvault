@@ -1,5 +1,6 @@
 import {
   CloudDownload,
+  MoreHorizontal,
   FileUp,
   Folder as FolderIcon,
   FolderInput,
@@ -19,6 +20,7 @@ import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { ActionSheet } from '@/ui/ActionSheet';
 import { SwipeRow } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -523,6 +525,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
   const moveFolder = useStudy((s) => s.moveFolder);
   const removeFolder = useStudy((s) => s.removeFolder);
   const [renaming, setRenaming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   return (
@@ -549,36 +552,49 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
           onClose={() => setRenaming(false)}
         />
       )}
-      {
-        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('Rename this collection')}
-            onClick={() => setRenaming(true)}
-          >
-            <Pencil className="size-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t(empty ? 'Delete this empty collection' : 'Only empty collections can be deleted')}
-            onClick={async () => {
-              const err = await removeFolder(folder);
-              // Translated HERE: the server answers in English, and this is
-              // the boundary where a server string becomes something a
-              // person reads.
-              setFailure(err && t(err));
-              // A refusal is worth reading once, not forever: it sits under
-              // a row that is still there, so left alone it reads as the
-              // row's permanent state rather than as an answer to a click.
-              if (err) setTimeout(() => setFailure(null), 5000);
-            }}
-          >
-            <Trash2 className="size-3" />
-          </Button>
-        </div>
-      }
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={t('More')}
+        active={menuOpen}
+        className="opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100"
+        onClick={() => setMenuOpen(true)}
+      >
+        <MoreHorizontal className="size-3" />
+      </Button>
+
+      {menuOpen && (
+        <ActionSheet
+          title={folder}
+          onClose={() => setMenuOpen(false)}
+          actions={[
+            { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+            ...(empty
+              ? [
+                  {
+                    label: 'Delete this collection',
+                    icon: Trash2,
+                    danger: true,
+                    onSelect: () => {
+                      void removeFolder(folder).then((err) => {
+                        setFailure(err && t(err));
+                        // A refusal is worth reading once, not forever.
+                        if (err) setTimeout(() => setFailure(null), 5000);
+                      });
+                    },
+                  },
+                ]
+              : []),
+          ]}
+        >
+          {!empty && (
+            <p className="text-subtle px-3 pb-2 text-xs">
+              {t('Only empty collections can be deleted')}
+            </p>
+          )}
+        </ActionSheet>
+      )}
+
       {failure && <span className="text-bad text-xs">{failure}</span>}
     </div>
   );
@@ -596,6 +612,7 @@ function StudyCard({
   const move = useStudy((s) => s.move);
   const [renaming, setRenaming] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   const name = study.id.split('/').at(-1)!;
@@ -640,38 +657,31 @@ function StudyCard({
             <Button
               variant="ghost"
               size="icon-sm"
-              title={t('Rename this study')}
+              title={t('More')}
+              active={menuOpen}
               onClick={(e) => {
                 e.stopPropagation();
-                setRenaming(true);
+                setMenuOpen(true);
               }}
             >
-              <Pencil className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('Move to a collection')}
-              active={moving}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMoving((v) => !v);
-              }}
-            >
-              <FolderInput className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('Remove this study')}
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-            >
-              <Trash2 className="size-3.5" />
+              <MoreHorizontal className="size-3.5" />
             </Button>
           </div>
+        )}
+
+        {/* The card's verbs live here rather than as three icons on every
+            row: one ⋯, and each action gets a name and a whole row to be
+            tapped in. */}
+        {menuOpen && (
+          <ActionSheet
+            title={name}
+            onClose={() => setMenuOpen(false)}
+            actions={[
+              { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+              { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+              { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
+            ]}
+          />
         )}
 
         {/* Renaming and moving both ask one question, and both used to ask

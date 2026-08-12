@@ -1,6 +1,7 @@
 import {
   Folder as FolderIcon,
   FolderInput,
+  MoreHorizontal,
   NotebookPen,
   Pencil,
   Trash2,
@@ -11,6 +12,7 @@ import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
+import { ActionSheet } from '@/ui/ActionSheet';
 import { SwipeRow } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -316,6 +318,7 @@ function NoteCard({
 }) {
   const [moving, setMoving] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
   const name = note.id.split('/').at(-1)!;
@@ -380,38 +383,28 @@ function NoteCard({
             <Button
               variant="ghost"
               size="icon-sm"
-              title={t('Rename this note')}
+              title={t('More')}
+              active={menuOpen}
               onClick={(e) => {
                 e.stopPropagation();
-                setRenaming(true);
+                setMenuOpen(true);
               }}
             >
-              <Pencil className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('Move to a collection')}
-              active={moving}
-              onClick={(e) => {
-                e.stopPropagation();
-                setMoving((v) => !v);
-              }}
-            >
-              <FolderInput className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('Remove this note')}
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove();
-              }}
-            >
-              <Trash2 className="size-3.5" />
+              <MoreHorizontal className="size-3.5" />
             </Button>
           </div>
+        )}
+
+        {menuOpen && (
+          <ActionSheet
+            title={name}
+            onClose={() => setMenuOpen(false)}
+            actions={[
+              { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+              { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
+              { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
+            ]}
+          />
         )}
 
         {renaming && (

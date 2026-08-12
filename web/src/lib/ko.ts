@@ -623,6 +623,8 @@ export const ko: Record<string, string> = {
   Undo: '되돌리기',
   'Release to remove': '놓으면 삭제',
   'Remove this study': '이 스터디 삭제',
+  'Delete this collection': '이 모음 삭제',
+  'Only empty collections can be deleted': '빈 모음만 삭제할 수 있습니다',
   'Remove this note': '이 노트 삭제',
   'Remove this book and its progress': '이 책과 진행 상황 삭제',
   'New note': '새 노트',
