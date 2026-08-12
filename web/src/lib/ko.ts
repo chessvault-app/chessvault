@@ -580,6 +580,9 @@ export const ko: Record<string, string> = {
     '즐겨찾기한 게임이 없습니다 — 각 줄의 별을 누르면 여기에 남습니다.',
   'No bookmarked game matches “{query}”.': '“{query}”와 맞는 즐겨찾기 게임이 없습니다.',
   'No game in your collection matches “{query}”.': '모음에 “{query}”와 맞는 게임이 없습니다.',
+  'Change password': '비밀번호 변경',
+  'Set password': '비밀번호 설정',
+  'Importing…': '가져오는 중…',
   'Show all games': '모든 게임 보기',
   'Show bookmarked games only': '즐겨찾기한 게임만 보기',
   'Remove bookmark': '즐겨찾기 해제',
@@ -643,7 +646,7 @@ export const ko: Record<string, string> = {
   'Correct so far, but the book line goes further.':
     '여기까진 맞지만, 책의 변화는 더 이어집니다.',
   'Explore freely — only the mainline is judged on submit.':
-    '자유롭게 살펴보세요 — 제출할 때 채점되는 것은 주 변화뿐입니다.',
+    '자유롭게 살펴보세요 — 제출할 때 채점되는 것은 메인 라인뿐입니다.',
   'Engine agrees': '엔진도 동의',
   'Engine agrees: every solver move keeps a decisive advantage.':
     '엔진도 동의합니다: 풀이의 모든 수가 결정적인 우위를 유지합니다.',

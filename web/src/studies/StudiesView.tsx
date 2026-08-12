@@ -463,7 +463,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
             disabled={checked.size === 0 || busy}
             onClick={() => void importChecked()}
           >
-            {busy ? 'Importing…' : `Import ${checked.size || ''}`}
+            {busy ? t('Importing…') : `${t('Import')}${checked.size ? ` ${checked.size}` : ''}`}
           </Button>
         )}
       </div>
@@ -508,53 +508,39 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
   const moveFolder = useStudy((s) => s.moveFolder);
   const removeFolder = useStudy((s) => s.removeFolder);
   const [renaming, setRenaming] = useState(false);
-  const [draft, setDraft] = useState(folder);
   const [failure, setFailure] = useState<string | null>(null);
 
   return (
     <div className="group/folder flex h-6 items-center gap-1.5">
       <FolderIcon className="text-subtle size-3.5 shrink-0" />
-      {renaming ? (
-        <Input
-          autoFocus
-          inputSize="sm"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={async () => {
+      <button
+        type="button"
+        onDoubleClick={() => setRenaming(true)}
+        title={t('Double-click to rename')}
+        className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]"
+      >
+        {folder}
+      </button>
+      {renaming && (
+        <PromptSheet
+          label={t('Rename this collection')}
+          initial={folder}
+          onSubmit={(value) => {
             setRenaming(false);
-            if (draft.trim() && draft.trim() !== folder) {
-              setFailure(await moveFolder(folder, draft.trim()).then((e) => e && t(e)));
+            if (value !== folder) {
+              void moveFolder(folder, value).then((e) => setFailure(e && t(e)));
             }
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-            if (e.key === 'Escape') setRenaming(false);
-          }}
-          className="w-48"
+          onClose={() => setRenaming(false)}
         />
-      ) : (
-        <button
-          type="button"
-          onDoubleClick={() => {
-            setDraft(folder);
-            setRenaming(true);
-          }}
-          title={t('Double-click to rename')}
-          className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]"
-        >
-          {folder}
-        </button>
       )}
-      {!renaming && (
+      {
         <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100">
           <Button
             variant="ghost"
             size="icon-sm"
             title={t('Rename this collection')}
-            onClick={() => {
-              setDraft(folder);
-              setRenaming(true);
-            }}
+            onClick={() => setRenaming(true)}
           >
             <Pencil className="size-3" />
           </Button>
@@ -577,7 +563,7 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
             <Trash2 className="size-3" />
           </Button>
         </div>
-      )}
+      }
       {failure && <span className="text-bad text-xs">{failure}</span>}
     </div>
   );
@@ -588,16 +574,14 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
   const move = useStudy((s) => s.move);
   const [renaming, setRenaming] = useState(false);
   const [moving, setMoving] = useState(false);
-  const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
-  const moveTrigger = useRef<HTMLButtonElement>(null);
 
   const name = study.id.split('/').at(-1)!;
   const folder = study.id.includes('/') ? study.id.slice(0, study.id.lastIndexOf('/')) : '';
 
-  const rename = async (): Promise<void> => {
+  const rename = async (value: string): Promise<void> => {
     setRenaming(false);
-    const next = draft.trim();
+    const next = value.trim();
     if (!next || next === name) return;
     setFailure(
       await move(study.id, folder ? `${folder}/${next}` : next).then((e) => e && t(e)),
@@ -621,24 +605,7 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
         )}
       >
         <div className="min-w-0 flex-1">
-          {renaming ? (
-            <Input
-              autoFocus
-              inputSize="sm"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onBlur={() => void rename()}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') setRenaming(false);
-              }}
-              className="w-full max-w-sm text-sm"
-            />
-          ) : (
-            <p className="text-fg truncate text-sm font-semibold">{name}</p>
-          )}
+          <p className="text-fg truncate text-sm font-semibold">{name}</p>
           <p className="text-subtle text-xs" title={formatWhen(study.updatedAt)}>
             {t('{n} chapters', { n: study.chapters })} · {t('edited {when}', { when: formatAgo(study.updatedAt) })}
           </p>
@@ -653,14 +620,12 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
               title={t('Rename this study')}
               onClick={(e) => {
                 e.stopPropagation();
-                setDraft(name);
                 setRenaming(true);
               }}
             >
               <Pencil className="size-3.5" />
             </Button>
             <Button
-              ref={moveTrigger}
               variant="ghost"
               size="icon-sm"
               title={t('Move to a collection')}
@@ -682,11 +647,23 @@ function StudyCard({ study, allFolders }: { study: StudyMeta; allFolders: string
           </div>
         )}
 
+        {/* Renaming and moving both ask one question, and both used to ask
+            it inside the row — an input where the title was, a popover
+            pinned to a button. They are sheets now, like every other
+            one-question window. */}
+        {renaming && (
+          <PromptSheet
+            label={t('Rename this study')}
+            initial={name}
+            onSubmit={(value) => void rename(value)}
+            onClose={() => setRenaming(false)}
+          />
+        )}
+
         {moving && (
           <MoveToPopover
             currentFolder={folder}
             folders={allFolders}
-            triggerRef={moveTrigger}
             onPick={(target) => {
               setMoving(false);
               void move(study.id, target ? `${target}/${name}` : name).then(setFailure);

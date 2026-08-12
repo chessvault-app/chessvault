@@ -2320,7 +2320,11 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   if (book === null || !puzzle || !tree || !node || !pos) {
     return (
       <div className="text-subtle grid h-full place-items-center text-sm">
-        {!puzzle && book !== null ? 'That puzzle does not exist.' : <Loader2 className="size-5 animate-spin" />}
+        {!puzzle && book !== null ? (
+          t('That puzzle does not exist.')
+        ) : (
+          <Loader2 className="size-5 animate-spin" />
+        )}
       </div>
     );
   }

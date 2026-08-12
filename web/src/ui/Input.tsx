@@ -41,22 +41,38 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  * Autofill is off by default across the app.
  *
  * Nothing here is a name, an address or a card — a study is called what you
- * call it — but iOS decided otherwise and offered "auto-complete contact"
- * above the keyboard while naming a PGN import. A caller that genuinely
- * wants a browser suggestion passes autoComplete itself.
+ * call it — but iOS offered "auto-complete contact" over the keyboard while
+ * naming a PGN import, and `autocomplete="off"` is precisely the hint
+ * Safari ignores: it decides from the field's own words, and a field whose
+ * placeholder says "name" is a person's name as far as it is concerned.
+ *
+ * What Safari does not offer contacts for is a SEARCH field, so a plain
+ * text box becomes one — the type is the only lever the browser honours.
+ * Nothing else changes: WebKit's clear button is hidden, its appearance is
+ * reset, and the keyboard's return key is told this is not a search. A
+ * caller that wants a real suggestion passes autoComplete and a type.
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, inputSize = 'md', ...props },
+  { className, inputSize = 'md', type = 'text', enterKeyHint, ...props },
   ref,
 ) {
+  const plainText = type === 'text';
   return (
     <input
       ref={ref}
+      type={plainText ? 'search' : type}
+      enterKeyHint={enterKeyHint ?? (plainText ? 'done' : undefined)}
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="none"
       data-1p-ignore
-      className={cn(base, sizes[inputSize], className)}
+      data-form-type="other"
+      className={cn(
+        base,
+        sizes[inputSize],
+        plainText && 'appearance-none [&::-webkit-search-cancel-button]:hidden',
+        className,
+      )}
       {...props}
     />
   );

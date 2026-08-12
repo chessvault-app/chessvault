@@ -17,7 +17,7 @@ import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { Select } from '@/ui/Select';
 import { PromptSheet } from '@/ui/PromptSheet';
-import { Input, SearchInput } from '@/ui/Input';
+import { SearchInput } from '@/ui/Input';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
@@ -293,16 +293,14 @@ function NoteCard({
 }) {
   const [moving, setMoving] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
-  const moveTrigger = useRef<HTMLButtonElement>(null);
 
   const name = note.id.split('/').at(-1)!;
   const folder = note.id.includes('/') ? note.id.slice(0, note.id.lastIndexOf('/')) : '';
 
-  const rename = async (): Promise<void> => {
+  const rename = async (value: string): Promise<void> => {
     setRenaming(false);
-    const next = draft.trim();
+    const next = value.trim();
     if (!next || next === name) return;
     const res = await fetch(`${API}/move`, {
       method: 'POST',
@@ -346,24 +344,7 @@ function NoteCard({
         )}
       >
         <div className="min-w-0 flex-1">
-          {renaming ? (
-            <Input
-              autoFocus
-              inputSize="sm"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onBlur={() => void rename()}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') setRenaming(false);
-              }}
-              className="w-full max-w-sm text-sm"
-            />
-          ) : (
           <p className="text-fg truncate text-sm font-semibold">{name}</p>
-          )}
           <p className="text-subtle text-xs" title={formatWhen(note.updatedAt)}>
             {(note.bytes / 1024).toFixed(1)} KB · {t('edited {when}', { when: formatAgo(note.updatedAt) })}
           </p>
@@ -378,14 +359,12 @@ function NoteCard({
               title={t('Rename this note')}
               onClick={(e) => {
                 e.stopPropagation();
-                setDraft(name);
                 setRenaming(true);
               }}
             >
               <Pencil className="size-3.5" />
             </Button>
             <Button
-              ref={moveTrigger}
               variant="ghost"
               size="icon-sm"
               title={t('Move to a collection')}
@@ -411,11 +390,19 @@ function NoteCard({
           </div>
         )}
 
+        {renaming && (
+          <PromptSheet
+            label={t('Rename this note')}
+            initial={name}
+            onSubmit={(value) => void rename(value)}
+            onClose={() => setRenaming(false)}
+          />
+        )}
+
         {moving && (
           <MoveToPopover
             currentFolder={folder}
             folders={allFolders}
-            triggerRef={moveTrigger}
             onPick={(target) => {
               setMoving(false);
               void move(target ? `${target}/${name}` : name);

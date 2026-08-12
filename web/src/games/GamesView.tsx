@@ -35,6 +35,7 @@ import { RowMenu } from '@/ui/RowMenu';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { t } from '@/lib/i18n';
 
 export interface GameSummary {
@@ -525,7 +526,8 @@ function CollectionView() {
     });
   };
 
-  // Inline rename, like notes/studies: the doc id IS the file name.
+  // Renaming, like notes and studies: a prompt sheet, and the doc id IS
+  // the file name. An empty value is the sheet closing without an answer.
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
   const renameGame = async (game: GameSummary, to: string): Promise<void> => {
     setRenamingKey(null);
@@ -538,7 +540,9 @@ function CollectionView() {
       body: JSON.stringify({ from, to: next }),
     });
     if (!res.ok) {
-      setError(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? t('rename failed'));
+      setError(
+        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'rename failed'),
+      );
     }
     void load();
   };
@@ -1358,22 +1362,18 @@ function GameRow({
       className="group hover:bg-surface-2 flex cursor-pointer items-center gap-3 px-3 py-2 transition-colors duration-100"
     >
       <div className="flex min-w-0 flex-1 items-center gap-3">
+        {/* The name is asked for in a sheet, like every other rename; the
+            row keeps showing what it is called meanwhile. */}
+        {renaming && (
+          <PromptSheet
+            label={t('Rename this game')}
+            initial={customName ?? docId(game)}
+            onSubmit={(value) => onRename?.(value)}
+            onClose={() => onRename?.('')}
+          />
+        )}
         <div className="min-w-0 flex-1">
-          {renaming ? (
-            <Input
-              autoFocus
-              inputSize="sm"
-              defaultValue={customName ?? docId(game)}
-              onClick={(e) => e.stopPropagation()}
-              onBlur={(e) => onRename?.(e.target.value)}
-              onKeyDown={(e) => {
-                e.stopPropagation();
-                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-                if (e.key === 'Escape') onRename?.('');
-              }}
-              className="w-full max-w-sm text-sm"
-            />
-          ) : customName ? (
+          {customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
             <p className="text-fg truncate text-sm font-medium">

@@ -39,11 +39,13 @@ const reauth = (): void => {
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const pending = useSlowLoad(settings === null);
-  // The same fix the note editor got: the shell is 100svh, which knows
-  // nothing about a keyboard, so a field low on this page — the wipe
-  // confirmation, at the very bottom — had nowhere to be scrolled TO, and
-  // iOS shoved the whole window up instead. Give the page back the height
-  // the keyboard took and the browser scrolls THIS box, invisibly.
+  // The shell is 100svh, which knows nothing about a keyboard, so this
+  // scroll box ran on underneath it: a field near the bottom — the wipe
+  // confirmation — was inside the box but behind the keyboard, and Safari
+  // revealed the caret the only way left to it, by shoving the whole
+  // window up. Padding the box did not help (it was still as TALL as the
+  // screen); ending it at the top of the keyboard does, because then
+  // scrolling the box is enough to bring the caret into view.
   const inset = useKeyboardInset();
 
   const refresh = async (): Promise<void> => {
@@ -63,7 +65,10 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto" style={{ paddingBottom: inset || undefined }}>
+    <div
+      className="overflow-y-auto"
+      style={{ height: inset ? `calc(100% - ${inset}px)` : '100%' }}
+    >
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -640,7 +645,7 @@ function PasswordBlock({ gate }: { gate: boolean }) {
       </div>
       <div className="flex items-center gap-3">
         <Button variant="primary" disabled={next.length < 8 || (gate && current === '')} onClick={() => void change()}>
-          {gate ? 'Change password' : 'Set password'}
+          {t(gate ? 'Change password' : 'Set password')}
         </Button>
         <Feedback note={note} />
       </div>
