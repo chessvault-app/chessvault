@@ -48,7 +48,7 @@ export function PaneTabs<T extends string>({
             className={cn(
               // Icon tabs stay a thin row (the full-width flex button is a
               // wide tap target even when short); text tabs keep more height.
-              'flex flex-1 items-center justify-center rounded-md font-medium transition-colors duration-100',
+              'flex flex-1 items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors duration-100',
               Icon ? 'h-6' : 'h-7 text-xs pointer-coarse:h-9',
               tab.id === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
             )}

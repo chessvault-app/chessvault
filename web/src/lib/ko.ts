@@ -76,6 +76,7 @@ export const ko: Record<string, string> = {
   'Move to a collection': '모음으로 옮기기',
   'Delete “{name}”?': '“{name}”을(를) 지울까요?',
   'Are you sure?': '정말 진행할까요?',
+  Filters: '필터',
   Collection: '모음',
   'Empty collection.': '빈 모음입니다.',
 

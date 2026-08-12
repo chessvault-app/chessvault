@@ -1,4 +1,4 @@
-import { BookOpen, Compass, ExternalLink, Hammer, Loader2, Trash2, Upload } from 'lucide-react';
+import { BookOpen, ChevronDown, Compass, ExternalLink, Hammer, Loader2, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
@@ -292,8 +292,43 @@ function MyGamesFilterBar() {
   const toggleSpeed = (id: Speed): void =>
     setFilters({ speeds: speeds.includes(id) ? speeds.filter((s) => s !== id) : [...speeds, id] });
 
+  /**
+   * Folded by default, because the filters cost two rows of a pane whose
+   * height belongs to the moves, and most looks at a position ask no
+   * question of them. Not hidden, though: the count of what is on rides on
+   * the summary row, so a filter can never be quietly changing every number
+   * while out of sight — which is the reason these were chips and not a
+   * form in the first place.
+   */
+  const [open, setOpen] = useState(() => hasMyFilters(filters));
+  const activeCount =
+    (filters.side ? 1 : 0) +
+    (filters.outcome ? 1 : 0) +
+    speeds.length +
+    (filters.from ? 1 : 0) +
+    (filters.to ? 1 : 0) +
+    (filters.collectionOnly ? 1 : 0);
+
   return (
-    <div className="border-line flex shrink-0 flex-col gap-1 border-b px-3 py-2">
+    <div className="border-line flex shrink-0 flex-col border-b">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="text-subtle hover:text-fg flex h-8 shrink-0 items-center gap-1.5 px-3 text-[0.625rem] font-semibold uppercase tracking-[0.08em] transition-colors duration-100"
+      >
+        <SlidersHorizontal className="size-3" />
+        {t('Filters')}
+        {activeCount > 0 && (
+          <span className="bg-primary-soft text-primary rounded-full px-1.5 py-px text-[0.5625rem] tabular-nums">
+            {activeCount}
+          </span>
+        )}
+        <ChevronDown className={cn('ml-auto size-3 transition-transform duration-150', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+      <div className="flex flex-col gap-1 px-3 pb-2">
       <div className="scrollbar-none flex items-center gap-1 overflow-x-auto">
         {SIDES.map(({ id, label }) => (
           <Chip
@@ -370,6 +405,8 @@ function MyGamesFilterBar() {
           </span>
         )}
       </div>
+      </div>
+      )}
     </div>
   );
 }

@@ -159,10 +159,14 @@ export function PanelHeader({ title, actions, className }: PanelHeaderProps) {
           fine in English and ships. Doing it once means it cannot be
           forgotten; a caller that already translated passes Korean, and
           t() on a string with no entry returns it unchanged. */}
-      <h2 className="text-subtle min-w-0 shrink truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <h2 className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {typeof title === 'string' ? t(title) : title}
       </h2>
-      {actions ? <div className="flex min-w-0 grow items-center justify-end gap-1">{actions}</div> : null}
+      {/* The actions take exactly their own width and the title takes the
+          rest. They used to `grow` while the title merely `shrink`: on a
+          phone the buttons — every one of them shrink-0 — overflowed their
+          box and painted over the opening name instead of squeezing it. */}
+      {actions ? <div className="flex shrink-0 items-center justify-end gap-1">{actions}</div> : null}
     </header>
   );
 }

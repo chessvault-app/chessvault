@@ -768,7 +768,11 @@ function ArchiveBrowser({
       else {
         setMonths(body.months);
         setOffline(body.offline);
-        if (body.months[0]) await loadMonth(body.months[0].month);
+        // All dates, not the newest month: the question people open this
+        // page with is "have I played this before", which one month cannot
+        // answer. Months are cached server-side after the first pass, and
+        // the counter below the list has a Stop while it runs.
+        if (body.months.length) await loadAllMonths(body.months);
       }
     } catch {
       setError(t('vault server unreachable'));
@@ -785,12 +789,14 @@ function ArchiveBrowser({
    * count climbs as they arrive rather than showing nothing for a minute —
    * a decade is dozens of requests.
    */
-  const loadAllMonths = async (): Promise<void> => {
+  const loadAllMonths = async (list: ArchiveMonth[] = months): Promise<void> => {
     setMonth(ALL_MONTHS);
     setError(null);
     stopRef.current = false;
     const user = username.trim();
-    const newestFirst = months.map((m) => m.month).sort().reverse();
+    // Taken as an argument because the first call happens in the same tick
+    // as setMonths(): reading `months` there would find the previous list.
+    const newestFirst = list.map((m) => m.month).sort().reverse();
     const all: GameSummary[] = [];
     for (const [at, m] of newestFirst.entries()) {
       if (stopRef.current) break;

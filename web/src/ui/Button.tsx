@@ -36,7 +36,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       type={type}
       data-active={active || undefined}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center font-medium',
+        // nowrap: Korean has no spaces to break at, so a narrow button split
+        // 추가 down the middle into two stacked syllables. Latin labels were
+        // never wide enough to notice.
+        'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium',
         'transition-[background-color,color,border-color,box-shadow,transform] duration-150',
         'active:scale-[0.97]',
         'disabled:pointer-events-none disabled:opacity-45',
