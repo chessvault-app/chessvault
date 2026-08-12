@@ -398,57 +398,76 @@ function EliteBrowser() {
       <Panel flush className="mt-1 min-h-0 flex-1">
         <PanelHeader title={loading && rows.length === 0 ? t('Searching…') : t('{n} games', { n: total.toLocaleString() })} />
         {searching && <SkeletonGameRows rows={8} />}
-        <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto">
+        {/* The same stripe the collection list has: at three lines a row is
+            tall enough that a hairline between rows disappears. */}
+        <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022]">
           {rows.map((g) => (
-            <li key={g.id} className="flex items-center gap-3 pr-2">
-              {/* Mirrors the collection's GameRow layout so the two lists
-                  read as one family. */}
+            <li key={g.id} className="group hover:bg-surface-2 flex items-center gap-1 pr-2 transition-colors duration-100">
+              {/* Mirrors the collection's GameRow — same bold names, same
+                  ECO badge, same result tag — so the two lists read as one
+                  family rather than as two takes on a game list. */}
               <button
                 type="button"
                 onClick={() => void openGame(g)}
                 title={t('Open on the analysis board')}
-                className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-3 px-3 py-3.5 text-left transition-colors duration-100"
+                className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3.5 text-left"
               >
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate text-sm">
                     <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
-                    <span className="font-medium">{g.white}</span>{' '}
+                    <span className="font-semibold">{g.white}</span>{' '}
                     <span className="text-subtle text-xs">{g.white_elo}</span>
                   </span>
                   <span className="text-fg block truncate text-sm">
                     <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
-                    <span className="font-medium">{g.black}</span>{' '}
+                    <span className="font-semibold">{g.black}</span>{' '}
                     <span className="text-subtle text-xs">{g.black_elo}</span>
                   </span>
                   <span className="text-subtle block truncate text-xs">
+                    {g.eco ? <OpeningTag eco={g.eco} name={g.opening} /> : g.opening}
+                    {(g.eco || g.opening) && g.date ? ' · ' : ''}
                     {g.date ?? ''}
-                    {g.eco || g.opening ? ` · ${g.eco ?? ''} ${g.opening ?? ''}` : ''}
                   </span>
-                </span>
-                <span className="grid size-7 shrink-0 place-items-center">
-                  <Eye
-                    className="text-subtle hover:text-fg size-3.5 pointer-coarse:size-4.5"
-                    aria-label={t('Preview the final position')}
-                    onMouseEnter={(e) => {
-                      if (!coarse()) void showPreview(g, e.currentTarget);
-                    }}
-                    onMouseLeave={() => {
-                      if (!coarse()) hidePreview();
-                    }}
-                    onClick={(e) => {
-                      if (!coarse()) return;
-                      e.stopPropagation();
-                      if (previewFor.current === g.id) {
-                        hidePreview();
-                      } else {
-                        previewFor.current = g.id;
-                        void showPreview(g, e.currentTarget, true);
-                      }
-                    }}
-                  />
                 </span>
                 <ResultScore result={g.result} userSide={null} />
               </button>
+
+              {/* The eye lives outside the row's own button — a button
+                  inside a button is not markup a browser will keep — and
+                  in the same hover tray the collection rows use. Add stays
+                  put: it is the point of this page, not a quick action. */}
+              <span
+                className={cn(
+                  'flex shrink-0 items-center rounded-lg p-0.5 transition-opacity duration-100',
+                  'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
+                  'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
+                )}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Preview the final position')}
+                  onMouseEnter={(e) => {
+                    if (!coarse()) void showPreview(g, e.currentTarget);
+                  }}
+                  onMouseLeave={() => {
+                    if (!coarse()) hidePreview();
+                  }}
+                  onClick={(e) => {
+                    if (!coarse()) return;
+                    e.stopPropagation();
+                    if (previewFor.current === g.id) {
+                      hidePreview();
+                    } else {
+                      previewFor.current = g.id;
+                      void showPreview(g, e.currentTarget, true);
+                    }
+                  }}
+                >
+                  <Eye className="size-3.5" />
+                </Button>
+              </span>
+
               <Button
                 variant={inCollection(g) ? 'ghost' : 'secondary'}
                 size="sm"
