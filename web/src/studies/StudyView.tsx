@@ -419,7 +419,7 @@ function ChaptersPanel() {
       resizeKey="study-chapters"
     >
       <PanelHeader
-        title={`Chapters · ${chapters.length}`}
+        title={`${t('Chapters')} · ${chapters.length}`}
         actions={
           <Button variant="ghost" size="icon-sm" title={t('Add a chapter')} onClick={() => addChapter()}>
             <Plus className="size-3.5" />

@@ -7,6 +7,7 @@ import {
   NotebookPen,
   Pencil,
   Plus,
+  Search,
   Star,
   BookOpen,
   Trash2,
@@ -644,6 +645,30 @@ function CollectionView() {
                   "Your collection is empty. It's meant to hold the games worth keeping — each one annotatable like a study. Browse your chess.com history below and add the ones you want to study.",
                 )}
               </p>
+            </div>
+          ) : loaded && visible.length === 0 ? (
+            /* The collection HAS games; this search or the bookmark toggle
+               just matches none of them. Saying so beats a box with nothing
+               under its header, which reads as the collection having been
+               emptied. */
+            <div className="flex flex-col items-center gap-3 py-8 text-center">
+              {starredOnly && !needle ? (
+                <>
+                  <Star className="text-subtle size-6" strokeWidth={1.5} />
+                  <p className="text-muted max-w-md text-sm leading-relaxed">
+                    {t('No bookmarked games yet — the star on a row keeps it here.')}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Search className="text-subtle size-6" strokeWidth={1.5} />
+                  <p className="text-muted max-w-md text-sm leading-relaxed">
+                    {starredOnly
+                      ? t('No bookmarked game matches “{query}”.', { query: query.trim() })
+                      : t('No game in your collection matches “{query}”.', { query: query.trim() })}
+                  </p>
+                </>
+              )}
             </div>
           ) : (
           <ul className="divide-line min-h-0 divide-y overflow-y-auto sm:max-h-[38dvh]">

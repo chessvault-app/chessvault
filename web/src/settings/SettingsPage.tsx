@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useKeyboardInset } from '@/lib/keyboardInset';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
 import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
@@ -38,6 +39,12 @@ const reauth = (): void => {
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const pending = useSlowLoad(settings === null);
+  // The same fix the note editor got: the shell is 100svh, which knows
+  // nothing about a keyboard, so a field low on this page — the wipe
+  // confirmation, at the very bottom — had nowhere to be scrolled TO, and
+  // iOS shoved the whole window up instead. Give the page back the height
+  // the keyboard took and the browser scrolls THIS box, invisibly.
+  const inset = useKeyboardInset();
 
   const refresh = async (): Promise<void> => {
     const res = await fetch('/api/settings');
@@ -56,7 +63,7 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto" style={{ paddingBottom: inset || undefined }}>
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">

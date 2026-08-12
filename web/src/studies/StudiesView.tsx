@@ -386,9 +386,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
 
   return (
     <>
-      <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
-        {t('Import from Lichess')}
-      </p>
+      {/* No heading here: the window it opens in is already called this. */}
       <div className="flex gap-2">
         <Input
           autoFocus

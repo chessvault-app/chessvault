@@ -576,6 +576,10 @@ export const ko: Record<string, string> = {
 
   // --- games ---------------------------------------------------------------
   Added: '추가됨',
+  'No bookmarked games yet — the star on a row keeps it here.':
+    '즐겨찾기한 게임이 없습니다 — 각 줄의 별을 누르면 여기에 남습니다.',
+  'No bookmarked game matches “{query}”.': '“{query}”와 맞는 즐겨찾기 게임이 없습니다.',
+  'No game in your collection matches “{query}”.': '모음에 “{query}”와 맞는 게임이 없습니다.',
   'Show all games': '모든 게임 보기',
   'Show bookmarked games only': '즐겨찾기한 게임만 보기',
   'Remove bookmark': '즐겨찾기 해제',
@@ -925,6 +929,7 @@ export const ko: Record<string, string> = {
   "Played between": "대국 기간",
   "Clear filters": "필터 지우기",
   "{n} games indexed": "{n}개 게임 색인됨",
+  "{n} of {total} games match": "{total}개 중 {n}개 일치",
   "Recent games": "최근 게임",
   "None of your games reached this position.": "이 포지션에 도달한 내 게임이 없습니다.",
   "None of your games reached this position under these filters.": "이 조건에서 이 포지션에 도달한 내 게임이 없습니다.",

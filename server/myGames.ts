@@ -362,15 +362,27 @@ export class MyGamesIndex {
     return { moves, topGames, games: moves.reduce((sum, m) => sum + m.total, 0) };
   }
 
-  /** Row counts, for the pane's "indexed N games" line. */
-  stats(): { games: number; positions: number } {
+  /**
+   * Row counts, for the pane's "indexed N games" line.
+   *
+   * `matching` answers the filter window's question — how many games the
+   * chips in front of you still let through — which is the number worth
+   * reading while setting them. It equals `games` when nothing is set.
+   */
+  stats(filters: MyGamesFilters = {}): { games: number; positions: number; matching: number } {
     const db = this.open();
-    if (!db) return { games: 0, positions: 0 };
+    if (!db) return { games: 0, positions: 0, matching: 0 };
     const games = (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
     const positions = (
       db.prepare('SELECT COUNT(DISTINCT pos) AS n FROM plies').get() as { n: number }
     ).n;
-    return { games, positions };
+    const { sql, binds } = this.where(filters);
+    const matching = sql
+      ? (db.prepare(`SELECT COUNT(*) AS n FROM games g WHERE 1 = 1${sql}`).get(...binds) as {
+          n: number;
+        }).n
+      : games;
+    return { games, positions, matching };
   }
 
   close(): void {
@@ -447,7 +459,7 @@ export function myGamesApi(
   /** What the index holds — and a way to make it catch up on demand. */
   api.get('/mygames/status', (c) => {
     index.sync();
-    return c.json(index.stats());
+    return c.json(index.stats(parseFilters((k) => c.req.query(k))));
   });
 
   api.post('/mygames/reindex', (c) => {

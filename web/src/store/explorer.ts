@@ -82,7 +82,7 @@ interface ExplorerState {
   /** Filters, applied only while MY_GAMES is the source. */
   myFilters: MyGamesFilters;
   /** How much the index holds, for the pane's footer. Null until asked. */
-  myStats: { games: number; positions: number } | null;
+  myStats: { games: number; positions: number; matching: number } | null;
 
   /** FEN the current results belong to; guards against stale responses. */
   resultFen: string | null;
@@ -137,7 +137,12 @@ export const isMyGames = (name: string | null): boolean => name === MY_GAMES;
 
 /** Turn the filter set into the query the server reads. */
 export function myGamesQuery(fen: string, f: MyGamesFilters): string {
-  const query = new URLSearchParams({ fen });
+  return new URLSearchParams({ fen, ...Object.fromEntries(new URLSearchParams(myFilterQuery(f))) }).toString();
+}
+
+/** The filter half of that query, for the endpoints that take no position. */
+export function myFilterQuery(f: MyGamesFilters): string {
+  const query = new URLSearchParams();
   if (f.side) query.set('side', f.side);
   if (f.outcome) query.set('outcome', f.outcome);
   if (f.speeds?.length) query.set('speeds', f.speeds.join(','));
@@ -247,13 +252,19 @@ export const useExplorer = create<ExplorerState>()(
           }
           set({ myFilters: next });
           if (latestFen) get().lookup(latestFen);
+          void get().refreshMyStats();
         },
 
         refreshMyStats: async () => {
           try {
-            const res = await fetch('/api/mygames/status');
+            // With the filters: the count in the filter window answers "how
+            // many games are these chips letting through", which is the
+            // question being asked while they are being tapped.
+            const res = await fetch(`/api/mygames/status?${myFilterQuery(get().myFilters)}`);
             if (!res.ok) return;
-            set({ myStats: (await res.json()) as { games: number; positions: number } });
+            set({
+              myStats: (await res.json()) as { games: number; positions: number; matching: number },
+            });
           } catch {
             // The footer line simply does not appear.
           }

@@ -71,6 +71,24 @@ export function ExplorerPane({
   const [showManager, setShowManager] = useState(false);
   // The My-games filters, as a window rather than two rows of the pane.
   const [showFilters, setShowFilters] = useState(false);
+  // What the filters were when the window opened. The chips apply as they
+  // are tapped — that is the point of the live count — so Cancel has to put
+  // back what was there rather than merely stop editing.
+  const filtersOnOpen = useRef<MyGamesFilters>({});
+  const closeFilters = (revert: boolean): void => {
+    if (revert) {
+      const was = filtersOnOpen.current;
+      useExplorer.getState().setMyFilters({
+        side: was.side,
+        outcome: was.outcome,
+        speeds: was.speeds ?? [],
+        from: was.from,
+        to: was.to,
+        collectionOnly: was.collectionOnly,
+      });
+    }
+    setShowFilters(false);
+  };
   // Rare continuations are noise most of the time — show the top handful
   // and keep the pane's room for the reference games below.
   const [allMoves, setAllMoves] = useState(false);
@@ -159,7 +177,10 @@ export function ExplorerPane({
                 variant="ghost"
                 size="icon-sm"
                 active={filtered}
-                onClick={() => setShowFilters(true)}
+                onClick={() => {
+                  filtersOnOpen.current = useExplorer.getState().myFilters;
+                  setShowFilters(true);
+                }}
                 title={t('Filters')}
               >
                 <SlidersHorizontal className="size-3.5" />
@@ -189,11 +210,11 @@ export function ExplorerPane({
       {enabled && showManager && <BooksManager onClose={() => setShowManager(false)} />}
 
       {showFilters && (
-        <Modal title="Filters" icon={SlidersHorizontal} onClose={() => setShowFilters(false)}>
+        <Modal title="Filters" icon={SlidersHorizontal} onClose={() => closeFilters(true)}>
           {/* Every chip applies as it is tapped, so there is nothing to
               confirm — but a window still needs a stated way out, and it
               belongs on the same line as Clear rather than below it. */}
-          <MyGamesFilterBar onDone={() => setShowFilters(false)} />
+          <MyGamesFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
         </Modal>
       )}
 
@@ -293,7 +314,7 @@ export function ExplorerPane({
  * so "against 1800+" means something different in January and December,
  * and a filter whose meaning drifts is worse than no filter.
  */
-function MyGamesFilterBar({ onDone }: { onDone: () => void }) {
+function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
   const filters = useExplorer((s) => s.myFilters);
   const setFilters = useExplorer((s) => s.setMyFilters);
   const stats = useExplorer((s) => s.myStats);
@@ -392,14 +413,18 @@ function MyGamesFilterBar({ onDone }: { onDone: () => void }) {
       <div className="border-line text-subtle flex items-center gap-2 border-t pt-3 text-xs">
         {stats && (
           <span className="mr-auto tabular-nums">
-            {t('{n} games indexed', { n: exact.format(stats.games) })}
+            {hasMyFilters(filters)
+              ? t('{n} of {total} games match', {
+                  n: exact.format(stats.matching),
+                  total: exact.format(stats.games),
+                })
+              : t('{n} games indexed', { n: exact.format(stats.games) })}
           </span>
         )}
         {hasMyFilters(filters) && (
           <Button
             variant="ghost"
             size="sm"
-            className="ml-auto"
             onClick={() =>
               setFilters({
                 side: undefined,
@@ -414,6 +439,9 @@ function MyGamesFilterBar({ onDone }: { onDone: () => void }) {
             {t('Clear filters')}
           </Button>
         )}
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t('Cancel')}
+        </Button>
         <Button variant="primary" size="sm" onClick={onDone}>
           {t('Done')}
         </Button>
