@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -71,6 +72,62 @@ export function ActionSheet({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  /**
+   * Push the sheet away.
+   *
+   * Downwards only — a sheet that follows the finger upwards suggests it
+   * can be expanded, which is the same lie the bare handle used to tell.
+   * Past DISMISS_PX it goes; short of it, it springs back, and the spring
+   * is what teaches the gesture to anybody who tried it halfway.
+   *
+   * Pointer events rather than touch, so a mouse can do it too and the
+   * capture keeps tracking when the finger leaves the header.
+   */
+  const [dragY, setDragY] = useState(0);
+  const dragFrom = useRef<number | null>(null);
+  /**
+   * The live offset, for the release to judge by.
+   *
+   * NOT the state: if the last move and the release land in one React
+   * batch, the release handler still closes over the previous render's
+   * dragY — zero — and a long throw would spring back instead of
+   * dismissing. Reasoned, not observed: this environment cannot deliver
+   * a pointerdown to test the gesture end to end. The state is only what
+   * the sheet is painted from.
+   */
+  const dragNow = useRef(0);
+  const DISMISS_PX = 72;
+  const startDrag = (e: React.PointerEvent<HTMLElement>): void => {
+    dragFrom.current = e.clientY;
+    // Capture keeps the moves coming when the finger leaves the header,
+    // but it throws for a pointer the browser no longer considers active
+    // — and a throw here would take the whole gesture with it. The drag
+    // works without it as long as the finger stays on the grab area.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* not capturable — track what we can */
+    }
+  };
+  const moveDrag = (e: React.PointerEvent<HTMLElement>): void => {
+    if (dragFrom.current === null) return;
+    // Downwards only: a sheet that follows the finger up suggests it can
+    // be expanded, which is the lie the bare handle used to tell.
+    const dy = Math.max(0, e.clientY - dragFrom.current);
+    dragNow.current = dy;
+    setDragY(dy);
+  };
+  const endDrag = (): void => {
+    if (dragFrom.current === null) return;
+    dragFrom.current = null;
+    if (dragNow.current > DISMISS_PX) {
+      onClose();
+      return;
+    }
+    dragNow.current = 0;
+    setDragY(0);
+  };
+
   // Portalled to the body, because `position: fixed` is only relative to
   // the viewport while no ancestor has a transform, a filter or
   // containment — and a shelf card has a transform: it lifts a pixel under
@@ -98,7 +155,13 @@ export function ActionSheet({
         onClick={(e) => e.stopPropagation()}
         style={
           !popover
-            ? undefined
+            ? {
+                // Follows the finger while held, springs back when let go
+                // short of the threshold. No transition during the drag,
+                // or the sheet would lag behind the thumb by 180ms.
+                transform: dragY ? `translateY(${dragY}px)` : undefined,
+                transition: dragFrom.current === null ? 'transform 180ms cubic-bezier(0.4,0,0.2,1)' : undefined,
+              }
             : at
               ? // A context menu opens AT the pointer, kept inside the
                 // window so a right-click near an edge is still readable.
@@ -121,12 +184,43 @@ export function ActionSheet({
               'w-full max-w-lg rounded-t-2xl pb-[calc(0.5rem+env(safe-area-inset-bottom))]',
         )}
       >
-        {/* The grab handle a bottom sheet needs to say which way it came
-            from — a popover already says that by where it hangs. */}
-        {!popover && (
-          <div className="bg-line mx-auto mb-2 mt-1 h-1 w-9 shrink-0 rounded-full" aria-hidden />
+        {/* Two ways out, because a sheet is two things at once: a thing on
+            the screen, which wants a button, and a thing under a thumb,
+            which wants to be pushed away. The handle was there before and
+            meant nothing — it promised a drag the sheet did not do. It
+            drags now, and the X is for everyone not holding the phone.
+            (Windows use Cancel, not an X — docs/design-principles.md.
+            That rule is about a window with its own button row, where a
+            second closing idiom competes with it. A sheet of verbs has no
+            such row to put a Cancel in.) */}
+        {popover ? (
+          <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
+        ) : (
+          <div
+            // The grab area is the header, not the whole sheet: below it
+            // every row is a verb, and a drag that starts on one must not
+            // have to decide whether it was a press.
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            className="-mt-1 cursor-grab touch-none select-none pt-1 active:cursor-grabbing"
+          >
+            <div className="bg-line mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
+            <div className="flex items-center gap-2 pb-1 pl-3 pr-1">
+              <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
+              <button
+                type="button"
+                title={t('Close')}
+                aria-label={t('Close')}
+                onClick={onClose}
+                className="text-subtle hover:bg-surface-2 hover:text-fg grid size-9 shrink-0 place-items-center rounded-full transition-colors duration-100"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          </div>
         )}
-        <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
         {children}
         {actions.map(({ label, icon: Icon, danger, className, onSelect }) => (
           <button

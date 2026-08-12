@@ -114,6 +114,14 @@ scrim also close, but neither is advertised. A window whose changes
 apply as you make them (the filters) offers Cancel — restoring what was
 there when it opened — beside Done.
 
+The row-actions sheet (`ActionSheet`, the phone half of a row's ⋯) is
+the exception, and it proves the rule: it is a list of verbs with no
+button row of its own, so there is nowhere for a Cancel to sit that is
+not itself another verb. It carries an X. It used to carry a drag
+handle instead, which was worse than either — a handle promises the
+sheet can be dragged and resized, and this one holds three items and
+does neither.
+
 Autofill is off in every field (`Input`, `TextArea`, or the exported
 `noAutofill` props for the few bare inputs). `autocomplete="off"` is not
 enough: Safari decides from the field's own words and offers to complete
