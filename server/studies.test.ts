@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chaptersToPgn, pgnToChapters } from '../shared/pgn.ts';
@@ -223,5 +223,80 @@ describe('studies api', () => {
 
     await app.request('/api/studies/King%20s%20Indian', { method: 'DELETE' });
     await app.request('/api/studies/Other', { method: 'DELETE' });
+  });
+});
+
+describe('notes list excerpts', () => {
+  let dir: string;
+  let app: Hono;
+
+  const write = (name: string, body: string): void =>
+    writeFileSync(join(dir, `${name}.md`), body, 'utf-8');
+  const listed = async (): Promise<Record<string, string | null>> => {
+    const { studies } = (await (await app.request('/api/notes')).json()) as {
+      studies: { id: string; excerpt: string | null }[];
+    };
+    return Object.fromEntries(studies.map((s) => [s.id, s.excerpt]));
+  };
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'notes-api-'));
+    app = new Hono().route('/api', studiesApi(dir, 'notes', '.md'));
+  });
+
+  afterAll(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('takes the first line of prose, not the heading', async () => {
+    write('Prep', '# Prep\n\nKnow the first ten moves of everything I play.\n');
+    expect((await listed())['Prep']).toBe('Know the first ten moves of everything I play.');
+  });
+
+  it('strips list markers, emphasis and links', async () => {
+    write('Drills', '# Drills\n\n- **Lucena** and [Philidor](https://x.test) until automatic\n');
+    expect((await listed())['Drills']).toBe('Lucena and Philidor until automatic');
+  });
+
+  it('skips front matter, rules and fenced blocks', async () => {
+    write('Fenced', '---\ntags: endgame\n---\n\n```\n8/8/8/8\n```\n\nAfter the fence.\n');
+    expect((await listed())['Fenced']).toBe('After the fence.');
+  });
+
+  it('has none for a note that is only a heading', async () => {
+    write('Bare', '# Bare\n\n');
+    expect((await listed())['Bare']).toBeNull();
+  });
+
+  it('caps a long first line', async () => {
+    write('Long', `# Long\n\n${'a'.repeat(400)}\n`);
+    const excerpt = (await listed())['Long']!;
+    expect(excerpt).toHaveLength(140);
+    expect(excerpt.endsWith('…')).toBe(true);
+  });
+
+  it('reads only the head of a file, so a huge note still lists', async () => {
+    write('Huge', `# Huge\n\nThe opening line.\n${'padding padding padding\n'.repeat(5000)}`);
+    expect((await listed())['Huge']).toBe('The opening line.');
+  });
+
+  it('re-reads when the file changes, and not otherwise', async () => {
+    write('Edited', '# Edited\n\nBefore.\n');
+    expect((await listed())['Edited']).toBe('Before.');
+    // A same-millisecond rewrite would keep the cached mtime, so wait.
+    await new Promise((done) => setTimeout(done, 20));
+    write('Edited', '# Edited\n\nAfter.\n');
+    expect((await listed())['Edited']).toBe('After.');
+  });
+
+  it('leaves study listings alone — a PGN header is not a preview', async () => {
+    const pgnDir = mkdtempSync(join(tmpdir(), 'studies-excerpt-'));
+    const pgnApp = new Hono().route('/api', studiesApi(pgnDir));
+    writeFileSync(join(pgnDir, 'Game.pgn'), '[Event "x"]\n\n1. e4 *\n', 'utf-8');
+    const { studies } = (await (await pgnApp.request('/api/studies')).json()) as {
+      studies: { excerpt: string | null }[];
+    };
+    expect(studies[0]!.excerpt).toBeNull();
+    rmSync(pgnDir, { recursive: true, force: true });
   });
 });

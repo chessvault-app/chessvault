@@ -1,8 +1,11 @@
 import { Hono } from 'hono';
 import {
+  closeSync,
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
+  readSync,
   readdirSync,
   renameSync,
   rmdirSync,
@@ -37,6 +40,46 @@ function countChapters(pgn: string): number {
   return pgn.match(/^\[Event /gm)?.length ?? (pgn.trim() ? 1 : 0);
 }
 
+/** How much of a note is read to find its first sentence. */
+const EXCERPT_BYTES = 1024;
+
+/**
+ * A note's first line of prose, for the shelf.
+ *
+ * Skips the heading — that is the note's name, which the card already
+ * shows — and anything that is punctuation rather than words: a rule, a
+ * front-matter block, a bullet's dash, an embedded board. What is left is
+ * the sentence somebody actually wrote, flattened to one line.
+ */
+function firstProseLine(head: string): string | null {
+  const lines = head.split('\n');
+  // YAML front matter is a BLOCK, not a rule: skipping only its `---`
+  // fences left "tags: endgame" standing there as the note's first
+  // sentence. It only counts as front matter if it opens the file.
+  if (lines[0]?.trim() === '---') {
+    const close = lines.findIndex((line, at) => at > 0 && line.trim() === '---');
+    if (close > 0) lines.splice(0, close + 1);
+  }
+  let inFence = false;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.startsWith('```') || line.startsWith('~~~')) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence || !line) continue;
+    if (line.startsWith('#') || line.startsWith('---') || line.startsWith('===')) continue;
+    const text = line
+      .replace(/^[-*+>]\s+/, '')
+      .replace(/^\d+[.)]\s+/, '')
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+      .replace(/[*_`]/g, '')
+      .trim();
+    if (text) return text.length > 140 ? `${text.slice(0, 139)}…` : text;
+  }
+  return null;
+}
+
 /**
  * Plain-file document CRUD over a directory. Mounted three times: `studies`
  * (vault/studies, .pgn), `games/docs` (the games collection, .pgn — an
@@ -57,6 +100,34 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     const chapters = countChapters(readFileSync(path, 'utf-8'));
     chapterCache.set(path, { mtimeMs, chapters });
     return chapters;
+  };
+
+  // The same cache, for the line of a note the shelf shows under its name.
+  // Only the head of the file is read — a listing must never depend on how
+  // long the longest note is.
+  const excerptCache = new Map<string, { mtimeMs: number; excerpt: string | null }>();
+
+  const excerptCached = (path: string, mtimeMs: number): string | null => {
+    const hit = excerptCache.get(path);
+    if (hit && hit.mtimeMs === mtimeMs) return hit.excerpt;
+    let excerpt: string | null = null;
+    try {
+      const fd = openSync(path, 'r');
+      try {
+        const buf = Buffer.alloc(EXCERPT_BYTES);
+        const read = readSync(fd, buf, 0, EXCERPT_BYTES, 0);
+        // A multi-byte character cut in half at the end of the window
+        // becomes a replacement char; dropping the last line loses nothing
+        // a first sentence needs.
+        excerpt = firstProseLine(buf.subarray(0, read).toString('utf-8'));
+      } finally {
+        closeSync(fd);
+      }
+    } catch {
+      /* unreadable between readdir and here — the card just has no preview */
+    }
+    excerptCache.set(path, { mtimeMs, excerpt });
+    return excerpt;
   };
 
   api.get(`/${base}`, (c) => {
@@ -84,6 +155,9 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
           chapters: ext === '.pgn' ? countChaptersCached(path, mtime.getTime()) : 1,
           bytes: size,
           updatedAt: mtime.toISOString(),
+          // Markdown only: a PGN's "first line" is a header nobody wants
+          // to read, and the study card has its chapter count instead.
+          excerpt: ext === '.md' ? excerptCached(path, mtime.getTime()) : null,
         };
       })
       .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
