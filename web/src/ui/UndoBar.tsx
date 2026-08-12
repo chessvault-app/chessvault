@@ -33,17 +33,28 @@ export function UndoBar({
         'md:inset-x-auto md:bottom-6 md:right-6 md:px-0'
       }
     >
+      {/* The inverted surface, and no border: a chip that is the opposite
+          of the page needs no outline to be told from it, and the border
+          was the last thing making this read as one more panel. */}
       <div
         className={cn(
-          'bg-surface border-line flex max-w-full items-center gap-3 rounded-full border',
+          'bg-toast text-toast-fg flex max-w-full items-center gap-3 rounded-full',
           'py-1.5 pl-4 pr-1.5 shadow-[var(--shadow-pop)]',
           leaving ? 'animate-sink' : 'animate-rise pointer-events-auto',
         )}
       >
-        <span className="text-fg min-w-0 truncate text-sm">
+        <span className="min-w-0 truncate text-sm">
           {t('Removed “{name}”', { name: label })}
         </span>
-        <Button variant="ghost" size="sm" onClick={onUndo}>
+        {/* The ghost button's own colours are page colours — muted grey on
+            a hover of surface-2 — which are invisible here. It borrows the
+            chip's foreground and a wash of it for the hover instead. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-toast-fg hover:bg-toast-fg/12 hover:text-toast-fg font-semibold"
+          onClick={onUndo}
+        >
           <Undo2 className="size-3.5" />
           {t('Undo')}
         </Button>

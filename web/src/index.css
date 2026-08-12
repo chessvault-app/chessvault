@@ -118,6 +118,14 @@
      other use is text or a tint, which keeps the page colour behind it. */
   --bad-fg: oklch(99% 0 0);
 
+  /* The transient chip — the undo offer, and anything else that floats
+     over the page for a few seconds and must not read as part of it.
+     It is the surface INVERTED: dark on a light app, light on a dark one.
+     Distinct by construction rather than by a colour chosen to contrast
+     with today's palette, and the one convention this widget has. */
+  --toast: oklch(24% 0.02 var(--ui-hue));
+  --toast-fg: oklch(98% 0.004 var(--ui-hue));
+
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
   --board-light: oklch(91% 0.035 84);
   --board-dark: oklch(62% 0.072 52);
@@ -200,6 +208,12 @@
   /* Dark mode's --bad is a light red; white on it is unreadable. */
   --bad-fg: oklch(18% 0.03 25);
 
+  /* Light chip on the dark app. Held at 90% rather than pure white: it
+     has to be plainly foreign to the page, not a headlight in the corner
+     of a room this dim. */
+  --toast: oklch(90% 0.012 var(--ui-hue));
+  --toast-fg: oklch(20% 0.02 var(--ui-hue));
+
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light: oklch(60% 0.024 250);
   --board-dark: oklch(39% 0.031 256);
@@ -243,6 +257,8 @@
   --color-good: var(--good);
   --color-bad: var(--bad);
   --color-bad-fg: var(--bad-fg);
+  --color-toast: var(--toast);
+  --color-toast-fg: var(--toast-fg);
   --color-warn: var(--warn);
   --color-info: var(--info);
 
