@@ -1186,7 +1186,10 @@ function ArchiveBrowser({
           a 30%-wide column wants. */}
       <PanelHeader title={t('Online archives')} />
 
-      <div className="flex flex-col gap-2 px-3 pb-3">
+      {/* pt-3, not flush under the header's rule: the tab bar is a raised
+          control and sitting it straight against the line made the two
+          read as one stuck-together thing. */}
+      <div className="flex flex-col gap-2 px-3 pb-3 pt-3">
         {/* One track, one lit segment. As two chips it was impossible to
             tell by looking whether they were a choice or two independent
             toggles — and both being unlit is not a state this has. */}
