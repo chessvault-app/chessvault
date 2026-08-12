@@ -13,6 +13,8 @@ import { useKeyboardInset } from '@/lib/keyboardInset';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
+import { TagEditor } from '@/ui/TagEditor';
+import { frontMatterWithTags, tagsFromFrontMatter } from '@shared/tags';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
@@ -93,6 +95,7 @@ export function NoteView({ id }: { id: string }) {
       id={id}
       initialDoc={initialDoc}
       frontMatter={frontMatter}
+      onFrontMatter={setFrontMatter}
       saveState={saveState}
       setSaveState={setSaveState}
       saveTimer={saveTimer}
@@ -104,6 +107,7 @@ function NoteEditor({
   id,
   initialDoc,
   frontMatter,
+  onFrontMatter,
   saveState,
   setSaveState,
   saveTimer,
@@ -112,6 +116,8 @@ function NoteEditor({
   initialDoc: object;
   /** Put back on every write; it is not part of the document. */
   frontMatter: string;
+  /** Editing the tags rewrites it — see TagEditor. */
+  onFrontMatter: (next: string) => void;
   saveState: SaveState;
   setSaveState: (s: SaveState) => void;
   saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
@@ -217,6 +223,21 @@ function NoteEditor({
         </Button>
         <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc, frontMatter))} />
       </header>
+      {/* Only while editing: a reader has no use for a text field, and the
+          tags are already on the note's shelf card. */}
+      {editable && (
+        <TagEditor
+          tags={tagsFromFrontMatter(frontMatter)}
+          onChange={(tags) => {
+            const next = frontMatterWithTags(frontMatter, tags);
+            onFrontMatter(next);
+            // Saved with the NEW front matter rather than waiting for the
+            // autosave: that debounce is keyed to typing in the document,
+            // and nothing in the document changed.
+            if (editor) void save(docToMarkdown(editor.state.doc, next));
+          }}
+        />
+      )}
       <EditorPalette editor={editor} editable={editable} />
       </div>
 

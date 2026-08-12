@@ -675,6 +675,7 @@ function StudyCard({
           {t('edited {when}', { when: formatAgo(study.updatedAt) })}
         </span>
       }
+      tags={study.tags}
       pinned={pinned}
       onTogglePin={onTogglePin}
       layout={layout}

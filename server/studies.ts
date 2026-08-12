@@ -16,6 +16,7 @@ import {
 import { resolve, sep } from 'node:path';
 import { VAULT_STUDIES } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
+import { tagsFromFrontMatter, tagsFromPgnText } from '../shared/tags.ts';
 
 /**
  * Studies are plain multi-game PGN files in vault/studies/ — one game per
@@ -61,43 +62,20 @@ export interface DocPreview {
 }
 
 /** Split the head into its front matter (if any) and the body after it. */
-function splitFrontMatter(head: string): { front: string[]; body: string[] } {
+function splitFrontMatter(head: string): { front: string; body: string[] } {
   const lines = head.split('\n');
   // Front matter is a BLOCK, not a rule, and only if it opens the file:
   // skipping just its `---` fences left "tags: endgame" standing there as
   // the note's first sentence.
   if (lines[0]?.trim() === '---') {
     const close = lines.findIndex((line, at) => at > 0 && line.trim() === '---');
-    if (close > 0) return { front: lines.slice(1, close), body: lines.slice(close + 1) };
+    if (close > 0) {
+      return { front: `${lines.slice(0, close + 1).join('\n')}\n`, body: lines.slice(close + 1) };
+    }
   }
-  return { front: [], body: lines };
+  return { front: '', body: lines };
 }
 
-/**
- * `tags: opening, sicilian` or a YAML list under `tags:`.
- *
- * Only front matter — an inline #hashtag is indistinguishable from a
- * markdown heading and from "#1 priority", and guessing wrong puts a
- * badge on a card that the note never asked for.
- */
-function frontMatterTags(front: string[]): string[] {
-  const at = front.findIndex((line) => /^tags\s*:/i.test(line.trim()));
-  if (at < 0) return [];
-  const found: string[] = [];
-  const inline = front[at]!.replace(/^\s*tags\s*:/i, '').trim();
-  if (inline) found.push(...inline.replace(/^\[|\]$/g, '').split(','));
-  // A block list: the indented `- item` lines that follow.
-  for (let i = at + 1; i < front.length; i += 1) {
-    const line = front[i]!;
-    if (!/^\s+-\s+/.test(line)) break;
-    found.push(line.replace(/^\s+-\s+/, ''));
-  }
-  const seen = new Set<string>();
-  return found
-    .map((tag) => tag.trim().replace(/^['"]|['"]$/g, '').toLowerCase())
-    .filter((tag) => tag && tag.length <= 24 && !seen.has(tag) && seen.add(tag) !== undefined)
-    .slice(0, 4);
-}
 
 /**
  * Where the note's first board opens.
@@ -158,7 +136,10 @@ export function readPreview(head: string): DocPreview {
   const { front, body } = splitFrontMatter(head);
   return {
     excerpt: firstProseLine(body),
-    tags: frontMatterTags(front),
+    // Front matter only — an inline #hashtag is indistinguishable from a
+    // markdown heading and from "#1 priority", and guessing wrong puts a
+    // badge on a card the note never asked for.
+    tags: tagsFromFrontMatter(front),
     fen: firstBoardFen(body),
   };
 }
@@ -202,7 +183,14 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
         // A multi-byte character cut in half at the end of the window
         // becomes a replacement char; dropping the last line loses nothing
         // a first sentence needs.
-        preview = readPreview(buf.subarray(0, read).toString('utf-8'));
+        const head = buf.subarray(0, read).toString('utf-8');
+        // A study is PGN: no prose to excerpt and no fence to read a board
+        // from, but it carries its tags in a header on its first chapter,
+        // which is inside the same window.
+        preview =
+          ext === '.md'
+            ? readPreview(head)
+            : { excerpt: null, tags: tagsFromPgnText(head), fen: null };
       } finally {
         closeSync(fd);
       }
@@ -290,12 +278,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
       .filter(({ file, isFile }) => isFile && file.endsWith(ext))
       .map(({ file, size, mtime }) => {
         const path = resolve(dir, file);
-        // Markdown only: a PGN's "first line" is a header nobody wants to
-        // read, and the study card has its chapter count instead.
-        const preview =
-          ext === '.md'
-            ? previewCached(path, mtime.getTime())
-            : { excerpt: null, tags: [], fen: null };
+        const preview = previewCached(path, mtime.getTime());
         return {
           // Ids always use forward slashes, whatever the OS separator is.
           id: file.slice(0, -ext.length).split(sep).join('/'),

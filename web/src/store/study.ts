@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
+import { pgnHeadersWithTags } from '@shared/tags';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { useAnalysis } from './analysis';
@@ -10,6 +11,8 @@ export interface StudyMeta {
   chapters: number;
   bytes: number;
   updatedAt: string;
+  /** From the `Tags` header the study carries on every chapter. */
+  tags?: string[];
 }
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
@@ -54,6 +57,8 @@ interface StudyState {
   addChapter: (group?: string) => void;
   renameChapter: (index: number, name: string) => void;
   deleteChapter: (index: number) => void;
+  /** Replace the open study's tags (stored on every chapter's headers). */
+  setTags: (tags: string[]) => void;
   save: () => Promise<void>;
 }
 
@@ -315,6 +320,22 @@ export const useStudy = create<StudyState>()((set, get) => {
         }
         return c;
       });
+      set({ chapters, saveState: 'dirty' });
+      scheduleSave();
+    },
+
+    /**
+     * The study's tags, written onto every chapter — see shared/tags.
+     *
+     * PGN has no file-level header, only game-level ones, and a study is a
+     * file of games. Carried once on chapter 1 the tags would vanish the
+     * day chapter 1 did.
+     */
+    setTags: (tags) => {
+      const chapters = stashCurrent().map((c) => ({
+        ...c,
+        headers: pgnHeadersWithTags(c.headers, tags),
+      }));
       set({ chapters, saveState: 'dirty' });
       scheduleSave();
     },
