@@ -829,6 +829,35 @@ function ArchiveBrowser({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
   const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
+  /**
+   * The handles looked up before, on THIS provider, kept on the device.
+   * Typing a username is the one thing this panel asks for over and over,
+   * and until an archive is loaded the space below it does nothing.
+   */
+  const recentsKey = `chess-vault:recent-${provider}`;
+  const [recents, setRecents] = useState<string[]>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(recentsKey) ?? '[]') as unknown;
+      return Array.isArray(stored) ? (stored as string[]).slice(0, 4) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(recentsKey) ?? '[]') as unknown;
+      setRecents(Array.isArray(stored) ? (stored as string[]).slice(0, 4) : []);
+    } catch {
+      setRecents([]);
+    }
+  }, [recentsKey]);
+  const rememberRecent = (who: string): void => {
+    setRecents((prev) => {
+      const next = [who, ...prev.filter((p) => p.toLowerCase() !== who.toLowerCase())].slice(0, 4);
+      localStorage.setItem(recentsKey, JSON.stringify(next));
+      return next;
+    });
+  };
   const [loading, setLoading] = useState<'months' | 'games' | null>(null);
   // On a phone this panel sits under the collection, so an archive that has
   // just arrived is off the bottom of the screen. Scrolled to, once, when it
@@ -847,10 +876,11 @@ function ArchiveBrowser({
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  const loadMonths = async (): Promise<void> => {
-    const user = username.trim();
+  const loadMonths = async (who?: string): Promise<void> => {
+    const user = (who ?? username).trim();
     if (!user) return;
     localStorage.setItem('chess-vault:chesscom-user', user);
+    rememberRecent(user);
     setLoading('months');
     setError(null);
     setMonth('');
@@ -1060,77 +1090,94 @@ function ArchiveBrowser({
     <Panel flush className="shrink-0 sm:min-h-0 sm:flex-1">
       {/* Narrow screens can't fit tabs + username + Browse on one line;
           the band relaxes its fixed height and lets the actions wrap. */}
-      <PanelHeader
-        // Always wrapping, not only on a narrow VIEWPORT: this panel is a
-        // 30% column on a desktop now, so the width that matters is its
-        // own. Unwrapped, the second provider chip was cut off by the
-        // header's truncation.
-        className="h-auto min-h-10 flex-wrap py-1.5"
-        title={
-          /* The two provider chips stay on one line together — they are the
-             choice being made. What moves to a second line on a narrow
-             screen is the username field below them (actionsClassName). */
-          <span className="flex items-center gap-1 normal-case tracking-normal">
-            {(
-              [
-                ['chesscom', 'chess.com'],
-                ['lichess', 'Lichess'],
-              ] as const
-            ).map(([id, label]) => (
-              <FilterChip
-                key={id}
-                label={
-                  <span className="inline-flex items-center gap-1.5">
-                    {id === 'chesscom' ? (
-                      /* chess.com's pawn, in its brand green */
-                      <svg viewBox="5 4.5 35 37" className="size-3.5" fill="#7fa650" aria-hidden>
-                        <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
-                      </svg>
-                    ) : (
-                      /* lichess's knight mark */
-                      <KnightIcon className="size-3.5 fill-current" />
-                    )}
-                    {t('Browse {site}', { site: label })}
-                  </span>
-                }
-                active={provider === id}
-                onClick={() => switchProvider(id)}
-              />
-            ))}
-          </span>
-        }
-        actionsClassName="w-full justify-start lg:w-full"
-        actions={
-          <>
-            <Input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && username.trim()) void loadMonths();
-              }}
-              placeholder={
-                provider === 'chesscom' ? t('chess.com username') : t('Lichess username')
+      {/* A plain title, the same h-10 the collection's header is: the two
+          panels sit side by side, and a header that grew to fit its
+          controls started this one's contents 35px below the other's. The
+          controls live in the body instead, stacked, which is also what
+          a 30%-wide column wants. */}
+      <PanelHeader title={t('Online archives')} />
+
+      <div className="border-line flex flex-col gap-2 border-b px-3 py-2">
+        {/* The two provider chips stay on one line together — they are the
+            choice being made. */}
+        <div className="flex items-center gap-1">
+          {(
+            [
+              ['chesscom', 'chess.com'],
+              ['lichess', 'Lichess'],
+            ] as const
+          ).map(([id, label]) => (
+            <FilterChip
+              key={id}
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  {id === 'chesscom' ? (
+                    /* chess.com's pawn, in its brand green */
+                    <svg viewBox="5 4.5 35 37" className="size-3.5" fill="#7fa650" aria-hidden>
+                      <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" />
+                    </svg>
+                  ) : (
+                    /* lichess's knight mark */
+                    <KnightIcon className="size-3.5 fill-current" />
+                  )}
+                  {t('Browse {site}', { site: label })}
+                </span>
               }
-              className="w-auto min-w-0 flex-1 font-mono"
-              inputSize="sm"
+              active={provider === id}
+              onClick={() => switchProvider(id)}
             />
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              title={t("Browse this player's online archive")}
-              disabled={loading !== null || !username.trim()}
-              onClick={() => void loadMonths()}
-            >
-              {loading === 'months' ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Globe className="size-3.5" />
-              )}
-            </Button>
-          </>
-        }
-      />
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && username.trim()) void loadMonths();
+            }}
+            placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
+            className="w-auto min-w-0 flex-1 font-mono"
+            inputSize="sm"
+          />
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            title={t("Browse this player's online archive")}
+            disabled={loading !== null || !username.trim()}
+            onClick={() => void loadMonths()}
+          >
+            {loading === 'months' ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Globe className="size-3.5" />
+            )}
+          </Button>
+        </div>
+
+        {/* Who you have looked up before, on this provider. Typing a handle
+            again is the one thing this panel asks for repeatedly, and the
+            empty space under it was doing nothing. */}
+        {months.length === 0 && recents.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1">
+            <span className="text-subtle text-[0.6875rem]">{t('Recent')}</span>
+            {recents.map((who) => (
+              <button
+                key={who}
+                type="button"
+                onClick={() => {
+                  setUsername(who);
+                  void loadMonths(who);
+                }}
+                className="border-line text-muted hover:border-line-strong hover:text-fg rounded-full border px-2 py-0.5 font-mono text-[0.6875rem] transition-colors duration-100"
+              >
+                {who}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (

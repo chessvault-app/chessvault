@@ -416,14 +416,17 @@
     display: none;
   }
 
-  /* Slim, theme-aware scrollbars. */
+  /* Slim, theme-aware scrollbars: a 6px thumb inside a 12px gutter, so it
+     is easy to grab without crowding the content it scrolls. The colours
+     are tokens rather than fixed greys — the same rule has to look right
+     on the light theme, where a #2f3542 thumb would be a black bar. */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
   }
   *::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
   }
   *::-webkit-scrollbar-track {
     background: transparent;

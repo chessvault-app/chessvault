@@ -166,6 +166,8 @@ export const ko: Record<string, string> = {
   Annotated: '주석 있음',
   'View on chess.com (needs internet)': 'chess.com에서 보기 (인터넷 필요)',
   'Import a game': '게임 가져오기',
+  'Online archives': '온라인 기보',
+  Recent: '최근',
   'Advanced details': '자세한 정보',
   'White (optional)': '백 (선택)',
   'Black (optional)': '흑 (선택)',
