@@ -30,7 +30,7 @@ const arg = (flag: string, fallback: number): number => {
 const DEPTH = arg('--depth', 16);
 const WIDTH = arg('--width', 6);
 const MIN_GAMES = arg('--min', 20);
-const OUT = resolve(REPO_ROOT, 'web/public/demo/book.sqlite');
+const OUT = resolve(REPO_ROOT, 'web/demo-assets/book.sqlite');
 
 const source = readdirSync(DATA_BOOKS).find((n) => n.endsWith('.sqlite'));
 if (!source) {

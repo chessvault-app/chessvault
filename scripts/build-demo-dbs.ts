@@ -25,7 +25,7 @@ const arg = (flag: string, fallback: number): number => {
 
 const PUZZLE_TARGET = arg('--puzzles', 4000);
 const GAME_TARGET = arg('--games', 3000);
-const OUT_DIR = resolve(REPO_ROOT, 'web/public/demo');
+const OUT_DIR = resolve(REPO_ROOT, 'web/demo-assets');
 mkdirSync(OUT_DIR, { recursive: true });
 
 // --- puzzles ------------------------------------------------------------------

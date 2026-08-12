@@ -55,11 +55,11 @@ jobs:
 
       # The curated databases are built from the full ones, which are far too
       # large to live in a repository. They are committed under
-      # web/public/demo/ precisely so this job does not need them.
+      # web/demo-assets/ precisely so this job does not need them.
       - name: Check the demo databases are present
         run: |
-          for f in web/public/demo/puzzles.sqlite web/public/demo/refgames.sqlite \
-                   web/public/demo/book.sqlite web/public/demo/openings.json; do
+          for f in web/demo-assets/puzzles.sqlite web/demo-assets/refgames.sqlite \
+                   web/demo-assets/book.sqlite web/demo-assets/openings.json; do
             [ -f "$f" ] || { echo "missing $f — run npm run build:demo-dbs and commit it"; exit 1; }
           done
 

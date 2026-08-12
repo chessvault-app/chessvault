@@ -87,10 +87,10 @@ describe('the static demo keeps up with the app', () => {
 
   it('ships the databases and assets the demo build needs', () => {
     for (const file of [
-      'web/public/demo/puzzles.sqlite',
-      'web/public/demo/refgames.sqlite',
-      'web/public/demo/book.sqlite',
-      'web/public/demo/openings.json',
+      'web/demo-assets/puzzles.sqlite',
+      'web/demo-assets/refgames.sqlite',
+      'web/demo-assets/book.sqlite',
+      'web/demo-assets/openings.json',
     ]) {
       expect(existsSync(resolve(REPO_ROOT, file)), `missing ${file}`).toBe(true);
     }
@@ -128,9 +128,9 @@ function schema(path: string): Record<string, string[]> {
  */
 describe('curated databases match the real ones', () => {
   const cases = [
-    { demo: 'web/public/demo/puzzles.sqlite', real: DATA_PUZZLES, tables: ['puzzles', 'themes', 'meta'] },
+    { demo: 'web/demo-assets/puzzles.sqlite', real: DATA_PUZZLES, tables: ['puzzles', 'themes', 'meta'] },
     {
-      demo: 'web/public/demo/refgames.sqlite',
+      demo: 'web/demo-assets/refgames.sqlite',
       real: resolve(DATA, 'refgames.sqlite'),
       tables: ['games', 'meta'],
     },
@@ -155,7 +155,7 @@ describe('curated databases match the real ones', () => {
   }
 
   it('the opening book carries the tables its route joins', () => {
-    const book = resolve(REPO_ROOT, 'web/public/demo/book.sqlite');
+    const book = resolve(REPO_ROOT, 'web/demo-assets/book.sqlite');
     if (!existsSync(book)) return;
     const small = schema(book);
     // books.ts joins top_games to games; both must exist even when empty,
