@@ -676,9 +676,6 @@ export const ko: Record<string, string> = {
   Length: '길이',
   Source: '출처',
 
-  // --- the demo ------------------------------------------------------------
-  'Demo — everyone shares this vault and it resets regularly. Do not put anything private here.':
-    '데모 — 이 보관함은 모두가 함께 쓰며 주기적으로 초기화됩니다. 개인적인 내용은 넣지 마세요.',
   // --- demo ----------------------------------------------------------------
   'This is a demo': '이것은 데모입니다',
   'Everything you change here lives in this browser tab and disappears when you reload. Your profile, password, two-factor authentication, the Lichess token and the vault itself need a server of your own — install the app or host it, and this page becomes the real thing.':

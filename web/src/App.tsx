@@ -25,7 +25,7 @@ import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { t, useLang } from '@/lib/i18n';
-import { demoKind, isDemo, noteServerDemo } from '@/lib/demo';
+import { isDemo } from '@/lib/demo';
 
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
@@ -83,31 +83,17 @@ export function App() {
 }
 
 /**
- * Public demo notice.
+ * Demo notice.
  *
- * A shared vault that anyone can edit is only honest if it says so: a
- * visitor who writes a study and comes back to find it gone should have
- * been told, and a visitor about to type something private should be
- * warned before rather than after.
+ * A vault that disappears is only honest if it says so: a visitor who
+ * writes a study and comes back to find it gone should have been told
+ * before rather than after.
  */
 function DemoBanner() {
-  const [demo, setDemo] = useState(isDemo);
-  useEffect(() => {
-    void fetch('/api/health')
-      .then((r) => r.json() as Promise<{ demo?: boolean }>)
-      .then((h) => {
-        // Recorded so every other surface can name the demo too.
-        noteServerDemo(!!h.demo);
-        setDemo(!!h.demo || isDemo());
-      })
-      .catch(() => setDemo(false));
-  }, []);
-  if (!demo) return null;
+  if (!isDemo()) return null;
   return (
     <div className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-xs">
-      {demoKind() === 'server'
-        ? t('Demo — everyone shares this vault and it resets regularly. Do not put anything private here.')
-        : t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
+      {t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
     </div>
   );
 }

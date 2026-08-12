@@ -4,7 +4,6 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, w
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
-import { DEMO } from './demo.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 
 /**
@@ -71,14 +70,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       profile: config.profile ?? {},
       gate: !!config.appPassword?.trim(),
       totp: !!config.totpSecret?.trim(),
-      // Even the last four characters of a token, and the vault's path on
-      // disk, are more than a stranger needs. The demo says neither.
-      lichess: DEMO
-        ? { configured: token !== '', last4: null }
-        : { configured: token !== '', last4: token === '' ? null : token.slice(-4) },
-      vaultPath: DEMO ? 'demo' : vaultDir,
+      lichess: { configured: token !== '', last4: token === '' ? null : token.slice(-4) },
+      vaultPath: vaultDir,
       version: APP_VERSION,
-      ...(DEMO && { demo: true }),
     });
   });
 
