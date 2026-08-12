@@ -1198,6 +1198,9 @@ function ArchiveBrowser({
           segments={[
             {
               value: 'chesscom',
+              // Each site answers in its own colour when it is the live
+              // one: chess.com's green, Lichess's near-white.
+              accent: '#8fbb5c',
               label: (
                 <>
                   {/* chess.com's pawn, in its brand green */}
@@ -1210,6 +1213,7 @@ function ArchiveBrowser({
             },
             {
               value: 'lichess',
+              accent: '#f2f2f0',
               label: (
                 <>
                   {/* lichess's knight mark */}
