@@ -80,36 +80,6 @@ export function SkeletonRows({ rows = 6, className }: { rows?: number; className
 const NAME_WIDTHS = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
 
 /**
- * Rows inside a divided list — the shape the games lists use: an icon, a
- * name over a meta line, and something on the right.
- */
-export function SkeletonListRows({
-  rows = 6,
-  action = false,
-  className,
-}: {
-  rows?: number;
-  /** Reserve the trailing button the real rows carry. */
-  action?: boolean;
-  className?: string;
-}) {
-  return (
-    <Loading className={cn('divide-line divide-y', className)}>
-      {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex items-center gap-3 px-3 py-2.5">
-          <Skeleton className="size-4 shrink-0 rounded" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
-            <Skeleton className="h-2 w-1/4" />
-          </div>
-          {action && <Skeleton className="h-6 w-14 shrink-0" />}
-        </div>
-      ))}
-    </Loading>
-  );
-}
-
-/**
  * Separate bordered cards under a collection heading — what Studies and
  * Notes actually draw. They are not a divided list, and a skeleton shaped
  * like one made the page jump when the real cards arrived.

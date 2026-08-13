@@ -21,7 +21,6 @@ export type Quad = [Point, Point, Point, Point];
 
 /** Warped board edge length; divides evenly into 64 cells of 64 px. */
 export const BOARD_PX = 512;
-export const CELL_PX = BOARD_PX / 8;
 /** Cell features are mean-pooled to FEATURE_PX² bytes. */
 export const FEATURE_PX = 16;
 

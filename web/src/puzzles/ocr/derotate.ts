@@ -1,6 +1,6 @@
 import { detectDiagrams } from './detect';
 import type { Gray } from './image';
-import type { NumberBox, TextPage } from '@shared/bookImport';
+import type { TextPage } from '@shared/bookImport';
 
 /**
  * Pages a scanner fed in upside down.
@@ -114,15 +114,4 @@ export function numbersForRun(
     }
   }
   return out;
-}
-
-/** A recovered label, as the number box the label matcher expects. */
-export function asNumberBox(label: RecoveredLabel, page: { width: number; height: number }): NumberBox {
-  const x0 = label.rect.x * page.width;
-  return {
-    value: label.number,
-    x0,
-    x1: x0 + 0.03 * page.width,
-    y1: label.rect.y * page.height - 2,
-  };
 }
