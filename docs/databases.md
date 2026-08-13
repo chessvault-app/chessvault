@@ -52,7 +52,7 @@ npm run build:refgames                    # every PGN in vault/sources/
 npm run build:refgames -- elite-2025-11.pgn
 ```
 
-## Why reference games still need the shell
+## Why building reference games still needs the shell
 
 The standing rule is that every user action must be possible in the app.
 This page used to argue that these two databases were a considered

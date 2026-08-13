@@ -41,11 +41,12 @@ The packaged local mode runs the bundled server on Electron's own Node
 pointed at `%APPDATA%/Chess Vault/{vault,data}` — a fresh vault per
 machine profile.
 
-Opening books build in the packaged app: `build-book.mjs` ships beside
-the server bundle and the server prefers it over the repo script. The
-puzzle and reference-game databases are still prepared artefacts — no
-build job exposes them anywhere — so bring built `data/` files along if
-wanted.
+Opening books and the puzzle pool build in the packaged app:
+`build-book.mjs` and `build-puzzles.mjs` ship beside the server bundle
+and the server prefers them over the repo scripts. Reference games are
+the one remaining prepared artefact — the installer seeds a starter set
+on first run, and growing past it means bringing a built
+`data/refgames.sqlite` along.
 
 ## Auto-update
 

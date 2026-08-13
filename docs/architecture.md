@@ -91,9 +91,11 @@ How the app itself is reached is a deployment choice, not an architectural
 one: a reverse proxy terminating HTTPS on a public address, or Tailscale
 alone with nothing public at all. Both are just HTTP to the same server.
 
-Two things are prepared rather than produced by the app — the puzzle and
-reference-game databases — and are copied to the server; see
-[databases](databases.md) for when that has to happen. Desktop builds
+Two databases are prepared once rather than grown with the vault — the
+puzzle pool and the reference games; [databases](databases.md) covers how
+each machine comes by them (the app offers to build the puzzle pool
+itself, the desktop installer seeds starter reference games, and a bigger
+reference set is built in a shell and copied). Desktop builds
 update from a feed the server hosts at `/updates`, so releases need no
 third party and no public repository.
 

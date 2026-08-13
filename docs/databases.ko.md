@@ -50,7 +50,7 @@ npm run build:refgames                    # vault/sources/의 모든 PGN
 npm run build:refgames -- elite-2025-11.pgn
 ```
 
-## 왜 참고 게임에는 아직 셸이 필요한가
+## 왜 참고 게임을 직접 만들 때는 아직 셸이 필요한가
 
 모든 사용자 동작은 앱 안에서 가능해야 한다는 것이 계속 지키는 규칙입니다.
 이 문서는 그동안 이 두 데이터베이스가 따져 본 예외라고 주장했습니다 —
