@@ -877,7 +877,7 @@ function size(bytes: number): string {
  */
 function BrowsedGamesCard() {
   const [players, setPlayers] = useState<CachedPlayer[] | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const refresh = async (): Promise<void> => {
     const res = await fetch('/api/games/cache');
@@ -887,11 +887,14 @@ function BrowsedGamesCard() {
     void refresh();
   }, []);
 
-  const clear = async (query: string, key: string): Promise<void> => {
-    setBusy(key);
-    await json('DELETE', `/api/games/cache?${query}`);
+  // All of it. The list is here to SAY what is being held — whose history,
+  // how much — not to be picked through: choosing which player to keep is
+  // a question nobody has about data that costs one fetch to get back.
+  const clear = async (): Promise<void> => {
+    setBusy(true);
+    await json('DELETE', '/api/games/cache');
     await refresh();
-    setBusy(null);
+    setBusy(false);
   };
 
   const total = (players ?? []).reduce((sum, p) => sum + p.bytes, 0);
@@ -909,43 +912,19 @@ function BrowsedGamesCard() {
       {players !== null && players.length > 0 && (
         <>
           <ul className="divide-line border-line divide-y rounded-lg border">
-            {players.map((p) => {
-              const key = `${p.provider}/${p.user}`;
-              return (
-                <li key={key} className="flex items-center gap-2 px-3 py-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm">{p.user}</p>
-                    <p className="text-subtle text-xs">
-                      {PROVIDER_NAME[p.provider] ?? p.provider} ·{' '}
-                      {t('{n} months', { n: p.months })} · {size(p.bytes)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t('Clear')}
-                    aria-label={t('Clear')}
-                    disabled={busy !== null}
-                    onClick={() =>
-                      void clear(
-                        `provider=${p.provider}&user=${encodeURIComponent(p.user)}`,
-                        key,
-                      )
-                    }
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </li>
-              );
-            })}
+            {players.map((p) => (
+              <li key={`${p.provider}/${p.user}`} className="flex items-baseline gap-2 px-3 py-2">
+                <p className="min-w-0 flex-1 truncate text-sm">{p.user}</p>
+                <p className="text-subtle shrink-0 text-xs">
+                  {PROVIDER_NAME[p.provider] ?? p.provider} · {t('{n} months', { n: p.months })} ·{' '}
+                  {size(p.bytes)}
+                </p>
+              </li>
+            ))}
           </ul>
           <div className="flex items-center justify-between gap-2">
             <span className="text-subtle text-xs">{t('{size} in total', { size: size(total) })}</span>
-            <Button
-              variant="ghost"
-              disabled={busy !== null}
-              onClick={() => void clear('all=1', 'all')}
-            >
+            <Button variant="ghost" disabled={busy} onClick={() => void clear()}>
               {t('Clear all')}
             </Button>
           </div>

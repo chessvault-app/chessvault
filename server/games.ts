@@ -577,47 +577,32 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
   });
 
   /**
-   * Drop one player's cache, or all of it.
+   * Drop the whole browsing cache.
    *
-   * Safe by construction: this only ever removes months that can be
-   * fetched again, and the collection is a different directory
-   * altogether — a game someone kept was COPIED into it, so clearing the
-   * cache cannot take anything that was chosen.
+   * All of it, not one player at a time: this is housekeeping, and a list
+   * of players each with its own button asked whose history to keep — a
+   * question nobody has, about data that costs one fetch to get back.
+   *
+   * Safe by construction: it only ever removes months that can be fetched
+   * again, and the collection is a different directory altogether — a
+   * game someone kept was COPIED into it, so clearing the cache cannot
+   * take anything that was chosen.
    */
   api.delete('/games/cache', (c) => {
-    const all = c.req.query('all') === '1';
-    const provider = c.req.query('provider');
-    const user = c.req.query('user')?.trim();
-
-    if (all) {
-      let bytes = 0;
-      for (const p of ['chesscom', 'lichess']) {
-        const providerDir = resolve(dir, p);
-        if (!existsSync(providerDir)) continue;
-        for (const u of readdirSync(providerDir)) {
-          const userDir = resolve(providerDir, u);
-          if (!statSync(userDir).isDirectory()) continue;
-          for (const f of readdirSync(userDir)) {
-            if (f.endsWith('.pgn')) bytes += statSync(resolve(userDir, f)).size;
-          }
-          rmSync(userDir, { recursive: true, force: true });
+    let bytes = 0;
+    for (const provider of ['chesscom', 'lichess']) {
+      const providerDir = resolve(dir, provider);
+      if (!existsSync(providerDir)) continue;
+      for (const user of readdirSync(providerDir)) {
+        const userDir = resolve(providerDir, user);
+        if (!statSync(userDir).isDirectory()) continue;
+        for (const f of readdirSync(userDir)) {
+          if (f.endsWith('.pgn')) bytes += statSync(resolve(userDir, f)).size;
         }
+        rmSync(userDir, { recursive: true, force: true });
       }
-      return c.json({ cleared: 'all', bytes });
     }
-
-    if (provider !== 'chesscom' && provider !== 'lichess') {
-      return c.json({ error: 'invalid provider' }, 400);
-    }
-    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
-
-    const userDir = resolve(dir, provider, user.toLowerCase());
-    if (!existsSync(userDir)) return c.json({ error: 'nothing cached for that player' }, 404);
-    const bytes = readdirSync(userDir)
-      .filter((f) => f.endsWith('.pgn'))
-      .reduce((sum, f) => sum + statSync(resolve(userDir, f)).size, 0);
-    rmSync(userDir, { recursive: true, force: true });
-    return c.json({ cleared: `${provider}/${user.toLowerCase()}`, bytes });
+    return c.json({ bytes });
   });
 
   api.get('/games/bookmarks', (c) => c.json({ keys: [...readBookmarks(dir)] }));

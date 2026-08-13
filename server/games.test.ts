@@ -219,23 +219,6 @@ describe('archive cache', () => {
     expect(body.bytes).toBe(MONTH_PGN.length * 2);
   });
 
-  it('clears one player, and leaves the other alone', async () => {
-    const res = await app.request('/api/games/cache?provider=lichess&user=someone', {
-      method: 'DELETE',
-    });
-    expect(res.status).toBe(200);
-    expect(existsSync(join(dir, 'lichess', 'someone'))).toBe(false);
-    expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(true);
-  });
-
-  it('refuses a username that would climb out of the provider directory', async () => {
-    const res = await app.request('/api/games/cache?provider=chesscom&user=..', {
-      method: 'DELETE',
-    });
-    expect(res.status).toBe(400);
-    expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(true);
-  });
-
   it('rechecks the month being played in, and keeps the cache when it has not changed', async () => {
     const now = new Date();
     const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
@@ -268,9 +251,12 @@ describe('archive cache', () => {
     expect(seen).toEqual([undefined, 'Wed, 01 Jul 2026 00:00:00 GMT']);
   });
 
-  it('clears the lot', async () => {
-    const res = await app.request('/api/games/cache?all=1', { method: 'DELETE' });
+  it('clears the lot, every provider, and reports what it freed', async () => {
+    const res = await app.request('/api/games/cache', { method: 'DELETE' });
     expect(res.status).toBe(200);
+    expect((await res.json()).bytes).toBeGreaterThan(0);
+    expect(existsSync(join(dir, 'lichess', 'someone'))).toBe(false);
+    expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(false);
     expect((await (await app.request('/api/games/cache')).json()).users).toEqual([]);
   });
 });
