@@ -337,31 +337,61 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
  *
  * The click handler still fires for the tap itself, so this only ever
  * ADDS the repeats: `onClick` moves one, the timer moves the rest.
+ *
+ * A HOOK, and the timers live in a ref, because the previous version was
+ * a plain function called during render — so every re-render built a new
+ * pair of handlers over a NEW, empty pair of timer variables. Releasing
+ * the button then ran the newest `stop`, which had nothing to stop,
+ * while the interval an earlier render had started ran on untouched. The
+ * board walked the game by itself until the page was left.
+ *
+ * It needed a re-render between press and release to happen, and this
+ * component gets them constantly: it is redrawn on every evaluation the
+ * engine reports. lanph3re found it on an iPad, where a press is
+ * naturally long enough to arm the repeat — but nothing about it was
+ * ever iPad-specific, and even a plain tap armed the 400ms timer that
+ * the same bug then failed to cancel.
  */
-function repeatOn(step: () => void): {
+function useRepeat(step: () => void): {
   onPointerDown: () => void;
   onPointerUp: () => void;
   onPointerLeave: () => void;
   onPointerCancel: () => void;
 } {
-  let delay: ReturnType<typeof setTimeout> | null = null;
-  let tick: ReturnType<typeof setInterval> | null = null;
-  const stop = (): void => {
-    if (delay) clearTimeout(delay);
-    if (tick) clearInterval(tick);
-    delay = tick = null;
-  };
-  return {
-    onPointerDown: () => {
-      stop();
-      delay = setTimeout(() => {
-        tick = setInterval(step, 90);
-      }, 400);
-    },
-    onPointerUp: stop,
-    onPointerLeave: stop,
-    onPointerCancel: stop,
-  };
+  // Read through a ref so the handlers can stay stable while `step` — a
+  // store action, but not guaranteed to be — is free to change.
+  const latest = useRef(step);
+  latest.current = step;
+  const timers = useRef<{
+    delay: ReturnType<typeof setTimeout> | null;
+    tick: ReturnType<typeof setInterval> | null;
+  }>({ delay: null, tick: null });
+
+  const handlers = useMemo(() => {
+    const stop = (): void => {
+      const t = timers.current;
+      if (t.delay) clearTimeout(t.delay);
+      if (t.tick) clearInterval(t.tick);
+      t.delay = t.tick = null;
+    };
+    return {
+      onPointerDown: () => {
+        stop();
+        timers.current.delay = setTimeout(() => {
+          timers.current.tick = setInterval(() => latest.current(), 90);
+        }, 400);
+      },
+      onPointerUp: stop,
+      onPointerLeave: stop,
+      onPointerCancel: stop,
+    };
+  }, []);
+
+  // Navigating away mid-press must not leave a timer stepping a board
+  // that is not on screen any more.
+  useEffect(() => handlers.onPointerCancel, [handlers]);
+
+  return handlers;
 }
 
 export function BoardControls({
@@ -377,6 +407,10 @@ export function BoardControls({
   const goForward = useAnalysis((s) => s.goForward);
   const goToEnd = useAnalysis((s) => s.goToEnd);
   const flip = useAnalysis((s) => s.flip);
+  // Hooks, so they must be here rather than spread inline in the JSX —
+  // which is what let the old version lose its timers on every render.
+  const repeatBack = useRepeat(goBack);
+  const repeatForward = useRepeat(goForward);
 
   // Arrow keys should drive the board from anywhere except a text field.
   useEffect(() => {
@@ -421,10 +455,10 @@ export function BoardControls({
       <Button variant="ghost" size="icon" onClick={goToStart} title={t('Start (↑)')}>
         <ChevronFirst className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')} {...repeatOn(goBack)}>
+      <Button variant="ghost" size="icon" onClick={goBack} title={t('Back (←)')} {...repeatBack}>
         <ChevronLeft className="size-[1.1rem]" />
       </Button>
-      <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')} {...repeatOn(goForward)}>
+      <Button variant="ghost" size="icon" onClick={goForward} title={t('Forward (→)')} {...repeatForward}>
         <ChevronRight className="size-[1.1rem]" />
       </Button>
       <Button variant="ghost" size="icon" onClick={goToEnd} title={t('End (↓)')}>
