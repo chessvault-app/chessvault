@@ -573,8 +573,10 @@ function TopGamesList({
         if (g.result) query.set('result', g.result);
         const found = await fetch(`/api/refgames/find?${query}`);
         if (found.ok) {
-          const { id } = (await found.json()) as { id: number };
-          const res = await fetch(`/api/refgames/${id}/pgn`);
+          // `db` says which reference database held the match — absent on a
+          // single-database mount (the demo), where the default is it.
+          const { id, db } = (await found.json()) as { id: number; db?: string };
+          const res = await fetch(`/api/refgames/${id}/pgn${db ? `?db=${encodeURIComponent(db)}` : ''}`);
           if (res.ok) {
             const { pgn } = (await res.json()) as { pgn: string };
             if (await loadPgn(pgn)) return;

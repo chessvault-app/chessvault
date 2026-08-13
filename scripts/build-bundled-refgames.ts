@@ -17,8 +17,11 @@
  * lesson `build-demo-dbs.ts` records, at demo scale.
  *
  *   npx tsx scripts/build-bundled-refgames.ts [--games 50000]
- *                                             [--from data/refgames.sqlite]
+ *                                             [--from <a refgames .sqlite>]
  *                                             [--out assets/refgames-elite.sqlite]
+ *
+ * `--from` defaults to the BIGGEST database on this machine (see
+ * refgamesFiles.ts for why size is the signal).
  *
  * The output file name MUST keep the `refgames-` prefix: that prefix is how
  * first-run seeding tells the bundled reference games apart from the
@@ -27,8 +30,9 @@
 import Database from 'better-sqlite3';
 import { mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
-import { DATA, REPO_ROOT } from '../server/paths.ts';
+import { REPO_ROOT } from '../server/paths.ts';
 import { REFGAMES_INDEXES } from './lib/db-tuning.ts';
+import { biggestRefgames } from './lib/refgamesFiles.ts';
 
 const argValue = (flag: string): string | undefined => {
   const at = process.argv.indexOf(flag);
@@ -36,7 +40,12 @@ const argValue = (flag: string): string | undefined => {
 };
 
 const GAMES = Number(argValue('--games') ?? 50_000);
-const FROM = resolve(process.cwd(), argValue('--from') ?? resolve(DATA, 'refgames.sqlite'));
+const fromArg = argValue('--from') ?? biggestRefgames();
+if (!fromArg) {
+  console.error('no reference-games database to curate — run build:refgames first');
+  process.exit(1);
+}
+const FROM = resolve(process.cwd(), fromArg);
 const OUT = resolve(process.cwd(), argValue('--out') ?? resolve(REPO_ROOT, 'assets/refgames-elite.sqlite'));
 
 if (!basename(OUT).startsWith('refgames-')) {

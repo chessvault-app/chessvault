@@ -12,7 +12,7 @@ import { seedBundledBook } from './books.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
-import { seedBundledRefgames } from './refgames.ts';
+import { migrateLegacyRefgames, seedBundledRefgames } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
@@ -29,8 +29,10 @@ for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) 
 // copied in the first time this data directory is used — so the explorer,
 // the repertoire trainer and the elite game browser all have something to
 // answer from on a fresh install. Deletable like anything the user built,
-// and neither comes back once it has been.
+// and neither comes back once it has been. The single-file refgames
+// layout migrates first, so the seed lands beside it, never over it.
 seedBundledBook();
+migrateLegacyRefgames();
 seedBundledRefgames();
 
 const app = new Hono();

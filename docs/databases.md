@@ -8,7 +8,7 @@ than growing with your vault the way everything else does:
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
-| `data/refgames.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | the app, in the elite browser (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
+| `data/refgames/*.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | the app, in the elite browser's manager (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
 inside the app, and `data/mygames.sqlite` is not even that: the explorer's
@@ -45,19 +45,23 @@ deliberate limit.
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.
 
-**More reference games.** Upload PGN collections in the explorer's book
-manager (or drop them into `vault/sources/` — same place) and either let
-the elite browser's empty state build the database, or run the same
-indexer yourself:
+**More reference games.** They are plural, like books:
+`data/refgames/<name>.sqlite`, each an independent database, listed and
+switched in the elite browser. Its manager uploads PGN collections (the
+same `vault/sources/` uploads that build opening books), indexes any
+selection of them under a name, and deletes what is no longer wanted —
+so unlike puzzles there is no replace-wrinkle here: build the same name
+again to replace it, or a new name beside it. The same indexer runs from
+a terminal:
 
 ```
 npm run build:refgames                    # every PGN in vault/sources/
-npm run build:refgames -- elite-2025-11.pgn
+npm run build:refgames -- elite-2025-11.pgn --name elite
 ```
 
-The same no-button-yet caveat as puzzles applies: the in-app offer
-appears only when there is no database at all, so *replacing* a working
-set still means the command, or deleting the file first.
+A machine still carrying the single-file era's `data/refgames.sqlite`
+migrates on the server's next start: the file is renamed into the
+directory, named after its source when the meta records one.
 
 ## How reference games stopped needing the shell
 
@@ -83,7 +87,8 @@ files in.
 The desktop installer softens the empty start besides: it carries a
 starter set — the strongest games of every ECO code from one Lichess
 Elite month, ~39 k games in 25 MB, built by `build-bundled-refgames.ts`
-at release time — seeded to `data/refgames.sqlite` on first run, the same
-way the bundled opening book is. It is an ordinary database from then on:
-a build replaces it, and deleting it is final. A server install gets no
-seed; it takes the commit, not the release artefacts.
+at release time — seeded into `data/refgames/` on first run, the same
+way the bundled opening book is. It is an ordinary database from then
+on, one name among however many are built beside it, and deleting it is
+final. A server install gets no seed; it takes the commit, not the
+release artefacts.

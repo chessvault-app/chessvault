@@ -674,14 +674,28 @@ export const ko: Record<string, string> = {
   'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.':
     '작은 모음입니다. 내 기보 데이터베이스로는 괜찮습니다 — 무엇을 뒀고 결과가 어땠는지 알려 줍니다. 다만 일반적으로 어떻게 두는지에 대한 참고 자료로는 오해를 부릅니다. 판수가 적어 포지션마다 한 수가 100%로 나오기 때문입니다.',
   'Uploading {name}…': '{name} 올리는 중…',
-  'Index the PGN collections you have uploaded ({n} in vault/sources) into a searchable database of whole games.':
-    '올려 둔 PGN 모음(vault/sources에 {n}개)을 게임 전체를 검색할 수 있는 데이터베이스로 색인합니다.',
-  'Build the database': '데이터베이스 만들기',
-  'Indexing your collections — this keeps going if you leave the page.':
-    '모음을 색인하는 중 — 페이지를 떠나도 계속됩니다.',
+  'Upload PGN collections and index them into searchable databases of whole games.':
+    'PGN 모음을 올리고, 게임 전체를 검색할 수 있는 데이터베이스로 색인하세요.',
+  'This server has no reference games database.': '이 서버에는 참고 게임 데이터베이스가 없습니다.',
+  Databases: '데이터베이스',
+  'Delete this database — deleting is final': '이 데이터베이스 삭제 — 지우면 그것으로 끝입니다',
+  'PGN collections': 'PGN 모음',
+  'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export — and the same uploads build opening books.':
+    '아직 올린 것이 없습니다. 모음은 게임이 담긴 .pgn 파일이면 무엇이든 됩니다 — Lichess Elite 월별 파일, Lumbra 내보내기 — 같은 업로드로 오프닝 북도 만듭니다.',
+  'Upload PGN collections': 'PGN 모음 올리기',
+  'Name — the file’s name if blank': '이름 — 비우면 파일 이름',
   'The build failed.': '만들기에 실패했습니다.',
-  'Upload PGN collections (Lichess Elite months, Lumbra exports) in the explorer’s book manager first — the same uploads build opening books and this browser.':
-    '먼저 탐색기의 북 관리자에서 PGN 모음(Lichess Elite 월별 파일, Lumbra 내보내기)을 올리세요 — 같은 업로드로 오프닝 북과 이 브라우저를 만듭니다.',
+  'could not start the build': '만들기를 시작하지 못했습니다',
+  'could not delete the database': '데이터베이스를 지우지 못했습니다',
+  'Building keeps going if you leave the page. A build under an existing name replaces that database.':
+    '만들기는 페이지를 떠나도 계속됩니다. 이미 있는 이름으로 만들면 그 데이터베이스를 대체합니다.',
+  'Reference database': '참고 데이터베이스',
+  'Manage reference databases': '참고 데이터베이스 관리',
+  'Reference databases': '참고 데이터베이스',
+  'no PGN collections to index': '색인할 PGN 모음이 없습니다',
+  'that database is being built right now': '그 데이터베이스는 지금 만들어지는 중입니다',
+  'no such database': '그런 데이터베이스가 없습니다',
+  'invalid database name': '데이터베이스 이름이 올바르지 않습니다',
   'Vault:': '보관함:',
   '— every game, study and puzzle lives there as plain files. Display settings live on this device.':
     '— 모든 게임, 스터디, 퍼즐이 평범한 파일로 그곳에 저장됩니다. 화면 설정은 이 기기에만 저장됩니다.',

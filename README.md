@@ -255,7 +255,7 @@ terminal alternative, not the requirement.
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames.sqlite` | the elite game browser | a starter set comes with the app; your own in the app, or `npm run build:refgames` |
+| `data/refgames/*.sqlite` | the elite game browser | a starter set comes with the app; more in the app, or `npm run build:refgames` |
 | `data/books/*.sqlite` | the local opening explorer | one comes with the app; more in the app, or `npm run build:book` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
@@ -286,8 +286,8 @@ the release artefacts — and start with an empty explorer and an empty
 game browser. **When you outgrow the starters, build your own** — that
 is the ordinary way round anyway: upload your PGN collections in the
 book manager and press Build for a fuller book than the bundled one, and
-run `npm run build:refgames` over the same collections for a fuller game
-database (see below). Neither `deploy.sh` nor the app downloads games
+do the same in the elite browser's manager for game databases of your
+own (see below). Neither `deploy.sh` nor the app downloads games
 for this; only the release workflow does. (`npm run build:bundled-book`
 and `build:bundled-refgames` shrink data you already have into what an
 installer carries — they are for packaging installers by hand, not for
@@ -352,20 +352,23 @@ of building here, after the download. Nothing to install, nothing to type,
 and it keeps going if you leave the page. `npm run build:puzzles` does the
 same thing from a terminal if you prefer one.
 
-**Reference games build in the app too.** The desktop starts seeded —
-the installer's starter set is in place before the app first opens — and
-with no database at all, the elite browser offers to index the PGN
-collections you have uploaded: the same uploads the book manager builds
-opening books from. The same indexer runs from a terminal, if you prefer
-one:
+**Reference games build in the app too, and they are plural like
+books.** The desktop starts seeded — the installer's starter set is one
+database, in place before the app first opens — and the elite browser's
+manager uploads PGN collections and indexes any selection of them into a
+named database beside the others: an Elite month, an OTB collection,
+your club's games, each searchable on its own and switchable in the
+browser. Replacing one is therefore not a special case — build the same
+name again, or a new name, and delete what you no longer want. The same
+indexer runs from a terminal, if you prefer one:
 
 ```bash
-npm run build:refgames         # over vault/sources -> data/refgames.sqlite
+npm run build:refgames                       # everything in vault/sources
+npm run build:refgames -- elite.pgn --name elite
 ```
 
-Either way the build replaces what is there by rename, so a running
-server keeps serving until it lands. Deleting the file without building
-over it is final, like deleting the bundled book.
+Builds land by rename, so a running server keeps serving until they do.
+A deleted database is gone for good, like the bundled book.
 
 Running **on a server**: the puzzle build streams a 304 MB compressed dump
 into a 2.6 GB database, and it will OOM on a small instance — it did on a
@@ -378,8 +381,9 @@ Every later deploy keeps their indexes current on its own, so rebuild only
 for a newer dump or more games.
 
 [docs/databases.md](docs/databases.md) covers rebuilding them, and the
-one wrinkle that still wants a terminal: replacing a database that
-already works, since the in-app offers appear only when there is none.
+one wrinkle that still wants a terminal: replacing a puzzle database
+that already works, since that build's offer appears only when there is
+none.
 
 ## It never calls anyone but your own server
 

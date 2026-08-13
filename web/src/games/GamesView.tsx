@@ -2,6 +2,7 @@ import {
   Bookmark,
   ChevronLeft,
   ChevronRight,
+  Database,
   ExternalLink,
   Eye,
   Globe,
@@ -14,6 +15,7 @@ import {
   BookOpen,
   Trash2,
   Trophy,
+  Upload,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -46,6 +48,7 @@ import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { Sheet } from '@/ui/Sheet';
 import { t } from '@/lib/i18n';
 
 export interface GameSummary {
@@ -241,103 +244,270 @@ interface RefGame {
   opening: string | null;
 }
 
-/**
- * The elite browser's empty state builds the database instead of
- * prescribing a shell command — every user action must be possible in the
- * app, and this was the last one that was not. It indexes the same
- * vault/sources uploads the book manager manages, in a server child
- * process (the pattern books and puzzles use), so it keeps going if the
- * page is left. With nothing uploaded yet it points at the book manager
- * rather than offering a build that would index nothing.
- */
-function BuildRefGames({ page, onBuilt }: { page: boolean; onBuilt: () => void }) {
-  const [sources, setSources] = useState<{ name: string }[] | null>(null);
-  const [building, setBuilding] = useState(false);
-  const [lastLine, setLastLine] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  const poll = useRef<ReturnType<typeof setInterval> | null>(null);
+interface RefDb {
+  name: string;
+  games: number;
+  sources: string;
+  bytes: number;
+}
 
-  const watch = useCallback((): void => {
-    setBuilding(true);
-    setFailed(false);
-    poll.current = setInterval(() => {
-      void fetch('/api/refgames/build/status')
-        .then((r) => r.json())
-        .then((s: { running: boolean; exitCode?: number | null; log?: string[] }) => {
-          setLastLine(s.log?.at(-1) ?? null);
-          if (s.running) return;
-          if (poll.current) clearInterval(poll.current);
-          poll.current = null;
-          setBuilding(false);
-          if (s.exitCode === 0) onBuilt();
-          else setFailed(true);
-        })
-        .catch(() => {});
-    }, 1000);
-  }, [onBuilt]);
+/**
+ * Manage the reference databases: upload PGN collections, build a named
+ * database from a selection of them, delete one — the book manager's
+ * shapes over the same vault/sources uploads, because they are the same
+ * job. Every part of it works from a phone against a remote server:
+ * uploads stream, and the build is a server child process that keeps
+ * going if the page is left.
+ *
+ * Rendered two ways: inline as the browser's empty state (where building
+ * the first database IS the page's purpose), and inside a sheet from the
+ * ready browser. Databases are plural like books, so replacing one is not
+ * a mode — build a new name beside it and delete the old.
+ */
+function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onChanged: () => void }) {
+  const [sources, setSources] = useState<{ name: string; bytes: number }[] | null>(null);
+  // null until the first listing arrives, so "tick everything" happens
+  // once and a user's unticking is never overwritten by a refresh.
+  const [picked, setPicked] = useState<Set<string> | null>(null);
+  const [name, setName] = useState('');
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [status, setStatus] = useState<{
+    running: boolean;
+    exitCode?: number | null;
+    log?: string[];
+  } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const wasRunning = useRef(false);
+
+  const refreshSources = useCallback(async (): Promise<void> => {
+    try {
+      const res = await fetch('/api/sources');
+      const body = (await res.json()) as { sources: { name: string; bytes: number }[] };
+      setSources(body.sources);
+      setPicked((p) => p ?? new Set(body.sources.map((s) => s.name)));
+    } catch {
+      setSources([]);
+    }
+  }, []);
 
   useEffect(() => {
-    void fetch('/api/sources')
-      .then((r) => r.json())
-      .then((d: { sources?: { name: string }[] }) => setSources(d.sources ?? []))
-      .catch(() => setSources([]));
-    // A build started before this page opened is still worth watching.
-    void fetch('/api/refgames/build/status')
-      .then((r) => r.json())
-      .then((s: { running: boolean }) => {
-        if (s.running) watch();
-      })
-      .catch(() => {});
-    return () => {
-      if (poll.current) clearInterval(poll.current);
-    };
-  }, [watch]);
+    void refreshSources();
+  }, [refreshSources]);
 
-  const start = async (): Promise<void> => {
-    const res = await fetch('/api/refgames/build', { method: 'POST' });
-    // 409 = already running — watching it is the right response either way.
-    if (res.ok || res.status === 409) watch();
+  // Poll the build while one runs; refresh the browser when it finishes.
+  useEffect(() => {
+    const tick = async (): Promise<void> => {
+      try {
+        const s = (await (await fetch('/api/refgames/build/status')).json()) as {
+          running: boolean;
+          exitCode?: number | null;
+          log?: string[];
+        };
+        setStatus(s);
+        if (s.running) {
+          wasRunning.current = true;
+        } else if (wasRunning.current) {
+          wasRunning.current = false;
+          onChanged();
+        }
+      } catch {
+        // offline hiccup — the next tick asks again
+      }
+    };
+    void tick();
+    const interval = setInterval(() => void tick(), 1500);
+    return () => clearInterval(interval);
+  }, [onChanged]);
+
+  // One at a time as a raw body, which streams — these files run to
+  // hundreds of megabytes, and FormData would buffer the whole thing in
+  // the page before a byte left. Same route the book manager uses.
+  const upload = async (files: FileList | null): Promise<void> => {
+    if (!files?.length) return;
+    setError(null);
+    for (const file of Array.from(files)) {
+      if (!file.name.toLowerCase().endsWith('.pgn')) {
+        setError(t('{name} is not a .pgn', { name: file.name }));
+        continue;
+      }
+      setUploading(file.name);
+      try {
+        const res = await fetch(`/api/sources?name=${encodeURIComponent(file.name)}`, {
+          method: 'POST',
+          body: file,
+        });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          setError(`${file.name}: ${t(body?.error ?? res.statusText)}`);
+        } else {
+          setPicked((p) => new Set(p ?? []).add(file.name));
+        }
+      } catch {
+        setError(t('{name}: upload failed', { name: file.name }));
+      }
+    }
+    setUploading(null);
+    await refreshSources();
   };
 
+  const build = async (): Promise<void> => {
+    setError(null);
+    const res = await fetch('/api/refgames/build', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() || undefined, sources: [...(picked ?? [])] }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(t(body?.error ?? 'could not start the build'));
+      return;
+    }
+    setName('');
+    setStatus({ running: true, log: [] });
+    wasRunning.current = true;
+  };
+
+  const del = async (dbName: string): Promise<void> => {
+    setError(null);
+    const res = await fetch(`/api/refgames/${encodeURIComponent(dbName)}`, { method: 'DELETE' });
+    if (res.ok) onChanged();
+    else {
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      setError(t(body?.error ?? 'could not delete the database'));
+    }
+  };
+
+  const running = status?.running === true;
+  const failed = !running && status?.exitCode != null && status.exitCode !== 0;
+
   return (
-    <div className={cn('grid place-items-center p-8', page && 'h-full')}>
-      <div className="max-w-md text-center">
-        <p className="text-fg mb-2 text-sm font-semibold">{t('No reference games yet')}</p>
-        {sources === null ? null : building ? (
-          <>
-            <p className="text-muted text-xs leading-relaxed">
-              {t('Indexing your collections — this keeps going if you leave the page.')}
-            </p>
-            <p className="text-subtle mt-3 flex items-center justify-center gap-2 font-mono text-[0.6875rem]">
-              <Loader2 className="size-3.5 shrink-0 animate-spin" />
-              <span className="truncate">{lastLine ?? '…'}</span>
-            </p>
-          </>
-        ) : sources.length > 0 ? (
-          <>
-            <p className="text-muted text-xs leading-relaxed">
-              {t(
-                'Index the PGN collections you have uploaded ({n} in vault/sources) into a searchable database of whole games.',
-                { n: sources.length },
-              )}
-            </p>
-            {failed && (
-              <p className="text-bad mt-2 font-mono text-[0.6875rem]">
-                {lastLine ?? t('The build failed.')}
-              </p>
-            )}
-            <Button variant="primary" size="sm" className="mt-3" onClick={() => void start()}>
-              {t('Build the database')}
-            </Button>
-          </>
-        ) : (
-          <p className="text-muted text-xs leading-relaxed">
+    <div className="flex flex-col gap-3 text-xs">
+      {databases.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-muted font-medium">{t('Databases')}</p>
+          <ul className="divide-line border-line divide-y rounded-md border">
+            {databases.map((d) => (
+              <li key={d.name} className="flex items-center gap-2 py-1 pl-2.5 pr-1">
+                <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
+                  {d.name}
+                </span>
+                <span className="text-subtle shrink-0">
+                  {t('{n} games', { n: d.games.toLocaleString() })} · {(d.bytes / 1e6).toFixed(1)} MB
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Delete this database — deleting is final')}
+                  onClick={() => void del(d.name)}
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5">
+        <p className="text-muted font-medium">{t('PGN collections')}</p>
+        {sources !== null && sources.length === 0 && (
+          <p className="text-subtle leading-relaxed">
             {t(
-              'Upload PGN collections (Lichess Elite months, Lumbra exports) in the explorer’s book manager first — the same uploads build opening books and this browser.',
+              'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export — and the same uploads build opening books.',
             )}
           </p>
         )}
+        {sources !== null && sources.length > 0 && (
+          <ul className="flex flex-col gap-1">
+            {sources.map((s) => (
+              <li key={s.name}>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="accent-primary"
+                    checked={picked?.has(s.name) ?? false}
+                    onChange={(e) =>
+                      setPicked((p) => {
+                        const next = new Set(p ?? []);
+                        if (e.target.checked) next.add(s.name);
+                        else next.delete(s.name);
+                        return next;
+                      })
+                    }
+                  />
+                  <span className="text-fg min-w-0 flex-1 truncate">{s.name}</span>
+                  <span className="text-subtle shrink-0">{(s.bytes / 1e6).toFixed(1)} MB</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        )}
+        <label
+          className={cn(
+            'border-line text-muted hover:border-primary/40 flex h-8 cursor-pointer items-center',
+            'justify-center gap-1.5 rounded-md border border-dashed transition-colors duration-100',
+          )}
+        >
+          <input
+            type="file"
+            accept=".pgn"
+            multiple
+            className="hidden"
+            disabled={uploading !== null}
+            onChange={(e) => {
+              void upload(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          {uploading ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              {t('Uploading {name}…', { name: uploading })}
+            </>
+          ) : (
+            <>
+              <Upload className="size-3.5" />
+              {t('Upload PGN collections')}
+            </>
+          )}
+        </label>
       </div>
+
+      {running ? (
+        <p className="text-subtle flex items-center gap-2 font-mono text-[0.6875rem]">
+          <Loader2 className="size-3.5 shrink-0 animate-spin" />
+          <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
+        </p>
+      ) : (
+        (sources?.length ?? 0) > 0 && (
+          <div className="flex items-center gap-2">
+            <Input
+              inputSize="sm"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t('Name — the file’s name if blank')}
+              className="min-w-0 flex-1"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={(picked?.size ?? 0) === 0}
+              onClick={() => void build()}
+            >
+              {t('Build')}
+            </Button>
+          </div>
+        )
+      )}
+      {failed && (
+        <p className="text-bad font-mono text-[0.6875rem]">
+          {status?.log?.at(-1) ?? t('The build failed.')}
+        </p>
+      )}
+      {error && <p className="text-bad">{error}</p>}
+      <p className="text-subtle leading-relaxed">
+        {t('Building keeps going if you leave the page. A build under an existing name replaces that database.')}
+      </p>
     </div>
   );
 }
@@ -364,9 +534,17 @@ function BuildRefGames({ page, onBuilt }: { page: boolean; onBuilt: () => void }
  */
 function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'column' }) {
   const page = variant === 'page';
-  const [meta, setMeta] = useState<{ ready: boolean; games?: number; sources?: string } | null>(
-    null,
-  );
+  // `databases` present = the server's directory mount, where databases
+  // are named, picked, built and deleted. Absent = a single-database
+  // mount (the static demo), which has none of that.
+  const [meta, setMeta] = useState<{
+    ready: boolean;
+    games?: number;
+    sources?: string;
+    databases?: RefDb[];
+  } | null>(null);
+  const [curDb, setCurDb] = useState<string | null>(null);
+  const [manage, setManage] = useState(false);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<RefGame[]>([]);
   const [total, setTotal] = useState(0);
@@ -376,10 +554,11 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   const searching = useSlowLoad(loading && rows.length === 0);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const search = useCallback(async (q: string, offset: number) => {
+  const search = useCallback(async (q: string, offset: number, db: string | null) => {
     setLoading(true);
     const res = await fetch(
-      `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}`,
+      `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}` +
+        (db ? `&db=${encodeURIComponent(db)}` : ''),
     );
     if (res.ok) {
       const data = (await res.json()) as { total: number | null; rows: RefGame[] };
@@ -394,19 +573,34 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   const loadMeta = useCallback(() => {
     void fetch('/api/refgames')
       .then((r) => r.json())
-      .then((d: { ready: boolean; games?: number; sources?: string }) => {
+      .then((d: { ready: boolean; games?: number; sources?: string; databases?: RefDb[] }) => {
         setMeta(d);
-        if (d.ready) void search('', 0);
       });
-  }, [search]);
+  }, []);
   useEffect(() => {
     loadMeta();
   }, [loadMeta]);
 
+  // Reconcile the picked database against the list (a delete may have
+  // taken it), then run its first search. Two passes when the pick moves:
+  // the state change re-enters with the settled name.
+  useEffect(() => {
+    if (!meta?.ready) return;
+    const dbs = meta.databases ?? null;
+    const next = dbs ? (dbs.some((d) => d.name === curDb) ? curDb : (dbs[0]?.name ?? null)) : null;
+    if (next !== curDb) {
+      setCurDb(next);
+      return;
+    }
+    setRows([]);
+    setQuery('');
+    void search('', 0, next);
+  }, [meta, curDb, search]);
+
   const onQuery = (q: string): void => {
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => void search(q, 0), 250);
+    debounce.current = setTimeout(() => void search(q, 0, curDb), 250);
   };
 
   // Infinite scroll: a sentinel row near the list's end pulls the next
@@ -417,16 +611,23 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
     if (!el || loading || rows.length === 0 || rows.length >= total) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) void search(query, rows.length);
+        if (entries[0]?.isIntersecting) void search(query, rows.length, curDb);
       },
       { rootMargin: '200px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [rows.length, total, loading, query, search]);
+  }, [rows.length, total, loading, query, search, curDb]);
+
+  // Which database a game row means — every per-game fetch carries it,
+  // and every per-game cache key does too: row ids restart at 1 in each
+  // database, so a bare id would collide across them.
+  const pgnUrl = (id: number): string =>
+    `/api/refgames/${id}/pgn${curDb ? `?db=${encodeURIComponent(curDb)}` : ''}`;
+  const gameKey = (id: number): string => `${curDb ?? ''}:${id}`;
 
   const openGame = async (game: RefGame): Promise<void> => {
-    const res = await fetch(`/api/refgames/${game.id}/pgn`);
+    const res = await fetch(pgnUrl(game.id));
     if (!res.ok) return;
     const { pgn } = (await res.json()) as { pgn: string };
     if (useAnalysis.getState().loadPgn(pgn)) {
@@ -439,7 +640,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   // promoted chess.com game — annotatable, searchable, yours. The
   // collection keys make already-kept games read 'Added' across reloads,
   // and the server refuses duplicates besides.
-  const [added, setAdded] = useState<Set<number>>(new Set());
+  const [added, setAdded] = useState<Set<string>>(new Set());
   const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
   useEffect(() => {
     void loadCollection()
@@ -447,9 +648,9 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
       .catch(() => {});
   }, []);
   const inCollection = (g: RefGame): boolean =>
-    added.has(g.id) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
+    added.has(gameKey(g.id)) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
   const collect = async (game: RefGame): Promise<void> => {
-    const res = await fetch(`/api/refgames/${game.id}/pgn`);
+    const res = await fetch(pgnUrl(game.id));
     if (!res.ok) return;
     const { pgn } = (await res.json()) as { pgn: string };
     const posted = await fetch('/api/games/collect-pgn', {
@@ -459,21 +660,21 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
     });
     // 409 = already there; either way this game is now in the collection.
     if (posted.ok) forgetCollection();
-    if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(game.id));
+    if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(gameKey(game.id)));
   };
 
   // Preview eye, matching the collection rows: the DB stores movetext,
   // not positions, so the final fen is derived lazily from the game's
   // PGN (cached per id). Coarse pointers tap it open, fine ones hover.
   const [preview, setPreview] = useState<Preview | null>(null);
-  const fenCache = useRef<Map<number, string>>(new Map());
+  const fenCache = useRef<Map<string, string>>(new Map());
   const previewSeq = useRef(0);
   const previewFor = useRef<number | null>(null);
   const showPreview = async (game: RefGame, anchor: Element, viaTap = false): Promise<void> => {
     const seq = ++previewSeq.current;
-    let fen = fenCache.current.get(game.id);
+    let fen = fenCache.current.get(gameKey(game.id));
     if (!fen) {
-      const res = await fetch(`/api/refgames/${game.id}/pgn`);
+      const res = await fetch(pgnUrl(game.id));
       if (!res.ok) return;
       const { pgn } = (await res.json()) as { pgn: string };
       try {
@@ -484,7 +685,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
       } catch {
         return;
       }
-      fenCache.current.set(game.id, fen);
+      fenCache.current.set(gameKey(game.id), fen);
     }
     if (seq !== previewSeq.current) return;
     const rect = anchor.getBoundingClientRect();
@@ -507,13 +708,71 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   const coarse = isCoarsePointer;
 
   if (meta && !meta.ready) {
-    return <BuildRefGames page={page} onBuilt={loadMeta} />;
+    // The empty state IS the manager: building the first database is this
+    // page's whole purpose until one exists. A single-database mount (the
+    // demo) has no manager to offer, so it just says what is missing.
+    return (
+      <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
+        <div className="w-full max-w-md">
+          <p className="text-fg mb-1 text-center text-sm font-semibold">
+            {t('No reference games yet')}
+          </p>
+          {meta.databases ? (
+            <>
+              <p className="text-muted mb-3 text-center text-xs leading-relaxed">
+                {t('Upload PGN collections and index them into searchable databases of whole games.')}
+              </p>
+              <RefDbManager databases={meta.databases} onChanged={loadMeta} />
+            </>
+          ) : (
+            <p className="text-muted text-center text-xs leading-relaxed">
+              {t('This server has no reference games database.')}
+            </p>
+          )}
+        </div>
+      </div>
+    );
   }
 
   const count =
     loading && rows.length === 0
       ? t('Searching…')
       : t('{n} games', { n: total.toLocaleString() });
+
+  // The database picker (only when there is a choice) and the manager,
+  // shown wherever the count is — absent entirely on a single-database
+  // mount, which has neither names nor a manager.
+  const dbs = meta?.databases;
+  const dbControls = dbs && (
+    <>
+      {dbs.length > 1 && (
+        <Select
+          value={curDb ?? ''}
+          onChange={setCurDb}
+          ariaLabel={t('Reference database')}
+          size="sm"
+          align="end"
+          className="max-w-[9rem]"
+          groups={[{ options: dbs.map((d) => ({ value: d.name, label: d.name })) }]}
+        />
+      )}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={t('Manage reference databases')}
+        onClick={() => setManage(true)}
+      >
+        <Database className="size-3.5" />
+      </Button>
+    </>
+  );
+  const manageSheet = manage && dbs && (
+    <Sheet label={t('Reference databases')} onClose={() => setManage(false)}>
+      <div className="overflow-y-auto">
+        <RefDbManager databases={dbs} onChanged={loadMeta} />
+      </div>
+    </Sheet>
+  );
 
   const list = (
     <>
@@ -635,11 +894,17 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
             className="w-full"
           />
         </div>
-        <div className="border-line text-subtle shrink-0 border-t px-3 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-          {count}
+        <div className="border-line shrink-0 border-t px-3 py-1 pr-1.5">
+          <div className="flex min-h-6 items-center gap-1">
+            <span className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+              {count}
+            </span>
+            {dbControls}
+          </div>
         </div>
         {list}
         <GamePreview preview={preview} onClose={hidePreview} />
+        {manageSheet}
       </>
     );
   }
@@ -661,10 +926,11 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
           sm and the window scrolls instead. Exactly what the archive
           browser does in the same window. */}
       <Panel flush className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
-        <PanelHeader title={count} />
+        <PanelHeader title={count} actions={dbControls} />
         {list}
       </Panel>
       <GamePreview preview={preview} onClose={hidePreview} />
+      {manageSheet}
     </>
   );
 
@@ -680,9 +946,15 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
           <ChevronLeft className="size-3.5" />
         </Button>
         <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
-          {meta?.games
-            ? `${t('Elite games')} (${t('{n} games', { n: meta.games.toLocaleString() })})`
-            : t('Elite games')}
+          {(() => {
+            // Dir mounts count across every database; a single mount says
+            // its own meta. Either way the title is the whole shelf, while
+            // the panel's count below is the database being searched.
+            const all = dbs ? dbs.reduce((sum, d) => sum + d.games, 0) : (meta?.games ?? 0);
+            return all
+              ? `${t('Elite games')} (${t('{n} games', { n: all.toLocaleString() })})`
+              : t('Elite games');
+          })()}
         </h1>
       </div>
       {body}

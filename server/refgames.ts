@@ -1,38 +1,95 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { copyFileSync, existsSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
-import { DATA, REPO_ROOT } from './paths.ts';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { basename, resolve, sep } from 'node:path';
+import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
 /**
- * Reference games (data/refgames.sqlite, built by `npm run build:refgames`
- * from PGN collections in vault/sources) — elite games browsable from the
- * Games tab. Read-only; a rebuild renames the file, restart to pick it up.
+ * Reference games — whole games with movetext, browsable and searchable
+ * from the Games tab, built from PGN collections in vault/sources.
+ *
+ * Plural, like opening books: `data/refgames/<name>.sqlite`, each an
+ * independent database (an Elite month, an OTB collection, a club's
+ * games), listed and chosen in the elite browser. Replacing one is
+ * therefore not a special case any more — build a new name beside it and
+ * delete the old. The single-file layout this grew out of
+ * (`data/refgames.sqlite`) is migrated on startup, and a bare file path
+ * can still be mounted directly, which is how the static demo and the
+ * tests run these routes over one file of their own choosing.
  */
 
-const DB_PATH = resolve(DATA, 'refgames.sqlite');
+const REFGAMES_DIR = resolve(DATA, 'refgames');
+const LEGACY_DB = resolve(DATA, 'refgames.sqlite');
 const PAGE = 50;
+
+/** Same shape as book names: file names, no slashes, no dot-only names. */
+const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
+
+/**
+ * Move the single-file era's database into the directory layout.
+ *
+ * Named after its first source when the meta says one (`elite-2025-11.pgn`
+ * becomes `elite-2025-11`), because that is the name the build would have
+ * given it today; `refgames` when the meta is unreadable or the name is
+ * taken. The file is renamed, not copied — it is the same database, in
+ * the place the multi-database code looks.
+ */
+export function migrateLegacyRefgames(dataDir: string = DATA): void {
+  const legacy = resolve(dataDir, 'refgames.sqlite');
+  if (!existsSync(legacy)) return;
+  const dir = resolve(dataDir, 'refgames');
+  mkdirSync(dir, { recursive: true });
+
+  let name = 'refgames';
+  try {
+    const db = new Database(legacy, { readonly: true, fileMustExist: true });
+    const sources = (
+      db.prepare("SELECT value FROM meta WHERE key = 'sources'").get() as
+        | { value: string }
+        | undefined
+    )?.value;
+    db.close();
+    // Only a single-source database gets its source's name — naming a
+    // merge of several after the first alone would misdescribe it.
+    const first = (sources ?? '').includes(',')
+      ? ''
+      : (sources ?? '').trim().split(' ')[0]!.replace(/\.pgn$/i, '');
+    if (NAME_RE.test(first)) name = first;
+  } catch {
+    // Unreadable meta — the fallback name is fine.
+  }
+
+  let target = resolve(dir, `${name}.sqlite`);
+  if (existsSync(target)) target = resolve(dir, 'refgames.sqlite');
+  if (existsSync(target)) {
+    console.warn(`refgames: could not migrate ${basename(legacy)} — ${basename(target)} already exists`);
+    return;
+  }
+  renameSync(legacy, target);
+  console.log(`refgames: migrated the single database to refgames/${basename(target)}`);
+}
 
 /**
  * The starter set of reference games that comes with the app — a curated
  * slice of a CC0 Lichess Elite month (the strongest games of every ECO
  * code, ~39 k games / ~25 MB), built at release time by
  * `build-bundled-refgames.ts` next to the bundled opening book. Without it
- * a fresh install's elite browser is empty until its owner learns about
- * vault/sources and a build script.
+ * a fresh install's elite browser is empty until something is uploaded.
  *
  * Same contract as the bundled book (see seedBundledBook in books.ts for
- * the full reasoning): COPIED into the data directory so it is the user's
- * ordinary database from then on — rebuild over it, delete it — and the
- * marker records the decision, not the file, so a deleted one does not
- * come back. An existing refgames.sqlite always wins. The `refgames-`
- * file-name prefix is what separates this asset from the book in the same
- * assets/ directory.
+ * the full reasoning): COPIED into the data directory so it is one of the
+ * user's ordinary databases from then on — delete it, build others beside
+ * it — and the marker records the decision, not the file, so a deleted one
+ * does not come back. A database already carrying the same name wins. The
+ * `refgames-` file-name prefix is what separates this asset from the book
+ * in the same assets/ directory, and stripping it gives the seeded
+ * database its name.
  *
- * Called from server/index.ts at startup, not from refGamesApi(): the
- * static demo and the tests mount these routes over paths of their own
- * choosing and must not inherit a database they did not ask for.
+ * Called from server/index.ts at startup (after migrateLegacyRefgames),
+ * not from refGamesApi(): the static demo and the tests mount these
+ * routes over paths of their own choosing and must not inherit a database
+ * they did not ask for.
  */
 const SEED_MARKER = '.seeded-refgames';
 
@@ -56,9 +113,10 @@ export function seedBundledRefgames(
   // an install that gains one later still gets it.
   if (!bundled) return;
 
-  const target = resolve(dataDir, 'refgames.sqlite');
-  // A database is already there — one the user built, or one a previous
-  // install seeded before markers were per-file. Theirs wins.
+  const name = basename(bundled, '.sqlite').replace(/^refgames-/, '');
+  const dir = resolve(dataDir, 'refgames');
+  const target = resolve(dir, `${name}.sqlite`);
+  // A database of that name is already there. Theirs wins.
   if (existsSync(target)) {
     writeFileSync(marker, `${new Date().toISOString()}\n`);
     return;
@@ -67,6 +125,7 @@ export function seedBundledRefgames(
   // Copy beside the target and rename, like every other write here: a copy
   // interrupted halfway must not leave a truncated file that IS the
   // database from then on.
+  mkdirSync(dir, { recursive: true });
   const part = `${target}.part`;
   try {
     rmSync(part, { force: true });
@@ -81,7 +140,7 @@ export function seedBundledRefgames(
   }
   writeFileSync(marker, `${new Date().toISOString()}\n`);
   console.log(
-    `refgames: seeded ${basename(bundled)} (${(statSync(target).size / 1e6).toFixed(1)} MB)`,
+    `refgames: seeded ${name} (${(statSync(target).size / 1e6).toFixed(1)} MB)`,
   );
 }
 
@@ -100,6 +159,7 @@ interface RefGameRow {
 
 /** One build at a time, like books — the indexer is CPU-bound. */
 interface BuildJob {
+  name: string;
   startedAt: number;
   running: boolean;
   exitCode: number | null;
@@ -107,59 +167,123 @@ interface BuildJob {
 }
 let job: BuildJob | null = null;
 
-export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => void } {
-  let handle: InstanceType<typeof Database> | null = null;
-  const db = (): InstanceType<typeof Database> | null => {
-    if (handle) return handle;
-    if (!existsSync(dbPath)) return null;
-    handle = new Database(dbPath, { readonly: true, fileMustExist: true });
-    return handle;
+/**
+ * Mount the reference-games API.
+ *
+ * Two mounts, one route set. The default serves the `data/refgames/`
+ * directory: many named databases, a `db` query parameter to pick one,
+ * build and delete routes. A string mounts one bare file with the original
+ * single-database shapes — no names, no build, no delete — which is what
+ * the static demo and the tests use.
+ */
+export function refGamesApi(
+  source: string | { dir: string } = { dir: REFGAMES_DIR },
+): Hono & { closeDb: () => void } {
+  const single = typeof source === 'string' ? source : null;
+  const dir = typeof source === 'string' ? null : source.dir;
+
+  // Read-only handles for the process lifetime, keyed by name ('' for a
+  // single-file mount). A build or delete closes its entry so the next
+  // query reopens the current file.
+  const handles = new Map<string, InstanceType<typeof Database>>();
+  // Row counts from each build's own meta tally — the files are read-only
+  // between builds, so one read per database is enough.
+  const counts = new Map<string, number>();
+
+  const fileFor = (name: string): string => single ?? resolve(dir!, `${name}.sqlite`);
+
+  const names = (): string[] => {
+    if (single) return existsSync(single) ? [''] : [];
+    try {
+      return readdirSync(dir!)
+        .filter((f) => f.endsWith('.sqlite'))
+        .map((f) => basename(f, '.sqlite'))
+        .sort();
+    } catch {
+      return []; // no directory yet
+    }
   };
 
-  // Windows can't delete an open database file, so tests need this.
-  const closeDb = (): void => {
-    handle?.close();
-    handle = null;
+  const open = (name: string): InstanceType<typeof Database> | null => {
+    const cached = handles.get(name);
+    if (cached) return cached;
+    const file = fileFor(name);
+    if (!existsSync(file)) return null;
+    const db = new Database(file, { readonly: true, fileMustExist: true });
+    handles.set(name, db);
+    return db;
   };
 
-  /**
-   * Rows in `games`, from the build's own tally — the file is read-only for
-   * the process lifetime, so one read is enough. Older databases without the
-   * meta row pay a single COUNT(*).
-   */
-  let cachedCount: number | null = null;
-  const tableCount = (d: InstanceType<typeof Database>): number => {
-    if (cachedCount === null) {
-      const meta = d.prepare("SELECT value FROM meta WHERE key = 'games'").get() as
+  // Windows can't delete or rename over an open database file, so builds,
+  // deletes and tests all need this.
+  const close = (name?: string): void => {
+    for (const [key, db] of handles) {
+      if (name !== undefined && key !== name) continue;
+      db.close();
+      handles.delete(key);
+      counts.delete(key);
+    }
+  };
+
+  const readMeta = (db: InstanceType<typeof Database>): Record<string, string> =>
+    Object.fromEntries(
+      (db.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
+        (r) => [r.key, r.value],
+      ),
+    );
+
+  const tableCount = (name: string, db: InstanceType<typeof Database>): number => {
+    let count = counts.get(name);
+    if (count === undefined) {
+      const meta = db.prepare("SELECT value FROM meta WHERE key = 'games'").get() as
         | { value: string }
         | undefined;
-      cachedCount =
+      count =
         Number(meta?.value) ||
-        (d.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+        (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+      counts.set(name, count);
     }
-    return cachedCount;
+    return count;
+  };
+
+  /** The database a request means: its ?db=, or the first one there is. */
+  const fromQuery = (c: { req: { query: (k: string) => string | undefined } }): { name: string; db: InstanceType<typeof Database> } | null => {
+    const all = names();
+    if (all.length === 0) return null;
+    const asked = single ? undefined : c.req.query('db');
+    const name = asked !== undefined && NAME_RE.test(asked) && all.includes(asked) ? asked : all[0]!;
+    const db = open(name);
+    return db ? { name, db } : null;
   };
 
   const api = new Hono();
 
   /**
-   * The in-app build: index every PGN in vault/sources — the same uploads
-   * the book manager manages — into a fresh database, in a child process
-   * so this server stays responsive (the pattern books and puzzles use).
-   *
-   * Registered only when serving the real data path: the demo and the
-   * tests mount these routes over files of their own choosing, and a
-   * read-only mount must not be able to spawn an indexer.
+   * The in-app build: index PGN collections from vault/sources — the same
+   * uploads the book manager manages — into a named database, in a child
+   * process so this server stays responsive (the pattern books and puzzles
+   * use). Registered only on the real data directory: the demo and the
+   * tests must not be able to spawn an indexer.
    */
-  if (dbPath === DB_PATH) {
-    const startBuild = (): void => {
-      const current: BuildJob = { startedAt: Date.now(), running: true, exitCode: null, log: [] };
+  if (dir === REFGAMES_DIR) {
+    const sourcePath = (id: string): string | null => {
+      if (!id.toLowerCase().endsWith('.pgn') || id.includes('/') || id.includes('\\')) return null;
+      const root = resolve(VAULT_SOURCES);
+      const path = resolve(root, id);
+      if (!path.startsWith(root + sep)) return null;
+      return existsSync(path) ? path : null;
+    };
+
+    const startBuild = (name: string, sources: string[]): void => {
+      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
       job = current;
 
       // A packaged build has no scripts/ and no tsx, so the builder ships
       // as a bundle beside the server; the repo runs the source directly.
       const bundled = resolve(REPO_ROOT, 'server', 'build-refgames.mjs');
-      const args = existsSync(bundled) ? [bundled] : ['--import', 'tsx', 'scripts/build-refgames.ts'];
+      const args = existsSync(bundled)
+        ? [bundled, ...sources, '--name', name]
+        : ['--import', 'tsx', 'scripts/build-refgames.ts', ...sources, '--name', name];
       const child = spawn(process.execPath, args, {
         cwd: REPO_ROOT,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -175,16 +299,15 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
       child.on('close', (code) => {
         current.running = false;
         current.exitCode = code;
-        closeDb();
-        cachedCount = null; // the new file's meta, not the old file's
+        close(name); // reopen the freshly renamed file on next query
         // Windows: our own read handle blocks the script's rename-over, so
         // it leaves the fresh file beside the target and we swap it in
-        // here — synchronously after closeDb, before any request reopens
+        // here — synchronously after close, before any request can reopen
         // the old file.
-        const building = `${dbPath}.building`;
+        const building = `${fileFor(name)}.building`;
         if (code === 0 && existsSync(building)) {
           try {
-            renameSync(building, dbPath);
+            renameSync(building, fileFor(name));
           } catch {
             current.log.push('could not swap in the new database — rebuild after a restart');
           }
@@ -192,10 +315,36 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
       });
     };
 
-    api.post('/refgames/build', (c) => {
+    api.post('/refgames/build', async (c) => {
       if (job?.running) return c.json({ error: 'a build is already running' }, 409);
-      startBuild();
-      return c.json({ started: true });
+
+      const body = await c.req.json<{ name?: string; sources?: string[] }>().catch(() => null);
+      const ids =
+        body?.sources ??
+        (() => {
+          try {
+            return readdirSync(VAULT_SOURCES).filter((f) => f.toLowerCase().endsWith('.pgn'));
+          } catch {
+            return [];
+          }
+        })();
+      if (ids.length === 0) return c.json({ error: 'no PGN collections to index' }, 400);
+
+      const sources: string[] = [];
+      for (const id of ids) {
+        const path = sourcePath(id);
+        if (!path) return c.json({ error: `invalid or missing source: ${id}` }, 400);
+        sources.push(path);
+      }
+
+      // No name given: the file's name when there is one file, like books.
+      const derived = ids.length === 1 ? ids[0]!.replace(/\.pgn$/i, '') : 'refgames';
+      const name = body?.name ?? (NAME_RE.test(derived) ? derived : 'refgames');
+      if (!NAME_RE.test(name)) return c.json({ error: 'invalid database name' }, 400);
+
+      mkdirSync(dir!, { recursive: true });
+      startBuild(name, sources);
+      return c.json({ started: true, name });
     });
 
     api.get('/refgames/build/status', (c) =>
@@ -203,6 +352,7 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
         job
           ? {
               running: job.running,
+              name: job.name,
               exitCode: job.exitCode,
               seconds: (Date.now() - job.startedAt) / 1000,
               log: job.log.slice(-15),
@@ -210,26 +360,53 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
           : { running: false },
       ),
     );
+
+    api.delete('/refgames/:name', (c) => {
+      const name = c.req.param('name');
+      if (!NAME_RE.test(name)) return c.json({ error: 'invalid database name' }, 400);
+      if (job?.running && job.name === name) {
+        return c.json({ error: 'that database is being built right now' }, 409);
+      }
+      if (!existsSync(fileFor(name))) return c.json({ error: 'no such database' }, 404);
+      close(name);
+      rmSync(fileFor(name));
+      return c.json({ deleted: name });
+    });
   }
 
   api.get('/refgames', (c) => {
-    const d = db();
-    if (!d) return c.json({ ready: false as const });
-    const meta = Object.fromEntries(
-      (d.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
-        (r) => [r.key, r.value],
-      ),
-    );
-    return c.json({
-      ready: true as const,
-      games: Number(meta.games ?? 0),
-      sources: meta.sources ?? '',
+    if (single) {
+      // The original single-database shape, kept for the demo's mount.
+      const found = fromQuery(c);
+      if (!found) return c.json({ ready: false as const });
+      const meta = readMeta(found.db);
+      return c.json({
+        ready: true as const,
+        games: Number(meta.games ?? 0),
+        sources: meta.sources ?? '',
+      });
+    }
+    const databases = names().flatMap((name) => {
+      const db = open(name);
+      if (!db) return [];
+      const meta = readMeta(db);
+      return [
+        {
+          name,
+          games: tableCount(name, db),
+          sources: meta.sources ?? '',
+          bytes: statSync(fileFor(name)).size,
+          builtAt: meta.built_at ?? null,
+        },
+      ];
     });
+    return c.json({ ready: databases.length > 0, databases });
   });
 
   api.get('/refgames/search', (c) => {
-    const d = db();
-    if (!d) return c.json({ error: 'No reference games. Run: npm run build:refgames (see docs/databases.md)' }, 503);
+    const found = fromQuery(c);
+    if (!found) return c.json({ error: 'no reference games database' }, 503);
+    const { name, db } = found;
     const q = (c.req.query('q') ?? '').trim();
     const offset = Math.max(0, Number(c.req.query('offset')) || 0);
 
@@ -245,11 +422,11 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
     // empty query is free: it is the whole table, which meta already knows.
     const total =
       q === ''
-        ? tableCount(d)
+        ? tableCount(name, db)
         : offset === 0
-          ? (d.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }).n
+          ? (db.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }).n
           : null;
-    const rows = d
+    const rows = db
       .prepare(
         `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening
          FROM games ${where} ORDER BY id DESC LIMIT ${PAGE} OFFSET ?`,
@@ -258,30 +435,35 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
     return c.json({ total, rows });
   });
 
-  // Match a book's top-game reference (metadata only) to a full game
-  // here, so the explorer can open it on the board.
+  // Match a book's top-game reference (metadata only) to a full game in
+  // ANY database, so the explorer can open it on the board — a book does
+  // not know which database holds its games.
   api.get('/refgames/find', (c) => {
-    const d = db();
-    if (!d) return c.json({ error: 'no reference games database' }, 503);
+    const all = names();
+    if (all.length === 0) return c.json({ error: 'no reference games database' }, 503);
     const { white, black, date, result } = c.req.query();
     if (!white || !black) return c.json({ error: 'expected white & black' }, 400);
-    const row = d
-      .prepare(
-        `SELECT id FROM games
-         WHERE white = ? AND black = ? AND (? IS NULL OR date = ?) AND (? IS NULL OR result = ?)
-         LIMIT 1`,
-      )
-      .get(white, black, date ?? null, date ?? null, result ?? null, result ?? null) as
-      | { id: number }
-      | undefined;
-    if (!row) return c.json({ error: 'not indexed' }, 404);
-    return c.json({ id: row.id });
+    for (const name of all) {
+      const db = open(name);
+      if (!db) continue;
+      const row = db
+        .prepare(
+          `SELECT id FROM games
+           WHERE white = ? AND black = ? AND (? IS NULL OR date = ?) AND (? IS NULL OR result = ?)
+           LIMIT 1`,
+        )
+        .get(white, black, date ?? null, date ?? null, result ?? null, result ?? null) as
+        | { id: number }
+        | undefined;
+      if (row) return c.json(single ? { id: row.id } : { id: row.id, db: name });
+    }
+    return c.json({ error: 'not indexed' }, 404);
   });
 
   api.get('/refgames/:id/pgn', (c) => {
-    const d = db();
-    if (!d) return c.json({ error: 'no reference games database' }, 503);
-    const row = d
+    const found = fromQuery(c);
+    if (!found) return c.json({ error: 'no reference games database' }, 503);
+    const row = found.db
       .prepare('SELECT * FROM games WHERE id = ?')
       .get(Number(c.req.param('id'))) as (RefGameRow & { moves: string }) | undefined;
     if (!row) return c.json({ error: 'unknown game' }, 404);
@@ -302,5 +484,9 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
     return c.json({ pgn });
   });
 
-  return Object.assign(api, { closeDb });
+  return Object.assign(api, { closeDb: () => close() });
 }
+
+// Referenced by scripts that need the same resolution (tune-dbs, the
+// bundled-set curator, the demo curator) without duplicating the layout.
+export { REFGAMES_DIR, LEGACY_DB };

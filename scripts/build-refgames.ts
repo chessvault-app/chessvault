@@ -4,21 +4,30 @@
  *
  *   npm run build:refgames                     all vault/sources/*.pgn
  *   npm run build:refgames -- elite-2025-11.pgn
+ *   npm run build:refgames -- a.pgn b.pgn --name otb
+ *
+ * Databases are plural, like books: output is data/refgames/<name>.sqlite
+ * via temp + rename, ~200 MB for a Lichess Elite month. Without --name,
+ * the file's name when one source is given (the books convention), and
+ * `refgames` otherwise.
  *
  * Unlike the opening books (positions only), this stores the movetext, so
- * any game can be opened on the board. Output: data/refgames.sqlite via
- * temp + rename, ~200 MB for a Lichess Elite month.
+ * any game can be opened on the board.
  */
 import Database from 'better-sqlite3';
-import { createReadStream, existsSync, readdirSync, renameSync, rmSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs';
 import { basename, isAbsolute, resolve } from 'node:path';
 import { PgnParser, type Game, type PgnNodeData } from 'chessops/pgn';
 import { DATA, VAULT_SOURCES } from '../server/paths.ts';
 import { REFGAMES_INDEXES } from './lib/db-tuning.ts';
 
-const OUT = resolve(DATA, 'refgames.sqlite');
+const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
-const args = process.argv.slice(2);
+const rawArgs = process.argv.slice(2);
+const nameAt = rawArgs.indexOf('--name');
+const namedAs = nameAt >= 0 ? rawArgs[nameAt + 1] : undefined;
+const args = nameAt >= 0 ? [...rawArgs.slice(0, nameAt), ...rawArgs.slice(nameAt + 2)] : rawArgs;
+
 const sources =
   args.length > 0
     ? args.map((arg) => {
@@ -39,6 +48,15 @@ if (sources.length === 0) {
   console.error(`no .pgn files in ${VAULT_SOURCES} — drop PGN collections there first`);
   process.exit(1);
 }
+
+const derived = sources.length === 1 ? basename(sources[0]!).replace(/\.pgn$/i, '') : 'refgames';
+const name = namedAs ?? (NAME_RE.test(derived) ? derived : 'refgames');
+if (!NAME_RE.test(name)) {
+  console.error(`invalid database name: ${name}`);
+  process.exit(1);
+}
+const OUT = resolve(DATA, 'refgames', `${name}.sqlite`);
+mkdirSync(resolve(DATA, 'refgames'), { recursive: true });
 
 const tmp = `${OUT}.building`;
 rmSync(tmp, { force: true });

@@ -16,7 +16,8 @@
 import Database from 'better-sqlite3';
 import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { DATA, DATA_PUZZLES, REPO_ROOT } from '../server/paths.ts';
+import { DATA_PUZZLES, REPO_ROOT } from '../server/paths.ts';
+import { biggestRefgames } from './lib/refgamesFiles.ts';
 
 const arg = (flag: string, fallback: number): number => {
   const at = process.argv.indexOf(flag);
@@ -125,12 +126,12 @@ source.close();
 
 // --- reference games ----------------------------------------------------------
 
-const gamesSource = resolve(DATA, 'refgames.sqlite');
+const gamesSource = biggestRefgames();
 const gamesOut = resolve(OUT_DIR, 'refgames.sqlite');
 rmSync(gamesOut, { force: true });
 let gameCount = 0;
 
-if (existsSync(gamesSource)) {
+if (gamesSource !== null) {
   const from = new Database(gamesSource, { readonly: true });
   const to = new Database(gamesOut);
   to.exec(`
@@ -174,7 +175,7 @@ if (existsSync(gamesSource)) {
   to.close();
   from.close();
 } else {
-  console.warn(`no reference games at ${gamesSource} — the demo will show its empty state`);
+  console.warn('no reference-games database on this machine — the demo will show its empty state');
 }
 
 const size = (path: string): string =>

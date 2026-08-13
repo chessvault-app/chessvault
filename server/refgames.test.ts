@@ -1,10 +1,10 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { refGamesApi, seedBundledRefgames } from './refgames.ts';
+import { migrateLegacyRefgames, refGamesApi, seedBundledRefgames } from './refgames.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
 describe('reference games api', () => {
@@ -108,44 +108,150 @@ describe('seedBundledRefgames', () => {
     rmSync(data, { recursive: true, force: true });
   });
 
-  const target = (): string => join(data, 'refgames.sqlite');
+  const target = (name: string): string => join(data, 'refgames', `${name}.sqlite`);
   const marker = (): string => join(data, '.seeded-refgames');
 
-  it('copies the bundled file and records the decision', () => {
+  it('copies the bundled file in under its asset-derived name', () => {
     writeFileSync(join(assets, 'refgames-elite-2025-11.sqlite'), 'bundled-games');
     seedBundledRefgames(data, assets);
-    expect(readFileSync(target(), 'utf-8')).toBe('bundled-games');
+    expect(readFileSync(target('elite-2025-11'), 'utf-8')).toBe('bundled-games');
     expect(existsSync(marker())).toBe(true);
   });
 
-  it('never overwrites a database the user already has', () => {
+  it('never overwrites a database already carrying the name', () => {
     writeFileSync(join(assets, 'refgames-elite.sqlite'), 'bundled-games');
-    writeFileSync(target(), 'their-own-build');
+    mkdirSync(join(data, 'refgames'), { recursive: true });
+    writeFileSync(target('elite'), 'their-own-build');
     seedBundledRefgames(data, assets);
-    expect(readFileSync(target(), 'utf-8')).toBe('their-own-build');
+    expect(readFileSync(target('elite'), 'utf-8')).toBe('their-own-build');
     expect(existsSync(marker())).toBe(true);
   });
 
   it('does not bring back a database that was deleted after seeding', () => {
     writeFileSync(join(assets, 'refgames-elite.sqlite'), 'bundled-games');
     seedBundledRefgames(data, assets);
-    rmSync(target());
+    rmSync(target('elite'));
     seedBundledRefgames(data, assets);
-    expect(existsSync(target())).toBe(false);
+    expect(existsSync(target('elite'))).toBe(false);
   });
 
   it('ignores the bundled opening book sitting in the same directory', () => {
     // The book carries no refgames- prefix; only the prefix marks ours.
     writeFileSync(join(assets, 'lichess-elite-2025-11.sqlite'), 'a-book');
     seedBundledRefgames(data, assets);
-    expect(existsSync(target())).toBe(false);
+    expect(existsSync(target('lichess-elite-2025-11'))).toBe(false);
     // And no marker: an install that gains the asset later still seeds.
     expect(existsSync(marker())).toBe(false);
   });
 
   it('is a no-op without an assets directory, leaving no marker', () => {
     seedBundledRefgames(data, join(assets, 'does-not-exist'));
-    expect(existsSync(target())).toBe(false);
+    expect(existsSync(join(data, 'refgames'))).toBe(false);
     expect(existsSync(marker())).toBe(false);
+  });
+});
+
+describe('migrateLegacyRefgames', () => {
+  let data: string;
+
+  beforeEach(() => {
+    data = mkdtempSync(join(tmpdir(), 'refgames-migrate-'));
+  });
+
+  afterEach(() => {
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  const legacyDb = (sources: string): void => {
+    const db = new Database(join(data, 'refgames.sqlite'));
+    db.exec('CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+    db.prepare('INSERT INTO meta VALUES (?, ?)').run('sources', sources);
+    db.close();
+  };
+
+  it('renames the single database in, named after its one source', () => {
+    legacyDb('elite-2025-11.pgn');
+    migrateLegacyRefgames(data);
+    expect(existsSync(join(data, 'refgames.sqlite'))).toBe(false);
+    expect(existsSync(join(data, 'refgames', 'elite-2025-11.sqlite'))).toBe(true);
+  });
+
+  it('falls back to a plain name when the meta names several sources', () => {
+    legacyDb('a.pgn, b.pgn');
+    migrateLegacyRefgames(data);
+    // "a.pgn," fails the name pattern (trailing comma), so the fallback.
+    expect(existsSync(join(data, 'refgames', 'refgames.sqlite'))).toBe(true);
+  });
+
+  it('is a no-op without a legacy file', () => {
+    migrateLegacyRefgames(data);
+    expect(existsSync(join(data, 'refgames'))).toBe(false);
+  });
+});
+
+describe('directory mount', () => {
+  let dir: string;
+  let app: Hono;
+  let api: ReturnType<typeof refGamesApi>;
+
+  const makeDb = (name: string, white: string): void => {
+    const db = new Database(join(dir, `${name}.sqlite`));
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '1'), ('sources', '${name}.pgn');
+    `);
+    db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(white, 'Opponent', 2500, 2400, '1-0', '2026.01.01', 'Test', 'B90', 'Sicilian', 'e4 c5');
+    tune(db);
+    db.close();
+  };
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refgames-dir-'));
+    makeDb('alpha', 'AlphaPlayer');
+    makeDb('beta', 'BetaPlayer');
+    api = refGamesApi({ dir });
+    app = new Hono().route('/api', api);
+  });
+
+  afterAll(() => {
+    api.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('lists every database with its own count', async () => {
+    const body = await (await app.request('/api/refgames')).json();
+    expect(body.ready).toBe(true);
+    expect(body.databases.map((d: { name: string }) => d.name)).toEqual(['alpha', 'beta']);
+    expect(body.databases[0].games).toBe(1);
+  });
+
+  it('searches the database the query names, defaulting to the first', async () => {
+    const first = await (await app.request('/api/refgames/search?q=')).json();
+    expect(first.rows[0].white).toBe('AlphaPlayer');
+    const second = await (await app.request('/api/refgames/search?q=&db=beta')).json();
+    expect(second.rows[0].white).toBe('BetaPlayer');
+  });
+
+  it('finds a game in whichever database holds it, and says which', async () => {
+    const found = await (
+      await app.request('/api/refgames/find?white=BetaPlayer&black=Opponent')
+    ).json();
+    expect(found).toEqual({ id: 1, db: 'beta' });
+    const pgn = await (await app.request(`/api/refgames/${found.id}/pgn?db=${found.db}`)).json();
+    expect(pgn.pgn).toContain('[White "BetaPlayer"]');
+  });
+
+  it('offers no build or delete off the real data directory', async () => {
+    expect((await app.request('/api/refgames/build', { method: 'POST' })).status).toBe(404);
+    expect((await app.request('/api/refgames/alpha', { method: 'DELETE' })).status).toBe(404);
   });
 });
