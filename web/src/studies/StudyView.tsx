@@ -40,7 +40,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { AnnotationPane } from './AnnotationPane';
-import { t } from '@/lib/i18n';
+import { isUntitled, t } from '@/lib/i18n';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
 
@@ -326,6 +326,11 @@ function TitleEditor({
     );
   }
 
+  // The naming moment: creation never asks (rightly — a New button should
+  // cost nothing), but nothing ever asked again, and the shelf filled with
+  // "Untitled study 3". A quiet offer, worn only while the placeholder is.
+  const untitled = backSection === 'studies' && isUntitled(name, 'Untitled study');
+
   return (
     <>
       <h1
@@ -340,6 +345,20 @@ function TitleEditor({
         {name}
         {failure ? ` — ${failure}` : ''}
       </h1>
+      {untitled && (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={() => {
+            setDraft(name);
+            setEditing(true);
+          }}
+        >
+          <Pencil className="size-3.5" />
+          {t('Name this study')}
+        </Button>
+      )}
     </>
   );
 }

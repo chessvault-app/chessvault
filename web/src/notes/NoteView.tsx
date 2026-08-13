@@ -15,7 +15,7 @@ import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { t } from '@/lib/i18n';
+import { isUntitled, t } from '@/lib/i18n';
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
@@ -305,6 +305,10 @@ function NoteTitle({ id }: { id: string }) {
     );
   }
 
+  // Same naming moment as the studies shelf: the placeholder invites its
+  // replacement for as long as it is worn, and no longer.
+  const untitled = isUntitled(name, 'Untitled note');
+
   return (
     <>
       <h1
@@ -318,6 +322,20 @@ function NoteTitle({ id }: { id: string }) {
         {folder && <span className="text-subtle">{folder} / </span>}
         {name}
       </h1>
+      {untitled && (
+        <Button
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={() => {
+            setDraft(name);
+            setEditing(true);
+          }}
+        >
+          <Pencil className="size-3.5" />
+          {t('Name this note')}
+        </Button>
+      )}
     </>
   );
 }
