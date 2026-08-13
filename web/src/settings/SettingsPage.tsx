@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useKeyboardInset } from '@/lib/keyboardInset';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
 import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
-import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
@@ -40,19 +38,6 @@ const reauth = (): void => {
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const pending = useSlowLoad(settings === null);
-  // The shell is 100svh, which knows nothing about a keyboard, so this
-  // scroll box ran on underneath it: a field near the bottom — the wipe
-  // confirmation — was inside the box but behind the keyboard, and Safari
-  // revealed the caret the only way left to it, by shoving the whole
-  // window up.
-  //
-  // The box used to SHRINK by the inset. That works, and it fails badly:
-  // an inset that is stale or wrong for a platform leaves a band of dead
-  // page between the content and the tab bar, and a wrong height is
-  // visible in a way a wrong padding is not. Padding degrades to nothing
-  // worse than some extra scroll room, so the bottom is reachable by
-  // scrolling either way. Same reasoning the note editor already used.
-  const inset = useKeyboardInset();
 
   const refresh = async (): Promise<void> => {
     const res = await fetch('/api/settings');
@@ -70,20 +55,14 @@ export function SettingsPage() {
     );
   }
 
+  // Nothing here knows about the keyboard any more. This box used to pad
+  // itself by what the keyboard covered, and to claim the phone's bottom
+  // bar so the tab row could not ride up onto the keys — both from when
+  // the shell was 100svh and ran on underneath. The shell ends at the
+  // keyboard now and the bar hides itself while typing, so padding again
+  // only pushed the bottom of the page out of a box with nothing under it.
   return (
-    <div
-      className="h-full overflow-y-auto"
-      style={inset ? { paddingBottom: `${inset}px` } : undefined}
-    >
-      {/* While the keyboard is up, iOS shoves the whole window upwards to
-          reveal the caret — main.tsx explains why that shove is left
-          alone rather than fought. The tab bar rides up with it and ends
-          up floating across the middle of the screen, which is the part
-          that reads as broken. The note editor already claims the bottom
-          bar while editing for exactly this reason; settings does the
-          same now. It does not move the window, and it cannot: what is
-          below the shoved page is the webview's own canvas. */}
-      {inset > 0 && <MobileActionBar>{null}</MobileActionBar>}
+    <div className="h-full overflow-y-auto">
       <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">

@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
-import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useAnalysis } from '@/store/analysis';
+import { autoFocusField } from '@/lib/media';
 import { Button } from '@/ui/Button';
+import { Modal } from '@/ui/Modal';
 import { ChipRow } from '@/ui/ChipRow';
 import { t } from '@/lib/i18n';
 
@@ -164,40 +165,39 @@ export function AnnotationPane({
           />
         )}
       </div>
+      {/* The app's own window. This was a scrim and a card pinned to the
+          TOP of the screen, hand-rolled here from before there was a
+          shared sheet — the one window in the app that opened away from
+          the thumb, with no handle, no drag and its own idea of the safe
+          area. Modal is a bottom sheet on a phone, and this only opens on
+          one. */}
       {sheet && coarse && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50"
-          onPointerDown={() => {
+        <Modal
+          title={placeholder}
+          onClose={() => {
             setSheet(false);
             flush();
-            suppressNextClick();
           }}
         >
-          <div
-            className="bg-surface border-line absolute inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] flex flex-col gap-2 rounded-xl border p-3 shadow-[var(--shadow-pop)]"
-            onPointerDown={(e) => e.stopPropagation()}
+          <TextArea
+            autoFocus={autoFocusField()}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={4}
+            className="w-full resize-none leading-relaxed"
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            className="self-end"
+            onClick={() => {
+              setSheet(false);
+              flush();
+            }}
           >
-            <p className="text-subtle text-xs">{placeholder}</p>
-            <TextArea
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={4}
-              className="w-full resize-none leading-relaxed"
-            />
-            <Button
-              variant="primary"
-              size="sm"
-              className="self-end"
-              onClick={() => {
-                setSheet(false);
-                flush();
-              }}
-            >
-              {t('Done')}
-            </Button>
-          </div>
-        </div>
+            {t('Done')}
+          </Button>
+        </Modal>
       )}
     </div>
   );

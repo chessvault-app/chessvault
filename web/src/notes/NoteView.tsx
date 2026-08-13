@@ -9,7 +9,6 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
-import { useKeyboardInset } from '@/lib/keyboardInset';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
@@ -126,7 +125,6 @@ function NoteEditor({
   // Notes open read-only (wiki-links follow on plain click); the header's
   // Edit button switches the TipTap editor live.
   const [editable, setEditable] = useState(false);
-  const keyboardInset = useKeyboardInset();
   /**
    * What is on the server, so an edit can be told from a settling node.
    *
@@ -222,16 +220,16 @@ function NoteEditor({
     // above the pinned header for content to scroll through in plain view.
     // The header wrapper carries that padding instead. The bottom keeps the
     // home-indicator inset, since an edited note claims the phone's bar and
-    // its text would otherwise run under it.
-    <div
-      className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:px-6 lg:pb-6"
-      // While the keyboard is up it covers the bottom of this container,
-      // so the text under it cannot be scrolled to and the note reads as
-      // stuck. Padding by exactly what the keyboard took gives that text
-      // somewhere to go — and gives the browser's own caret-scrolling room
-      // to bring the line being typed above the keyboard.
-      style={keyboardInset ? { paddingBottom: `${keyboardInset}px` } : undefined}
-    >
+    // its text would otherwise run under it — and --safe-b is zero while
+    // the keyboard is up, when the indicator is behind the keys.
+    //
+    // Nothing here pads for the KEYBOARD any more. It used to add exactly
+    // what the keyboard covered, from when the app shell stayed full
+    // height and the bottom of this box was underneath the keys. The shell
+    // ends at the keyboard now (lib/keyboardInset, index.css), so this box
+    // is already entirely above it and padding again pushed the last lines
+    // of the note up out of a container that had nothing under it.
+    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] lg:px-6 lg:pb-6">
       {/* Header AND palette pin together. Pinning only the palette left the
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it
