@@ -112,7 +112,9 @@ export function ShelfToolbar({
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
       <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
-      <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 sm:flex-none">
+      {/* max-sm:flex-wrap so a focused search field, which takes the whole
+          line on a phone, gets a line rather than squeezing the buttons. */}
+      <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:flex-none">
         <SearchInput
           type="text"
           inputSize="sm"

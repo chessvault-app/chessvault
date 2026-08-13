@@ -761,7 +761,8 @@ function CollectionView() {
           controls onto their own full-width line instead of clipping. */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+        {/* Wraps below sm: a focused search field takes the whole line there. */}
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
           {/* A bordered control like the two beside it, not a bare glyph
               floating at their left: it is a filter, and at h-7 with a
               border it sits on the same baseline as the field and the
@@ -783,7 +784,7 @@ function CollectionView() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search collection…')}
-            className="w-56 max-[500px]:w-auto max-[500px]:min-w-0 max-[500px]:flex-1"
+            className="w-56 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
           />
           {/* Every way to get a game, in one place — but only while there
               is nowhere better for them. At lg the two browsers live in

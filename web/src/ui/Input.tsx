@@ -130,42 +130,49 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
   );
 });
 
-/** The clear button matches the field's own height, coarse sizes included. */
-const clearSizes: Record<InputSize, string> = {
+/** Cancel matches the field's own height, coarse sizes included. */
+const cancelSizes: Record<InputSize, string> = {
   sm: 'h-7 pointer-coarse:h-9',
   md: 'h-8',
   lg: 'h-9',
 };
 
 /**
- * An Input with the magnifier badge every search field carries, and a way
- * out of it.
+ * An Input with the magnifier badge every search field carries, plus the
+ * two things a search needs that a text box does not.
  *
- * The X arrives on focus, BESIDE the field rather than inside it: an icon
- * floating over the right end of a text box is a target you have to aim
- * past the text to hit, and it covers the tail of what you typed — which
- * on a phone is most of what is visible. The field gives up the width
- * instead, so the row is exactly as wide as it was and the button is a
- * button, on its own ground.
+ * INSIDE, at the right end: an X that empties the field and leaves you in
+ * it. It is only there while there is something to clear, and the field
+ * pads itself out of its way so the tail of what you typed is never
+ * underneath it.
  *
- * It clears without closing: focus stays, so the next thing you type is
- * the new search rather than a tap away from being one.
+ * OUTSIDE, on focus: Cancel, which puts the field away. Two different
+ * jobs, and they were one button until it was clear that "clear what I
+ * typed" and "I am done searching" are things you want at different
+ * moments. The field gives up the width for it, so the row stays exactly
+ * as wide as it was.
+ *
+ * On a phone the field also takes the whole line while it is focused,
+ * because a search you are typing into is the only thing on the screen
+ * that matters and 140px of it is not enough to read a result back.
  *
  * Width classes go on the wrapper; the field takes what is left.
  */
 export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function SearchInput(
-  { className, inputSize = 'md', onFocus, onBlur, ...props },
+  { className, inputSize = 'md', onFocus, onBlur, onChange, value, ...props },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
+  // For an uncontrolled caller, which the X still has to know about.
+  const [typed, setTyped] = useState('');
   const self = useRef<HTMLInputElement | null>(null);
+  const text = value === undefined ? typed : String(value);
 
   const clear = (): void => {
     const el = self.current;
     if (!el) return;
     // Through the native setter and an input event, so a CONTROLLED field
-    // hears it as a change. Assigning el.value alone is invisible to
-    // React, and every caller of this is controlled.
+    // hears it as a change. Assigning el.value alone is invisible to React.
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
     setter?.call(el, '');
     el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -173,7 +180,16 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
   };
 
   return (
-    <span className={cn('relative inline-flex items-center', className)}>
+    <span
+      className={cn(
+        'relative inline-flex items-center',
+        className,
+        // The whole line, phones only, and only while it is being used.
+        // The toolbars wrap, so this takes a row of its own rather than
+        // squeezing the buttons beside it.
+        focused && 'max-sm:w-full',
+      )}
+    >
       <span className="relative inline-flex min-w-0 flex-1 items-center">
         <Search className="text-subtle pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2" />
         <Input
@@ -183,7 +199,8 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
             else if (ref) ref.current = node;
           }}
           inputSize={inputSize}
-          className="w-full pl-7"
+          value={value}
+          className={cn('w-full pl-7', text && 'pr-7')}
           onFocus={(e) => {
             setFocused(true);
             onFocus?.(e);
@@ -192,35 +209,60 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
             setFocused(false);
             onBlur?.(e);
           }}
+          onChange={(e) => {
+            setTyped(e.target.value);
+            onChange?.(e);
+          }}
           {...props}
         />
+        {/* Inside the field, because it is about the field's contents. It
+            appears with the text and leaves with it — an X over an empty
+            box is a button that does nothing. preventDefault on the press
+            keeps the focus, so clearing costs neither the caret nor, on a
+            phone, the keyboard. */}
+        {text && (
+          <button
+            type="button"
+            title={t('Clear search')}
+            aria-label={t('Clear search')}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={clear}
+            className={cn(
+              'text-subtle hover:text-fg hover:bg-fg/10 absolute right-1.5 top-1/2 grid -translate-y-1/2',
+              'size-5 place-items-center rounded-full transition-colors duration-100',
+            )}
+          >
+            <X className="size-3.5 shrink-0" />
+          </button>
+        )}
       </span>
-      {/* Never unmounted, only narrowed to nothing: a button that
-          disappears on blur is a button whose own press dismisses it
-          before the click lands. preventDefault on the press keeps the
-          field focused for the same reason — and means clearing does not
-          cost you the keyboard. */}
+      {/* Touch only. Cancel exists to put a keyboard away and give the
+          screen back; a mouse has neither problem, and has Escape and
+          anywhere-else besides. Never unmounted where it does apply, only
+          narrowed to nothing: a button that disappears on blur is a
+          button whose own press dismisses it before the click lands.
+          preventDefault on the press is the same protection — the field
+          stays focused until the click has run, and then this blurs it. */}
       <button
         type="button"
         tabIndex={focused ? 0 : -1}
         aria-hidden={!focused}
-        title={t('Clear search')}
-        aria-label={t('Clear search')}
         onPointerDown={(e) => e.preventDefault()}
-        onClick={clear}
+        onClick={() => self.current?.blur()}
         className={cn(
-          'text-muted hover:text-fg grid shrink-0 place-items-center overflow-hidden rounded-full',
-          // Glass, like the sheets' close: a translucent disc that takes
-          // its colour from whatever it sits on, with a hairline of light
-          // along the edge. backdrop-blur is what makes it read as glass
-          // rather than as a grey circle.
+          'pointer-fine:hidden text-muted hover:text-fg grid shrink-0 place-items-center overflow-hidden',
+          'whitespace-nowrap rounded-full text-xs font-medium',
+          // The same glass the sheets close with: a translucent disc that
+          // takes its colour from whatever it sits on, with a hairline of
+          // light along the edge. backdrop-blur is what makes it read as
+          // glass rather than as a grey pill.
           'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
-          'transition-[width,margin,opacity] duration-150',
-          clearSizes[inputSize],
-          focused ? 'ml-1.5 w-7 opacity-100 pointer-coarse:w-9' : 'ml-0 w-0 opacity-0',
+          'transition-[max-width,margin,padding,opacity] duration-150',
+          cancelSizes[inputSize],
+          focused ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',
         )}
       >
-        <X className="size-3.5 shrink-0" />
+        {t('Cancel')}
       </button>
     </span>
   );
