@@ -269,9 +269,11 @@ ships with, the first time something asks for a name.
 **The installer bundles two starter databases**, so a fresh desktop
 install answers from the first minute instead of showing empty pages.
 An *opening book* is an index of positions — in this position, what was
-played and how did it score? — and it is what the explorer and the
-repertoire trainer read. The bundled one is a curated walk of a recent
-Lichess Elite month: 29,297 positions to move 12, 1.5 MB, CC0. The
+played and how did it score? — and it is what the local opening explorer
+reads. (The repertoire trainer spars against the *online* Lichess
+database instead, so it wants the token, not a book.) The bundled book
+is a curated walk of a recent Lichess Elite month: 29,297 positions to
+move 12, 1.5 MB, CC0. The
 *reference games* are whole games, searchable by player, opening and ECO
 in the Games tab, any of them openable on the board. The bundled set
 keeps the strongest games of every opening from that same month: 38,977
