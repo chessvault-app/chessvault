@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  renameSync,
   rmSync,
   statSync,
   unlinkSync,
@@ -185,7 +186,49 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return tally;
   };
 
+  /**
+   * Which books are bookmarked, as plain JSON beside them.
+   *
+   * The same shape and the same reasoning as the studies shelf: the vault
+   * holds the answer, so a mark survives a browser, a device and a
+   * reinstall. The leading dot keeps it out of the way of anyone looking
+   * at the folder, and it is not a directory so it is never listed as a
+   * book.
+   */
+  const marksPath = resolve(dir, '.bookmarks.json');
+  const readMarks = (): string[] => {
+    try {
+      const parsed = JSON.parse(readFileSync(marksPath, 'utf-8')) as { slugs?: string[] };
+      return Array.isArray(parsed.slugs) ? parsed.slugs : [];
+    } catch {
+      return [];
+    }
+  };
+  const writeMarks = (slugs: string[]): void => {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(`${marksPath}.tmp`, `${JSON.stringify({ slugs }, null, 2)}
+`);
+    renameSync(`${marksPath}.tmp`, marksPath);
+  };
+
   const api = new Hono();
+
+  api.get('/puzzlebooks/bookmarks', (c) => c.json({ slugs: readMarks() }));
+
+  api.post('/puzzlebooks/bookmarks/toggle', async (c) => {
+    const body = await c.req.json<{ slug?: string }>().catch(() => null);
+    const slug = body?.slug?.trim();
+    if (!slug || !validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const slugs = readMarks();
+    const at = slugs.indexOf(slug);
+    const bookmarked = at < 0;
+    if (bookmarked) slugs.unshift(slug);
+    else slugs.splice(at, 1);
+    // Atomic, like every other vault write.
+    writeMarks(slugs);
+    return c.json({ slug, bookmarked });
+  });
+
 
   api.get('/puzzlebooks', (c) => {
     if (!existsSync(dir)) return c.json({ books: [] });
@@ -232,6 +275,9 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     rmSync(bookDir(slug), { recursive: true, force: true });
+    // Or the mark would come back on the next book created under that name.
+    const marks = readMarks();
+    if (marks.includes(slug)) writeMarks(marks.filter((s) => s !== slug));
     return c.json({ ok: true });
   });
 

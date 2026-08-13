@@ -1,6 +1,7 @@
 import {
   BadgeCheck,
   BarChart3,
+  Bookmark,
   BookMarked,
   BookOpenCheck,
   ChevronFirst,
@@ -14,6 +15,7 @@ import {
   Cpu,
   Maximize2,
   Minimize2,
+  MoreHorizontal,
   Pencil,
   ScanSearch,
   Check,
@@ -57,7 +59,10 @@ import { ConfirmPopover } from '@/ui/ConfirmPopover';
 import { SkeletonBookCards, SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
+import { ActionSheet } from '@/ui/ActionSheet';
 import { Button } from '@/ui/Button';
+import { SearchInput } from '@/ui/Input';
+import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { UndoBar } from '@/ui/UndoBar';
@@ -423,6 +428,31 @@ function Shelf() {
 
   // A book holds a lot of work, so removal is undoable rather than
   // confirmed: it leaves the shelf at once and the DELETE waits.
+  // Bookmarks, kept in the vault beside the books — the same store and the
+  // same reasoning as the other two shelves.
+  const [markedSlugs, setMarked] = useState<Set<string>>(new Set());
+  const [markedOnly, setMarkedOnly] = useState(false);
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    void fetch('/api/puzzlebooks/bookmarks')
+      .then((r) => (r.ok ? (r.json() as Promise<{ slugs: string[] }>) : null))
+      .then((body) => setMarked(new Set(body?.slugs ?? [])))
+      .catch(() => {});
+  }, []);
+  const toggleMark = async (slug: string): Promise<void> => {
+    setMarked((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+    await fetch('/api/puzzlebooks/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
+  };
+
   const dropBook = (slug: string, title: string): void => {
     const unhide = (): void =>
       setHidden((prev) => {
@@ -439,6 +469,14 @@ function Shelf() {
    * A book is made and opened, with a name its own header can change. What
    * a book is called is on its cover, and you are about to go and look.
    */
+  const needle = query.trim().toLowerCase();
+  const visibleBooks = (books ?? []).filter(
+    (b) =>
+      !hidden.has(b.slug) &&
+      (!markedOnly || markedSlugs.has(b.slug)) &&
+      (!needle || b.title.toLowerCase().includes(needle)),
+  );
+
   const create = async (): Promise<void> => {
     const base = t('Untitled book');
     const taken = new Set((books ?? []).map((b) => b.title));
@@ -477,17 +515,39 @@ function Shelf() {
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg flex-1 text-base font-semibold">{t('Puzzle books')}</h1>
-          <CreateControl
-            actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
-          />
+          <h1 className="text-fg text-base font-semibold">{t('Puzzle books')}</h1>
+          {/* Search, then the filter, then create — the order the other
+              three toolbars use. */}
+          <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
+            <SearchInput
+              inputSize="sm"
+              value={query}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+              placeholder={t('Search books…')}
+              className="w-44 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
+            />
+            <Button
+              variant="secondary"
+              size="icon-sm"
+              active={markedOnly}
+              aria-pressed={markedOnly}
+              title={markedOnly ? t('Show all') : t('Show bookmarked only')}
+              className="shrink-0"
+              onClick={() => setMarkedOnly((v) => !v)}
+            >
+              <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+            </Button>
+            <CreateControl
+              actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
+            />
+          </div>
         </div>
 
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
 
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
-        ) : books.filter((b) => !hidden.has(b.slug)).length === 0 ? (
+        ) : visibleBooks.length === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle mx-auto mb-2 size-6" />
             <p className="text-muted text-sm">
@@ -497,59 +557,139 @@ function Shelf() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {books.filter((b) => !hidden.has(b.slug)).map((b) => (
-              <div key={b.slug} className="group relative">
-                <button
-                  type="button"
-                  onClick={() => navigate('puzzles', 'books', b.slug)}
-                  className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 flex w-full items-stretch gap-3 rounded-xl border p-3 text-left transition-colors duration-100"
-                >
-                  {b.cover ? (
-                    <img
-                      src={diagramUrl(b.slug, 'cover.jpg')}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
-                    />
-                  ) : (
-                    <span className="bg-surface-inset border-line grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
-                      <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
-                    </span>
-                  )}
-                  <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
-                    {/* pr keeps long titles clear of the delete overlay */}
-                    <span className="min-w-0 pr-7">
-                      <span className="text-fg block truncate text-sm font-medium">{b.title}</span>
-                      <span className="text-subtle block text-xs">
-                        {t('{n} puzzles', { n: b.puzzles })}
-                      </span>
-                    </span>
-                    <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} />
-                  </span>
-                </button>
-                {/* Hover-revealed on mouse; always present under a thumb. */}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title={t('Remove this book and its progress')}
-                  className="absolute right-2 top-2 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    dropBook(b.slug, b.title);
-                  }}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </div>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {visibleBooks.map((b) => (
+              <BookCard
+                key={b.slug}
+                book={b}
+                marked={markedSlugs.has(b.slug)}
+                onToggleMark={() => void toggleMark(b.slug)}
+                onRemove={() => dropBook(b.slug, b.title)}
+              />
             ))}
-          </div>
+          </ul>
         )}
 
         <FabSpacer />
       </div>
     </div>
+  );
+}
+
+/**
+ * One book on the shelf: a cover, a title, a count and a progress bar —
+ * and the same three gestures every other shelf card has.
+ *
+ * It used to wear a bin in its corner, permanently visible under a thumb:
+ * one press from throwing away a book's whole history, sitting on top of
+ * its title. The row's verbs are behind the ⋯ now, a swipe left removes
+ * (undoably) and a swipe right marks, which is what a study, a note and a
+ * game already do.
+ */
+function BookCard({
+  book,
+  marked,
+  onToggleMark,
+  onRemove,
+}: {
+  book: BookSummary;
+  marked: boolean;
+  onToggleMark: () => void;
+  onRemove: () => void;
+}) {
+  const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
+  const menuTrigger = useRef<HTMLButtonElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <li className="h-full">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => navigate('puzzles', 'books', book.slug)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') navigate('puzzles', 'books', book.slug);
+        }}
+        {...swipe.handlers}
+        className={cn(
+          'bg-surface border-line group relative flex h-full cursor-pointer items-stretch gap-3',
+          'overflow-hidden rounded-xl border p-3 text-left transition-colors duration-100',
+          'hover:border-line-strong hover:bg-surface-2',
+          // The whole indicator that a book is kept, and it costs no width
+          // — see the shelves and the games rows.
+          marked && 'border-l-warn hover:border-l-warn border-l-2',
+        )}
+      >
+        <SwipeTrack dx={swipe.dx} bookmarked={marked} />
+
+        <div className="flex min-w-0 flex-1 items-stretch gap-3" style={swipe.style}>
+          {book.cover ? (
+            <img
+              src={diagramUrl(book.slug, 'cover.jpg')}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
+            />
+          ) : (
+            <span className="bg-surface-inset border-line grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
+              <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
+            </span>
+          )}
+          <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
+            {/* pr keeps a long title clear of the corner control */}
+            <span className="min-w-0 pr-7">
+              <span className="text-fg block truncate text-sm font-medium">{book.title}</span>
+              <span className="text-subtle block text-xs">
+                {t('{n} puzzles', { n: book.puzzles })}
+              </span>
+            </span>
+            <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} />
+          </span>
+        </div>
+
+        <Button
+          ref={menuTrigger}
+          variant="ghost"
+          size="icon-sm"
+          title={t('More')}
+          active={menuOpen}
+          style={swipe.style}
+          className={cn(
+            'absolute right-2 top-2 opacity-0 transition-opacity',
+            'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+            menuOpen && 'opacity-100',
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            setMenuOpen(true);
+          }}
+        >
+          <MoreHorizontal className="size-3.5" />
+        </Button>
+
+        {menuOpen && (
+          <ActionSheet
+            title={book.title}
+            anchor={menuTrigger}
+            onClose={() => setMenuOpen(false)}
+            actions={[
+              {
+                label: marked ? 'Remove bookmark' : 'Bookmark',
+                icon: Bookmark,
+                onSelect: onToggleMark,
+              },
+              {
+                label: 'Remove this book and its progress',
+                icon: Trash2,
+                danger: true,
+                onSelect: onRemove,
+              },
+            ]}
+          />
+        )}
+      </div>
+    </li>
   );
 }
 
