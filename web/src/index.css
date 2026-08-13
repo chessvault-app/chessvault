@@ -123,6 +123,23 @@
   /* On --warn, which is a light amber in BOTH themes: white on it is a
      smear. The swipe-to-bookmark strip is the only thing that fills it. */
   --warn-fg: oklch(22% 0.04 75);
+  /**
+   * The ECO tag: one hue per opening family (A–E), two lightnesses per
+   * theme.
+   *
+   * The hue is picked in JS from the ECO letter, so only the lightness
+   * and chroma can live here — and they have to, because a colour written
+   * for a near-black page is a colour nobody can read on a white one. At
+   * the dark theme's 72% the opening name measured 2.3:1 against the
+   * light page, well under the 4.5:1 a small label needs; 45% measures
+   * 7:1. The chip is the same lightness with more chroma and a wash of
+   * itself behind it.
+   */
+  --eco-l: 45%;
+  --eco-c: 0.12;
+  --eco-wash: 10%;
+  --eco-name-l: 45%;
+  --eco-name-c: 0.05;
 
   /* The transient chip — the undo offer, and anything else that floats
      over the page for a few seconds and must not read as part of it.
@@ -214,6 +231,12 @@
   /* Dark mode's --bad is a light red; white on it is unreadable. */
   --bad-fg: oklch(18% 0.03 25);
   --warn-fg: oklch(20% 0.04 80);
+  /* Light text on a near-black page — the pair the tag was drawn with. */
+  --eco-l: 80%;
+  --eco-c: 0.08;
+  --eco-wash: 15%;
+  --eco-name-l: 72%;
+  --eco-name-c: 0.045;
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner

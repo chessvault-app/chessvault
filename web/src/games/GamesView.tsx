@@ -2566,11 +2566,19 @@ function OpeningTag({ eco, name }: { eco: string; name?: string | null }) {
     <>
       <span
         className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-[0.625rem] font-semibold leading-4"
-        style={{ color: `oklch(80% 0.08 ${hue})`, backgroundColor: `oklch(80% 0.08 ${hue} / 15%)` }}
+        // Lightness and chroma from the theme (index.css), hue from the
+        // ECO letter: the same tag was written once for the dark page and
+        // was a pale wash on the light one.
+        style={{
+          color: `oklch(var(--eco-l) var(--eco-c) ${hue})`,
+          backgroundColor: `oklch(var(--eco-l) var(--eco-c) ${hue} / var(--eco-wash))`,
+        }}
       >
         {eco}
       </span>
-      {name && <span style={{ color: `oklch(72% 0.045 ${hue})` }}>{name}</span>}
+      {name && (
+        <span style={{ color: `oklch(var(--eco-name-l) var(--eco-name-c) ${hue})` }}>{name}</span>
+      )}
     </>
   );
 }
