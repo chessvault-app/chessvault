@@ -20,6 +20,7 @@ import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveEntry, MoveEntry } from '@/board/MoveEntry';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -518,6 +519,9 @@ function Trainer({
               }
             />
             <MoveTreePane />
+            <div className="border-line border-t px-2 py-1.5 max-md:hidden">
+              <AnalysisMoveEntry />
+            </div>
             <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
             <StatusBar />
           </Panel>
@@ -831,6 +835,18 @@ function Trainer({
                 </>
               )}
             </div>
+            {/* The typed way to answer: the board has no focusable squares,
+                so without this a puzzle cannot be solved by keyboard at
+                all. Any legal move is accepted and judged like a drag. */}
+            {phase === 'solving' && !reviewing && displayed && (
+              <MoveEntry
+                fen={displayed.fen}
+                onPlay={(uci) => {
+                  applyUserMove(uci);
+                }}
+                className="max-md:hidden"
+              />
+            )}
           </div>
         </Panel>
 

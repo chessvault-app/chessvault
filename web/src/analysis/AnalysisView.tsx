@@ -2,6 +2,7 @@ import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOr
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisMoveEntry } from '@/board/MoveEntry';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -149,6 +150,13 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           />
           <MoveTreePane />
           <ReviewStrip />
+          {/* Typed entry: the board is pointer-only, so this is how a
+              keyboard plays a move at all (and how notation-thinkers play
+              one fastest). Phones use the touch board and have no row to
+              spare. */}
+          <div className="border-line border-t px-2 py-1.5 max-md:hidden">
+            <AnalysisMoveEntry />
+          </div>
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
           <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
