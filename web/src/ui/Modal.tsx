@@ -102,6 +102,14 @@ export function Modal({
           // sheet, which then moves under a scrim you are still touching.
           'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto overscroll-contain',
           'border p-3 shadow-[var(--shadow-pop)]',
+          // Children keep their size; the WINDOW scrolls. A flex column is
+          // allowed to shrink its children before it overflows, and that is
+          // what it did the moment the keyboard shortened the sheet: the
+          // PGN box collapsed to a sliver of its own placeholder and the
+          // button row landed on top of the result buttons. A form does not
+          // get smaller because there is less room to show it in — it gets
+          // scrolled, which is what a sheet is for.
+          '[&>*]:shrink-0',
           full
             ? // A BOTTOM SHEET on a phone, not a full-screen card. Edge to
               // edge meant a window that had replaced the app — no sense
