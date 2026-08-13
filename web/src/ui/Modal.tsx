@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
-import { ChevronLeft, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, X, type LucideIcon } from 'lucide-react';
 import { Button } from './Button';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
@@ -16,13 +16,16 @@ import { useSheetDrag } from './sheetDrag';
  * own import form — and a panel that grows has no obvious way out, while a
  * modal always has the same one.
  *
- * It is PromptSheet at a larger size, deliberately: a quiet label, no rule
- * under it, no X in the corner, and the way out is the Cancel button next
- * to whatever the window is for. Two closing idioms in one app meant every
- * window had to be read before it could be dismissed.
+ * It is PromptSheet at a larger size, deliberately: a quiet label and the
+ * way out next to whatever the window is for. Two closing idioms in one
+ * app meant every window had to be read before it could be dismissed.
  *
  * Escape and a click on the backdrop close it too, for the same reason
- * PromptSheet's scrim does — but neither is the advertised way out.
+ * PromptSheet's scrim does — but neither is the advertised way out. On a
+ * DESKTOP one is: an X in the corner, because a window that is only a
+ * list of settings has no Cancel button to leave by, and the other two
+ * ways out are both invisible. A phone shows no X — the sheet drags away
+ * from anywhere on itself, which is the gesture it was given instead.
  */
 export function Modal({
   title,
@@ -194,6 +197,23 @@ export function Modal({
             {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
             <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
             {actions}
+            {/* A way out for the mouse, and only for the mouse.
+                A phone has three already — drag the sheet down, tap the
+                scrim, press Back — which is why the X went. A desktop
+                window has the scrim and Escape, and both are invisible:
+                a window whose only content is a list of settings had no
+                button in it at all, so there was nothing on screen that
+                said how to leave. */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Close')}
+              aria-label={t('Close')}
+              className="-my-1 -mr-1 hidden shrink-0 sm:inline-flex"
+              onClick={onClose}
+            >
+              <X className="size-3.5" />
+            </Button>
           </div>
         </div>
         {children}
