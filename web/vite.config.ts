@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import { licenses } from './vite.licenses.ts';
+import { launchScreen } from './vite.launchScreen.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -20,7 +21,7 @@ const crossOriginIsolation = {
 export default defineConfig({
   root,
   publicDir: `${root}public`,
-  plugins: [react(), tailwindcss(), licenses()],
+  plugins: [react(), tailwindcss(), licenses(), launchScreen()],
   // Stated false so it FOLDS. `isDemo()` guards on
   // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
   // absent but cannot be evaluated at build time — so the demo's dynamic

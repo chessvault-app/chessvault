@@ -79,6 +79,28 @@ createRoot(container).render(
  * BOOT_MAX_MS is the backstop. A chunk that never arrives is a problem to
  * see, not one to hide behind a launch screen for ever.
  */
+/**
+ * The app's stylesheet, which no longer blocks the first paint.
+ *
+ * web/vite.launchScreen.ts loads it with `media="print"` so the launch
+ * screen — whose styles are inline — can draw immediately instead of
+ * waiting on a quarter of a megabyte of CSS. The cost of that is a moment
+ * where the app underneath is unstyled, and the screen must not come down
+ * during it.
+ *
+ * Resolves immediately in dev, where Vite injects styles through JS and
+ * there is no such link.
+ */
+function whenStyled(): Promise<void> {
+  const link = document.querySelector<HTMLLinkElement>('link[data-app-styles]');
+  if (!link || link.dataset.styled === '1') return Promise.resolve();
+  return new Promise<void>((resolve) => {
+    link.addEventListener('load', () => resolve(), { once: true });
+    // A stylesheet that 404s must not strand the screen on top of the app.
+    link.addEventListener('error', () => resolve(), { once: true });
+  });
+}
+
 const BOOT_MIN_MS = 900;
 const BOOT_MAX_MS = 4000;
 const boot = document.getElementById('boot');
@@ -87,7 +109,9 @@ if (boot) {
     setTimeout(resolve, Math.max(0, BOOT_MIN_MS - performance.now())),
   );
   const ready = Promise.race([
-    whenFirstPainted(),
+    // Both, because a page that has painted without its stylesheet is not
+    // a page anyone should be shown.
+    Promise.all([whenFirstPainted(), whenStyled()]),
     new Promise<void>((resolve) => setTimeout(resolve, BOOT_MAX_MS)),
   ]);
   /**

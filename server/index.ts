@@ -78,15 +78,38 @@ app.get('/api/health', (c) =>
 );
 
 /**
- * Gzip the API only.
+ * Gzip the API.
  *
  * A book's detail response is its whole puzzle list — 1.9 MB of JSON for
  * the largest, every byte of it repetitive FENs and move lists, which is
- * exactly what gzip is good at. Everything under /dist is already
- * compressed (jpeg, wasm) or served by the static handler, so squeezing
- * those would cost CPU for nothing.
+ * exactly what gzip is good at.
  */
 app.use('/api/*', compress());
+
+/**
+ * And the app's own text, which was the bigger miss.
+ *
+ * This used to say that everything under /dist was "already compressed
+ * (jpeg, wasm)", so squeezing it would cost CPU for nothing. That is true
+ * of the pictures and the engine and false of the two files that matter
+ * most: the stylesheet and the bundle went over the wire RAW — measured
+ * on the deployed server, 267 kB of CSS and 222 kB of JS, on every cold
+ * launch, over whatever connection a phone happens to have.
+ *
+ * The stylesheet is the one that hurts. It is render-blocking, so nothing
+ * paints until all of it has arrived — including the launch screen, whose
+ * own styles are inline and ready from the first byte. That is the gap
+ * between the OS splash going away and anything of ours appearing.
+ *
+ * By extension, not by path: a woff2, a jpeg and the engine's wasm are
+ * already compressed and gzipping them again spends CPU to add bytes, so
+ * only the text types are listed.
+ */
+const COMPRESSIBLE = /\.(css|js|mjs|json|webmanifest|svg|map|txt)$/;
+app.use('/*', async (c, next) => {
+  if (!COMPRESSIBLE.test(c.req.path)) return next();
+  return compress()(c, next);
+});
 
 // Cap request bodies before any handler buffers them: the vault-write
 // routes (studies, notes, draft images) otherwise accept unbounded input.
