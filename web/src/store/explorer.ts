@@ -136,12 +136,12 @@ export const MY_GAMES = 'vault:mine';
 export const isMyGames = (name: string | null): boolean => name === MY_GAMES;
 
 /** Turn the filter set into the query the server reads. */
-export function myGamesQuery(fen: string, f: MyGamesFilters): string {
+function myGamesQuery(fen: string, f: MyGamesFilters): string {
   return new URLSearchParams({ fen, ...Object.fromEntries(new URLSearchParams(myFilterQuery(f))) }).toString();
 }
 
 /** The filter half of that query, for the endpoints that take no position. */
-export function myFilterQuery(f: MyGamesFilters): string {
+function myFilterQuery(f: MyGamesFilters): string {
   const query = new URLSearchParams();
   if (f.side) query.set('side', f.side);
   if (f.outcome) query.set('outcome', f.outcome);

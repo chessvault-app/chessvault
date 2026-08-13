@@ -8,7 +8,7 @@ export function grayFromCanvas(canvas: HTMLCanvasElement): Gray {
   return grayscaleFrom(ctx.getImageData(0, 0, canvas.width, canvas.height));
 }
 
-export function grayFromImage(img: HTMLImageElement): Gray {
+function grayFromImage(img: HTMLImageElement): Gray {
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
@@ -22,7 +22,7 @@ export function grayFromImage(img: HTMLImageElement): Gray {
  * gutters — real-book crops carry both, and a blind full-frame warp
  * misaligns every cell by a fraction of a square.
  */
-export function boardFromGray(gray: Gray): Gray {
+function boardFromGray(gray: Gray): Gray {
   const quad: Quad = detectBoardQuad(gray) ?? [
     { x: 0, y: 0 },
     { x: gray.w, y: 0 },

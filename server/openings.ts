@@ -44,7 +44,7 @@ function* openingRows(): Generator<[string, string, string]> {
  * Replay every line and key it by the shared Zobrist hash, so the server can
  * name any position with one map lookup. Fully offline; ~0.4 s.
  */
-export function compileOpenings(): { file: OpeningsFile; lines: number; collisions: number } {
+function compileOpenings(): { file: OpeningsFile; lines: number; collisions: number } {
   const byKey: OpeningsFile['byKey'] = {};
   let lines = 0;
   let collisions = 0;

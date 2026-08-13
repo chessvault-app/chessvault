@@ -184,7 +184,7 @@ function firstChapterFen(head: string, read: number): string | null {
 }
 
 /** Everything a note's card shows beyond its name, size and time. */
-export function readPreview(head: string): DocPreview {
+function readPreview(head: string): DocPreview {
   const { body } = splitFrontMatter(head);
   return { excerpt: firstProseLine(body), fen: firstBoardFen(body) };
 }

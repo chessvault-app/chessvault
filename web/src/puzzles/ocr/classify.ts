@@ -38,13 +38,13 @@ const PER_LABEL_CAP = 16;
 /** A new template this close to an existing same-label one adds nothing. */
 const DUPLICATE_DISTANCE = 4;
 
-export function encodeFeature(feature: Uint8Array): string {
+function encodeFeature(feature: Uint8Array): string {
   let bin = '';
   for (const byte of feature) bin += String.fromCharCode(byte);
   return btoa(bin);
 }
 
-export function decodeFeature(encoded: string): Uint8Array {
+function decodeFeature(encoded: string): Uint8Array {
   const bin = atob(encoded);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
@@ -89,7 +89,7 @@ function distance(a: Float32Array, b: Float32Array): number {
  * Nearest template wins; confidence is 1 − d_best/d_otherLabel (0 when a
  * different label matches just as well, →1 when the winner is unambiguous).
  */
-export function classifyCell(
+function classifyCell(
   feature: Uint8Array,
   templates: Template[],
 ): CellReading {

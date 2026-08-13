@@ -175,7 +175,7 @@ function applyPgnChild(
 }
 
 /** Convert a `MoveTree` back into a chessops `Game`, ready for `makePgn`. */
-export function treeToGame(tree: MoveTree, headers: Headers): Game<PgnNodeData> {
+function treeToGame(tree: MoveTree, headers: Headers): Game<PgnNodeData> {
   const root = new PgnNode<PgnNodeData>();
   const rootComments = joinComment(getNode(tree, tree.rootId));
 

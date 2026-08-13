@@ -122,7 +122,7 @@ function pgnsUnder(root: string): string[] {
  * Kept as a class rather than module state because the tests and the demo
  * each want their own, pointed at their own vault.
  */
-export class MyGamesIndex {
+class MyGamesIndex {
   private db: InstanceType<typeof Database> | null = null;
   private nextId = 1;
   private lastScan = 0;
@@ -396,7 +396,7 @@ const SPEEDS: Speed[] = ['bullet', 'blitz', 'rapid', 'classical', 'correspondenc
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Read the filter set out of a query string, ignoring anything malformed. */
-export function parseFilters(query: (key: string) => string | undefined): MyGamesFilters {
+function parseFilters(query: (key: string) => string | undefined): MyGamesFilters {
   const side = query('side');
   const outcome = query('outcome');
   const speeds = (query('speeds') ?? '')

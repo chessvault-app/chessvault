@@ -27,11 +27,11 @@ export interface GrayLike {
 }
 
 /** Every glyph is squashed to this before being compared. */
-export const GLYPH_W = 16;
-export const GLYPH_H = 24;
+const GLYPH_W = 16;
+const GLYPH_H = 24;
 
 /** The pieces a figurine can be. Pawns have no symbol — that is the point. */
-export const GLYPH_ROLES: Role[] = ['knight', 'bishop', 'rook', 'queen', 'king'];
+const GLYPH_ROLES: Role[] = ['knight', 'bishop', 'rook', 'queen', 'king'];
 
 /** One glyph read off a page, with the garbled prefix it was printed as. */
 export interface GlyphSample {
