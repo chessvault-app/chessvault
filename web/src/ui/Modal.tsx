@@ -3,7 +3,6 @@ import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
-import { useKeyboardInset } from '@/lib/keyboardInset';
 import { useMediaQuery } from '@/lib/media';
 import { useSheetDrag } from './sheetDrag';
 
@@ -59,10 +58,6 @@ export function Modal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // The layer is pinned to the visible band (above), so the keyboard is
-  // already outside it — nothing to pad. The number is still wanted for
-  // one thing: knowing that a keyboard is up at all.
-  const inset = useKeyboardInset();
   // Only a `full` window is a sheet, and only below sm — above it this is
   // a centred card, and a centred card that slides away downwards is not
   // answering any question the pointer asked.
@@ -99,14 +94,7 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
         // The ref is what makes the WHOLE sheet draggable — see sheetDrag.
         ref={sheet ? drag.ref : undefined}
-        style={{
-          ...(sheet ? drag.style : {}),
-          // With the keyboard up, take the whole band that is left rather
-          // than 88% of it: the sheet is a form being filled in, and the
-          // 12% of page showing above it was for orientation, which is not
-          // what anybody needs while typing.
-          ...(sheet && inset ? { maxHeight: '100%' } : {}),
-        }}
+        style={sheet ? drag.style : undefined}
         className={cn(
           // overscroll-contain: a scroll this window cannot use is its own
           // business. Without it, reaching the end of the list inside a
@@ -127,9 +115,16 @@ export function Modal({
               // dvh stayed its full height when the keyboard took half the
               // screen — its bottom went under the keys, and the browser
               // scrolled the whole sheet up to find the caret, which is
-              // what threw the caret away. The layer pads itself by what
-              // the keyboard covers (see useKeyboardInset), so a
-              // percentage of the layer IS the room actually left.
+              // what threw the caret away. While the keyboard is up the
+              // layer IS the band above it (see index.css), so a
+              // percentage of the layer is a percentage of the room left.
+              //
+              // And it stays 88% with the keyboard up, rather than taking
+              // the whole band. A sheet has to rise to clear the keys —
+              // that much is arithmetic — but it does not have to GROW on
+              // the way, and one that fills the band arrives at the top of
+              // the screen looking like a different window. Capped, it
+              // keeps a strip of page above it and its head moves less.
               'max-h-[88%] rounded-t-2xl pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
               'sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl sm:pb-3'
             : 'max-h-full max-w-[32rem] rounded-xl',
