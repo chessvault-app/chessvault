@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -113,7 +114,12 @@ export function ConfirmPopover({
         {label && t(label)}
       </Button>
 
-      {open && rect && (
+      {/* On the body, like Select's list and for the same two reasons: it
+          is position-fixed off a measured rect, which a transformed
+          ancestor would redefine, and a touch inside it would otherwise
+          bubble into whatever it was written inside. No caller puts this
+          in a sheet today; the point is that one may. */}
+      {open && rect && createPortal(
         <div
           ref={pop}
           role="dialog"
@@ -148,7 +154,8 @@ export function ConfirmPopover({
               {t(confirmLabel)}
             </Button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
