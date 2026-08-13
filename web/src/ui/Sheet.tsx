@@ -1,6 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
+import { useKeyboardInset } from '@/lib/keyboardInset';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
 
@@ -28,16 +29,8 @@ export function Sheet({
   onClose: () => void;
   className?: string;
 }) {
-  const [covered, setCovered] = useState(0);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const measure = (): void =>
-      setCovered(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
-    measure();
-    vv.addEventListener('resize', measure);
-    return () => vv.removeEventListener('resize', measure);
-  }, []);
+  // The app's one keyboard measurement, not a second copy of the sum.
+  const covered = useKeyboardInset();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {

@@ -116,7 +116,11 @@ function Shell() {
         // retracted, which is taller than what you can actually see while
         // they are out, and that difference was cutting the bottom off
         // panels that reached the end of the page.
-        'bg-app text-fg flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
+        // Minus --kb: the shell ends where the keyboard begins, so the
+        // keyboard overlays nothing and the browser has no reason to
+        // scroll the page looking for the field. --kb is 0 whenever there
+        // is no keyboard, which is every desktop and most of the time.
+        'bg-app text-fg flex h-[calc(var(--app-h,100svh)-var(--kb,0px))] flex-col overflow-hidden',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
@@ -218,7 +222,7 @@ function MobileBottom({ active }: { active: Section }) {
         id={MOBILE_BAR_SLOT_ID}
         className={cn(
           'bg-surface/85 border-line flex items-stretch border-t backdrop-blur-xl md:hidden',
-          'pb-[env(safe-area-inset-bottom)]',
+          'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
           !claimed && 'hidden',
         )}
       />
@@ -461,6 +465,12 @@ function MobileNav({ active }: { active: Section }) {
         'bg-surface/85 border-line flex shrink-0 items-stretch border-t backdrop-blur-xl md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
+        // Gone while the keyboard is up. The shell now ends at the top of
+        // the keyboard, so a bar pinned to the shell's bottom edge would
+        // sit on the keys — which is exactly how the last attempt at this
+        // failed. Nothing on a phone asks for typing except a sheet, and a
+        // sheet covers the bar anyway.
+        'keyboard:hidden',
       )}
     >
       {tabs.map(({ section, label, icon: Icon }) => {

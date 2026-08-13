@@ -42,6 +42,9 @@
 @import './piece-sets.css' layer(chessground);
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* `keyboard:` — while the on-screen keyboard is up. The class is put on
+   <html> by startKeyboardTracking, which is also what sets --kb. */
+@custom-variant keyboard (:where(.kb-open) &);
 
 /* Layout direction is orientation-aware, not width-only: a Nest Hub or a
    phone held sideways is short and wide, and the panels belong BESIDE the
