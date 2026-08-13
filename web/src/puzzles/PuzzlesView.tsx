@@ -181,8 +181,14 @@ function Trainer({
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const refreshMeta = useCallback(async () => {
-    const res = await fetch('/api/puzzles/meta');
-    setMeta((await res.json()) as Meta);
+    // Meta is decoration around the trainer (counts, the setup gate); if
+    // the server is away, loadNext will say so where it can be acted on.
+    try {
+      const res = await fetch('/api/puzzles/meta');
+      setMeta((await res.json()) as Meta);
+    } catch {
+      /* the puzzle fetch reports the outage, with a retry */
+    }
   }, []);
 
   const report = useCallback(
@@ -230,9 +236,20 @@ function Trainer({
         const qs = query.toString();
         url = `/api/puzzles/next${qs ? `?${qs}` : ''}`;
       }
-      const res = await fetch(url);
+      // A fetch that THROWS — server down, network gone — used to fall
+      // straight through this function, leaving the phase on 'loading'
+      // and the board on a spinner that nothing would ever stop. An error
+      // is a state the trainer must be able to be in.
+      let res: Response;
+      try {
+        res = await fetch(url);
+      } catch {
+        setError(navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
+        return;
+      }
       if (!res.ok) {
-        setError(((await res.json()) as { error?: string }).error ?? t('Request failed ({status})', { status: res.status }));
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(body?.error ?? t('Request failed ({status})', { status: res.status }));
         return;
       }
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
@@ -538,7 +555,19 @@ function Trainer({
             ) : (
               <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
                 {error ? (
-                  <p className="text-muted max-w-[80%] text-center text-xs">{error}</p>
+                  // What happened, and a way to go again — a dead end here
+                  // used to need a full page reload to recover from.
+                  <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
+                    <p className="text-muted text-xs">{error}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void loadNext(theme, difficulty)}
+                    >
+                      <RotateCw className="size-3.5" />
+                      {t('Try again')}
+                    </Button>
+                  </div>
                 ) : (
                   <Loader2 className="text-subtle size-6 animate-spin" />
                 )}

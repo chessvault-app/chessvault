@@ -46,6 +46,7 @@ export const ko: Record<string, string> = {
   Reset: '초기화',
   Close: '닫기',
   Retry: '다시 시도',
+  'Try again': '다시 시도',
   Done: '완료',
   Paste: '붙여넣기',
   Import: '가져오기',

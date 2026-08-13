@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, Compass, ExternalLink, Hammer, Loader2, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
+import { BookOpen, ChevronLeft, Compass, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
@@ -244,7 +244,23 @@ export function ExplorerPane({
 
 
           {error ? (
-            <p className="text-bad px-3 py-3 text-xs">{error}</p>
+            // A bare red line was a dead end: the pane never asked again
+            // until the position changed. Say what happened, offer to go
+            // again in place.
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+              <p className="text-bad text-xs">{error}</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void refreshBooks();
+                  lookup(node.fen);
+                }}
+              >
+                <RotateCw className="size-3.5" />
+                {t('Try again')}
+              </Button>
+            </div>
           ) : booksLoaded && books.length === 0 && !isRemoteDb(book) && !mine ? (
             <EmptyBooks onOpenManager={() => setShowManager(true)} />
           ) : (
