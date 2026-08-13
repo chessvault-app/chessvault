@@ -138,6 +138,29 @@
       @media (prefers-reduced-motion: reduce) {
         #boot.done { transition-duration: 1ms; }
       }
+      /**
+       * No backdrop filters while the launch screen is up.
+       *
+       * WebKit composites -webkit-backdrop-filter outside the normal paint
+       * order: an element that has one can draw OVER a later overlay that
+       * covers it, and no z-index on the overlay changes that. The app has
+       * exactly two, and they are the phone's bottom bars — so the launch
+       * screen covered the whole app except the one strip that had a blur
+       * on it, and lanph3re watched a nav bar sit on top of the knight
+       * through three fixes aimed at the wrong thing.
+       *
+       * Nothing is lost by this. A blur behind an opaque screen is a blur
+       * nobody can see; the class goes the moment the screen does, and the
+       * bars are frosted again before anything can be pressed.
+       *
+       * The universal selector is deliberate — it is the escape that has
+       * to be closed, not one element's use of it, and it is in force for
+       * about a second.
+       */
+      html.booting * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
     </style>
     <script>
       // Set the theme class before first paint so dark-theme users never see a
@@ -204,6 +227,10 @@
           boot.remove();
           return;
         }
+        // The screen is staying, so nothing may composite its way in front
+        // of it — see the html.booting rule. main.tsx clears this when it
+        // takes the screen away.
+        document.documentElement.classList.add('booting');
         /**
          * Pin the KNIGHT to the screen. Never the box.
          *

@@ -90,11 +90,23 @@ if (boot) {
     whenFirstPainted(),
     new Promise<void>((resolve) => setTimeout(resolve, BOOT_MAX_MS)),
   ]);
+  /**
+   * Gone means gone: the element AND the class that suppresses backdrop
+   * filters underneath it (see the html.booting rule in index.html).
+   *
+   * Cleared when the screen has actually left rather than when the fade
+   * starts, because a bar that gets its blur back mid-fade is a bar that
+   * can composite its way in front of what is still fading.
+   */
+  const finish = (): void => {
+    boot.remove();
+    document.documentElement.classList.remove('booting');
+  };
   void Promise.all([seen, ready]).then(() => {
     boot.classList.add('done');
-    boot.addEventListener('transitionend', () => boot.remove(), { once: true });
+    boot.addEventListener('transitionend', finish, { once: true });
     // A transition that never runs (reduced motion, a backgrounded tab)
     // must not leave the screen on top of the app for ever.
-    setTimeout(() => boot.remove(), 600);
+    setTimeout(finish, 600);
   });
 }
