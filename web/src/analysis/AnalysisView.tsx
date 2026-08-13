@@ -19,6 +19,8 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
 import { MoveTreePane, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 import { t } from '@/lib/i18n';
@@ -258,11 +260,37 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
   );
 }
 
+/**
+ * Undo for the tree's destructive verbs.
+ *
+ * Deleting a move (and everything after it) was the only one-tap,
+ * no-confirm, no-undo destruction in the app — while every shelf row got
+ * an UndoBar. The tree is in memory, so undo is a snapshot: capture
+ * before the act, put it back if asked. Same treatment as the shelves,
+ * same toast.
+ */
+function useTreeUndo(): {
+  undoable: ReturnType<typeof useUndoable>;
+  capture: (label: string) => void;
+} {
+  const undoable = useUndoable();
+  const capture = (label: string): void => {
+    const { tree, cursorId, gameHeaders, orientation } = useAnalysis.getState();
+    undoable.remove(
+      label,
+      () => {},
+      () => useAnalysis.setState({ tree, cursorId, gameHeaders, orientation }),
+    );
+  };
+  return { undoable, capture };
+}
+
 export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const deleteNode = useAnalysis((s) => s.deleteNode);
   const reset = useAnalysis((s) => s.reset);
+  const { undoable, capture } = useTreeUndo();
 
   const node = getNode(tree, cursorId);
   const atRoot = node.parentId === null;
@@ -275,7 +303,10 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
         variant="ghost"
         size="icon-sm"
         disabled={atRoot}
-        onClick={() => deleteNode(cursorId)}
+        onClick={() => {
+          capture(node.san ?? '');
+          deleteNode(cursorId);
+        }}
         title={t('Delete this move and everything after it')}
       >
         <Trash2 className="size-3.5" />
@@ -285,11 +316,23 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
           variant="ghost"
           size="icon-sm"
           className="max-md:hidden"
-          onClick={() => reset()}
+          onClick={() => {
+            capture(t('all moves'));
+            reset();
+          }}
           title={t('Clear the board')}
         >
           <RotateCcw className="size-3.5" />
         </Button>
+      )}
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+          onHold={undoable.hold}
+          onRelease={undoable.release}
+        />
       )}
     </>
   );
@@ -325,6 +368,7 @@ export function MovesOverflow({
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const reset = useAnalysis((s) => s.reset);
+  const { undoable, capture } = useTreeUndo();
   const exportPgn = useAnalysis((s) => s.exportPgn);
   const runReview = useReview((s) => s.run);
   const reviewing = useReview((s) => s.status) === 'running';
@@ -355,7 +399,10 @@ export function MovesOverflow({
             label: 'Clear the board',
             icon: RotateCcw,
             danger: true,
-            onSelect: () => reset(),
+            onSelect: () => {
+              capture(t('all moves'));
+              reset();
+            },
           } as SheetAction,
         ]
       : []),
@@ -380,6 +427,15 @@ export function MovesOverflow({
           anchor={trigger}
           actions={actions}
           onClose={() => setOpen(false)}
+        />
+      )}
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+          onHold={undoable.hold}
+          onRelease={undoable.release}
         />
       )}
     </>

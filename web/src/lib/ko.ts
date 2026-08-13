@@ -106,6 +106,7 @@ export const ko: Record<string, string> = {
   // --- analysis, board, editor --------------------------------------------
   'Delete this move and everything after it': '이 수와 그 이후를 모두 삭제',
   'Clear the board': '보드 비우기',
+  'all moves': '모든 수',
   'Has a comment': '주석 있음',
   'Play a move on the board, or load a FEN or PGN.':
     '보드에서 수를 두거나, FEN 또는 PGN을 불러오세요.',

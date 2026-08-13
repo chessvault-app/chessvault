@@ -499,23 +499,28 @@ export function EditorView({
           >
             <FlipVertical2 className="size-3.5" />
           </Button>
+          {/* Both of these destroy the position on the board, and as two
+              adjacent anonymous icons they were a coin-flip. Named where
+              there is room, like Move and Erase beside them. */}
           <Button
             variant="ghost"
-            size="icon-sm"
-            className="h-full w-8"
+            size="sm"
+            className="h-full max-sm:w-10 max-sm:px-0"
             onClick={() => setState(defaultEditorState())}
             title={t('Reset to the starting position')}
           >
             <RotateCcw className="size-3.5" />
+            <span className="hidden sm:inline">{t('Reset')}</span>
           </Button>
           <Button
             variant="ghost"
-            size="icon-sm"
-            className="h-full w-8"
+            size="sm"
+            className="h-full max-sm:w-10 max-sm:px-0"
             onClick={() => setState(emptyEditorState())}
             title={t('Clear the board')}
           >
             <Trash2 className="size-3.5" />
+            <span className="hidden sm:inline">{t('Clear')}</span>
           </Button>
           </div>
           {/* Position details (side to move, castling, FEN) — a LABELLED
