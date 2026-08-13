@@ -249,6 +249,13 @@ export function ExplorerPane({
             // again in place.
             <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
               <p className="text-bad text-xs">{error}</p>
+              {/* The online databases go through the server's Lichess
+                  token; when they fail, the fix has an address. */}
+              {isRemoteDb(book) && (
+                <a href="#/settings" className="text-primary text-xs hover:underline">
+                  {t('Add a Lichess token in Settings')}
+                </a>
+              )}
               <Button
                 variant="secondary"
                 size="sm"
@@ -683,9 +690,11 @@ function EmptyBooks({ onOpenManager }: { onOpenManager: () => void }) {
   return (
     <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
       <Compass className="text-subtle size-5" strokeWidth={1.75} />
+      {/* The copy used to say to drop files into vault/sources/ — a
+          shell instruction, stale since the manager grew its own upload.
+          Point at the thing in the app instead. */}
       <p className="text-muted text-xs leading-relaxed">
-        No opening books yet. Drop PGN files into <code className="font-mono">vault/sources/</code>{' '}
-        and build one.
+        {t('No opening books yet — upload PGN files and build one in Manage books.')}
       </p>
       <Button variant="ghost" size="sm" onClick={onOpenManager}>
         <Hammer className="mr-1 size-3.5" />

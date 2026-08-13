@@ -766,6 +766,18 @@ export function RepertoireView() {
                           ? 'Your move.'
                           : 'Reviewing an earlier move — step to the end to keep playing.'}
                 </p>
+                {/* The dependency arrow, pointed back: Settings knows it
+                    powers this, but this error never said Settings was
+                    the fix. A tokenless user read "could not reach" as
+                    the app being broken. */}
+                {error && source === ONLINE_SOURCE && (
+                  <p className="text-muted text-xs leading-relaxed">
+                    {t('The online database goes through your Lichess token.')}{' '}
+                    <a href="#/settings" className="text-primary hover:underline">
+                      {t('Add one in Settings')}
+                    </a>
+                  </p>
+                )}
                 {phase === 'ended' && (
                   <FinalAssessment
                     fen={getNode(tree, tipId).fen}

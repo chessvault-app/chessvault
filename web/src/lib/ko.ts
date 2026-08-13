@@ -527,6 +527,12 @@ export const ko: Record<string, string> = {
   'New password': '새 비밀번호',
   'Repeat new password': '새 비밀번호 확인',
   'Lichess token': 'Lichess 토큰',
+  'Add a Lichess token in Settings': '설정에서 Lichess 토큰을 추가하세요',
+  'The online database goes through your Lichess token.':
+    '온라인 데이터베이스는 Lichess 토큰을 통해 접속합니다.',
+  'Add one in Settings': '설정에서 추가하기',
+  'No opening books yet — upload PGN files and build one in Manage books.':
+    '오프닝 북이 없습니다 — 북 관리에서 PGN 파일을 올려 만들어 보세요.',
   'Danger zone': '보관함 내 데이터 초기화',
   Server: '서버',
   Vault: '보관함',
