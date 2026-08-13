@@ -118,6 +118,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow: hidden;
         background: #f9fafc;
       }
       #boot svg { width: 22vmin; height: 22vmin; fill: #0083c1; }
@@ -125,6 +126,11 @@
         #boot { background: #090c12; }
         #boot svg { fill: #49b2f3; }
       }
+      /* Added by the script below once it has measured the screen: the
+         knight stops being centred in the BOX and is placed on a point
+         instead. The box is not consulted, so it stays free to cover the
+         viewport. */
+      #boot.pinned svg { position: absolute; transform: translate(-50%, -50%); }
       /* Set by main.tsx once the app is up and the screen has had its
          moment. pointer-events go first so the app is usable through the
          fade rather than after it. */
@@ -177,12 +183,16 @@
       </svg>
     </div>
     <script>
-      // An INSTALLED app only. This screen exists to cover the handover
-      // from the OS splash to React — and a browser tab has no OS splash:
-      // the page simply appears, as every other page does, and a
-      // full-screen brand card in front of it is a splash screen for its
-      // own sake. Removed here rather than never rendered, so the markup
-      // stays one thing that main.tsx knows how to take down.
+      // An INSTALLED app only, and not the desktop one. This screen exists
+      // to cover the handover from the OS splash to React — and a browser
+      // tab has no OS splash: the page simply appears, as every other page
+      // does, and a full-screen brand card in front of it is a splash
+      // screen for its own sake. The desktop shell has none either, and is
+      // not getting one; `vaultShell` is the preload's own bridge, so it
+      // says that outright rather than leaving it to depend on what
+      // Chromium reports display-mode as for an Electron window.
+      // Removed here rather than never rendered, so the markup stays one
+      // thing that main.tsx knows how to take down.
       (function () {
         var boot = document.getElementById('boot');
         var app =
@@ -190,12 +200,12 @@
           matchMedia('(display-mode: fullscreen)').matches ||
           matchMedia('(display-mode: minimal-ui)').matches ||
           navigator.standalone === true;
-        if (!app) {
+        if (!app || window.vaultShell) {
           boot.remove();
           return;
         }
         /**
-         * Pin it to the SCREEN, not the viewport.
+         * Pin the KNIGHT to the screen. Never the box.
          *
          * The startup image iOS just drew is the screen, with the knight
          * at 22% of the screen's short side. This screen was a viewport
@@ -206,17 +216,60 @@
          * re-centres it. The logo jumped, which is what a launch screen
          * has exactly one job not to do.
          *
-         * `screen` does not move. The short side is taken with min(), so
-         * it is right whichever way the phone reports its axes, and the
-         * box is laid out in the viewport's own orientation.
+         * The first go at this sized the BOX from `screen` and left the
+         * knight centred inside it. That fixed the jump and broke the
+         * thing the box is for. A fixed element with an explicit height
+         * ignores `bottom: 0` — so the screen was only as tall as
+         * `screen` claimed, anchored at the top, and anything the claim
+         * fell short by was left uncovered. What shows through the gap at
+         * the bottom of a phone is the nav bar, which is exactly what
+         * lanph3re saw sitting under the knight. The old portrait test
+         * made it worse: it read window.innerHeight, which is the number
+         * a home-screen launch is documented (in index.css, by us) to get
+         * wrong until the first scroll — one bad frame and the box was
+         * laid out landscape on a portrait phone, covering less than half
+         * the screen.
+         *
+         * So the two jobs are split. Coverage comes from `inset: 0`,
+         * which cannot be short of the viewport whatever the viewport
+         * turns out to be. Only the knight is measured, and it is placed
+         * on the screen's centre point rather than centred in anything.
+         *
+         * Orientation is read from screen.orientation, which describes
+         * the screen and not the viewport that is still settling; the old
+         * test stays as the fallback for anything without it.
          */
         var short = Math.min(screen.width, screen.height);
         var long = Math.max(screen.width, screen.height);
-        var portrait = window.innerHeight >= window.innerWidth;
-        boot.style.width = (portrait ? short : long) + 'px';
-        boot.style.height = (portrait ? long : short) + 'px';
-        var svg = boot.querySelector('svg');
-        svg.style.width = svg.style.height = Math.round(short * 0.22) + 'px';
+        var type = screen.orientation && screen.orientation.type;
+        var portrait = type ? type.indexOf('portrait') === 0 : window.innerHeight >= window.innerWidth;
+        var w = portrait ? short : long;
+        var h = portrait ? long : short;
+        /**
+         * And only where the viewport IS the screen.
+         *
+         * The screen's centre is the right place for the knight exactly
+         * when the app fills the screen, which is the case this exists
+         * for. Anywhere it does not — an app installed from a desktop
+         * browser, which is `standalone` in a window nothing like the
+         * size of the monitor — the middle of a 1080p screen can fall
+         * outside an 800px window, and the launch screen would have no
+         * logo on it at all.
+         *
+         * Width settles it, because width is the measurement that is not
+         * in doubt. It is the DYNAMIC viewport — the height — that a
+         * home-screen launch mis-reports; the layout viewport's width is
+         * the device's width from the first frame. So a viewport as wide
+         * as the screen is a screen-filling launch, and anything else
+         * keeps the plain CSS centring it already has.
+         */
+        if (Math.abs(window.innerWidth - w) <= 4) {
+          var svg = boot.querySelector('svg');
+          svg.style.width = svg.style.height = Math.round(short * 0.22) + 'px';
+          svg.style.left = w / 2 + 'px';
+          svg.style.top = h / 2 + 'px';
+          boot.classList.add('pinned');
+        }
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>
