@@ -2,6 +2,7 @@ import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
+import { useDialogFocus } from '@/ui/dialogFocus';
 import {
   boardFeatures,
   grayscaleFrom,
@@ -56,6 +57,17 @@ export function PhotoImport({
   const [dragOver, setDragOver] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef<number | null>(null);
+
+  // The same focus and Escape duty every shared window has — this was
+  // the one overlay without either.
+  const focusRef = useDialogFocus();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const pick = useCallback((file: Blob): void => {
     const url = URL.createObjectURL(file);
@@ -249,12 +261,20 @@ export function PhotoImport({
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      // The scrim token, not a raw black — this was the one window with
+      // its own hand-rolled layer. A scrim CLICK deliberately does not
+      // close it: half-adjusted corner handles are work, and Escape (and
+      // Cancel) are the deliberate ways out.
+      className="bg-scrim fixed inset-0 z-50 grid place-items-center p-4"
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('Position from an image')}
+        ref={focusRef}
         className={cn(
           'bg-surface border-line relative flex max-h-full w-full max-w-[38rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4',
           dragOver && 'border-primary',

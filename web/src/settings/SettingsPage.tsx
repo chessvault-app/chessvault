@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { ChevronLeft, Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
+import { Modal } from '@/ui/Modal';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
@@ -1000,44 +1001,36 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
     setTimeout(() => window.location.reload(), 900);
   };
 
+  // The shared Modal, not a hand-rolled layer: this was the one dialog in
+  // Settings with no Escape, no focus management and no phone-sheet form.
+  // The most destructive question in the app should behave like every
+  // other window, only more so.
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-6" onClick={onClose}>
-      <div className="bg-scrim absolute inset-0" />
-      <div
-        className="bg-surface border-line relative w-full max-w-sm rounded-2xl border p-5 shadow-[var(--shadow-pop)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-3 flex items-center gap-2">
-          <div className="bg-bad/12 text-bad grid size-9 place-items-center rounded-lg">
-            <Trash2 className="size-4" />
-          </div>
-          <h2 className="text-sm font-semibold">{t('Wipe the entire vault?')}</h2>
-        </div>
-        <p className="text-muted mb-4 text-xs leading-relaxed">
-          {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
-        </p>
-        {gate && (
-          <label className="mb-3 flex flex-col gap-1">
-            <span className="text-muted text-xs font-medium">{t('Confirm your app password')}</span>
-            <Input
-              autoFocus
-              inputSize="lg"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !busy && password !== '' && void wipe()}
-            />
-          </label>
-        )}
-        <Feedback note={note} />
-        <div className="mt-4 flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
-          <Button variant="danger" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
-            {busy ? t('Wiping…') : t('Wipe everything')}
-          </Button>
-        </div>
+    <Modal title="Wipe the entire vault?" icon={Trash2} onClose={onClose}>
+      <p className="text-muted text-xs leading-relaxed">
+        {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
+      </p>
+      {gate && (
+        <label className="flex flex-col gap-1">
+          <span className="text-muted text-xs font-medium">{t('Confirm your app password')}</span>
+          <Input
+            autoFocus
+            inputSize="lg"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !busy && password !== '' && void wipe()}
+          />
+        </label>
+      )}
+      <Feedback note={note} />
+      <div className="mt-1 flex justify-end gap-2">
+        <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
+        <Button variant="danger" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
+          {busy ? t('Wiping…') : t('Wipe everything')}
+        </Button>
       </div>
-    </div>
+    </Modal>
   );
 }
