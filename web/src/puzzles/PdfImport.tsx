@@ -1,9 +1,10 @@
-import { FileUp, Loader2 } from 'lucide-react';
+import { Eye, FileUp, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
+import { Skeleton } from '@/ui/Skeleton';
 import { useImportJob } from './importJob';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
@@ -62,6 +63,10 @@ export function PdfImport({
 
   // A book's PDF is the one file this window exists for, so the whole
   // choose-a-file box takes a drop as well as a click.
+  // Which row is showing its scan. One at a time: the point is to check a
+  // suspicious row, not to rebuild the wall of thumbnails.
+  const [preview, setPreview] = useState<number | null>(null);
+
   const pdfDrop = useFileDrop({
     accept: byExtension('.pdf'),
     onFiles: ([file]) => void begin(file!),
@@ -247,41 +252,76 @@ export function PdfImport({
               {found.every((f) => f.fen === null) &&
                 ` ${t('Positions are unread for now: confirming the first draft teaches this book’s font.')}`}
             </p>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {found.map((f, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => job.toggle(i)}
-                  className={cn(
-                    'relative rounded-lg border p-1 transition-colors [content-visibility:auto]',
-                    f.selected ? 'border-primary/60' : 'border-line opacity-40',
-                  )}
-                >
-                  {/* lazy + async decode: a thousand-diagram scan holds a
-                      thousand data URLs, and decoding them all at once is
-                      hundreds of megabytes of bitmap in one go — enough to
-                      take the renderer with it. content-visibility already
-                      skips the paint; this skips the decode. */}
-                  <img
-                    src={f.dataUrl}
-                    alt={`page ${f.page}`}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full rounded"
-                  />
-                  <span className="text-subtle block pt-0.5 text-[0.625rem]">
-                    {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
-                    {f.solved && <span className="text-good ml-1">{t('solved')}</span>}
-                    {!f.solved && f.fen !== null && (
-                      <span className={cn('ml-1', f.uncertain > 0 ? 'text-warn' : 'text-good')}>
-                        {f.uncertain > 0 ? t('{n} unsure', { n: f.uncertain }) : t('read')}
+            {/*
+              A LIST, not a wall of crops.
+              Thumbnails at this size say only "something board-shaped was
+              cut out here" — not whether it was read, or read correctly,
+              which is the thing worth knowing while a book is being taken
+              apart. So each row states what became of that diagram, and
+              the crop is one press away for the rows where the answer
+              looks wrong. It also stops a thousand-diagram scan holding a
+              thousand decoded bitmaps: only an opened row decodes.
+            */}
+            <ul className="border-line divide-line max-h-72 divide-y overflow-y-auto rounded-lg border">
+              {found.map((f, i) => {
+                const mark = f.solved
+                  ? { label: 'solved', cls: 'text-good' }
+                  : f.fen === null
+                    ? { label: 'unread', cls: 'text-subtle' }
+                    : f.uncertain > 0
+                      ? { label: t('{n} unsure', { n: f.uncertain }), cls: 'text-warn' }
+                      : { label: 'read', cls: 'text-good' };
+                return (
+                  <li key={i} className="[content-visibility:auto]">
+                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={f.selected}
+                        onChange={() => job.toggle(i)}
+                        aria-label={t('Keep this diagram')}
+                        className="accent-primary shrink-0"
+                      />
+                      <span className="text-subtle w-12 shrink-0 font-mono text-[0.6875rem]">
+                        {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
                       </span>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        active={preview === i}
+                        title={t('Show the scan')}
+                        onClick={() => setPreview(preview === i ? null : i)}
+                      >
+                        <Eye className="size-3.5" />
+                      </Button>
+                      <span className={cn('ml-auto shrink-0 text-[0.6875rem]', mark.cls)}>
+                        {t(mark.label)}
+                      </span>
+                    </div>
+                    {preview === i && (
+                      <div className="px-2 pb-2">
+                        <img
+                          src={f.dataUrl}
+                          alt={`page ${f.page}`}
+                          loading="lazy"
+                          decoding="async"
+                          className="border-line mx-auto w-44 rounded border"
+                        />
+                      </div>
                     )}
-                  </span>
-                </button>
-              ))}
-            </div>
+                  </li>
+                );
+              })}
+              {/* The board being read right now. Same row shape as the rest,
+                  so the list does not jump when it turns into a real one. */}
+              {scanning && (
+                <li className="flex items-center gap-2 px-2 py-1.5">
+                  <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                  <Skeleton className="h-3 w-12 shrink-0" />
+                  <Skeleton className="size-5 shrink-0 rounded-md" />
+                  <Skeleton className="ml-auto h-3 w-10 shrink-0" />
+                </li>
+              )}
+            </ul>
           </>
         )}
 

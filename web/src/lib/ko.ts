@@ -456,6 +456,10 @@ export const ko: Record<string, string> = {
   'This line has run past the database — you are on your own now.':
     '이 수순은 데이터베이스를 벗어났습니다 — 여기부터는 스스로입니다.',
   'Evaluating the position…': '포지션 평가 중…',
+  // The book import's diagram list.
+  unread: '못 읽음',
+  'Keep this diagram': '이 다이어그램 유지',
+  'Show the scan': '스캔 보기',
   // The moves panel's overflow menu.
   'Load a position': '포지션 불러오기',
   'Copy FEN': 'FEN 복사',
