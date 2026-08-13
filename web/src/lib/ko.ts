@@ -237,7 +237,6 @@ export const ko: Record<string, string> = {
   'Show bookmarked only': '즐겨찾기만 보기',
   Layout: '보기 방식',
   // Games: the row toolbar and the archive panel.
-  Bookmarked: '북마크',
   'Preview the board': '보드 미리보기',
   // Games: the three empty states, each ending on the press that fixes it.
   'Your collection is empty': '모음이 비어 있습니다',

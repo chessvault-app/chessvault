@@ -1,4 +1,5 @@
 import {
+  Bookmark,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -10,7 +11,6 @@ import {
   NotebookPen,
   Pencil,
   Plus,
-  Star,
   BookOpen,
   Trash2,
   Trophy,
@@ -615,7 +615,7 @@ function CollectionView() {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
-  const [starredOnly, setStarredOnly] = useState(false);
+  const [markedOnly, setMarkedOnly] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column. */
@@ -748,7 +748,7 @@ function CollectionView() {
   const needle = query.trim().toLowerCase();
   const visible = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
-    if (starredOnly && !bookmarks.has(gameKey(g))) return false;
+    if (markedOnly && !bookmarks.has(gameKey(g))) return false;
     if (!needle) return true;
     return `${customName(g) ?? ''} ${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
       .toLowerCase()
@@ -763,21 +763,6 @@ function CollectionView() {
         <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
         {/* Wraps below sm: a focused search field takes the whole line there. */}
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
-          {/* A bordered control like the two beside it, not a bare glyph
-              floating at their left: it is a filter, and at h-7 with a
-              border it sits on the same baseline as the field and the
-              button instead of reading as a stray icon. */}
-          <Button
-            variant="secondary"
-            size="sm"
-            active={starredOnly}
-            aria-pressed={starredOnly}
-            title={starredOnly ? t('Show all games') : t('Show bookmarked games only')}
-            onClick={() => setStarredOnly((v) => !v)}
-          >
-            <Star className={cn('size-3.5', starredOnly && 'fill-warn text-warn')} />
-            <span className="max-sm:hidden">{t('Bookmarked')}</span>
-          </Button>
           <SearchInput
             type="text"
             inputSize="sm"
@@ -786,6 +771,22 @@ function CollectionView() {
             placeholder={t('Search collection…')}
             className="w-56 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
           />
+          {/* Search, then filter, then create — the order the two shelves
+              use, so the three toolbars are one toolbar in three places.
+              Icon only, like theirs: the word Bookmarked beside it was the
+              only label in any of them, and a pressed state says the same
+              thing without asking for the width. */}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            active={markedOnly}
+            aria-pressed={markedOnly}
+            title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
+            className="shrink-0"
+            onClick={() => setMarkedOnly((v) => !v)}
+          >
+            <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+          </Button>
           {/* Every way to get a game, in one place — but only while there
               is nowhere better for them. At lg the two browsers live in
               the column to the right, where they are on screen rather
@@ -867,14 +868,14 @@ function CollectionView() {
                emptied. Each of these ends on the press that undoes it —
                an empty state whose only advice is "go and do something
                else" leaves the reader looking at dead space. */
-            starredOnly && !needle ? (
+            markedOnly && !needle ? (
               <EmptyState
                 className="min-h-0 flex-1"
                 art={<BookmarkArt />}
                 title="No bookmarked games yet"
-                body="Star a game from the list and it is kept here, one press from wherever you are."
+                body="Bookmark a game from the list and it is kept here, one press from wherever you are."
                 action={
-                  <Button variant="primary" size="sm" onClick={() => setStarredOnly(false)}>
+                  <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
                     <BookOpen className="mr-1 size-3.5" />
                     {t('Browse all games')}
                   </Button>
@@ -886,7 +887,7 @@ function CollectionView() {
                 art={<NoMatchArt />}
                 title="Nothing matches that search"
                 body={
-                  starredOnly
+                  markedOnly
                     ? 'No bookmarked game in your collection matches it. Clearing the search shows every bookmark again.'
                     : 'No game in your collection matches it. Clearing the search shows the whole collection again.'
                 }
@@ -936,7 +937,7 @@ function CollectionView() {
                       void toggleBookmark(game);
                     }}
                   >
-                    <Star
+                    <Bookmark
                       className={cn(
                         'size-3.5',
                         bookmarks.has(gameKey(game)) && 'fill-warn text-warn',
@@ -946,11 +947,11 @@ function CollectionView() {
                 }
                 menu={[
                   {
-                    // Same rule as the preview: on a desktop the star is
+                    // Same rule as the preview: on a desktop the mark is
                     // already in the row's tray, and repeating it here
                     // just makes the menu longer to read.
                     label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
-                    icon: Star,
+                    icon: Bookmark,
                     className: 'pointer-fine:hidden',
                     onSelect: () => void toggleBookmark(game),
                   },
@@ -1074,7 +1075,7 @@ function CollectionView() {
             },
             {
               label: bookmarks.has(gameKey(context.game)) ? 'Remove bookmark' : 'Bookmark',
-              icon: Star,
+              icon: Bookmark,
               onSelect: () => void toggleBookmark(context.game),
             },
             { label: 'Remove', icon: Trash2, danger: true, onSelect: () => dropGame(context.game) },

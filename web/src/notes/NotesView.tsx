@@ -1,9 +1,9 @@
 import {
+  Bookmark,
   Folder as FolderIcon,
   FolderInput,
   NotebookPen,
   Pencil,
-  Star,
   Trash2,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -427,7 +427,7 @@ function NoteCard({
           // Touch only: a desktop has the bookmark in the card's own
           // corner, two centimetres from the ⋯ that opened this.
           label: marked ? 'Remove bookmark' : 'Bookmark',
-          icon: Star,
+          icon: Bookmark,
           className: 'pointer-fine:hidden',
           onSelect: onToggleMark,
         },

@@ -1,4 +1,4 @@
-import { LayoutGrid, List, Star } from 'lucide-react';
+import { Bookmark, LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { SearchInput } from './Input';
@@ -142,7 +142,7 @@ export function ShelfToolbar({
           className="shrink-0"
           onClick={() => onMarkedOnly(!markedOnly)}
         >
-          <Star className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+          <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
         </Button>
         <Select
           value={sort}
