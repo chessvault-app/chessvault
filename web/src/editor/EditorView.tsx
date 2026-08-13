@@ -217,10 +217,13 @@ export function EditorView({
     navigate('analysis');
   };
 
-  const positionPanels = (
+  // `titled` is false in the sheet: the window is already called Position,
+  // and a panel header repeating it under the window's own title bar is
+  // the same word twice, three lines apart.
+  const positionPanels = (titled: boolean) => (
     <>
         <Panel flush>
-          <PanelHeader title={t('Position')} />
+          {titled && <PanelHeader title={t('Position')} />}
           <div className="grid gap-3 p-3">
             <Field label={t('Side to move')}>
               <div className="flex gap-1">
@@ -508,7 +511,7 @@ export function EditorView({
           <SquarePen className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
         </div>
-        {positionPanels}
+        {positionPanels(true)}
       </div>
 
       {/* The app's own window, not a second one hand-rolled here. This was
@@ -519,7 +522,7 @@ export function EditorView({
           button that opens it). */}
       {sheetOpen && (
         <Modal title="Position" onClose={() => setSheetOpen(false)}>
-          {positionPanels}
+          {positionPanels(false)}
         </Modal>
       )}
 

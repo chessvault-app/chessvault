@@ -449,11 +449,28 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
       .lede { opacity: .75; margin: 0 0 .4rem; }
       .copyright { font-size: .9rem; opacity: .85; margin: 0 0 1.4rem; }
       .controls { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 .3rem; }
+      /* The filter owns its line and the group chips own theirs. Sharing
+         one wrapping row put the chips on a second line anyway on a phone,
+         but only sometimes — a row that reflows as you resize reads as
+         broken rather than as responsive. */
+      .controls.chips { margin: .4rem 0 .3rem; }
+      .field { position: relative; display: flex; flex: 1 1 100%; min-width: 0; }
       #q {
-        flex: 1 1 16rem; min-width: 0; font: inherit; font-size: .95rem;
-        padding: .45rem .7rem; border-radius: .5rem;
+        flex: 1 1 auto; min-width: 0; font: inherit; font-size: .95rem;
+        padding: .45rem 2rem .45rem .7rem; border-radius: .5rem;
         border: 1px solid rgba(128,128,128,.45); background: transparent; color: inherit;
       }
+      /* WebKit draws its own clear button in a search field, in its own
+         place and its own size. One button, ours, in both engines. */
+      #q::-webkit-search-cancel-button { display: none; }
+      #clear {
+        position: absolute; right: .35rem; top: 50%; transform: translateY(-50%);
+        width: 1.4rem; height: 1.4rem; display: grid; place-items: center;
+        border: 0; border-radius: 999px; background: rgba(128,128,128,.18);
+        color: inherit; font: inherit; font-size: 1rem; line-height: 1; cursor: pointer;
+      }
+      #clear:hover { background: rgba(128,128,128,.32); }
+      #clear[hidden] { display: none; }
       .chip {
         font: inherit; font-size: .8rem; padding: .3rem .6rem; border-radius: 999px;
         border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit;
@@ -466,13 +483,20 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
 
       .dep { border-top: 1px solid rgba(128,128,128,.25); }
       .dep[hidden] { display: none; }
+      /* One line, and the NAME is what gives way. Wrapping put the licence
+         tag on a line of its own under a long package name, which on a
+         phone was most of them. */
       .dep > summary {
         cursor: pointer; padding: .5rem .2rem; display: flex; gap: .6rem;
-        align-items: baseline; flex-wrap: wrap;
+        align-items: baseline; flex-wrap: nowrap;
       }
-      .dep .nm { font-weight: 600; }
-      .dep .ver { font-size: .8rem; opacity: .6; font-family: ui-monospace, monospace; }
-      .dep .lic { font-size: .75rem; opacity: .8; margin-left: auto;
+      .dep .nm {
+        font-weight: 600; min-width: 0; overflow: hidden;
+        text-overflow: ellipsis; white-space: nowrap;
+      }
+      .dep .ver { font-size: .8rem; opacity: .6; font-family: ui-monospace, monospace; flex: none; }
+      .dep .lic { font-size: .75rem; opacity: .8; margin-left: auto; flex: none;
+                  white-space: nowrap;
                   border: 1px solid rgba(128,128,128,.35); border-radius: 999px; padding: .05rem .5rem; }
       .dep .src { margin: .1rem .2rem .5rem; font-size: .8rem; word-break: break-all; }
       .dep pre {
@@ -493,7 +517,23 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
     </p>
 
     <div class="controls">
-      <input id="q" type="search" placeholder="Filter ${total} entries by name or licence…" autocomplete="off" />
+      <span class="field">
+        <input
+          id="q"
+          type="search"
+          placeholder="Filter ${total} entries by name or licence…"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="none"
+          spellcheck="false"
+          enterkeyhint="done"
+          data-1p-ignore
+          data-form-type="other"
+        />
+        <button type="button" id="clear" aria-label="Clear search" hidden>&times;</button>
+      </span>
+    </div>
+    <div class="controls chips">
       <button type="button" class="chip" data-group="">all <span class="n">${total}</span></button>
       ${chips}
     </div>
@@ -527,7 +567,17 @@ ${list}
             c.setAttribute('aria-pressed', String(c.dataset.group === group));
           });
         }
-        q.addEventListener('input', apply);
+        var clear = document.getElementById('clear');
+        function syncClear() { clear.hidden = q.value === ''; }
+        q.addEventListener('input', function () { syncClear(); apply(); });
+        clear.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        clear.addEventListener('click', function () {
+          q.value = '';
+          syncClear();
+          apply();
+          q.focus();
+        });
+        syncClear();
         chips.forEach(function (c) {
           c.addEventListener('click', function () {
             group = c.dataset.group === group ? '' : c.dataset.group;

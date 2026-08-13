@@ -1,19 +1,15 @@
 import { parseSquare } from 'chessops/util';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Compass, FlipVertical2, Play, RotateCcw, SwatchBook } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw, SwatchBook } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
-import { treeToPgn } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
 import { cn } from '@/lib/cn';
-import { navigate } from '@/lib/router';
 import { suppressNextClick } from '@/lib/suppressNextClick';
-import { useAnalysis } from '@/store/analysis';
-import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
@@ -511,15 +507,6 @@ export function RepertoireView() {
   };
   const cursorIndex = line.indexOf(cursorId);
 
-  const analyse = (): void => {
-    const pgn = treeToPgn(tree, { Event: 'Repertoire line', Result: '*' });
-    if (useAnalysis.getState().loadPgn(pgn)) {
-      useAnalysis.setState({ handoff: true, orientation: userColor });
-      useEngine.getState().setEnabled(true);
-      navigate('analysis');
-    }
-  };
-
   const header = (
     <>
       <SwatchBook className="text-subtle size-4" aria-hidden />
@@ -650,15 +637,6 @@ export function RepertoireView() {
                           ? 'Your move.'
                           : 'Reviewing an earlier move — step to the end to keep playing.'}
                 </p>
-                <Button
-                  variant={phase === 'ended' ? 'primary' : 'secondary'}
-                  size="sm"
-                  className="self-start"
-                  onClick={analyse}
-                >
-                  <Compass className="size-3.5" />
-                  {t('Analyse this line')}
-                </Button>
               </div>
             </Panel>
             <AnswerPanel
