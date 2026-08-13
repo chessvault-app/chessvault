@@ -5,6 +5,7 @@ import { initTheme, watchSystemTheme } from './store/theme';
 import { initPrefs } from './store/prefs';
 import { installTooltips } from './ui/tooltip';
 import { startKeyboardTracking } from './lib/keyboardInset';
+import { whenFirstPainted } from './lib/firstPaint';
 import { initLang } from './lib/i18n';
 import './index.css';
 
@@ -60,26 +61,40 @@ createRoot(container).render(
 );
 
 /**
- * Take the launch screen down, but not before it has been seen.
+ * Take the launch screen down, but not before it has been seen — and not
+ * before there is something behind it.
  *
- * index.html draws it; this removes it. A warm launch mounts in a
- * hundred milliseconds or so, and a screen that appears and vanishes
- * inside that reads as a flicker rather than as a launch — so it stays
- * for BOOT_MIN_MS from the moment the document started, then fades.
+ * index.html draws it; this removes it, on two conditions.
  *
- * It does not hold the app back: the app is already mounted and painting
- * underneath, and the screen stops taking presses the instant the fade
- * begins. The only thing being waited for is the look of the thing.
+ * BOOT_MIN_MS, because a warm launch mounts in a hundred milliseconds and
+ * a screen that appears and vanishes inside that reads as a flicker
+ * rather than as a launch.
+ *
+ * And the first PAGE having painted, because the app's frame paints
+ * before its content: every section is a lazy chunk, and the Suspense
+ * fallback covering it is blank by design. Waiting on the timer alone
+ * handed over to the shell — a sidebar and a bottom nav bar around an
+ * empty box — for however long the chunk still had to travel.
+ *
+ * BOOT_MAX_MS is the backstop. A chunk that never arrives is a problem to
+ * see, not one to hide behind a launch screen for ever.
  */
 const BOOT_MIN_MS = 900;
+const BOOT_MAX_MS = 4000;
 const boot = document.getElementById('boot');
 if (boot) {
-  const shown = Math.max(0, BOOT_MIN_MS - performance.now());
-  setTimeout(() => {
+  const seen = new Promise<void>((resolve) =>
+    setTimeout(resolve, Math.max(0, BOOT_MIN_MS - performance.now())),
+  );
+  const ready = Promise.race([
+    whenFirstPainted(),
+    new Promise<void>((resolve) => setTimeout(resolve, BOOT_MAX_MS)),
+  ]);
+  void Promise.all([seen, ready]).then(() => {
     boot.classList.add('done');
     boot.addEventListener('transitionend', () => boot.remove(), { once: true });
     // A transition that never runs (reduced motion, a backgrounded tab)
     // must not leave the screen on top of the app for ever.
     setTimeout(() => boot.remove(), 600);
-  }, shown);
+  });
 }
