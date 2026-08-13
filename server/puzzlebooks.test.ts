@@ -344,6 +344,25 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('makes a book whose title is not written in Latin', async () => {
+    // The shelf's own New book button offers a translated title, so in
+    // Korean the ASCII-only rule this replaced left an empty slug and
+    // answered "that title cannot become a folder name" — pressing Create
+    // could not make a book at all.
+    const title = '제목 없는 책';
+    expect((await post('/api/puzzlebooks', { title })).status).toBe(200);
+    const slug = encodeURIComponent(title);
+    expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(200);
+    const list = await (await app.request('/api/puzzlebooks')).json();
+    expect(list.books.some((b: { title: string }) => b.title === title)).toBe(true);
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
+  it('refuses a title with nothing left in it once a path is ruled out', async () => {
+    const res = await post('/api/puzzlebooks', { title: '///' });
+    expect(res.status).toBe(400);
+  });
+
   it('still refuses names that could escape the books folder', async () => {
     for (const bad of ['../evil', 'a/b', '.hidden', 'ends.', ' padded']) {
       expect((await app.request(`/api/puzzlebooks/${encodeURIComponent(bad)}`)).status).toBe(404);

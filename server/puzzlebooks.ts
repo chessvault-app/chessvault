@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { VAULT } from './paths.ts';
+import { sanitizeSegment, validId } from '../shared/vaultNames.ts';
 
 /**
  * Book puzzles — positions transcribed from paper books (lanph3re's v1: manual
@@ -32,7 +33,23 @@ const BOOKS_DIR = resolve(VAULT, 'puzzlebooks');
 // every character Windows forbids (\ / : * ? " < > |) stays out, the name
 // must START alphanumeric, and callers reject a trailing dot, so ".." and
 // hidden folders stay unreachable.
-const SLUG_RE = /^[A-Za-z0-9][A-Za-z0-9 (),'’&+_.–—-]*$/;
+/**
+ * A book's folder name.
+ *
+ * This was an allowlist — `[A-Za-z0-9 (),'’&+_.–—-]` — which is the same
+ * mistake shared/vaultNames.ts records having made and undone for
+ * studies: it rejected every Korean title outright. In Korean the shelf's
+ * own New book button offers "제목 없는 책", every character of which was
+ * stripped, leaving an empty slug and "that title cannot become a folder
+ * name" as the answer to pressing Create. A Korean user could not make a
+ * book at all.
+ *
+ * So the vault's own rule instead: whatever a path cannot hold is
+ * refused, and everything else — Korean, accents, punctuation — is a
+ * name like any other. Single segment, since a book is a folder rather
+ * than a tree.
+ */
+const validSlug = (slug: string): boolean => !slug.includes('/') && validId(slug);
 
 interface BookPuzzle {
   id: string;
@@ -134,10 +151,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   const diagramsDir = (slug: string): string => resolve(bookDir(slug), 'diagrams');
 
   const validBook = (slug: string): boolean =>
-    SLUG_RE.test(slug) &&
-    !slug.endsWith('.') &&
-    slug.trim() === slug &&
-    existsSync(resolve(bookDir(slug), 'book.json'));
+    validSlug(slug) && existsSync(resolve(bookDir(slug), 'book.json'));
 
   /**
    * puzzles.json is 500-600 KB per book and was re-read + re-parsed on the
@@ -260,10 +274,10 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const body = (await c.req.json().catch(() => ({}))) as { title?: string };
     const title = body.title?.trim();
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
-    // Strip only what the folder name cannot hold; a title's commas and
-    // ampersands survive, so the book keeps the name it was given.
-    const slug = title.replace(/[^A-Za-z0-9 (),'’&+_.–—-]/g, '').trim();
-    if (!SLUG_RE.test(slug)) return c.json({ error: 'that title cannot become a folder name' }, 400);
+    // Replace only what a path cannot hold; the title's commas, quotes
+    // and Korean survive, so the book keeps the name it was given.
+    const slug = sanitizeSegment(title, '');
+    if (!validSlug(slug)) return c.json({ error: 'that title cannot become a folder name' }, 400);
     if (existsSync(bookDir(slug))) return c.json({ error: 'a book with that name exists' }, 409);
     mkdirSync(bookDir(slug), { recursive: true });
     writeJson(resolve(bookDir(slug), 'book.json'), { title, createdAt: new Date().toISOString() });
