@@ -626,6 +626,13 @@ export const ko: Record<string, string> = {
     '책의 다이어그램입니다 — 보드를 여기에 맞춘 다음, 정답을 기록하세요.',
   'The book’s own scan — make the board match it.': '책의 스캔 원본입니다 — 보드를 여기에 맞추세요.',
   'Nothing in this book yet.': '아직 이 책에는 아무것도 없습니다.',
+  'Reading the book': '책을 읽는 중',
+  'Working out the printed solutions': '인쇄된 정답을 맞춰 보는 중',
+  'Import unfinished': '가져오기 미완료',
+  'page {page} of {pages} · {found} diagrams': '{pages}쪽 중 {page}쪽 · 다이어그램 {found}개',
+  '{found} diagrams read': '다이어그램 {found}개를 읽었습니다',
+  'Press to watch it, or to pause.': '누르면 진행 상황을 보거나 멈출 수 있습니다.',
+  'Press to carry on from page {page}.': '누르면 {page}쪽부터 이어서 진행합니다.',
   'Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.':
     '책의 PDF를 넘기면 페이지에서 다이어그램과 인쇄된 정답을 읽어 옵니다 — 도중에 멈출 수 있고, 멈춘 자리에서 이어집니다. 또는 직접 포지션을 만들고 양쪽의 수를 모두 포함한 정답을 기록해도 됩니다.',
   'Tip: click an opponent move to mark it “any move” (the book’s ~).':

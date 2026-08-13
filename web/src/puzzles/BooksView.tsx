@@ -905,43 +905,32 @@ function BookPage({ slug }: { slug: string }) {
    * holds a hundred puzzles when the book has nine hundred.
    */
   const stopped = halted;
+  const jobHere = importJob.slug === slug && importJob.status !== 'idle';
   const scanRunning =
-    importJob.slug === slug &&
-    (importJob.status === 'scanning' || importJob.status === 'reading');
+    jobHere && (importJob.status === 'scanning' || importJob.status === 'reading');
+  /**
+   * The running job outranks the checkpoint summary.
+   *
+   * `halted` is re-read when the status changes, and pausing changes the
+   * status BEFORE the loop finishes the page it is on — so the summary
+   * read on that transition is a page behind by the time the loop stops
+   * and writes. The resume itself always reads the checkpoint fresh, so
+   * this only ever affected the number on screen, but a panel that says
+   * "carry on from 77" while the dialog says it stopped at 77 is the kind
+   * of disagreement that makes someone distrust both.
+   */
+  const scan =
+    scanRunning || stopped
+      ? {
+          page: jobHere ? importJob.page : stopped!.page,
+          pages: jobHere ? importJob.pages : stopped!.pages,
+          found: jobHere ? importJob.found.length : stopped!.diagrams,
+        }
+      : null;
 
   return (
     <div className="h-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-3xl p-4 pb-8">
-        {(scanRunning || stopped) && (
-          <button
-            type="button"
-            onClick={() => setImporting(true)}
-            className={cn(
-              'mb-3 flex w-full items-center gap-2 rounded-lg border p-2.5 text-left text-xs',
-              'transition-colors duration-100',
-              scanRunning
-                ? 'border-primary/40 bg-primary-soft text-primary hover:bg-primary-soft/70'
-                : 'border-warn/40 bg-warn/5 text-warn hover:bg-warn/10',
-            )}
-          >
-            {scanRunning ? (
-              <Loader2 className="size-3.5 shrink-0 animate-spin" />
-            ) : (
-              <FileUp className="size-3.5 shrink-0" />
-            )}
-            <span className="min-w-0 flex-1">
-              {scanRunning
-                ? t('reading — page {page} of {pages}', {
-                    page: importJob.page,
-                    pages: importJob.pages,
-                  })
-                : t('unfinished — {page} of {pages} pages, tap to carry on', {
-                    page: stopped!.page,
-                    pages: stopped!.pages,
-                  })}
-            </span>
-          </button>
-        )}
         <div className="mb-4 flex items-center gap-2">
           <Button
             variant="ghost"
@@ -954,24 +943,12 @@ function BookPage({ slug }: { slug: string }) {
           <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
             {book?.title ?? slug}
           </h1>
-          {/* A background scan for THIS book announces itself here; the
-              chip reopens the dialog with the live results. */}
-          {!importing && importJob.slug === slug && importJob.status !== 'idle' && (
-            <button
-              type="button"
-              onClick={() => setImporting(true)}
-              className="bg-primary-soft text-primary border-primary/40 flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium"
-            >
-              {importJob.status === 'scanning' ? (
-                <Loader2 className="size-3 animate-spin" />
-              ) : (
-                <FileUp className="size-3" />
-              )}
-              {importJob.status === 'scanning'
-                ? `p.${importJob.page}/${importJob.pages || '…'} · ${importJob.found.length}`
-                : `${importJob.found.length} found`}
-            </button>
-          )}
+          {/* No progress chip here. A scan used to announce itself in this
+              row AND in a banner above it — two spinners, one of them a
+              cryptic "p.67/241 · 299" — while the panel below sat empty
+              claiming there was nothing in the book. Progress belongs in
+              that panel: it is the largest thing on the page, it is doing
+              nothing during a scan, and it is where the result appears. */}
           {/* Stacked headers drop the button labels — five labelled
               controls in a phone-width row read as clutter. */}
           {(book?.drafts?.length ?? 0) > 0 && templates.length > 0 && (
@@ -1025,6 +1002,33 @@ function BookPage({ slug }: { slug: string }) {
           // the RENDER after it. Forty-eight is the guess for the fetch
           // itself, which is the only part that happens blind.
           detailPending ? <SkeletonTiles tiles={Math.min(book?.puzzles.length ?? 48, 48)} /> : null
+        ) : scan ? (
+          // The scan owns the panel while it runs. On an empty book it
+          // stands alone — the "nothing in this book yet" copy was a lie
+          // told over a scan that had already found three hundred
+          // diagrams — and on a book being re-read it sits above what is
+          // already there.
+          <>
+            <ScanPanel
+              phase={
+                !scanRunning ? 'stopped' : importJob.status === 'reading' ? 'reading' : 'scanning'
+              }
+              page={scan.page}
+              pages={scan.pages}
+              found={scan.found}
+              onOpen={() => setImporting(true)}
+            />
+            {(book.puzzles.length > 0 || (book.drafts?.length ?? 0) > 0) && (
+              <PuzzleList
+                slug={slug}
+                puzzles={book.puzzles}
+                drafts={book.drafts ?? []}
+                progress={book.progress}
+                solvedCount={solvedCount}
+                onDraft={(d) => setDraft(d)}
+              />
+            )}
+          </>
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             {/*
@@ -1063,6 +1067,84 @@ function BookPage({ slug }: { slug: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * A scan, shown where the scan's results will be.
+ *
+ * This is the ONLY place a book page reports an import. There were two —
+ * a strip above the title and a chip inside it — spinning the same
+ * spinner at each other, one of them abbreviated to "p.67/241 · 299",
+ * while the panel underneath said the book was empty. Progress is not a
+ * decoration to tuck into a header; on this page it is the content, so
+ * it takes the panel, and the panel is a button because every state of it
+ * leads to the same dialog: watch, pause, or carry on.
+ */
+function ScanPanel({
+  phase,
+  page,
+  pages,
+  found,
+  onOpen,
+}: {
+  phase: 'scanning' | 'reading' | 'stopped';
+  page: number;
+  pages: number;
+  found: number;
+  onOpen: () => void;
+}) {
+  const live = phase !== 'stopped';
+  // The solutions half has no page counter of its own — the pages are all
+  // read by then — so it holds the bar full rather than dropping it.
+  const pct = phase === 'reading' ? 100 : pages > 0 ? Math.min(100, (page / pages) * 100) : 0;
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        'mb-3 block w-full rounded-xl border p-6 text-center transition-colors duration-100',
+        live
+          ? 'border-primary/40 bg-primary-soft/40 hover:bg-primary-soft/60'
+          : 'border-warn/40 bg-warn/5 hover:bg-warn/10',
+      )}
+    >
+      <p
+        className={cn(
+          'flex items-center justify-center gap-2 text-sm font-medium',
+          live ? 'text-primary' : 'text-warn',
+        )}
+      >
+        {live ? (
+          <Loader2 className="size-4 shrink-0 animate-spin" />
+        ) : (
+          <FileUp className="size-4 shrink-0" />
+        )}
+        {phase === 'reading'
+          ? t('Working out the printed solutions')
+          : phase === 'scanning'
+            ? t('Reading the book')
+            : t('Import unfinished')}
+      </p>
+      <p className="text-muted mt-1 text-xs">
+        {phase === 'reading'
+          ? t('{found} diagrams read', { found })
+          : t('page {page} of {pages} · {found} diagrams', {
+              page,
+              pages: pages || '…',
+              found,
+            })}
+      </p>
+      <div className="bg-line mx-auto mt-3 h-1 max-w-xs overflow-hidden rounded-full">
+        <div
+          className={cn('h-full rounded-full transition-[width] duration-300', live ? 'bg-primary' : 'bg-warn')}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="text-subtle mt-3 text-xs">
+        {live ? t('Press to watch it, or to pause.') : t('Press to carry on from page {page}.', { page: page + 1 })}
+      </p>
+    </button>
   );
 }
 
