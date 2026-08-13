@@ -30,6 +30,30 @@
     <link rel="apple-touch-startup-image" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" href="/splash/ipad.png" />
     <link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" href="/splash/ipad-pro-11.png" />
     <link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" href="/splash/ipad-pro-13.png" />
+    <style>
+      /* Inline, because a stylesheet that has not arrived cannot draw the
+         thing that covers the wait for it. */
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background: #f9fafb;
+        color: #6b7280;
+        font: 600 0.875rem/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
+        opacity: 0;
+        animation: boot-in 200ms ease-out 400ms forwards;
+      }
+      .dark .boot { background: #171a22; color: #8b94a7; }
+      .boot p { margin: 0; }
+      @keyframes boot-in { to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot { animation-delay: 400ms; animation-duration: 1ms; }
+      }
+    </style>
     <script>
       // Set the theme class before first paint so dark-theme users never see a
       // white flash. Mirrors the resolution logic in src/store/theme.ts.
@@ -48,7 +72,34 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      The gap between the OS splash and React.
+
+      The startup images above cover the launch itself, but they go the
+      moment the document paints, and #root is empty until the app's
+      chunks have downloaded and mounted — an app-coloured nothing, for as
+      long as that takes on a cold cache. This is what stands there.
+
+      React clears the container on its first render (createRoot does,
+      unlike hydrateRoot), so nothing has to remove it.
+
+      It fades in after 400ms rather than appearing at once: a launch that
+      finishes in 150ms should show no loader at all, and a spinner that
+      flashes on a fast start reads as a stutter rather than as progress.
+    -->
+    <div id="root">
+      <div class="boot">
+        <svg viewBox="0 0 45 45" width="56" height="56" aria-hidden="true">
+          <rect width="45" height="45" rx="10" fill="#0284c7" />
+          <path
+            fill="#fff"
+            transform="translate(0 -0.5)"
+            d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 Z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 Z"
+          />
+        </svg>
+        <p>Chess Vault</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
