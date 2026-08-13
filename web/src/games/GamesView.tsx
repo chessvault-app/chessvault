@@ -757,36 +757,13 @@ function CollectionView() {
 
   return (
     <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:max-w-7xl lg:p-6">
-      {/* flex-wrap + the search field's narrow flex-1: phones drop the
-          controls onto their own full-width line instead of clipping. */}
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
-        {/* Wraps below sm: a focused search field takes the whole line there. */}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Search collection…')}
-            className="w-56 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
-          />
-          {/* Search, then filter, then create — the order the two shelves
-              use, so the three toolbars are one toolbar in three places.
-              Icon only, like theirs: the word Bookmarked beside it was the
-              only label in any of them, and a pressed state says the same
-              thing without asking for the width. */}
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            active={markedOnly}
-            aria-pressed={markedOnly}
-            title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
-            className="shrink-0"
-            onClick={() => setMarkedOnly((v) => !v)}
-          >
-            <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
-          </Button>
+      {/* Two rows, the same shape the two shelves use — see ShelfToolbar,
+          which is this toolbar for Studies and Notes. The heading carries
+          what is about the collection; the row under it carries the two
+          controls that narrow it, bookmark then search. */}
+      <div className="flex flex-col gap-2.5">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
           {/* Every way to get a game, in one place — but only while there
               is nowhere better for them. At lg the two browsers live in
               the column to the right, where they are on screen rather
@@ -805,8 +782,33 @@ function CollectionView() {
                   ]),
             ]}
           />
+        </header>
+
+        <div className="flex items-center gap-2">
+          {/* Icon only, like the shelves': the word Bookmarked beside it
+              was the only label in any of them, and a pressed state says
+              the same thing without asking for the width. */}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            active={markedOnly}
+            aria-pressed={markedOnly}
+            title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
+            className="shrink-0"
+            onClick={() => setMarkedOnly((v) => !v)}
+          >
+            <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+          </Button>
+          <SearchInput
+            type="text"
+            inputSize="sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('Search collection…')}
+            className="min-w-0 flex-1"
+          />
         </div>
-      </header>
+      </div>
 
       {importing && (
         <ImportGamePanel

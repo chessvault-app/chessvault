@@ -85,9 +85,18 @@ export function sortDocs<T extends { id: string; bytes: number; updatedAt: strin
  * The bar over a shelf: what it is called, how to find one, how to order
  * them, how to look at them, and how to make another.
  *
- * One row on a desktop; on a phone the title keeps its own line and the
- * controls take the next, because five controls and a heading do not fit
- * across 390px without every one of them becoming too small to hit.
+ * Two rows, always. The heading row carries the things that are ABOUT the
+ * shelf — its name, its order, its layout, and the way to add to it — and
+ * the row under it carries the two that NARROW it: the bookmark filter,
+ * then the search.
+ *
+ * They used to share one line that wrapped, which meant the search field
+ * was whatever width the other four controls had finished with, and on a
+ * phone it was a stub that grew over the buttons when it was focused. A
+ * row of its own costs one line of height and gives it the full width on
+ * every screen. Bookmark leads because it is a fixed-size switch and the
+ * search takes the rest; the other way round leaves the switch floating
+ * at a different place on every screen.
  */
 export function ShelfToolbar({
   title,
@@ -116,23 +125,39 @@ export function ShelfToolbar({
   create: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-      <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
-      {/* max-sm:flex-wrap so a focused search field, which takes the whole
-          line on a phone, gets a line rather than squeezing the buttons. */}
-      <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap sm:flex-none">
-        <SearchInput
-          type="text"
-          inputSize="sm"
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder={placeholder}
-          className="min-w-0 flex-1 sm:w-44 sm:flex-none"
-        />
-        {/* Icon only: the games header can afford the word Bookmarked
-            beside its star, and a shelf toolbar carrying a search, a sort,
-            a layout switch and a Create button cannot. Pressed state does
-            the saying. */}
+    <div className="flex flex-col gap-2.5">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+        <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+          <Select
+            value={sort}
+            onChange={(value) => onSort(value as ShelfSort)}
+            ariaLabel={t('Sort by')}
+            size="sm"
+            align="end"
+            className="hidden shrink-0 sm:flex"
+            groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
+          />
+          {/* Two states, so a switch rather than a menu — the same segmented
+              control the archive panel picks its site with. */}
+          <Segmented
+            value={layout}
+            onChange={onLayout}
+            ariaLabel="Layout"
+            size="sm"
+            className="hidden sm:flex"
+            segments={[
+              { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
+              { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
+            ]}
+          />
+          {create}
+        </div>
+      </header>
+
+      <div className="flex items-center gap-2">
+        {/* Icon only: the pressed state says what a label would, and it
+            says it in the width of a button. */}
         <Button
           variant="secondary"
           size="icon-sm"
@@ -144,32 +169,15 @@ export function ShelfToolbar({
         >
           <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
         </Button>
-        <Select
-          value={sort}
-          onChange={(value) => onSort(value as ShelfSort)}
-          ariaLabel={t('Sort by')}
-          size="sm"
-          align="end"
-          className="hidden shrink-0 sm:flex"
-          groups={[
-            { options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
-          ]}
+        <SearchInput
+          type="text"
+          inputSize="sm"
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder={placeholder}
+          className="min-w-0 flex-1"
         />
-        {/* Two states, so a switch rather than a menu — the same segmented
-            control the archive panel picks its site with. */}
-        <Segmented
-          value={layout}
-          onChange={onLayout}
-          ariaLabel="Layout"
-          size="sm"
-          className="hidden sm:flex"
-          segments={[
-            { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
-            { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
-          ]}
-        />
-        {create}
       </div>
-    </header>
+    </div>
   );
 }
