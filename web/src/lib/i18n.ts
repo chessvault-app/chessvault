@@ -89,6 +89,25 @@ export function t(text: string, vars?: Record<string, string | number>): string 
 }
 
 /**
+ * Is this name still the placeholder it was created with?
+ *
+ * Creation deliberately never asks for a name — "Untitled study 3" is the
+ * cost of a zero-friction New button — but the shelves fill with them
+ * because nothing ever asked again. This is how the views that CAN ask
+ * (a nudge beside the title, the importer's suggestion) recognise a name
+ * nobody chose. Checked against the English base and every translation
+ * of it, because the placeholder was minted in whatever language was
+ * active at the time and may be read in another.
+ */
+export function isUntitled(name: string, base: string): boolean {
+  const bases = new Set([base]);
+  for (const dict of Object.values(DICTS)) {
+    if (dict[base]) bases.add(dict[base]);
+  }
+  return [...bases].some((b) => name === b || (name.startsWith(b) && /^ \d+$/.test(name.slice(b.length))));
+}
+
+/**
  * Subscribe a component to the language.
  *
  * Call sites use the plain `t()` — it reads module state, so it is correct

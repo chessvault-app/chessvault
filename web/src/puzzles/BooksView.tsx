@@ -63,7 +63,7 @@ import { ActionSheet } from '@/ui/ActionSheet';
 import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
-import { SearchInput } from '@/ui/Input';
+import { Input, SearchInput } from '@/ui/Input';
 import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
@@ -92,7 +92,7 @@ import { ProgressBar } from '@/ui/ProgressBar';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
 import { AnswerPanel } from './AnswerPanel';
 import { formatScore } from '@/engine/uci';
-import { t } from '@/lib/i18n';
+import { isUntitled, t } from '@/lib/i18n';
 
 /**
  * Book puzzles (lanph3re's long-wanted feature): positions transcribed from
@@ -863,6 +863,25 @@ function BookPage({ slug }: { slug: string }) {
   }, [slug]);
   useEffect(() => void load(), [load]);
 
+  // Renaming edits the TITLE; the slug (the folder, the URL, the progress
+  // key) stays put — a slug is an id, and ids do not follow names.
+  const [renaming, setRenaming] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+  const untitled = book !== null && isUntitled(book.title, 'Untitled book');
+  const rename = async (title: string): Promise<void> => {
+    const next = title.trim();
+    if (!next || next === book?.title) return;
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: next }),
+    });
+    if (res.ok) {
+      forgetBook(slug);
+      await load();
+    }
+  };
+
   const resetProgress = async (): Promise<void> => {
     await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/progress`, { method: 'DELETE' });
     forgetBook(slug);
@@ -943,9 +962,53 @@ function BookPage({ slug }: { slug: string }) {
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
-            {book?.title ?? slug}
-          </h1>
+          {renaming ? (
+            <Input
+              autoFocus
+              inputSize="sm"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={() => {
+                setRenaming(false);
+                void rename(titleDraft);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setRenaming(false);
+              }}
+              className="min-w-0 flex-1 text-base font-semibold"
+            />
+          ) : (
+            <>
+              <h1
+                onDoubleClick={() => {
+                  setTitleDraft(book?.title ?? slug);
+                  setRenaming(true);
+                }}
+                title={t('Double-click to rename')}
+                className="text-fg min-w-0 flex-1 truncate text-base font-semibold"
+              >
+                {book?.title ?? slug}
+              </h1>
+              {/* The naming moment nobody had: creation deliberately never
+                  asks (a zero-friction New button), but nothing asked
+                  AGAIN, so shelves filled with "Untitled book 3". A quiet
+                  offer, only while the placeholder is still worn. */}
+              {untitled && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setTitleDraft(book?.title ?? '');
+                    setRenaming(true);
+                  }}
+                >
+                  <Pencil className="size-3.5" />
+                  {t('Name this book')}
+                </Button>
+              )}
+            </>
+          )}
           {/* No progress chip here. A scan used to announce itself in this
               row AND in a banner above it — two spinners, one of them a
               cryptic "p.67/241 · 299" — while the panel below sat empty
@@ -995,6 +1058,9 @@ function BookPage({ slug }: { slug: string }) {
               void load();
             }}
             onClose={() => setImporting(false)}
+            // Only while the default name is still on: a chosen title is
+            // the reader's own answer and outranks the filename.
+            onSuggestName={untitled ? (name) => void rename(name) : undefined}
           />
         </Suspense>
         )}

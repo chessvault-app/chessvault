@@ -78,12 +78,31 @@ function PeekCrop({
  * or browsing elsewhere doesn't stop it, classification runs in a worker,
  * and the book page shows live progress with a way back here.
  */
+/**
+ * A book's name, read off its PDF's filename.
+ *
+ * "chess-evolution_1.pdf" is how a scan arrives; "chess evolution 1" is a
+ * title. Underscores and dots are separator noise; hyphens can be real
+ * (a year range) so they stay.
+ */
+export function suggestTitle(file: File): string | null {
+  const title = file.name
+    .replace(/\.pdf$/i, '')
+    .replace(/[_.]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 80)
+    .trim();
+  return title.length > 0 ? title : null;
+}
+
 export function PdfImport({
   slug,
   templates,
   existing,
   onDone,
   onClose,
+  onSuggestName,
 }: {
   slug: string;
   templates: Template[];
@@ -91,6 +110,12 @@ export function PdfImport({
   existing: number;
   onDone: () => void;
   onClose: () => void;
+  /**
+   * Passed only while the book still wears its "Untitled book" default:
+   * the chosen PDF's own name is offered as the book's. The caller owns
+   * the rename — this window only knows what the file was called.
+   */
+  onSuggestName?: (title: string) => void;
 }) {
   const job = useImportJob();
   const [saving, setSaving] = useState(false);
@@ -125,6 +150,13 @@ export function PdfImport({
 
   const begin = async (file: File): Promise<void> => {
     setSaveError(null);
+    // An untitled book takes its name from the PDF it is being fed —
+    // the shelf otherwise fills with "Untitled book 3" cards whose only
+    // identity is a cover.
+    if (onSuggestName) {
+      const suggested = suggestTitle(file);
+      if (suggested) onSuggestName(suggested);
+    }
     if (existing > 0 && mode === 'rebuild') {
       setPreparing(true);
       try {

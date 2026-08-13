@@ -36,6 +36,42 @@ describe('puzzle books api', () => {
     expect(list.books[0]).toMatchObject({ title: '1001 Sacrifices', puzzles: 0, solved: 0 });
   });
 
+  it('renames a book without moving its folder', async () => {
+    const created = await post('/api/puzzlebooks', { title: 'Untitled book 7' });
+    const { slug } = await created.json();
+
+    const renamed = await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'Chess Evolution' }),
+    });
+    expect(renamed.status).toBe(200);
+    expect(await renamed.json()).toMatchObject({ slug, title: 'Chess Evolution' });
+
+    // The slug is the id every route holds: it must not have moved.
+    const list = await (await app.request('/api/puzzlebooks')).json();
+    const book = list.books.find((b: { slug: string }) => b.slug === slug);
+    expect(book).toMatchObject({ slug, title: 'Chess Evolution' });
+
+    const empty = await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '  ' }),
+    });
+    expect(empty.status).toBe(400);
+    expect(
+      (
+        await app.request('/api/puzzlebooks/no-such-book', {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ title: 'x' }),
+        })
+      ).status,
+    ).toBe(404);
+
+    await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+  });
+
   it('adds puzzles, tracks attempts, deletes puzzles', async () => {
     const slug = encodeURIComponent('1001 Sacrifices');
     const added = await post(`/api/puzzlebooks/${slug}/puzzles`, {

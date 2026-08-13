@@ -285,6 +285,25 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     return c.json({ slug });
   });
 
+  /**
+   * Rename a book. The TITLE only: the slug is the folder on disk and the
+   * key every route, bookmark and checkpoint holds, so it stays put — a
+   * slug is an id, and ids do not follow display names. This is also what
+   * lets the importer offer the PDF's own name for a book still wearing
+   * its "Untitled book" default without breaking anything mid-scan.
+   */
+  api.patch('/puzzlebooks/:slug', async (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const body = (await c.req.json().catch(() => ({}))) as { title?: string };
+    const title = body.title?.trim();
+    if (!title) return c.json({ error: 'a book needs a title' }, 400);
+    const path = resolve(bookDir(slug), 'book.json');
+    const book = readJson<{ title?: string; createdAt?: string }>(path, {});
+    writeJson(path, { ...book, title });
+    return c.json({ slug, title });
+  });
+
   api.delete('/puzzlebooks/:slug', (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
