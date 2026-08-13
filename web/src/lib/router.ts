@@ -14,7 +14,9 @@ export interface Route {
 function parse(hash: string): Route {
   const segments = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
   const [head = 'home', ...params] = segments;
-  return { section: isSection(head) ? head : 'analysis', params };
+  // An unknown hash lands on Home, which explains itself — it used to
+  // land on an empty analysis Board with no hint anything went wrong.
+  return isSection(head) ? { section: head, params } : { section: 'home', params: [] };
 }
 
 /**

@@ -745,6 +745,17 @@ export const ko: Record<string, string> = {
   'vault server unreachable': '보관함 서버에 연결할 수 없습니다',
   'Searching…': '검색 중…',
   Continue: '계속',
+  'Continue study': '스터디 계속하기',
+  'Last game': '최근 게임',
+  'Resume training': '훈련 이어하기',
+  'Set up your vault': '보관함 준비하기',
+  'Hide this checklist': '이 목록 숨기기',
+  'Add your Lichess or Chess.com username — the Games page fills itself from it':
+    'Lichess 또는 Chess.com 아이디를 등록하세요 — 게임 페이지가 자동으로 채워집니다',
+  'Fetch the puzzle database — the trainer runs offline from it':
+    '퍼즐 데이터베이스를 받으세요 — 트레이너가 오프라인으로 동작합니다',
+  'Import a scanned tactics book — its diagrams become solvable puzzles':
+    '스캔한 전술 책을 가져오세요 — 다이어그램이 풀 수 있는 퍼즐이 됩니다',
   Unlock: '잠금 해제',
   'Wrong password.': '비밀번호가 틀렸습니다.',
   'Wrong authenticator code.': '인증 코드가 틀렸습니다.',
