@@ -1039,7 +1039,16 @@ function CollectionView() {
           window left open across a resize stays usable. */}
       {browsing && (
         <Modal title="Online archives" onClose={() => setBrowsing(false)} full>
-          <ArchiveBrowser collectionKeys={collectionKeys} onCollected={() => void load()} onPreview={setPreview} />
+          {/* Unframed here too: the window's own title bar already says
+              Online archives, and the panel said it again directly under
+              it. A window that names itself twice is a window with a
+              wasted line and a reader wondering what the difference is. */}
+          <ArchiveBrowser
+            framed={false}
+            collectionKeys={collectionKeys}
+            onCollected={() => void load()}
+            onPreview={setPreview}
+          />
         </Modal>
       )}
 
