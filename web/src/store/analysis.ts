@@ -45,9 +45,23 @@ interface AnalysisState {
    * show name plates. Null for scratch analysis / FEN loads.
    */
   gameHeaders: Headers | null;
+  /**
+   * Move list reading mode: show only the line the cursor is on.
+   *
+   * Here rather than inside the list because the control that flips it
+   * lives in the panel's HEADER, which is a sibling — and because a
+   * chapter with a side line at every other move is unreadable end to
+   * end, which is a property of the study, not of one component.
+   *
+   * Ephemeral on purpose: this store is not persisted, so it starts off
+   * on every load. A list still hiding moves from yesterday's session
+   * looks like a study that has lost them.
+   */
+  currentLineOnly: boolean;
 
   // -- navigation --
   setCursor: (id: NodeId) => void;
+  toggleCurrentLineOnly: () => void;
   goBack: () => void;
   goForward: () => void;
   goToStart: () => void;
@@ -85,8 +99,10 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
     pendingPromotion: null,
     loadError: null,
     gameHeaders: null,
+    currentLineOnly: false,
 
     setCursor: (id) => set({ cursorId: id }),
+    toggleCurrentLineOnly: () => set({ currentLineOnly: !get().currentLineOnly }),
 
     goBack: () => {
       const { tree, cursorId } = get();

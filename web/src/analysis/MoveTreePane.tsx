@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { ArrowUpToLine } from 'lucide-react';
-import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel } from '@shared/tree';
+import { useEffect, useMemo, useRef } from 'react';
+import { ArrowUpToLine, GitBranch } from 'lucide-react';
+import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { scrollRowIntoPanel } from '@/lib/scroll';
@@ -45,6 +45,47 @@ const nagClass = (nags: number[]): string | undefined => {
   return quality ? NAG_CLASS[quality] : undefined;
 };
 
+/** Whether the tree branches at all — the control is noise on a game that never does. */
+function hasSidelines(tree: MoveTree): boolean {
+  return Object.values(tree.nodes).some((node) => node.children.length > 1);
+}
+
+/**
+ * Show only the line the cursor is on.
+ *
+ * Lives in the moves panel's HEADER, beside the other things that act on
+ * the whole list, rather than taking a row of its own above the moves —
+ * a strip of chrome over a list is a strip of moves you cannot see, and
+ * on a phone the list is already the shortest panel on the page.
+ *
+ * Renders nothing when the game has no side lines: a control that can
+ * only ever be a no-op is worse than an absent one, because it invites
+ * the press that proves it does nothing.
+ */
+export function SidelinesToggle() {
+  const tree = useAnalysis((s) => s.tree);
+  const on = useAnalysis((s) => s.currentLineOnly);
+  const toggle = useAnalysis((s) => s.toggleCurrentLineOnly);
+  const branching = useMemo(() => hasSidelines(tree), [tree]);
+  if (!branching) return null;
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={on}
+      title={on ? t('Showing the current line only') : t('Show the current line only')}
+      aria-label={on ? t('Showing the current line only') : t('Show the current line only')}
+      className={cn(
+        'grid size-7 shrink-0 place-items-center rounded-md pointer-coarse:size-9',
+        'transition-colors duration-100',
+        on ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-surface-2 hover:text-fg',
+      )}
+    >
+      <GitBranch className="size-3.5" />
+    </button>
+  );
+}
+
 const FIGURINE: Record<string, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
 
 /** SAN with figurines — uppercase piece letters never mean anything else. */
@@ -61,6 +102,7 @@ export function MoveTreePane({ className }: { className?: string }) {
   const cursorId = useAnalysis((s) => s.cursorId);
   const setCursor = useAnalysis((s) => s.setCursor);
   const promoteNode = useAnalysis((s) => s.promoteNode);
+  const currentLineOnly = useAnalysis((s) => s.currentLineOnly);
   const scroller = useRef<HTMLDivElement>(null);
 
   // Keep the active move visible as the user walks the line, along with
@@ -97,7 +139,12 @@ export function MoveTreePane({ className }: { className?: string }) {
             {t('Play a move on the board, or load a FEN or PGN.')}
           </p>
         ) : (
-          <MainlineTable tree={tree} cursorId={cursorId} onSelect={setCursor} />
+          <MainlineTable
+            tree={tree}
+            cursorId={cursorId}
+            onSelect={setCursor}
+            currentLineOnly={currentLineOnly}
+          />
         )}
       </div>
       <PromoteStrip tree={tree} cursorId={cursorId} onPromote={(id) => promoteNode(id, true)} />
@@ -115,11 +162,21 @@ export function MainlineTable({
   tree,
   cursorId,
   onSelect,
+  currentLineOnly = false,
 }: {
   tree: MoveTree;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
+  /** Hide every branch that is not on the way to the cursor. */
+  currentLineOnly?: boolean;
 }) {
+  // The way to the current move. In reading mode a side line the cursor
+  // is not in does not exist; walking into one therefore reveals it, and
+  // its continuation, without leaving the mode.
+  const onPath = useMemo(() => new Set(pathTo(tree, cursorId)), [tree, cursorId]);
+  const keep = (ids: NodeId[]): NodeId[] =>
+    currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
+
   const out: React.ReactNode[] = [];
   let row: RowState | null = null;
   const blackFirst = blackToMoveAtRoot(tree);
@@ -161,7 +218,11 @@ export function MainlineTable({
       row = { number, white: 'ellipsis', black: { id: mainChildId, node: child } };
     }
 
-    const interrupts = Boolean(child.comment) || variationIds.length > 0;
+    // Filtered BEFORE the interrupt test: a branch that is not shown must
+    // not break the move pair apart either, or reading mode would leave a
+    // trail of "…" rows explaining nothing.
+    const shownVariationIds = keep(variationIds);
+    const interrupts = Boolean(child.comment) || shownVariationIds.length > 0;
     if (interrupts) {
       // The pair resumes on its own row after the interruption ("2 c4 …" /
       // "2 … e6"), the same convention as PGN and lichess.
@@ -178,7 +239,7 @@ export function MainlineTable({
           </p>,
         );
       }
-      for (const variationId of variationIds) {
+      for (const variationId of shownVariationIds) {
         out.push(
           <div
             key={`var-${variationId}`}
@@ -189,6 +250,7 @@ export function MainlineTable({
               startId={variationId}
               cursorId={cursorId}
               onSelect={onSelect}
+              keep={keep}
             />
           </div>,
         );
@@ -246,6 +308,8 @@ interface LineProps {
   onSelect: (id: NodeId) => void;
   /** True when the caller already rendered the move this line continues. */
   continued?: boolean;
+  /** Reading-mode filter, applied to every branch at every depth. */
+  keep: (ids: NodeId[]) => NodeId[];
 }
 
 /**
@@ -281,7 +345,7 @@ export function PromoteStrip({
  * child continues inline, and every further child becomes a parenthesised
  * variation rendered as a nested block.
  */
-function Line({ tree, fromId, cursorId, onSelect, continued = false }: LineProps) {
+function Line({ tree, fromId, cursorId, onSelect, continued = false, keep }: LineProps) {
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
   const blackFirst = blackToMoveAtRoot(tree);
@@ -325,7 +389,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false }: LineProps
       flowInterrupted = true;
     }
 
-    for (const variationId of variationIds) {
+    for (const variationId of keep(variationIds)) {
       items.push(
         <div
           key={`var-${variationId}`}
@@ -341,6 +405,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false }: LineProps
             startId={variationId}
             cursorId={cursorId}
             onSelect={onSelect}
+            keep={keep}
           />
         </div>,
       );
@@ -359,11 +424,13 @@ function VariationBranch({
   startId,
   cursorId,
   onSelect,
+  keep,
 }: {
   tree: MoveTree;
   startId: NodeId;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
+  keep: (ids: NodeId[]) => NodeId[];
 }) {
   const node = getNode(tree, startId);
   return (
@@ -389,6 +456,7 @@ function VariationBranch({
         cursorId={cursorId}
         onSelect={onSelect}
         continued={!node.comment}
+        keep={keep}
       />
     </>
   );

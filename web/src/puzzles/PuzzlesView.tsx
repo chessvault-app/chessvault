@@ -24,7 +24,7 @@ import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
-import { MoveTreePane } from '@/analysis/MoveTreePane';
+import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
 import { cn } from '@/lib/cn';
@@ -453,7 +453,15 @@ function Trainer({
           </div>
           <Panel flush className="min-h-min flex-1">
             <EngineBlock />
-            <PanelHeader title={t('Moves')} actions={<MoveActions allowReset={false} />} />
+            <PanelHeader
+              title={t('Moves')}
+              actions={
+                <>
+                  <SidelinesToggle />
+                  <MoveActions allowReset={false} />
+                </>
+              }
+            />
             <MoveTreePane />
             <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
             <StatusBar />

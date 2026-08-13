@@ -17,7 +17,7 @@ import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
-import { MoveTreePane } from './MoveTreePane';
+import { MoveTreePane, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
 import { t } from '@/lib/i18n';
 
@@ -127,6 +127,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             title={openingName ?? 'Starting position'}
             actions={
               <>
+                <SidelinesToggle />
                 <ReviewButton />
                 <CollectGameButton />
                 <LoadPositionButton />

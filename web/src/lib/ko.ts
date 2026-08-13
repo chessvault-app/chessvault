@@ -447,6 +447,9 @@ export const ko: Record<string, string> = {
   Licences: '라이선스',
   'Desktop app': '데스크톱 앱',
   Built: '빌드 시각',
+  // The moves panel's reading mode.
+  'Show the current line only': '현재 수순만 보기',
+  'Showing the current line only': '현재 수순만 보는 중',
   Appearance: '모양',
   'App theme': '앱 테마',
   Colours: '색',
