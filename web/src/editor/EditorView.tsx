@@ -13,7 +13,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -113,6 +113,20 @@ export function EditorView({
    * sheet now: the title row grows a back chevron and the body swaps.
    */
   const [sheetPage, setSheetPage] = useState<'position' | 'load'>('position');
+  /**
+   * The tallest page the sheet has shown, so turning a page cannot make
+   * it shorter.
+   *
+   * The two pages are different heights — the position form is a few rows
+   * taller than the load form — and a sheet that resizes as you move
+   * between its own pages reads as two windows again, which is the thing
+   * the pages were for. Measured rather than guessed: a percentage picked
+   * here would be wrong on the next phone.
+   */
+  const [pageMinH, setPageMinH] = useState(0);
+  const measurePage = useCallback((node: HTMLDivElement | null) => {
+    if (node) setPageMinH((h) => Math.max(h, node.offsetHeight));
+  }, []);
   const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   // Image import runs against the app's built-in piece templates, so a
@@ -563,25 +577,36 @@ export function EditorView({
           onClose={() => {
             setSheetOpen(false);
             setSheetPage('position');
+            setPageMinH(0);
           }}
         >
-          {sheetPage === 'position' ? (
-            positionPanels(false, true)
-          ) : (
-            <LoadPositionForm
-              loadText={loadText}
-              onDone={() => {
-                setSheetOpen(false);
-                setSheetPage('position');
-              }}
-              onImage={(file) => {
-                setPhotoFile(file);
-                void builtinTemplates()
-                  .then(setPhotoTemplates)
-                  .catch(() => setPhotoTemplates([]));
-              }}
-            />
-          )}
+          {/* Keyed by page so the ref fires again and each page is
+              measured; the min-height is whatever the tallest one needed. */}
+          <div
+            key={sheetPage}
+            ref={measurePage}
+            style={pageMinH ? { minHeight: pageMinH } : undefined}
+            className="flex flex-col gap-3"
+          >
+            {sheetPage === 'position' ? (
+              positionPanels(false, true)
+            ) : (
+              <LoadPositionForm
+                loadText={loadText}
+                onDone={() => {
+                  setSheetOpen(false);
+                  setSheetPage('position');
+                  setPageMinH(0);
+                }}
+                onImage={(file) => {
+                  setPhotoFile(file);
+                  void builtinTemplates()
+                    .then(setPhotoTemplates)
+                    .catch(() => setPhotoTemplates([]));
+                }}
+              />
+            )}
+          </div>
         </Modal>
       )}
 

@@ -97,7 +97,12 @@ export function EngineBlock({ className }: { className?: string }) {
           pushed the eval bar and the three PV lines down the screen — the
           reader loses the thing they were reading in order to change how
           it is computed. On a phone the window is a bottom sheet. */}
-      {enabled && showSettings && (
+      {/* Not gated on the engine being ON. Half of what is in here — the
+          lines to show, the memory to give it — is what somebody decides
+          BEFORE turning it on, and a settings button that opens nothing
+          until you have started the thing it configures is a button that
+          looks broken. */}
+      {showSettings && (
         <Modal title="Engine settings" icon={Settings2} onClose={() => setShowSettings(false)}>
           <EngineSettings />
         </Modal>

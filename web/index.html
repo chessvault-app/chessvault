@@ -44,15 +44,9 @@
         background: #f9fafb;
         color: #6b7280;
         font: 600 0.875rem/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
-        opacity: 0;
-        animation: boot-in 200ms ease-out 400ms forwards;
       }
       .dark .boot { background: #171a22; color: #8b94a7; }
       .boot p { margin: 0; }
-      @keyframes boot-in { to { opacity: 1; } }
-      @media (prefers-reduced-motion: reduce) {
-        .boot { animation-delay: 400ms; animation-duration: 1ms; }
-      }
     </style>
     <script>
       // Set the theme class before first paint so dark-theme users never see a
@@ -83,9 +77,11 @@
       React clears the container on its first render (createRoot does,
       unlike hydrateRoot), so nothing has to remove it.
 
-      It fades in after 400ms rather than appearing at once: a launch that
-      finishes in 150ms should show no loader at all, and a spinner that
-      flashes on a fast start reads as a stutter rather than as progress.
+      It is drawn at once. It waited 400ms first, on the theory that a
+      launch finishing in 150ms should show no loader at all — but a warm
+      cache mounts inside that window on every launch, so the screen was
+      never seen, which is not a launch screen. It shows, and on a fast
+      start it shows briefly.
     -->
     <div id="root">
       <div class="boot">
