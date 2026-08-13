@@ -297,7 +297,7 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
  * A desktop keeps every icon on the header and its status bar, so this
  * renders nothing there.
  */
-function MovesOverflow() {
+export function MovesOverflow({ allowReset = true }: { allowReset?: boolean }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const tree = useAnalysis((s) => s.tree);
@@ -321,8 +321,19 @@ function MovesOverflow() {
       onSelect: () => void copyText(getNode(tree, cursorId).fen),
     },
     { label: 'Copy PGN', icon: Copy, onSelect: () => void copyText(exportPgn()) },
-    // Last and tinted: it throws the board away.
-    { label: 'Clear the board', icon: RotateCcw, danger: true, onSelect: () => reset() },
+    // Last and tinted: it throws the board away. Never offered in a
+    // study or a game, where the board IS the document — the same reason
+    // MoveActions takes allowReset.
+    ...(allowReset
+      ? [
+          {
+            label: 'Clear the board',
+            icon: RotateCcw,
+            danger: true,
+            onSelect: () => reset(),
+          } as SheetAction,
+        ]
+      : []),
   ];
 
   return (

@@ -21,7 +21,7 @@ import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
-import { MoveActions } from '@/analysis/AnalysisView';
+import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
@@ -224,9 +224,16 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             actions={
               <>
                 <SidelinesToggle />
-                <ReviewButton />
+                {/* On the header where there is room; under ⋯ on a phone. */}
+                <span className="hidden items-center gap-1 md:inline-flex">
+                  <ReviewButton />
+                </span>
                 {editing && <LoadPositionButton />}
                 {editing && <MoveActions allowReset={false} />}
+                {/* No Clear here: in a study the board IS the document. This
+                    is also the only way to copy a chapter's FEN or PGN on a
+                    phone — the Board's status bar has never existed here. */}
+                <MovesOverflow allowReset={false} />
               </>
             }
           />

@@ -318,21 +318,61 @@ function FinalAssessment({
   const analyse = useEngine((s) => s.analyse);
   const lines = useEngine((s) => s.lines);
   const resultFen = useEngine((s) => s.resultFen);
+  const finished = useEngine((s) => s.finished);
+
+  /**
+   * The verdict, kept here rather than read from the engine.
+   *
+   * Switching the engine off frees its worker AND clears its results (see
+   * store/engine.ts), so the number has to be taken out before the engine
+   * goes — otherwise stopping it would erase the very thing it was
+   * started for.
+   */
+  const [verdict, setVerdict] = useState<{ cp?: number; mate?: number } | null>(null);
+  // Whether WE turned it on. An engine the reader had already running is
+  // theirs, and stopping it because a sparring line ended would be this
+  // page reaching outside itself.
+  const startedByUs = useRef(false);
 
   useEffect(() => {
+    if (verdict) return;
     if (!enabled) {
+      startedByUs.current = true;
       setEnabled(true);
       return;
     }
     analyse(fen);
-  }, [enabled, fen, analyse, setEnabled]);
+  }, [enabled, fen, verdict, analyse, setEnabled]);
 
-  // Only the result for THIS position; the engine keeps the previous
-  // one on screen while it starts on the next, which would read as an
-  // assessment of a line you are no longer looking at.
-  const best = resultFen === fen ? lines[0] : undefined;
-  const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
-  const score = best ? toWhitePov({ cp: best.cp, mate: best.mate }, turn) : null;
+  // One position, one search: take the answer at the end of it and stop.
+  // It used to run on after the number appeared, which on a phone is a
+  // fan spinning for a line that finished a minute ago.
+  useEffect(() => {
+    if (verdict || !finished || resultFen !== fen) return;
+    const best = lines[0];
+    if (!best) return;
+    const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+    setVerdict(toWhitePov({ cp: best.cp, mate: best.mate }, turn));
+    if (startedByUs.current) setEnabled(false);
+  }, [finished, resultFen, fen, lines, verdict, setEnabled]);
+
+  // Leaving mid-search stops it too, for the same reason.
+  useEffect(
+    () => () => {
+      if (startedByUs.current) useEngine.getState().setEnabled(false);
+    },
+    [],
+  );
+
+  // Before the verdict is in, show the engine's running best guess.
+  const live =
+    resultFen === fen && lines[0]
+      ? toWhitePov(
+          { cp: lines[0].cp, mate: lines[0].mate },
+          fen.split(' ')[1] === 'b' ? 'black' : 'white',
+        )
+      : null;
+  const score = verdict ?? live;
 
   return (
     <div className="flex flex-col gap-2">
@@ -349,7 +389,7 @@ function FinalAssessment({
         <EvalBar score={score} orientation="horizontal" className="flex-1" />
       </div>
       <p className="text-subtle min-h-[0.875rem] text-[0.6875rem] leading-none">
-        {score ? '' : t('Thinking…')}
+        {verdict ? '' : t('Evaluating the position…')}
       </p>
       <Button variant="primary" size="sm" className="self-start" onClick={onAnalyse}>
         <Microscope className="size-3.5" />
