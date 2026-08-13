@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 import { t } from '@/lib/i18n';
 
@@ -38,6 +39,7 @@ export function Sheet({
 }) {
   const phone = useMediaQuery('(max-width: 39.9375rem)');
   const drag = useSheetDrag(onClose);
+  const focusRef = useDialogFocus();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -67,7 +69,10 @@ export function Sheet({
         role="dialog"
         aria-modal="true"
         aria-label={t(label)}
-        ref={phone ? drag.ref : undefined}
+        ref={(node) => {
+          focusRef(node);
+          if (phone) drag.ref(node);
+        }}
         style={phone ? drag.style : undefined}
         className={cn(
           // overscroll-contain for the same reason Modal has it: a scroll

@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import type { Role } from 'chessops/types';
 import type { Color } from '@lichess-org/chessground/types';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
+import { useDialogFocus } from '@/ui/dialogFocus';
 
 const CHOICES: Role[] = ['queen', 'knight', 'rook', 'bishop'];
 
@@ -27,6 +29,20 @@ export function PromotionPicker({
   onSelect,
   onCancel,
 }: PromotionPickerProps) {
+  // The one dialog in the app that could not be dismissed with Escape —
+  // and a promotion is exactly the moment a misdrag wants taking back.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onCancel();
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => document.removeEventListener('keydown', onKey, true);
+  }, [onCancel]);
+  const focusRef = useDialogFocus();
+
   const file = dest.charCodeAt(0) - 97; // 'a' -> 0
   // Flip the column when viewing from Black's side.
   const column = orientation === 'white' ? file : 7 - file;
@@ -45,6 +61,7 @@ export function PromotionPicker({
       role="dialog"
       aria-modal="true"
       aria-label={t('Choose promotion piece')}
+      ref={focusRef}
     >
       {/* `cg-wrap promo-host` exists purely to bring chessground's piece sprites
           into scope; it is deliberately not the positioned overlay itself. */}

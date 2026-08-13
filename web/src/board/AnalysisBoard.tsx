@@ -22,6 +22,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { SideDot } from '@/ui/SideDot';
+import { dialogOpen } from '@/ui/dialogFocus';
 import { t } from '@/lib/i18n';
 
 /**
@@ -419,6 +420,10 @@ export function BoardControls({
       const target = e.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
       if (target?.isContentEditable) return;
+      // An open window owns the keyboard. These listen on the window and
+      // cannot see a scrim: arrows were stepping the game behind an open
+      // dialog while its own list wanted them.
+      if (dialogOpen()) return;
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -440,6 +445,9 @@ export function BoardControls({
           goToEnd();
           break;
         case 'f':
+          // Bare `f` only: Ctrl+F is the browser's find, and flipping the
+          // board underneath it turned a search into a surprise.
+          if (e.ctrlKey || e.metaKey || e.altKey) break;
           flip();
           break;
         default:

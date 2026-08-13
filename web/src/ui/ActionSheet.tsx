@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 import { t } from '@/lib/i18n';
 
@@ -74,6 +75,7 @@ export function ActionSheet({
 
   // The same gesture every bottom sheet in the app is pushed away with.
   const drag = useSheetDrag(onClose);
+  const focusRef = useDialogFocus();
 
   // Portalled to the body, because `position: fixed` is only relative to
   // the viewport while no ancestor has a transform, a filter or
@@ -101,7 +103,10 @@ export function ActionSheet({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         // A sheet drags from anywhere on it; a popover is not a sheet.
-        ref={popover ? undefined : drag.ref}
+        ref={(node) => {
+          focusRef(node);
+          if (!popover) drag.ref(node);
+        }}
         style={
           !popover
             ? drag.style

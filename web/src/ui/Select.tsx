@@ -212,6 +212,10 @@ export function Select({
       }
       return;
     }
+    // An open listbox owns its keys outright. The board's arrow shortcuts
+    // listen on the window, and preventDefault does not stop a bubble:
+    // stepping through options was also stepping through the game.
+    e.stopPropagation();
     if (e.key === 'Escape') setOpen(false);
     else if (e.key === 'ArrowDown') {
       e.preventDefault();

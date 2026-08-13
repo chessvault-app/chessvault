@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 
 /**
@@ -91,6 +92,9 @@ export function Modal({
   // the pointer asked. `full` is about desktop width and nothing else.
   const sheet = useMediaQuery('(max-width: 39.9375rem)');
   const drag = useSheetDrag(onClose);
+  // Inactive while hidden: a window parked behind the one it opened must
+  // not hold the focus trap against it.
+  const focusRef = useDialogFocus(!hidden);
 
   // On the body, not wherever it was written: a window is a floating layer
   // and must not inherit a containing block from whatever opened it — a
@@ -121,8 +125,12 @@ export function Modal({
         // The backdrop closes; the window itself must not, or every click
         // inside the form would dismiss it.
         onClick={(e) => e.stopPropagation()}
-        // The ref is what makes the WHOLE sheet draggable — see sheetDrag.
-        ref={sheet ? drag.ref : undefined}
+        // Two refs on one node: the focus trap always, and on a phone the
+        // drag ref that makes the WHOLE sheet draggable — see sheetDrag.
+        ref={(node) => {
+          focusRef(node);
+          if (sheet) drag.ref(node);
+        }}
         style={sheet ? drag.style : undefined}
         className={cn(
           // overscroll-contain: a scroll this window cannot use is its own
