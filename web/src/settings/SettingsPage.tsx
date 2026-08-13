@@ -233,15 +233,19 @@ interface UpdateResult {
  */
 function VersionCard() {
   const [server, setServer] = useState<string | null>(null);
+  const [build, setBuild] = useState<string | null>(null);
   const [app, setApp] = useState<string | null>(null);
   const [update, setUpdate] = useState<UpdateResult | null>(null);
   const [checking, setChecking] = useState(false);
   const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
 
   useEffect(() => {
-    void fetch('/api/health')
+    void fetch('/api/health', { cache: 'no-store' })
       .then((r) => r.json())
-      .then((b: { version?: string }) => setServer(b.version ?? null))
+      .then((b: { version?: string; build?: string | null }) => {
+        setServer(b.version ?? null);
+        setBuild(b.build ?? null);
+      })
       .catch(() => setServer(null));
     void shell?.appInfo?.().then((info) => setApp(info?.version ?? null));
   }, [shell]);
@@ -262,6 +266,16 @@ function VersionCard() {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
         <dt className="text-subtle">{t('Server')}</dt>
         <dd className="text-fg font-mono">{server ?? '—'}</dd>
+        {/* Which BUILD, not which release. The version only moves once per
+            release, so between releases it cannot tell a just-deployed app
+            from one the phone has been holding in a cache — the question
+            that comes up every time a fix will not reproduce. */}
+        {build && (
+          <>
+            <dt className="text-subtle">{t('Built')}</dt>
+            <dd className="text-fg font-mono">{build}</dd>
+          </>
+        )}
         {app && (
           <>
             <dt className="text-subtle">{t('Desktop app')}</dt>

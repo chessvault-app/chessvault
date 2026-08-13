@@ -4,7 +4,7 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
@@ -45,12 +45,35 @@ app.use('*', async (c, next) => {
   c.header('Cross-Origin-Resource-Policy', 'same-origin');
 });
 
+/**
+ * When this build was made.
+ *
+ * The version number moves once per release, so between releases every
+ * deploy reports the same string and there is no way — from the device —
+ * to tell a freshly shipped app from one a cache has been holding on to.
+ * That question comes up every time a fix cannot be reproduced, and the
+ * only honest answer needs a stamp that changes per BUILD.
+ *
+ * The built index.html's mtime is that stamp: it is rewritten by every
+ * build, needs no git (the desktop app is not a checkout) and no
+ * generated file. Read once at boot, because it cannot change under a
+ * running server without that server being restarted.
+ */
+const BUILD_STAMP = ((): string | null => {
+  try {
+    return statSync(`${REPO_ROOT}/dist/index.html`).mtime.toISOString().slice(0, 19).replace('T', ' ');
+  } catch {
+    return null; // dev, where Vite serves the app and there is no dist
+  }
+})();
+
 app.get('/api/health', (c) =>
   c.json({
     ok: true,
     // Reported so the UI can show whether threads are actually available.
     crossOriginIsolated: true,
     version: APP_VERSION,
+    build: BUILD_STAMP,
   }),
 );
 
@@ -173,6 +196,38 @@ if (existsSync(dist)) {
     if (c.res.headers.get('content-type')?.startsWith('text/html')) {
       c.res.headers.set('accept-ch', 'Sec-CH-Prefers-Color-Scheme');
       c.res.headers.append('vary', 'Sec-CH-Prefers-Color-Scheme');
+    }
+  });
+
+  /**
+   * How long anything may be believed without asking.
+   *
+   * The static handler sent Last-Modified and nothing else, and a response
+   * with no cache-control is one a cache may keep for a HEURISTIC time of
+   * its own choosing — commonly a tenth of the file's age. That is fine
+   * for a picture and wrong for index.html, which is the one file whose
+   * name never changes: keep a stale copy of it and the whole app is the
+   * build it names, however many times the server has been updated since.
+   * A phone that had banked an older copy would go on launching the old
+   * app, and every fix shipped to it would look like it had not worked.
+   *
+   * So the two halves get opposite answers. Everything under /assets
+   * carries a content hash in its filename, so it can never change
+   * meaning and is immutable for a year. index.html and the service
+   * worker are `no-cache`, which does NOT mean "do not store" — it means
+   * "store it, but ask before using it". The ask costs a 304 and a round
+   * trip on launch, and buys the guarantee that what starts is what is
+   * deployed.
+   */
+  app.use('/*', async (c, next) => {
+    await next();
+    if (c.res.headers.get('cache-control')) return; // a route said its own
+    const path = c.req.path;
+    const html = c.res.headers.get('content-type')?.startsWith('text/html');
+    if (html || path === '/sw.js' || path === '/manifest.webmanifest') {
+      c.res.headers.set('cache-control', 'no-cache');
+    } else if (path.startsWith('/assets/')) {
+      c.res.headers.set('cache-control', 'public, max-age=31536000, immutable');
     }
   });
 

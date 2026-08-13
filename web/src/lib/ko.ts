@@ -446,6 +446,7 @@ export const ko: Record<string, string> = {
   'Source code': '소스 코드',
   Licences: '라이선스',
   'Desktop app': '데스크톱 앱',
+  Built: '빌드 시각',
   Appearance: '모양',
   'App theme': '앱 테마',
   Colours: '색',
