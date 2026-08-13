@@ -147,27 +147,32 @@
        * for in the first place.
        */
       /**
-       * No backdrop filters while the launch screen is up.
+       * While the launch screen is up, the app is laid out but not DRAWN.
        *
-       * WebKit composites -webkit-backdrop-filter outside the normal paint
-       * order: an element that has one can draw OVER a later overlay that
-       * covers it, and no z-index on the overlay changes that. The app has
-       * exactly two, and they are the phone's bottom bars — so the launch
-       * screen covered the whole app except the one strip that had a blur
-       * on it, and lanph3re watched a nav bar sit on top of the knight
-       * through three fixes aimed at the wrong thing.
+       * Paint order could not be relied on. WebKit composites some
+       * elements outside it, so the bottom nav bar drew on top of this
+       * screen — a fixed, fully opaque box at z-index 100 — for exactly
+       * one frame, at the moment the shell first rendered. Caught in
+       * lanph3re's screen recording at 2.71s: the knight still on screen,
+       * the tab bar over it, gone again by 2.72s, and the app itself not
+       * arriving until 3.52s. That single frame is the flicker, and it is
+       * why every fix aimed at the HANDOVER missed it — it happens most
+       * of a second before the handover.
        *
-       * Nothing is lost by this. A blur behind an opaque screen is a blur
-       * nobody can see; the class goes the moment the screen does, and the
-       * bars are frosted again before anything can be pressed.
+       * Suppressing backdrop-filter was the first attempt at this and was
+       * not enough: it removed one reason WebKit promotes a layer, not the
+       * escape itself. `visibility: hidden` removes the question. There is
+       * nothing to paint, so there is nothing that can be painted in the
+       * wrong order.
        *
-       * The universal selector is deliberate — it is the escape that has
-       * to be closed, not one element's use of it, and it is in force for
-       * about a second.
+       * It hides rather than skips rendering, because the point of the
+       * screen is to COVER useful work: the app still mounts, fetches,
+       * measures and lays out underneath — visibility does not stop layout
+       * — so nothing is serialised behind the launch and the app is ready
+       * the moment the screen goes.
        */
-      html.booting * {
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
+      html.booting #root {
+        visibility: hidden !important;
       }
     </style>
     <script>
