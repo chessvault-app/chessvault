@@ -1,5 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
@@ -181,7 +182,17 @@ export function Select({
         <ChevronDown className="text-subtle size-3 shrink-0" />
       </button>
 
-      {open && rect && (
+      {/* On the BODY, not where it was written. Two reasons, both of which
+          bit: this list is position-fixed off a measured rect, and `fixed`
+          resolves against any ancestor that has a transform — a bottom
+          sheet has one the moment it is dragged, so the list would ride
+          the sheet instead of staying put. And a touch inside it BUBBLES
+          to whatever it was written inside: dragging this list inside a
+          sheet dragged the sheet. A floating layer has no business living
+          inside the thing it floats over. Dismissal is unaffected — it
+          asks `list.contains(target)`, which does not care where the node
+          sits. */}
+      {open && rect && createPortal(
         <div
           ref={list}
           role="listbox"
@@ -265,7 +276,8 @@ export function Select({
               })}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
