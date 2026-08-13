@@ -185,3 +185,92 @@ describe('games api (collection model)', () => {
     expect(res.status).toBe(400);
   });
 });
+
+/**
+ * Browsing leaves months on disk for ever, and nothing used to say so or
+ * remove them. These cover both halves: what is there, and getting rid of
+ * it — plus the reason the cache exists at all, which is that a second
+ * look at a month should not download it again.
+ */
+describe('archive cache', () => {
+  let dir: string;
+  let app: Hono;
+  const realFetch = globalThis.fetch;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'games-cache-'));
+    mkdirSync(join(dir, 'chesscom', 'lanph3re'), { recursive: true });
+    writeFileSync(join(dir, 'chesscom', 'lanph3re', '2026-07.pgn'), MONTH_PGN);
+    mkdirSync(join(dir, 'lichess', 'someone'), { recursive: true });
+    writeFileSync(join(dir, 'lichess', 'someone', '2026-06.pgn'), MONTH_PGN);
+    app = new Hono().route('/api', gamesApi(dir));
+  });
+
+  afterAll(() => {
+    globalThis.fetch = realFetch;
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('reports every player browsing has cached, largest first', async () => {
+    const body = await (await app.request('/api/games/cache')).json();
+    expect(body.users).toHaveLength(2);
+    expect(body.users.map((u: { user: string }) => u.user).sort()).toEqual(['lanph3re', 'someone']);
+    expect(body.users[0].months).toBe(1);
+    expect(body.bytes).toBe(MONTH_PGN.length * 2);
+  });
+
+  it('clears one player, and leaves the other alone', async () => {
+    const res = await app.request('/api/games/cache?provider=lichess&user=someone', {
+      method: 'DELETE',
+    });
+    expect(res.status).toBe(200);
+    expect(existsSync(join(dir, 'lichess', 'someone'))).toBe(false);
+    expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(true);
+  });
+
+  it('refuses a username that would climb out of the provider directory', async () => {
+    const res = await app.request('/api/games/cache?provider=chesscom&user=..', {
+      method: 'DELETE',
+    });
+    expect(res.status).toBe(400);
+    expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(true);
+  });
+
+  it('rechecks the month being played in, and keeps the cache when it has not changed', async () => {
+    const now = new Date();
+    const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+    const seen: (string | undefined)[] = [];
+
+    globalThis.fetch = ((_url: string, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      seen.push(headers.get('if-modified-since') ?? undefined);
+      // First visit: the month arrives, dated. Second: nothing has
+      // happened since, so chess.com says so in four bytes.
+      if (seen.length === 1) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ games: [{ pgn: MONTH_PGN }] }), {
+            headers: { 'content-type': 'application/json', 'last-modified': 'Wed, 01 Jul 2026 00:00:00 GMT' },
+          }),
+        );
+      }
+      return Promise.resolve(new Response(null, { status: 304 }));
+    }) as typeof fetch;
+
+    const first = await app.request(`/api/games/archive/month?user=lanph3re&month=${month}`);
+    expect(first.status).toBe(200);
+    expect((await first.json()).games).toHaveLength(2);
+
+    const second = await app.request(`/api/games/archive/month?user=lanph3re&month=${month}`);
+    expect(second.status).toBe(200);
+    // Same games, from disk: the second request carried the date it was
+    // given and got a 304, so nothing was downloaded or rewritten.
+    expect((await second.json()).games).toHaveLength(2);
+    expect(seen).toEqual([undefined, 'Wed, 01 Jul 2026 00:00:00 GMT']);
+  });
+
+  it('clears the lot', async () => {
+    const res = await app.request('/api/games/cache?all=1', { method: 'DELETE' });
+    expect(res.status).toBe(200);
+    expect((await (await app.request('/api/games/cache')).json()).users).toEqual([]);
+  });
+});

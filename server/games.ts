@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { sanitizeSegment } from '../shared/vaultNames.ts';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { makeFen } from 'chessops/fen';
@@ -157,15 +157,75 @@ function monthPath(dir: string, user: string, month: string): string {
   return resolve(dir, 'chesscom', user.toLowerCase(), `${month}.pgn`);
 }
 
-/** Fetch one month from chess.com into the on-disk cache. */
+/**
+ * What is known about a cached month besides its games.
+ *
+ * Kept beside them as a dotfile, so the month listing — which counts
+ * `.pgn` — never sees it.
+ */
+interface CacheMeta {
+  months: Record<string, { lastModified?: string; fetchedAt?: number }>;
+}
+
+function metaPath(dir: string, provider: string, user: string): string {
+  return resolve(dir, provider, user.toLowerCase(), '.cache.json');
+}
+
+function readCacheMeta(dir: string, provider: string, user: string): CacheMeta {
+  try {
+    const parsed = JSON.parse(readFileSync(metaPath(dir, provider, user), 'utf-8')) as CacheMeta;
+    return { months: parsed.months ?? {} };
+  } catch {
+    return { months: {} };
+  }
+}
+
+function writeCacheMeta(dir: string, provider: string, user: string, meta: CacheMeta): void {
+  mkdirSync(resolve(dir, provider, user.toLowerCase()), { recursive: true });
+  writeFileSync(metaPath(dir, provider, user), `${JSON.stringify(meta, null, 2)}\n`);
+}
+
+/**
+ * Fetch one month from chess.com into the on-disk cache.
+ *
+ * Conditionally, once we have it. The month anyone looks at most is the
+ * one they are still playing in — and that was the single month the cache
+ * did nothing for: it was refetched whole on every visit, because it might
+ * have grown since. chess.com dates its archives and honours
+ * `If-Modified-Since`, so the usual answer is now 304 and a couple of
+ * headers: the games are already here, and nothing is downloaded, written
+ * or re-parsed until the player has actually played.
+ */
 async function cacheMonth(dir: string, user: string, month: string): Promise<void> {
   const [year, mm] = month.split('-');
-  const body = await fetchJson<{ games: { pgn?: string }[] }>(
+  const path = monthPath(dir, user, month);
+  const meta = readCacheMeta(dir, 'chesscom', user);
+  const known = existsSync(path) ? meta.months[month]?.lastModified : undefined;
+
+  const res = await fetch(
     `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/${year}/${mm}`,
+    {
+      headers: { ...FETCH_HEADERS, ...(known ? { 'If-Modified-Since': known } : {}) },
+      signal: AbortSignal.timeout(20_000),
+    },
   );
+
+  if (res.status === 304) {
+    meta.months[month] = { ...meta.months[month], fetchedAt: Date.now() };
+    writeCacheMeta(dir, 'chesscom', user, meta);
+    return;
+  }
+  if (!res.ok) throw new Error(`chess.com replied ${res.status}`);
+
+  const body = (await res.json()) as { games: { pgn?: string }[] };
   const pgns = body.games.map((g) => g.pgn).filter((p): p is string => Boolean(p));
   mkdirSync(resolve(dir, 'chesscom', user.toLowerCase()), { recursive: true });
-  writeFileSync(monthPath(dir, user, month), pgns.length > 0 ? `${pgns.join('\n\n')}\n` : '');
+  writeFileSync(path, pgns.length > 0 ? `${pgns.join('\n\n')}\n` : '');
+  meta.months[month] = {
+    lastModified: res.headers.get('last-modified') ?? undefined,
+    fetchedAt: Date.now(),
+  };
+  writeCacheMeta(dir, 'chesscom', user, meta);
 }
 
 // ---------------------------------------------------------------------------
@@ -427,10 +487,22 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
     if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
     if (!MONTH_RE.test(month)) return c.json({ error: 'invalid month' }, 400);
     const path = resolve(dir, 'lichess', user, `${month}.pgn`);
-    if (!existsSync(path)) {
-      const [y, m] = month.split('-').map(Number) as [number, number];
-      const since = Date.UTC(y, m - 1, 1);
-      const until = Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 1);
+    const cached = existsSync(path);
+    const meta = readCacheMeta(dir, 'lichess', user);
+    const [y, m] = month.split('-').map(Number) as [number, number];
+    const monthStart = Date.UTC(y, m - 1, 1);
+    const until = Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 1);
+    // A month that has ended cannot gain games; the one being played in
+    // can, and it is the one anybody looks at. Cached, it used to be
+    // frozen — a game finished five minutes ago was simply not there
+    // until the file was deleted by hand.
+    const live = Date.now() < until;
+
+    if (!cached || live) {
+      // Everything, first time round; only what has happened since the
+      // last look, after that. `since` is what makes a repeat visit to
+      // this month one small response instead of three hundred games.
+      const since = cached ? (meta.months[month]?.fetchedAt ?? monthStart) : monthStart;
       try {
         const res = await fetch(
           `https://lichess.org/api/games/user/${encodeURIComponent(user)}?since=${since}&until=${until}&max=300&moves=true&tags=true`,
@@ -439,14 +511,113 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
             signal: AbortSignal.timeout(30_000),
           },
         );
-        if (!res.ok) return c.json({ error: `lichess replied ${res.status}` }, 502);
-        mkdirSync(resolve(dir, 'lichess', user), { recursive: true });
-        writeFileSync(path, await res.text());
+        if (!res.ok) {
+          if (!cached) return c.json({ error: `lichess replied ${res.status}` }, 502);
+        } else {
+          const fetched = await res.text();
+          mkdirSync(resolve(dir, 'lichess', user), { recursive: true });
+          if (!cached) {
+            writeFileSync(path, fetched);
+          } else if (fetched.trim()) {
+            // Newest first, as lichess sends them — so new games go on
+            // the front. `since` is a boundary rather than a cursor, so
+            // the game that straddles it comes back twice; its own URL,
+            // which is already in the file, is what says so.
+            const have = readFileSync(path, 'utf-8');
+            const fresh = fetched
+              .split(/\n\n(?=\[Event )/)
+              .filter((game) => {
+                const site = /\[Site "([^"]+)"\]/.exec(game)?.[1];
+                return game.trim() && (!site || !have.includes(site));
+              });
+            if (fresh.length) writeFileSync(path, `${fresh.join('\n\n')}\n\n${have}`);
+          }
+          meta.months[month] = { fetchedAt: Date.now() };
+          writeCacheMeta(dir, 'lichess', user, meta);
+        }
       } catch {
-        return c.json({ error: 'lichess unreachable' }, 502);
+        // Offline with a copy on disk is still a browsable month.
+        if (!cached) return c.json({ error: 'lichess unreachable' }, 502);
       }
     }
     return c.json({ games: parseFileSummaries(dir, path) });
+  });
+
+  /**
+   * What browsing has left on disk, per player.
+   *
+   * Every month anyone looks at is kept as a PGN file so it browses
+   * offline afterwards, and nothing has ever removed one. Browse a dozen
+   * players out of curiosity and the vault quietly holds a dozen players'
+   * whole histories — none of which is in the collection, and none of
+   * which the app admitted to storing. Bytes and months, cheap to
+   * produce: a size is a stat per file, whereas a game count would be a
+   * parse of every one of them.
+   */
+  api.get('/games/cache', (c) => {
+    const users: { provider: string; user: string; months: number; bytes: number }[] = [];
+    for (const provider of ['chesscom', 'lichess'] as const) {
+      const providerDir = resolve(dir, provider);
+      if (!existsSync(providerDir)) continue;
+      for (const user of readdirSync(providerDir)) {
+        const userDir = resolve(providerDir, user);
+        if (!statSync(userDir).isDirectory()) continue;
+        const files = readdirSync(userDir).filter((f) => f.endsWith('.pgn'));
+        if (!files.length) continue;
+        users.push({
+          provider,
+          user,
+          months: files.length,
+          bytes: files.reduce((sum, f) => sum + statSync(resolve(userDir, f)).size, 0),
+        });
+      }
+    }
+    users.sort((a, b) => b.bytes - a.bytes || a.user.localeCompare(b.user));
+    return c.json({ bytes: users.reduce((sum, u) => sum + u.bytes, 0), users });
+  });
+
+  /**
+   * Drop one player's cache, or all of it.
+   *
+   * Safe by construction: this only ever removes months that can be
+   * fetched again, and the collection is a different directory
+   * altogether — a game someone kept was COPIED into it, so clearing the
+   * cache cannot take anything that was chosen.
+   */
+  api.delete('/games/cache', (c) => {
+    const all = c.req.query('all') === '1';
+    const provider = c.req.query('provider');
+    const user = c.req.query('user')?.trim();
+
+    if (all) {
+      let bytes = 0;
+      for (const p of ['chesscom', 'lichess']) {
+        const providerDir = resolve(dir, p);
+        if (!existsSync(providerDir)) continue;
+        for (const u of readdirSync(providerDir)) {
+          const userDir = resolve(providerDir, u);
+          if (!statSync(userDir).isDirectory()) continue;
+          for (const f of readdirSync(userDir)) {
+            if (f.endsWith('.pgn')) bytes += statSync(resolve(userDir, f)).size;
+          }
+          rmSync(userDir, { recursive: true, force: true });
+        }
+      }
+      return c.json({ cleared: 'all', bytes });
+    }
+
+    if (provider !== 'chesscom' && provider !== 'lichess') {
+      return c.json({ error: 'invalid provider' }, 400);
+    }
+    if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
+
+    const userDir = resolve(dir, provider, user.toLowerCase());
+    if (!existsSync(userDir)) return c.json({ error: 'nothing cached for that player' }, 404);
+    const bytes = readdirSync(userDir)
+      .filter((f) => f.endsWith('.pgn'))
+      .reduce((sum, f) => sum + statSync(resolve(userDir, f)).size, 0);
+    rmSync(userDir, { recursive: true, force: true });
+    return c.json({ cleared: `${provider}/${user.toLowerCase()}`, bytes });
   });
 
   api.get('/games/bookmarks', (c) => c.json({ keys: [...readBookmarks(dir)] }));

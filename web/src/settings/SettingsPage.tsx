@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { ChevronLeft, Eye, EyeOff, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { ChevronLeft, Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Select } from '@/ui/Select';
@@ -105,6 +105,7 @@ export function SettingsPage() {
             <SoundCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
+            <BrowsedGamesCard />
             <DangerCard gate={settings.gate} />
             <VersionCard />
           </>
@@ -844,6 +845,115 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
 // --- Danger zone -------------------------------------------------------------
 
 const WIPE_PHRASE = 'wipe everything';
+
+// --- Browsed games -----------------------------------------------------------
+
+interface CachedPlayer {
+  provider: 'chesscom' | 'lichess';
+  user: string;
+  months: number;
+  bytes: number;
+}
+
+const PROVIDER_NAME: Record<string, string> = { chesscom: 'chess.com', lichess: 'Lichess' };
+
+/** Bytes as something readable; a cache of a few megabytes should not be
+    reported in seven digits. */
+function size(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Everything browsing has left on disk, and the way to be rid of it.
+ *
+ * Looking at a month keeps it, so that it browses offline afterwards and
+ * so that a second look costs nothing. Nothing ever removed one — look up
+ * a dozen players out of curiosity and the vault is quietly holding a
+ * dozen players' entire histories, none of it in the collection and none
+ * of it mentioned anywhere in the app. This is the mention, and the
+ * button.
+ */
+function BrowsedGamesCard() {
+  const [players, setPlayers] = useState<CachedPlayer[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const refresh = async (): Promise<void> => {
+    const res = await fetch('/api/games/cache');
+    if (res.ok) setPlayers(((await res.json()) as { users: CachedPlayer[] }).users);
+  };
+  useEffect(() => {
+    void refresh();
+  }, []);
+
+  const clear = async (query: string, key: string): Promise<void> => {
+    setBusy(key);
+    await json('DELETE', `/api/games/cache?${query}`);
+    await refresh();
+    setBusy(null);
+  };
+
+  const total = (players ?? []).reduce((sum, p) => sum + p.bytes, 0);
+
+  return (
+    <Card icon={HardDrive} title={t('Browsed games')}>
+      <p className="text-subtle text-xs leading-relaxed">
+        {t(
+          'Months you have browsed are kept so they open again instantly and work offline. Nothing here is in your collection — a game you kept was copied — so clearing this only means downloading a month again next time you look at it.',
+        )}
+      </p>
+      {players !== null && players.length === 0 && (
+        <p className="text-subtle text-xs">{t('Nothing cached yet.')}</p>
+      )}
+      {players !== null && players.length > 0 && (
+        <>
+          <ul className="divide-line border-line divide-y rounded-lg border">
+            {players.map((p) => {
+              const key = `${p.provider}/${p.user}`;
+              return (
+                <li key={key} className="flex items-center gap-2 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm">{p.user}</p>
+                    <p className="text-subtle text-xs">
+                      {PROVIDER_NAME[p.provider] ?? p.provider} ·{' '}
+                      {t('{n} months', { n: p.months })} · {size(p.bytes)}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t('Clear')}
+                    aria-label={t('Clear')}
+                    disabled={busy !== null}
+                    onClick={() =>
+                      void clear(
+                        `provider=${p.provider}&user=${encodeURIComponent(p.user)}`,
+                        key,
+                      )
+                    }
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-subtle text-xs">{t('{size} in total', { size: size(total) })}</span>
+            <Button
+              variant="ghost"
+              disabled={busy !== null}
+              onClick={() => void clear('all=1', 'all')}
+            >
+              {t('Clear all')}
+            </Button>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
 
 function DangerCard({ gate }: { gate: boolean }) {
   const [phrase, setPhrase] = useState('');

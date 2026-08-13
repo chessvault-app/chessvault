@@ -467,6 +467,13 @@ export const ko: Record<string, string> = {
   'no scopes': '권한 없음',
   'A token ending in': '끝자리가',
   'is configured.': '인 토큰이 설정되어 있습니다.',
+  'Browsed games': '둘러본 게임',
+  'Months you have browsed are kept so they open again instantly and work offline. Nothing here is in your collection — a game you kept was copied — so clearing this only means downloading a month again next time you look at it.':
+    '둘러본 달은 다시 열 때 바로 보이고 오프라인에서도 열리도록 저장해 둡니다. 여기 있는 것은 내 게임 목록에 들어간 것이 아니며, 담아 둔 게임은 복사된 것이라 그대로 남습니다. 지우면 다음에 그 달을 볼 때 다시 받아올 뿐입니다.',
+  'Nothing cached yet.': '아직 저장된 것이 없습니다.',
+  '{n} months': '{n}개월',
+  '{size} in total': '모두 {size}',
+  'Clear all': '모두 지우기',
   'Wipe all data': '모든 데이터 삭제',
   'Wipe the entire vault?': '보관함 전체를 삭제할까요?',
   'Confirm your app password': '앱 비밀번호를 확인하세요',
