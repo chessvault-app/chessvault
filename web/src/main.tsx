@@ -58,3 +58,28 @@ createRoot(container).render(
     <App />
   </StrictMode>,
 );
+
+/**
+ * Take the launch screen down, but not before it has been seen.
+ *
+ * index.html draws it; this removes it. A warm launch mounts in a
+ * hundred milliseconds or so, and a screen that appears and vanishes
+ * inside that reads as a flicker rather than as a launch — so it stays
+ * for BOOT_MIN_MS from the moment the document started, then fades.
+ *
+ * It does not hold the app back: the app is already mounted and painting
+ * underneath, and the screen stops taking presses the instant the fade
+ * begins. The only thing being waited for is the look of the thing.
+ */
+const BOOT_MIN_MS = 900;
+const boot = document.getElementById('boot');
+if (boot) {
+  const shown = Math.max(0, BOOT_MIN_MS - performance.now());
+  setTimeout(() => {
+    boot.classList.add('done');
+    boot.addEventListener('transitionend', () => boot.remove(), { once: true });
+    // A transition that never runs (reduced motion, a backgrounded tab)
+    // must not leave the screen on top of the app for ever.
+    setTimeout(() => boot.remove(), 600);
+  }, shown);
+}
