@@ -1,6 +1,13 @@
-import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react';
-import { CalendarDays, Search } from 'lucide-react';
+import {
+  forwardRef,
+  useRef,
+  useState,
+  type InputHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react';
+import { CalendarDays, Search, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 
 /**
  * The one text input. Every ad-hoc `bg-surface-inset border-line …` string
@@ -123,16 +130,98 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
   );
 });
 
-/** An Input with the magnifier badge every search field carries. Width
-    classes go on the wrapper; the input fills it. */
+/** The clear button matches the field's own height, coarse sizes included. */
+const clearSizes: Record<InputSize, string> = {
+  sm: 'h-7 pointer-coarse:h-9',
+  md: 'h-8',
+  lg: 'h-9',
+};
+
+/**
+ * An Input with the magnifier badge every search field carries, and a way
+ * out of it.
+ *
+ * The X arrives on focus, BESIDE the field rather than inside it: an icon
+ * floating over the right end of a text box is a target you have to aim
+ * past the text to hit, and it covers the tail of what you typed — which
+ * on a phone is most of what is visible. The field gives up the width
+ * instead, so the row is exactly as wide as it was and the button is a
+ * button, on its own ground.
+ *
+ * It clears without closing: focus stays, so the next thing you type is
+ * the new search rather than a tap away from being one.
+ *
+ * Width classes go on the wrapper; the field takes what is left.
+ */
 export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function SearchInput(
-  { className, inputSize = 'md', ...props },
+  { className, inputSize = 'md', onFocus, onBlur, ...props },
   ref,
 ) {
+  const [focused, setFocused] = useState(false);
+  const self = useRef<HTMLInputElement | null>(null);
+
+  const clear = (): void => {
+    const el = self.current;
+    if (!el) return;
+    // Through the native setter and an input event, so a CONTROLLED field
+    // hears it as a change. Assigning el.value alone is invisible to
+    // React, and every caller of this is controlled.
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    setter?.call(el, '');
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.focus();
+  };
+
   return (
-    <span className={cn('relative inline-flex', className)}>
-      <Search className="text-subtle pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2" />
-      <Input ref={ref} inputSize={inputSize} className="w-full pl-7" {...props} />
+    <span className={cn('relative inline-flex items-center', className)}>
+      <span className="relative inline-flex min-w-0 flex-1 items-center">
+        <Search className="text-subtle pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2" />
+        <Input
+          ref={(node) => {
+            self.current = node;
+            if (typeof ref === 'function') ref(node);
+            else if (ref) ref.current = node;
+          }}
+          inputSize={inputSize}
+          className="w-full pl-7"
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          {...props}
+        />
+      </span>
+      {/* Never unmounted, only narrowed to nothing: a button that
+          disappears on blur is a button whose own press dismisses it
+          before the click lands. preventDefault on the press keeps the
+          field focused for the same reason — and means clearing does not
+          cost you the keyboard. */}
+      <button
+        type="button"
+        tabIndex={focused ? 0 : -1}
+        aria-hidden={!focused}
+        title={t('Clear search')}
+        aria-label={t('Clear search')}
+        onPointerDown={(e) => e.preventDefault()}
+        onClick={clear}
+        className={cn(
+          'text-muted hover:text-fg grid shrink-0 place-items-center overflow-hidden rounded-full',
+          // Glass, like the sheets' close: a translucent disc that takes
+          // its colour from whatever it sits on, with a hairline of light
+          // along the edge. backdrop-blur is what makes it read as glass
+          // rather than as a grey circle.
+          'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
+          'transition-[width,margin,opacity] duration-150',
+          clearSizes[inputSize],
+          focused ? 'ml-1.5 w-7 opacity-100 pointer-coarse:w-9' : 'ml-0 w-0 opacity-0',
+        )}
+      >
+        <X className="size-3.5 shrink-0" />
+      </button>
     </span>
   );
 });
