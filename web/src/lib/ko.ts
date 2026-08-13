@@ -113,7 +113,7 @@ export const ko: Record<string, string> = {
   'click to choose, drop a file, or paste an image':
     '클릭해 선택하거나, 파일을 끌어놓거나, 이미지를 붙여넣으세요',
   Position: '포지션',
-  'Side to move': '둘 차례',
+  'Side to move': '차례',
   'Castling rights': '캐슬링 권리',
   'En passant target': '앙파상 대상',
   'Halfmove clock': '하프무브 카운터',
@@ -122,7 +122,7 @@ export const ko: Record<string, string> = {
   'Move: drag pieces around the board': '이동: 기물을 끌어 옮깁니다',
   'Erase: click a square to remove its piece': '지우기: 칸을 클릭하면 그 기물이 사라집니다',
   'Reset to the starting position': '시작 포지션으로 되돌리기',
-  'Position details (side to move, castling, FEN)': '포지션 세부 정보 (둘 차례, 캐슬링, FEN)',
+  'Position details (side to move, castling, FEN)': '포지션 세부 정보 (차례, 캐슬링, FEN)',
   Move: '이동',
   Erase: '지우기',
 
