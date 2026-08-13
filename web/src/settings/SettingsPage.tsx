@@ -424,7 +424,9 @@ function AppearanceCard() {
                 <span
                   className="size-3 shrink-0 rounded-full"
                   style={{
-                    background: `oklch(58% 0.135 ${preset.scheme.accent})`,
+                    // The dot has to be able to be grey, or Greyscale
+                    // advertises itself with a blue spot.
+                    background: `oklch(58% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
                     outline: `2px solid oklch(90% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
                   }}
                 />

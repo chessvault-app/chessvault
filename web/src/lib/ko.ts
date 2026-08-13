@@ -518,6 +518,7 @@ export const ko: Record<string, string> = {
   Rose: '로즈',
   Midnight: '미드나이트',
   Mono: '모노',
+  Greyscale: '흑백',
   'Move the king two squares (g1)': '킹을 두 칸 옮기기 (g1)',
   'Move the king onto the rook (h1)': '킹을 룩 위로 옮기기 (h1)',
   'Follow system': '시스템 설정 따르기',

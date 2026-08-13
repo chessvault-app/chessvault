@@ -90,6 +90,19 @@
   --ui-hue: 264;
   --ui-tint: 1;
   --accent-hue: 240;
+  /**
+   * How far the ACCENT is from grey, as a multiplier — the same knob
+   * --ui-tint is for the neutrals.
+   *
+   * Added for the greyscale scheme, which needs a grey button as much as
+   * a grey panel: Mono already flattened the surfaces, and left one blue
+   * button, one blue link and one blue nav highlight standing in an
+   * otherwise colourless app. Everything that is a CHOICE of colour
+   * multiplies by this; --good, --bad, --warn and --info do not, because
+   * a puzzle that cannot say wrong in red has lost something a palette
+   * was never meant to take.
+   */
+  --accent-tint: 1;
 
   --app-bg: oklch(98.4% calc(0.003 * var(--ui-tint)) var(--ui-hue));
   --app-bg-accent: oklch(96.5% calc(0.008 * var(--ui-tint)) var(--ui-hue));
@@ -105,11 +118,11 @@
   --text-muted: oklch(52% calc(0.016 * var(--ui-tint)) var(--ui-hue));
   --text-subtle: oklch(64% calc(0.013 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(58% 0.135 var(--accent-hue));
-  --primary-hover: oklch(52% 0.14 var(--accent-hue));
+  --primary: oklch(58% calc(0.135 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(52% calc(0.14 * var(--accent-tint)) var(--accent-hue));
   --primary-fg: oklch(99% 0 0);
-  --primary-soft: oklch(94% 0.04 var(--accent-hue));
-  --ring: oklch(58% 0.135 var(--accent-hue) / 45%);
+  --primary-soft: oklch(94% calc(0.04 * var(--accent-tint)) var(--accent-hue));
+  --ring: oklch(58% calc(0.135 * var(--accent-tint)) var(--accent-hue) / 45%);
 
   --good: oklch(58% 0.15 150);
   --bad: oklch(56% 0.2 25);
@@ -136,18 +149,18 @@
    * itself behind it.
    */
   --eco-l: 45%;
-  --eco-c: 0.12;
+  --eco-c: calc(0.12 * var(--accent-tint));
   --eco-wash: 10%;
   --eco-name-l: 45%;
-  --eco-name-c: 0.05;
+  --eco-name-c: calc(0.05 * var(--accent-tint));
 
   /* The transient chip — the undo offer, and anything else that floats
      over the page for a few seconds and must not read as part of it.
      It is the surface INVERTED: dark on a light app, light on a dark one.
      Distinct by construction rather than by a colour chosen to contrast
      with today's palette, and the one convention this widget has. */
-  --toast: oklch(24% 0.02 var(--ui-hue));
-  --toast-fg: oklch(98% 0.004 var(--ui-hue));
+  --toast: oklch(24% calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --toast-fg: oklch(98% calc(0.004 * var(--ui-tint)) var(--ui-hue));
 
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
   --board-light: oklch(91% 0.035 84);
@@ -218,11 +231,11 @@
   --text-muted: oklch(70% calc(0.016 * var(--ui-tint)) var(--ui-hue));
   --text-subtle: oklch(57% calc(0.017 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(73% 0.135 var(--accent-hue));
-  --primary-hover: oklch(78% 0.125 var(--accent-hue));
+  --primary: oklch(73% calc(0.135 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(78% calc(0.125 * var(--accent-tint)) var(--accent-hue));
   --primary-fg: oklch(16% 0.025 235);
-  --primary-soft: oklch(30% 0.055 var(--accent-hue));
-  --ring: oklch(73% 0.135 var(--accent-hue) / 50%);
+  --primary-soft: oklch(30% calc(0.055 * var(--accent-tint)) var(--accent-hue));
+  --ring: oklch(73% calc(0.135 * var(--accent-tint)) var(--accent-hue) / 50%);
 
   --good: oklch(72% 0.16 152);
   --bad: oklch(69% 0.18 25);
@@ -233,16 +246,16 @@
   --warn-fg: oklch(20% 0.04 80);
   /* Light text on a near-black page — the pair the tag was drawn with. */
   --eco-l: 80%;
-  --eco-c: 0.08;
+  --eco-c: calc(0.08 * var(--accent-tint));
   --eco-wash: 15%;
   --eco-name-l: 72%;
-  --eco-name-c: 0.045;
+  --eco-name-c: calc(0.045 * var(--accent-tint));
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner
      of a room this dim. */
-  --toast: oklch(90% 0.012 var(--ui-hue));
-  --toast-fg: oklch(20% 0.02 var(--ui-hue));
+  --toast: oklch(90% calc(0.012 * var(--ui-tint)) var(--ui-hue));
+  --toast-fg: oklch(20% calc(0.02 * var(--ui-tint)) var(--ui-hue));
 
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light: oklch(60% 0.024 250);

@@ -34,6 +34,13 @@ export interface Scheme {
   tint: number;
   /** 0–360. Buttons, links, the active nav. */
   accent: number;
+  /**
+   * 0–1. How far the accent is from grey; 1 unless said otherwise.
+   *
+   * Optional because it arrived after people had schemes saved, and a
+   * stored scheme without it means the accent it has always had.
+   */
+  accentTint?: number;
 }
 
 export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
@@ -43,6 +50,8 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   { id: 'rose', label: 'Rose', scheme: { hue: 350, tint: 1.5, accent: 350 } },
   { id: 'midnight', label: 'Midnight', scheme: { hue: 265, tint: 2.4, accent: 275 } },
   { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
+  // Mono greys the panels and keeps a blue button; this greys that too.
+  { id: 'greyscale', label: 'Greyscale', scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0 } },
 ];
 
 /**
@@ -159,11 +168,12 @@ const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
 };
 
 /** Three custom properties; every token in index.css reads from them. */
-const applyScheme = ({ hue, tint, accent }: Scheme): void => {
+const applyScheme = ({ hue, tint, accent, accentTint = 1 }: Scheme): void => {
   const el = document.documentElement;
   el.style.setProperty('--ui-hue', String(hue));
   el.style.setProperty('--ui-tint', String(tint));
   el.style.setProperty('--accent-hue', String(accent));
+  el.style.setProperty('--accent-tint', String(accentTint));
 };
 
 export const usePrefs = create<PrefsState>()(
