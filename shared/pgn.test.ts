@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parsePgn, parseComment, walk, type PgnNodeData } from 'chessops/pgn';
-import { chaptersToPgn, gameToTree, pgnToChapters, treeToPgn } from './pgn.ts';
+import { chaptersToPgn, gameToTree, pgnToChapters, studyNameFromPgn, treeToPgn } from './pgn.ts';
 import { addSan, collectSubtree, createTree, getNode, updateNode } from './tree.ts';
 import type { MoveTree } from './types.ts';
 
@@ -196,5 +196,46 @@ describe('PGN codec round-trip', () => {
     expect(out).toContain('[%clk 0:09:55]');
     // Idempotence: a second round-trip must not drift.
     expect(treeToPgn(gameToTree(parsePgn(out)[0]!), {})).toBe(out);
+  });
+});
+
+/**
+ * The title an import window can fill in for itself. A wrong guess lands
+ * in a field that becomes a filename, so disagreement means no answer.
+ */
+describe('studyNameFromPgn', () => {
+  it('takes the study name a Lichess export repeats on every chapter', () => {
+    // Real export: "<study>: <chapter>" across its chapters.
+    expect(studyNameFromPgn(fixture)).toBe('Lucas Opening Homework - Ruy Lopez');
+  });
+
+  it('splits on the first colon, so a chapter may keep its own', () => {
+    const pgn = `[Event "Endgames: rook: Lucena"]
+
+1. e4 *
+
+[Event "Endgames: rook: Philidor"]
+
+1. e4 *
+`;
+    expect(studyNameFromPgn(pgn)).toBe('Endgames');
+  });
+
+  it('names a single game by its event', () => {
+    expect(studyNameFromPgn('[Event "Tal memorial"]\n\n1. e4 *\n')).toBe('Tal memorial');
+  });
+
+  it('says nothing when the games disagree, or say nothing themselves', () => {
+    const mixed = `[Event "One"]
+
+1. e4 *
+
+[Event "Two"]
+
+1. e4 *
+`;
+    expect(studyNameFromPgn(mixed)).toBeNull();
+    expect(studyNameFromPgn('[Event "?"]\n\n1. e4 *\n')).toBeNull();
+    expect(studyNameFromPgn('1. e4 e5 *\n')).toBeNull();
   });
 });

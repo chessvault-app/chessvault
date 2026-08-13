@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { pgnToChapters } from '@shared/pgn';
+import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
@@ -234,10 +234,34 @@ function CreateMenu() {
     if (!err) navigate('studies', encodeURIComponent(id));
   };
 
+  /**
+   * Take the PGN, and take its study's name with it.
+   *
+   * An export knows what it is called — every chapter is tagged with it
+   * — so a paste fills the title in rather than asking for the name of
+   * the thing that has just been pasted. Only over a title this filled
+   * itself: once it has been typed in, it is an answer, and a later
+   * paste must not overwrite it.
+   */
+  const autoNamed = useRef(false);
+  const takePgn = (text: string): void => {
+    setPgnText(text);
+    const found = studyNameFromPgn(text);
+    if (!found || (name.trim() && !autoNamed.current)) return;
+    setName(found);
+    autoNamed.current = true;
+  };
+
   const pickFile = async (file: File | undefined): Promise<void> => {
     if (!file) return;
     setPgnText(await file.text());
-    if (!name.trim()) setName(file.name.replace(/\.pgn$/i, ''));
+    // A chosen file keeps naming itself, and it wins over the PGN's own
+    // idea: whoever saved it under that name meant it, whereas a Lichess
+    // export arrives as `lichess_study_….pgn` only when nobody has. Still
+    // marked as ours, so pasting a different study over it renames it.
+    if (name.trim()) return;
+    setName(file.name.replace(/\.pgn$/i, ''));
+    autoNamed.current = true;
   };
 
   // No outside-click handler here. There used to be one, closing over a
@@ -309,7 +333,10 @@ function CreateMenu() {
             <Input
               autoFocus={autoFocusField()}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                autoNamed.current = false;
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void submit(name);
                 if (e.key === 'Escape') setMode(null);
@@ -335,7 +362,7 @@ function CreateMenu() {
                 offering to complete with a contact. */}
             <TextArea
               value={pgnText}
-              onChange={(e) => setPgnText(e.target.value)}
+              onChange={(e) => takePgn(e.target.value)}
               placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
               spellCheck={false}
               className="h-28 w-full resize-none p-2 font-mono"
