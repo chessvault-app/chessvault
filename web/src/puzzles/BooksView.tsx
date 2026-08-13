@@ -577,6 +577,14 @@ function BookPage({ slug }: { slug: string }) {
       setGridReady(false);
       return;
     }
+    // Nothing to defer when there is nothing to build. A book with no
+    // puzzles is the one you have just created from the shelf's Add
+    // button, and it was answering with a frame of forty-eight grey
+    // tiles — a skeleton of a grid that does not exist and is not coming.
+    if (book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0) {
+      setGridReady(true);
+      return;
+    }
     let live = true;
     const go = (): void => {
       if (live) setGridReady(true);
@@ -768,7 +776,11 @@ function BookPage({ slug }: { slug: string }) {
         )}
 
         {book === null || !gridReady ? (
-          detailPending ? <SkeletonTiles tiles={48} /> : null
+          // As many tiles as the book actually has, once that is known:
+          // the count arrives with the data, and the wait this covers is
+          // the RENDER after it. Forty-eight is the guess for the fetch
+          // itself, which is the only part that happens blind.
+          detailPending ? <SkeletonTiles tiles={Math.min(book?.puzzles.length ?? 48, 48)} /> : null
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
             <p className="text-muted text-sm">
