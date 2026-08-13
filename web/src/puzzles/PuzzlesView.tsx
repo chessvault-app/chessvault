@@ -182,6 +182,29 @@ function Trainer({
   };
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
+  // Today's clean solves, counted from the same history the dashboard
+  // reads — fetched once, then kept current locally as wins land. This
+  // is the trainer's visible session context: without it nothing on the
+  // solving screen said how training was going.
+  const [solvedToday, setSolvedToday] = useState<number | null>(null);
+  const refreshToday = useCallback(async () => {
+    try {
+      const res = await fetch('/api/puzzles/history?limit=200');
+      if (!res.ok) return;
+      const { attempts } = (await res.json()) as {
+        attempts: { win: boolean; counted?: boolean; at: string }[];
+      };
+      const today = new Date().toDateString();
+      setSolvedToday(
+        attempts.filter(
+          (h) => h.win && h.counted !== false && new Date(h.at).toDateString() === today,
+        ).length,
+      );
+    } catch {
+      /* the line simply does not appear */
+    }
+  }, []);
+
   const refreshMeta = useCallback(async () => {
     // Meta is decoration around the trainer (counts, the setup gate); if
     // the server is away, loadNext will say so where it can be acted on.
@@ -205,6 +228,7 @@ function Trainer({
       if (res.ok) {
         const data = (await res.json()) as { user: UserState };
         setMeta((m) => (m ? { ...m, user: data.user } : m));
+        if (win && mode === 'fresh') setSolvedToday((n) => (n === null ? n : n + 1));
       }
     },
     [mode],
@@ -278,6 +302,7 @@ function Trainer({
     if (booted.current) return;
     booted.current = true;
     void refreshMeta();
+    if (mode === 'fresh') void refreshToday();
     void loadNext(theme, difficulty);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -550,6 +575,13 @@ function Trainer({
         </Button>
         <h1 className="text-fg text-sm font-semibold">{title}
         </h1>
+        {mode === 'fresh' && (
+          <DifficultyChip
+            difficulty={difficulty}
+            theme={theme}
+            onOpen={() => setShowDifficulty(true)}
+          />
+        )}
       </div>
       {/* Board column, matching the shared budget so the board sits where
           every other view puts it. */}
@@ -614,6 +646,21 @@ function Trainer({
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
             <h1 className="text-fg text-sm font-semibold">{title}
           </h1>
+          {mode === 'fresh' && (
+            <DifficultyChip
+              difficulty={difficulty}
+              theme={theme}
+              onOpen={() => setShowDifficulty(true)}
+            />
+          )}
+          <span className="min-w-0 flex-1" />
+          {/* How the session is going — words and counts, never a rating. */}
+          {mode === 'fresh' && solvedToday !== null && (
+            <span className="text-subtle shrink-0 text-xs tabular-nums">
+              {t('Solved today: {n}', { n: solvedToday })}
+              {(meta?.user.streak ?? 0) > 1 && ` · ${t('Run: {n}', { n: meta!.user.streak })}`}
+            </span>
+          )}
         </div>
         {/* Fresh training folds this panel into two icons on the Puzzle
             panel header (lanph3re: same treatment on desktop as mobile); it only
@@ -917,6 +964,40 @@ function DifficultyRow({
         </Button>
       ))}
     </div>
+  );
+}
+
+/**
+ * The active difficulty (and theme), visible while solving.
+ *
+ * It only existed inside the gear window before — nothing on the solving
+ * screen said what was being trained. The chip states it and opens the
+ * window that changes it.
+ */
+function DifficultyChip({
+  difficulty,
+  theme,
+  onOpen,
+}: {
+  difficulty: DifficultyId;
+  theme: string;
+  onOpen: () => void;
+}) {
+  const label = DIFFICULTIES.find((d) => d.id === difficulty)?.label ?? 'Any';
+  return (
+    <Button
+      variant="secondary"
+      size="sm"
+      className="min-w-0"
+      title={t('Which puzzles')}
+      onClick={onOpen}
+    >
+      <Settings2 className="size-3.5" />
+      <span className="truncate">
+        {difficulty === 'any' ? t('Any difficulty') : t(label)}
+        {theme && ` · ${themeLabel(theme)}`}
+      </span>
+    </Button>
   );
 }
 

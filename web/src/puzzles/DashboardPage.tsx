@@ -187,20 +187,23 @@ export function DashboardPage() {
             label={t('Failed')}
             title={t('Distinct puzzles whose latest attempt failed — always the review pool')}
             value={String(failed)}
-            action={
-              failed > 0 ? (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title={t('Review failed puzzles')}
-                  onClick={() => navigate('puzzles', 'failed')}
-                >
-                  <RotateCcw className="size-3.5" />
-                </Button>
-              ) : undefined
-            }
           />
         </div>
+
+        {/* The review queue, promoted: it was a 14px icon inside the
+            Failed card — the one training action this page should be
+            offering, hidden in the one place nobody pressed. */}
+        {failed > 0 && (
+          <Button
+            variant="secondary"
+            size="md"
+            className="mb-4 w-full justify-center"
+            onClick={() => navigate('puzzles', 'failed')}
+          >
+            <RotateCcw className="size-3.5" />
+            {t('Review failed puzzles')} · {failed}
+          </Button>
+        )}
 
         <Panel flush className="mb-4">
           <PanelHeader title={t('By difficulty')} />
