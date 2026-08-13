@@ -326,7 +326,7 @@ export const ko: Record<string, string> = {
   'All books': '모든 책',
   'All themes': '모든 테마',
   'All puzzles in this book': '이 책의 모든 퍼즐',
-  'Which puzzles': '어떤 퍼즐',
+  'Which puzzles': '퍼즐 설정',
   'Puzzle books': '퍼즐 책',
   'Search books…': '책 검색…',
   'Puzzle dashboard': '퍼즐 대시보드',
@@ -447,6 +447,11 @@ export const ko: Record<string, string> = {
   Licences: '라이선스',
   'Desktop app': '데스크톱 앱',
   Built: '빌드 시각',
+  'Find the best move.': '최선의 수를 찾으세요.',
+  'Find the best move. The themes stay hidden until you finish.':
+    '최선의 수를 찾으세요. 테마는 끝날 때까지 숨겨집니다.',
+  'Find the best move. The difficulty stays hidden until you finish.':
+    '최선의 수를 찾으세요. 난이도는 끝날 때까지 숨겨집니다.',
   // The repertoire's opening picker.
   'Reading the catalogue…': '목록을 읽는 중…',
   'No opening matches that.': '그 검색어에 맞는 오프닝이 없습니다.',

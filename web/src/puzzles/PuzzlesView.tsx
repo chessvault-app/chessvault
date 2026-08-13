@@ -77,6 +77,23 @@ const DIFFICULTIES = [
   { id: 'expert', label: 'Expert', query: { min: 2200 }, hint: '2200+' },
 ] as const;
 type DifficultyId = (typeof DIFFICULTIES)[number]['id'];
+
+/**
+ * What is actually being withheld while you solve.
+ *
+ * The panel used to say the difficulty and themes both stay hidden until
+ * the end, which is true only when the trainer chose them. You can pick
+ * either yourself — and being told that the thing you just selected is a
+ * secret reads as the app having lost track of what you asked for. So
+ * the sentence names only what you do not already know, and says nothing
+ * at all when you know both.
+ */
+function hiddenNote(pickedDifficulty: boolean, pickedTheme: boolean): string {
+  if (pickedDifficulty && pickedTheme) return 'Find the best move.';
+  if (pickedDifficulty) return 'Find the best move. The themes stay hidden until you finish.';
+  if (pickedTheme) return 'Find the best move. The difficulty stays hidden until you finish.';
+  return 'Find the best move. The difficulty and themes stay hidden until you finish.';
+}
 const DIFFICULTY_KEY = 'vault:puzzle-difficulty';
 
 /** What the solver is doing right now. */
@@ -694,7 +711,7 @@ function Trainer({
                     ? t('Finding a puzzle…')
                     : failed
                       ? t('Keep looking — find the best move.')
-                      : t('Find the best move. The difficulty and themes stay hidden until you finish.')}
+                      : t(hiddenNote(difficulty !== 'any', Boolean(theme)))}
                 </p>
               </div>
             )}
