@@ -55,7 +55,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { EditorView } from '@/editor/EditorView';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { SkeletonBookCards, SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -892,7 +892,7 @@ function BookPage({ slug }: { slug: string }) {
             <Plus className="size-3.5" />
             <span className="hidden wide:inline">{t('Add puzzle')}</span>
           </Button>
-          <ConfirmPopover
+          <ConfirmSheet
             icon={RotateCcw}
             triggerTitle="Reset all progress in this book"
             question="Reset all progress in this book?"

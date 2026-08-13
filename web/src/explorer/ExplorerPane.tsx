@@ -28,7 +28,7 @@ import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { SideDot } from '@/ui/SideDot';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Switch } from '@/ui/Switch';
 import { t } from '@/lib/i18n';
 import { isDemo, DEMO_BOOK_PLIES } from '@/lib/demo';
@@ -1006,7 +1006,7 @@ function BookRow({
       >
         <Hammer className="size-3.5" />
       </Button>
-      <ConfirmPopover
+      <ConfirmSheet
         icon={Trash2}
         triggerTitle="Delete this book (the source PGNs stay)"
         question="Delete this opening book?"

@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button';
 import { ChipRow } from '@/ui/ChipRow';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { BANDS, bandOf } from './bands';
@@ -410,7 +410,7 @@ export function DashboardPage() {
     anchored confirm, so it stays deliberate without a browser dialog. */
 function ResetButton({ onDone }: { onDone: () => void }) {
   return (
-    <ConfirmPopover
+    <ConfirmSheet
       icon={Eraser}
       label={t('Reset')}
       triggerTitle="Wipe attempts, history and the review pool"

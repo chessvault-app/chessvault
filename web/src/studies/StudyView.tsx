@@ -33,7 +33,7 @@ import { useReview } from '@/store/review';
 import { useStudy } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
-import { ConfirmPopover } from '@/ui/ConfirmPopover';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
@@ -595,7 +595,7 @@ function ChapterRow({
             <Pencil className="size-3" />
           </Button>
           {chapters.length > 1 && (
-            <ConfirmPopover
+            <ConfirmSheet
               icon={Trash2}
               triggerTitle={t(
                 childCount > 0
