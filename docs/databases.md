@@ -8,7 +8,7 @@ than growing with your vault the way everything else does:
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
-| `data/refgames.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | `npm run build:refgames`; the desktop installer seeds a 25 MB starter set |
+| `data/refgames.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | the app, in the elite browser (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
 inside the app, and `data/mygames.sqlite` is not even that: the explorer's
@@ -45,14 +45,21 @@ deliberate limit.
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.
 
-**More reference games.** Drop PGN files into `vault/sources/` and:
+**More reference games.** Upload PGN collections in the explorer's book
+manager (or drop them into `vault/sources/` — same place) and either let
+the elite browser's empty state build the database, or run the same
+indexer yourself:
 
 ```
 npm run build:refgames                    # every PGN in vault/sources/
 npm run build:refgames -- elite-2025-11.pgn
 ```
 
-## Why building reference games still needs the shell
+The same no-button-yet caveat as puzzles applies: the in-app offer
+appears only when there is no database at all, so *replacing* a working
+set still means the command, or deleting the file first.
+
+## How reference games stopped needing the shell
 
 The standing rule is that every user action must be possible in the app.
 This page used to argue that these two databases were a considered
@@ -63,19 +70,20 @@ That argument only ever held for a server. The desktop app has no
 repository, no npm and no shell, and on Windows and macOS no `zstd`
 either, so for the people the app is actually installed by, "run the
 script" was not an exception to the rule: it was the puzzle trainer being
-unavailable. The build is a server-side job now, offered by the page that
-needs it.
+unavailable. The puzzle build became a server-side job, offered by the
+page that needs it.
 
-What is left is `refgames.sqlite`, and its input is different in kind:
-not one public dump, but whatever PGN collections you happen to have.
-Uploading those already works — it is how opening books are built — so
-the honest fix here is to point the reference-game index at the same
-uploads, not to invent a second way to get files in.
+`refgames.sqlite` followed, and its input being different in kind — not
+one public dump, but whatever PGN collections you happen to have — is
+what dictated the shape of the fix: uploading collections already worked
+(it is how opening books are built), so the elite browser's build offer
+indexes those same uploads rather than inventing a second way to get
+files in.
 
-Until then, the desktop installer takes the edge off: it carries a
+The desktop installer softens the empty start besides: it carries a
 starter set — the strongest games of every ECO code from one Lichess
 Elite month, ~39 k games in 25 MB, built by `build-bundled-refgames.ts`
 at release time — seeded to `data/refgames.sqlite` on first run, the same
 way the bundled opening book is. It is an ordinary database from then on:
-`build:refgames` replaces it, and deleting it is final. A server install
-gets no seed; it takes the commit, not the release artefacts.
+a build replaces it, and deleting it is final. A server install gets no
+seed; it takes the commit, not the release artefacts.

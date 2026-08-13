@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
+import { spawn } from 'node:child_process';
 import { copyFileSync, existsSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { DATA, REPO_ROOT } from './paths.ts';
@@ -97,6 +98,15 @@ interface RefGameRow {
   opening: string | null;
 }
 
+/** One build at a time, like books — the indexer is CPU-bound. */
+interface BuildJob {
+  startedAt: number;
+  running: boolean;
+  exitCode: number | null;
+  log: string[];
+}
+let job: BuildJob | null = null;
+
 export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => void } {
   let handle: InstanceType<typeof Database> | null = null;
   const db = (): InstanceType<typeof Database> | null => {
@@ -131,6 +141,76 @@ export function refGamesApi(dbPath: string = DB_PATH): Hono & { closeDb: () => v
   };
 
   const api = new Hono();
+
+  /**
+   * The in-app build: index every PGN in vault/sources — the same uploads
+   * the book manager manages — into a fresh database, in a child process
+   * so this server stays responsive (the pattern books and puzzles use).
+   *
+   * Registered only when serving the real data path: the demo and the
+   * tests mount these routes over files of their own choosing, and a
+   * read-only mount must not be able to spawn an indexer.
+   */
+  if (dbPath === DB_PATH) {
+    const startBuild = (): void => {
+      const current: BuildJob = { startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      job = current;
+
+      // A packaged build has no scripts/ and no tsx, so the builder ships
+      // as a bundle beside the server; the repo runs the source directly.
+      const bundled = resolve(REPO_ROOT, 'server', 'build-refgames.mjs');
+      const args = existsSync(bundled) ? [bundled] : ['--import', 'tsx', 'scripts/build-refgames.ts'];
+      const child = spawn(process.execPath, args, {
+        cwd: REPO_ROOT,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      const append = (chunk: Buffer): void => {
+        for (const line of chunk.toString().split('\n')) {
+          if (line.trim()) current.log.push(line);
+        }
+        if (current.log.length > 100) current.log.splice(0, current.log.length - 100);
+      };
+      child.stdout.on('data', append);
+      child.stderr.on('data', append);
+      child.on('close', (code) => {
+        current.running = false;
+        current.exitCode = code;
+        closeDb();
+        cachedCount = null; // the new file's meta, not the old file's
+        // Windows: our own read handle blocks the script's rename-over, so
+        // it leaves the fresh file beside the target and we swap it in
+        // here — synchronously after closeDb, before any request reopens
+        // the old file.
+        const building = `${dbPath}.building`;
+        if (code === 0 && existsSync(building)) {
+          try {
+            renameSync(building, dbPath);
+          } catch {
+            current.log.push('could not swap in the new database — rebuild after a restart');
+          }
+        }
+      });
+    };
+
+    api.post('/refgames/build', (c) => {
+      if (job?.running) return c.json({ error: 'a build is already running' }, 409);
+      startBuild();
+      return c.json({ started: true });
+    });
+
+    api.get('/refgames/build/status', (c) =>
+      c.json(
+        job
+          ? {
+              running: job.running,
+              exitCode: job.exitCode,
+              seconds: (Date.now() - job.startedAt) / 1000,
+              log: job.log.slice(-15),
+            }
+          : { running: false },
+      ),
+    );
+  }
 
   api.get('/refgames', (c) => {
     const d = db();

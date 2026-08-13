@@ -45,11 +45,11 @@ Node로(`ELECTRON_RUN_AS_NODE`) 돌리며, `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA`�
 `%APPDATA%/Chess Vault/{vault,data}`로 향하게 합니다 — 기기 프로필마다
 새 보관함이 생깁니다.
 
-패키징된 앱 안에서 오프닝 북과 퍼즐 풀을 만들 수 있습니다.
-`build-book.mjs`와 `build-puzzles.mjs`가 서버 번들 옆에 실려 있고 서버가
-저장소 스크립트보다 그것들을 먼저 씁니다. 남은 미리 준비하는 산출물은
-참고 게임뿐입니다 — 설치 프로그램이 첫 실행 때 시작용 세트를 심어 주고,
-그보다 키우려면 만들어 둔 `data/refgames.sqlite`를 함께 가져가세요.
+패키징된 앱 안에서 오프닝 북, 퍼즐 풀, 참고 게임을 전부 만들 수
+있습니다. `build-book.mjs`, `build-puzzles.mjs`, `build-refgames.mjs`가
+서버 번들 옆에 실려 있고 서버가 저장소 스크립트보다 그것들을 먼저
+씁니다. 설치 프로그램은 여기에 더해 첫 실행 때 시작용 북과 시작용 참고
+게임을 심어 줍니다.
 
 ## 자동 업데이트
 

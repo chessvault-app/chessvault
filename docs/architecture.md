@@ -93,9 +93,9 @@ alone with nothing public at all. Both are just HTTP to the same server.
 
 Two databases are prepared once rather than grown with the vault — the
 puzzle pool and the reference games; [databases](databases.md) covers how
-each machine comes by them (the app offers to build the puzzle pool
-itself, the desktop installer seeds starter reference games, and a bigger
-reference set is built in a shell and copied). Desktop builds
+each machine comes by them (the app builds both — the puzzle pool from
+the public dump, reference games from uploaded PGN collections — and the
+desktop installer seeds starters besides). Desktop builds
 update from a feed the server hosts at `/updates`, so releases need no
 third party and no public repository.
 

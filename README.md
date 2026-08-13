@@ -249,15 +249,13 @@ against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 The app runs with an empty `data/`. These four datasets light up specific
 features; everything under `data/` is derived, gitignored and rebuildable,
 so it never ships in the repo. Build what you want, per machine — and
-**almost all of it from inside the app**: the one thing that still wants
-a terminal is indexing your own PGN collections into reference games,
-and the installer already carries a starter set of those. The `npm run`
-commands below are the terminal alternative, not the requirement.
+**all of it from inside the app**. The `npm run` commands below are the
+terminal alternative, not the requirement.
 
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames.sqlite` | the elite game browser | a starter set comes with the app; your own via `npm run build:refgames` |
+| `data/refgames.sqlite` | the elite game browser | a starter set comes with the app; your own in the app, or `npm run build:refgames` |
 | `data/books/*.sqlite` | the local opening explorer | one comes with the app; more in the app, or `npm run build:book` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
@@ -354,18 +352,20 @@ of building here, after the download. Nothing to install, nothing to type,
 and it keeps going if you leave the page. `npm run build:puzzles` does the
 same thing from a terminal if you prefer one.
 
-**Reference games come seeded on the desktop** — the installer's starter
-set is in place before the app first opens. Building your own is still a
-shell job, because the input is your own PGN collections rather than one
-public dump:
+**Reference games build in the app too.** The desktop starts seeded —
+the installer's starter set is in place before the app first opens — and
+with no database at all, the elite browser offers to index the PGN
+collections you have uploaded: the same uploads the book manager builds
+opening books from. The same indexer runs from a terminal, if you prefer
+one:
 
 ```bash
 npm run build:refgames         # over vault/sources -> data/refgames.sqlite
 ```
 
-The build replaces the starter set (by rename, so a running server keeps
-serving until it lands). Deleting the file without building over it is
-final, like deleting the bundled book.
+Either way the build replaces what is there by rename, so a running
+server keeps serving until it lands. Deleting the file without building
+over it is final, like deleting the bundled book.
 
 Running **on a server**: the puzzle build streams a 304 MB compressed dump
 into a 2.6 GB database, and it will OOM on a small instance — it did on a
@@ -377,9 +377,9 @@ about the machine, not about servers.
 Every later deploy keeps their indexes current on its own, so rebuild only
 for a newer dump or more games.
 
-[docs/databases.md](docs/databases.md) covers rebuilding them, and why
-building your own reference games is the one job here that still wants a
-terminal.
+[docs/databases.md](docs/databases.md) covers rebuilding them, and the
+one wrinkle that still wants a terminal: replacing a database that
+already works, since the in-app offers appear only when there is none.
 
 ## It never calls anyone but your own server
 

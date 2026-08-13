@@ -242,6 +242,107 @@ interface RefGame {
 }
 
 /**
+ * The elite browser's empty state builds the database instead of
+ * prescribing a shell command — every user action must be possible in the
+ * app, and this was the last one that was not. It indexes the same
+ * vault/sources uploads the book manager manages, in a server child
+ * process (the pattern books and puzzles use), so it keeps going if the
+ * page is left. With nothing uploaded yet it points at the book manager
+ * rather than offering a build that would index nothing.
+ */
+function BuildRefGames({ page, onBuilt }: { page: boolean; onBuilt: () => void }) {
+  const [sources, setSources] = useState<{ name: string }[] | null>(null);
+  const [building, setBuilding] = useState(false);
+  const [lastLine, setLastLine] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const poll = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const watch = useCallback((): void => {
+    setBuilding(true);
+    setFailed(false);
+    poll.current = setInterval(() => {
+      void fetch('/api/refgames/build/status')
+        .then((r) => r.json())
+        .then((s: { running: boolean; exitCode?: number | null; log?: string[] }) => {
+          setLastLine(s.log?.at(-1) ?? null);
+          if (s.running) return;
+          if (poll.current) clearInterval(poll.current);
+          poll.current = null;
+          setBuilding(false);
+          if (s.exitCode === 0) onBuilt();
+          else setFailed(true);
+        })
+        .catch(() => {});
+    }, 1000);
+  }, [onBuilt]);
+
+  useEffect(() => {
+    void fetch('/api/sources')
+      .then((r) => r.json())
+      .then((d: { sources?: { name: string }[] }) => setSources(d.sources ?? []))
+      .catch(() => setSources([]));
+    // A build started before this page opened is still worth watching.
+    void fetch('/api/refgames/build/status')
+      .then((r) => r.json())
+      .then((s: { running: boolean }) => {
+        if (s.running) watch();
+      })
+      .catch(() => {});
+    return () => {
+      if (poll.current) clearInterval(poll.current);
+    };
+  }, [watch]);
+
+  const start = async (): Promise<void> => {
+    const res = await fetch('/api/refgames/build', { method: 'POST' });
+    // 409 = already running — watching it is the right response either way.
+    if (res.ok || res.status === 409) watch();
+  };
+
+  return (
+    <div className={cn('grid place-items-center p-8', page && 'h-full')}>
+      <div className="max-w-md text-center">
+        <p className="text-fg mb-2 text-sm font-semibold">{t('No reference games yet')}</p>
+        {sources === null ? null : building ? (
+          <>
+            <p className="text-muted text-xs leading-relaxed">
+              {t('Indexing your collections — this keeps going if you leave the page.')}
+            </p>
+            <p className="text-subtle mt-3 flex items-center justify-center gap-2 font-mono text-[0.6875rem]">
+              <Loader2 className="size-3.5 shrink-0 animate-spin" />
+              <span className="truncate">{lastLine ?? '…'}</span>
+            </p>
+          </>
+        ) : sources.length > 0 ? (
+          <>
+            <p className="text-muted text-xs leading-relaxed">
+              {t(
+                'Index the PGN collections you have uploaded ({n} in vault/sources) into a searchable database of whole games.',
+                { n: sources.length },
+              )}
+            </p>
+            {failed && (
+              <p className="text-bad mt-2 font-mono text-[0.6875rem]">
+                {lastLine ?? t('The build failed.')}
+              </p>
+            )}
+            <Button variant="primary" size="sm" className="mt-3" onClick={() => void start()}>
+              {t('Build the database')}
+            </Button>
+          </>
+        ) : (
+          <p className="text-muted text-xs leading-relaxed">
+            {t(
+              'Upload PGN collections (Lichess Elite months, Lumbra exports) in the explorer’s book manager first — the same uploads build opening books and this browser.',
+            )}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Browse the reference database (data/refgames.sqlite — Lichess Elite or
  * whatever PGN collections were indexed). Click a game to open it on the
  * analysis board.
@@ -290,7 +391,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
     setLoading(false);
   }, []);
 
-  useEffect(() => {
+  const loadMeta = useCallback(() => {
     void fetch('/api/refgames')
       .then((r) => r.json())
       .then((d: { ready: boolean; games?: number; sources?: string }) => {
@@ -298,6 +399,9 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
         if (d.ready) void search('', 0);
       });
   }, [search]);
+  useEffect(() => {
+    loadMeta();
+  }, [loadMeta]);
 
   const onQuery = (q: string): void => {
     setQuery(q);
@@ -403,19 +507,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   const coarse = isCoarsePointer;
 
   if (meta && !meta.ready) {
-    return (
-      <div className={cn('grid place-items-center p-8', page && 'h-full')}>
-        <div className="max-w-md text-center">
-          <p className="text-fg mb-2 text-sm font-semibold">{t('No reference games yet')}</p>
-          <p className="text-muted text-xs leading-relaxed">
-            {t('Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:')}
-          </p>
-          <code className="bg-surface-inset border-line text-subtle mt-3 block rounded-md border p-3 text-left font-mono text-[0.6875rem]">
-            npm run build:refgames
-          </code>
-        </div>
-      </div>
-    );
+    return <BuildRefGames page={page} onBuilt={loadMeta} />;
   }
 
   const count =

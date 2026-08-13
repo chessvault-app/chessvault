@@ -674,8 +674,14 @@ export const ko: Record<string, string> = {
   'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.':
     '작은 모음입니다. 내 기보 데이터베이스로는 괜찮습니다 — 무엇을 뒀고 결과가 어땠는지 알려 줍니다. 다만 일반적으로 어떻게 두는지에 대한 참고 자료로는 오해를 부릅니다. 판수가 적어 포지션마다 한 수가 100%로 나오기 때문입니다.',
   'Uploading {name}…': '{name} 올리는 중…',
-  'Drop PGN collections (Lichess Elite months, TWIC, Lumbra exports) into vault/sources and index them once:':
-    'PGN 모음(Lichess Elite 월별 파일, TWIC, Lumbra 내보내기)을 vault/sources에 넣고 한 번만 색인하세요:',
+  'Index the PGN collections you have uploaded ({n} in vault/sources) into a searchable database of whole games.':
+    '올려 둔 PGN 모음(vault/sources에 {n}개)을 게임 전체를 검색할 수 있는 데이터베이스로 색인합니다.',
+  'Build the database': '데이터베이스 만들기',
+  'Indexing your collections — this keeps going if you leave the page.':
+    '모음을 색인하는 중 — 페이지를 떠나도 계속됩니다.',
+  'The build failed.': '만들기에 실패했습니다.',
+  'Upload PGN collections (Lichess Elite months, Lumbra exports) in the explorer’s book manager first — the same uploads build opening books and this browser.':
+    '먼저 탐색기의 북 관리자에서 PGN 모음(Lichess Elite 월별 파일, Lumbra 내보내기)을 올리세요 — 같은 업로드로 오프닝 북과 이 브라우저를 만듭니다.',
   'Vault:': '보관함:',
   '— every game, study and puzzle lives there as plain files. Display settings live on this device.':
     '— 모든 게임, 스터디, 퍼즐이 평범한 파일로 그곳에 저장됩니다. 화면 설정은 이 기기에만 저장됩니다.',

@@ -133,7 +133,15 @@ setMeta.run('sources', sources.map((s) => basename(s)).join(', '));
 setMeta.run('built_at', new Date().toISOString());
 
 db.close();
-renameSync(tmp, OUT);
+try {
+  renameSync(tmp, OUT);
+} catch (error) {
+  // Windows: a server holding the old database open blocks the rename
+  // (EPERM). Leave the .building file — the server that spawned this build
+  // closes its handle and finishes the swap itself, as with books.
+  if ((error as NodeJS.ErrnoException).code !== 'EPERM') throw error;
+  console.log('rename deferred (target busy) — server will swap the file in');
+}
 console.log(
   `done: ${games.toLocaleString()} games, ${skipped.toLocaleString()} skipped, ${((Date.now() - started) / 1000).toFixed(1)}s → ${OUT}`,
 );
