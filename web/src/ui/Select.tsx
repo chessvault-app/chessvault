@@ -34,9 +34,18 @@ export interface SelectGroup {
   options: SelectOption[];
 }
 
+/**
+ * `pointer-coarse:` on both, because a toolbar is a ROW.
+ *
+ * Button and Input have grown their touch targets on a coarse pointer for
+ * a long time and this had not, so on an iPad the shelf toolbar's
+ * bookmark button stood 36px beside a 28px sort menu — the same row, two
+ * heights. A touch target that grows is right; one control staying behind
+ * is what makes it look wrong.
+ */
 const triggerSizes = {
-  sm: 'h-7 px-2 text-xs',
-  md: 'h-8 px-2.5 text-xs',
+  sm: 'h-7 px-2 text-xs pointer-coarse:h-9',
+  md: 'h-8 px-2.5 text-xs pointer-coarse:h-9',
 } as const;
 
 export function Select({

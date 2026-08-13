@@ -50,11 +50,19 @@ export function Segmented<T extends string>({
   // sets rather than one radius reused at both.
   // Derived from the radius token rather than a matching literal, so the
   // pair stays concentric if the scale ever moves.
-  const box = size === 'sm' ? 'rounded-lg border p-0.5' : 'rounded-xl border p-1';
+  // The coarse-pointer height is set on the BOX and the segments fill it,
+  // rather than growing the segments and letting the padding and border
+  // add themselves on top. That way this lands on exactly the 36px a
+  // Button's `icon-sm` and a Select take on touch — a toolbar is a row,
+  // and 34 or 38 would be as visibly wrong as the 30 it used to be.
+  const box =
+    size === 'sm'
+      ? 'rounded-lg border p-0.5 pointer-coarse:h-9'
+      : 'rounded-xl border p-1 pointer-coarse:h-9';
   const seg =
     size === 'sm'
-      ? 'h-6 rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-xs'
-      : 'h-7 rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-xs';
+      ? 'h-6 pointer-coarse:h-full rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-xs'
+      : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-xs';
 
   return (
     <div
