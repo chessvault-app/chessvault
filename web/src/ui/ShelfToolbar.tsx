@@ -160,6 +160,9 @@ export function ShelfToolbar({
             ariaLabel={t('Sort by')}
             size="sm"
             align="end"
+            // Otherwise picking Title after Last modified pulls the layout
+            // switch and Create left by 40-odd pixels.
+            steady
             className="hidden shrink-0 sm:flex"
             groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
           />

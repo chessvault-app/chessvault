@@ -48,6 +48,7 @@ export function Select({
   align = 'start',
   inset = false,
   mono = false,
+  steady = false,
   className,
 }: {
   value: string;
@@ -60,6 +61,19 @@ export function Select({
   /** Input-like trigger for form contexts (matches ui/Input's backdrop). */
   inset?: boolean;
   mono?: boolean;
+  /**
+   * Keep one width whatever is picked.
+   *
+   * A trigger sized to its current option moves the controls beside it
+   * every time the option changes — the shelf's sort menu shifted its
+   * layout switch and Create button sideways on each pick. With this it
+   * reserves the width of its WIDEST option instead, so nothing moves.
+   *
+   * Not a number: "Last modified" is 73px and "최근 수정순" is 55px, so any
+   * width picked for one language clips or floats in the other. The
+   * options measure themselves — see the stack in the trigger.
+   */
+  steady?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -212,8 +226,24 @@ export function Select({
           className,
         )}
       >
-        <span className="min-w-0 flex-1 truncate text-left">
-          {selected ? t(selected.short ?? selected.label) : '—'}
+        {/* One grid cell holding every option at once. The invisible ones
+            set the column's width — the widest of them wins — and the
+            visible one is laid over the top of it. That is what makes the
+            trigger keep one width without a number being chosen for it. */}
+        <span className={cn('min-w-0 flex-1 text-left', steady ? 'grid' : 'truncate')}>
+          {steady &&
+            flat.map((option) => (
+              <span
+                key={option.value}
+                aria-hidden
+                className="invisible col-start-1 row-start-1 whitespace-nowrap"
+              >
+                {t(option.short ?? option.label)}
+              </span>
+            ))}
+          <span className={cn('truncate', steady && 'col-start-1 row-start-1')}>
+            {selected ? t(selected.short ?? selected.label) : '—'}
+          </span>
         </span>
         <ChevronDown className="text-subtle size-3 shrink-0" />
       </button>
