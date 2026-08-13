@@ -33,6 +33,19 @@ interface StudyState {
   chapters: Chapter[];
   chapterIndex: number;
   saveState: SaveState;
+  /**
+   * Reading, or annotating.
+   *
+   * In the STORE rather than in StudyView, because the autosave lives
+   * here and has to know: reading a study must not rewrite it. The board
+   * is already locked while reading, but the engine's lines and the
+   * explorer's moves are played through the analysis store, which the
+   * autosave watched without ever asking whether the reader had asked to
+   * edit anything. Following an engine line to see where it went wrote
+   * that line into the file.
+   */
+  editing: boolean;
+  setEditing: (editing: boolean) => void;
   error: string | null;
 
   refresh: () => Promise<void>;
@@ -131,6 +144,8 @@ export const useStudy = create<StudyState>()((set, get) => {
     chapters: [],
     chapterIndex: 0,
     saveState: 'saved',
+    editing: false,
+    setEditing: (editing) => set({ editing }),
     error: null,
 
     refresh: async () => {
@@ -243,7 +258,7 @@ export const useStudy = create<StudyState>()((set, get) => {
             headers: { Event: `${id}: Chapter 1`, ChapterName: 'Chapter 1', Result: '*' },
           });
         }
-        set({ openId: id, openBase: base, chapters, chapterIndex: 0, saveState: 'saved', error: null });
+        set({ openId: id, openBase: base, chapters, chapterIndex: 0, saveState: 'saved', error: null, editing: false });
         loadIntoAnalysis(chapters[0]!);
         return true;
       } catch {
@@ -259,7 +274,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       if (!get().openId) return;
       if (saveTimer) clearTimeout(saveTimer);
       if (get().saveState !== 'saved') await get().save();
-      set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved' });
+      set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved', editing: false });
       useAnalysis.getState().reset();
     },
 
@@ -379,11 +394,26 @@ export const useStudy = create<StudyState>()((set, get) => {
 // while a study is open marks it dirty and schedules an autosave. Chapter
 // loads set `loadingChapter` so swapping chapters never counts as an edit.
 useAnalysis.subscribe((state, prev) => {
-  if ((state.tree === prev.tree && state.orientation === prev.orientation) || loadingChapter) {
-    return;
-  }
+  const treeChanged = state.tree !== prev.tree;
+  const flipped = state.orientation !== prev.orientation;
+  if ((!treeChanged && !flipped) || loadingChapter) return;
   const study = useStudy.getState();
   if (!study.openId) return;
+  /**
+   * Reading must not rewrite what is being read.
+   *
+   * The board refuses moves while reading, so this only ever fires for
+   * the two controls that reach the tree another way — an engine line
+   * and an explorer move. Following one is a useful thing to do while
+   * reading; it just belongs in memory, not in the vault. The change
+   * stays on screen and is gone on the next open, which is what "not
+   * saved" should look like.
+   *
+   * The flip is not gated with it: which way the board faces is saved
+   * with the chapter, and turning it round to read from the other side
+   * is a reading act that should stick.
+   */
+  if (treeChanged && !study.editing) return;
   useStudy.setState({ saveState: 'dirty' });
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => void useStudy.getState().save(), AUTOSAVE_MS);

@@ -23,7 +23,7 @@ import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
-import { MoveTreePane } from '@/analysis/MoveTreePane';
+import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
@@ -68,8 +68,11 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const [failed, setFailed] = useState(false);
   // Small screens show one pane at a time under the board.
   const [pane, setPane] = useState<StudyPane>('moves');
-  // Reading vs annotating: reading hides the NAG toolbar and comment boxes.
-  const [editing, setEditing] = useState(false);
+  // Reading vs annotating: reading hides the NAG toolbar and comment boxes
+  // — and, in the store, keeps the autosave from writing what a reader
+  // merely walked through. See the subscriber in store/study.ts.
+  const editing = useStudy((s) => s.editing);
+  const setEditing = useStudy((s) => s.setEditing);
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
@@ -152,7 +155,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         size="sm"
         className="shrink-0"
         title={editing ? t('Back to reading') : t('Edit moves, NAGs and comments')}
-        onClick={() => setEditing((v) => !v)}
+        onClick={() => setEditing(!editing)}
       >
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
@@ -220,6 +223,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
             title={movesTitle}
             actions={
               <>
+                <SidelinesToggle />
                 <ReviewButton />
                 {editing && <LoadPositionButton />}
                 {editing && <MoveActions allowReset={false} />}
