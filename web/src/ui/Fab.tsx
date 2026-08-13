@@ -153,12 +153,18 @@ export function Fab({
               setOpen(false);
               onSelect();
             }}
+            // The INVERTED surface, like the undo chip — not `bg-surface`,
+            // which is the colour of the cards these float over. A pill in
+            // card colours over a shelf of cards is a card-coloured shape
+            // among card-coloured shapes: it read as part of the list
+            // rather than as something that had just opened. The opposite
+            // of the page needs no help being told from it.
             className={cn(
-              'bg-surface border-line text-fg flex items-center gap-2 rounded-full border py-2 pl-3 pr-4',
-              'text-sm shadow-[var(--shadow-pop)] transition-colors duration-100 hover:bg-surface-2',
+              'bg-toast text-toast-fg flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
+              'text-sm shadow-[var(--shadow-pop)] transition-opacity duration-100 active:opacity-80',
             )}
           >
-            <Icon className="text-subtle size-4 shrink-0" />
+            <Icon className="size-4 shrink-0 opacity-70" />
             {t(itemLabel)}
           </button>
         ))}
@@ -169,8 +175,16 @@ export function Fab({
         aria-label={single ? t(single.label) : t(label)}
         aria-expanded={single ? undefined : open}
         onClick={() => (single ? single.onSelect() : setOpen((v) => !v))}
+        // The hairline every other floating thing in the app has. A disc
+        // of flat colour with only a shadow under it has no edge of its
+        // own: over a pale panel it ended where the eye guessed, and the
+        // shadow — which is what a phone's own buttons do NOT have — was
+        // carrying the whole job. Drawn in the button's own foreground at
+        // low alpha, so it darkens the rim in dark mode and lightens it
+        // in light, instead of dropping a grey ring on a blue disc.
         className={cn(
           'bg-primary text-primary-fg hover:bg-primary-hover grid size-14 place-items-center rounded-full',
+          'border border-primary-fg/30',
           'shadow-[var(--shadow-pop)] transition-transform duration-100 active:scale-95',
         )}
       >
