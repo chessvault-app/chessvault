@@ -108,11 +108,18 @@ Every one of them — and every `PanelHeader` — draws the same thin rule
 under its title. Windows once had no rule while panels did, which made
 the same app look like two.
 
-The way out is a **Cancel**, never an X in the corner: one closing
-idiom, stated in words, next to the thing it cancels. Escape and the
-scrim also close, but neither is advertised. A window whose changes
-apply as you make them (the filters) offers Cancel — restoring what was
-there when it opened — beside Done.
+The way out is a **Cancel**, stated in words, next to the thing it
+cancels. Escape and the scrim also close, but neither is advertised. A
+window whose changes apply as you make them (the filters) offers
+Cancel — restoring what was there when it opened — beside Done.
+
+The rule was once "never an X in the corner", and it has one exception
+now, because some windows have no button row for a Cancel to sit in: a
+list of settings (the engine's, the puzzle difficulty and theme picker)
+applies as you touch it and has nothing to confirm. Those get an X on
+**desktop only** — with no Cancel, the other two ways out are both
+invisible. A phone still shows none: the sheet drags away from anywhere
+on itself, which is the gesture it was given instead.
 
 The row-actions sheet (`ActionSheet`, the phone half of a row's ⋯) is
 the exception, and it proves the rule: it is a list of verbs with no
