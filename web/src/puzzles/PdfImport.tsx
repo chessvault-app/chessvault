@@ -1,14 +1,73 @@
 import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
+import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { Skeleton } from '@/ui/Skeleton';
-import { useImportJob } from './importJob';
+import { useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
+
+/** How wide the hovered crop is drawn, in px. Big enough to read the
+    pieces on a diagram; small enough to sit beside a window. */
+const PEEK_W = 208;
+
+/**
+ * The hovered row's crop, floating beside the list.
+ *
+ * Placed by hand rather than by CSS. The list scrolls, so an absolute
+ * child of a row would be clipped by it, and a sheet under drag is
+ * transformed, which would capture `fixed` — so this goes on the body
+ * and takes its coordinates from the row it belongs to. It sits to the
+ * right of the row unless that would run off the window, in which case
+ * it flips to the left rather than showing a sliver at the edge.
+ *
+ * `pointer-events-none`: it hangs over the list it was opened from, and
+ * a preview that swallows the pointer would flicker the row it is
+ * describing out from under itself.
+ */
+function PeekCrop({
+  f,
+  at,
+}: {
+  f: FoundDiagram;
+  at: { top: number; left: number; right: number };
+}) {
+  const room = window.innerWidth - at.right - 12;
+  const flip = room < PEEK_W + 16;
+  // Lifted a little above the row so a crop taller than it is wide still
+  // reads as belonging to it, then held inside the window.
+  const top = Math.max(8, Math.min(at.top - 48, window.innerHeight - PEEK_W - 32));
+  return createPortal(
+    <div
+      className={cn(
+        'bg-surface border-line pointer-events-none fixed z-[60] rounded-xl border p-2',
+        'shadow-[var(--shadow-pop)]',
+      )}
+      style={
+        flip
+          ? { top, right: window.innerWidth - at.left + 12 }
+          : { top, left: at.right + 12 }
+      }
+    >
+      <img
+        src={f.dataUrl}
+        alt={`page ${f.page}`}
+        width={PEEK_W}
+        decoding="async"
+        // A crop is usually about square, but a two-column page can hand
+        // over a tall one; height is capped so it cannot run off the
+        // bottom of the window it is floating over.
+        className="block max-h-[45vh] w-52 rounded object-contain"
+      />
+    </div>,
+    document.body,
+  );
+}
 
 /**
  * Whole-book import (lanph3re's original ask): pick the book's PDF, every
@@ -88,6 +147,23 @@ export function PdfImport({
   // Which row is showing its scan. One at a time: the point is to check a
   // suspicious row, not to rebuild the wall of thumbnails.
   const [preview, setPreview] = useState<number | null>(null);
+  /**
+   * The row under a mouse, and where it is.
+   *
+   * A pointer that can hover gets the crop for free — a list of rows
+   * reading "p.8", "p.8", "p.8" cannot be checked without opening each
+   * one, and opening each one is three presses to answer "which board is
+   * this". Touch keeps the eye: there is no hover to give it.
+   *
+   * Fixed to the viewport and portalled to the body, because the list
+   * scrolls (an absolute child would be clipped by it) and the sheet is
+   * transformed while it is dragged, which would turn `fixed` into fixed
+   * inside the sheet.
+   */
+  const [peek, setPeek] = useState<{ i: number; top: number; left: number; right: number } | null>(
+    null,
+  );
+  const hoverable = useMediaQuery('(pointer: fine)');
 
   const pdfDrop = useFileDrop({
     accept: byExtension('.pdf'),
@@ -95,6 +171,24 @@ export function PdfImport({
   });
   const mine = job.slug === slug;
   const found = mine ? job.found : [];
+  /**
+   * Where each diagram sits on its own page: the nth of m.
+   *
+   * A page holds up to six of them, and every row for that page said the
+   * same word. "p.8 (2/3)" is the middle board on page eight — enough to
+   * find it in the book, and enough to tell the three rows apart without
+   * opening any of them. Pages with a single diagram say nothing extra.
+   */
+  const place = useMemo(() => {
+    const total = new Map<number, number>();
+    for (const f of found) total.set(f.page, (total.get(f.page) ?? 0) + 1);
+    const seen = new Map<number, number>();
+    return found.map((f) => {
+      const nth = (seen.get(f.page) ?? 0) + 1;
+      seen.set(f.page, nth);
+      return { nth, of: total.get(f.page) ?? 1 };
+    });
+  }, [found]);
   const scanning = mine && job.status === 'scanning';
   const paused = mine && job.status === 'paused';
   const reading = mine && job.status === 'reading';
@@ -366,7 +460,29 @@ export function PdfImport({
               looks wrong. It also stops a thousand-diagram scan holding a
               thousand decoded bitmaps: only an opened row decodes.
             */}
-            <ul className="border-line divide-line max-h-72 divide-y overflow-y-auto rounded-lg border">
+            <ul
+              className="border-line divide-line max-h-72 divide-y overflow-y-auto rounded-lg border"
+              /*
+                A peek pinned to where a row USED to be is worse than
+                none, and this list moves on its own: each page that
+                lands re-anchors the scroll. Dropping the peek on every
+                scroll made it flicker away mid-scan — the one time
+                someone is watching it — so it FOLLOWS its row instead,
+                and is dropped only once that row has left the box.
+              */
+              onScroll={(e) => {
+                const list = e.currentTarget;
+                setPeek((p) => {
+                  if (!p) return p;
+                  const row = list.querySelector(`[data-row="${p.i}"]`);
+                  if (!row) return null;
+                  const r = row.getBoundingClientRect();
+                  const box = list.getBoundingClientRect();
+                  if (r.bottom < box.top + 4 || r.top > box.bottom - 4) return null;
+                  return { i: p.i, top: r.top, left: r.left, right: r.right };
+                });
+              }}
+            >
               {found.map((f, i) => {
                 const mark = f.solved
                   ? { label: 'solved', cls: 'text-good' }
@@ -377,7 +493,24 @@ export function PdfImport({
                       : { label: 'read', cls: 'text-good' };
                 return (
                   <li key={i} className="[content-visibility:auto]">
-                    <div className="flex items-center gap-2 px-2 py-1.5 text-xs">
+                    <div
+                      data-row={i}
+                      className={cn(
+                        'flex items-center gap-2 py-1.5 pl-2 text-xs transition-colors duration-100',
+                        // pr-4, not pr-2: the mark sat against the
+                        // scrollbar, which on Windows is a solid gutter
+                        // rather than an overlay, and "3개 불확실" read as
+                        // though it were part of it.
+                        'pr-4',
+                        peek?.i === i && 'bg-surface-2',
+                      )}
+                      onMouseEnter={(e) => {
+                        if (!hoverable) return;
+                        const r = e.currentTarget.getBoundingClientRect();
+                        setPeek({ i, top: r.top, left: r.left, right: r.right });
+                      }}
+                      onMouseLeave={() => setPeek((p) => (p?.i === i ? null : p))}
+                    >
                       <input
                         type="checkbox"
                         checked={f.selected}
@@ -385,8 +518,18 @@ export function PdfImport({
                         aria-label={t('Keep this diagram')}
                         className="accent-primary shrink-0"
                       />
-                      <span className="text-subtle w-12 shrink-0 font-mono text-[0.6875rem]">
-                        {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
+                      <span className="w-24 shrink-0 font-mono text-[0.6875rem]">
+                        <span className="text-fg">
+                          {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
+                        </span>
+                        {/* Once the printed numbers are worked out the row
+                            leads with the number — but it keeps the page,
+                            which is what you turn to in the actual book. */}
+                        <span className="text-subtle">
+                          {f.number === undefined
+                            ? place[i]!.of > 1 && ` (${place[i]!.nth}/${place[i]!.of})`
+                            : ` p.${f.page}`}
+                        </span>
                       </span>
                       <Button
                         variant="ghost"
@@ -418,14 +561,16 @@ export function PdfImport({
               {/* The board being read right now. Same row shape as the rest,
                   so the list does not jump when it turns into a real one. */}
               {scanning && (
-                <li className="flex items-center gap-2 px-2 py-1.5">
+                <li className="flex items-center gap-2 py-1.5 pl-2 pr-4">
                   <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-                  <Skeleton className="h-3 w-12 shrink-0" />
+                  <Skeleton className="h-3 w-24 shrink-0" />
                   <Skeleton className="size-5 shrink-0 rounded-md" />
                   <Skeleton className="ml-auto h-3 w-10 shrink-0" />
                 </li>
               )}
             </ul>
+            {/* The hovered row's crop, floating beside the list. */}
+            {peek && found[peek.i] && <PeekCrop f={found[peek.i]!} at={peek} />}
           </>
         )}
 
