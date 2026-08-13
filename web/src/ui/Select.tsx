@@ -132,6 +132,42 @@ export function Select({
     };
   }, [open]);
 
+  /**
+   * The gesture stops here, whatever the browser thinks.
+   *
+   * overscroll-behavior:contain was supposed to be enough and is not: on a
+   * phone, dragging this list still scrolled the PAGE behind the sheet it
+   * was opened from. So the list judges its own edges — nothing to scroll,
+   * or nothing left in the direction being pulled, and the move is
+   * cancelled outright rather than handed upwards.
+   *
+   * Native and non-passive, because React attaches touchmove passively at
+   * the root and a passive listener cannot cancel anything.
+   */
+  useEffect(() => {
+    const el = list.current;
+    if (!open || !el) return;
+    let last = 0;
+    const start = (e: TouchEvent): void => {
+      last = e.touches[0]?.clientY ?? 0;
+    };
+    const move = (e: TouchEvent): void => {
+      const y = e.touches[0]?.clientY;
+      if (y === undefined) return;
+      const dy = y - last;
+      last = y;
+      const room = el.scrollHeight - el.clientHeight;
+      const spent = room <= 0 || (dy > 0 && el.scrollTop <= 0) || (dy < 0 && el.scrollTop >= room);
+      if (spent && e.cancelable) e.preventDefault();
+    };
+    el.addEventListener('touchstart', start, { passive: true });
+    el.addEventListener('touchmove', move, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', start);
+      el.removeEventListener('touchmove', move);
+    };
+  }, [open]);
+
   const onKeyDown = (e: React.KeyboardEvent): void => {
     if (!open) {
       if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
