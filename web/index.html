@@ -184,12 +184,39 @@
       // own sake. Removed here rather than never rendered, so the markup
       // stays one thing that main.tsx knows how to take down.
       (function () {
+        var boot = document.getElementById('boot');
         var app =
           matchMedia('(display-mode: standalone)').matches ||
           matchMedia('(display-mode: fullscreen)').matches ||
           matchMedia('(display-mode: minimal-ui)').matches ||
           navigator.standalone === true;
-        if (!app) document.getElementById('boot').remove();
+        if (!app) {
+          boot.remove();
+          return;
+        }
+        /**
+         * Pin it to the SCREEN, not the viewport.
+         *
+         * The startup image iOS just drew is the screen, with the knight
+         * at 22% of the screen's short side. This screen was a viewport
+         * box with a 22vmin knight in it — the same thing, until the
+         * viewport moves. It does: a web app's viewport settles over the
+         * first frames of a launch as the status bar and safe areas are
+         * accounted for, and every pixel of that resizes the knight and
+         * re-centres it. The logo jumped, which is what a launch screen
+         * has exactly one job not to do.
+         *
+         * `screen` does not move. The short side is taken with min(), so
+         * it is right whichever way the phone reports its axes, and the
+         * box is laid out in the viewport's own orientation.
+         */
+        var short = Math.min(screen.width, screen.height);
+        var long = Math.max(screen.width, screen.height);
+        var portrait = window.innerHeight >= window.innerWidth;
+        boot.style.width = (portrait ? short : long) + 'px';
+        boot.style.height = (portrait ? long : short) + 'px';
+        var svg = boot.querySelector('svg');
+        svg.style.width = svg.style.height = Math.round(short * 0.22) + 'px';
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>

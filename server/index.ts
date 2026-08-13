@@ -156,15 +156,22 @@ if (existsSync(dist)) {
     });
   });
 
-  // Ask for the hint on the page itself; the manifest request that
-  // follows carries it. Critical-CH makes Chrome retry the page once with
-  // the hint attached rather than waiting for the next navigation, so the
-  // very first install already gets the right colour.
+  /**
+   * Ask for the hint on the page itself; the manifest request that
+   * follows carries it.
+   *
+   * Accept-CH only — NOT Critical-CH. Critical-CH tells Chrome the
+   * response is wrong without the hint, and Chrome answers by throwing
+   * away the page it has just started and navigating again with the hint
+   * attached. That is a second load of the whole app on a cold start, in
+   * front of the launch screen, to correct a colour that Android only
+   * reads when it installs. The hint arrives on the next request either
+   * way.
+   */
   app.use('/*', async (c, next) => {
     await next();
     if (c.res.headers.get('content-type')?.startsWith('text/html')) {
       c.res.headers.set('accept-ch', 'Sec-CH-Prefers-Color-Scheme');
-      c.res.headers.set('critical-ch', 'Sec-CH-Prefers-Color-Scheme');
       c.res.headers.append('vary', 'Sec-CH-Prefers-Color-Scheme');
     }
   });
