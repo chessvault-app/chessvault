@@ -2374,9 +2374,13 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
 
       {detailsOpen && (
         <div className="flex flex-col gap-2">
-          {/* Paired left to right: the two players, their two ratings, then
-              when and where — so each row answers one question twice. */}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {/* Paired left to right on every screen, not just a desktop: a
+              name and a rating are short, and a column of six full-width
+              boxes was three screenfuls of a form that fits in one and a
+              half. Measured at 390px, every placeholder fits the 158px a
+              half-column leaves — once the event stopped calling itself a
+              tournament as well, which it was at 157 of them. */}
+          <div className="grid grid-cols-2 gap-2">
             <Input
               value={white}
               onChange={(e) => setWhite(e.target.value)}
@@ -2413,7 +2417,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
               value={event}
               onChange={(e) => setEvent(e.target.value)}
               onFocus={scrollFocusIntoView}
-              placeholder={t('Event / tournament (optional)')}
+              placeholder={t('Event (optional)')}
             />
           </div>
 
@@ -2461,8 +2465,16 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           starts, and z-10 keeps it over anything that scrolls beneath. */}
       <div
         className={cn(
-          'bg-surface border-line sticky bottom-0 z-10 -mx-3 -mb-1 flex justify-end gap-2',
-          'border-t px-3 pb-1 pt-2',
+          'bg-surface border-line sticky z-10 -mx-3 flex justify-end gap-2 border-t px-3 pt-2',
+          // The bar reaches the window's own bottom edge and carries the
+          // home-indicator clearance itself. Left to the window, that
+          // clearance was a strip of empty surface UNDER the bar — about
+          // 100px of nothing between the buttons and the bottom of the
+          // screen. Sticking it that much lower and padding itself by the
+          // same amount puts the background where the padding was and the
+          // buttons where they always were.
+          'bottom-[calc(-0.75rem-env(safe-area-inset-bottom))]',
+          'pb-[calc(0.25rem+0.75rem+env(safe-area-inset-bottom))]',
         )}
       >
         <Button variant="ghost" size="sm" onClick={onCancel}>

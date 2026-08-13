@@ -174,7 +174,7 @@ export const ko: Record<string, string> = {
   'Date, e.g. 2026-08-08': '날짜, 예: 2026-08-08',
   'White rating': '백 레이팅',
   'Black rating': '흑 레이팅',
-  'Event / tournament (optional)': '대회 (선택)',
+  'Event (optional)': '대회 (선택)',
   Result: '결과',
   'No reference games yet': '아직 참고 게임이 없습니다',
   'Elite games': '엘리트 게임',
