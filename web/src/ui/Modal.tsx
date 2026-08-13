@@ -96,7 +96,14 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
         // The ref is what makes the WHOLE sheet draggable — see sheetDrag.
         ref={sheet ? drag.ref : undefined}
-        style={sheet ? drag.style : undefined}
+        style={{
+          ...(sheet ? drag.style : {}),
+          // With the keyboard up, take the whole band that is left rather
+          // than 88% of it: the sheet is a form being filled in, and the
+          // 12% of page showing above it was for orientation, which is not
+          // what anybody needs while typing.
+          ...(sheet && inset ? { maxHeight: '100%' } : {}),
+        }}
         className={cn(
           // overscroll-contain: a scroll this window cannot use is its own
           // business. Without it, reaching the end of the list inside a
@@ -111,7 +118,16 @@ export function Modal({
               // Rising from the thumb's own edge, stopping short of the
               // top, it reads as a thing ON the page. Desktop keeps the
               // large centred card.
-              'max-h-[88dvh] rounded-t-2xl pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
+              //
+              // 88% of THIS LAYER, not 88dvh. dvh is the dynamic viewport
+              // and does not shrink for a keyboard, so a sheet capped in
+              // dvh stayed its full height when the keyboard took half the
+              // screen — its bottom went under the keys, and the browser
+              // scrolled the whole sheet up to find the caret, which is
+              // what threw the caret away. The layer pads itself by what
+              // the keyboard covers (see useKeyboardInset), so a
+              // percentage of the layer IS the room actually left.
+              'max-h-[88%] rounded-t-2xl pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
               'sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl sm:pb-3'
             : 'max-h-full max-w-[32rem] rounded-xl',
           className,
