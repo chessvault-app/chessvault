@@ -166,6 +166,65 @@ export function copyFileSync(from: string, to: string): void {
   writeFileSync(to, readFileSync(from));
 }
 
+/**
+ * Descriptors, for the one route that reads a file's HEAD rather than all
+ * of it.
+ *
+ * The shelf listings show each document a preview — a first sentence, or
+ * the position its first chapter opens on — and reading whole files to
+ * build a listing would make the listing cost whatever the longest note
+ * happens to be. So `server/studies.ts` opens, reads PREVIEW_BYTES, and
+ * closes, and the demo has to answer that the same way: it is the real
+ * route module running in the browser, not a second implementation of it.
+ *
+ * A number handed back and looked up in a Map is the whole of it. Nothing
+ * here is concurrent, so the table can never grow beyond the one
+ * descriptor a preview holds for the length of a try/finally.
+ */
+const encoder = new TextEncoder();
+const openFds = new Map<number, string>();
+// 0, 1 and 2 belong to the standard streams on a real system; starting
+// above them keeps a stray 0 from ever looking like a valid descriptor.
+let nextFd = 3;
+
+export function openSync(path: string, _flags?: string): number {
+  const key = norm(path);
+  const entry = files.get(key);
+  if (!entry || entry.content === undefined) {
+    const error = new Error(`ENOENT: no such file, open '${path}'`) as Error & { code?: string };
+    error.code = 'ENOENT';
+    throw error;
+  }
+  const fd = nextFd++;
+  openFds.set(fd, key);
+  return fd;
+}
+
+/** Bytes, not characters — the caller asked for a byte window. */
+export function readSync(
+  fd: number,
+  buffer: Uint8Array,
+  offset = 0,
+  length = buffer.length,
+  position = 0,
+): number {
+  const key = openFds.get(fd);
+  if (key === undefined) {
+    const error = new Error('EBADF: bad file descriptor, read') as Error & { code?: string };
+    error.code = 'EBADF';
+    throw error;
+  }
+  const bytes = encoder.encode(files.get(key)?.content ?? '');
+  const from = position ?? 0;
+  const count = Math.max(0, Math.min(length, bytes.length - from));
+  if (count > 0) buffer.set(bytes.subarray(from, from + count), offset);
+  return count;
+}
+
+export function closeSync(fd: number): void {
+  openFds.delete(fd);
+}
+
 export default {
   existsSync,
   mkdirSync,
@@ -179,4 +238,7 @@ export default {
   unlinkSync,
   appendFileSync,
   copyFileSync,
+  openSync,
+  readSync,
+  closeSync,
 };
