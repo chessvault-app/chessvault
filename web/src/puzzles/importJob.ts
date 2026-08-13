@@ -148,6 +148,24 @@ const RENDER_WIDTH = 1400;
  * progress. Classification runs in a worker, page rendering yields to the
  * event loop between pages, so the app stays responsive throughout.
  */
+/**
+ * A scan lives in this tab and nowhere else.
+ *
+ * The pages are rendered by pdf.js here, the boards are classified by a
+ * worker here, and the crops exist only in this store — which is not
+ * persisted. Nothing on the server knows a scan is running, so there is
+ * nothing to resume from: a reload throws away however many minutes of
+ * work had been done, silently, and can land in the middle of the loop
+ * that writes verified puzzles and leave the book half-filled.
+ *
+ * Until that is resumable, the least this can do is what an unsaved note
+ * does — make the browser ask. The listener is attached to the JOB rather
+ * than to the window that started it, because the window can be closed
+ * while the scan runs on (which the window itself offers).
+ */
+let unloadGuarded = false;
+const warnOnUnload = (e: BeforeUnloadEvent): void => e.preventDefault();
+
 export const useImportJob = create<ImportJobState>((set, get) => ({
   slug: null,
   status: 'idle',
@@ -594,3 +612,11 @@ async function readAnswerGlyphs(
   // that replayed, so they are the trustworthy half.
   return learnGlyphHints(samples, settled);
 }
+
+useImportJob.subscribe((state) => {
+  const running = state.status === 'scanning' || state.status === 'reading';
+  if (running === unloadGuarded) return;
+  unloadGuarded = running;
+  if (running) window.addEventListener('beforeunload', warnOnUnload);
+  else window.removeEventListener('beforeunload', warnOnUnload);
+});
