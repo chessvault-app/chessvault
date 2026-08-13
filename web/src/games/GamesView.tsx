@@ -24,7 +24,7 @@ import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { sanitizeSegment } from '@shared/vaultNames';
 import { cn } from '@/lib/cn';
-import { useMediaQuery } from '@/lib/media';
+import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { StudyView } from '@/studies/StudyView';
@@ -2296,7 +2296,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
       className="sm:max-w-[37.5rem]"
     >
       <TextArea
-        autoFocus
+        autoFocus={autoFocusField()}
         ref={pgnField}
         value={pgn}
         onChange={(e) => {

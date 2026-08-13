@@ -9,6 +9,7 @@ const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ de
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
+import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
 /**
@@ -163,7 +164,7 @@ function LoadDialog({
     >
       <TextArea
         ref={textarea}
-        autoFocus
+        autoFocus={autoFocusField()}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {

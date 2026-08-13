@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Sheet } from './Sheet';
+import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
 /**
@@ -53,7 +54,7 @@ export function PromptSheet({
     <Sheet label={label} onClose={onClose}>
       {extra}
       <Input
-        autoFocus
+        autoFocus={autoFocusField()}
         value={draft}
         onFocus={(e) => e.target.select()}
         onChange={(e) => setDraft(e.target.value)}

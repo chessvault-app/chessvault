@@ -29,6 +29,7 @@ import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
+import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
 /** Router shell for the Studies section: list, or one open study. */
@@ -301,7 +302,7 @@ function CreateMenu() {
           )}
           <Field label="Study title">
             <Input
-              autoFocus
+              autoFocus={autoFocusField()}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -448,7 +449,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
       <Field label="Lichess username">
         <div className="flex gap-2">
           <Input
-            autoFocus
+            autoFocus={autoFocusField()}
             type="text"
             value={user}
             onChange={(e) => setUser(e.target.value)}

@@ -12,6 +12,22 @@ import { useEffect, useState } from 'react';
  * real paint: a menu that decides it is narrow and corrects itself a frame
  * later has already been seen.
  */
+/**
+ * Should a window focus its first field as it opens?
+ *
+ * Only where focusing is free. Under a mouse it saves a click and costs
+ * nothing. Under a thumb it summons the on-screen keyboard, which takes
+ * half the screen the moment the sheet arrives — so a window opened to be
+ * READ (which PGN did I paste, which months are cached) opens already
+ * covered, and the sheet has to be scrolled or dismissed before it can be
+ * looked at. The field is one tap away for anyone who wanted it.
+ *
+ * A function, not a hook: `autoFocus` is read once, at mount.
+ */
+export function autoFocusField(): boolean {
+  return !window.matchMedia('(pointer: coarse)').matches;
+}
+
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
   useEffect(() => {
