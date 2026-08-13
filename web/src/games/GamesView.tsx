@@ -1864,8 +1864,17 @@ function ArchiveBrowser({
       {!month && loading !== 'months' && (
         <div className="border-line flex min-h-0 flex-1 flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
           {/* What the panel does, drawn — rather than the same globe that
-              is already on the button two inches above it. */}
-          <CloudBoardArt className="w-20" />
+              is already on the button two inches above it.
+
+              shrink-0, or the column crushes it: an SVG with a width and
+              an automatic height is a flex item that will give up every
+              pixel of that height before the paragraph beside it gives up
+              one. In a sheet shortened by the keyboard it went to exactly
+              0 and appeared to have been hidden on purpose. It is hidden
+              on purpose NOW — a picture is the first thing to go when
+              there is no room, and the sentence is the part that was
+              doing the work. */}
+          <CloudBoardArt className="keyboard:hidden w-20 shrink-0" />
           <p className="text-muted max-w-xs text-sm leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
