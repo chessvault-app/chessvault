@@ -143,7 +143,15 @@ function Trainer({
   const [phase, setPhase] = useState<Phase>('loading');
   const [plies, setPlies] = useState(0);
   const [view, setView] = useState<PuzzlePosition | null>(null);
+  // Not a clean solve: a wrong move, or the solution shown. Both count
+  // the same for reporting, and read very differently to the solver.
   const [failed, setFailed] = useState(false);
+  // The solution was SHOWN. Kept apart from `failed` because the finished
+  // message used to be "solved with help" for both, so finding the move
+  // yourself on the second try was reported back as having been given the
+  // answer — and the Hint button, which says it is not counted, never set
+  // either of these.
+  const [revealed, setRevealed] = useState(false);
   const [hint, setHint] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<DifficultyId>(() => {
@@ -201,6 +209,7 @@ function Trainer({
       setPhase('loading');
       setPuzzle(null);
       setFailed(false);
+      setRevealed(false);
       setHint(0);
       setError(null);
       setPendingPromotion(null);
@@ -371,6 +380,7 @@ function Trainer({
   const viewSolution = (): void => {
     if (!puzzle || phase === 'done') return;
     setFailed(true);
+    setRevealed(true);
     void report(puzzle.id, false);
     const moves = puzzle.moves.split(' ');
     let at = plies;
@@ -660,8 +670,20 @@ function Trainer({
           <div className="flex flex-col gap-3 p-3">
             {phase === 'done' && puzzle ? (
               <>
-                <p className={cn('text-sm font-semibold', failed ? 'text-bad' : 'text-good')}>
-                  {failed ? t('Solved with help.') : t('Solved!')}
+                <p
+                  className={cn(
+                    'text-sm font-semibold',
+                    // Green for a clean solve, amber for one that took a
+                    // second go — it was still found — and red only where
+                    // the answer was handed over.
+                    revealed ? 'text-bad' : failed ? 'text-warn' : 'text-good',
+                  )}
+                >
+                  {revealed
+                    ? t('Solution shown.')
+                    : failed
+                      ? t('Solved after a wrong try.')
+                      : t('Solved!')}
                 </p>
                 <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
                   {/* The band, not the number: a rating is how the trainer
