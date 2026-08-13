@@ -1309,6 +1309,14 @@ function PuzzleGrid({
                 )}
               >
                 {p.number ?? i + 1}
+                {/* State by glyph as well as tint — the colour grammar's
+                    own rule; a tile that is only a colour is unreadable
+                    to 1 in 12 people. */}
+                {(last === 'win' || last === 'loss') && (
+                  <span className="absolute bottom-0.5 left-1 text-[0.5rem] leading-none" aria-hidden>
+                    {last === 'win' ? '✓' : '✗'}
+                  </span>
+                )}
                 {meta && (
                   <meta.icon
                     className={cn('absolute right-1 top-1 size-2.5', meta.iconClass)}
@@ -1621,6 +1629,13 @@ function PuzzleList({
               )}
             >
               {p.number ?? ordinalOf.get(p.id)}
+              {/* Same glyph redundancy as the panel grid: tint alone is
+                  invisible to colour-blind eyes. */}
+              {(state === 'solved' || state === 'failed') && (
+                <span className="absolute bottom-1 left-1.5 text-[0.625rem] leading-none" aria-hidden>
+                  {state === 'solved' ? '✓' : '✗'}
+                </span>
+              )}
               {meta && (
                 <meta.icon
                   className={cn('absolute right-2 top-2 size-3', meta.iconClass)}

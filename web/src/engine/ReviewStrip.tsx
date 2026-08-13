@@ -248,14 +248,17 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
               key={p.id}
               style={{ left: `${(i / (points.length - 1)) * 100}%`, top: `${(1 - p.chances) * 100}%` }}
               className={cn(
-                'absolute -translate-x-1/2 -translate-y-1/2 rounded-full',
+                'absolute -translate-x-1/2 -translate-y-1/2',
+                // Shape as well as colour: a blunder is a diamond, a
+                // mistake a square, an inaccuracy a circle — so the graph
+                // still reads when the hues do not.
                 p.nag === 4
-                  ? 'bg-nag-blunder size-2'
+                  ? 'bg-nag-blunder size-2 rotate-45 rounded-[1px]'
                   : p.nag === 2
-                    ? 'bg-nag-mistake size-2'
+                    ? 'bg-nag-mistake size-2 rounded-[1px]'
                     : p.nag === 6
-                      ? 'bg-nag-dubious size-2'
-                      : 'bg-line-strong size-1',
+                      ? 'bg-nag-dubious size-2 rounded-full'
+                      : 'bg-line-strong size-1 rounded-full',
                 i === cursorIndex && 'ring-primary ring-2',
               )}
             />

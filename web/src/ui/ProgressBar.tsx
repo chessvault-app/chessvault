@@ -22,17 +22,22 @@ export function ProgressBar({
   showEmpty?: boolean;
 }) {
   if (total === 0 && !showEmpty) return null;
+  const label =
+    total === 0
+      ? t('Nothing attempted yet')
+      : t('{solved} solved · {failed} failed · {left} remaining', {
+          solved,
+          failed,
+          left: total - solved - failed,
+        });
   return (
     <span
-      title={
-        total === 0
-          ? t('Nothing attempted yet')
-          : t('{solved} solved · {failed} failed · {left} remaining', {
-              solved,
-              failed,
-              left: total - solved - failed,
-            })
-      }
+      title={label}
+      // The counts existed only in the hover title — nothing for touch,
+      // nothing for a screen reader. The title stays for the mouse; this
+      // is for everyone else.
+      role="img"
+      aria-label={label}
       className={cn(
         'bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border',
         className,
@@ -41,7 +46,16 @@ export function ProgressBar({
       {total > 0 && (
         <>
           <span className="bg-nag-good h-full" style={{ width: `${(100 * solved) / total}%` }} />
-          <span className="bg-nag-blunder h-full" style={{ width: `${(100 * failed) / total}%` }} />
+          {/* Striped, not just red: the two segments must differ by more
+              than hue (the app's own colour-grammar rule). */}
+          <span
+            className="bg-nag-blunder h-full"
+            style={{
+              width: `${(100 * failed) / total}%`,
+              backgroundImage:
+                'repeating-linear-gradient(135deg, transparent 0 2px, rgba(0,0,0,0.35) 2px 4px)',
+            }}
+          />
         </>
       )}
     </span>
