@@ -66,10 +66,15 @@ export function Modal({
   /**
    * A wide window on a DESKTOP. Nothing to do with a phone.
    *
-   * For the windows that are a task rather than a question — importing a
-   * PDF, a game, a Lichess study — where a small floating card is too
-   * small for what is inside it. On a phone every window is the same
-   * shape, so this says nothing there.
+   * For the windows that are a task rather than a question — browsing an
+   * archive, picking from the elite games — where a small floating card
+   * is too small for what is inside it. On a phone every window is the
+   * same shape, so this says nothing there.
+   *
+   * It is about the CONTENT, not the importance of the window: the book
+   * import was `full` while it showed a wall of crops and gave it up
+   * when it became a list of one-line rows, which at 4xl were mostly
+   * empty space.
    */
   full?: boolean;
 }) {

@@ -1,5 +1,5 @@
 import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
@@ -194,6 +194,28 @@ export function PdfImport({
   const reading = mine && job.status === 'reading';
   const solve = mine ? job.solve : null;
 
+  /**
+   * The list follows the board being read.
+   *
+   * The skeleton row is the live end of a scan — it is where the next
+   * result appears — and it was below the fold within seven diagrams, so
+   * a nine-hundred page book showed its first seven boards and then
+   * nothing at all. The list is held at the bottom while it grows.
+   *
+   * `stuck` is what makes that bearable: scroll up to look at something
+   * and the list stops chasing, because being yanked back to the bottom
+   * mid-inspection is worse than not following at all. Scroll back down
+   * to the end and it resumes.
+   */
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const stuck = useRef(true);
+  const grown = found.length;
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !stuck.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [grown, scanning]);
+
   const save = async (): Promise<void> => {
     const chosen = found.filter((f) => f.selected);
     if (chosen.length === 0) return;
@@ -235,8 +257,11 @@ export function PdfImport({
 
   const selectedCount = found.filter((f) => f.selected).length;
 
+  // Not `full`. This window WAS a wall of thumbnails, which needed the
+  // width; it is a list of one-line rows now, and at 4xl each row was a
+  // label, an icon, and thirty empty characters before its verdict.
   return (
-    <Modal title="Import a book PDF" icon={FileUp} onClose={onClose} full>
+    <Modal title="Import a book PDF" icon={FileUp} onClose={onClose}>
 
         {/*
           An interrupted scan is offered back before anything else. It is
@@ -461,6 +486,7 @@ export function PdfImport({
               thousand decoded bitmaps: only an opened row decodes.
             */}
             <ul
+              ref={listRef}
               className="border-line divide-line max-h-72 divide-y overflow-y-auto rounded-lg border"
               /*
                 A peek pinned to where a row USED to be is worse than
@@ -472,6 +498,10 @@ export function PdfImport({
               */
               onScroll={(e) => {
                 const list = e.currentTarget;
+                // Within a row's height of the end counts as "at the end":
+                // the exact bottom is a moving target while the list grows
+                // under the scroll.
+                stuck.current = list.scrollHeight - list.scrollTop - list.clientHeight < 28;
                 setPeek((p) => {
                   if (!p) return p;
                   const row = list.querySelector(`[data-row="${p.i}"]`);
@@ -504,12 +534,6 @@ export function PdfImport({
                         'pr-4',
                         peek?.i === i && 'bg-surface-2',
                       )}
-                      onMouseEnter={(e) => {
-                        if (!hoverable) return;
-                        const r = e.currentTarget.getBoundingClientRect();
-                        setPeek({ i, top: r.top, left: r.left, right: r.right });
-                      }}
-                      onMouseLeave={() => setPeek((p) => (p?.i === i ? null : p))}
                     >
                       <input
                         type="checkbox"
@@ -531,12 +555,28 @@ export function PdfImport({
                             : ` p.${f.page}`}
                         </span>
                       </span>
+                      {/* The eye is the whole preview control: it opens
+                          the crop on a press, and — for a pointer that
+                          can hover — shows it on the way past. Hovering
+                          the ROW fired it while the pointer was merely
+                          crossing the list to reach something else. */}
                       <Button
                         variant="ghost"
                         size="icon-sm"
                         active={preview === i}
                         title={t('Show the scan')}
                         onClick={() => setPreview(preview === i ? null : i)}
+                        onMouseEnter={(e) => {
+                          if (!hoverable) return;
+                          const row = e.currentTarget.closest('[data-row]');
+                          if (!row) return;
+                          // The ROW's rect, not the button's: the crop
+                          // belongs to the whole line, and the follow-on-
+                          // scroll below re-reads the same element.
+                          const r = row.getBoundingClientRect();
+                          setPeek({ i, top: r.top, left: r.left, right: r.right });
+                        }}
+                        onMouseLeave={() => setPeek((p) => (p?.i === i ? null : p))}
                       >
                         <Eye className="size-3.5" />
                       </Button>
