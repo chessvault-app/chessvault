@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 import { formatScore, winningChances } from './uci.ts';
 
 interface EvalBarProps {
@@ -34,8 +35,8 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
       aria-valuemin={0}
       aria-valuemax={1}
       aria-valuenow={fraction}
-      aria-label={`Evaluation ${label}`}
-      title={`${label} (White's point of view)`}
+      aria-label={t('Evaluation {score}', { score: label })}
+      title={t("{score} (White's point of view)", { score: label })}
     >
       <div
         className="bg-eval-white absolute transition-[height,width] duration-300 ease-out"

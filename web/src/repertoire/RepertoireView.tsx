@@ -12,8 +12,9 @@ import { EvalBar } from '@/engine/EvalBar';
 import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
 import { useAnalysis } from '@/store/analysis';
-import { navigate } from '@/lib/router';
+import { navigate, up } from '@/lib/router';
 import { isDemo } from '@/lib/demo';
+import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/cn';
 import { formatAgo } from '@/lib/dates';
 import { Button } from '@/ui/Button';
@@ -285,7 +286,9 @@ function OpeningPicker({
         )}
       >
         <span className="min-w-0 flex-1 truncate">
-          {value.eco ? `${value.eco}  ${value.name}` : value.name}
+          {/* t() so "Start position" translates; real opening names are
+              proper nouns and pass through untouched. */}
+          {value.eco ? `${value.eco}  ${value.name}` : t(value.name)}
         </span>
       </button>
 
@@ -325,7 +328,7 @@ function OpeningPicker({
                         {o.eco}
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 truncate">{o.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{t(o.name)}</span>
                   </button>
                 </li>
               ))
@@ -652,7 +655,7 @@ export function RepertoireView() {
   const sourceLabel =
     source === ONLINE_SOURCE
       ? `Lichess · ${RATING_BANDS.find((b) => b.ratings === band)?.label ?? ''}`
-      : source;
+      : bookLabel(source);
 
   // One log entry per run, written when the line runs out of book.
   useEffect(() => {
@@ -712,7 +715,7 @@ export function RepertoireView() {
           size="icon-sm"
           className="md:hidden"
           title={t('Back')}
-          onClick={() => window.history.back()}
+          onClick={() => up('home')}
         >
           <ChevronLeft className="size-3.5" />
         </Button>
@@ -805,7 +808,7 @@ export function RepertoireView() {
                       ? [
                           {
                             label: 'Local books',
-                            options: books.map((b) => ({ value: b.name, label: b.name })),
+                            options: books.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
                           },
                         ]
                       : []),

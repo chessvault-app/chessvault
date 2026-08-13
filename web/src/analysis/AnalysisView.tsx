@@ -7,6 +7,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { cn } from '@/lib/cn';
+import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
 import { forgetCollection } from '@/games/collection';
@@ -251,7 +252,7 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
         size="icon-sm"
         className="md:hidden"
         title={t('Back')}
-        onClick={() => window.history.back()}
+        onClick={() => up('home')}
       >
         <ChevronLeft className="size-3.5" />
       </Button>

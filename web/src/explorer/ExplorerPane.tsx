@@ -8,6 +8,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
 import {
   activeBook,
+  bookLabel,
   hasMyFilters,
   isMyGames,
   isRemoteDb,
@@ -154,7 +155,7 @@ export function ExplorerPane({
                     ? [
                         {
                           label: 'Local books',
-                          options: books.map((b) => ({ value: b.name, label: b.name })),
+                          options: books.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
                         },
                       ]
                     : []),
@@ -855,9 +856,12 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
           panel the surrounding header already says where you are. */}
       {page && (
         <header className="flex items-center gap-2">
+          {/* Phones only: on a desktop this is a sidebar destination, and
+              the app's own rule is no back arrows on top-level pages. */}
           <Button
             variant="ghost"
             size="icon-sm"
+            className="md:hidden"
             title={t('Back to the board')}
             onClick={() => navigate('analysis', 'explorer')}
           >

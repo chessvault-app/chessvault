@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
+import { SearchInput } from '@/ui/Input';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 
@@ -128,9 +129,16 @@ export function ThemesPage() {
       });
   }, []);
 
+  // The page's only job is finding one theme in ~70 cards; a filter beats
+  // scanning a wall. Matched against the translated label, which is what
+  // is being read.
+  const [query, setQuery] = useState('');
+  const matches = (theme: string): boolean =>
+    query.trim() === '' || themeLabel(theme).toLowerCase().includes(query.trim().toLowerCase());
+
   const byName = new Map((themes ?? []).map((t) => [t.theme, t.count]));
   const known = new Set(GROUPS.flatMap((g) => g.themes));
-  const leftovers = (themes ?? []).filter((t) => !known.has(t.theme));
+  const leftovers = (themes ?? []).filter((t) => !known.has(t.theme) && matches(t.theme));
 
   return (
     <div className="h-full min-h-0 overflow-y-auto">
@@ -146,6 +154,15 @@ export function ThemesPage() {
             <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg text-base font-semibold">{t('Puzzle themes')}</h1>
+          <span className="min-w-0 flex-1" />
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('Find a theme')}
+            aria-label={t('Find a theme')}
+            className="w-44 max-w-full"
+          />
         </div>
 
         <ChipRow className="mb-5" innerClassName="gap-2">
@@ -172,7 +189,7 @@ export function ThemesPage() {
         ) : (
           <>
             {GROUPS.map((group) => {
-              const present = group.themes.filter((t) => byName.has(t));
+              const present = group.themes.filter((t) => byName.has(t) && matches(t));
               if (present.length === 0) return null;
               return (
                 <ThemeGroup key={group.title} title={t(group.title)}>
@@ -199,6 +216,11 @@ export function ThemesPage() {
                 ))}
               </ThemeGroup>
             )}
+            {query.trim() !== '' &&
+              leftovers.length === 0 &&
+              GROUPS.every(
+                (g) => g.themes.filter((th) => byName.has(th) && matches(th)).length === 0,
+              ) && <p className="text-subtle text-xs">{t('No theme matches it.')}</p>}
           </>
         )}
       </div>

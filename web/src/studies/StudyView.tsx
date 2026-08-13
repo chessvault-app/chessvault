@@ -577,7 +577,9 @@ function ChapterRow({
             <span
               role="button"
               tabIndex={-1}
-              title={isFolded ? `Unfold ${childCount} sub-chapters` : 'Fold sub-chapters'}
+              title={
+                isFolded ? t('Unfold {n} sub-chapters', { n: childCount }) : t('Fold sub-chapters')
+              }
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleFold();

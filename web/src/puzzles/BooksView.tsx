@@ -1294,7 +1294,7 @@ function PuzzleGrid({
                 onClick={() => go(i)}
                 title={[
                   meta ? `${t(meta.label)} — ${t(meta.title)}` : null,
-                  prog ? `${prog.wins}/${prog.tries} tries` : 'not attempted',
+                  prog ? t('{wins}/{tries} tries', { wins: prog.wins, tries: prog.tries }) : t('not attempted'),
                 ]
                   .filter(Boolean)
                   .join('\n')}

@@ -135,6 +135,13 @@ export const MY_GAMES = 'vault:mine';
 
 export const isMyGames = (name: string | null): boolean => name === MY_GAMES;
 
+/**
+ * A book's NAME is a filename-safe id (`lichess_elite_2025-11`); what a
+ * picker shows should not read as the database showing through. Underscores
+ * become spaces; the id itself stays what the API and the manager use.
+ */
+export const bookLabel = (name: string): string => name.replace(/_/g, ' ');
+
 /** Turn the filter set into the query the server reads. */
 function myGamesQuery(fen: string, f: MyGamesFilters): string {
   return new URLSearchParams({ fen, ...Object.fromEntries(new URLSearchParams(myFilterQuery(f))) }).toString();

@@ -20,7 +20,7 @@ import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import { Board, type BoardApi, type BoardPiece } from '@/board/Board';
 import { copyText } from '@/lib/clipboard';
-import { navigate } from '@/lib/router';
+import { navigate, up } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
@@ -397,7 +397,7 @@ export function EditorView({
             size="icon-sm"
             className="md:hidden"
             title={t('Back')}
-            onClick={() => window.history.back()}
+            onClick={() => up('home')}
           >
             <ChevronLeft className="size-3.5" />
           </Button>

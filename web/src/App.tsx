@@ -24,6 +24,7 @@ import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { KnightIcon } from '@/ui/KnightIcon';
+import { ShortcutsHelp } from '@/ui/ShortcutsHelp';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { t, useLang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -225,6 +226,7 @@ function Shell() {
       </main>
 
       <MobileBottom active={section} />
+      <ShortcutsHelp />
       </div>
     </div>
   );

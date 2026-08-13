@@ -36,3 +36,21 @@ export function useRoute(): Route {
 export function navigate(section: Section, ...params: string[]): void {
   window.location.hash = `/${[section, ...params].join('/')}`;
 }
+
+/** How deep the history was when the app loaded — see `up`. Read lazily:
+    this module is imported by node-side tests, where there is no window. */
+let historyFloor: number | null = null;
+if (typeof window !== 'undefined') historyFloor = window.history.length;
+
+/**
+ * A back chevron that cannot eject you from the app.
+ *
+ * Leaf pages used to call history.back() bare, and opened from a shared
+ * or bookmarked deep link "back" left the site instead of going up a
+ * level. If in-app navigation has grown the history, back is honest;
+ * otherwise go where the chevron points.
+ */
+export function up(fallback: Section, ...params: string[]): void {
+  if (historyFloor !== null && window.history.length > historyFloor) window.history.back();
+  else navigate(fallback, ...params);
+}

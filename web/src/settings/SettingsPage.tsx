@@ -9,6 +9,7 @@ import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { cn } from '@/lib/cn';
+import { up } from '@/lib/router';
 import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
@@ -72,7 +73,7 @@ export function SettingsPage() {
               size="icon-sm"
               className="md:hidden"
               title={t('Back')}
-              onClick={() => window.history.back()}
+              onClick={() => up('home')}
             >
               <ChevronLeft className="size-3.5" />
             </Button>
