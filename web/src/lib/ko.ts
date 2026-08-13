@@ -142,6 +142,8 @@ export const ko: Record<string, string> = {
     '엔진 리뷰 — 모든 수를 평가하고 (?!/?/??) 정확도를 측정합니다',
   Dismiss: '닫기',
   'Dismiss review': '리뷰 닫기',
+  'Review game': '게임 리뷰',
+  'See accuracy, mistakes and the evaluation graph.': '정확도와 실수, 평가 그래프를 봅니다.',
   'Evaluation graph — click to jump to a move': '평가 그래프 — 클릭하면 그 수로 이동합니다',
   Reviewing: '리뷰 중',
 

@@ -63,8 +63,36 @@ export function ReviewStrip() {
   const points = useReview((s) => s.points);
   const error = useReview((s) => s.error);
   const clear = useReview((s) => s.clear);
+  const run = useReview((s) => s.run);
+  // The offer below: a whole game just opened, and the feature that
+  // judges it was a 14px icon in a six-icon cluster nobody found.
+  const gameHeaders = useAnalysis((s) => s.gameHeaders);
+  const hasMoves = useAnalysis((s) => getRootHasMoves(s));
+  // Dismissal is per game, by identity: the next loaded game offers again.
+  const [offerDismissed, setOfferDismissed] = useState<unknown>(null);
 
-  if (status === 'idle') return null;
+  if (status === 'idle') {
+    if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
+    return (
+      <div className="border-line flex shrink-0 items-center gap-2 border-t px-3 py-2">
+        <p className="text-muted min-w-0 flex-1 truncate text-xs">
+          {t('See accuracy, mistakes and the evaluation graph.')}
+        </p>
+        <Button variant="secondary" size="sm" onClick={() => void run()}>
+          <Microscope className="size-3.5" />
+          {t('Review game')}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('Dismiss')}
+          onClick={() => setOfferDismissed(gameHeaders)}
+        >
+          <X className="size-3" />
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="border-line shrink-0 border-t">
