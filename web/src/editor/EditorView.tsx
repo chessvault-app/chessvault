@@ -97,6 +97,8 @@ export function EditorView({
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
   const [sheetOpen, setSheetOpen] = useState(false);
+  // The sheet stays mounted while the loader it opened is up — see Modal.
+  const [loaderOpen, setLoaderOpen] = useState(false);
   // Image import runs against the app's built-in piece templates, so a
   // screenshot of any lichess/chessground-style board reads with no setup.
 
@@ -220,7 +222,7 @@ export function EditorView({
   // `titled` is false in the sheet: the window is already called Position,
   // and a panel header repeating it under the window's own title bar is
   // the same word twice, three lines apart.
-  const positionPanels = (titled: boolean) => (
+  const positionPanels = (titled: boolean, nested = false) => (
     <>
         <Panel flush>
           {titled && <PanelHeader title={t('Position')} />}
@@ -331,7 +333,20 @@ export function EditorView({
             </Button>
             {/* Same Load-position dialog as the Board tab (lanph3re: one
                 dialog everywhere); here it lands on the editor state. */}
-            <LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />
+            {/* Opened from the sheet, this REPLACES the sheet rather than
+                stacking a second one on it: the sheet closes as the
+                loader opens, and the loader's back chevron brings it
+                straight back. Two scrims deep on a phone is a window you
+                have to dismiss twice to get out of. */}
+            <LoadPositionButton
+              loadText={loadText}
+              applyImageFen={applyImageFen}
+              onOpenChange={nested ? (open) => {
+                setLoaderOpen(open);
+                if (!open) setSheetOpen(false);
+              } : undefined}
+              onBack={nested ? () => setLoaderOpen(false) : undefined}
+            />
           </div>
         </Panel>
     </>
@@ -521,8 +536,8 @@ export function EditorView({
           on a phone and this only ever opens on one (`wide:hidden` on the
           button that opens it). */}
       {sheetOpen && (
-        <Modal title="Position" onClose={() => setSheetOpen(false)}>
-          {positionPanels(false)}
+        <Modal title="Position" hidden={loaderOpen} onClose={() => setSheetOpen(false)}>
+          {positionPanels(false, true)}
         </Modal>
       )}
 

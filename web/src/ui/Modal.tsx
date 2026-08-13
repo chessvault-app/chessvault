@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import { ChevronLeft, type LucideIcon } from 'lucide-react';
+import { Button } from './Button';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
@@ -28,8 +29,10 @@ export function Modal({
   icon: Icon,
   actions,
   onClose,
+  onBack,
   children,
   className,
+  hidden = false,
   full = false,
 }: {
   title: string;
@@ -37,7 +40,25 @@ export function Modal({
   /** One control on the title line — Paste, say. Never a close button. */
   actions?: ReactNode;
   onClose: () => void;
+  /**
+   * Where this window came from, when it came from another one.
+   *
+   * A window opened out of a window used to be a second sheet stacked on
+   * the first, two scrims deep on a phone. With this it is the same sheet
+   * showing its second page: the caller closes the first and reopens it
+   * from here, and the title row grows a chevron to say so.
+   */
+  onBack?: () => void;
   children: ReactNode;
+  /**
+   * Out of sight, still mounted.
+   *
+   * For a window that has opened another one: unmounting it would take
+   * the state of whatever it contains with it — including, in the
+   * editor's case, the very button that opened the second window. Hidden,
+   * it is still there to come back to.
+   */
+  hidden?: boolean;
   className?: string;
   /**
    * A wide window on a DESKTOP. Nothing to do with a phone.
@@ -80,6 +101,7 @@ export function Modal({
         'vv-band fixed inset-0 z-50 grid place-items-center bg-black/60',
         'max-sm:flex max-sm:items-end max-sm:justify-center max-sm:p-0',
         full ? 'sm:p-6' : 'sm:p-4',
+        hidden && 'hidden',
       )}
       onClick={onClose}
       role="presentation"
@@ -157,6 +179,18 @@ export function Modal({
             aria-hidden
           />
           <div className="flex items-center gap-2">
+            {onBack && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Back')}
+                aria-label={t('Back')}
+                className="-my-1 -ml-1 shrink-0"
+                onClick={onBack}
+              >
+                <ChevronLeft className="size-3.5" />
+              </Button>
+            )}
             {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
             <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
             {actions}

@@ -34,11 +34,18 @@ function loadIntoAnalysis(value: string): string | null {
 export function LoadPositionButton({
   loadText = loadIntoAnalysis,
   applyImageFen,
+  onOpenChange,
+  onBack,
 }: {
   /** Consume pasted text; return an error message, or null on success. */
   loadText?: (value: string) => string | null;
   /** Consume a position read from an image (defaults to the analysis board). */
   applyImageFen?: (fen: string) => void;
+  /** Told whenever the dialog opens or closes — for a caller that must
+      get out of its way and know when to come back. */
+  onOpenChange?: (open: boolean) => void;
+  /** Given only when this opened from another window; see Modal.onBack. */
+  onBack?: () => void;
 } = {}) {
   const [open, setOpen] = useState(false);
   // 'Load position' is the single entry point (lanph3re's call): the dialog
@@ -53,14 +60,24 @@ export function LoadPositionButton({
         size="icon-sm"
         active={open}
         title={t('Load a position — FEN, PGN, or image')}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          onOpenChange?.(true);
+          setOpen(true);
+        }}
       >
         <FolderInput className="size-3.5" />
       </Button>
       {open && templates === null && (
         <LoadDialog
           loadText={loadText}
-          onClose={() => setOpen(false)}
+          onBack={onBack && (() => {
+            setOpen(false);
+            onBack();
+          })}
+          onClose={() => {
+            setOpen(false);
+            onOpenChange?.(false);
+          }}
           onImage={(file) => {
             setImageFile(file);
             void builtinTemplates()
@@ -96,10 +113,12 @@ export function LoadPositionButton({
 function LoadDialog({
   loadText,
   onClose,
+  onBack,
   onImage,
 }: {
   loadText: (value: string) => string | null;
   onClose: () => void;
+  onBack?: () => void;
   onImage: (file: Blob | null) => void;
 }) {
   const [text, setText] = useState('');
@@ -149,7 +168,8 @@ function LoadDialog({
     <Modal
       title="Load position"
       onClose={onClose}
-      className="max-w-md"
+      onBack={onBack}
+      className="sm:max-w-md"
       actions={
         <Button
           variant="ghost"
