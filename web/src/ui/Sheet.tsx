@@ -65,7 +65,9 @@ export function Sheet({
         aria-modal="true"
         aria-label={t(label)}
         className={cn(
-          'bg-surface border-line flex max-h-full w-full max-w-sm flex-col gap-2 overflow-y-auto',
+          // overscroll-contain for the same reason Modal has it: a scroll
+          // this card cannot use must not be handed to the page under it.
+          'bg-surface border-line flex max-h-full w-full max-w-sm flex-col gap-2 overflow-y-auto overscroll-contain',
           'rounded-xl border p-3 shadow-[var(--shadow-pop)]',
           className,
         )}

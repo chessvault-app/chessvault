@@ -91,7 +91,11 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
         style={full ? drag.style : undefined}
         className={cn(
-          'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto',
+          // overscroll-contain: a scroll this window cannot use is its own
+          // business. Without it, reaching the end of the list inside a
+          // sheet hands the rest of the gesture to whatever is behind the
+          // sheet, which then moves under a scrim you are still touching.
+          'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto overscroll-contain',
           'border p-3 shadow-[var(--shadow-pop)]',
           full
             ? // A BOTTOM SHEET on a phone, not a full-screen card. Edge to
@@ -109,7 +113,17 @@ export function Modal({
         {/* Full-bleed rule: the card pads by 3, so the row un-pads itself
             and the line reaches both edges, as it does in a Panel. */}
         <div
-          className="border-line -mx-3 shrink-0 border-b px-3 pb-2"
+          className={cn(
+            'border-line -mx-3 shrink-0 border-b px-3 pb-2',
+            // touch-none on the element that CARRIES the drag, not on the
+            // two boxes inside it. A touch is panned by the nearest
+            // scrollable ancestor unless touch-action says otherwise, and
+            // this card scrolls — so a drag that started on the strip of
+            // padding around the handle both pushed the sheet down and
+            // scrolled what was inside it. Restored on sm, where this is a
+            // centred window with no drag to protect.
+            full && 'touch-none select-none sm:touch-auto sm:select-auto',
+          )}
           {...(full ? drag.handlers : {})}
         >
           {/* The grabber, phones only: the same handle the row menu has,
@@ -117,11 +131,11 @@ export function Modal({
               the same way. */}
           {full && (
             <div
-              className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab touch-none rounded-full sm:hidden"
+              className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden"
               aria-hidden
             />
           )}
-          <div className={cn('flex items-center gap-2', full && 'touch-none select-none sm:touch-auto')}>
+          <div className="flex items-center gap-2">
             {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
             <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
             {actions}

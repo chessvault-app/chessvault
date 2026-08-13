@@ -37,7 +37,7 @@ export function MoveToPopover({
 
   return (
     <Sheet label="Move to" onClose={onClose}>
-      <div className="flex max-h-64 flex-col overflow-y-auto">
+      <div className="flex max-h-64 flex-col overflow-y-auto overscroll-contain">
         {targets.map((target) => (
           <button
             key={target || '(root)'}
