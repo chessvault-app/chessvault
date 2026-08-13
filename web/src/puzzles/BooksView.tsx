@@ -75,6 +75,7 @@ import { Suspense, lazy } from 'react';
 
 const PdfImport = lazy(() => import('./PdfImport').then((m) => ({ default: m.PdfImport })));
 import { useImportJob } from './importJob';
+import { listCheckpoints, type CheckpointSummary } from './importCheckpoint';
 import {
   classifyBoard,
   harvestTemplates,
@@ -470,6 +471,28 @@ function Shelf() {
    * a book is called is on its cover, and you are about to go and look.
    */
   const needle = query.trim().toLowerCase();
+  /**
+   * Books with a scan that never finished.
+   *
+   * Read once when the shelf opens, and again whenever a scan stops
+   * running — that is the moment one either disappears (it finished) or
+   * appears (it was interrupted). The live job is watched separately so
+   * a scan in progress shows its page as it moves.
+   */
+  const job = useImportJob();
+  const [interrupted, setInterrupted] = useState<CheckpointSummary[]>([]);
+  const jobStatus = job.status;
+  useEffect(() => {
+    void listCheckpoints().then(setInterrupted);
+  }, [jobStatus]);
+  const scanOf = (slug: string): { page: number; pages: number; live: boolean } | undefined => {
+    if (job.slug === slug && (jobStatus === 'scanning' || jobStatus === 'reading')) {
+      return { page: job.page, pages: job.pages, live: true };
+    }
+    const saved = interrupted.find((c) => c.slug === slug);
+    return saved ? { page: saved.page, pages: saved.pages, live: false } : undefined;
+  };
+
   const visibleBooks = (books ?? []).filter(
     (b) =>
       !hidden.has(b.slug) &&
@@ -565,6 +588,7 @@ function Shelf() {
                 marked={markedSlugs.has(b.slug)}
                 onToggleMark={() => void toggleMark(b.slug)}
                 onRemove={() => dropBook(b.slug, b.title)}
+                scan={scanOf(b.slug)}
               />
             ))}
           </ul>
@@ -591,11 +615,15 @@ function BookCard({
   marked,
   onToggleMark,
   onRemove,
+  scan,
 }: {
   book: BookSummary;
   marked: boolean;
   onToggleMark: () => void;
   onRemove: () => void;
+  /** An unfinished import of this book: live if it is running now, or
+      the checkpoint it stopped at. */
+  scan?: { page: number; pages: number; live: boolean };
 }) {
   const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
   const menuTrigger = useRef<HTMLButtonElement>(null);
@@ -644,7 +672,33 @@ function BookCard({
                 {t('{n} puzzles', { n: book.puzzles })}
               </span>
             </span>
-            <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} />
+            {scan ? (
+              /*
+                A book being read is not a book you can train from, so the
+                shelf says so instead of showing a progress bar over
+                puzzles that are still arriving. Opening the book is the
+                way back to the import — the card already does that on
+                click, so this is a line, not another control competing
+                with it.
+              */
+              <span className="flex items-center gap-1.5">
+                {scan.live ? (
+                  <Loader2 className="text-primary size-3 shrink-0 animate-spin" />
+                ) : (
+                  <FileUp className="text-warn size-3 shrink-0" />
+                )}
+                <span className={cn('truncate text-xs', scan.live ? 'text-primary' : 'text-warn')}>
+                  {scan.live
+                    ? t('reading — page {page} of {pages}', { page: scan.page, pages: scan.pages })
+                    : t('unfinished — {page} of {pages} pages, tap to carry on', {
+                        page: scan.page,
+                        pages: scan.pages,
+                      })}
+                </span>
+              </span>
+            ) : (
+              <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} />
+            )}
           </span>
         </div>
 

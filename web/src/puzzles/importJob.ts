@@ -26,6 +26,13 @@ import type { Gray } from './ocr/image';
 // pass re-renders pages, so it needs the real document type.
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { Role } from 'chessops/types';
+import {
+  clearCheckpoint,
+  fingerprintOf,
+  readCheckpoint,
+  saveCheckpoint,
+  type ImportCheckpoint,
+} from './importCheckpoint';
 
 export interface FoundDiagram {
   page: number;
@@ -73,6 +80,8 @@ interface ImportJobState {
   solve: SolveSummary | null;
   error: string | null;
   start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
+  /** Continue a scan a reload or a crash interrupted. */
+  resume: (slug: string, templates: Template[], options?: ImportOptions) => void;
   toggle: (index: number) => void;
   clear: () => void;
 }
@@ -178,7 +187,25 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   start: (slug, file, templates, options) => {
     if (get().status === 'scanning') return;
     set({ slug, status: 'scanning', page: 0, pages: 0, found: [], solve: null, error: null });
-    void scan(file, templates, options ?? {}, set, get);
+    void scan(file, templates, options ?? {}, set, get, null);
+  },
+
+  resume: (slug, templates, options) => {
+    if (get().status === 'scanning') return;
+    void (async () => {
+      const saved = await readCheckpoint(slug);
+      if (!saved) return;
+      set({
+        slug,
+        status: 'scanning',
+        page: saved.page,
+        pages: saved.pages,
+        found: saved.results,
+        solve: null,
+        error: null,
+      });
+      void scan(saved.file, templates, options ?? {}, set, get, saved);
+    })();
   },
 
   toggle: (index) =>
@@ -216,6 +243,8 @@ async function scan(
   options: ImportOptions,
   set: (partial: Partial<ImportJobState>) => void,
   get: () => ImportJobState,
+  /** A scan to continue, or null to start the book from page one. */
+  saved: ImportCheckpoint | null,
 ): Promise<void> {
   try {
     const pdfjs = await import('pdfjs-dist');
@@ -229,11 +258,20 @@ async function scan(
       wasmUrl: `${window.location.origin}/pdfjs-wasm/`,
     }).promise;
     set({ pages: pdf.numPages });
-    const results: FoundDiagram[] = [];
-    const texts: TextPage[] = [];
-    const geometry: PageGeometry[] = [];
+    // Everything phase one accumulates. Restored from the checkpoint when
+    // resuming, which is the whole of what "resume" means here: the loop
+    // picks up at the next page with the arrays it had.
+    const results: FoundDiagram[] = saved ? [...saved.results] : [];
+    const texts: TextPage[] = saved ? [...saved.texts] : [];
+    const geometry: PageGeometry[] = saved ? [...saved.geometry] : [];
+    // NOT checkpointed: full-page JPEGs are the heaviest thing here and are
+    // only wanted at the very end, for pages that turned out to hold a
+    // solved puzzle. A resumed scan re-renders those few pages instead of
+    // carrying every page's image through the interruption.
     const pageImages = new Map<number, string>();
-    for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+    const fingerprint = fingerprintOf(file);
+    const startAt = saved ? saved.page + 1 : 1;
+    for (let pageNo = startAt; pageNo <= pdf.numPages; pageNo++) {
       if (get().status !== 'scanning') return; // cancelled
       set({ page: pageNo });
       const page = await pdf.getPage(pageNo);
@@ -279,12 +317,54 @@ async function scan(
       // pages that printed one, and only until the upload.
       if (rects.length > 0) pageImages.set(pageNo, pageJpeg(canvas));
       set({ found: [...results] });
+      // The page is done, so record it. Awaited rather than fired and
+      // forgotten: a put that is still in flight when the tab dies is a
+      // checkpoint that does not exist, and one page of writing is cheap
+      // beside rendering and classifying the next.
+      const slugNow = get().slug;
+      if (slugNow) {
+        await saveCheckpoint({
+          slug: slugNow,
+          file,
+          fingerprint,
+          page: pageNo,
+          pages: pdf.numPages,
+          results,
+          texts,
+          geometry,
+          updatedAt: Date.now(),
+        });
+      }
       // Yield so navigation and rendering stay smooth between pages.
       await new Promise((r) => setTimeout(r, 0));
     }
     if (results.length === 0) {
+      // A verdict, not an interruption: this book has been read to the end
+      // and had nothing in it. Leaving the checkpoint would park it on the
+      // shelf as "unfinished" for ever, and resuming would start past the
+      // last page and reach the same conclusion.
+      const finishedSlug = get().slug;
+      if (finishedSlug) await clearCheckpoint(finishedSlug);
       set({ error: 'No diagrams found in that PDF.', status: 'failed' });
       return;
+    }
+
+    // A resumed scan holds page images only for the pages IT rendered, so
+    // fill the gaps before the text half asks for evidence. Only pages
+    // that produced a diagram can ever be wanted, which is a small
+    // fraction of a book.
+    if (saved) {
+      for (const g of geometry) {
+        if (g.rects.length === 0 || pageImages.has(g.page)) continue;
+        const page = await pdf.getPage(g.page);
+        const base = page.getViewport({ scale: 1 });
+        const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(viewport.width);
+        canvas.height = Math.round(viewport.height);
+        await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+        pageImages.set(g.page, pageJpeg(canvas));
+      }
     }
 
     // The text half. Everything it needs about the book it works out from
@@ -295,14 +375,17 @@ async function scan(
     const summary = slug
       ? await readSolutions(slug, pdf, texts, geometry, results, pageImages, options)
       : null;
+    if (slug) await clearCheckpoint(slug);
     set({ solve: summary, status: 'done', found: [...results] });
   } catch (e) {
+    // The checkpoint is deliberately NOT cleared here: a scan that fell
+    // over is exactly the one worth resuming.
     set({ status: 'failed', error: `Could not read the PDF: ${(e as Error).message}` });
   }
 }
 
 /** One diagram's place on its page, in render pixels. */
-interface Rect {
+export interface Rect {
   x: number;
   y: number;
   w: number;
@@ -310,7 +393,7 @@ interface Rect {
 }
 
 /** What one rendered page contributed to the vision half. */
-interface PageGeometry {
+export interface PageGeometry {
   page: number;
   rects: Rect[];
   /** Each rect's placement as CellNet read it, or null if it could not. */

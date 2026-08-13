@@ -1,11 +1,12 @@
 import { Eye, FileUp, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { Skeleton } from '@/ui/Skeleton';
 import { useImportJob } from './importJob';
+import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
 
@@ -41,6 +42,27 @@ export function PdfImport({
   const [mode, setMode] = useState<'update' | 'rebuild'>('update');
   const [repair, setRepair] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  /**
+   * An unfinished scan of THIS book, if there is one.
+   *
+   * `undefined` while it is being looked up, so the window does not
+   * flash a file picker at someone whose answer is "carry on where you
+   * left off". Cleared once the scan is running, because from then on
+   * the live job is the thing to show.
+   */
+  const [saved, setSaved] = useState<
+    { page: number; pages: number; diagrams: number } | null | undefined
+  >(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    void readCheckpoint(slug).then((c) => {
+      if (cancelled) return;
+      setSaved(c ? { page: c.page, pages: c.pages, diagrams: c.results.length } : null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   const begin = async (file: File): Promise<void> => {
     setSaveError(null);
@@ -107,7 +129,45 @@ export function PdfImport({
   return (
     <Modal title="Import a book PDF" icon={FileUp} onClose={onClose} full>
 
-        {!mine && existing > 0 && (
+        {/*
+          An interrupted scan is offered back before anything else. It is
+          the only thing on this window that is about work already done,
+          and asking someone to find the PDF again — and wait through the
+          pages they already waited through — to get back to where they
+          were is the failure this exists to remove.
+        */}
+        {!mine && saved && (
+          <div className="border-primary/40 bg-primary-soft flex flex-col gap-2 rounded-lg border p-3">
+            <p className="text-fg text-xs font-medium">
+              {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
+                page: saved.page,
+                pages: saved.pages,
+                n: saved.diagrams,
+              })}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => job.resume(slug, templates, { repair })}
+              >
+                {t('Carry on from page {page}', { page: saved.page + 1 })}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  void clearCheckpoint(slug);
+                  setSaved(null);
+                }}
+              >
+                {t('Start the book again')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!mine && !saved && existing > 0 && (
           <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">
             <p className="text-fg text-xs font-medium">
               {t('This book already holds {n} puzzles. What should the import do with them?', {
@@ -156,7 +216,7 @@ export function PdfImport({
           </label>
         )}
 
-        {!mine && (
+        {!mine && !saved && (
           <label
             {...pdfDrop.handlers}
             className={cn(
