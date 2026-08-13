@@ -209,11 +209,32 @@ export function PdfImport({
    */
   const listRef = useRef<HTMLUListElement | null>(null);
   const stuck = useRef(true);
+  /**
+   * Where WE last put the scroll.
+   *
+   * Every jump to the end fires a scroll event, and the first version
+   * read those events as the reader scrolling — one under-shooting jump
+   * (see below) therefore unstuck the list permanently, which is exactly
+   * the "it doesn't auto-scroll" it was meant to fix. A scroll that
+   * leaves the position where we set it is ours and says nothing about
+   * what the reader wants.
+   */
+  const pinnedAt = useRef(-1);
   const grown = found.length;
   useEffect(() => {
-    const el = listRef.current;
-    if (!el || !stuck.current) return;
-    el.scrollTop = el.scrollHeight;
+    const pin = (): void => {
+      const el = listRef.current;
+      if (!el || !stuck.current) return;
+      el.scrollTop = el.scrollHeight;
+      pinnedAt.current = el.scrollTop;
+    };
+    pin();
+    // And again next frame. `content-visibility` means a row that has
+    // never been near the viewport is not laid out, so scrollHeight can
+    // still be growing under the first jump — that is what left the list
+    // 480px short of an end it then stopped chasing.
+    const again = requestAnimationFrame(pin);
+    return () => cancelAnimationFrame(again);
   }, [grown, scanning]);
 
   const save = async (): Promise<void> => {
@@ -498,10 +519,13 @@ export function PdfImport({
               */
               onScroll={(e) => {
                 const list = e.currentTarget;
-                // Within a row's height of the end counts as "at the end":
-                // the exact bottom is a moving target while the list grows
-                // under the scroll.
-                stuck.current = list.scrollHeight - list.scrollTop - list.clientHeight < 28;
+                // Only a scroll we did not cause says anything about
+                // whether the reader still wants the end. Within a row's
+                // height of it counts as at it: the exact bottom is a
+                // moving target while the list grows under the scroll.
+                if (Math.abs(list.scrollTop - pinnedAt.current) > 1) {
+                  stuck.current = list.scrollHeight - list.scrollTop - list.clientHeight < 28;
+                }
                 setPeek((p) => {
                   if (!p) return p;
                   const row = list.querySelector(`[data-row="${p.i}"]`);
@@ -522,7 +546,17 @@ export function PdfImport({
                       ? { label: t('{n} unsure', { n: f.uncertain }), cls: 'text-warn' }
                       : { label: 'read', cls: 'text-good' };
                 return (
-                  <li key={i} className="[content-visibility:auto]">
+                  <li
+                    key={i}
+                    // A row that has never been on screen is skipped by
+                    // content-visibility, and without an intrinsic size it
+                    // is skipped as ZERO HIGH — so a list of a thousand
+                    // reported a fraction of its real height, and every
+                    // jump to the end landed short. 41px is the row; once
+                    // one has been laid out `auto` uses what it measured,
+                    // including the taller rows with a crop open.
+                    className="[content-visibility:auto] [contain-intrinsic-size:auto_41px]"
+                  >
                     <div
                       data-row={i}
                       className={cn(
