@@ -120,7 +120,15 @@ export function App() {
 function DemoBanner() {
   if (!isDemo()) return null;
   return (
-    <div className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-xs">
+    <div
+      // Named so the screenshot capture can hide it — the demo is where
+      // the docs' images come from, and this notice is a property of the
+      // demo rather than of the app being pictured. It used to be found
+      // by matching its own sentence, which meant the images depended on
+      // a string nobody would think to check when editing it.
+      data-demo-banner
+      className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-xs"
+    >
       {t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
     </div>
   );

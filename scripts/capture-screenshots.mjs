@@ -20,7 +20,7 @@
  * CSS width it wants the app laid out at, and gets a raster comfortably
  * denser than wherever it is displayed.
  */
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, session } from 'electron';
 import { writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -55,17 +55,23 @@ const TARGETS = [
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** The demo's own banner: a property of the demo, not of the app. */
+/**
+ * The demo's own banner: a property of the demo, not of the app.
+ *
+ * A STYLESHEET rule on the attribute App.tsx marks it with, not an inline
+ * style on whatever element happened to hold the sentence. The old version
+ * matched the banner's own text and set `style.display` on the node it
+ * found: it broke silently if the wording changed, and an inline style
+ * only lasts as long as the node React put it on, so a re-render between
+ * hiding and capturing put the banner back into the image. A rule in the
+ * document applies to whatever is on screen at capture time.
+ */
 const HIDE_DEMO_BANNER = `
   (() => {
-    for (const el of document.querySelectorAll('body *')) {
-      const text = (el.textContent || '').trim();
-      if (text.startsWith('Demo —') && el.children.length === 0) {
-        const bar = el.closest('div');
-        if (bar) bar.style.display = 'none';
-      }
-    }
-    return true;
+    const style = document.createElement('style');
+    style.textContent = '[data-demo-banner]{display:none!important}';
+    document.head.appendChild(style);
+    return document.querySelectorAll('[data-demo-banner]').length;
   })()
 `;
 
@@ -74,6 +80,12 @@ const HIDE_DEMO_BANNER = `
 app.on('window-all-closed', () => {});
 
 app.whenReady().then(async () => {
+  // A picture of a cached build is a picture of the wrong app. index.html
+  // is the one file whose name does not change between builds, so a stale
+  // copy of it keeps pointing at the previous run's hashed bundle and
+  // every shot silently shows yesterday's UI.
+  await session.defaultSession.clearCache();
+
   for (const { hash, out, win: [w, h], css, wait } of TARGETS) {
     const win = new BrowserWindow({
       width: w,
@@ -89,14 +101,31 @@ app.whenReady().then(async () => {
     await win.webContents.executeJavaScript(
       `localStorage.setItem('chess-vault:lang', 'en'); location.hash = ${JSON.stringify(hash.slice(1))}; true`,
     );
+    // BEFORE the waits, not after them. A rule in the document applies to
+    // whatever appears later, so hiding first means no frame ever contains
+    // the notice — which matters because an offscreen window's capture can
+    // hand back a frame older than the last thing done to the DOM. Hiding
+    // it a moment before the shutter left the notice in the raster while
+    // the DOM said it was gone.
+    await win.webContents.executeJavaScript(HIDE_DEMO_BANNER);
     // After the load, not before: a navigation resets it.
     win.webContents.setZoomFactor(w / css);
     await sleep(1800);
-    await win.webContents.executeJavaScript(HIDE_DEMO_BANNER);
+    const banners = await win.webContents.executeJavaScript(
+      `document.querySelectorAll('[data-demo-banner]').length`,
+    );
     const found = await win.webContents.executeJavaScript(
       `document.querySelectorAll('${wait}').length`,
     );
     await sleep(1200);
+
+    // Checked at the shutter, not when the rule was added: the notice
+    // getting into the docs is exactly the failure nobody notices until
+    // the images are already published.
+    const bannerHeight = await win.webContents.executeJavaScript(
+      `(() => { const el = document.querySelector('[data-demo-banner]');
+        return el ? Math.round(el.getBoundingClientRect().height) : 0; })()`,
+    );
 
     const image = await win.webContents.capturePage();
     const png = image.toPNG();
@@ -106,7 +135,10 @@ app.whenReady().then(async () => {
     console.log(
       `${out.padEnd(18)} raster ${size.width}x${size.height}  layout ${layout[0]}x${layout[1]}` +
         `  ${(png.length / 1e3).toFixed(0)} KB` +
-        (found ? '' : `  (WARNING: no "${wait}" on the page — is it still loading?)`),
+        (found ? '' : `  (WARNING: no "${wait}" on the page — is it still loading?)`) +
+        // Silence here would mean the demo notice is in the picture.
+        (banners ? '' : `  (WARNING: no [data-demo-banner] — is the notice in the shot?)`) +
+        (bannerHeight ? `  (WARNING: demo notice ${bannerHeight}px tall AT CAPTURE)` : ''),
     );
     win.destroy();
   }
