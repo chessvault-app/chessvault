@@ -308,7 +308,6 @@ function CreateMenu() {
           <Field label="Study title">
             <Input
               autoFocus={autoFocusField()}
-              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {

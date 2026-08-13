@@ -1056,8 +1056,12 @@ function CollectionView() {
         </Modal>
       )}
 
+      {/* A HEIGHT, not a cap. This window is a list of 280,000 games: it
+          opens empty, the first page lands a moment later, and a
+          content-sized sheet grew under the reader's thumb as it did.
+          Given the height it is going to end up at, it opens at it. */}
       {elite && (
-        <Modal title="Elite games" onClose={() => setElite(false)} full>
+        <Modal title="Elite games" onClose={() => setElite(false)} full className="max-sm:h-[88%]">
           <EliteGames />
         </Modal>
       )}
@@ -1463,8 +1467,14 @@ function ArchiveBrowser({
     <>
       {/* pt-3, not flush under the header's rule: the tab bar is a raised
           control and sitting it straight against the line made the two
-          read as one stuck-together thing. */}
-      <div className="flex flex-col gap-2 px-3 pb-3 pt-3">
+          read as one stuck-together thing.
+
+          Unframed — in a window — the card is already padding by 3 on
+          every side, so this padded a second time: the archive's controls
+          sat 24px from the edges while every other window's sat 12, and
+          twice as far below the title rule. Unframed it adds nothing
+          horizontally and only the gap under the rule. */}
+      <div className={cn('flex flex-col gap-2', framed ? 'px-3 pb-3 pt-3' : 'pb-2 pt-1')}>
         {/* One track, one lit segment. As two chips it was impossible to
             tell by looking whether they were a choice or two independent
             toggles — and both being unlit is not a state this has. */}
@@ -1871,10 +1881,10 @@ function ArchiveBrowser({
               pixel of that height before the paragraph beside it gives up
               one. In a sheet shortened by the keyboard it went to exactly
               0 and appeared to have been hidden on purpose. It is hidden
-              on purpose NOW — a picture is the first thing to go when
-              there is no room, and the sentence is the part that was
-              doing the work. */}
-          <CloudBoardArt className="keyboard:hidden w-20 shrink-0" />
+              hidden on purpose for a while, on the grounds that a picture
+              is the first thing to go when there is no room. There is
+              room: the window scrolls. */}
+          <CloudBoardArt className="w-20 shrink-0" />
           <p className="text-muted max-w-xs text-sm leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
