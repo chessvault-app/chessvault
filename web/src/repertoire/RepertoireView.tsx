@@ -12,6 +12,7 @@ import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
 import { useAnalysis } from '@/store/analysis';
 import { navigate } from '@/lib/router';
+import { isDemo } from '@/lib/demo';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
@@ -25,9 +26,12 @@ import { t } from '@/lib/i18n';
 /**
  * Repertoire trainer: rehearse an opening against the field. You move; the app
  * replies with a real move, chosen in proportion to how often it was actually
- * played in the Lichess database, filtered to a rating band you pick. When the
- * line runs past the database the opening is over — the whole line hands off to
- * the Board for engine analysis.
+ * played — in the Lichess database, filtered to a rating band you pick, or in
+ * any local opening book. A book offers no band: its population was fixed when
+ * it was built (the bundled one is elite-only by construction), which is also
+ * what makes it work offline with no token. When the line runs past the source
+ * the opening is over — the whole line hands off to the Board for engine
+ * analysis.
  */
 
 type Phase = 'idle' | 'playing' | 'thinking' | 'ended';
@@ -90,6 +94,13 @@ const RATING_BANDS: { label: string; ratings: string }[] = [
   { label: '2500+', ratings: '2500' },
   { label: 'All ratings', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
 ];
+
+/**
+ * The online source's value in the picker. A book name must match
+ * `^[A-Za-z0-9][A-Za-z0-9_.-]*$` (server/books.ts), so a value with a colon
+ * can never collide with one — the same trick the explorer's switcher uses.
+ */
+const ONLINE_SOURCE = 'lichess:lichess';
 
 interface ExplorerMove {
   uci: string;
@@ -404,6 +415,29 @@ export function RepertoireView() {
   // 1600–1800: the group the database as a whole averages into.
   const [band, setBand] = useState(RATING_BANDS[4]!.ratings);
   const [template, setTemplate] = useState<Template>(TEMPLATES[0]!);
+  // '' = undecided, resolved when the book list arrives. The demo cannot
+  // offer the online source (no token can ship in a static bundle), so it
+  // starts undecided and settles on the first book.
+  const [source, setSource] = useState<string>(isDemo() ? '' : ONLINE_SOURCE);
+  const [books, setBooks] = useState<{ name: string }[]>([]);
+
+  // Which local books exist, for the source picker.
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/books')
+      .then((r) => r.json())
+      .then((body: { books?: { name: string }[] }) => {
+        if (cancelled) return;
+        setBooks(body.books ?? []);
+        setSource((s) => (s === '' ? (body.books?.[0]?.name ?? ONLINE_SOURCE) : s));
+      })
+      .catch(() => {
+        if (!cancelled) setSource((s) => (s === '' ? ONLINE_SOURCE : s));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [tree, setTree] = useState<MoveTree>(() => createTree());
   const [tipId, setTipId] = useState<NodeId>(tree.rootId);
@@ -453,7 +487,7 @@ export function RepertoireView() {
   // Fetch the field's reply and play it. The runId guard drops replies that
   // arrive after the game was restarted.
   const reply = useCallback(
-    async (curTree: MoveTree, curId: NodeId, ratings: string) => {
+    async (curTree: MoveTree, curId: NodeId, src: string, ratings: string) => {
       const token = runId.current;
       setPhase('thinking');
       setError(null);
@@ -462,13 +496,23 @@ export function RepertoireView() {
       // random. Waiting out the rest of MIN_THINK makes the reply land at a
       // consistent, deliberate pace.
       const started = Date.now();
+      // Both sources answer in the same shape — the server normalises the
+      // Lichess payload to the book contract — so only the URL differs.
+      const online = src === ONLINE_SOURCE;
+      const fallback = online
+        ? 'Could not reach the Lichess database.'
+        : 'Could not read the opening book.';
       try {
         const fen = getNode(curTree, curId).fen;
-        const res = await fetch(`/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`);
+        const res = await fetch(
+          online
+            ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
+            : `/api/books/${encodeURIComponent(src)}?fen=${encodeURIComponent(fen)}`,
+        );
         if (token !== runId.current) return;
         const body = (await res.json().catch(() => null)) as { moves?: ExplorerMove[]; error?: string } | null;
         if (!res.ok || !body?.moves) {
-          setError(t(body?.error ?? 'Could not reach the Lichess database.'));
+          setError(t(body?.error ?? fallback));
           setPhase('playing');
           return;
         }
@@ -492,7 +536,7 @@ export function RepertoireView() {
         setPhase('playing');
       } catch {
         if (token === runId.current) {
-          setError(t('Could not reach the Lichess database.'));
+          setError(t(fallback));
           setPhase('playing');
         }
       }
@@ -508,7 +552,7 @@ export function RepertoireView() {
     setTree(added.tree);
     setTipId(added.nodeId);
     setCursorId(added.nodeId);
-    void reply(added.tree, added.nodeId, band);
+    void reply(added.tree, added.nodeId, source, band);
   };
 
   const startGame = (): void => {
@@ -539,7 +583,7 @@ export function RepertoireView() {
     } else {
       // The bot moves first; its reply animates on its own.
       setCursorId(id);
-      void reply(t, id, band);
+      void reply(t, id, source, band);
     }
   };
 
@@ -642,15 +686,49 @@ export function RepertoireView() {
                 ))}
               </div>
               <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">{t('Rating')}</span>
+                <span className="text-muted text-xs font-medium">{t('Source')}</span>
                 <Select
-                  value={band}
-                  onChange={setBand}
-                  ariaLabel={t('Opponent strength')}
+                  value={source}
+                  onChange={setSource}
+                  ariaLabel={t('Where replies come from')}
                   steady
-                  groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
+                  groups={[
+                    // The demo hides the online source rather than offering
+                    // it broken — no token can ship in a static bundle.
+                    ...(isDemo()
+                      ? []
+                      : [
+                          {
+                            label: 'Online (via proxy)',
+                            options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
+                          },
+                        ]),
+                    ...(books.length > 0
+                      ? [
+                          {
+                            label: 'Local books',
+                            options: books.map((b) => ({ value: b.name, label: b.name })),
+                          },
+                        ]
+                      : []),
+                  ]}
                 />
               </label>
+              {/* A rating band is the online database's own dimension. A book
+                  has none: its population was fixed when it was built, so the
+                  choice of book IS the choice of field. */}
+              {source === ONLINE_SOURCE && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-muted text-xs font-medium">{t('Rating')}</span>
+                  <Select
+                    value={band}
+                    onChange={setBand}
+                    ariaLabel={t('Opponent strength')}
+                    steady
+                    groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
+                  />
+                </label>
+              )}
               <label className="flex flex-col gap-1">
                 <span className="text-muted text-xs font-medium">{t('Opening')}</span>
                 <OpeningPicker value={template} onChange={setTemplate} />

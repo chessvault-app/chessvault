@@ -72,9 +72,10 @@ is one connected body of work, and the links are what make it that.
 
 - **Tools** — the interactive boards, grouped: the analysis **Board**,
   the position **Editor**, a shortcut into the opening **Explorer**, and
-  a **Repertoire** trainer that spars an opening against the Lichess
-  database (weighted-random replies filtered to a rating band, seamless
-  hand-off to the engine when the line leaves book).
+  a **Repertoire** trainer that spars an opening against the field — the
+  Lichess database filtered to a rating band, or any local opening book,
+  the bundled one included, so it works offline (weighted-random replies,
+  seamless hand-off to the engine when the line leaves book).
 - **Your own games, in the explorer.** Alongside opening books and the
   Lichess databases, the explorer has a **My games** source: every game
   in the vault, answering *what have I played here, and how did it go* —
@@ -270,10 +271,9 @@ ships with, the first time something asks for a name.
 install answers from the first minute instead of showing empty pages.
 An *opening book* is an index of positions — in this position, what was
 played and how did it score? — and it is what the local opening explorer
-reads. (The repertoire trainer spars against the *online* Lichess
-database instead, so it wants the token, not a book.) The bundled book
-is a curated walk of a recent Lichess Elite month: 29,297 positions to
-move 12, 1.5 MB, CC0. The
+reads and the repertoire trainer can spar against, no token needed. The
+bundled book is a curated walk of a recent Lichess Elite month: 29,297
+positions to move 12, 1.5 MB, CC0. The
 *reference games* are whole games, searchable by player, opening and ECO
 in the Games tab, any of them openable on the board. The bundled set
 keeps the strongest games of every opening from that same month: 38,977
@@ -425,8 +425,8 @@ First run downloads the Stockfish engine assets (7 MB lite build;
 
 ## Lichess token (optional)
 
-Powers the *online* explorer augmentation, the Repertoire trainer, and
-importing studies from a Lichess account. Create one at
+Powers the *online* explorer augmentation, the Repertoire trainer's
+Lichess source, and importing studies from a Lichess account. Create one at
 [lichess.org/account/oauth/token/create](https://lichess.org/account/oauth/token/create)
 with **no scopes ticked** (add `study:read` for private studies,
 `puzzle:read` for Lichess puzzle-history import). Paste it into the

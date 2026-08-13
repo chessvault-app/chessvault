@@ -72,13 +72,12 @@ export interface BooksApiDirs {
 /**
  * The book that comes with the app, copied in on first run.
  *
- * Without it a new install's explorer is not sparse but EMPTY: with no
- * book and no Lichess token there is nothing to answer "what is played
- * here?" from — the online explorer refuses anonymous requests. (A book
- * does NOT rescue the repertoire trainer, which samples the online
- * explorer only and needs the token either way.) A curated walk of a CC0
- * Lichess Elite month (1.5 MB, 29,297 positions to ply 24) is enough for
- * the explorer to work the moment the app opens.
+ * Without it a new install's explorer is not sparse but EMPTY, and so is
+ * the repertoire trainer's local source: both answer "what is played
+ * here?", and with no book and no Lichess token there is nothing to
+ * answer from — the online explorer refuses anonymous requests. A curated
+ * walk of a CC0 Lichess Elite month (1.5 MB, 29,297 positions to ply 24)
+ * is enough for both to work the moment the app opens.
  *
  * COPIED, not mounted read-only from the installation: a bundled book the
  * user cannot delete would be the app keeping a file in their vault's data
