@@ -248,14 +248,15 @@ against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 The app runs with an empty `data/`. These four datasets light up specific
 features; everything under `data/` is derived, gitignored and rebuildable,
 so it never ships in the repo. Build what you want, per machine — and
-**almost all of it from inside the app**: only the reference games need a
-terminal. The `npm run` commands below are the terminal alternative, not
-the requirement.
+**almost all of it from inside the app**: the one thing that still wants
+a terminal is indexing your own PGN collections into reference games,
+and the installer already carries a starter set of those. The `npm run`
+commands below are the terminal alternative, not the requirement.
 
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames.sqlite` | the elite game browser | `npm run build:refgames` |
+| `data/refgames.sqlite` | the elite game browser | a starter set comes with the app; your own via `npm run build:refgames` |
 | `data/books/*.sqlite` | the local opening explorer | one comes with the app; more in the app, or `npm run build:book` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
@@ -265,24 +266,32 @@ keeps up as you collect more. `data/openings.json` is in it only to say
 where the names come from — the server compiles it from the ECO tables it
 ships with, the first time something asks for a name.
 
-**One book comes with the installer.** Install the desktop app and it
-already has a curated walk of a recent Lichess Elite month — 29,297
-positions to move 12, 1.5 MB, CC0 — so the explorer and the repertoire
-trainer answer from the first move you play instead of showing nothing.
-It is copied into `data/books/` the first time the app runs and is an
-ordinary book after that: delete it, rename it, build over it. Deleting it
-is final; it is not put back.
+**The installer bundles two starter databases**, so a fresh desktop
+install answers from the first minute instead of showing empty pages.
+An *opening book* is an index of positions — in this position, what was
+played and how did it score? — and it is what the explorer and the
+repertoire trainer read. The bundled one is a curated walk of a recent
+Lichess Elite month: 29,297 positions to move 12, 1.5 MB, CC0. The
+*reference games* are whole games, searchable by player, opening and ECO
+in the Games tab, any of them openable on the board. The bundled set
+keeps the strongest games of every opening from that same month: 38,977
+games, 25 MB, CC0. Both are copied into `data/` the first time the app
+runs and are ordinary files after that: delete them, build over them.
+Deleting is final; neither is put back.
 
-It is built when a release is cut, not kept in the repo, so each release
-carries a book made from a month that was current then. **A server install
-and a source checkout have none** — they take the commit, not the release
-artefacts — and start with an empty explorer. Getting a book there is the
-ordinary way round: upload your PGN collections in the book manager and
-press Build, which produces a fuller book than the bundled one anyway.
-Neither `deploy.sh` nor the app downloads games for this; only the release
-workflow does. (`npm run build:bundled-book` shrinks a book you already
-have into a small one — it is for packaging installers by hand, not for
-getting your first book.)
+Both are built when a release is cut, not kept in the repo, so each
+release carries data from a month that was current then. **A server
+install and a source checkout have neither** — they take the commit, not
+the release artefacts — and start with an empty explorer and an empty
+game browser. **When you outgrow the starters, build your own** — that
+is the ordinary way round anyway: upload your PGN collections in the
+book manager and press Build for a fuller book than the bundled one, and
+run `npm run build:refgames` over the same collections for a fuller game
+database (see below). Neither `deploy.sh` nor the app downloads games
+for this; only the release workflow does. (`npm run build:bundled-book`
+and `build:bundled-refgames` shrink data you already have into what an
+installer carries — they are for packaging installers by hand, not for
+getting your first databases.)
 
 **Opening books need no shell.** Open the explorer's book manager, upload
 your PGN collections, tick the ones to merge and press Build. Good free
@@ -343,12 +352,18 @@ of building here, after the download. Nothing to install, nothing to type,
 and it keeps going if you leave the page. `npm run build:puzzles` does the
 same thing from a terminal if you prefer one.
 
-**Reference games still need the shell**, because their input is your own
-PGN collections rather than one public dump:
+**Reference games come seeded on the desktop** — the installer's starter
+set is in place before the app first opens. Building your own is still a
+shell job, because the input is your own PGN collections rather than one
+public dump:
 
 ```bash
 npm run build:refgames         # over vault/sources -> data/refgames.sqlite
 ```
+
+The build replaces the starter set (by rename, so a running server keeps
+serving until it lands). Deleting the file without building over it is
+final, like deleting the bundled book.
 
 Running **on a server**: the puzzle build streams a 304 MB compressed dump
 into a 2.6 GB database, and it will OOM on a small instance — it did on a
@@ -361,7 +376,8 @@ Every later deploy keeps their indexes current on its own, so rebuild only
 for a newer dump or more games.
 
 [docs/databases.md](docs/databases.md) covers rebuilding them, and why
-reference games are the one thing here that still wants a terminal.
+building your own reference games is the one job here that still wants a
+terminal.
 
 ## It never calls anyone but your own server
 
@@ -433,6 +449,7 @@ npm run typecheck      # tsc --noEmit
 npm run setup:engine   # copy Stockfish into web/public/engine/
 npm run build:book     # index vault/sources PGNs into opening books
 npm run build:bundled-book     # shrink the biggest book into the one an installer ships
+npm run build:bundled-refgames # curate reference games into the starter set an installer ships
 npm run build:openings # recompile ECO names (the app does this itself)
 npm run build:refgames # index reference games for the elite browser
 npm run build:puzzles  # build the puzzle trainer's pool from the Lichess dump

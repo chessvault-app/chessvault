@@ -144,11 +144,17 @@ export function seedBundledBook(booksDir: string = DATA_BOOKS): void {
  * per-artefact knowledge this repo keeps in data instead. Returns null
  * when there is nothing to seed — a source checkout, or a server deploy,
  * neither of which carries one.
+ *
+ * assets/ holds two kinds of database now, and they must not be confused:
+ * a `refgames-` prefix marks the bundled reference games (seeded by
+ * server/refgames.ts), and anything else ending in .sqlite is the book.
  */
 function bundledBookPath(): string | null {
   const dir = resolve(REPO_ROOT, 'assets');
   try {
-    const file = readdirSync(dir).find((name) => name.endsWith('.sqlite'));
+    const file = readdirSync(dir).find(
+      (name) => name.endsWith('.sqlite') && !name.startsWith('refgames-'),
+    );
     return file ? resolve(dir, file) : null;
   } catch {
     return null; // no assets directory at all

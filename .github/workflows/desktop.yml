@@ -36,18 +36,20 @@ permissions:
   contents: write
 
 jobs:
-  # The opening book that ships inside the installer, built here rather than
-  # committed. It is derived data — the repo's rule is that derived data is
-  # rebuildable and not tracked — and building it per release also keeps it
-  # from ageing into a snapshot of whichever month it was first made from.
+  # The opening book and the starter reference games that ship inside the
+  # installer, built here rather than committed. Both are derived data — the
+  # repo's rule is that derived data is rebuildable and not tracked — and
+  # building them per release also keeps them from ageing into a snapshot of
+  # whichever month they were first made from. Both come from the same
+  # downloaded month, so one download feeds two artefacts.
   #
-  # Built ONCE and passed to the three package jobs as an artefact: the walk
+  # Built ONCE and passed to the three package jobs as an artefact: the work
   # is minutes of CPU, and doing it per platform would triple that for three
-  # identical files.
+  # identical file sets.
   #
-  # A server deploy and a source checkout get no book from this, by design —
+  # A server deploy and a source checkout get neither from this, by design —
   # they ship the commit, not the release artefacts. Both can build their own
-  # (npm run build:book, or the book manager in the app).
+  # (npm run build:book / build:refgames, or the book manager in the app).
   book:
     runs-on: ubuntu-latest
     steps:
@@ -83,9 +85,9 @@ jobs:
         id: cache
         with:
           path: assets
-          key: bundled-book-${{ steps.month.outputs.month }}-v1
+          key: bundled-dbs-${{ steps.month.outputs.month }}-v1
 
-      - name: Build the book
+      - name: Build the book and the starter reference games
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
@@ -103,11 +105,17 @@ jobs:
           npx tsx scripts/build-demo-book.ts --depth 24 --width 8 --min 10 \
             --games "$games" \
             --out "assets/lichess-elite-${{ steps.month.outputs.month }}.sqlite"
+          # The same month again, as full games this time: index every game,
+          # then keep the strongest of each ECO code. The refgames- prefix is
+          # what first-run seeding uses to tell this file from the book.
+          npx tsx scripts/build-refgames.ts "$pgn"
+          npx tsx scripts/build-bundled-refgames.ts --games 50000 \
+            --out "assets/refgames-lichess-elite-${{ steps.month.outputs.month }}.sqlite"
           ls -la assets
 
       - uses: actions/upload-artifact@v7
         with:
-          name: bundled-book
+          name: bundled-dbs
           path: assets/*.sqlite
           if-no-files-found: error
 
@@ -160,11 +168,12 @@ jobs:
       # this needs no network beyond the install above.
       - run: npm run setup:engine
 
-      # The book built by the `book` job. package.json ships assets/ as an
-      # extraResource, so it has to be here before electron-builder runs.
+      # The book and starter reference games built by the `book` job.
+      # package.json ships assets/ as an extraResource, so they have to be
+      # here before electron-builder runs.
       - uses: actions/download-artifact@v7
         with:
-          name: bundled-book
+          name: bundled-dbs
           path: assets
 
       # On a tag: build and upload to the draft release for that tag.

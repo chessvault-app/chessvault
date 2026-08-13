@@ -1,10 +1,10 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { refGamesApi } from './refgames.ts';
+import { refGamesApi, seedBundledRefgames } from './refgames.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
 describe('reference games api', () => {
@@ -91,5 +91,61 @@ describe('reference games api', () => {
     expect(pgn.trimEnd().endsWith('d4 d5 Bf4 0-1')).toBe(true);
 
     expect((await app.request('/api/refgames/99/pgn')).status).toBe(404);
+  });
+});
+
+describe('seedBundledRefgames', () => {
+  let assets: string;
+  let data: string;
+
+  beforeEach(() => {
+    assets = mkdtempSync(join(tmpdir(), 'refgames-assets-'));
+    data = mkdtempSync(join(tmpdir(), 'refgames-data-'));
+  });
+
+  afterEach(() => {
+    rmSync(assets, { recursive: true, force: true });
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  const target = (): string => join(data, 'refgames.sqlite');
+  const marker = (): string => join(data, '.seeded-refgames');
+
+  it('copies the bundled file and records the decision', () => {
+    writeFileSync(join(assets, 'refgames-elite-2025-11.sqlite'), 'bundled-games');
+    seedBundledRefgames(data, assets);
+    expect(readFileSync(target(), 'utf-8')).toBe('bundled-games');
+    expect(existsSync(marker())).toBe(true);
+  });
+
+  it('never overwrites a database the user already has', () => {
+    writeFileSync(join(assets, 'refgames-elite.sqlite'), 'bundled-games');
+    writeFileSync(target(), 'their-own-build');
+    seedBundledRefgames(data, assets);
+    expect(readFileSync(target(), 'utf-8')).toBe('their-own-build');
+    expect(existsSync(marker())).toBe(true);
+  });
+
+  it('does not bring back a database that was deleted after seeding', () => {
+    writeFileSync(join(assets, 'refgames-elite.sqlite'), 'bundled-games');
+    seedBundledRefgames(data, assets);
+    rmSync(target());
+    seedBundledRefgames(data, assets);
+    expect(existsSync(target())).toBe(false);
+  });
+
+  it('ignores the bundled opening book sitting in the same directory', () => {
+    // The book carries no refgames- prefix; only the prefix marks ours.
+    writeFileSync(join(assets, 'lichess-elite-2025-11.sqlite'), 'a-book');
+    seedBundledRefgames(data, assets);
+    expect(existsSync(target())).toBe(false);
+    // And no marker: an install that gains the asset later still seeds.
+    expect(existsSync(marker())).toBe(false);
+  });
+
+  it('is a no-op without an assets directory, leaving no marker', () => {
+    seedBundledRefgames(data, join(assets, 'does-not-exist'));
+    expect(existsSync(target())).toBe(false);
+    expect(existsSync(marker())).toBe(false);
   });
 });

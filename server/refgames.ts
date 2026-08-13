@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { DATA } from './paths.ts';
+import { copyFileSync, existsSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { basename, resolve } from 'node:path';
+import { DATA, REPO_ROOT } from './paths.ts';
 
 /**
  * Reference games (data/refgames.sqlite, built by `npm run build:refgames`
@@ -12,6 +12,77 @@ import { DATA } from './paths.ts';
 
 const DB_PATH = resolve(DATA, 'refgames.sqlite');
 const PAGE = 50;
+
+/**
+ * The starter set of reference games that comes with the app — a curated
+ * slice of a CC0 Lichess Elite month (the strongest games of every ECO
+ * code, ~39 k games / ~25 MB), built at release time by
+ * `build-bundled-refgames.ts` next to the bundled opening book. Without it
+ * a fresh install's elite browser is empty until its owner learns about
+ * vault/sources and a build script.
+ *
+ * Same contract as the bundled book (see seedBundledBook in books.ts for
+ * the full reasoning): COPIED into the data directory so it is the user's
+ * ordinary database from then on — rebuild over it, delete it — and the
+ * marker records the decision, not the file, so a deleted one does not
+ * come back. An existing refgames.sqlite always wins. The `refgames-`
+ * file-name prefix is what separates this asset from the book in the same
+ * assets/ directory.
+ *
+ * Called from server/index.ts at startup, not from refGamesApi(): the
+ * static demo and the tests mount these routes over paths of their own
+ * choosing and must not inherit a database they did not ask for.
+ */
+const SEED_MARKER = '.seeded-refgames';
+
+export function seedBundledRefgames(
+  dataDir: string = DATA,
+  assetsDir: string = resolve(REPO_ROOT, 'assets'),
+): void {
+  const marker = resolve(dataDir, SEED_MARKER);
+  if (existsSync(marker)) return;
+
+  let bundled: string | null = null;
+  try {
+    const file = readdirSync(assetsDir).find(
+      (name) => name.startsWith('refgames-') && name.endsWith('.sqlite'),
+    );
+    bundled = file ? resolve(assetsDir, file) : null;
+  } catch {
+    bundled = null; // no assets directory at all
+  }
+  // No bundled file — a source checkout, or a server deploy. No marker, so
+  // an install that gains one later still gets it.
+  if (!bundled) return;
+
+  const target = resolve(dataDir, 'refgames.sqlite');
+  // A database is already there — one the user built, or one a previous
+  // install seeded before markers were per-file. Theirs wins.
+  if (existsSync(target)) {
+    writeFileSync(marker, `${new Date().toISOString()}\n`);
+    return;
+  }
+
+  // Copy beside the target and rename, like every other write here: a copy
+  // interrupted halfway must not leave a truncated file that IS the
+  // database from then on.
+  const part = `${target}.part`;
+  try {
+    rmSync(part, { force: true });
+    copyFileSync(bundled, part);
+    renameSync(part, target);
+  } catch (error) {
+    rmSync(part, { force: true });
+    // No marker: a recoverable failure should be retried on the next
+    // launch rather than remembered as a decision.
+    console.warn(`refgames: could not seed the bundled games (${(error as Error).message})`);
+    return;
+  }
+  writeFileSync(marker, `${new Date().toISOString()}\n`);
+  console.log(
+    `refgames: seeded ${basename(bundled)} (${(statSync(target).size / 1e6).toFixed(1)} MB)`,
+  );
+}
 
 interface RefGameRow {
   id: number;

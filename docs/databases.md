@@ -8,7 +8,7 @@ than growing with your vault the way everything else does:
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
-| `data/refgames.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | `npm run build:refgames` |
+| `data/refgames.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | `npm run build:refgames`; the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
 inside the app, and `data/mygames.sqlite` is not even that: the explorer's
@@ -71,3 +71,11 @@ not one public dump, but whatever PGN collections you happen to have.
 Uploading those already works — it is how opening books are built — so
 the honest fix here is to point the reference-game index at the same
 uploads, not to invent a second way to get files in.
+
+Until then, the desktop installer takes the edge off: it carries a
+starter set — the strongest games of every ECO code from one Lichess
+Elite month, ~39 k games in 25 MB, built by `build-bundled-refgames.ts`
+at release time — seeded to `data/refgames.sqlite` on first run, the same
+way the bundled opening book is. It is an ordinary database from then on:
+`build:refgames` replaces it, and deleting it is final. A server install
+gets no seed; it takes the commit, not the release artefacts.

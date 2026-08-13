@@ -12,6 +12,7 @@ import { seedBundledBook } from './books.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
+import { seedBundledRefgames } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
@@ -24,11 +25,13 @@ for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) 
   mkdirSync(d, { recursive: true });
 }
 
-// The opening book that ships with the app, copied in the first time this
-// data directory is used — so the explorer and the repertoire trainer have
-// something to answer from on a fresh install. Deletable like any other
-// book, and it does not come back once it has been.
+// The opening book and starter reference games that ship with the app,
+// copied in the first time this data directory is used — so the explorer,
+// the repertoire trainer and the elite game browser all have something to
+// answer from on a fresh install. Deletable like anything the user built,
+// and neither comes back once it has been.
 seedBundledBook();
+seedBundledRefgames();
 
 const app = new Hono();
 app.use('*', logger());
