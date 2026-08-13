@@ -111,7 +111,31 @@ export function startKeyboardTracking(): void {
     });
   };
 
+  /**
+   * Measure again, and again, until the keyboard has stopped moving.
+   *
+   * iOS fires its viewport events DURING the animation, and the numbers
+   * they carry are wherever the keyboard had got to at that moment — often
+   * a shift of zero, because the shift has not happened yet. One reading
+   * was all this took, so the sheet stayed where it was and only came
+   * right when a finger nudged the viewport and produced another event.
+   * That is what lanph3re kept seeing: "it only comes up when I scroll a
+   * little."
+   *
+   * So: read it now, and read it again over the next half second. measure()
+   * is idempotent — it writes nothing when nothing has changed — so the
+   * extra passes cost a subtraction each and settle the answer.
+   */
+  const settle = (): void => {
+    measure();
+    for (const ms of [60, 150, 300, 500]) setTimeout(measure, ms);
+  };
+
   measure();
-  vv.addEventListener('resize', measure);
-  vv.addEventListener('scroll', measure);
+  vv.addEventListener('resize', settle);
+  vv.addEventListener('scroll', settle);
+  // The keyboard follows a focus, and the focus is the earliest notice
+  // there is — earlier than any viewport event.
+  document.addEventListener('focusin', settle);
+  document.addEventListener('focusout', settle);
 }
