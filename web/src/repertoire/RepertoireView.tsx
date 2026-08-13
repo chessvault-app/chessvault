@@ -1,5 +1,5 @@
 import { parseSquare } from 'chessops/util';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw, Telescope } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
@@ -336,14 +336,23 @@ function FinalAssessment({
 
   return (
     <div className="flex flex-col gap-2">
+      {/* The number's slot is held whether or not there is a number in it,
+          and the bar is drawn empty rather than absent, so the answer
+          lands in place instead of pushing the button down when it
+          arrives. Starting an engine and searching a position takes long
+          enough to look like nothing is happening — hence the spinner in
+          the slot and a line that says so. */}
       <div className="flex items-center gap-2">
-        <span className="text-fg min-w-[3.75rem] font-mono text-lg font-semibold tabular-nums">
-          {score ? formatScore(score) : '…'}
+        <span className="text-fg flex min-w-[3.75rem] items-center font-mono text-lg font-semibold tabular-nums">
+          {score ? formatScore(score) : <Loader2 className="text-subtle size-4 animate-spin" />}
         </span>
         <EvalBar score={score} orientation="horizontal" className="flex-1" />
       </div>
-      <Button variant="secondary" size="sm" className="self-start" onClick={onAnalyse}>
-        <Telescope className="size-3.5" />
+      <p className="text-subtle min-h-[0.875rem] text-[0.6875rem] leading-none">
+        {score ? '' : t('Thinking…')}
+      </p>
+      <Button variant="primary" size="sm" className="self-start" onClick={onAnalyse}>
+        <Microscope className="size-3.5" />
         {t('Analyse on the board')}
       </Button>
     </div>
