@@ -178,17 +178,18 @@ const RENDER_WIDTH = 1400;
 /**
  * A scan lives in this tab and nowhere else.
  *
- * The pages are rendered by pdf.js here, the boards are classified by a
- * worker here, and the crops exist only in this store — which is not
- * persisted. Nothing on the server knows a scan is running, so there is
- * nothing to resume from: a reload throws away however many minutes of
- * work had been done, silently, and can land in the middle of the loop
- * that writes verified puzzles and leave the book half-filled.
+ * The pages are rendered by pdf.js here and the boards are classified by
+ * a worker here; nothing on the server knows a scan is running. It is no
+ * longer true that a reload throws the work away — every page writes a
+ * checkpoint, so a reload costs the page in flight and a click to carry
+ * on — but "costs a click and lands you on a book that looks abandoned"
+ * is still worth a question, and leaving mid-scan is nearly always a
+ * misclick rather than a decision.
  *
- * Until that is resumable, the least this can do is what an unsaved note
- * does — make the browser ask. The listener is attached to the JOB rather
- * than to the window that started it, because the window can be closed
- * while the scan runs on (which the window itself offers).
+ * The listener is attached to the JOB rather than to the window that
+ * started it, because the window can be closed while the scan runs on
+ * (which the window itself offers). A scan stopped on purpose asks
+ * nothing: `paused` is not running, so this detaches.
  */
 let unloadGuarded = false;
 const warnOnUnload = (e: BeforeUnloadEvent): void => e.preventDefault();

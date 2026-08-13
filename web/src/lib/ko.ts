@@ -625,8 +625,9 @@ export const ko: Record<string, string> = {
   'The diagram from the book — make the board match it, then record the solution.':
     '책의 다이어그램입니다 — 보드를 여기에 맞춘 다음, 정답을 기록하세요.',
   'The book’s own scan — make the board match it.': '책의 스캔 원본입니다 — 보드를 여기에 맞추세요.',
-  'Empty book. “Add puzzle” sets up the position on a board and records the full solution — both sides’ moves.':
-    '빈 책입니다. “퍼즐 추가”로 보드에 포지션을 만들고 양쪽의 수를 모두 포함한 정답을 기록하세요.',
+  'Nothing in this book yet.': '아직 이 책에는 아무것도 없습니다.',
+  'Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.':
+    '책의 PDF를 넘기면 페이지에서 다이어그램과 인쇄된 정답을 읽어 옵니다 — 도중에 멈출 수 있고, 멈춘 자리에서 이어집니다. 또는 직접 포지션을 만들고 양쪽의 수를 모두 포함한 정답을 기록해도 됩니다.',
   'Tip: click an opponent move to mark it “any move” (the book’s ~).':
     '팁: 상대의 수를 클릭하면 “아무 수나”로 표시됩니다 (책의 ~ 표기).',
   "Training attempts only — review sessions don't count here, which is why this can differ from the review pool":

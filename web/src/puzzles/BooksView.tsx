@@ -1027,9 +1027,29 @@ function BookPage({ slug }: { slug: string }) {
           detailPending ? <SkeletonTiles tiles={Math.min(book?.puzzles.length ?? 48, 48)} /> : null
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
           <div className="bg-surface border-line rounded-xl border p-6 text-center">
-            <p className="text-muted text-sm">
-              {t('Empty book. “Add puzzle” sets up the position on a board and records the full solution — both sides’ moves.')}
+            {/*
+              The import goes FIRST. An empty book used to name only "Add
+              puzzle" — the by-hand route — which reads as though a book
+              is filled a position at a time, and says nothing about the
+              feature books exist for: handing over the PDF and letting
+              the reader take the diagrams and the printed answers off its
+              pages. Both are offered here rather than described, because
+              this is the page where you would do either.
+            */}
+            <p className="text-fg text-sm font-medium">{t('Nothing in this book yet.')}</p>
+            <p className="text-muted mx-auto mt-1 max-w-md text-xs leading-relaxed">
+              {t('Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.')}
             </p>
+            <div className="mt-3 flex flex-wrap justify-center gap-2">
+              <Button variant="primary" size="sm" onClick={() => setImporting(true)}>
+                <FileUp className="size-3.5" />
+                {t('Import a book PDF')}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+                <Plus className="size-3.5" />
+                {t('Add puzzle')}
+              </Button>
+            </div>
           </div>
         ) : (
           <PuzzleList
