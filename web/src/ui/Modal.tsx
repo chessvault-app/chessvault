@@ -81,10 +81,10 @@ export function Modal({
         // edge so it rises from the thumb. Expressed as max-sm rather
         // than by swapping the base, because swapping it also swapped
         // how the card sizes itself and collapsed a 600px window to 202.
-        // The band, not the layout viewport — see App's shell. A window
-        // laid out against a page iOS has shifted is a window with its
-        // head off the top of the screen.
-        'fixed inset-x-0 top-[var(--vvt,0px)] h-[var(--vvh,100dvh)] z-50 grid place-items-center bg-black/60',
+        // vv-band: while the keyboard is up this is pinned to the band
+        // that can be seen rather than to the layout viewport, which is
+        // the thing iOS has just shifted. At rest it is inset-0.
+        'vv-band fixed inset-0 z-50 grid place-items-center bg-black/60',
         full ? 'p-0 max-sm:flex max-sm:items-end max-sm:justify-center sm:p-6' : 'p-4',
       )}
       onClick={onClose}

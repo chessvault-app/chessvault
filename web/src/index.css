@@ -804,3 +804,26 @@ cg-board square.check {
     opacity: 0;
   }
 }
+
+/* The app shell and every floating layer, pinned to the band that can
+   actually be seen — but ONLY while the keyboard is up.
+
+   iOS does two things at once when a field is focused: it shrinks the
+   visual viewport by the keyboard, and it SHIFTS the page up to reveal
+   the field. Anything laid out against the layout viewport is therefore
+   both too tall and in the wrong place, which is a head off the top of
+   the screen and a gap at the bottom.
+
+   Gated on .kb-open because it must be invisible the rest of the time.
+   Applying it always made the shell a fixed box measured in custom
+   properties, and on a home-screen PWA that came out short: a band under
+   the bottom bar, clipping it. At rest these elements keep the plain
+   `h-[var(--app-h,100svh)]` and `inset-0` that have always worked. */
+.kb-open .vv-band {
+  position: fixed;
+  top: var(--vvt, 0px);
+  bottom: auto;
+  left: 0;
+  right: 0;
+  height: var(--vvh, 100dvh);
+}

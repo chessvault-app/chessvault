@@ -44,7 +44,7 @@ export function Sheet({
   // inside the card and clipped by its overflow.
   return createPortal(
     <div
-      className="fixed inset-x-0 top-[var(--vvt,0px)] h-[var(--vvh,100dvh)] z-50 flex items-center justify-center bg-black/50 p-3"
+      className="vv-band fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
       onPointerDown={() => {
         onClose();
         suppressNextClick();

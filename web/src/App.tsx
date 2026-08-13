@@ -116,16 +116,20 @@ function Shell() {
         // retracted, which is taller than what you can actually see while
         // they are out, and that difference was cutting the bottom off
         // panels that reached the end of the page.
-        // Pinned to the band you can actually see. While the keyboard is
-        // up, --vvt/--vvh are the visual viewport's own top and height, so
-        // the shell ends at the keyboard AND stays put when iOS shifts the
-        // page to reveal a field — a shell that was merely shorter got
-        // shifted with everything else, and left a black gap between its
-        // foot and the keys. Both are unset the rest of the time, which is
-        // every desktop and most of a phone's life, and then this is
-        // exactly what it was: the full height, at the top.
-        'bg-app text-fg fixed inset-x-0 top-[var(--vvt,0px)] flex flex-col overflow-hidden',
-        'h-[var(--vvh,var(--app-h,100svh))]',
+        // --app-h is set in standalone PWA mode, where 100dvh can be stale
+        // on launch. Browsers fall back to 100svh — the SMALL viewport, the
+        // height with the toolbars showing. 100dvh is the height with them
+        // retracted, which is taller than what you can actually see while
+        // they are out, and that difference was cutting the bottom off
+        // panels that reached the end of the page.
+        //
+        // `vv-band` is a hook, not a style: while the keyboard is up, one
+        // rule in index.css pins this to the visual viewport. At rest it
+        // does nothing at all, which is the point — pinning it full time
+        // left a band under the bottom bar on lanph3re's phone, and a
+        // shell that is wrong while nobody is typing is worse than a
+        // keyboard that misbehaves while somebody is.
+        'bg-app text-fg vv-band flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
