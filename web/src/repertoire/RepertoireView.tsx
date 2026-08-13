@@ -1,7 +1,6 @@
 import { parseSquare } from 'chessops/util';
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { Board } from '@/board/Board';
@@ -9,10 +8,10 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
 import { cn } from '@/lib/cn';
-import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
+import { Sheet } from '@/ui/Sheet';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Select } from '@/ui/Select';
@@ -57,11 +56,33 @@ const TEMPLATES: Template[] = [
   { eco: 'A04', name: 'Réti Opening', sans: ['Nf3'] },
 ];
 
+/**
+ * The rating groups the Lichess explorer actually has, one per option.
+ *
+ * These are not ours to choose or to refine. Measured against the live
+ * API: asking for 1600 and 1800 together returns EXACTLY the sum of
+ * asking for each alone, so the database is aggregated per group rather
+ * than filtered per game, and a boundary at 1500 cannot be computed from
+ * it. Asking for 1500 anyway does not fail — it silently answers with
+ * the 1400 group — which is why the server keeps an allowlist and why
+ * this list is the whole of what can be offered.
+ *
+ * Each label is the span the group covers, not its floor: shown bare, a
+ * "1600" reads as exactly 1600 when it means 1600 to 1800.
+ *
+ * This replaced four bands that spanned two groups each, so the middle
+ * of the range could only be had 400 points at a time.
+ */
 const RATING_BANDS: { label: string; ratings: string }[] = [
-  { label: 'Beginner (under 1400)', ratings: '400,1000,1200' },
-  { label: 'Club (1400–1800)', ratings: '1400,1600' },
-  { label: 'Strong (1800–2200)', ratings: '1800,2000' },
-  { label: 'Master (2200+)', ratings: '2200,2500' },
+  { label: '400–1000', ratings: '400' },
+  { label: '1000–1200', ratings: '1000' },
+  { label: '1200–1400', ratings: '1200' },
+  { label: '1400–1600', ratings: '1400' },
+  { label: '1600–1800', ratings: '1600' },
+  { label: '1800–2000', ratings: '1800' },
+  { label: '2000–2200', ratings: '2000' },
+  { label: '2200–2500', ratings: '2200' },
+  { label: '2500+', ratings: '2500' },
   { label: 'All ratings', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
 ];
 
@@ -132,6 +153,20 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
  * sheet pinned to the TOP of the viewport — visible above any keyboard, and
  * nothing on the page is scripted to scroll while it animates.
  */
+/**
+ * Pick an opening to spar from.
+ *
+ * ONE control for every pointer, and it is the app's own Sheet — a
+ * bottom sheet on a phone, a centred card on a desktop, with the drag,
+ * the scrim and the Escape that every other window here has.
+ *
+ * It used to be two hand-rolled things: a floating list portalled and
+ * positioned against the input by hand (because a Panel clips its
+ * children), and, on touch, a fixed overlay with its own backdrop, its
+ * own close chevron and its own pointerdown dance to stop the dismissing
+ * tap pressing what was behind it. Both were solving problems Sheet had
+ * already solved, and neither looked like the rest of the app.
+ */
 function OpeningPicker({
   value,
   onChange,
@@ -142,28 +177,6 @@ function OpeningPicker({
   const [all, setAll] = useState<Template[] | null>(null);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
-  // Where to put the floating list. A Panel clips its children (rounded
-  // corners), so an absolutely-positioned dropdown inside one is buried in
-  // it — the list has to leave the panel entirely and be placed against
-  // the input's own box on screen.
-  const anchor = useRef<HTMLDivElement>(null);
-  const [box, setBox] = useState<{ left: number; top: number; width: number } | null>(null);
-  useEffect(() => {
-    if (!open || coarse) return;
-    const place = (): void => {
-      const rect = anchor.current?.getBoundingClientRect();
-      if (rect) setBox({ left: rect.left, top: rect.bottom + 4, width: rect.width });
-    };
-    place();
-    window.addEventListener('resize', place);
-    // Capture: the panel it lives in is itself scrollable.
-    window.addEventListener('scroll', place, true);
-    return () => {
-      window.removeEventListener('resize', place);
-      window.removeEventListener('scroll', place, true);
-    };
-  }, [open, coarse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -181,14 +194,14 @@ function OpeningPicker({
   }, []);
 
   /** Rendered at once. The catalogue is thousands of entries, and building
-      that many buttons to open a dropdown costs most of a second. */
+      that many buttons to open a list costs most of a second. */
   const SHOWN = 300;
 
   const { matches, hidden } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    // An empty box used to offer a dozen curated openings, so the picker
-    // could be searched but not browsed. It now offers the whole
-    // catalogue, ordered by ECO, with the curated few first.
+    // An empty box offers the whole catalogue, ordered by ECO, with the
+    // curated few first — so the picker can be browsed and not only
+    // searched.
     const pool = q
       ? (all ?? []).filter(
           (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
@@ -200,158 +213,84 @@ function OpeningPicker({
   const pick = (o: Template): void => {
     onChange(o);
     setOpen(false);
-    (document.activeElement as HTMLElement | null)?.blur();
   };
 
-  const list = (
-    <ul
-      className={cn(
-        'border-line bg-surface overflow-y-auto overscroll-contain rounded-lg border p-1',
-        // On a mouse the list FLOATS over the page, portalled out of the
-        // panel that would otherwise clip it. Inline, it also pushed
-        // everything below it down as you typed and let go when you picked.
-        coarse ? 'max-h-[45dvh]' : 'max-h-64 shadow-[var(--shadow-pop)]',
-      )}
-    >
-      {matches.length === 0 ? (
-        <li className="text-subtle px-2 py-1.5 text-xs">
-          {all === null ? 'Reading the catalogue…' : 'No opening matches that.'}
-        </li>
-      ) : (
-        matches.map((o, i) => (
-          <li key={`${o.eco}-${o.name}-${i}`} className="[content-visibility:auto]">
-            <button
-              type="button"
-              // mousedown, not click: it fires before the input's blur
-              // closes the list.
-              onMouseDown={(e) => {
-                e.preventDefault();
-                pick(o);
-              }}
-              className={cn(
-                'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
-                'hover:bg-surface-2 transition-colors duration-100',
-                'pointer-coarse:py-2.5',
-                o.name === value.name && o.eco === value.eco ? 'text-primary font-medium' : 'text-fg',
-              )}
-            >
-              {o.eco && <span className="text-subtle w-7 shrink-0 font-mono text-[0.625rem]">{o.eco}</span>}
-              <span className="min-w-0 flex-1 truncate">{o.name}</span>
-            </button>
-          </li>
-        ))
-      )}
-      {hidden > 0 && (
-        <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
-          {hidden.toLocaleString()} more — type to narrow.
-        </li>
-      )}
-    </ul>
-  );
-
-  if (coarse) {
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => {
-            setQuery('');
-            setOpen(true);
-          }}
-          className={cn(
-            'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border px-2.5 text-left text-xs',
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate">
-            {value.eco ? `${value.eco}  ${value.name}` : value.name}
-          </span>
-        </button>
-        {open && (
-          <div
-            className="fixed inset-0 z-50 bg-black/50"
-            // pointerdown, not click: iOS does not reliably synthesize click
-            // on a plain backdrop div, which left selecting an opening as the
-            // ONLY way to close the sheet. The dismissing tap's synthesized
-            // click is swallowed — it must not press what's behind the
-            // backdrop (it reached the colour buttons, lanph3re's report).
-            onPointerDown={() => {
-              setOpen(false);
-              suppressNextClick();
-            }}
-          >
-            <div
-              // The safe-area term keeps the sheet below the notch/status bar
-              // when installed as a PWA (standalone covers the whole screen).
-              className="bg-surface border-line absolute inset-x-3 top-[calc(0.75rem+env(safe-area-inset-top))] flex flex-col gap-2 rounded-xl border p-2 shadow-[var(--shadow-pop)]"
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              {/* With the keyboard up, the backdrop is mostly covered and
-                  the only dead space is a sliver — so closing needed an
-                  explicit way out, not just a tap somewhere else. */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  aria-label={t('Close')}
-                  onPointerDown={(e) => {
-                    e.stopPropagation();
-                    setOpen(false);
-                    suppressNextClick();
-                  }}
-                  className="text-subtle hover:text-fg -ml-1 grid size-8 shrink-0 place-items-center rounded-md"
-                >
-                  <ChevronLeft className="size-4" />
-                </button>
-                <Input
-                  autoFocus
-                  inputSize="sm"
-                  className="min-w-0 flex-1"
-                  value={query}
-                  placeholder={t('Search any opening or ECO code…')}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-              {list}
-            </div>
-          </div>
-        )}
-      </>
-    );
-  }
-
   return (
-    <div ref={anchor} className="flex flex-col gap-1">
-      <Input
-        inputSize="sm"
-        value={open ? query : value.eco ? `${value.eco}  ${value.name}` : value.name}
-        placeholder={t('Search any opening or ECO code…')}
-        onFocus={() => {
-          setOpen(true);
+    <>
+      <button
+        type="button"
+        onClick={() => {
           setQuery('');
+          setOpen(true);
         }}
-        onBlur={() => setOpen(false)}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') (e.target as HTMLInputElement).blur();
-        }}
-      />
-      {open &&
-        box &&
-        createPortal(
-          <div
-            className="fixed z-50"
-            style={{ left: box.left, top: box.top, width: box.width }}
-          >
-            {list}
-          </div>,
-          document.body,
+        className={cn(
+          'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border',
+          'px-2.5 text-left text-xs transition-colors duration-100',
+          'hover:border-primary/40',
         )}
-    </div>
+      >
+        <span className="min-w-0 flex-1 truncate">
+          {value.eco ? `${value.eco}  ${value.name}` : value.name}
+        </span>
+      </button>
+
+      {open && (
+        <Sheet label={t('Opening')} onClose={() => setOpen(false)} className="gap-2">
+          <Input
+            autoFocus
+            inputSize="sm"
+            className="w-full"
+            value={query}
+            placeholder={t('Search any opening or ECO code…')}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {/* The sheet owns the height; the list scrolls inside it rather
+              than growing the sheet past the keyboard. */}
+          <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            {matches.length === 0 ? (
+              <li className="text-subtle px-2 py-1.5 text-xs">
+                {all === null ? t('Reading the catalogue…') : t('No opening matches that.')}
+              </li>
+            ) : (
+              matches.map((o, i) => (
+                <li key={`${o.eco}-${o.name}-${i}`} className="[content-visibility:auto]">
+                  <button
+                    type="button"
+                    onClick={() => pick(o)}
+                    className={cn(
+                      'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                      'hover:bg-surface-2 transition-colors duration-100 pointer-coarse:py-2.5',
+                      o.name === value.name && o.eco === value.eco
+                        ? 'text-primary font-medium'
+                        : 'text-fg',
+                    )}
+                  >
+                    {o.eco && (
+                      <span className="text-subtle w-7 shrink-0 font-mono text-[0.625rem]">
+                        {o.eco}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate">{o.name}</span>
+                  </button>
+                </li>
+              ))
+            )}
+            {hidden > 0 && (
+              <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
+                {t('{count} more — type to narrow.', { count: hidden.toLocaleString() })}
+              </li>
+            )}
+          </ul>
+        </Sheet>
+      )}
+    </>
   );
 }
 
 export function RepertoireView() {
   const [userColor, setUserColor] = useState<'white' | 'black'>('white');
-  const [band, setBand] = useState(RATING_BANDS[1]!.ratings);
+  // 1600–1800: the group the database as a whole averages into.
+  const [band, setBand] = useState(RATING_BANDS[4]!.ratings);
   const [template, setTemplate] = useState<Template>(TEMPLATES[0]!);
 
   const [tree, setTree] = useState<MoveTree>(() => createTree());
@@ -596,6 +535,7 @@ export function RepertoireView() {
                   value={band}
                   onChange={setBand}
                   ariaLabel={t('Opponent strength')}
+                  steady
                   groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
                 />
               </label>

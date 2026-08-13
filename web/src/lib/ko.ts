@@ -447,6 +447,10 @@ export const ko: Record<string, string> = {
   Licences: '라이선스',
   'Desktop app': '데스크톱 앱',
   Built: '빌드 시각',
+  // The repertoire's opening picker.
+  'Reading the catalogue…': '목록을 읽는 중…',
+  'No opening matches that.': '그 검색어에 맞는 오프닝이 없습니다.',
+  '{count} more — type to narrow.': '{count}개 더 있습니다 — 입력해서 좁혀 보세요.',
   // The moves panel's reading mode.
   'Show the current line only': '현재 수순만 보기',
   'Showing the current line only': '현재 수순만 보는 중',
