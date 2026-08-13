@@ -167,7 +167,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
       {titleRow('wide:hidden')}
       {/* Reading locks the pieces: studies and games open as documents to
           step through; the pencil switches to annotating/recording. */}

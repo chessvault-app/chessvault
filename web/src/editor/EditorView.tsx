@@ -386,7 +386,7 @@ export function EditorView({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4">
+    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
       {/* Phones lead with a header like every other page (the Editor title
           otherwise lives only in the wide-only side column). Suppressed when
           embedded (onUse) — the host page carries its own header. */}
