@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Compass, Cpu, FolderPlus, Grid3x3, ListOrdered, Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Cpu, FolderPlus, ListOrdered, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -91,11 +91,6 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
-          {wantExplorer ? (
-            <Compass className="text-subtle size-4" aria-hidden />
-          ) : (
-            <Grid3x3 className="text-subtle size-4" aria-hidden />
-          )}
           <h1 className="text-fg text-sm font-semibold">
             {wantExplorer ? t('Explorer') : t('Board')}
           </h1>
@@ -226,7 +221,6 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
       : explorer
         ? t('Explorer')
         : t('Board');
-  const Icon = explorer ? Compass : Grid3x3;
   return (
     <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
       <Button
@@ -238,7 +232,6 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
       >
         <ChevronLeft className="size-3.5" />
       </Button>
-      <Icon className="text-subtle size-4" aria-hidden />
       <h1 className="text-fg min-w-0 truncate text-sm font-semibold">{title}</h1>
     </div>
   );

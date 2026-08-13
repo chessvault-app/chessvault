@@ -7,7 +7,6 @@ import {
   Eraser,
   FlipVertical2,
   FolderInput,
-  SquarePen,
   Microscope,
   MousePointer2,
   RotateCcw,
@@ -402,7 +401,6 @@ export function EditorView({
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <SquarePen className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
         </div>
       )}
@@ -557,7 +555,6 @@ export function EditorView({
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="flex h-9 shrink-0 items-center gap-2">
-          <SquarePen className="text-subtle size-4" aria-hidden />
           <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
         </div>
         {positionPanels(true)}

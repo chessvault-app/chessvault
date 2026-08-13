@@ -1,5 +1,5 @@
 import { parseSquare } from 'chessops/util';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw, SwatchBook } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
@@ -509,7 +509,6 @@ export function RepertoireView() {
 
   const header = (
     <>
-      <SwatchBook className="text-subtle size-4" aria-hidden />
       <h1 className="text-fg text-sm font-semibold">{t('Repertoire')}</h1>
     </>
   );
