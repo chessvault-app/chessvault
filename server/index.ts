@@ -115,6 +115,60 @@ app.get('/updates/:file', (c) => {
 // In production the built SPA is served from ./dist; in dev Vite serves it.
 const dist = `${REPO_ROOT}/dist`;
 if (existsSync(dist)) {
+  /**
+   * The manifest, in the scheme the phone is actually in.
+   *
+   * Android draws its own launch screen from `background_color` — one
+   * colour, baked into the manifest, so an app that has both schemes gets
+   * one of them wrong: a white card in front of a dark app, or the
+   * reverse. The manifest format has no media queries and no second
+   * colour to offer.
+   *
+   * What it does have is a client hint. `Accept-CH:
+   * Sec-CH-Prefers-Color-Scheme` on the page asks Chrome to say which
+   * scheme it is in, and it then sends that header on same-origin
+   * requests — including the manifest fetch, which is why this is a route
+   * rather than a file. `Vary` keeps the two answers apart in every cache
+   * between here and the phone.
+   *
+   * It is not live: Android reads these colours when the app is installed
+   * and again when it refreshes the WebAPK (days, not seconds), so
+   * switching a phone to dark mode does not repaint yesterday's splash.
+   * It fixes the case that actually bites — installing in dark mode and
+   * being handed a white flash for ever — and nothing here can do better
+   * until the format grows a second colour.
+   */
+  app.get('/manifest.webmanifest', (c) => {
+    const path = `${dist}/manifest.webmanifest`;
+    if (!existsSync(path)) return c.notFound();
+    const manifest = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>;
+    // Absent hint = the first visit, before Accept-CH has been honoured.
+    // Dark is the app's own default, and the one a phone is more often in.
+    const light = c.req.header('sec-ch-prefers-color-scheme') === 'light';
+    const bg = light ? '#f9fafc' : '#090c12';
+    return c.body(JSON.stringify({ ...manifest, background_color: bg, theme_color: bg }), 200, {
+      // The manifest's own type, not application/json: c.json() would
+      // serve it as the latter, which browsers accept and validators do
+      // not.
+      'content-type': 'application/manifest+json; charset=utf-8',
+      vary: 'Sec-CH-Prefers-Color-Scheme',
+      'cache-control': 'no-cache',
+    });
+  });
+
+  // Ask for the hint on the page itself; the manifest request that
+  // follows carries it. Critical-CH makes Chrome retry the page once with
+  // the hint attached rather than waiting for the next navigation, so the
+  // very first install already gets the right colour.
+  app.use('/*', async (c, next) => {
+    await next();
+    if (c.res.headers.get('content-type')?.startsWith('text/html')) {
+      c.res.headers.set('accept-ch', 'Sec-CH-Prefers-Color-Scheme');
+      c.res.headers.set('critical-ch', 'Sec-CH-Prefers-Color-Scheme');
+      c.res.headers.append('vary', 'Sec-CH-Prefers-Color-Scheme');
+    }
+  });
+
   app.use('/*', serveStatic({ root: './dist' }));
   app.get('*', serveStatic({ path: './dist/index.html' }));
 }
