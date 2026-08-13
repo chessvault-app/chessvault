@@ -432,7 +432,10 @@ function ResetButton({ onDone }: { onDone: () => void }) {
       triggerTone="danger"
       label={t('Reset')}
       triggerTitle="Wipe attempts, history and the review pool"
-      triggerClassName="text-subtle ml-auto"
+      // Position only. A colour here would land AFTER the variant in
+      // cn() and win: text-subtle was doing exactly that, which is why
+      // the one button meant to read as destructive was grey.
+      triggerClassName="ml-auto"
       question="Wipe all attempts, history and the review pool?"
       confirmLabel={t('Wipe everything')}
       onConfirm={() => {
