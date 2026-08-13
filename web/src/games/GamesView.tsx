@@ -825,8 +825,15 @@ function CollectionView() {
       {/* minmax(0,…), not a bare 7fr/3fr: an fr track is min-content wide
           at its narrowest, so the column silently widened to fit the
           longest opening name in whichever list it was showing — the two
-          panels changed width when the tab was switched. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:items-stretch">
+          panels changed width when the tab was switched.
+
+          And a FLOOR under the right one. minmax(0,3fr) let it shrink to
+          226px at a 1024 window, which is less than this row's own
+          furniture: the text box reached ZERO width, and the ratings and
+          the result badge — both shrink-0 — spilled out of it and painted
+          over each other. 20rem is the narrowest the list is legible at;
+          the collection gives up the difference, having the easier job. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)] lg:items-stretch">
       {
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
@@ -1582,6 +1589,9 @@ function ArchiveBrowser({
                           ? ` · ${t('needs internet')}`
                           : ''
                     }`,
+                    // The month alone once it is chosen: how many games it
+                    // holds is what you needed while picking one.
+                    short: m.month,
                   })),
                 ],
               },
@@ -1725,8 +1735,12 @@ function ArchiveBrowser({
         </div>
       )}
 
+      {/* The list is a container, so its rows can answer to the width they
+          actually have rather than to the window's. Named, so the rules
+          only fire here — the collection's rows are the same component in
+          a column with twice the room. */}
       {month && (
-        <ul className="divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
+        <ul className="@container/arc divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
           {loading === 'games' && visibleMonthGames.length === 0 ? (
             // Rows, not a spinner on an empty box. Fetching a month used to
             // take the games away and leave one line of text where the list
@@ -1958,10 +1972,17 @@ function GameRow({
           : undefined
       }
       {...(onSwipeAway ? swipe.handlers : {})}
-      className="group hover:bg-surface-2 relative flex cursor-pointer items-center gap-3 overflow-hidden px-3 py-2 transition-colors duration-100"
+      // flex-wrap, with a floor under the text: everything to the right of
+      // the names — result, eye, Add, ⋯, link — is shrink-0 by necessity,
+      // so in a narrow enough box they used to eat the text box down to
+      // nothing and then overflow it. Now the text keeps 9rem and the
+      // furniture drops to a line of its own instead. It costs a taller
+      // row at widths the layout should never reach, which beats a row of
+      // numbers printed on top of each other at widths it did.
+      className="group hover:bg-surface-2 relative flex cursor-pointer flex-wrap items-center gap-3 overflow-hidden px-3 py-2 transition-colors duration-100"
     >
       {onSwipeAway && <SwipeTrack dx={swipe.dx} />}
-      <div className="flex min-w-0 flex-1 items-center gap-3" style={swipe.style}>
+      <div className="flex min-w-[8rem] flex-1 items-center gap-3" style={swipe.style}>
         {/* The name is asked for in a sheet, like every other rename; the
             row keeps showing what it is called meanwhile. */}
         {renaming && (
@@ -2050,7 +2071,9 @@ function GameRow({
       <div
         style={swipe.style}
         className={cn(
-          'flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
+          // ml-auto so it stays against the right edge on the line it
+          // wraps to, rather than following the text it left behind.
+          'ml-auto flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
           'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
           'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
         )}
@@ -2062,7 +2085,14 @@ function GameRow({
             variant="ghost"
             size="icon-sm"
             title={t('Preview the final position')}
-            className="shrink-0 pointer-coarse:hidden"
+            // Gone in a narrow list as well as on a phone. In the games
+            // column it is 28px of hover convenience taken off the player
+            // names, which are the row. 21.5rem is where the row stops
+            // fitting with it: 8rem of text + the badge + the tray + the
+            // link is 340px. `/arc` is the archive list's own container —
+            // a query with no named container never matches, so this
+            // reads as "always shown" everywhere else.
+            className="shrink-0 pointer-coarse:hidden @max-[21.5rem]/arc:hidden"
             // Guarded like the other preview eyes: an unguarded mouseenter
             // trips iOS's sticky-hover heuristic (first tap hovers only).
             onMouseEnter={(e) => {
@@ -2133,7 +2163,12 @@ function GameRow({
           ]}
         />
       )}
-      {showLink && !game.link && <span className="w-[1.375rem] shrink-0" aria-hidden />}
+      {/* Same container rule as the eye: in a narrow column this is 22px
+          spent on a link out of the app, and the row it is taking them
+          from is the reason anyone is looking. */}
+      {showLink && !game.link && (
+        <span className="w-[1.375rem] shrink-0 @max-[21.5rem]/arc:hidden" aria-hidden />
+      )}
       {showLink && game.link && (
         <a
           href={game.link}
@@ -2141,7 +2176,7 @@ function GameRow({
           rel="noreferrer"
           title={t('View on chess.com (needs internet)')}
           onClick={(e) => e.stopPropagation()}
-          className="text-subtle hover:text-fg shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100"
+          className="text-subtle hover:text-fg shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
         >
           <ExternalLink className="size-3.5" />
         </a>

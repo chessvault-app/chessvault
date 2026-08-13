@@ -15,6 +15,17 @@ import { t } from '@/lib/i18n';
 export interface SelectOption {
   value: string;
   label: string;
+  /**
+   * What the CLOSED trigger says, when the full label is more than a
+   * narrow trigger can show.
+   *
+   * An option's label is written for the open list, where there is room
+   * to qualify it — "2026-08 · 43 games" tells you which months are worth
+   * opening. On the button that is 111px of text in a 60px slot, and what
+   * survived the ellipsis was "2026-08 · 4…". The qualifier is the part
+   * that has done its job by the time the list closes.
+   */
+  short?: string;
 }
 
 export interface SelectGroup {
@@ -164,7 +175,9 @@ export function Select({
           className,
         )}
       >
-        <span className="min-w-0 flex-1 truncate text-left">{selected ? t(selected.label) : '—'}</span>
+        <span className="min-w-0 flex-1 truncate text-left">
+          {selected ? t(selected.short ?? selected.label) : '—'}
+        </span>
         <ChevronDown className="text-subtle size-3 shrink-0" />
       </button>
 
