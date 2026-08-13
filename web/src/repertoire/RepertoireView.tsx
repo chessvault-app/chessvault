@@ -1,7 +1,8 @@
 import { parseSquare } from 'chessops/util';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
+import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
+import { treeToPgn } from '@shared/pgn';
 import type { MoveTree, NodeId } from '@shared/types';
 import { Board } from '@/board/Board';
 import { BOARD_MAX_W } from '@/board/boardSize';
@@ -14,9 +15,11 @@ import { useAnalysis } from '@/store/analysis';
 import { navigate } from '@/lib/router';
 import { isDemo } from '@/lib/demo';
 import { cn } from '@/lib/cn';
+import { formatAgo } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { Sheet } from '@/ui/Sheet';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -106,6 +109,42 @@ interface ExplorerMove {
   uci: string;
   san: string;
   total: number;
+}
+
+/**
+ * The practice log: the one trainer with no record now keeps a small one.
+ *
+ * Device-local, like the trainer's difficulty choice — a memory aid for
+ * "what did I spar last", not vault data. Newest first, capped.
+ */
+const LOG_KEY = 'vault:repertoire-log';
+const LOG_MAX = 8;
+
+interface PracticeEntry {
+  opening: string;
+  source: string;
+  moves: number;
+  at: string;
+}
+
+function readLog(): PracticeEntry[] {
+  try {
+    const raw = localStorage.getItem(LOG_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as PracticeEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function appendLog(entry: PracticeEntry): PracticeEntry[] {
+  const next = [entry, ...readLog()].slice(0, LOG_MAX);
+  try {
+    localStorage.setItem(LOG_KEY, JSON.stringify(next));
+  } catch {
+    /* full or blocked storage loses the memo, nothing else */
+  }
+  return next;
 }
 
 /** Weighted-random pick by game count — the field's move, not the best move. */
@@ -448,6 +487,14 @@ export function RepertoireView() {
   // Guards against a stale reply landing after a new game.
   const runId = useRef(0);
 
+  // Saving the sparred line into the vault: the session used to
+  // evaporate — leaving lost the line, and nothing recorded that you
+  // practised at all.
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [log, setLog] = useState<PracticeEntry[]>(readLog);
+  const loggedRun = useRef(-1);
+
   // Seed a tree with the template's line — used both for the idle preview
   // (picking an opening shows its position at once) and for starting a game.
   const seedTree = (tpl: Template): { t: MoveTree; id: NodeId } => {
@@ -602,6 +649,51 @@ export function RepertoireView() {
   };
   const cursorIndex = line.indexOf(cursorId);
 
+  const sourceLabel =
+    source === ONLINE_SOURCE
+      ? `Lichess · ${RATING_BANDS.find((b) => b.ratings === band)?.label ?? ''}`
+      : source;
+
+  // One log entry per run, written when the line runs out of book.
+  useEffect(() => {
+    if (phase !== 'ended' || loggedRun.current === runId.current) return;
+    loggedRun.current = runId.current;
+    setLog(
+      appendLog({
+        opening: template.name,
+        source: sourceLabel,
+        moves: line.length - 1,
+        at: new Date().toISOString(),
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  const saveLine = async (name: string): Promise<void> => {
+    setSaveError(null);
+    const pgn = treeToPgn(tree, {
+      Event: 'Repertoire practice',
+      White: userColor === 'white' ? 'You' : sourceLabel,
+      Black: userColor === 'black' ? 'You' : sourceLabel,
+    });
+    try {
+      const res = await fetch('/api/studies', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name, pgn }),
+      });
+      const body = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
+      if (!res.ok) {
+        setSaveError(t(body?.error ?? 'could not create study'));
+        return;
+      }
+      setSaveOpen(false);
+      navigate('studies', encodeURIComponent(body?.id ?? name));
+    } catch {
+      setSaveError(t('vault server unreachable'));
+    }
+  };
+
   const header = (
     <>
       <h1 className="text-fg text-sm font-semibold">{t('Repertoire')}</h1>
@@ -665,9 +757,15 @@ export function RepertoireView() {
         {/* fit: a short form under a tall board. Left to shrink, the panel
             cut its own Start button off with nothing to scroll to. */}
         {phase === 'idle' ? (
+          <>
           <Panel flush fit className="shrink-0">
             <PanelHeader title={t('New game')} />
             <div className="flex flex-col gap-3 p-3">
+              {/* What sparring is — said here, not only on the phone's
+                  More page. The idle screen used to assume you knew. */}
+              <p className="text-muted text-xs leading-relaxed">
+                {t('Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.')}
+              </p>
               <div className="flex gap-1">
                 {(['white', 'black'] as const).map((c) => (
                   <Button
@@ -739,6 +837,33 @@ export function RepertoireView() {
               </Button>
             </div>
           </Panel>
+          {/* The record that you practised — the one trainer with none.
+              Device-local memos, newest first. */}
+          {log.length > 0 && (
+            <Panel flush fit className="shrink-0">
+              <PanelHeader title={t('Recent practice')} />
+              <ul>
+                {log.map((entry, i) => (
+                  <li
+                    key={`${entry.at}-${i}`}
+                    className="border-line flex items-center gap-2.5 border-b px-3 py-1.5 text-xs last:border-b-0"
+                  >
+                    <span className="text-fg min-w-0 flex-1 truncate font-medium">
+                      {t(entry.opening)}
+                    </span>
+                    <span className="text-subtle shrink-0 truncate">{entry.source}</span>
+                    <span className="text-subtle shrink-0 font-mono tabular-nums">
+                      {t('{n} moves', { n: entry.moves })}
+                    </span>
+                    <span className="text-subtle w-16 shrink-0 text-right tabular-nums">
+                      {formatAgo(entry.at)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+          </>
         ) : (
           <>
             {/* Game panel in the trainers' shape: status and the game's own
@@ -779,22 +904,39 @@ export function RepertoireView() {
                   </p>
                 )}
                 {phase === 'ended' && (
-                  <FinalAssessment
-                    fen={getNode(tree, tipId).fen}
-                    onAnalyse={() => {
-                      // The tree itself, not a PGN round-trip: this is the
-                      // line as played, and the board should open on the
-                      // move it ended on, facing the way it was trained.
-                      useAnalysis.setState({
-                        tree,
-                        cursorId: tipId,
-                        orientation: userColor,
-                        gameHeaders: null,
-                        handoff: true,
-                      });
-                      navigate('analysis');
-                    }}
-                  />
+                  <>
+                    <FinalAssessment
+                      fen={getNode(tree, tipId).fen}
+                      onAnalyse={() => {
+                        // The tree itself, not a PGN round-trip: this is the
+                        // line as played, and the board should open on the
+                        // move it ended on, facing the way it was trained.
+                        useAnalysis.setState({
+                          tree,
+                          cursorId: tipId,
+                          orientation: userColor,
+                          gameHeaders: null,
+                          handoff: true,
+                        });
+                        navigate('analysis');
+                      }}
+                    />
+                    {/* The same generosity as the analysis handoff, pointed
+                        at the vault: the sparred line used to evaporate the
+                        moment you left. */}
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="self-start"
+                      onClick={() => {
+                        setSaveError(null);
+                        setSaveOpen(true);
+                      }}
+                    >
+                      <BookmarkPlus className="size-3.5" />
+                      {t('Save line to study')}
+                    </Button>
+                  </>
                 )}
               </div>
             </Panel>
@@ -828,6 +970,18 @@ export function RepertoireView() {
             </Button>
           </div>
         </MobileActionBar>
+      )}
+
+      {saveOpen && (
+        <PromptSheet
+          label={t('Save line to study')}
+          initial={`${t(template.name)} — ${new Date().toISOString().slice(0, 10)}`}
+          submitLabel="Save"
+          error={saveError}
+          closeOnSubmit={false}
+          onSubmit={(name) => void saveLine(name)}
+          onClose={() => setSaveOpen(false)}
+        />
       )}
     </div>
   );
