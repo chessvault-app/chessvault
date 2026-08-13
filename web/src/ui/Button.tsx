@@ -1,7 +1,7 @@
 import { forwardRef, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-solid';
 type Size = 'sm' | 'md' | 'icon' | 'icon-sm';
 
 const variants: Record<Variant, string> = {
@@ -9,6 +9,11 @@ const variants: Record<Variant, string> = {
   secondary: 'bg-surface-2 text-fg hover:bg-surface-3 border border-line',
   ghost: 'text-muted hover:bg-surface-2 hover:text-fg',
   danger: 'bg-bad/12 text-bad hover:bg-bad/20 border border-bad/25',
+  // Filled, for a confirmation's own confirm button — the one press in the
+  // app that cannot be taken back should not look like the tinted danger
+  // used for triggers that merely OPEN a question. --bad-fg is the token
+  // for what reads on a filled --bad panel in both themes.
+  'danger-solid': 'bg-bad text-bad-fg hover:bg-bad/90 border border-bad',
 };
 
 // Coarse pointers get bigger hit areas: 28px icon buttons are fine under a

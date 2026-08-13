@@ -58,6 +58,7 @@ export function Select({
   inset = false,
   mono = false,
   steady = false,
+  prefix,
   className,
 }: {
   value: string;
@@ -83,6 +84,15 @@ export function Select({
    * options measure themselves — see the stack in the trigger.
    */
   steady?: boolean;
+  /**
+   * Shown on the TRIGGER before the selection — "Status: Solved" — and
+   * never inside the list, where every row would repeat it.
+   *
+   * A filter menu has to say what it filters even when nothing is
+   * chosen: a bare "All" at the top of a list is not a control anyone
+   * can identify without pressing it.
+   */
+  prefix?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -97,6 +107,9 @@ export function Select({
   const [dropUp, setDropUp] = useState(false);
 
   const flat = useMemo(() => groups.flatMap((g) => g.options), [groups]);
+  // The prefix rides on the trigger only, and on the invisible sizers too,
+  // or `steady` would reserve a width the real label overflows.
+  const face = (text: string): string => (prefix ? `${t(prefix)}: ${text}` : text);
   const selected = flat.find((o) => o.value === value) ?? null;
 
   const show = (): void => {
@@ -247,11 +260,11 @@ export function Select({
                 aria-hidden
                 className="invisible col-start-1 row-start-1 whitespace-nowrap"
               >
-                {t(option.short ?? option.label)}
+                {face(t(option.short ?? option.label))}
               </span>
             ))}
           <span className={cn('truncate', steady && 'col-start-1 row-start-1')}>
-            {selected ? t(selected.short ?? selected.label) : '—'}
+            {selected ? face(t(selected.short ?? selected.label)) : '—'}
           </span>
         </span>
         <ChevronDown className="text-subtle size-3 shrink-0" />

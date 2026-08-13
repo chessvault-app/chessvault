@@ -1,5 +1,5 @@
 import { parseSquare } from 'chessops/util';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Play, RotateCcw, Telescope } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
@@ -7,6 +7,11 @@ import { Board } from '@/board/Board';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
+import { EvalBar } from '@/engine/EvalBar';
+import { formatScore, toWhitePov } from '@/engine/uci';
+import { useEngine } from '@/store/engine';
+import { useAnalysis } from '@/store/analysis';
+import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
@@ -284,6 +289,64 @@ function OpeningPicker({
         </Sheet>
       )}
     </>
+  );
+}
+
+/**
+ * How the line ended, and a way into the board.
+ *
+ * The trainer's job stops when the line leaves the database — the panel
+ * has always SAID to go and analyse it, and then offered nothing to do
+ * that with. So the button is back, at the one moment it means
+ * something, and it carries the answer to the question you would open
+ * the board to ask: how does this position actually stand.
+ *
+ * The engine is switched on to answer it. That is a session switch, not
+ * a stored preference — `enabled` is deliberately not persisted (see
+ * store/engine.ts) — so this turns it on for the evaluation and leaves
+ * it visibly on, rather than running something the app says is off.
+ */
+function FinalAssessment({
+  fen,
+  onAnalyse,
+}: {
+  fen: string;
+  onAnalyse: () => void;
+}) {
+  const enabled = useEngine((s) => s.enabled);
+  const setEnabled = useEngine((s) => s.setEnabled);
+  const analyse = useEngine((s) => s.analyse);
+  const lines = useEngine((s) => s.lines);
+  const resultFen = useEngine((s) => s.resultFen);
+
+  useEffect(() => {
+    if (!enabled) {
+      setEnabled(true);
+      return;
+    }
+    analyse(fen);
+  }, [enabled, fen, analyse, setEnabled]);
+
+  // Only the result for THIS position; the engine keeps the previous
+  // one on screen while it starts on the next, which would read as an
+  // assessment of a line you are no longer looking at.
+  const best = resultFen === fen ? lines[0] : undefined;
+  const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  const score = best ? toWhitePov({ cp: best.cp, mate: best.mate }, turn) : null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <span className="text-fg min-w-[3.75rem] font-mono text-lg font-semibold tabular-nums">
+          {score ? formatScore(score) : '…'}
+        </span>
+        <EvalBar score={score} orientation="horizontal" className="flex-1" />
+      </div>
+      <Button variant="secondary" size="sm" className="self-start" onClick={onAnalyse}>
+        <Telescope className="size-3.5" />
+        {t('Analyse on the board')}
+      </Button>
+    </div>
   );
 }
 
@@ -567,7 +630,7 @@ export function RepertoireView() {
               <div className="flex flex-col gap-3 p-3">
                 <p className="text-muted text-xs leading-relaxed">
                   {phase === 'ended'
-                    ? 'This line has run past the database — you are on your own now. Analyse it to see how the position stands.'
+                    ? t('This line has run past the database — you are on your own now.')
                     : error
                       ? error
                       : phase === 'thinking'
@@ -576,6 +639,24 @@ export function RepertoireView() {
                           ? 'Your move.'
                           : 'Reviewing an earlier move — step to the end to keep playing.'}
                 </p>
+                {phase === 'ended' && (
+                  <FinalAssessment
+                    fen={getNode(tree, tipId).fen}
+                    onAnalyse={() => {
+                      // The tree itself, not a PGN round-trip: this is the
+                      // line as played, and the board should open on the
+                      // move it ended on, facing the way it was trained.
+                      useAnalysis.setState({
+                        tree,
+                        cursorId: tipId,
+                        orientation: userColor,
+                        gameHeaders: null,
+                        handoff: true,
+                      });
+                      navigate('analysis');
+                    }}
+                  />
+                )}
               </div>
             </Panel>
             <AnswerPanel

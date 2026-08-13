@@ -77,7 +77,13 @@ export function Sheet({
           // than let itself overflow.
           'bg-surface border-line flex max-h-full w-full flex-col gap-2 overflow-y-auto overscroll-contain',
           'border p-3 shadow-[var(--shadow-pop)] [&>*]:shrink-0',
+          // A tall sheet — the opening catalogue is a thousand rows — grows
+          // until it runs out of screen, and on a phone the top of the
+          // screen is under the notch. So its ceiling is the safe area
+          // rather than the viewport, and it stops short of the status bar
+          // instead of putting its first row behind the clock.
           'max-sm:rounded-t-2xl max-sm:pb-[calc(0.75rem+var(--safe-b))]',
+          'max-sm:max-h-[calc(100%-env(safe-area-inset-top)-0.75rem)]',
           'sm:max-w-sm sm:rounded-xl',
           className,
         )}

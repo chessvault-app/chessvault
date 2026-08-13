@@ -33,6 +33,7 @@ export function ConfirmSheet({
   label,
   triggerTitle,
   triggerClassName,
+  triggerTone = 'quiet',
   question,
   confirmLabel,
   disabled = false,
@@ -43,6 +44,16 @@ export function ConfirmSheet({
   label?: string;
   triggerTitle: string;
   triggerClassName?: string;
+  /**
+   * How loud the trigger is.
+   *
+   * `quiet` for the destructive actions that sit among ordinary row
+   * controls, where a red button in every row is a page that looks
+   * alarmed. `danger` for the ones that are the only destructive thing
+   * on their surface — the puzzle history's reset, a book's — where the
+   * colour is the warning and there is nothing for it to shout over.
+   */
+  triggerTone?: 'quiet' | 'danger';
   question: string;
   confirmLabel: string;
   disabled?: boolean;
@@ -53,7 +64,7 @@ export function ConfirmSheet({
   return (
     <>
       <Button
-        variant="ghost"
+        variant={triggerTone === 'danger' ? 'danger' : 'ghost'}
         size={label ? 'sm' : 'icon-sm'}
         title={t(triggerTitle)}
         aria-haspopup="dialog"
@@ -76,16 +87,23 @@ export function ConfirmSheet({
       {open && (
         <Sheet label={t(confirmLabel)} onClose={() => setOpen(false)} className="gap-3">
           <p className="text-fg text-sm">{t(question)}</p>
-          {/* Cancel first, then the destructive one — the way out is the
-              thing nearest to hand, and the button that cannot be undone
-              is the one you have to reach for. */}
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              {t('Cancel')}
-            </Button>
+          {/*
+            Stacked, not a row, and the destructive one on top.
+            A row of two puts them a thumb's width apart on a phone, which
+            is the wrong geometry for a pair where one is irreversible and
+            the other is the way out. Full width each, with a real gap
+            between them, so the press that cannot be undone cannot be the
+            one you meant to make somewhere else.
+            The confirm is FILLED rather than tinted — the tinted danger
+            style belongs to triggers that merely open this question — and
+            it names its action ("Reset all progress"), because "Confirm"
+            answers a question you have already stopped reading.
+          */}
+          <div className="mt-1 flex flex-col gap-2">
             <Button
-              variant="danger"
-              size="sm"
+              variant="danger-solid"
+              size="md"
+              className="w-full justify-center"
               onClick={() => {
                 setOpen(false);
                 onConfirm();
@@ -93,6 +111,14 @@ export function ConfirmSheet({
             >
               <Icon className="size-3.5" />
               {t(confirmLabel)}
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
+              className="w-full justify-center"
+              onClick={() => setOpen(false)}
+            >
+              {t('Cancel')}
             </Button>
           </div>
         </Sheet>

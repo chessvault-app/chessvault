@@ -6,8 +6,7 @@ import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { Button } from '@/ui/Button';
-import { ChipRow } from '@/ui/ChipRow';
-import { FilterChip } from '@/ui/FilterChip';
+import { Select } from '@/ui/Select';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ProgressBar } from '@/ui/ProgressBar';
@@ -285,33 +284,51 @@ export function DashboardPage() {
           <PanelHeader
             title={history === null ? t('Puzzles') : `${t('Puzzles')} · ${puzzles.length}`}
           />
-          {/* Filters: outcome × rating band. Click a row to replay it. */}
-          <ChipRow className="border-line border-b px-3 py-2" innerClassName="gap-1">
-            {(
-              [
-                ['all', 'All'],
-                ['solved', 'Solved'],
-                ['review', 'Failed'],
-              ] as [ResultFilter, string][]
-            ).map(([id, label]) => (
-              <FilterChip
-                key={id}
-                label={label}
-                active={resultFilter === id}
-                onClick={() => setResultFilter(id)}
-              />
-            ))}
-            <span className="bg-line mx-1 h-4 w-px" />
-            <FilterChip label={t('Any')} active={bandFilter === 'any'} onClick={() => setBandFilter('any')} />
-            {BANDS.map((b) => (
-              <FilterChip
-                key={b.id}
-                label={t(b.label)}
-                active={bandFilter === b.id}
-                onClick={() => setBandFilter(b.id)}
-              />
-            ))}
-          </ChipRow>
+          {/*
+            Two menus, not two runs of pills in one row.
+            Outcome and difficulty are separate questions, and as chips
+            they were nine controls on one line separated by a hairline —
+            with two lit at once and nothing to say which lit chip
+            belonged to which question. A menu names its own subject
+            ("Status: Solved"), so the row reads as two answers instead of
+            nine buttons. `steady` keeps each from resizing as it is
+            changed and shoving the other along the row.
+          */}
+          <div className="border-line flex items-center gap-2 border-b px-3 py-2">
+            <Select
+              value={resultFilter}
+              onChange={(v) => setResultFilter(v as ResultFilter)}
+              ariaLabel={t('Filter by outcome')}
+              size="sm"
+              prefix="Status"
+              steady
+              groups={[
+                {
+                  options: [
+                    { value: 'all', label: 'All' },
+                    { value: 'solved', label: 'Solved' },
+                    { value: 'review', label: 'Failed' },
+                  ],
+                },
+              ]}
+            />
+            <Select
+              value={bandFilter}
+              onChange={(v) => setBandFilter(v as BandFilter)}
+              ariaLabel={t('Filter by difficulty')}
+              size="sm"
+              prefix="Difficulty"
+              steady
+              groups={[
+                {
+                  options: [
+                    { value: 'any', label: 'Any' },
+                    ...BANDS.map((b) => ({ value: b.id, label: b.label })),
+                  ],
+                },
+              ]}
+            />
+          </div>
           {history === null ? (
             pending ? <SkeletonRows rows={5} /> : null
           ) : puzzles.length === 0 ? (
@@ -412,6 +429,7 @@ function ResetButton({ onDone }: { onDone: () => void }) {
   return (
     <ConfirmSheet
       icon={Eraser}
+      triggerTone="danger"
       label={t('Reset')}
       triggerTitle="Wipe attempts, history and the review pool"
       triggerClassName="text-subtle ml-auto"

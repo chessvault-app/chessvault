@@ -84,8 +84,7 @@ import {
 } from './ocr/classify';
 import { boardFromImage, featuresFromImage, loadImage } from './ocr/browser';
 import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
-import { ChipRow } from '@/ui/ChipRow';
-import { FilterChip } from '@/ui/FilterChip';
+import { Select } from '@/ui/Select';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { evaluateWhitePov, movePasses } from '@/engine/adjudicate';
@@ -894,6 +893,7 @@ function BookPage({ slug }: { slug: string }) {
           </Button>
           <ConfirmSheet
             icon={RotateCcw}
+            triggerTone="danger"
             triggerTitle="Reset all progress in this book"
             question="Reset all progress in this book?"
             confirmLabel="Reset"
@@ -1315,42 +1315,64 @@ function PuzzleList({
         failed={stateCounts.failed}
         className="mb-3"
       />
-      <ChipRow className="mb-2">
-        {(
-          [
-            ['all', 'All'],
-            ['new', 'New'],
-            ['failed', 'Failed'],
-            ['solved', 'Solved'],
-          ] as const
-        ).map(([id, label]) => (
-          <FilterChip
-            key={id}
-            label={t(label)}
-            count={stateCounts[id]}
-            active={stateFilter === id}
-            onClick={() => setStateFilter(id)}
+      {/*
+        Two menus, not two runs of pills in one row — the same shape the
+        puzzle dashboard uses. State and fidelity are separate questions,
+        and as chips they shared a line with a hairline between them, two
+        lit at once and nothing saying which lit chip answered which. A
+        menu names its own subject, and carries the count of what it
+        would leave.
+        The tier icons do not come along: an option row is text. They stay
+        where they carry meaning — on the tiles themselves, where the
+        shape is how a tier is told apart without relying on colour.
+      */}
+      <div className="mb-2 flex items-center gap-2">
+        <Select
+          value={stateFilter}
+          onChange={(v) => setStateFilter(v as typeof stateFilter)}
+          ariaLabel={t('Filter by state')}
+          size="sm"
+          prefix="Status"
+          steady
+          groups={[
+            {
+              options: ([
+                ['all', 'All'],
+                ['new', 'New'],
+                ['failed', 'Failed'],
+                ['solved', 'Solved'],
+              ] as const).map(([id, label]) => ({
+                value: id,
+                label: stateCounts[id] === undefined ? label : `${label} (${stateCounts[id]})`,
+                short: label,
+              })),
+            },
+          ]}
+        />
+        {tiers.size > 0 && (
+          <Select
+            value={tierFilter}
+            onChange={(v) => setTierFilter(v)}
+            ariaLabel={t('Filter by how the puzzle was verified')}
+            size="sm"
+            prefix="Fidelity"
+            steady
+            groups={[
+              {
+                options: [
+                  { value: 'all', label: 'Any' },
+                  // Map insertion follows meta-key order = confidence order.
+                  ...[...tiers.values()].map(({ meta, count }) => ({
+                    value: meta.label,
+                    label: `${t(meta.label)} (${count})`,
+                    short: t(meta.label),
+                  })),
+                ],
+              },
+            ]}
           />
-        ))}
-        {tiers.size > 0 && <span className="border-line mx-1 h-4 border-l" />}
-        {/* Map insertion follows meta-key order = confidence order. Each
-            chip wears its tier icon so tile marks are matchable to names. */}
-        {[...tiers.values()].map(({ meta, count }) => (
-          <FilterChip
-            key={meta.label}
-            label={
-              <span className="inline-flex items-center gap-1">
-                <meta.icon className={cn('size-3', meta.iconClass)} aria-hidden />
-                {t(meta.label)}
-              </span>
-            }
-            count={count}
-            title={meta.title}
-            active={tierFilter === meta.label}
-            onClick={() => setTierFilter(tierFilter === meta.label ? 'all' : meta.label)}
-          />
-        ))}
-      </ChipRow>
+        )}
+      </div>
       <div ref={grid} className="grid grid-cols-6 gap-2 sm:grid-cols-8">
         {/* The rows above the viewport, as one spacer that spans the grid.
             content-visibility already skipped PAINTING them; this skips

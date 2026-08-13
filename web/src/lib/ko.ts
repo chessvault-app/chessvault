@@ -452,6 +452,16 @@ export const ko: Record<string, string> = {
     '최선의 수를 찾으세요. 테마는 끝날 때까지 숨겨집니다.',
   'Find the best move. The difficulty stays hidden until you finish.':
     '최선의 수를 찾으세요. 난이도는 끝날 때까지 숨겨집니다.',
+  'Analyse on the board': '보드에서 분석하기',
+  'This line has run past the database — you are on your own now.':
+    '이 수순은 데이터베이스를 벗어났습니다 — 여기부터는 스스로입니다.',
+  // The puzzle filters, as menus.
+  Status: '상태',
+  Fidelity: '신뢰도',
+  'Filter by outcome': '결과로 거르기',
+  'Filter by difficulty': '난이도로 거르기',
+  'Filter by state': '상태로 거르기',
+  'Filter by how the puzzle was verified': '검증 방식으로 거르기',
   // The repertoire's opening picker.
   'Reading the catalogue…': '목록을 읽는 중…',
   'No opening matches that.': '그 검색어에 맞는 오프닝이 없습니다.',
