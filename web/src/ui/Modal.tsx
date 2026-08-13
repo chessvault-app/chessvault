@@ -133,7 +133,7 @@ export function Modal({
               // the way, and one that fills the band arrives at the top of
               // the screen looking like a different window. Capped, it
               // keeps a strip of page above it and its head moves less.
-              'max-h-[88%] rounded-t-2xl pb-[calc(0.75rem+env(safe-area-inset-bottom))] ' +
+              'max-h-[88%] rounded-t-2xl pb-[calc(0.75rem+var(--safe-b))] ' +
               'sm:h-auto sm:max-h-full sm:max-w-4xl sm:rounded-xl sm:pb-3'
             : 'max-h-full max-w-[32rem] rounded-xl',
           className,

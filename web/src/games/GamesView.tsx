@@ -2473,8 +2473,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           // screen. Sticking it that much lower and padding itself by the
           // same amount puts the background where the padding was and the
           // buttons where they always were.
-          'bottom-[calc(-0.75rem-env(safe-area-inset-bottom))]',
-          'pb-[calc(0.25rem+0.75rem+env(safe-area-inset-bottom))]',
+          'bottom-[calc(-0.75rem-var(--safe-b))]',
+          'pb-[calc(1rem+var(--safe-b))]',
+          // And it eats the window's bottom padding in flow as well as
+          // when stuck. Sticky only sticks while there is something to
+          // scroll; with a form short enough to fit, the bar sat in the
+          // ordinary flow and its clearance was ADDED to the window's own
+          // — two indicators' worth of nothing under the buttons.
+          '-mb-[calc(0.75rem+var(--safe-b))]',
         )}
       >
         <Button variant="ghost" size="sm" onClick={onCancel}>

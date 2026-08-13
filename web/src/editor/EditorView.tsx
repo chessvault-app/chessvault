@@ -516,7 +516,7 @@ export function EditorView({
         // gap slot to the column and nudges the centred board.
         <div className="contents wide:hidden">
           <div className="bg-scrim fixed inset-0 z-40" onClick={() => setSheetOpen(false)} />
-          <div className="bg-app border-line fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] space-y-3 overflow-y-auto rounded-t-2xl border-t p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+          <div className="bg-app border-line fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] space-y-3 overflow-y-auto rounded-t-2xl border-t p-3 pb-[calc(0.75rem+var(--safe-b))]">
             {positionPanels}
           </div>
         </div>

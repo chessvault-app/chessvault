@@ -125,7 +125,7 @@ export function ActionSheet({
           popover
             ? 'w-56 rounded-lg'
             : // The phone's home indicator lives under the sheet's last row.
-              'w-full max-w-lg rounded-t-2xl pb-[calc(0.5rem+env(safe-area-inset-bottom))]',
+              'w-full max-w-lg rounded-t-2xl pb-[calc(0.5rem+var(--safe-b))]',
         )}
       >
         {/* Two ways out, because a sheet is two things at once: a thing on

@@ -819,6 +819,22 @@ cg-board square.check {
    properties, and on a home-screen PWA that came out short: a band under
    the bottom bar, clipping it. At rest these elements keep the plain
    `h-[var(--app-h,100svh)]` and `inset-0` that have always worked. */
+/* The home-indicator clearance, as a name rather than an env() spelled out
+   in eight places — and, crucially, ZERO while the keyboard is up.
+
+   The inset exists so nothing sits under the indicator at the bottom of
+   the screen. With a keyboard up, a bottom sheet's bottom edge is the top
+   of the keyboard: there is no indicator anywhere near it, and reserving
+   for one left about 100px of empty surface under the buttons. iOS keeps
+   reporting the inset regardless, because the screen still has one. */
+:root {
+  --safe-b: env(safe-area-inset-bottom);
+}
+
+.kb-open {
+  --safe-b: 0px;
+}
+
 .kb-open .vv-band {
   position: fixed;
   top: var(--vvt, 0px);
