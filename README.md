@@ -7,6 +7,22 @@ engine analysis, opening explorer, studies, notes, a curated game
 collection, and a puzzle trainer fed by real paper books — everything
 stored as PGN, markdown and JSON in one folder you own.
 
+**The idea comes from Obsidian.** Two things about it are worth keeping
+for chess, and this app is built on both.
+
+*Everything is a plain file, on your own disk.* The vault is a folder —
+PGN, markdown, JSON — that any editor can open and any backup tool can
+copy. There is no database holding your work hostage, no export step, and
+nothing that stops being readable if this app does. The parts that ARE
+databases (opening books, the puzzle pool, indexes) are all derived: they
+live apart from the vault, and any of them can be deleted and rebuilt.
+
+*Everything can point at everything else.* A note links a study, a study
+links a game, a game links back to the note where you worked out what
+went wrong — with the same `[[wiki-links]]` Obsidian uses, resolved
+across all three. Chess material is not a pile of separate documents; it
+is one connected body of work, and the links are what make it that.
+
 ![Analysis board](docs/screenshots/board.png)
 
 ## Features
