@@ -7,6 +7,13 @@ engine analysis, opening explorer, studies, notes, a curated game
 collection, and a puzzle trainer fed by real paper books — everything
 stored as PGN, markdown and JSON in one folder you own.
 
+**Quick start:** grab the installer for Windows, macOS or Linux from
+[Releases](https://github.com/chessvault-app/chessvault/releases/latest),
+run it, and answer **local** when it asks where your vault lives. That is
+the whole setup. [Two ways to run it](#two-ways-to-run-it) has the
+details — and the second way, for when you want the same vault on every
+device.
+
 **The idea comes from Obsidian.** Two things about it are worth keeping
 for chess, and this app is built on both.
 
@@ -28,7 +35,8 @@ is one connected body of work, and the links are what make it that.
 ## Features
 
 - **Board** — free analysis with Stockfish 18 (WASM, multi-threaded),
-  full move trees with variations, comments, NAGs and arrows, an
+  full move trees with variations, comments, NAGs (`!`, `?!` and the
+  rest of the annotation glyphs) and arrows, an
   opening explorer (local book + Lichess), game review with accuracy
   and honest brilliancy detection, and position loading from FEN, PGN,
   or a *photo/screenshot* of any board.
@@ -52,8 +60,9 @@ is one connected body of work, and the links are what make it that.
   ![Games](docs/screenshots/games.png)
 
 - **Puzzles** — a lichess-themed trainer with difficulty bands and a
-  progress dashboard, plus **book puzzles**: point the importer at a
-  scanned tactics book PDF and an ML pipeline reads the diagrams,
+  progress dashboard, plus **book puzzles**: hand a scanned tactics
+  book PDF to the importer (in the app: Puzzles → Books → Import a
+  book) and an ML pipeline reads the diagrams,
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
   original page scan. No book is bundled: you supply the PDF of a book
@@ -82,6 +91,9 @@ is one connected body of work, and the links are what make it that.
   machine by default, or runs as a client to your server. On a phone the
   bottom bar turns into the open page's controls (move navigation, puzzle
   actions), chess.com/Lichess-style.
+
+Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
+end · `f` flip board.
 
 ## Two ways to run it
 
@@ -117,6 +129,12 @@ B.) Then it asks which folder:
   folder too, so moving or syncing the folder takes everything with it.
 
 Updates arrive through the app itself, from those same releases.
+
+**First minutes, once it opens:** put your chess.com / Lichess usernames
+into Settings and the Games page starts browsing your archives; open
+Puzzles and accept the database it offers to fetch, and the trainer is
+ready. The Lichess token ([below](#lichess-token-optional)) is only
+needed when you want the online extras.
 
 To build the installer yourself, or run from the source tree:
 
@@ -229,7 +247,10 @@ against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 
 The app runs with an empty `data/`. These four datasets light up specific
 features; everything under `data/` is derived, gitignored and rebuildable,
-so it never ships in the repo. Build what you want, per machine.
+so it never ships in the repo. Build what you want, per machine — and
+**almost all of it from inside the app**: only the reference games need a
+terminal. The `npm run` commands below are the terminal alternative, not
+the requirement.
 
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
@@ -423,9 +444,6 @@ npm run desktop:release        # check, tag, push — GitHub builds the installe
 
 Server-side, from your workstation: `bash scripts/deploy.sh` updates a
 server, `bash scripts/backup-vault.sh` pulls its vault down.
-
-Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
-end · `f` flip board.
 
 ## Documentation
 
