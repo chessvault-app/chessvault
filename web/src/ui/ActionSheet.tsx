@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -128,16 +127,12 @@ export function ActionSheet({
               'w-full max-w-lg rounded-t-2xl pb-[calc(0.5rem+var(--safe-b))]',
         )}
       >
-        {/* Two ways out, because a sheet is two things at once: a thing on
-            the screen, which wants a button, and a thing under a thumb,
-            which wants to be pushed away. The handle was there before and
-            meant nothing — it promised a drag the sheet did not do. The
-            whole sheet drags now, and the X is for everyone not holding
-            the phone.
-            (Windows use Cancel, not an X — docs/design-principles.md.
-            That rule is about a window with its own button row, where a
-            second closing idiom competes with it. A sheet of verbs has no
-            such row to put a Cancel in.) */}
+        {/* The handle, and nothing else. It carried an X beside it for a
+            while, from back when the drag was a promise the sheet did not
+            keep: a handle that did nothing needed a button next to it to
+            do the work. The whole sheet drags now — from anywhere on it,
+            with the scrim and Escape besides — and a close button on top
+            of three other ways out is one more thing to read past. */}
         {popover ? (
           <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
         ) : (
@@ -149,27 +144,7 @@ export function ActionSheet({
             className="-mt-1 cursor-grab touch-none select-none pt-1 active:cursor-grabbing"
           >
             <div className="bg-line mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
-            <div className="flex items-center gap-2 pb-1 pl-3 pr-1">
-              <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
-              {/* Glass: a translucent disc that takes its colour from the
-                  sheet it floats on, with a hairline of light along the
-                  edge. backdrop-blur is what makes it read as glass
-                  rather than as a grey circle — without it the tint is
-                  just a lighter fill. */}
-              <button
-                type="button"
-                title={t('Close')}
-                aria-label={t('Close')}
-                onClick={onClose}
-                className={cn(
-                  'text-muted hover:text-fg grid size-9 shrink-0 place-items-center rounded-full',
-                  'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
-                  'transition-colors duration-100',
-                )}
-              >
-                <X className="size-4" />
-              </button>
-            </div>
+            <p className="text-subtle truncate px-3 pb-1 text-xs">{t(title)}</p>
           </div>
         )}
         {children}

@@ -1,5 +1,5 @@
-import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
@@ -33,7 +33,7 @@ export function Modal({
   full = false,
 }: {
   title: string;
-  icon?: typeof X;
+  icon?: LucideIcon;
   /** One control on the title line — Paste, say. Never a close button. */
   actions?: ReactNode;
   onClose: () => void;
@@ -167,21 +167,6 @@ export function Modal({
             {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
             <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
             {actions}
-            {full && (
-              <button
-                type="button"
-                title={t('Close')}
-                aria-label={t('Close')}
-                onClick={onClose}
-                className={cn(
-                  'text-muted hover:text-fg -my-1 grid size-8 shrink-0 place-items-center rounded-full sm:hidden',
-                  'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
-                  'transition-colors duration-100',
-                )}
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
           </div>
         </div>
         {children}

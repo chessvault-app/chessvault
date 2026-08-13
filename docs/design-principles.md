@@ -117,10 +117,10 @@ there when it opened — beside Done.
 The row-actions sheet (`ActionSheet`, the phone half of a row's ⋯) is
 the exception, and it proves the rule: it is a list of verbs with no
 button row of its own, so there is nowhere for a Cancel to sit that is
-not itself another verb. It carries an X. It used to carry a drag
-handle instead, which was worse than either — a handle promises the
-sheet can be dragged and resized, and this one holds three items and
-does neither.
+not itself another verb. It carries a grab handle and nothing else, and
+the handle is honest — every sheet on a phone is pushed away by dragging
+it from anywhere on itself. It carried an X beside the handle for a
+while, from back when the drag was a promise the sheet did not keep.
 
 Autofill is off in every field (`Input`, `TextArea`, or the exported
 `noAutofill` props for the few bare inputs). `autocomplete="off"` is not
