@@ -91,22 +91,21 @@ if (boot) {
     new Promise<void>((resolve) => setTimeout(resolve, BOOT_MAX_MS)),
   ]);
   /**
-   * Gone means gone: the element AND the class that suppresses backdrop
-   * filters underneath it (see the html.booting rule in index.html).
+   * Gone means gone, in one frame.
    *
-   * Cleared when the screen has actually left rather than when the fade
-   * starts, because a bar that gets its blur back mid-fade is a bar that
-   * can composite its way in front of what is still fading.
+   * The element AND the class that suppresses backdrop filters underneath
+   * it (see the html.booting rule in index.html), removed together —
+   * there is no longer any in-between state for them to disagree during.
+   *
+   * It faded before, and a fade to transparent is a CROSS-fade: for 260ms
+   * the launch screen and the running app were both on screen at once.
+   * That was the flicker, on both an iPhone and an iPad, and no amount of
+   * getting the timing right could have removed it because it was not a
+   * timing problem — it was the transition itself.
    */
   const finish = (): void => {
     boot.remove();
     document.documentElement.classList.remove('booting');
   };
-  void Promise.all([seen, ready]).then(() => {
-    boot.classList.add('done');
-    boot.addEventListener('transitionend', finish, { once: true });
-    // A transition that never runs (reduced motion, a backgrounded tab)
-    // must not leave the screen on top of the app for ever.
-    setTimeout(finish, 600);
-  });
+  void Promise.all([seen, ready]).then(finish);
 }

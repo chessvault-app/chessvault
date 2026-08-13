@@ -131,13 +131,21 @@
          instead. The box is not consulted, so it stays free to cover the
          viewport. */
       #boot.pinned svg { position: absolute; transform: translate(-50%, -50%); }
-      /* Set by main.tsx once the app is up and the screen has had its
-         moment. pointer-events go first so the app is usable through the
-         fade rather than after it. */
-      #boot.done { opacity: 0; pointer-events: none; transition: opacity 260ms ease-out; }
-      @media (prefers-reduced-motion: reduce) {
-        #boot.done { transition-duration: 1ms; }
-      }
+      /*
+       * There is no fade, and that is the point.
+       *
+       * This used to go out over 260ms, which sounds gentler and is not:
+       * a fade to transparent is a CROSS-fade, so for a quarter of a
+       * second the knight and the running app are both on screen, drawn
+       * over each other. lanph3re saw it on an iPhone as the nav bar
+       * showing through the launch screen, and on an iPad — which has no
+       * bottom bar — as a flicker with nothing identifiable in it. Same
+       * event, different thing to notice in it.
+       *
+       * A cut has no such moment. The screen is up, then the app is,
+       * which is what every native launch does and what the screen was
+       * for in the first place.
+       */
       /**
        * No backdrop filters while the launch screen is up.
        *
