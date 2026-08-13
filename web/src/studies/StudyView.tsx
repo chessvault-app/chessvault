@@ -71,6 +71,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   // Reading vs annotating: reading hides the NAG toolbar and comment boxes
   // — and, in the store, keeps the autosave from writing what a reader
   // merely walked through. See the subscriber in store/study.ts.
+  const [loadOpen, setLoadOpen] = useState(false);
   const editing = useStudy((s) => s.editing);
   const setEditing = useStudy((s) => s.setEditing);
 
@@ -228,12 +229,21 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
                 <span className="hidden items-center gap-1 md:inline-flex">
                   <ReviewButton />
                 </span>
-                {editing && <LoadPositionButton />}
+                {editing && (
+                  <LoadPositionButton
+                    open={loadOpen}
+                    onOpenChange={setLoadOpen}
+                    triggerClassName="max-md:hidden"
+                  />
+                )}
                 {editing && <MoveActions allowReset={false} />}
                 {/* No Clear here: in a study the board IS the document. This
                     is also the only way to copy a chapter's FEN or PGN on a
                     phone — the Board's status bar has never existed here. */}
-                <MovesOverflow allowReset={false} />
+                <MovesOverflow
+                  allowReset={false}
+                  onLoadPosition={editing ? () => setLoadOpen(true) : undefined}
+                />
               </>
             }
           />

@@ -89,7 +89,23 @@ export const useEngine = create<EngineState>()(
         threads: 2,
         hashMb: 128,
         multiPv: 3,
-        depth: 22,
+        /**
+         * 18, not 22.
+         *
+         * The last plies are where the time goes. Measured on a 12-core
+         * desktop at ~8.5M nps, one middlegame position, multiPv 3:
+         * depth 14 at 1.0s, 18 at 2.0s, 20 at 3.0s, 22 at 4.8s — so the
+         * three plies past 18 cost more than everything before them. A
+         * phone runs this an order of magnitude slower, which is where
+         * "the lines take forever" comes from.
+         *
+         * Lines still appear as they are found (depth 10 inside half a
+         * second here), so this is not about the first result; it is
+         * about how long the fan runs for the last one. Adjustable in the
+         * engine's settings, and persisted, so anyone who wants 22 keeps
+         * it.
+         */
+        depth: 18,
 
         resultFen: null,
         lines: [],

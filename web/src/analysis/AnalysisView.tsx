@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Compass, Copy, Cpu, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -40,6 +40,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   // Small screens show ONE pane under the board (lichess-app style); the
   // others stay mounted but hidden so the engine keeps following the board.
   const [pane, setPane] = useState<AnalysisPane>(wantExplorer ? 'explorer' : 'moves');
+  // Held here because two things open it: the header's button on a desktop
+  // and the ⋯ on a phone, and they must share one dialog.
+  const [loadOpen, setLoadOpen] = useState(false);
   const engineOn = useEngine((s) => s.enabled);
 
   // Stateless page (lanph3re's call): entering analysis always starts a fresh
@@ -134,9 +137,13 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
                   <ReviewButton />
                   <CollectGameButton />
                 </span>
-                <LoadPositionButton />
+                <LoadPositionButton
+                  open={loadOpen}
+                  onOpenChange={setLoadOpen}
+                  triggerClassName="max-md:hidden"
+                />
                 <MoveActions />
-                <MovesOverflow />
+                <MovesOverflow onLoadPosition={() => setLoadOpen(true)} />
               </>
             }
           />
@@ -297,7 +304,14 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
  * A desktop keeps every icon on the header and its status bar, so this
  * renders nothing there.
  */
-export function MovesOverflow({ allowReset = true }: { allowReset?: boolean }) {
+export function MovesOverflow({
+  allowReset = true,
+  onLoadPosition,
+}: {
+  allowReset?: boolean;
+  /** Opens the caller's Load position dialog; omitted where there is none. */
+  onLoadPosition?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const tree = useAnalysis((s) => s.tree);
@@ -310,6 +324,9 @@ export function MovesOverflow({ allowReset = true }: { allowReset?: boolean }) {
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
 
   const actions: SheetAction[] = [
+    ...(onLoadPosition
+      ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
+      : []),
     // Offered only when there is a game to judge, and not while it is
     // already judging one.
     ...(hasMoves && !reviewing

@@ -36,6 +36,8 @@ export function LoadPositionButton({
   applyImageFen,
   onOpenChange,
   onBack,
+  open: openProp,
+  triggerClassName,
 }: {
   /** Consume pasted text; return an error message, or null on success. */
   loadText?: (value: string) => string | null;
@@ -46,8 +48,22 @@ export function LoadPositionButton({
   onOpenChange?: (open: boolean) => void;
   /** Given only when this opened from another window; see Modal.onBack. */
   onBack?: () => void;
+  /**
+   * Drive the dialog from outside — for the phone's ⋯, which offers this
+   * as a menu item while the button itself is hidden. Left undefined the
+   * component owns its own open state, as every other caller expects.
+   */
+  open?: boolean;
+  /** On the trigger. `max-md:hidden` where the menu takes over. */
+  triggerClassName?: string;
 } = {}) {
-  const [open, setOpen] = useState(false);
+  const [selfOpen, setSelfOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : selfOpen;
+  const setOpen = (next: boolean): void => {
+    if (!controlled) setSelfOpen(next);
+    onOpenChange?.(next);
+  };
   // 'Load position' is the single entry point (lanph3re's call): the dialog
   // offers text (FEN/PGN) and image import; the latter swaps to the same
   // PhotoImport flow the editor uses.
@@ -59,11 +75,9 @@ export function LoadPositionButton({
         variant="ghost"
         size="icon-sm"
         active={open}
+        className={triggerClassName}
         title={t('Load a position — FEN, PGN, or image')}
-        onClick={() => {
-          onOpenChange?.(true);
-          setOpen(true);
-        }}
+        onClick={() => setOpen(true)}
       >
         <FolderInput className="size-3.5" />
       </Button>
@@ -74,10 +88,7 @@ export function LoadPositionButton({
             setOpen(false);
             onBack();
           })}
-          onClose={() => {
-            setOpen(false);
-            onOpenChange?.(false);
-          }}
+          onClose={() => setOpen(false)}
           onImage={(file) => {
             setImageFile(file);
             void builtinTemplates()
