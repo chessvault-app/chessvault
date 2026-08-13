@@ -31,6 +31,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
+import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { MobileActionBar } from '@/ui/MobileActionBar';
@@ -302,6 +303,16 @@ function Trainer({
 
   // Any machine progress snaps the board back to live.
   useEffect(() => setReview(null), [plies, phase]);
+
+  // The verdicts are drawn over the board and printed in the panel; a
+  // screen reader saw neither. Announced at the two moments that matter.
+  useEffect(() => {
+    if (phase === 'wrong') announce(t('That is not it — it rolls back, try again.'));
+    else if (phase === 'done') {
+      announce(revealed ? t('Solution shown.') : failed ? t('Solved after a wrong try.') : t('Solved!'));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   const goToPly = (target: number): void => {
     if (!puzzle) return;

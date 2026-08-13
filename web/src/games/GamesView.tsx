@@ -1484,6 +1484,8 @@ function CollectionView() {
           label={undoable.pending.label}
           leaving={undoable.pending.leaving}
           onUndo={undoable.undo}
+          onHold={undoable.hold}
+          onRelease={undoable.release}
         />
       )}
 

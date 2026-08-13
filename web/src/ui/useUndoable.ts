@@ -38,6 +38,11 @@ export function useUndoable(): {
   /** `commit` runs when the grace period ends; `undo` puts the row back. */
   remove: (label: string, commit: () => void, undo?: () => void) => void;
   undo: () => void;
+  /** Pointer or focus is ON the toast: stop the clock — a timer that runs
+      out under the cursor takes the button away mid-press. */
+  hold: () => void;
+  /** …and wind it up again, in full, when they leave. */
+  release: () => void;
 } {
   const [pending, setPending] = useState<Undoable | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -104,6 +109,19 @@ export function useUndoable(): {
     [flush, fade],
   );
 
+  const hold = useCallback(() => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  }, []);
+
+  const release = useCallback(() => {
+    // Only if there is still something to commit — releasing after the
+    // undo was pressed must not resurrect the deletion.
+    if (commitRef.current && !timer.current) timer.current = setTimeout(flush, GRACE_MS);
+  }, [flush]);
+
   // A toast that is fading has already committed; pressing Undo through the
   // last frames of its animation must not put the row back.
   return {
@@ -112,5 +130,7 @@ export function useUndoable(): {
     undo: () => {
       if (pending && !pending.leaving) pending.undo();
     },
+    hold,
+    release,
   };
 }

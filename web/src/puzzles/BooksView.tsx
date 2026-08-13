@@ -60,6 +60,7 @@ import { SkeletonBookCards, SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { ActionSheet } from '@/ui/ActionSheet';
+import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { SearchInput } from '@/ui/Input';
@@ -525,6 +526,8 @@ function Shelf() {
           label={undoable.pending.label}
           leaving={undoable.pending.leaving}
           onUndo={undoable.undo}
+          onHold={undoable.hold}
+          onRelease={undoable.release}
         />
       )}
       <div className="mx-auto max-w-3xl p-4 pb-8">
@@ -2697,6 +2700,15 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
     const after = book.puzzles.slice(index + 1).concat(book.puzzles.slice(0, index));
     return after.find((p) => book.progress[p.id]?.last !== 'win')?.id ?? null;
   };
+
+  // The verdict is a coloured line in the panel; say it out loud too
+  // (see ui/announce — same treatment as the Lichess trainer's verdicts).
+  useEffect(() => {
+    if (phase === 'done') {
+      announce(won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.'));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // Sound per rendered position (see PuzzlesView for the mechanism).
   const prevPieces = useRef<number | null>(null);

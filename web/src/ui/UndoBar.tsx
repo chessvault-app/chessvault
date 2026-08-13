@@ -19,11 +19,18 @@ export function UndoBar({
   label,
   leaving = false,
   onUndo,
+  onHold,
+  onRelease,
 }: {
   label: string;
   /** Its time is up: fade out, and stop taking the press. */
   leaving?: boolean;
   onUndo: () => void;
+  /** Pointer or keyboard focus arrives: pause the commit timer. A grace
+      period that expires under the cursor takes the button away
+      mid-press, and a screen-reader user needs longer than 4.5 s. */
+  onHold?: () => void;
+  onRelease?: () => void;
 }) {
   return (
     <div
@@ -32,6 +39,14 @@ export function UndoBar({
         'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] ' +
         'md:inset-x-auto md:bottom-6 md:right-6 md:px-0'
       }
+      // The one moment of feedback a deletion gives — announced, not
+      // just shown. role=status makes its appearance a polite live
+      // announcement without a dedicated region.
+      role="status"
+      onPointerEnter={onHold}
+      onPointerLeave={onRelease}
+      onFocusCapture={onHold}
+      onBlurCapture={onRelease}
     >
       {/* The inverted surface, and no border: a chip that is the opposite
           of the page needs no outline to be told from it, and the border

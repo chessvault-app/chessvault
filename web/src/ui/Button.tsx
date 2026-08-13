@@ -31,6 +31,15 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
 }
 
+// Does the button say anything in text? A visible label is already the
+// accessible name — and must stay it, or "click Cancel" stops working for
+// voice control. Only icon-only buttons need naming by other means.
+function hasTextContent(children: React.ReactNode): boolean {
+  if (typeof children === 'string') return children.trim().length > 0;
+  if (Array.isArray(children)) return children.some(hasTextContent);
+  return false;
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { className, variant = 'secondary', size = 'md', active = false, type = 'button', ...props },
   ref,
@@ -39,6 +48,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       type={type}
+      // An icon-only button's title doubles as its accessible name unless
+      // one was given. These buttons were named by `title` alone, and the
+      // styled-tooltip system (ui/tooltip) REMOVES title while its tip is
+      // showing — so the name used to vanish exactly when the control was
+      // pointed at. aria-label stays put.
+      aria-label={
+        props['aria-label'] ?? (hasTextContent(props.children) ? undefined : props.title)
+      }
       data-active={active || undefined}
       className={cn(
         // nowrap: Korean has no spaces to break at, so a narrow button split
