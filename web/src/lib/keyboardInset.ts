@@ -58,20 +58,49 @@ export function startKeyboardTracking(): void {
     // below the visible band either way.
     const covered = window.innerHeight - vv.height - vv.offsetTop;
     const next = covered > KEYBOARD_MIN ? Math.round(covered) : 0;
+    const root = document.documentElement;
+
+    /**
+     * WHERE the band you can see is, not just how tall it is.
+     *
+     * Subtracting the keyboard from the shell was not enough on its own:
+     * iOS also SHIFTS the page up to reveal the field, and a shell that is
+     * merely shorter is still shifted — its head goes off the top of the
+     * screen and its foot stops short of the keyboard, which is the black
+     * band lanph3re photographed. So while the keyboard is up the shell is
+     * pinned to the visual viewport instead: top at its offset, height at
+     * its height. Then the app IS the band you can see, wherever iOS has
+     * decided to put it.
+     *
+     * Only while the keyboard is up. Left set, these would also track
+     * Safari's toolbar sliding in and out, and the shell would twitch
+     * every time the page was scrolled.
+     */
+    if (next > 0) {
+      root.style.setProperty('--vvt', `${Math.round(vv.offsetTop)}px`);
+      root.style.setProperty('--vvh', `${Math.round(vv.height)}px`);
+    } else {
+      root.style.removeProperty('--vvt');
+      root.style.removeProperty('--vvh');
+    }
+
     if (next !== inset) {
       inset = next;
-      const root = document.documentElement;
       root.style.setProperty('--kb', `${inset}px`);
       root.classList.toggle('kb-open', inset > 0);
       for (const fn of subscribers) fn();
     }
 
-    // After the shell has been re-measured against the new --kb, not
-    // before: the point of both of these is that the layout already fits
-    // above the keyboard, so neither has anything visible to undo.
+    // After the shell has been re-pinned to the band, not before: the
+    // field is already on screen by then, so this scrolls by nothing in
+    // the common case. The window itself is only put back once the
+    // keyboard has gone — while it is up, iOS owns that scroll, and
+    // fighting it for it is what the first three attempts did.
     requestAnimationFrame(() => {
-      if (window.scrollY !== 0) window.scrollTo(0, 0);
-      if (inset === 0) return;
+      if (inset === 0) {
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
+        return;
+      }
       const el = document.activeElement;
       if (el instanceof HTMLElement && el.matches('input, textarea, [contenteditable="true"]')) {
         // `nearest` is the least scrolling that puts it on screen, and it

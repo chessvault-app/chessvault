@@ -1,7 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
-import { useKeyboardInset } from '@/lib/keyboardInset';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
 
@@ -14,9 +13,11 @@ import { t } from '@/lib/i18n';
  * be — sometimes under the keyboard, sometimes off the edge.
  *
  * It centres inside the VISUAL viewport, not the window: the middle of the
- * window is behind the keyboard. Only the padding changes as the keyboard
- * arrives, and it is not transitioned — nothing here animates against
- * iOS's own animation, which is what made earlier attempts jump about.
+ * window is behind the keyboard, and on iOS it is not even where it was —
+ * the page gets shifted to reveal the field. The layer is pinned to
+ * --vvt/--vvh for both reasons (see lib/keyboardInset), so centring in it
+ * is centring in what can be seen. Nothing here is transitioned: animating
+ * against iOS's own animation is what made earlier attempts jump about.
  */
 export function Sheet({
   label,
@@ -29,9 +30,6 @@ export function Sheet({
   onClose: () => void;
   className?: string;
 }) {
-  // The app's one keyboard measurement, not a second copy of the sum.
-  const covered = useKeyboardInset();
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
@@ -46,8 +44,7 @@ export function Sheet({
   // inside the card and clipped by its overflow.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
-      style={{ paddingBottom: covered ? covered + 12 : undefined }}
+      className="fixed inset-x-0 top-[var(--vvt,0px)] h-[var(--vvh,100dvh)] z-50 flex items-center justify-center bg-black/50 p-3"
       onPointerDown={() => {
         onClose();
         suppressNextClick();

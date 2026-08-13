@@ -86,7 +86,7 @@ export function ActionSheet({
   return createPortal(
     <div
       className={cn(
-        'fixed inset-0 z-50',
+        'fixed inset-x-0 top-[var(--vvt,0px)] h-[var(--vvh,100dvh)] z-50',
         popover ? '' : 'bg-scrim flex items-end justify-center',
       )}
       onPointerDown={() => {

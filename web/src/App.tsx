@@ -116,11 +116,16 @@ function Shell() {
         // retracted, which is taller than what you can actually see while
         // they are out, and that difference was cutting the bottom off
         // panels that reached the end of the page.
-        // Minus --kb: the shell ends where the keyboard begins, so the
-        // keyboard overlays nothing and the browser has no reason to
-        // scroll the page looking for the field. --kb is 0 whenever there
-        // is no keyboard, which is every desktop and most of the time.
-        'bg-app text-fg flex h-[calc(var(--app-h,100svh)-var(--kb,0px))] flex-col overflow-hidden',
+        // Pinned to the band you can actually see. While the keyboard is
+        // up, --vvt/--vvh are the visual viewport's own top and height, so
+        // the shell ends at the keyboard AND stays put when iOS shifts the
+        // page to reveal a field — a shell that was merely shorter got
+        // shifted with everything else, and left a black gap between its
+        // foot and the keys. Both are unset the rest of the time, which is
+        // every desktop and most of a phone's life, and then this is
+        // exactly what it was: the full height, at the top.
+        'bg-app text-fg fixed inset-x-0 top-[var(--vvt,0px)] flex flex-col overflow-hidden',
+        'h-[var(--vvh,var(--app-h,100svh))]',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.

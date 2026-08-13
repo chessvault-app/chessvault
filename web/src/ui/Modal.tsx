@@ -59,8 +59,9 @@ export function Modal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  // A window with a field in it is a window the keyboard covers. Same fix
-  // as PromptSheet: give the centring box back the height the keyboard took.
+  // The layer is pinned to the visible band (above), so the keyboard is
+  // already outside it — nothing to pad. The number is still wanted for
+  // one thing: knowing that a keyboard is up at all.
   const inset = useKeyboardInset();
   // Only a `full` window is a sheet, and only below sm — above it this is
   // a centred card, and a centred card that slides away downwards is not
@@ -80,10 +81,12 @@ export function Modal({
         // edge so it rises from the thumb. Expressed as max-sm rather
         // than by swapping the base, because swapping it also swapped
         // how the card sizes itself and collapsed a 600px window to 202.
-        'fixed inset-0 z-50 grid place-items-center bg-black/60',
+        // The band, not the layout viewport — see App's shell. A window
+        // laid out against a page iOS has shifted is a window with its
+        // head off the top of the screen.
+        'fixed inset-x-0 top-[var(--vvt,0px)] h-[var(--vvh,100dvh)] z-50 grid place-items-center bg-black/60',
         full ? 'p-0 max-sm:flex max-sm:items-end max-sm:justify-center sm:p-6' : 'p-4',
       )}
-      style={{ paddingBottom: inset ? inset + 16 : undefined }}
       onClick={onClose}
       role="presentation"
     >
