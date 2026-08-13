@@ -454,7 +454,8 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
          but only sometimes — a row that reflows as you resize reads as
          broken rather than as responsive. */
       .controls.chips { margin: .4rem 0 .3rem; }
-      .field { position: relative; display: flex; flex: 1 1 100%; min-width: 0; }
+      .controls:first-of-type { flex-wrap: nowrap; }
+      .field { position: relative; display: flex; flex: 1 1 auto; min-width: 0; }
       #q {
         flex: 1 1 auto; min-width: 0; font: inherit; font-size: .95rem;
         padding: .45rem 2rem .45rem .7rem; border-radius: .5rem;
@@ -471,6 +472,15 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
       }
       #clear:hover { background: rgba(128,128,128,.32); }
       #clear[hidden] { display: none; }
+      /* Cancel empties the field and puts the keyboard away. Touch only:
+         a mouse has neither problem and has Escape besides. */
+      #cancel {
+        font: inherit; font-size: .85rem; padding: .45rem .7rem; border: 0;
+        border-radius: 999px; background: rgba(128,128,128,.18); color: inherit;
+        cursor: pointer; white-space: nowrap;
+      }
+      #cancel[hidden] { display: none; }
+      @media (pointer: fine) { #cancel { display: none !important; } }
       .chip {
         font: inherit; font-size: .8rem; padding: .3rem .6rem; border-radius: 999px;
         border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit;
@@ -517,11 +527,16 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
     </p>
 
     <div class="controls">
+      <!-- "by package", not "by name". Safari decides whether to offer a
+           contact from the field's own WORDS — it is the one thing
+           autocomplete="off" does not settle — and a box that says "name"
+           is a person's name as far as it is concerned. Same reasoning as
+           the app's own fields, which are all type="search" for it. -->
       <span class="field">
         <input
           id="q"
           type="search"
-          placeholder="Filter ${total} entries by name or licence…"
+          placeholder="Filter ${total} entries by package or licence…"
           autocomplete="off"
           autocorrect="off"
           autocapitalize="none"
@@ -532,6 +547,7 @@ function indexPage(_files: string[], deps: Dep[], chrome: Chromium | null): stri
         />
         <button type="button" id="clear" aria-label="Clear search" hidden>&times;</button>
       </span>
+      <button type="button" id="cancel" hidden>Cancel</button>
     </div>
     <div class="controls chips">
       <button type="button" class="chip" data-group="">all <span class="n">${total}</span></button>
@@ -568,8 +584,20 @@ ${list}
           });
         }
         var clear = document.getElementById('clear');
+        var cancel = document.getElementById('cancel');
         function syncClear() { clear.hidden = q.value === ''; }
         q.addEventListener('input', function () { syncClear(); apply(); });
+        // Cancel appears with the focus and takes the width from the field,
+        // exactly as it does in the app.
+        q.addEventListener('focus', function () { cancel.hidden = false; });
+        q.addEventListener('blur', function () { cancel.hidden = true; });
+        cancel.addEventListener('mousedown', function (e) { e.preventDefault(); });
+        cancel.addEventListener('click', function () {
+          q.value = '';
+          syncClear();
+          apply();
+          q.blur();
+        });
         clear.addEventListener('mousedown', function (e) { e.preventDefault(); });
         clear.addEventListener('click', function () {
           q.value = '';

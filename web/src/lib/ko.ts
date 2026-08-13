@@ -304,6 +304,7 @@ export const ko: Record<string, string> = {
   'All books': '모든 책',
   'All themes': '모든 테마',
   'All puzzles in this book': '이 책의 모든 퍼즐',
+  'Which puzzles': '어떤 퍼즐',
   'Puzzle books': '퍼즐 책',
   'Search books…': '책 검색…',
   'Puzzle dashboard': '퍼즐 대시보드',

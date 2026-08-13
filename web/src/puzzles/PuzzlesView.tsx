@@ -33,6 +33,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
+import { Modal } from '@/ui/Modal';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BooksView } from './BooksView';
@@ -602,32 +603,37 @@ function Trainer({
               </>
             }
           />
+          {/* A window, not a drawer above the board's own panel: opened in
+              place it pushed the puzzle down the screen, which is the one
+              thing a trainer must not do to the position being solved. On
+              a phone it is a bottom sheet. */}
           {showDifficulty && mode === 'fresh' && (
-            <div className="border-line border-b">
+            <Modal
+              title="Which puzzles"
+              icon={Settings2}
+              onClose={() => setShowDifficulty(false)}
+            >
               <DifficultyRow active={difficulty} onPick={pickDifficulty} />
               {/* Theme picker folded in beside difficulty — both answer
-                  "which puzzles", so they share the one reveal. Styled as a
-                  chip button to match the difficulty row above it. */}
-              <div className="px-2.5 pb-2.5">
-                <button
-                  type="button"
-                  onClick={() => navigate('puzzles', 'themes')}
-                  className={cn(
-                    'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-                    'border-line border px-2.5 py-2 text-left transition-colors duration-100',
-                  )}
-                >
-                  <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-                  <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-                    {t('Theme')}
-                  </span>
-                  <span className="text-fg ml-auto truncate text-xs font-medium">
-                    {theme ? themeLabel(theme) : t('All themes')}
-                  </span>
-                  <ChevronRight className="text-subtle size-3.5 shrink-0" />
-                </button>
-              </div>
-            </div>
+                  "which puzzles", so they share the one window. */}
+              <button
+                type="button"
+                onClick={() => navigate('puzzles', 'themes')}
+                className={cn(
+                  'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+                  'border-line border px-2.5 py-2 text-left transition-colors duration-100',
+                )}
+              >
+                <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+                <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                  {t('Theme')}
+                </span>
+                <span className="text-fg ml-auto truncate text-xs font-medium">
+                  {theme ? themeLabel(theme) : t('All themes')}
+                </span>
+                <ChevronRight className="text-subtle size-3.5 shrink-0" />
+              </button>
+            </Modal>
           )}
           <div className="flex flex-col gap-3 p-3">
             {phase === 'done' && puzzle ? (

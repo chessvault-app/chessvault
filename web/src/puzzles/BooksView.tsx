@@ -61,6 +61,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { ActionSheet } from '@/ui/ActionSheet';
 import { Button } from '@/ui/Button';
+import { Modal } from '@/ui/Modal';
 import { SearchInput } from '@/ui/Input';
 import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 import { MobileActionBar } from '@/ui/MobileActionBar';
@@ -2634,10 +2635,18 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
               </>
             }
           />
+          {/* A window, not a drawer above the puzzle: a book's grid is
+              hundreds of tiles, and opened in place it pushed the position
+              being solved off the screen. On a phone it is a bottom
+              sheet. */}
           {showNav && (
-            <div className="border-line border-b">
+            <Modal
+              title="All puzzles in this book"
+              icon={LayoutGrid}
+              onClose={() => setShowNav(false)}
+            >
               <PuzzleGrid slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
-            </div>
+            </Modal>
           )}
           <div className="flex flex-col gap-3 p-3">
             <div className="flex flex-col gap-0.5">

@@ -5,6 +5,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
+import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { EvalBar } from './EvalBar';
@@ -92,7 +93,15 @@ export function EngineBlock({ className }: { className?: string }) {
         }
       />
 
-      {enabled && showSettings && <EngineSettings />}
+      {/* A window, not a drawer inside the panel. Opening it in place
+          pushed the eval bar and the three PV lines down the screen — the
+          reader loses the thing they were reading in order to change how
+          it is computed. On a phone the window is a bottom sheet. */}
+      {enabled && showSettings && (
+        <Modal title="Engine settings" icon={Settings2} onClose={() => setShowSettings(false)}>
+          <EngineSettings />
+        </Modal>
+      )}
 
       {enabled && error && (
         <p className="text-bad flex items-start gap-1.5 px-3 py-2 text-xs">
