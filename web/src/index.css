@@ -826,4 +826,11 @@ cg-board square.check {
   left: 0;
   right: 0;
   height: var(--vvh, 100dvh);
+  /* The band starts at the top of the SCREEN, and on a phone the top of
+     the screen is the status bar and the notch. A window that fills the
+     band therefore fills that too: the sheet's own title and its close
+     button came out behind the clock. The shell already carried this
+     padding; the floating layers never needed it, because at rest they
+     are bottom-anchored and stop well short of the top. */
+  padding-top: env(safe-area-inset-top);
 }
