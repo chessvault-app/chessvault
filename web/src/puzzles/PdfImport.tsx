@@ -1,4 +1,4 @@
-import { Eye, FileUp, Loader2 } from 'lucide-react';
+import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -96,6 +96,7 @@ export function PdfImport({
   const mine = job.slug === slug;
   const found = mine ? job.found : [];
   const scanning = mine && job.status === 'scanning';
+  const paused = mine && job.status === 'paused';
   const reading = mine && job.status === 'reading';
   const solve = mine ? job.solve : null;
 
@@ -111,7 +112,21 @@ export function PdfImport({
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            drafts: chunk.map((f) => ({ image: f.dataUrl, fen: f.fen })),
+            // A draft is finished by hand from the printed page, so it
+            // carries the same evidence a verified puzzle does: the page,
+            // where on it the diagram sat, and the answers page for its
+            // number. Without these the editor has no Diagram or
+            // Solutions tab to read the answer off.
+            drafts: chunk.map((f) => ({
+              image: f.dataUrl,
+              fen: f.fen,
+              ...(f.number === undefined ? {} : { number: f.number }),
+              evidence: {
+                page: `page${String(f.page).padStart(3, '0')}.jpg`,
+                ...(f.rect ? { rect: f.rect } : {}),
+                ...(f.solutionPage ? { solutionPage: f.solutionPage } : {}),
+              },
+            })),
           }),
         });
         if (!res.ok) throw new Error(`save failed (${res.status})`);
@@ -252,14 +267,43 @@ export function PdfImport({
           </p>
         )}
         {scanning && (
-          <p className="text-muted flex items-center gap-2 text-sm">
-            <Loader2 className="size-4 animate-spin" />
-            {t('page {page}/{pages} — {n} diagrams so far', {
-              page: job.page,
-              pages: job.pages || '…',
-              n: found.length,
-            })}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-muted flex min-w-0 flex-1 items-center gap-2 text-sm">
+              <Loader2 className="size-4 shrink-0 animate-spin" />
+              <span className="truncate">
+                {t('page {page}/{pages} — {n} diagrams so far', {
+                  page: job.page,
+                  pages: job.pages || '…',
+                  n: found.length,
+                })}
+              </span>
+            </p>
+            {/* Stopping is safe: the page just finished is on disk, so this
+                is the same state a crash would have left, and the same
+                button brings it back. */}
+            <Button variant="secondary" size="sm" className="shrink-0" onClick={() => job.pause()}>
+              <Pause className="size-3.5" />
+              {t('Pause')}
+            </Button>
+          </div>
+        )}
+        {paused && (
+          <div className="border-warn/40 bg-warn/5 flex flex-wrap items-center gap-2 rounded-lg border p-3">
+            <p className="text-fg min-w-0 flex-1 text-xs">
+              {t('Paused at page {page} of {pages}. Nothing is lost.', {
+                page: job.page,
+                pages: job.pages,
+              })}
+            </p>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => job.resume(slug, templates, { repair })}
+            >
+              <Play className="size-3.5" />
+              {t('Carry on')}
+            </Button>
+          </div>
         )}
         {reading && (
           <p className="text-muted flex items-center gap-2 text-sm">

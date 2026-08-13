@@ -456,6 +456,11 @@ export const ko: Record<string, string> = {
   'This line has run past the database — you are on your own now.':
     '이 수순은 데이터베이스를 벗어났습니다 — 여기부터는 스스로입니다.',
   'Evaluating the position…': '포지션 평가 중…',
+  // Pausing a book scan.
+  Pause: '일시정지',
+  'Paused at page {page} of {pages}. Nothing is lost.':
+    '{pages}쪽 중 {page}쪽에서 멈췄습니다. 잃은 것은 없습니다.',
+  'Carry on': '이어서',
   // Resuming an interrupted book scan.
   'This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.':
     '이 책을 읽다가 멈췄습니다: {pages}쪽 중 {page}쪽까지, 지금까지 다이어그램 {n}개.',

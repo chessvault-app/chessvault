@@ -801,6 +801,13 @@ function BookPage({ slug }: { slug: string }) {
   const [importing, setImporting] = useState(false);
   const importJob = useImportJob();
   const [templates, setTemplates] = useState<Template[]>([]);
+  // This book's unfinished scan, if it has one. Re-read whenever the job
+  // stops or starts: those are the moments one appears or disappears.
+  const [halted, setHalted] = useState<CheckpointSummary | null>(null);
+  const importStatus = importJob.status;
+  useEffect(() => {
+    void listCheckpoints().then((all) => setHalted(all.find((c) => c.slug === slug) ?? null));
+  }, [slug, importStatus]);
   const [draft, setDraft] = useState<BookDraft | null>(null);
   const [rereading, setRereading] = useState(false);
 
@@ -890,9 +897,51 @@ function BookPage({ slug }: { slug: string }) {
     ? book.puzzles.filter((p) => book.progress[p.id]?.last === 'win').length
     : 0;
 
+  /**
+   * An unfinished import of THIS book.
+   *
+   * The shelf says so; the book itself said nothing, which is the worse
+   * place to be silent — this is the page someone opens wondering why it
+   * holds a hundred puzzles when the book has nine hundred.
+   */
+  const stopped = halted;
+  const scanRunning =
+    importJob.slug === slug &&
+    (importJob.status === 'scanning' || importJob.status === 'reading');
+
   return (
     <div className="h-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-3xl p-4 pb-8">
+        {(scanRunning || stopped) && (
+          <button
+            type="button"
+            onClick={() => setImporting(true)}
+            className={cn(
+              'mb-3 flex w-full items-center gap-2 rounded-lg border p-2.5 text-left text-xs',
+              'transition-colors duration-100',
+              scanRunning
+                ? 'border-primary/40 bg-primary-soft text-primary hover:bg-primary-soft/70'
+                : 'border-warn/40 bg-warn/5 text-warn hover:bg-warn/10',
+            )}
+          >
+            {scanRunning ? (
+              <Loader2 className="size-3.5 shrink-0 animate-spin" />
+            ) : (
+              <FileUp className="size-3.5 shrink-0" />
+            )}
+            <span className="min-w-0 flex-1">
+              {scanRunning
+                ? t('reading — page {page} of {pages}', {
+                    page: importJob.page,
+                    pages: importJob.pages,
+                  })
+                : t('unfinished — {page} of {pages} pages, tap to carry on', {
+                    page: stopped!.page,
+                    pages: stopped!.pages,
+                  })}
+            </span>
+          </button>
+        )}
         <div className="mb-4 flex items-center gap-2">
           <Button
             variant="ghost"

@@ -36,6 +36,14 @@ import {
 
 export interface FoundDiagram {
   page: number;
+  /**
+   * Where it sat on its page, in page fractions.
+   *
+   * Kept so a DRAFT can carry the same evidence a verified puzzle does.
+   * Correcting a draft by hand means reading the printed page — the crop
+   * alone shows a board with no number beside it and no answer anywhere.
+   */
+  rect?: { x: number; y: number; w: number; h: number };
   dataUrl: string;
   fen: string | null;
   uncertain: number;
@@ -44,6 +52,8 @@ export interface FoundDiagram {
   number?: number;
   /** True once its printed solution has been replayed successfully. */
   solved?: boolean;
+  /** The answers page covering this diagram's number, once known. */
+  solutionPage?: string;
 }
 
 /** Choices the user made before the import started. */
@@ -72,7 +82,13 @@ export interface SolveSummary {
 interface ImportJobState {
   /** Book the scan belongs to; null = idle. */
   slug: string | null;
-  status: 'idle' | 'scanning' | 'reading' | 'done' | 'failed';
+  /**
+   * `paused` is a scan stopped on purpose. The loop checks this between
+   * pages and simply returns; the checkpoint written after the last
+   * finished page is what carries on from, so pausing and being
+   * interrupted are the same thing to everything downstream.
+   */
+  status: 'idle' | 'scanning' | 'paused' | 'reading' | 'done' | 'failed';
   page: number;
   pages: number;
   found: FoundDiagram[];
@@ -80,8 +96,10 @@ interface ImportJobState {
   solve: SolveSummary | null;
   error: string | null;
   start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
-  /** Continue a scan a reload or a crash interrupted. */
+  /** Continue a scan a reload, a crash, or a pause interrupted. */
   resume: (slug: string, templates: Template[], options?: ImportOptions) => void;
+  /** Stop after the page being read, keeping the checkpoint. */
+  pause: () => void;
   toggle: (index: number) => void;
   clear: () => void;
 }
@@ -208,6 +226,10 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
     })();
   },
 
+  pause: () => {
+    if (get().status === 'scanning') set({ status: 'paused' });
+  },
+
   toggle: (index) =>
     set((s) => ({
       found: s.found.map((f, i) => (i === index ? { ...f, selected: !f.selected } : f)),
@@ -272,7 +294,9 @@ async function scan(
     const fingerprint = fingerprintOf(file);
     const startAt = saved ? saved.page + 1 : 1;
     for (let pageNo = startAt; pageNo <= pdf.numPages; pageNo++) {
-      if (get().status !== 'scanning') return; // cancelled
+      // Paused or cleared: stop between pages, leaving the checkpoint
+      // written after the last finished one to carry on from.
+      if (get().status !== 'scanning') return;
       set({ page: pageNo });
       const page = await pdf.getPage(pageNo);
       const base = page.getViewport({ scale: 1 });
@@ -310,7 +334,19 @@ async function scan(
           uncertain = cells.filter((c) => c.confidence < 0.35).length;
         }
         placements.push(fen ? (fen.split(' ')[0] ?? null) : null);
-        results.push({ page: pageNo, dataUrl, fen, uncertain, selected: true });
+        results.push({
+          page: pageNo,
+          rect: {
+            x: rect.x / canvas.width,
+            y: rect.y / canvas.height,
+            w: rect.w / canvas.width,
+            h: rect.h / canvas.height,
+          },
+          dataUrl,
+          fen,
+          uncertain,
+          selected: true,
+        });
       }
       geometry.push({ page: pageNo, rects, placements, w: canvas.width, h: canvas.height });
       // Evidence: the whole page a puzzle was printed on, kept only for the
@@ -499,8 +535,16 @@ async function readSolutions(
 
   // Evidence first: a puzzle must never reference a page image that is not
   // there, so the pages go up before anything that points at them.
-  const wanted = new Set(solved.map((p) => labelled.get(p.number)?.page).filter(Boolean));
-  const pages = [...wanted].map((page) => ({ page: page as number, image: pageImages.get(page as number) }));
+  //
+  // EVERY page that produced a diagram, not only the solved ones. What is
+  // left over becomes a draft, and a draft is finished by hand from the
+  // printed page — so the page it came off is precisely what it needs.
+  // Sending only the solved pages left drafts with a crop and nothing to
+  // read, which is the one thing they cannot be corrected without.
+  const wanted = new Set<number>(
+    geometry.filter((g) => g.rects.length > 0).map((g) => g.page),
+  );
+  const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
   for (let i = 0; i < pages.length; i += 12) {
     const chunk = pages.slice(i, i + 12).filter((p) => p.image);
     if (chunk.length === 0) continue;
@@ -509,6 +553,47 @@ async function readSolutions(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ pages: chunk }),
     });
+  }
+
+  /**
+   * The answers page a number is printed on.
+   *
+   * Mirrors what scripts/ml/enrich_solution_pages.py does offline, and for
+   * the same stated reason: a person enters a draft's solution while
+   * looking at it. Numbers are anchored where the answer pages print them;
+   * anything the scan mangled falls back to the page whose run of numbers
+   * covers it.
+   */
+  const anchors = new Map<number, number>();
+  for (const [from, to] of result.answerRanges) {
+    for (let page = from; page <= to; page++) {
+      const text = byPage.get(page);
+      if (!text) continue;
+      for (const match of text.text.matchAll(/(\d{1,4})/g)) {
+        const value = Number(match[1]);
+        if (value >= 1 && value <= numbering.maxNumber && !anchors.has(value)) {
+          anchors.set(value, page);
+        }
+      }
+    }
+  }
+  const runs = [...new Set(anchors.values())]
+    .map((page) => ({ page, first: Math.min(...[...anchors].filter(([, p]) => p === page).map(([n]) => n)) }))
+    .sort((a, b) => a.first - b.first);
+  const solutionPageFor = (number: number | undefined): string | undefined => {
+    if (number === undefined || runs.length === 0) return undefined;
+    const anchored = anchors.get(number);
+    if (anchored !== undefined) return `page${String(anchored).padStart(3, '0')}.jpg`;
+    let chosen = runs[0]!.page;
+    for (const run of runs) {
+      if (run.first <= number) chosen = run.page;
+      else break;
+    }
+    return `page${String(chosen).padStart(3, '0')}.jpg`;
+  };
+  for (const diagram of found) {
+    const page = solutionPageFor(diagram.number);
+    if (page) diagram.solutionPage = page;
   }
 
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));

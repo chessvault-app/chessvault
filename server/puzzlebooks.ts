@@ -484,6 +484,18 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     image: string;
     fen: string | null;
     added: string;
+    /** The number printed beside it, when the import worked one out. */
+    number?: number;
+    /**
+     * The same evidence a verified puzzle carries.
+     *
+     * A draft is the one a person has to finish by hand, which is done by
+     * reading the page it was printed on and the page its answer is on —
+     * so it needs these MORE than a solved puzzle does, not less. The
+     * offline pipeline has always written them; the in-app importer sent
+     * a crop and nothing else until now.
+     */
+    evidence?: BookEvidence;
   }
 
   // Book cover, written by the in-app importer straight from the PDF's first
@@ -505,7 +517,12 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     const body = (await c.req.json().catch(() => ({}))) as {
-      drafts?: { image?: string; fen?: string | null }[];
+      drafts?: {
+        image?: string;
+        fen?: string | null;
+        number?: number;
+        evidence?: unknown;
+      }[];
     };
     if (!Array.isArray(body.drafts) || body.drafts.length === 0 || body.drafts.length > 500) {
       return c.json({ error: 'expected { drafts: [...] } (1..500)' }, 400);
@@ -521,11 +538,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       const id = `d${Date.now().toString(36)}${index.toString(36)}`;
       const file = `${id}.${match[1] === 'png' ? 'png' : 'jpg'}`;
       writeFileSync(resolve(diagramsDir(slug), file), bytes);
+      const evidence = cleanEvidence(entry.evidence);
       added.push({
         id,
         image: file,
         fen: typeof entry.fen === 'string' ? entry.fen : null,
         added: new Date().toISOString(),
+        ...(typeof entry.number === 'number' ? { number: entry.number } : {}),
+        ...(evidence ? { evidence } : {}),
       });
     }
     writeJson(draftsPath(slug), [...existing, ...added]);
