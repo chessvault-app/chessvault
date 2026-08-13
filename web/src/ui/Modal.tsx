@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { useKeyboardInset } from '@/lib/keyboardInset';
+import { useMediaQuery } from '@/lib/media';
 import { useSheetDrag } from './sheetDrag';
 
 /**
@@ -61,7 +62,11 @@ export function Modal({
   // A window with a field in it is a window the keyboard covers. Same fix
   // as PromptSheet: give the centring box back the height the keyboard took.
   const inset = useKeyboardInset();
-  // Only a `full` window is a sheet, and only a sheet can be pushed away.
+  // Only a `full` window is a sheet, and only below sm — above it this is
+  // a centred card, and a centred card that slides away downwards is not
+  // answering any question the pointer asked.
+  const phone = useMediaQuery('(max-width: 39.9375rem)');
+  const sheet = full && phone;
   const drag = useSheetDrag(onClose);
 
   // On the body, not wherever it was written: a window is a floating layer
@@ -89,7 +94,9 @@ export function Modal({
         // The backdrop closes; the window itself must not, or every click
         // inside the form would dismiss it.
         onClick={(e) => e.stopPropagation()}
-        style={full ? drag.style : undefined}
+        // The ref is what makes the WHOLE sheet draggable — see sheetDrag.
+        ref={sheet ? drag.ref : undefined}
+        style={sheet ? drag.style : undefined}
         className={cn(
           // overscroll-contain: a scroll this window cannot use is its own
           // business. Without it, reaching the end of the list inside a
@@ -115,20 +122,19 @@ export function Modal({
         <div
           className={cn(
             'border-line -mx-3 shrink-0 border-b px-3 pb-2',
-            // touch-none on the element that CARRIES the drag, not on the
-            // two boxes inside it. A touch is panned by the nearest
-            // scrollable ancestor unless touch-action says otherwise, and
-            // this card scrolls — so a drag that started on the strip of
-            // padding around the handle both pushed the sheet down and
-            // scrolled what was inside it. Restored on sm, where this is a
-            // centred window with no drag to protect.
+            // The header is the one place the browser must never pan:
+            // it is not a scroller, and a drag begun here is a push on the
+            // sheet by definition. The BODY keeps touch-action auto, since
+            // it scrolls and the drag decides between the two at the first
+            // move. Restored on sm, a centred window with no drag.
             full && 'touch-none select-none sm:touch-auto sm:select-auto',
           )}
           {...(full ? drag.handlers : {})}
         >
-          {/* The grabber, phones only: the same handle the row menu has,
-              and the same drag, so every sheet in the app is pushed away
-              the same way. */}
+          {/* The grabber, phones only. It is a SIGN that the sheet can be
+              pushed away, not the only place that answers: the whole sheet
+              drags, and content that scrolls hands the gesture over once
+              it is at its top. */}
           {full && (
             <div
               className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden"

@@ -101,6 +101,8 @@ export function ActionSheet({
         aria-label={t(title)}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
+        // A sheet drags from anywhere on it; a popover is not a sheet.
+        ref={popover ? undefined : drag.ref}
         style={
           !popover
             ? drag.style
@@ -129,8 +131,9 @@ export function ActionSheet({
         {/* Two ways out, because a sheet is two things at once: a thing on
             the screen, which wants a button, and a thing under a thumb,
             which wants to be pushed away. The handle was there before and
-            meant nothing — it promised a drag the sheet did not do. It
-            drags now, and the X is for everyone not holding the phone.
+            meant nothing — it promised a drag the sheet did not do. The
+            whole sheet drags now, and the X is for everyone not holding
+            the phone.
             (Windows use Cancel, not an X — docs/design-principles.md.
             That rule is about a window with its own button row, where a
             second closing idiom competes with it. A sheet of verbs has no
@@ -139,9 +142,9 @@ export function ActionSheet({
           <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
         ) : (
           <div
-            // The grab area is the header, not the whole sheet: below it
-            // every row is a verb, and a drag that starts on one must not
-            // have to decide whether it was a press.
+            // The MOUSE grabs by the header only; a finger may start
+            // anywhere (see sheetDrag). A press on a verb is still a
+            // press — the drag needs 6px of travel before it is one.
             {...drag.handlers}
             className="-mt-1 cursor-grab touch-none select-none pt-1 active:cursor-grabbing"
           >
