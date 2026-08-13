@@ -182,6 +182,22 @@ export function Select({
         <ChevronDown className="text-subtle size-3 shrink-0" />
       </button>
 
+      {/* A touch-only backdrop, invisible and inert, under the list and
+          over everything else.
+
+          An open dropdown is modal in practice on a phone, and without
+          this every touch that landed BESIDE the list went to whatever
+          was under it — a sheet, which read the drag as a push and slid
+          away with its own dropdown still open on top of it. touch-none,
+          so a drag here moves nothing at all; the tap that dismisses is
+          the document listener above, which already treats anything
+          outside the list as a dismissal. Its own portal rather than a
+          fragment, so it is a sibling of the list and paints below it. */}
+      {open && rect && createPortal(
+        <div aria-hidden className="pointer-fine:hidden fixed inset-0 z-50 touch-none" />,
+        document.body,
+      )}
+
       {/* On the BODY, not where it was written. Two reasons, both of which
           bit: this list is position-fixed off a measured rect, and `fixed`
           resolves against any ancestor that has a transform — a bottom
