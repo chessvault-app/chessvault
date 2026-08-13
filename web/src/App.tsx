@@ -532,7 +532,7 @@ function MobileNav({ active }: { active: Section }) {
             onClick={() => (section === 'puzzles' ? navigate('puzzles', 'dashboard') : navigate(section))}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-2 text-[0.625rem] font-medium',
+              'flex flex-1 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium',
               'transition-colors duration-150',
               isActive ? 'text-primary' : 'text-subtle',
             )}
@@ -547,7 +547,7 @@ function MobileNav({ active }: { active: Section }) {
         onClick={() => navigate('more')}
         aria-current={inMore ? 'page' : undefined}
         className={cn(
-          'flex flex-1 flex-col items-center gap-1 py-2 text-[0.625rem] font-medium',
+          'flex flex-1 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium',
           'transition-colors duration-150',
           inMore ? 'text-primary' : 'text-subtle',
         )}

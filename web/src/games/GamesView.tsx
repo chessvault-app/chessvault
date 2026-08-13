@@ -1965,7 +1965,7 @@ function ArchiveBrowser({
             to drop one that had been mistyped. */}
         {months.length === 0 && recents.length > 0 && (
           <div className="mt-1 flex flex-col gap-1.5">
-            <p className="text-subtle text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+            <p className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
               {t('Recent searches')}
             </p>
             <div className="flex flex-wrap items-center gap-1">
@@ -3007,7 +3007,7 @@ function OpeningTag({ eco, name }: { eco: string; name?: string | null }) {
   return (
     <>
       <span
-        className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-[0.625rem] font-semibold leading-4"
+        className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-[0.6875rem] font-semibold leading-4"
         // Lightness and chroma from the theme (index.css), hue from the
         // ECO letter: the same tag was written once for the dark page and
         // was a pale wash on the light one.

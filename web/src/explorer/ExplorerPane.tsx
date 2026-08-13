@@ -614,7 +614,7 @@ function TopGamesList({
 
   return (
     <div className="border-line border-t px-1.5 pb-2">
-      <p className="text-subtle px-1.5 pb-1 pt-2 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle px-1.5 pb-1 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
@@ -634,11 +634,11 @@ function TopGamesList({
                 <span className="min-w-0 flex-1 truncate">
                   <SideDot side="white" className="mr-1 inline-block size-2 align-[-1px]" />
                   <span className="text-fg">{g.white}</span>
-                  <span className="text-subtle font-mono text-[0.625rem]"> {g.whiteElo || ''} </span>
+                  <span className="text-subtle font-mono text-[0.6875rem]"> {g.whiteElo || ''} </span>
                   <span className="text-subtle">v</span>
                   <SideDot side="black" className="mx-1 inline-block size-2 align-[-1px]" />
                   <span className="text-fg">{g.black}</span>
-                  <span className="text-subtle font-mono text-[0.625rem]"> {g.blackElo || ''}</span>
+                  <span className="text-subtle font-mono text-[0.6875rem]"> {g.blackElo || ''}</span>
                 </span>
                 <ResultBadge result={g.result} />
               </button>
@@ -675,7 +675,7 @@ function ResultBadge({ result }: { result: string }) {
   return (
     <span
       className={cn(
-        'shrink-0 rounded px-1 py-px font-mono text-[0.625rem] font-semibold',
+        'shrink-0 rounded px-1 py-px font-mono text-[0.6875rem] font-semibold',
         result === '1-0' && 'bg-eval-white text-on-eval-white',
         result === '0-1' && 'bg-eval-black text-on-eval-black',
         result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted',
@@ -885,7 +885,7 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
       )}
 
       <div className="flex flex-col gap-1.5">
-        <p className="text-subtle font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
+        <p className="text-subtle font-semibold uppercase tracking-[0.08em] text-[0.6875rem]">
           {t('Build a book')}
         </p>
         {/* Where your own games went. Books used to be able to index them,
@@ -983,7 +983,7 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
 
       {(running || (status?.log?.length ?? 0) > 0) && (
         <div className="flex flex-col gap-1">
-          <p className="text-subtle flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[0.625rem]">
+          <p className="text-subtle flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[0.6875rem]">
             {running && <Loader2 className="size-3 animate-spin" />}
             {running
               ? `Building “${status?.name}”…`
@@ -991,7 +991,7 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
                 ? `Built “${status?.name}”`
                 : `Build of “${status?.name}” failed`}
           </p>
-          <pre className="bg-surface text-subtle max-h-24 overflow-y-auto rounded-md p-2 font-mono text-[0.625rem] leading-relaxed">
+          <pre className="bg-surface text-subtle max-h-24 overflow-y-auto rounded-md p-2 font-mono text-[0.6875rem] leading-relaxed">
             {(status?.log ?? []).slice(-6).join('\n') || '…'}
           </pre>
         </div>
@@ -1029,7 +1029,7 @@ function BookRow({
             and "rebuild" means nothing until you know it re-reads THESE
             files — links into vault/sources, never copies, so a rebuild
             picks up whatever they say now. */}
-        <p className="text-subtle truncate text-[0.625rem]">
+        <p className="text-subtle truncate text-[0.6875rem]">
           {book.sources.length > 0
             ? t('Rebuilds from {sources}', { sources: book.sources.join(', ') })
             : t('Came with the app — nothing to rebuild from')}

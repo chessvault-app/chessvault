@@ -255,7 +255,7 @@ function ThemeCard({
         <span className={cn('block truncate text-xs font-medium', highlight ? 'text-primary' : 'text-fg')}>
           {label}
         </span>
-        <span className="text-subtle block font-mono text-[0.625rem]">
+        <span className="text-subtle block font-mono text-[0.6875rem]">
           {compact.format(count)}
         </span>
       </span>

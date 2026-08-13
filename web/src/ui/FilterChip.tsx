@@ -36,6 +36,8 @@ export function FilterChip({
         // the puzzles dashboard. A row that cannot fit its chips scrolls or
         // wraps; the chip itself never shortens.
         'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+        // The same growth every small Button gets under a thumb.
+        'pointer-coarse:min-h-9 pointer-coarse:px-3',
         active
           ? 'bg-primary-soft border-primary/40 text-primary'
           : 'border-line text-muted hover:border-line-strong',

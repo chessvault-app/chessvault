@@ -462,7 +462,7 @@ function StatCard({
   return (
     <div title={title} className="bg-surface border-line flex items-center justify-between rounded-xl border px-3 py-2.5">
       <div>
-        <div className="text-subtle text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+        <div className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
           {label}
         </div>
         <div className="text-fg font-mono text-xl font-bold tabular-nums">{value}</div>

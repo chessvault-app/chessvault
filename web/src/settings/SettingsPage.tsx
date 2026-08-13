@@ -713,7 +713,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-medium">
           {t('Two-factor authentication')}
-          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-[0.625rem] font-semibold">{t('On')}</span>
+          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold">{t('On')}</span>
         </div>
         <p className="text-subtle text-xs">{t('Turning it off needs a current code from your authenticator app.')}</p>
         <div className="flex items-center gap-2">

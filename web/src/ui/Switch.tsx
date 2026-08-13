@@ -29,6 +29,10 @@ export function Switch({
       title={title}
       className={cn(
         'relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200',
+        // The pill stays its size; the FINGER gets a bigger one. An
+        // invisible inset extends the hit box to ~44px on coarse pointers
+        // without growing the visual.
+        'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
         checked ? 'bg-primary' : 'bg-surface-3',
         className,
       )}

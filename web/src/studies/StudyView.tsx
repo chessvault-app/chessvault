@@ -593,12 +593,12 @@ function ChapterRow({
           ) : (
             <span className="size-3 shrink-0" />
           )}
-          <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.625rem]">
+          <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.6875rem]">
             {index + 1}
           </span>
           <span className="truncate">{ownName}</span>
           {isFolded && childCount > 0 && (
-            <span className="text-subtle shrink-0 font-mono text-[0.625rem]">+{childCount}</span>
+            <span className="text-subtle shrink-0 font-mono text-[0.6875rem]">+{childCount}</span>
           )}
         </button>
       )}

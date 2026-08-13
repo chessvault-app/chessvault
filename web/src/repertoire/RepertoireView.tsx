@@ -321,7 +321,7 @@ function OpeningPicker({
                     )}
                   >
                     {o.eco && (
-                      <span className="text-subtle w-7 shrink-0 font-mono text-[0.625rem]">
+                      <span className="text-subtle w-7 shrink-0 font-mono text-[0.6875rem]">
                         {o.eco}
                       </span>
                     )}

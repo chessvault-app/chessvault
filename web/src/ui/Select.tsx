@@ -329,7 +329,7 @@ export function Select({
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
                   {t(group.label)}
                 </p>
               )}
@@ -371,6 +371,9 @@ export function Select({
                     }}
                     className={cn(
                       'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                      // A 28px row is a menu item for a mouse and a
+                      // misfire for a thumb.
+                      'pointer-coarse:py-2.5',
                       'transition-colors duration-100',
                       i === active && 'bg-surface-2',
                       option.value === value ? 'text-primary font-medium' : 'text-fg',
