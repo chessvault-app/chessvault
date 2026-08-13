@@ -1050,7 +1050,7 @@ function CollectionView() {
 
           {source === 'archive' ? (
             <ArchiveBrowser
-              framed={false}
+              place="panel"
               collectionKeys={collectionKeys}
               onCollected={() => void load()}
               onPreview={setPreview}
@@ -1074,7 +1074,7 @@ function CollectionView() {
               it. A window that names itself twice is a window with a
               wasted line and a reader wondering what the difference is. */}
           <ArchiveBrowser
-            framed={false}
+            place="window"
             collectionKeys={collectionKeys}
             onCollected={() => void load()}
             onPreview={setPreview}
@@ -1137,13 +1137,29 @@ function ArchiveBrowser({
   collectionKeys,
   onCollected,
   onPreview,
-  framed = true,
+  place = 'framed',
 }: {
   collectionKeys: Set<string>;
   onCollected: () => void;
   onPreview: (p: Preview | null) => void;
-  /** Off in the column, where it shares a panel with Elite games. */
-  framed?: boolean;
+  /**
+   * Where this is being shown, which is what decides its padding.
+   *
+   * This used to be a `framed` boolean doing two jobs — whether to bring
+   * its own Panel, and whether to pad — and the two only agree in two of
+   * the three cases. Unframed was tuned for the WINDOW, where the
+   * Modal's card already pads on every side; the Games column is
+   * unframed too and its Panel pads nothing, so the same branch left the
+   * controls flush against both edges and jammed under the tab bar's
+   * indicator. Naming the three places instead of implying them from one
+   * flag is what stops that happening again.
+   *
+   * - `framed` — its own card, padded on every side
+   * - `panel`  — the Games column's Panel: pads nothing, and has a tab
+   *              bar above whose live-tab rule needs clearing
+   * - `window` — a Modal, whose card is already padding by 3
+   */
+  place?: 'framed' | 'panel' | 'window';
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -1500,7 +1516,17 @@ function ArchiveBrowser({
           sat 24px from the edges while every other window's sat 12, and
           twice as far below the title rule. Unframed it adds nothing
           horizontally and only the gap under the rule. */}
-      <div className={cn('flex flex-col gap-2', framed ? 'px-3 pb-3 pt-3' : 'pb-2 pt-1')}>
+      <div
+        className={cn(
+          'flex flex-col gap-2',
+          place === 'window' && 'pb-2 pt-1',
+          place === 'framed' && 'px-3 pb-3 pt-3',
+          // pt-4, not pt-3: the tab bar above thickens and lights its rule
+          // under the live tab, and a raised control sitting at the same
+          // remove as everywhere else read as stuck to it.
+          place === 'panel' && 'px-3 pb-3 pt-4',
+        )}
+      >
         {/* One track, one lit segment. As two chips it was impossible to
             tell by looking whether they were a choice or two independent
             toggles — and both being unlit is not a state this has. */}
@@ -1808,7 +1834,11 @@ function ArchiveBrowser({
                   game={game}
                   onOpen={() => void openInAnalysis(game)}
                   onPreview={onPreview}
-                  actions={
+                  // Outside the hover tray: Add is what this list is FOR,
+                  // and a selection checkbox that only appears under the
+                  // pointer is one you cannot tick with your eyes.
+                  actions={null}
+                  standing={
                     <>
                     {selecting && (
                       <input
@@ -1925,7 +1955,7 @@ function ArchiveBrowser({
   // In the column it shares a panel with Elite games, and the tab that
   // switched to it has already said which one this is. Everywhere else it
   // brings its own box and its own title.
-  if (!framed) return body;
+  if (place !== 'framed') return body;
 
   return (
     <Panel flush className="shrink-0 sm:min-h-0 sm:flex-1">
@@ -1954,6 +1984,7 @@ function GameRow({
   bookmarked = false,
   onContext,
   menu,
+  standing,
 }: {
   game: GameSummary;
   onOpen: () => void;
@@ -1968,7 +1999,21 @@ function GameRow({
    * they need.
    */
   menu?: SheetAction[];
+  /**
+   * Controls that belong IN the hover tray — the bookmark star, and the
+   * like. They fade in with the eye and the ⋯.
+   */
   actions: React.ReactNode;
+  /**
+   * Controls that must be visible without hovering.
+   *
+   * The archive's Add button is the point of that list, not a quick
+   * action on a row, so it cannot live in a tray that appears under the
+   * pointer. It used to be passed as `actions` and therefore shared the
+   * tray with the eye — which is why the archive's rows looked like one
+   * joined control where the elite list's look like two separate ones.
+   */
+  standing?: React.ReactNode;
   /** A user-chosen document name (in-game rename), shown instead of the matchup. */
   customName?: string | null;
   renaming?: boolean;
@@ -2208,6 +2253,11 @@ function GameRow({
           </Button>
         )}
       </div>
+      {standing && (
+        <div style={swipe.style} className="flex shrink-0 items-center gap-1">
+          {standing}
+        </div>
+      )}
 
       {menuOpen && menu && (
         <ActionSheet
