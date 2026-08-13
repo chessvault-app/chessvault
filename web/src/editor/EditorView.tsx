@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Eraser,
   FlipVertical2,
+  FolderInput,
   SquarePen,
   Microscope,
   MousePointer2,
@@ -29,7 +30,14 @@ import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
-import { LoadPositionButton } from '@/analysis/PositionLoader';
+import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { builtinTemplates } from '@/puzzles/ocr/builtin';
+import type { Template } from '@/puzzles/ocr/classify';
+import { Suspense, lazy } from 'react';
+
+const PhotoImport = lazy(() =>
+  import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })),
+);
 import { t } from '@/lib/i18n';
 import {
   defaultEditorState,
@@ -97,8 +105,16 @@ export function EditorView({
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
   const [sheetOpen, setSheetOpen] = useState(false);
-  // The sheet stays mounted while the loader it opened is up — see Modal.
-  const [loaderOpen, setLoaderOpen] = useState(false);
+  /**
+   * Which page the sheet is showing.
+   *
+   * Load position used to open a second sheet on top of this one — two
+   * scrims deep, two dismissals to get out of. It is a page of the SAME
+   * sheet now: the title row grows a back chevron and the body swaps.
+   */
+  const [sheetPage, setSheetPage] = useState<'position' | 'load'>('position');
+  const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
+  const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   // Image import runs against the app's built-in piece templates, so a
   // screenshot of any lichess/chessground-style board reads with no setup.
 
@@ -338,15 +354,19 @@ export function EditorView({
                 loader opens, and the loader's back chevron brings it
                 straight back. Two scrims deep on a phone is a window you
                 have to dismiss twice to get out of. */}
-            <LoadPositionButton
-              loadText={loadText}
-              applyImageFen={applyImageFen}
-              onOpenChange={nested ? (open) => {
-                setLoaderOpen(open);
-                if (!open) setSheetOpen(false);
-              } : undefined}
-              onBack={nested ? () => setLoaderOpen(false) : undefined}
-            />
+            {nested ? (
+              // Inside the sheet this is a page turn, not a new window.
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Load a position — FEN, PGN, or image')}
+                onClick={() => setSheetPage('load')}
+              >
+                <FolderInput className="size-3.5" />
+              </Button>
+            ) : (
+              <LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />
+            )}
           </div>
         </Panel>
     </>
@@ -536,9 +556,54 @@ export function EditorView({
           on a phone and this only ever opens on one (`wide:hidden` on the
           button that opens it). */}
       {sheetOpen && (
-        <Modal title="Position" hidden={loaderOpen} onClose={() => setSheetOpen(false)}>
-          {positionPanels(false, true)}
+        <Modal
+          title={sheetPage === 'load' ? 'Load position' : 'Position'}
+          hidden={photoTemplates !== null}
+          onBack={sheetPage === 'load' ? () => setSheetPage('position') : undefined}
+          onClose={() => {
+            setSheetOpen(false);
+            setSheetPage('position');
+          }}
+        >
+          {sheetPage === 'position' ? (
+            positionPanels(false, true)
+          ) : (
+            <LoadPositionForm
+              loadText={loadText}
+              onDone={() => {
+                setSheetOpen(false);
+                setSheetPage('position');
+              }}
+              onImage={(file) => {
+                setPhotoFile(file);
+                void builtinTemplates()
+                  .then(setPhotoTemplates)
+                  .catch(() => setPhotoTemplates([]));
+              }}
+            />
+          )}
         </Modal>
+      )}
+
+      {/* The picture flow is its own task and its own full window — the
+          sheet hides while it is up and is there again behind it. */}
+      {photoTemplates !== null && (
+        <Suspense fallback={null}>
+          <PhotoImport
+            templates={photoTemplates}
+            initialFile={photoFile ?? undefined}
+            onApply={(reading) => {
+              if (reading.fen) applyImageFen(reading.fen);
+              setPhotoTemplates(null);
+              setSheetOpen(false);
+              setSheetPage('position');
+            }}
+            onClose={() => {
+              setPhotoTemplates(null);
+              setSheetPage('position');
+            }}
+          />
+        </Suspense>
       )}
 
     </div>

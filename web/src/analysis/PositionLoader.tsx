@@ -110,15 +110,28 @@ export function LoadPositionButton({
   );
 }
 
-function LoadDialog({
+/**
+ * The load form itself, without a window around it.
+ *
+ * Exported because the editor's Position sheet shows it as a second PAGE
+ * rather than opening a second sheet on top of the first: two sheets deep
+ * on a phone is a window you have to dismiss twice to get out of.
+ *
+ * The Paste button lives in the form rather than in a window's title row
+ * for the same reason — the form has to carry everything it needs to be
+ * rendered anywhere.
+ */
+export function LoadPositionForm({
   loadText,
-  onClose,
-  onBack,
+  onDone,
+  onCancel,
   onImage,
 }: {
   loadText: (value: string) => string | null;
-  onClose: () => void;
-  onBack?: () => void;
+  /** A position was loaded. */
+  onDone: () => void;
+  /** The Cancel button. Omitted where the window's own way out is enough. */
+  onCancel?: () => void;
   onImage: (file: Blob | null) => void;
 }) {
   const [text, setText] = useState('');
@@ -126,9 +139,6 @@ function LoadDialog({
   const textarea = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
     const onPaste = (e: ClipboardEvent): void => {
       const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith('image/'));
       const file = item?.getAsFile();
@@ -137,19 +147,15 @@ function LoadDialog({
         onImage(file);
       }
     };
-    window.addEventListener('keydown', onKey);
     window.addEventListener('paste', onPaste);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('paste', onPaste);
-    };
-  }, [onClose, onImage]);
+    return () => window.removeEventListener('paste', onPaste);
+  }, [onImage]);
 
   const submit = (): void => {
     const value = text.trim();
     if (!value) return;
     const failure = loadText(value);
-    if (failure === null) onClose();
+    if (failure === null) onDone();
     else setError(failure);
   };
 
@@ -165,12 +171,8 @@ function LoadDialog({
   };
 
   return (
-    <Modal
-      title="Load position"
-      onClose={onClose}
-      onBack={onBack}
-      className="sm:max-w-md"
-      actions={
+    <>
+      <div className="flex justify-end">
         <Button
           variant="ghost"
           size="sm"
@@ -180,8 +182,8 @@ function LoadDialog({
           <ClipboardPaste className="size-3.5" />
           {t('Paste')}
         </Button>
-      }
-    >
+      </div>
+
       <TextArea
         ref={textarea}
         autoFocus={autoFocusField()}
@@ -233,13 +235,46 @@ function LoadDialog({
         />
       </label>
       <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {t('Cancel')}
-        </Button>
+        {onCancel && (
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            {t('Cancel')}
+          </Button>
+        )}
         <Button variant="primary" size="sm" onClick={submit} disabled={!text.trim()}>
           {t('Load')}
         </Button>
       </div>
+    </>
+  );
+}
+
+function LoadDialog({
+  loadText,
+  onClose,
+  onBack,
+  onImage,
+}: {
+  loadText: (value: string) => string | null;
+  onClose: () => void;
+  onBack?: () => void;
+  onImage: (file: Blob | null) => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <Modal title="Load position" onClose={onClose} onBack={onBack} className="sm:max-w-md">
+      <LoadPositionForm
+        loadText={loadText}
+        onDone={onClose}
+        onCancel={onClose}
+        onImage={onImage}
+      />
     </Modal>
   );
 }
