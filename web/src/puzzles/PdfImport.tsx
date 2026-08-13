@@ -1,6 +1,7 @@
 import { FileUp, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
+import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { useImportJob } from './importJob';
@@ -58,6 +59,13 @@ export function PdfImport({
     }
     job.start(slug, file, templates, { repair });
   };
+
+  // A book's PDF is the one file this window exists for, so the whole
+  // choose-a-file box takes a drop as well as a click.
+  const pdfDrop = useFileDrop({
+    accept: byExtension('.pdf'),
+    onFiles: ([file]) => void begin(file!),
+  });
   const mine = job.slug === slug;
   const found = mine ? job.found : [];
   const scanning = mine && job.status === 'scanning';
@@ -144,7 +152,16 @@ export function PdfImport({
         )}
 
         {!mine && (
-          <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+          <label
+            {...pdfDrop.handlers}
+            className={cn(
+              'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center',
+              'transition-colors',
+              pdfDrop.dragging
+                ? 'border-primary bg-primary-soft'
+                : 'border-line hover:border-line-strong hover:bg-surface-2',
+            )}
+          >
             <input
               type="file"
               accept="application/pdf"

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
@@ -328,6 +329,11 @@ function CreateMenu() {
     autoNamed.current = true;
   };
 
+  const pgnDrop = useFileDrop({
+    accept: byExtension('.pgn'),
+    onFiles: ([file]) => void pickFile(file),
+  });
+
   // No outside-click handler here. There used to be one, closing over a
   // `menuHost` ref that stopped being attached to anything when the
   // dropdown became CreateControl — so `menuHost.current` was null, every
@@ -375,7 +381,25 @@ function CreateMenu() {
         // The width every import window is: full screen on a phone, and a
         // single readable column on a desktop rather than the 4xl sheet
         // `full` gives by default, which for three fields was mostly margin.
-        <Modal title="Import PGN as study" onClose={() => setMode(null)} full className="sm:max-w-lg">
+        <Modal
+          title="Import PGN as study"
+          onClose={() => setMode(null)}
+          full
+          className={cn(
+            'sm:max-w-lg',
+            pgnDrop.dragging && 'outline-primary outline-dashed outline-2 outline-offset-[-6px]',
+          )}
+        >
+          {/*
+            The whole window takes the drop, not just the button: a file
+            dragged at a dialog is aimed at the dialog, and the browser's
+            default is to navigate to it — which threw the app away and
+            displayed the PGN.
+            `contents` so this wrapper carries the handlers without adding
+            a box to the window's layout; drag events bubble to it either
+            way, and the highlight goes on the Modal itself.
+          */}
+          <div className="contents" {...pgnDrop.handlers}>
           {folders.length > 0 && (
             <Field label="Target collection">
               <Select
@@ -466,6 +490,7 @@ function CreateMenu() {
             >
               {t('Import')}
             </Button>
+          </div>
           </div>
         </Modal>
       )}

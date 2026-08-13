@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
+import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
 import {
@@ -770,6 +771,20 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
     await refreshSources();
   };
 
+  // The vault may be on a server across the network, so uploading a
+  // collection is the only way in — and dragging one onto the window is
+  // the gesture a desktop expects for that. `upload` takes a FileList, so
+  // the dropped files are handed over as one.
+  const pgnDrop = useFileDrop({
+    accept: byExtension('.pgn'),
+    disabled: uploading !== null,
+    onFiles: (files) => {
+      const list = new DataTransfer();
+      for (const f of files) list.items.add(f);
+      void upload(list.files);
+    },
+  });
+
   // Poll the build while one runs; refresh the shelf when it finishes.
   useEffect(() => {
     const tick = async (): Promise<void> => {
@@ -913,7 +928,14 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
         {/* Adding a collection has to be possible here: the vault may be on
             a server across the network, and a phone has no way to copy a
             file into it. */}
-        <label className="mt-1 flex cursor-pointer items-center gap-2 self-start">
+        <label
+          {...pgnDrop.handlers}
+          className={cn(
+            'mt-1 flex cursor-pointer items-center gap-2 self-start rounded-md',
+            'border border-dashed px-2 py-1 transition-colors',
+            pgnDrop.dragging ? 'border-primary bg-primary-soft' : 'border-transparent',
+          )}
+        >
           <input
             type="file"
             accept=".pgn"
