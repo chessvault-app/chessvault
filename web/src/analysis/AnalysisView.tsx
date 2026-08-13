@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Compass, Cpu, FolderPlus, ListOrdered, Loader2, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Copy, Cpu, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -15,6 +15,7 @@ import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
+import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { MoveTreePane, SidelinesToggle } from './MoveTreePane';
@@ -128,10 +129,14 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             actions={
               <>
                 <SidelinesToggle />
-                <ReviewButton />
-                <CollectGameButton />
+                {/* On the header where there is room; under ⋯ on a phone. */}
+                <span className="hidden items-center gap-1 md:inline-flex">
+                  <ReviewButton />
+                  <CollectGameButton />
+                </span>
                 <LoadPositionButton />
                 <MoveActions />
+                <MovesOverflow />
               </>
             }
           />
@@ -261,9 +266,85 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
         <Trash2 className="size-3.5" />
       </Button>
       {allowReset && (
-        <Button variant="ghost" size="icon-sm" onClick={() => reset()} title={t('Clear the board')}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="max-md:hidden"
+          onClick={() => reset()}
+          title={t('Clear the board')}
+        >
           <RotateCcw className="size-3.5" />
         </Button>
+      )}
+    </>
+  );
+}
+
+/**
+ * The moves header's ⋯ — phones only.
+ *
+ * That header had grown to six controls: the side-line toggle, review,
+ * collect, load position, delete, reset. On a 390px panel whose title is
+ * a full opening name, six 28px buttons leave the name about a word.
+ *
+ * So the ones that are not about the move you are standing on fold into
+ * a menu, and the two that are — the side-line toggle and delete —
+ * stay out where a thumb can reach them. Copying the FEN and the PGN
+ * moves in here too, which is what lets the status bar underneath the
+ * list go away on a phone: it was a row of chrome spending a line of
+ * height on a string nobody reads on a phone.
+ *
+ * A desktop keeps every icon on the header and its status bar, so this
+ * renders nothing there.
+ */
+function MovesOverflow() {
+  const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const tree = useAnalysis((s) => s.tree);
+  const cursorId = useAnalysis((s) => s.cursorId);
+  const reset = useAnalysis((s) => s.reset);
+  const exportPgn = useAnalysis((s) => s.exportPgn);
+  const runReview = useReview((s) => s.run);
+  const reviewing = useReview((s) => s.status) === 'running';
+  // Review needs something to review; the root having children is that.
+  const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
+
+  const actions: SheetAction[] = [
+    // Offered only when there is a game to judge, and not while it is
+    // already judging one.
+    ...(hasMoves && !reviewing
+      ? [{ label: 'Engine review', icon: Microscope, onSelect: () => void runReview() }]
+      : []),
+    {
+      label: 'Copy FEN',
+      icon: Copy,
+      onSelect: () => void copyText(getNode(tree, cursorId).fen),
+    },
+    { label: 'Copy PGN', icon: Copy, onSelect: () => void copyText(exportPgn()) },
+    // Last and tinted: it throws the board away.
+    { label: 'Clear the board', icon: RotateCcw, danger: true, onSelect: () => reset() },
+  ];
+
+  return (
+    <>
+      <Button
+        ref={trigger}
+        variant="ghost"
+        size="icon-sm"
+        className="md:hidden"
+        title={t('More')}
+        active={open}
+        onClick={() => setOpen(true)}
+      >
+        <MoreHorizontal className="size-3.5" />
+      </Button>
+      {open && (
+        <ActionSheet
+          title={t('Moves')}
+          anchor={trigger}
+          actions={actions}
+          onClose={() => setOpen(false)}
+        />
       )}
     </>
   );
@@ -283,7 +364,7 @@ export function StatusBar() {
   }, []);
 
   return (
-    <div className="border-line flex shrink-0 items-center gap-2 border-t px-2 py-1.5">
+    <div className="border-line flex shrink-0 items-center gap-2 border-t px-2 py-1.5 max-md:hidden">
       <code
         className="text-subtle min-w-0 flex-1 truncate font-mono text-[0.6875rem]"
         title={node.fen}

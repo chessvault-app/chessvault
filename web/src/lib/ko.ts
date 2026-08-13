@@ -455,6 +455,10 @@ export const ko: Record<string, string> = {
   'Analyse on the board': '보드에서 분석하기',
   'This line has run past the database — you are on your own now.':
     '이 수순은 데이터베이스를 벗어났습니다 — 여기부터는 스스로입니다.',
+  // The moves panel's overflow menu.
+  'Copy FEN': 'FEN 복사',
+  'Copy PGN': 'PGN 복사',
+  'Engine review': '엔진 리뷰',
   // The puzzle filters, as menus.
   Status: '상태',
   Fidelity: '신뢰도',
