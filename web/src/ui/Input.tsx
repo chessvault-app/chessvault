@@ -146,11 +146,11 @@ const cancelSizes: Record<InputSize, string> = {
  * pads itself out of its way so the tail of what you typed is never
  * underneath it.
  *
- * OUTSIDE, on focus: Cancel, which puts the field away. Two different
- * jobs, and they were one button until it was clear that "clear what I
- * typed" and "I am done searching" are things you want at different
- * moments. The field gives up the width for it, so the row stays exactly
- * as wide as it was.
+ * OUTSIDE, on focus: Cancel, which empties the field AND puts it away —
+ * cancelling a search means the list you were looking at comes back, and
+ * leaving the words behind would leave it filtered by a search nobody is
+ * doing any more. The X is the same act without the leaving. The field
+ * gives up the width for it, so the row stays exactly as wide as it was.
  *
  * On a phone the field also takes the whole line while it is focused,
  * because a search you are typing into is the only thing on the screen
@@ -168,7 +168,8 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
   const self = useRef<HTMLInputElement | null>(null);
   const text = value === undefined ? typed : String(value);
 
-  const clear = (): void => {
+  /** Empty it, and either stay in it or leave — see the two buttons. */
+  const empty = (then: 'stay' | 'leave'): void => {
     const el = self.current;
     if (!el) return;
     // Through the native setter and an input event, so a CONTROLLED field
@@ -176,7 +177,8 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
     setter?.call(el, '');
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.focus();
+    if (then === 'stay') el.focus();
+    else el.blur();
   };
 
   return (
@@ -226,7 +228,7 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
             title={t('Clear search')}
             aria-label={t('Clear search')}
             onPointerDown={(e) => e.preventDefault()}
-            onClick={clear}
+            onClick={() => empty('stay')}
             className={cn(
               'text-subtle hover:text-fg hover:bg-fg/10 absolute right-1.5 top-1/2 grid -translate-y-1/2',
               'size-5 place-items-center rounded-full transition-colors duration-100',
@@ -248,7 +250,7 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
         tabIndex={focused ? 0 : -1}
         aria-hidden={!focused}
         onPointerDown={(e) => e.preventDefault()}
-        onClick={() => self.current?.blur()}
+        onClick={() => empty('leave')}
         className={cn(
           'pointer-fine:hidden text-muted hover:text-fg grid shrink-0 place-items-center overflow-hidden',
           'whitespace-nowrap rounded-full text-xs font-medium',
