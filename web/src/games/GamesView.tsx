@@ -16,7 +16,7 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { cachedCollection, forgetCollection, loadCollection } from './collection';
 import { create } from 'zustand';
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -755,12 +755,51 @@ function CollectionView() {
       .includes(needle);
   });
 
+  /**
+   * Search, then the bookmark switch — the pair that narrows the list.
+   *
+   * A function rather than a constant because the two homes want the
+   * field sized differently: a line of its own gives it everything left
+   * over, a panel header gives it a set width beside the panel's name.
+   * Everything else about them is identical, which is the point of
+   * writing them once.
+   */
+  const finders = (fieldClass: string): ReactNode => (
+    <>
+      <SearchInput
+        type="text"
+        inputSize="sm"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t('Search collection…')}
+        className={cn('min-w-0', fieldClass)}
+      />
+      {/* Icon only, like the shelves': the word Bookmarked beside it was
+          the only label in any of them, and a pressed state says the same
+          thing without asking for the width. */}
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        active={markedOnly}
+        aria-pressed={markedOnly}
+        title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
+        className="shrink-0"
+        onClick={() => setMarkedOnly((v) => !v)}
+      >
+        <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+      </Button>
+    </>
+  );
+
   return (
     <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:max-w-7xl lg:p-6">
-      {/* Two rows, the same shape the two shelves use — see ShelfToolbar,
-          which is this toolbar for Studies and Notes. The heading carries
-          what is about the collection; the row under it carries the two
-          controls that narrow it, bookmark then search. */}
+      {/* The heading carries what is ABOUT the page; the two controls that
+          NARROW it — search, then the bookmark switch — belong with the
+          thing they narrow. At lg that is the Collection panel, which has
+          a header of its own to put them in, so they go there and this
+          row is not rendered at all. Below lg there is no room in a panel
+          header, so they take a line under the title. Declared once in
+          `finders` and placed twice; only one is ever on screen. */}
       <div className="flex flex-col gap-2.5">
         <header className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
@@ -784,30 +823,7 @@ function CollectionView() {
           />
         </header>
 
-        <div className="flex items-center gap-2">
-          {/* Icon only, like the shelves': the word Bookmarked beside it
-              was the only label in any of them, and a pressed state says
-              the same thing without asking for the width. */}
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            active={markedOnly}
-            aria-pressed={markedOnly}
-            title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
-            className="shrink-0"
-            onClick={() => setMarkedOnly((v) => !v)}
-          >
-            <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
-          </Button>
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Search collection…')}
-            className="min-w-0 flex-1"
-          />
-        </div>
+        <div className="flex items-center gap-2 lg:hidden">{finders('flex-1')}</div>
       </div>
 
       {importing && (
@@ -846,7 +862,15 @@ function CollectionView() {
               ADD a game, and every one of those is behind the header's
               Add games now. A panel header should say what the panel
               holds, not offer a way somewhere else. */}
-          <PanelHeader title={`${t('Collection')} · ${visible.length}`} />
+          {/* At lg the pair lives here, with the list it filters, and the
+              row under the page title is not rendered. w-48 rather than
+              flex-1: the panel's own name must keep its place, and a
+              field that grows to fill a wide column reads as the panel's
+              content rather than as a control on its header. */}
+          <PanelHeader
+            title={`${t('Collection')} · ${visible.length}`}
+            actions={<span className="hidden items-center gap-2 lg:flex">{finders('w-48')}</span>}
+          />
           {loaded && games.length === 0 ? (
             <EmptyState
               // Centred in the PANEL, not parked under its header: an empty

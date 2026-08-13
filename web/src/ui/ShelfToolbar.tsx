@@ -85,18 +85,19 @@ export function sortDocs<T extends { id: string; bytes: number; updatedAt: strin
  * The bar over a shelf: what it is called, how to find one, how to order
  * them, how to look at them, and how to make another.
  *
- * Two rows, always. The heading row carries the things that are ABOUT the
- * shelf — its name, its order, its layout, and the way to add to it — and
- * the row under it carries the two that NARROW it: the bookmark filter,
- * then the search.
+ * Two rows. The heading row carries what is ABOUT the shelf — its name,
+ * its order, its layout, the way to add to it — and the row under it is
+ * the search, which gets the full content width instead of whatever the
+ * other four controls had finished with. On a phone that field used to be
+ * a stub that grew over the buttons when it was focused, which is why
+ * SearchInput still carries a rule for being focused at all.
  *
- * They used to share one line that wrapped, which meant the search field
- * was whatever width the other four controls had finished with, and on a
- * phone it was a stub that grew over the buttons when it was focused. A
- * row of its own costs one line of height and gives it the full width on
- * every screen. Bookmark leads because it is a fixed-size switch and the
- * search takes the rest; the other way round leaves the switch floating
- * at a different place on every screen.
+ * The bookmark filter sits in one of two places. On a wide screen there
+ * is room for it in the heading row's toolbar, next to the other things
+ * that act on the whole shelf. On a phone that toolbar is down to the
+ * Create button, so it rides beside the search instead — after it, not
+ * before, so the field still starts at the left edge like every other
+ * row on the page.
  */
 export function ShelfToolbar({
   title,
@@ -124,11 +125,35 @@ export function ShelfToolbar({
   /** The shelf's own Create control. */
   create: ReactNode;
 }) {
+  /**
+   * The same switch in both places — declared once so the two cannot drift
+   * apart, and only ever one of them is on screen.
+   *
+   * Icon only: the pressed state says what a label would, in the width of
+   * a button.
+   */
+  const bookmark = (className: string): ReactNode => (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={markedOnly}
+      aria-pressed={markedOnly}
+      title={markedOnly ? t('Show all') : t('Show bookmarked only')}
+      className={cn('shrink-0', className)}
+      onClick={() => onMarkedOnly(!markedOnly)}
+    >
+      <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+    </Button>
+  );
+
   return (
     <div className="flex flex-col gap-2.5">
       <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+          {/* Wide screens only — below sm this toolbar is just Create, and
+              the switch travels down to the search row. */}
+          {bookmark('hidden sm:inline-flex')}
           <Select
             value={sort}
             onChange={(value) => onSort(value as ShelfSort)}
@@ -156,19 +181,6 @@ export function ShelfToolbar({
       </header>
 
       <div className="flex items-center gap-2">
-        {/* Icon only: the pressed state says what a label would, and it
-            says it in the width of a button. */}
-        <Button
-          variant="secondary"
-          size="icon-sm"
-          active={markedOnly}
-          aria-pressed={markedOnly}
-          title={markedOnly ? t('Show all') : t('Show bookmarked only')}
-          className="shrink-0"
-          onClick={() => onMarkedOnly(!markedOnly)}
-        >
-          <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
-        </Button>
         <SearchInput
           type="text"
           inputSize="sm"
@@ -177,6 +189,7 @@ export function ShelfToolbar({
           placeholder={placeholder}
           className="min-w-0 flex-1"
         />
+        {bookmark('sm:hidden')}
       </div>
     </div>
   );
