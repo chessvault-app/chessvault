@@ -2448,9 +2448,23 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
 
       {failure && <p className="text-bad text-xs">{failure}</p>}
 
-      {/* Sticky, so the keyboard cannot push the only way to submit off
-          the bottom of a phone screen. */}
-      <div className="bg-surface sticky bottom-0 -mb-1 flex justify-end gap-2 pt-1">
+      {/* Sticky, so the only way to submit is never scrolled away — this
+          form is long enough with Advanced open that it now scrolls, and
+          a submit at the end of a scroll is a submit you have to go and
+          find.
+
+          Full-bleed and bordered, because a sticky bar that is merely
+          bg-surface reads as a mistake the moment content passes UNDER
+          it: half a field showing to the left of the buttons, the rest
+          hidden, no line to say which is which. -mx-3 px-3 takes it to
+          both edges of the window's own padding, the rule says where it
+          starts, and z-10 keeps it over anything that scrolls beneath. */}
+      <div
+        className={cn(
+          'bg-surface border-line sticky bottom-0 z-10 -mx-3 -mb-1 flex justify-end gap-2',
+          'border-t px-3 pb-1 pt-2',
+        )}
+      >
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}
         </Button>
