@@ -246,34 +246,44 @@ export function mainlineEndFen(pgn: string): string | null {
 /**
  * The study's own name, as carried by a PGN that came from one.
  *
- * Lichess exports a study as one game per chapter, each tagged
- * `[Event "Study name: Chapter name"]` — so the name is sitting in the
- * text that was just pasted, and asking for it again is asking someone to
- * copy it from the tab they exported it in.
+ * Lichess says it outright: every chapter of an export is tagged
+ * `[StudyName "…"]` beside its `[ChapterName "…"]`, so the name is
+ * sitting in the text that was just pasted and asking for it again is
+ * asking someone to copy it from the tab they exported it in.
+ *
+ * `[Event "Study name: Chapter name"]` is the fallback, because that is
+ * the one line an export keeps when it has been through something else —
+ * a database, a chess GUI, a paste that dropped the non-standard tags.
+ * Everything but Event, Site, Date, Round, White, Black and Result is an
+ * extension, and StudyName is Lichess's.
  *
  * Read with a regex rather than by parsing: this runs on every keystroke
  * in the PGN box, and an export can be a megabyte of moves whose headers
  * are the only part that matters here.
  *
- * Returns null unless the text agrees with itself — every Event sharing
- * one prefix, or one Event and no chapters to disagree with it. A file of
+ * Returns null unless the text agrees with itself — every game naming the
+ * same study, or one game with nothing to disagree with it. A file of
  * unrelated games has no study name in it, and a wrong guess in a field
  * that is about to be a filename is worse than an empty one.
  */
 export function studyNameFromPgn(pgn: string): string | null {
-  const events = [...pgn.matchAll(/^\[Event\s+"([^"]*)"\]/gm)].map((m) => m[1]!.trim());
-  if (events.length === 0) return null;
+  const agreed = (values: string[]): string | null => {
+    const [first] = values;
+    if (!first || first === '?' || !values.every((v) => v === first)) return null;
+    return first;
+  };
 
-  // "Study: Chapter" is the export's own shape; anything before the first
-  // colon is the study. A chapter name may contain colons of its own, so
-  // only the first one splits.
-  const names = events.map((e) => {
-    const at = e.indexOf(':');
-    return (at === -1 ? e : e.slice(0, at)).trim();
+  const stated = [...pgn.matchAll(/^\[StudyName\s+"([^"]*)"\]/gm)].map((m) => m[1]!.trim());
+  if (stated.length > 0) return agreed(stated);
+
+  // "Study: Chapter" — anything before the FIRST colon is the study, since
+  // a chapter name may carry colons of its own.
+  const events = [...pgn.matchAll(/^\[Event\s+"([^"]*)"\]/gm)].map((m) => {
+    const value = m[1]!.trim();
+    const at = value.indexOf(':');
+    return (at === -1 ? value : value.slice(0, at)).trim();
   });
-  const [first] = names;
-  if (!first || first === '?' || !names.every((n) => n === first)) return null;
-  return first;
+  return events.length > 0 ? agreed(events) : null;
 }
 
 /** Parse PGN text into chapters — one per game, as Lichess studies export. */

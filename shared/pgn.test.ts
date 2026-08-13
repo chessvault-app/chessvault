@@ -204,12 +204,26 @@ describe('PGN codec round-trip', () => {
  * in a field that becomes a filename, so disagreement means no answer.
  */
 describe('studyNameFromPgn', () => {
-  it('takes the study name a Lichess export repeats on every chapter', () => {
-    // Real export: "<study>: <chapter>" across its chapters.
+  it('reads the StudyName tag a Lichess export puts on every chapter', () => {
+    // The real export carries [StudyName] beside [ChapterName]; Event is
+    // "<study>: <chapter>", and both agree.
+    expect(fixture).toContain('[StudyName "Lucas Opening Homework - Ruy Lopez"]');
     expect(studyNameFromPgn(fixture)).toBe('Lucas Opening Homework - Ruy Lopez');
   });
 
-  it('splits on the first colon, so a chapter may keep its own', () => {
+  it('prefers the tag to the Event line when they disagree', () => {
+    // A chapter whose own name contains ": " splits an Event wrongly; the
+    // tag is what the study is actually called.
+    const pgn = `[Event "Endgames: rook: Lucena"]
+[StudyName "Endgames: rook"]
+[ChapterName "Lucena"]
+
+1. e4 *
+`;
+    expect(studyNameFromPgn(pgn)).toBe('Endgames: rook');
+  });
+
+  it('falls back to the Event line, splitting on the first colon', () => {
     const pgn = `[Event "Endgames: rook: Lucena"]
 
 1. e4 *
