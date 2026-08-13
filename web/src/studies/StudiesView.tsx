@@ -6,7 +6,9 @@ import {
   FolderInput,
   Library,
   Pencil,
+  Plus,
   Trash2,
+  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
@@ -28,6 +30,8 @@ import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
+import { EmptyState } from '@/ui/EmptyState';
+import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 import { MoveToPopover } from '@/ui/MoveToPopover';
 import { StudyView } from './StudyView';
 import { autoFocusField } from '@/lib/media';
@@ -45,6 +49,7 @@ function StudyList() {
   const listLoaded = useStudy((s) => s.listLoaded);
   const error = useStudy((s) => s.error);
   const refresh = useStudy((s) => s.refresh);
+  const create = useStudy((s) => s.create);
 
   const [query, setQuery] = useState('');
   const pending = useSlowLoad(!listLoaded);
@@ -134,13 +139,56 @@ function StudyList() {
         // that fills in — but only once the wait is long enough to notice.
         pending ? <SkeletonCards cards={5} /> : null
       ) : studies.length === 0 && folders.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <Library className="text-subtle size-6" strokeWidth={1.5} />
-          <p className="text-muted max-w-sm text-sm leading-relaxed">
-            No studies yet. A study is a set of annotated chapters — lines, comments, arrows —
-            saved as plain PGN in <code className="font-mono text-xs">vault/studies/</code>.
-          </p>
-        </div>
+        <EmptyState
+          art={<CollectionArt />}
+          title="No studies yet"
+          body="A study is a set of annotated chapters — lines, comments, arrows — kept as plain PGN. Start an empty one, or import a PGN you already have."
+          action={
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => void newUntitledStudy(studies, create)}
+            >
+              <Plus className="mr-1 size-3.5" />
+              {t('New study')}
+            </Button>
+          }
+        />
+      ) : /* The shelf HAS studies; this search or the bookmark toggle just
+            matches none of them. Without this the list was simply absent
+            under its own toolbar, which reads as the shelf having been
+            emptied rather than as a filter being on. Each ends on the
+            press that undoes it. */
+      visible.length === 0 ? (
+        markedOnly && !needle ? (
+          <EmptyState
+            art={<BookmarkArt />}
+            title="No bookmarked studies yet"
+            body="Bookmark a study from the shelf and it is kept here, one press from wherever you are."
+            action={
+              <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
+                <Library className="mr-1 size-3.5" />
+                {t('Browse all studies')}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            art={<NoMatchArt />}
+            title="Nothing matches that search"
+            body={
+              markedOnly
+                ? 'No bookmarked study matches it. Clearing the search shows every bookmark again.'
+                : 'No study matches it. Clearing the search shows the whole shelf again.'
+            }
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
+                <X className="mr-1 size-3.5" />
+                {t('Clear search')}
+              </Button>
+            }
+          />
+        )
       ) : (
         <GroupedStudies
           studies={visible.filter((st) => !hidden.has(st.id))}
@@ -164,6 +212,28 @@ function StudyList() {
       <FabSpacer />
     </div>
   );
+}
+
+/**
+ * Make an "Untitled study" and open it. Returns an error to show, or null.
+ *
+ * Module-level because two places offer this: the Create menu, and the
+ * empty shelf, whose whole job is to end on the press that fills it. A
+ * second copy of the numbering would be a second place for it to go
+ * wrong.
+ */
+async function newUntitledStudy(
+  studies: StudyMeta[],
+  create: (name: string) => Promise<string | null>,
+): Promise<string | null> {
+  const base = t('Untitled study');
+  const taken = new Set(studies.map((st) => st.id));
+  let id = base;
+  for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
+  const err = await create(id);
+  if (err) return t(err);
+  navigate('studies', encodeURIComponent(id));
+  return null;
 }
 
 /**
@@ -200,13 +270,7 @@ function CreateMenu() {
    * appears when the first is still called that.
    */
   const createStudy = async (): Promise<void> => {
-    const base = t('Untitled study');
-    const taken = new Set(studies.map((st: StudyMeta) => st.id));
-    let id = base;
-    for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
-    const err = await create(id);
-    if (err) setFailure(t(err));
-    else navigate('studies', encodeURIComponent(id));
+    setFailure(await newUntitledStudy(studies, create));
   };
 
   // The name is passed in rather than read from state: the prompt sheet owns

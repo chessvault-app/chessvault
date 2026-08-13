@@ -48,18 +48,22 @@ function Badge({ className, children }: { className?: string; children: ReactNod
   );
 }
 
-/** Nothing starred yet. */
+/** Nothing bookmarked yet. */
 export function BookmarkArt() {
   return (
     <KnightPlate
       glow="radial-gradient(circle, var(--color-warn) 0%, transparent 70%)"
       badge={
         <Badge className="bg-warn/20">
-          {/* Drawn rather than imported so it can be filled AND outlined:
-              a lucide star at this size is a wire outline, and the point
-              of this badge is that it looks like a star somebody lit. */}
+          {/* Drawn rather than imported so it can be FILLED: a lucide
+              bookmark at this size is a wire outline, and the point of
+              this badge is that it looks like one somebody placed. It was
+              a star until the app settled on one bookmark mark — the
+              picture for "nothing bookmarked" showing a different symbol
+              from the button that bookmarks things was the last place the
+              two idioms were still arguing. */}
           <svg viewBox="0 0 24 24" className="text-warn size-4" fill="currentColor" aria-hidden>
-            <path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3-5.8 3 1.1-6.5L2.6 9.4l6.5-.9L12 2.6z" />
+            <path d="M6.5 2.75h11a1.25 1.25 0 0 1 1.25 1.25v16.4a.75.75 0 0 1-1.16.63L12 17.4l-5.59 3.63a.75.75 0 0 1-1.16-.63V4A1.25 1.25 0 0 1 6.5 2.75z" />
           </svg>
         </Badge>
       }

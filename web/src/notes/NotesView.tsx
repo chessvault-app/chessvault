@@ -4,7 +4,9 @@ import {
   FolderInput,
   NotebookPen,
   Pencil,
+  Plus,
   Trash2,
+  X,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
@@ -19,6 +21,9 @@ import { MoveToPopover } from '@/ui/MoveToPopover';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
+import { Button } from '@/ui/Button';
+import { EmptyState } from '@/ui/EmptyState';
+import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 import { t } from '@/lib/i18n';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
@@ -64,6 +69,27 @@ export function NotesView({ params }: { params: string[] }) {
   ) : (
     <NoteList />
   );
+}
+
+/**
+ * Make an "Untitled note" and open it. Returns an error to show, or null.
+ *
+ * Module-level because two places offer this now: the Create menu, and
+ * the empty shelf, whose whole job is to end on the press that fills it.
+ */
+async function newUntitledNote(
+  notes: NoteMeta[],
+  onDone: () => Promise<void>,
+): Promise<string | null> {
+  const base = t('Untitled note');
+  const taken = new Set(notes.map((n) => n.id));
+  let id = base;
+  for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
+  const err = await post(API, { name: id });
+  if (err) return err;
+  await onDone();
+  navigate('notes', encodeURIComponent(id));
+  return null;
 }
 
 function NoteList() {
@@ -172,14 +198,51 @@ function NoteList() {
       {!loaded ? (
         pending ? <SkeletonCards cards={5} /> : null
       ) : notes.length === 0 && folders.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <NotebookPen className="text-subtle size-6" strokeWidth={1.5} />
-          <p className="text-muted max-w-sm text-sm leading-relaxed">
-            {t('No notes yet. A note is plain markdown in')}{' '}
-            <code className="font-mono text-xs">vault/notes/</code>{' '}
-            {t('with interactive chess boards embedded anywhere in the text.')}
-          </p>
-        </div>
+        <EmptyState
+          art={<CollectionArt />}
+          title="No notes yet"
+          body="A note is plain markdown with interactive boards embedded anywhere in the text — an idea, a plan, a game to come back to."
+          action={
+            <Button variant="primary" size="sm" onClick={() => void newUntitledNote(notes, refresh)}>
+              <Plus className="mr-1 size-3.5" />
+              {t('New note')}
+            </Button>
+          }
+        />
+      ) : /* The shelf HAS notes; this search or the bookmark toggle just
+            matches none of them. Without this the list was simply absent
+            under its own toolbar, which reads as the shelf having been
+            emptied rather than as a filter being on. */
+      visible.length === 0 ? (
+        markedOnly && !needle ? (
+          <EmptyState
+            art={<BookmarkArt />}
+            title="No bookmarked notes yet"
+            body="Bookmark a note from the shelf and it is kept here, one press from wherever you are."
+            action={
+              <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
+                <NotebookPen className="mr-1 size-3.5" />
+                {t('Browse all notes')}
+              </Button>
+            }
+          />
+        ) : (
+          <EmptyState
+            art={<NoMatchArt />}
+            title="Nothing matches that search"
+            body={
+              markedOnly
+                ? 'No bookmarked note matches it. Clearing the search shows every bookmark again.'
+                : 'No note matches it. Clearing the search shows the whole shelf again.'
+            }
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setQuery('')}>
+                <X className="mr-1 size-3.5" />
+                {t('Clear search')}
+              </Button>
+            }
+          />
+        )
       ) : (
         <GroupedNotes
           notes={visible.filter((n) => !hidden.has(n.id))}
@@ -216,13 +279,7 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
    * it whenever the subject becomes clear.
    */
   const createNote = async (): Promise<void> => {
-    const base = t('Untitled note');
-    const taken = new Set(notes.map((n: NoteMeta) => n.id));
-    let id = base;
-    for (let n = 2; taken.has(id); n += 1) id = `${base} ${n}`;
-    const err = await post(API, { name: id });
-    if (err) setFailure(err);
-    else navigate('notes', encodeURIComponent(id));
+    setFailure(await newUntitledNote(notes, onDone));
   };
 
   // The name comes from the prompt sheet, which owns its own draft.

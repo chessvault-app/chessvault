@@ -246,6 +246,28 @@ export const ko: Record<string, string> = {
   'Star a game from the list and it is kept here, one press from wherever you are.':
     '목록에서 게임에 별을 달면 여기에 모입니다. 어디서든 한 번에 열 수 있습니다.',
   'Browse all games': '모든 게임 보기',
+  'No studies yet': '아직 스터디가 없습니다',
+  'A study is a set of annotated chapters — lines, comments, arrows — kept as plain PGN. Start an empty one, or import a PGN you already have.':
+    '스터디는 주석이 달린 챕터들의 묶음입니다 — 변화수, 코멘트, 화살표까지 모두 평범한 PGN으로 저장됩니다. 빈 스터디로 시작하거나, 가지고 있는 PGN을 가져오세요.',
+  'No bookmarked studies yet': '즐겨찾기한 스터디가 없습니다',
+  'Bookmark a study from the shelf and it is kept here, one press from wherever you are.':
+    '목록에서 스터디를 즐겨찾기하면 여기에 모여, 어디서든 한 번에 열 수 있습니다.',
+  'Browse all studies': '모든 스터디 보기',
+  'No bookmarked study matches it. Clearing the search shows every bookmark again.':
+    '검색어와 맞는 즐겨찾기 스터디가 없습니다. 검색을 지우면 즐겨찾기 전체가 다시 보입니다.',
+  'No study matches it. Clearing the search shows the whole shelf again.':
+    '검색어와 맞는 스터디가 없습니다. 검색을 지우면 전체 목록이 다시 보입니다.',
+  'No notes yet': '아직 노트가 없습니다',
+  'A note is plain markdown with interactive boards embedded anywhere in the text — an idea, a plan, a game to come back to.':
+    '노트는 평범한 마크다운이며, 글 어디에나 움직이는 보드를 넣을 수 있습니다 — 떠오른 생각, 세워 둔 계획, 다시 볼 게임.',
+  'No bookmarked notes yet': '즐겨찾기한 노트가 없습니다',
+  'Bookmark a note from the shelf and it is kept here, one press from wherever you are.':
+    '목록에서 노트를 즐겨찾기하면 여기에 모여, 어디서든 한 번에 열 수 있습니다.',
+  'Browse all notes': '모든 노트 보기',
+  'No bookmarked note matches it. Clearing the search shows every bookmark again.':
+    '검색어와 맞는 즐겨찾기 노트가 없습니다. 검색을 지우면 즐겨찾기 전체가 다시 보입니다.',
+  'No note matches it. Clearing the search shows the whole shelf again.':
+    '검색어와 맞는 노트가 없습니다. 검색을 지우면 전체 목록이 다시 보입니다.',
   'Nothing matches that search': '검색 결과가 없습니다',
   'No bookmarked game in your collection matches it. Clearing the search shows every bookmark again.':
     '모음의 즐겨찾기 중 일치하는 게임이 없습니다. 검색을 지우면 모든 즐겨찾기가 다시 보입니다.',
@@ -560,8 +582,6 @@ export const ko: Record<string, string> = {
     '빈 책입니다. “퍼즐 추가”로 보드에 포지션을 만들고 양쪽의 수를 모두 포함한 정답을 기록하세요.',
   'Tip: click an opponent move to mark it “any move” (the book’s ~).':
     '팁: 상대의 수를 클릭하면 “아무 수나”로 표시됩니다 (책의 ~ 표기).',
-  'No studies yet. A study is a set of annotated chapters — lines, comments, arrows — saved as plain PGN in':
-    '아직 스터디가 없습니다. 스터디는 주석이 달린 챕터 묶음 — 변화수, 주석, 화살표 — 이며 평범한 PGN으로 저장됩니다:',
   "Training attempts only — review sessions don't count here, which is why this can differ from the review pool":
     '훈련 시도만 셉니다 — 복습은 여기에 포함되지 않으므로 복습 대상 수와 다를 수 있습니다',
   "Browse this player's online archive": '이 선수의 온라인 기보 보기',
@@ -586,9 +606,6 @@ export const ko: Record<string, string> = {
   '{n} chapters': '챕터 {n}개',
   'not parseable': '읽을 수 없음',
   'that PGN parses into zero chapters': '이 PGN에서 챕터를 하나도 읽지 못했습니다',
-  'No notes yet. A note is plain markdown in': '아직 노트가 없습니다. 노트는',
-  'with interactive chess boards embedded anywhere in the text.':
-    '에 저장되는 평범한 마크다운이며, 본문 어디에나 체스 보드를 넣을 수 있습니다.',
   'No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.':
     '아직 PGN 모음이 없습니다. 아래에서 추가하세요. 북은 참고할 만하려면 수천 판이 필요하므로, 보통 한 달치나 데이터베이스 전체를 내보낸 파일을 씁니다 — Lichess Elite 월별 파일, Gigabase 같은 것들입니다.',
   'Add PGN files': 'PGN 파일 추가',
