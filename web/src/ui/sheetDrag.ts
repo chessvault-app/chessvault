@@ -8,6 +8,17 @@ const DISMISS_PX = 72;
 const SLOP_PX = 6;
 
 /**
+ * A single move bigger than this did not come from a finger.
+ *
+ * When the keyboard opens, iOS shifts the page up to reveal the field.
+ * The finger has not moved, but clientY is measured against a page that
+ * HAS, so the next touchmove arrives with the whole shift in it — a
+ * couple of hundred pixels of apparent downward drag, which is a dismiss.
+ * Fingers do not travel 200px between two frames; viewports do.
+ */
+const JUMP_PX = 120;
+
+/**
  * Is everything between `target` and the sheet scrolled to its top?
  *
  * The rule that lets a sheet be dragged from anywhere: a downward pull is
@@ -90,22 +101,42 @@ export function useSheetDrag(onClose: () => void): {
     // Which way this gesture went: null while it is still undecided, true
     // once it belongs to the sheet, false once it belongs to a scroller.
     let mine: boolean | null = null;
+    // The previous touchmove's position, for spotting a jump.
+    let last = 0;
 
     const onStart = (e: TouchEvent): void => {
       // A second finger means a pinch or a stray palm, not a push.
-      if (e.touches.length !== 1) {
+      // A finger on a text field is a caret, not a push either: the sheet
+      // must not move because somebody reached for the thing they came to
+      // type in. This is the one that bit — tapping the PGN box dismissed
+      // the whole window, because focusing it opened the keyboard, which
+      // shifted the page, which arrived here as a long downward drag.
+      const target = e.target as Element | null;
+      if (e.touches.length !== 1 || target?.closest('input, textarea, [contenteditable="true"]')) {
         from.current = null;
         mine = false;
         return;
       }
       from.current = e.touches[0]!.clientY;
+      last = from.current;
       mine = null;
       now.current = 0;
     };
 
     const onMove = (e: TouchEvent): void => {
       if (from.current === null || mine === false) return;
-      const dy = e.touches[0]!.clientY - from.current;
+      const y = e.touches[0]!.clientY;
+      // The viewport moved, not the finger. Abandon the gesture rather
+      // than act on a number that is mostly somebody else's arithmetic.
+      if (Math.abs(y - last) > JUMP_PX) {
+        from.current = null;
+        mine = false;
+        now.current = 0;
+        setDragY(0);
+        return;
+      }
+      last = y;
+      const dy = y - from.current;
       if (mine === null) {
         if (Math.abs(dy) < SLOP_PX) return;
         // Down, and nothing under the finger left to scroll up.
@@ -122,9 +153,9 @@ export function useSheetDrag(onClose: () => void): {
       // Cancelable only until a scroll has started; it has not, because
       // the content was at its top and there was nothing to start.
       if (e.cancelable) e.preventDefault();
-      const y = Math.max(0, e.touches[0]!.clientY - from.current);
-      now.current = y;
-      setDragY(y);
+      const moved = Math.max(0, y - from.current);
+      now.current = moved;
+      setDragY(moved);
     };
 
     const onEnd = (): void => {
