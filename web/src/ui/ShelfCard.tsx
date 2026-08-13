@@ -1,10 +1,10 @@
-import { MoreHorizontal, Pin, type LucideIcon } from 'lucide-react';
+import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './Button';
 import { ActionSheet, type SheetAction } from './ActionSheet';
 import { MiniBoard } from './MiniBoard';
-import { SwipeTrack, useSwipeAway } from './SwipeRow';
+import { SwipeTrack, useSwipeRow } from './SwipeRow';
 import { t } from '@/lib/i18n';
 
 /** Grid: cards side by side. List: one dense row each, no thumbnail. */
@@ -25,8 +25,8 @@ export function ShelfCard({
   meta,
   preview,
   fen,
-  pinned = false,
-  onTogglePin,
+  marked = false,
+  onToggleMark,
   layout = 'grid',
   error,
   menuTitle,
@@ -44,9 +44,9 @@ export function ShelfCard({
   preview?: string | null;
   /** Where the document's first embedded board starts, if it has one. */
   fen?: string | null;
-  pinned?: boolean;
-  /** Omitted where pinning does not apply; the star only shows if given. */
-  onTogglePin?: () => void;
+  marked?: boolean;
+  /** Omitted where bookmarking does not apply. */
+  onToggleMark?: () => void;
   layout?: ShelfLayout;
   error?: string | null;
   /** What the ⋯ sheet is called; the title by default. */
@@ -58,7 +58,7 @@ export function ShelfCard({
   /** The card's own dialogs — rename, move to. */
   children?: ReactNode;
 }) {
-  const swipe = useSwipeAway(onSwipeAway);
+  const swipe = useSwipeRow({ onRemove: onSwipeAway, onBookmark: onToggleMark });
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const board = layout === 'grid' && fen ? <MiniBoard fen={fen} size={64} /> : null;
@@ -85,19 +85,20 @@ export function ShelfCard({
           'transition-[border-color,box-shadow,transform] duration-150',
           'hover:border-line-strong hover:shadow-[var(--shadow-pop)] md:hover:-translate-y-px',
           layout === 'grid' ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
-          // A pinned card says so before it is read: a warm edge down the
-          // left, which survives being one of forty cards in a grid where
-          // an icon in the corner does not.
+          // A bookmarked card says so before it is read: a warm edge down
+          // the left. It is the WHOLE indicator now — the filled star that
+          // used to sit in the corner cost a permanent 28px of every card
+          // on a phone to say something an edge says for nothing.
           //
           // The hover colour has to be re-stated for that edge, or it is
           // lost exactly when you reach for the card: `hover:border-line-
-          // strong` sets ALL FOUR sides, so pointing at a pinned card
+          // strong` sets ALL FOUR sides, so pointing at a marked card
           // repainted its amber edge the same grey as the rest of it.
-          pinned && 'border-l-warn hover:border-l-warn border-l-2',
+          marked && 'border-l-warn hover:border-l-warn border-l-2',
         )}
       >
         {/* The card stays; its contents slide off it. */}
-        <SwipeTrack dx={swipe.dx} />
+        <SwipeTrack dx={swipe.dx} bookmarked={marked} />
 
         <div
           className={cn('flex min-w-0 flex-1 gap-3', board ? 'items-start' : 'items-center')}
@@ -113,15 +114,15 @@ export function ShelfCard({
                 to sit in, it took its width from every line of the card
                 whether it was showing or not. */}
             {/* The right padding reserves the corner strip, so it has to
-                count what is actually IN it: one ⋯ is 28px, a pin beside
-                it is 58, and on a touch screen both grow to 36 so the pair
-                is 74. `pr-7` counted the ⋯ alone, and a long name — a
-                Lichess export keeps its whole slug — ran under the pin. */}
+                count what is actually IN it: one ⋯ is 28px, the bookmark
+                beside it makes 58. On a touch screen the bookmark is not
+                there at all (it is a swipe and a menu row instead), so the
+                ⋯ alone is 36. */}
             <p
               className={cn(
                 'text-fg truncate font-semibold',
                 layout === 'grid' ? 'text-[0.9375rem] leading-5' : 'text-sm',
-                onTogglePin ? 'pr-14 pointer-coarse:pr-[4.5rem]' : 'pr-7 pointer-coarse:pr-9',
+                onToggleMark ? 'pr-14 pointer-coarse:pr-9' : 'pr-7 pointer-coarse:pr-9',
               )}
             >
               {title}
@@ -140,28 +141,31 @@ export function ShelfCard({
         </div>
 
         {/* Both corner controls in one strip, so they cannot overlap and
-            the pin does not move when the ⋯ appears. */}
+            the bookmark does not move when the ⋯ appears. */}
         <div
           style={swipe.style}
           className={cn('absolute right-2 flex items-center gap-0.5', layout === 'grid' ? 'top-2' : 'top-1.5')}
         >
-          {onTogglePin && (
+          {/* Hover only, and gone entirely under a thumb: a phone marks a
+              card by swiping it right or from its ⋯, and a button that is
+              permanently on screen to say something the left edge already
+              says is 28px taken off every title in the list. */}
+          {onToggleMark && (
             <Button
               variant="ghost"
               size="icon-sm"
-              title={pinned ? t('Unpin') : t('Pin to the top')}
+              title={marked ? t('Remove bookmark') : t('Bookmark')}
               className={cn(
-                'transition-opacity',
-                pinned
-                  ? 'text-warn opacity-100'
-                  : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+                'pointer-coarse:hidden opacity-0 transition-opacity',
+                'group-hover:opacity-100 focus-visible:opacity-100',
+                marked && 'text-warn',
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                onTogglePin();
+                onToggleMark();
               }}
             >
-              <Pin className={cn('size-3.5', pinned && 'fill-current')} />
+              <Bookmark className={cn('size-3.5', marked && 'fill-current')} />
             </Button>
           )}
           <Button

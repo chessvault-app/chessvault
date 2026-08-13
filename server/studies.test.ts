@@ -328,39 +328,39 @@ describe('notes list excerpts', () => {
     expect(studies.find((s) => s.id === 'Unclosed')!.fen).toBeNull();
   });
 
-  it('pins are kept in the vault and follow a rename', async () => {
-    write('Pinned', '# Pinned\n\nBody.\n');
+  it('bookmarks are kept in the vault and follow a rename', async () => {
+    write('Marked', '# Marked\n\nBody.\n');
     const toggle = async (id: string): Promise<Response> =>
-      app.request('/api/notes/pins/toggle', {
+      app.request('/api/notes/bookmarks/toggle', {
         method: 'POST',
         body: JSON.stringify({ id }),
         headers: { 'content-type': 'application/json' },
       });
-    const pins = async (): Promise<string[]> =>
-      ((await (await app.request('/api/notes/pins')).json()) as { ids: string[] }).ids;
+    const marks = async (): Promise<string[]> =>
+      ((await (await app.request('/api/notes/bookmarks')).json()) as { ids: string[] }).ids;
 
-    expect(await pins()).toEqual([]);
-    expect(((await (await toggle('Pinned')).json()) as { pinned: boolean }).pinned).toBe(true);
-    expect(await pins()).toEqual(['Pinned']);
+    expect(await marks()).toEqual([]);
+    expect(((await (await toggle('Marked')).json()) as { bookmarked: boolean }).bookmarked).toBe(true);
+    expect(await marks()).toEqual(['Marked']);
 
-    // A rename must not silently unpin.
+    // A rename must not silently lose the mark.
     await app.request('/api/notes/move', {
       method: 'POST',
-      body: JSON.stringify({ from: 'Pinned', to: 'Renamed' }),
+      body: JSON.stringify({ from: 'Marked', to: 'Renamed' }),
       headers: { 'content-type': 'application/json' },
     });
-    expect(await pins()).toEqual(['Renamed']);
+    expect(await marks()).toEqual(['Renamed']);
 
-    // Nor may a delete leave an id that re-pins the next note of that name.
+    // Nor may a delete leave an id that re-marks the next note of that name.
     await app.request('/api/notes/Renamed', { method: 'DELETE' });
-    expect(await pins()).toEqual([]);
+    expect(await marks()).toEqual([]);
   });
 
-  it('the pins file is not itself listed as a note', async () => {
+  it('the bookmarks file is not itself listed as a note', async () => {
     const { studies } = (await (await app.request('/api/notes')).json()) as {
       studies: { id: string }[];
     };
-    expect(studies.some((s) => s.id.includes('pins'))).toBe(false);
+    expect(studies.some((s) => s.id.includes('bookmarks'))).toBe(false);
   });
 
   it('gives a study a board too, from its first chapter', async () => {

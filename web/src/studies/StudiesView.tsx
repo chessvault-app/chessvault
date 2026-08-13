@@ -5,6 +5,7 @@ import {
   FolderInput,
   Library,
   Pencil,
+  Star,
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -48,23 +49,24 @@ function StudyList() {
   const [query, setQuery] = useState('');
   const pending = useSlowLoad(!listLoaded);
   const view = useShelfView('studies');
-  // Pinned studies, kept in the vault the same way the games shelf keeps
-  // its bookmarks — a pin belongs to the shelf, not to a browser.
-  const [pinnedIds, setPinned] = useState<Set<string>>(new Set());
+  // Bookmarks, kept in the vault exactly as the games shelf keeps its
+  // own — a mark belongs to the shelf, not to a browser.
+  const [markedIds, setMarked] = useState<Set<string>>(new Set());
+  const [markedOnly, setMarkedOnly] = useState(false);
   useEffect(() => {
-    void fetch('/api/studies/pins')
+    void fetch('/api/studies/bookmarks')
       .then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null))
-      .then((body) => setPinned(new Set(body?.ids ?? [])))
+      .then((body) => setMarked(new Set(body?.ids ?? [])))
       .catch(() => {});
   }, []);
-  const togglePin = async (id: string): Promise<void> => {
-    setPinned((prev) => {
+  const toggleMark = async (id: string): Promise<void> => {
+    setMarked((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-    await fetch('/api/studies/pins/toggle', {
+    await fetch('/api/studies/bookmarks/toggle', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -100,9 +102,10 @@ function StudyList() {
   }, [refresh]);
 
   const needle = query.trim().toLowerCase();
-  const visible = needle
-    ? studies.filter((s) => s.id.toLowerCase().includes(needle))
-    : studies;
+  const visible = studies.filter(
+    (s) =>
+      (!markedOnly || markedIds.has(s.id)) && (!needle || s.id.toLowerCase().includes(needle)),
+  );
 
   return (
     // Two columns of cards on a desktop, so the shelf shows twice as many
@@ -115,6 +118,8 @@ function StudyList() {
         query={query}
         onQuery={setQuery}
         placeholder={t('Search studies…')}
+        markedOnly={markedOnly}
+        onMarkedOnly={setMarkedOnly}
         sort={view.sort}
         onSort={view.setSort}
         layout={view.layout}
@@ -140,8 +145,8 @@ function StudyList() {
         <GroupedStudies
           studies={visible.filter((st) => !hidden.has(st.id))}
           allFolders={needle ? [] : folders}
-          pinnedIds={pinnedIds}
-          onTogglePin={(id) => void togglePin(id)}
+          markedIds={markedIds}
+          onToggleMark={(id) => void toggleMark(id)}
           sort={view.sort}
           layout={view.layout}
           onRemove={dropStudy}
@@ -550,29 +555,26 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
 function GroupedStudies({
   studies,
   allFolders,
-  pinnedIds,
-  onTogglePin,
+  markedIds,
+  onToggleMark,
   sort,
   layout,
   onRemove,
 }: {
   studies: StudyMeta[];
   allFolders: string[];
-  pinnedIds: Set<string>;
-  onTogglePin: (id: string) => void;
+  markedIds: Set<string>;
+  onToggleMark: (id: string) => void;
   sort: ShelfSort;
   layout: ShelfLayout;
   onRemove: (id: string) => void;
 }) {
   const groups = new Map<string, StudyMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
-  // Whatever the chosen order, a pinned study comes first: that is what
-  // pinning IS, and a pin that only added a star would be decoration.
-  const ordered = sortDocs(studies, sort);
-  for (const study of [
-    ...ordered.filter((s) => pinnedIds.has(s.id)),
-    ...ordered.filter((s) => !pinnedIds.has(s.id)),
-  ]) {
+  // One order, the chosen one. Bookmarks used to be pins and pins jumped
+  // to the top; a mark is a filter now, so the list you are reading does
+  // not rearrange itself the moment you mark something in it.
+  for (const study of sortDocs(studies, sort)) {
     const slash = study.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : study.id.slice(0, slash);
     const list = groups.get(folder);
@@ -600,8 +602,8 @@ function GroupedStudies({
                   key={study.id}
                   study={study}
                   allFolders={folders.filter(Boolean)}
-                  pinned={pinnedIds.has(study.id)}
-                  onTogglePin={() => onTogglePin(study.id)}
+                  marked={markedIds.has(study.id)}
+                  onToggleMark={() => onToggleMark(study.id)}
                   layout={layout}
                   onRemove={() => onRemove(study.id)}
                 />
@@ -630,15 +632,15 @@ function FolderHeader({ folder, empty }: { folder: string; empty: boolean }) {
 function StudyCard({
   study,
   allFolders,
-  pinned,
-  onTogglePin,
+  marked,
+  onToggleMark,
   layout,
   onRemove,
 }: {
   study: StudyMeta;
   allFolders: string[];
-  pinned: boolean;
-  onTogglePin: () => void;
+  marked: boolean;
+  onToggleMark: () => void;
   layout: ShelfLayout;
   onRemove: () => void;
 }) {
@@ -672,13 +674,21 @@ function StudyCard({
         </span>
       }
       fen={study.fen}
-      pinned={pinned}
-      onTogglePin={onTogglePin}
+      marked={marked}
+      onToggleMark={onToggleMark}
       layout={layout}
       error={failure}
       onOpen={() => navigate('studies', encodeURIComponent(study.id))}
       onSwipeAway={onRemove}
       actions={[
+        {
+          // Touch only: a desktop has the bookmark in the card's own
+          // corner, two centimetres from the ⋯ that opened this.
+          label: marked ? 'Remove bookmark' : 'Bookmark',
+          icon: Star,
+          className: 'pointer-fine:hidden',
+          onSelect: onToggleMark,
+        },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
         { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
         { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },

@@ -1,9 +1,11 @@
-import { LayoutGrid, List } from 'lucide-react';
+import { LayoutGrid, List, Star } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
+import { Button } from './Button';
 import { SearchInput } from './Input';
 import { Segmented } from './Segmented';
 import { Select } from './Select';
 import type { ShelfLayout } from './ShelfCard';
+import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 
 /**
@@ -96,6 +98,8 @@ export function ShelfToolbar({
   onSort,
   layout,
   onLayout,
+  markedOnly,
+  onMarkedOnly,
   create,
 }: {
   title: string;
@@ -106,6 +110,8 @@ export function ShelfToolbar({
   onSort: (sort: ShelfSort) => void;
   layout: ShelfLayout;
   onLayout: (layout: ShelfLayout) => void;
+  markedOnly: boolean;
+  onMarkedOnly: (only: boolean) => void;
   /** The shelf's own Create control. */
   create: ReactNode;
 }) {
@@ -123,6 +129,21 @@ export function ShelfToolbar({
           placeholder={placeholder}
           className="min-w-0 flex-1 sm:w-44 sm:flex-none"
         />
+        {/* Icon only: the games header can afford the word Bookmarked
+            beside its star, and a shelf toolbar carrying a search, a sort,
+            a layout switch and a Create button cannot. Pressed state does
+            the saying. */}
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          active={markedOnly}
+          aria-pressed={markedOnly}
+          title={markedOnly ? t('Show all') : t('Show bookmarked only')}
+          className="shrink-0"
+          onClick={() => onMarkedOnly(!markedOnly)}
+        >
+          <Star className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+        </Button>
         <Select
           value={sort}
           onChange={(value) => onSort(value as ShelfSort)}

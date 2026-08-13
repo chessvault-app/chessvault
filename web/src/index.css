@@ -117,6 +117,9 @@
      wants near-black. Only the swipe-to-remove strip fills --bad; every
      other use is text or a tint, which keeps the page colour behind it. */
   --bad-fg: oklch(99% 0 0);
+  /* On --warn, which is a light amber in BOTH themes: white on it is a
+     smear. The swipe-to-bookmark strip is the only thing that fills it. */
+  --warn-fg: oklch(22% 0.04 75);
 
   /* The transient chip — the undo offer, and anything else that floats
      over the page for a few seconds and must not read as part of it.
@@ -207,6 +210,7 @@
   --info: oklch(72% 0.13 232);
   /* Dark mode's --bad is a light red; white on it is unreadable. */
   --bad-fg: oklch(18% 0.03 25);
+  --warn-fg: oklch(20% 0.04 80);
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner
@@ -257,6 +261,7 @@
   --color-good: var(--good);
   --color-bad: var(--bad);
   --color-bad-fg: var(--bad-fg);
+  --color-warn-fg: var(--warn-fg);
   --color-toast: var(--toast);
   --color-toast-fg: var(--toast-fg);
   --color-warn: var(--warn);

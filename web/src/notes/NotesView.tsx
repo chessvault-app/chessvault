@@ -3,6 +3,7 @@ import {
   FolderInput,
   NotebookPen,
   Pencil,
+  Star,
   Trash2,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
@@ -68,7 +69,8 @@ export function NotesView({ params }: { params: string[] }) {
 function NoteList() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
-  const [pinnedIds, setPinned] = useState<Set<string>>(new Set());
+  const [markedIds, setMarked] = useState<Set<string>>(new Set());
+  const [markedOnly, setMarkedOnly] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -77,14 +79,14 @@ function NoteList() {
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      const [res, pins] = await Promise.all([
+      const [res, marks] = await Promise.all([
         fetch(API),
-        fetch(`${API}/pins`).then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null)),
+        fetch(`${API}/bookmarks`).then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null)),
       ]);
       const body = (await res.json()) as { studies: NoteMeta[]; folders: string[] };
       setNotes(body.studies);
       setFolders(body.folders);
-      setPinned(new Set(pins?.ids ?? []));
+      setMarked(new Set(marks?.ids ?? []));
       setLoaded(true);
       setError(null);
     } catch {
@@ -94,18 +96,18 @@ function NoteList() {
   }, []);
 
   /**
-   * Pinned notes, kept in the vault rather than the browser — the same
-   * place the games shelf keeps its bookmarks. The state is optimistic:
-   * a star that waits for a round trip before it fills reads as broken.
+   * Bookmarked notes, kept in the vault rather than the browser — the same
+   * place the games shelf keeps its own. The state is optimistic: a mark
+   * that waits for a round trip before it shows reads as broken.
    */
-  const togglePin = async (id: string): Promise<void> => {
-    setPinned((prev) => {
+  const toggleMark = async (id: string): Promise<void> => {
+    setMarked((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-    const res = await fetch(`${API}/pins/toggle`, {
+    const res = await fetch(`${API}/bookmarks/toggle`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -118,7 +120,10 @@ function NoteList() {
   }, [refresh]);
 
   const needle = query.trim().toLowerCase();
-  const visible = needle ? notes.filter((n) => n.id.toLowerCase().includes(needle)) : notes;
+  const visible = notes.filter(
+    (n) =>
+      (!markedOnly || markedIds.has(n.id)) && (!needle || n.id.toLowerCase().includes(needle)),
+  );
 
   // Removal is immediate and undoable: the row goes, and the DELETE waits
   // until the undo has had its say (useUndoable).
@@ -153,6 +158,8 @@ function NoteList() {
         query={query}
         onQuery={setQuery}
         placeholder={t('Search notes…')}
+        markedOnly={markedOnly}
+        onMarkedOnly={setMarkedOnly}
         sort={view.sort}
         onSort={view.setSort}
         layout={view.layout}
@@ -177,8 +184,8 @@ function NoteList() {
         <GroupedNotes
           notes={visible.filter((n) => !hidden.has(n.id))}
           allFolders={needle ? [] : folders}
-          pinnedIds={pinnedIds}
-          onTogglePin={(id) => void togglePin(id)}
+          markedIds={markedIds}
+          onToggleMark={(id) => void toggleMark(id)}
           sort={view.sort}
           layout={view.layout}
           onChanged={refresh}
@@ -270,8 +277,8 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
 function GroupedNotes({
   notes,
   allFolders,
-  pinnedIds,
-  onTogglePin,
+  markedIds,
+  onToggleMark,
   sort,
   layout,
   onChanged,
@@ -279,8 +286,8 @@ function GroupedNotes({
 }: {
   notes: NoteMeta[];
   allFolders: string[];
-  pinnedIds: Set<string>;
-  onTogglePin: (id: string) => void;
+  markedIds: Set<string>;
+  onToggleMark: (id: string) => void;
   sort: ShelfSort;
   layout: ShelfLayout;
   onChanged: () => Promise<void>;
@@ -288,14 +295,9 @@ function GroupedNotes({
 }) {
   const groups = new Map<string, NoteMeta[]>();
   for (const folder of allFolders) groups.set(folder, []);
-  // Whatever the chosen order, a pinned note comes first: that is what
-  // pinning IS, and a pin that only added a star would be decoration.
-  const ordered = sortDocs(notes, sort);
-  const stable = [
-    ...ordered.filter((n) => pinnedIds.has(n.id)),
-    ...ordered.filter((n) => !pinnedIds.has(n.id)),
-  ];
-  for (const note of stable) {
+  // One order, the chosen one — see GroupedStudies. A mark is a filter,
+  // not a place in the list.
+  for (const note of sortDocs(notes, sort)) {
     const slash = note.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : note.id.slice(0, slash);
     const list = groups.get(folder);
@@ -347,8 +349,8 @@ function GroupedNotes({
                   key={note.id}
                   note={note}
                   allFolders={allFolders}
-                  pinned={pinnedIds.has(note.id)}
-                  onTogglePin={() => onTogglePin(note.id)}
+                  marked={markedIds.has(note.id)}
+                  onToggleMark={() => onToggleMark(note.id)}
                   layout={layout}
                   onChanged={onChanged}
                   onRemove={() => onRemove(note.id)}
@@ -365,16 +367,16 @@ function GroupedNotes({
 function NoteCard({
   note,
   allFolders,
-  pinned,
-  onTogglePin,
+  marked,
+  onToggleMark,
   layout,
   onChanged,
   onRemove,
 }: {
   note: NoteMeta;
   allFolders: string[];
-  pinned: boolean;
-  onTogglePin: () => void;
+  marked: boolean;
+  onToggleMark: () => void;
   layout: ShelfLayout;
   onChanged: () => Promise<void>;
   onRemove: () => void;
@@ -414,13 +416,21 @@ function NoteCard({
       // first sentence, its tags and the board it opens with do.
       preview={note.excerpt}
       fen={note.fen}
-      pinned={pinned}
-      onTogglePin={onTogglePin}
+      marked={marked}
+      onToggleMark={onToggleMark}
       layout={layout}
       error={failure}
       onOpen={() => navigate('notes', encodeURIComponent(note.id))}
       onSwipeAway={onRemove}
       actions={[
+        {
+          // Touch only: a desktop has the bookmark in the card's own
+          // corner, two centimetres from the ⋯ that opened this.
+          label: marked ? 'Remove bookmark' : 'Bookmark',
+          icon: Star,
+          className: 'pointer-fine:hidden',
+          onSelect: onToggleMark,
+        },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
         { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
         { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },

@@ -42,7 +42,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
-import { SwipeTrack, useSwipeAway } from '@/ui/SwipeRow';
+import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { PromptSheet } from '@/ui/PromptSheet';
@@ -909,6 +909,8 @@ function CollectionView() {
               <GameRow
                 key={gameKey(game)}
                 onSwipeAway={() => dropGame(game)}
+                onBookmark={() => void toggleBookmark(game)}
+                bookmarked={bookmarks.has(gameKey(game))}
                 game={game}
                 customName={customName(game)}
                 renaming={renamingKey === gameKey(game)}
@@ -917,18 +919,18 @@ function CollectionView() {
                 onPreview={setPreview}
                 onContext={(x, y) => setContext({ game, x, y })}
                 actions={
-                  // A bookmarked game must SAY so wherever it is read, so a
-                  // lit star stays on the row on every device. An unlit one
-                  // is only a control, and on a phone it belongs in the
-                  // sheet with the other controls.
+                  // The star is a CONTROL, so it lives where controls live:
+                  // in the hover tray on a desktop, and not on a phone at
+                  // all, where the row is swiped right or its ⋯ is used.
+                  // What a bookmarked game says for itself is the amber
+                  // edge down its left — which costs no width at all, and
+                  // a lit star standing permanently at the end of a 390px
+                  // row cost the player names about 36px of theirs.
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     title={bookmarks.has(gameKey(game)) ? t('Remove bookmark') : t('Bookmark')}
-                    className={cn(
-                      'shrink-0',
-                      !bookmarks.has(gameKey(game)) && 'pointer-coarse:hidden',
-                    )}
+                    className="pointer-coarse:hidden shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
                       void toggleBookmark(game);
@@ -945,8 +947,8 @@ function CollectionView() {
                 menu={[
                   {
                     // Same rule as the preview: on a desktop the star is
-                    // already on the row, and repeating it here just makes
-                    // the menu longer to read.
+                    // already in the row's tray, and repeating it here
+                    // just makes the menu longer to read.
                     label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
                     icon: Star,
                     className: 'pointer-fine:hidden',
@@ -1902,6 +1904,8 @@ function GameRow({
   onRename,
   showLink = true,
   onSwipeAway,
+  onBookmark,
+  bookmarked = false,
   onContext,
   menu,
 }: {
@@ -1927,13 +1931,16 @@ function GameRow({
   showLink?: boolean;
   /** Touch: swiping the row's contents left removes it (undoably). */
   onSwipeAway?: () => void;
+  /** Touch: swiping right marks it. Omitted where a row cannot be marked. */
+  onBookmark?: () => void;
+  bookmarked?: boolean;
   /** Desktop: a right-click asks for the row's actions at the pointer. */
   onContext?: (x: number, y: number) => void;
 }) {
   // The eye pops the final position. Fine pointers hover a popover beside
   // the row; coarse pointers TAP for a centred overlay (dismissed by its
   // scrim) — a beside-row popover on a phone would cover the row itself.
-  const swipe = useSwipeAway(() => onSwipeAway?.());
+  const swipe = useSwipeRow({ onRemove: () => onSwipeAway?.(), onBookmark });
   const coarse = isCoarsePointer;
   const row = useRef<HTMLLIElement>(null);
   const menuTrigger = useRef<HTMLButtonElement>(null);
@@ -1989,9 +1996,22 @@ function GameRow({
       // furniture drops to a line of its own instead. It costs a taller
       // row at widths the layout should never reach, which beats a row of
       // numbers printed on top of each other at widths it did.
-      className="group hover:bg-surface-2 relative flex cursor-pointer flex-wrap items-center gap-3 overflow-hidden px-3 py-2 transition-colors duration-100"
+      className={cn(
+        'group hover:bg-surface-2 relative flex cursor-pointer flex-wrap items-center gap-3',
+        'overflow-hidden px-3 py-2 transition-colors duration-100',
+        // The whole indicator that a game is kept: a warm edge down the
+        // left, which costs no width. The lit star that used to stand at
+        // the end of the row cost about 36px of two player names on every
+        // phone, to say what this says for nothing.
+        //
+        // Painted, not bordered. `divide-line` on the list sets
+        // border-color on every child through `.divide-line > *`, which
+        // outranks a plain `border-l-warn` on the row — the edge came out
+        // the same grey as the hairlines between rows.
+        bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
+      )}
     >
-      {onSwipeAway && <SwipeTrack dx={swipe.dx} />}
+      {onSwipeAway && <SwipeTrack dx={swipe.dx} bookmarked={bookmarked} />}
       <div className="flex min-w-[8rem] flex-1 items-center gap-3" style={swipe.style}>
         {/* The name is asked for in a sheet, like every other rename; the
             row keeps showing what it is called meanwhile. */}

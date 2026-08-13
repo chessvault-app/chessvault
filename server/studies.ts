@@ -246,61 +246,72 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
   };
 
   /**
-   * Which documents are pinned, as plain JSON beside them.
+   * Which documents are bookmarked, as plain JSON beside them.
    *
-   * The same shape the games shelf already uses for its bookmarks: the
-   * vault holds the answer, so a pin survives a browser, a device and a
-   * reinstall. The leading dot keeps it out of the way of somebody looking
-   * at the folder in a file manager, and it is not a `.md` so it is never
-   * listed as a note.
+   * The same shape the games shelf already uses: the vault holds the
+   * answer, so a bookmark survives a browser, a device and a reinstall.
+   * The leading dot keeps it out of the way of somebody looking at the
+   * folder in a file manager, and it is not a `.md` so it is never listed
+   * as a note.
    */
-  const pinsPath = resolve(dir, '.pins.json');
-  const readPins = (): string[] => {
-    try {
-      const parsed = JSON.parse(readFileSync(pinsPath, 'utf-8')) as { ids?: string[] };
-      return Array.isArray(parsed.ids) ? parsed.ids : [];
-    } catch {
-      return [];
+  const marksPath = resolve(dir, '.bookmarks.json');
+  /**
+   * These were pins until they became bookmarks, and the file they were
+   * kept in was `.pins.json`. Read it when the new one is absent so that
+   * nobody's marks vanish in an update; the next toggle writes the new
+   * name and the old file stops being consulted.
+   */
+  const legacyPath = resolve(dir, '.pins.json');
+  const readMarks = (): string[] => {
+    for (const path of [marksPath, legacyPath]) {
+      try {
+        const parsed = JSON.parse(readFileSync(path, 'utf-8')) as { ids?: string[] };
+        if (Array.isArray(parsed.ids)) return parsed.ids;
+      } catch {
+        /* next */
+      }
     }
+    return [];
   };
 
-  const writePins = (ids: string[]): void => {
-    const tmp = `${pinsPath}.tmp`;
-    writeFileSync(tmp, `${JSON.stringify({ ids }, null, 2)}\n`);
-    renameSync(tmp, pinsPath);
+  const writeMarks = (ids: string[]): void => {
+    const tmp = `${marksPath}.tmp`;
+    writeFileSync(tmp, `${JSON.stringify({ ids }, null, 2)}
+`);
+    renameSync(tmp, marksPath);
   };
 
   /**
-   * Follow a pinned document through a rename, or drop it on a delete.
+   * Follow a bookmarked document through a rename, or drop it on a delete.
    *
-   * Without this a pin is a name, not a thing: renaming a pinned note
-   * silently unpinned it, and deleting one left an id in the file that
-   * would re-pin whatever was next created under that name.
+   * Without this a bookmark is a name, not a thing: renaming a bookmarked
+   * note silently lost the mark, and deleting one left an id in the file
+   * that would re-mark whatever was next created under that name.
    */
-  const repin = (from: string, to: string | null): void => {
-    const ids = readPins();
+  const remark = (from: string, to: string | null): void => {
+    const ids = readMarks();
     const at = ids.indexOf(from);
     if (at < 0) return;
     if (to === null) ids.splice(at, 1);
     else ids[at] = to;
-    writePins(ids);
+    writeMarks(ids);
   };
 
-  api.get(`/${base}/pins`, (c) => c.json({ ids: readPins() }));
+  api.get(`/${base}/bookmarks`, (c) => c.json({ ids: readMarks() }));
 
-  api.post(`/${base}/pins/toggle`, async (c) => {
+  api.post(`/${base}/bookmarks/toggle`, async (c) => {
     const body = await c.req.json<{ id?: string }>().catch(() => null);
     const id = body?.id?.trim();
     if (!id || !validId(id)) return c.json({ error: 'invalid study id' }, 400);
-    const ids = readPins();
+    const ids = readMarks();
     const at = ids.indexOf(id);
-    const pinned = at < 0;
-    if (pinned) ids.unshift(id);
+    const bookmarked = at < 0;
+    if (bookmarked) ids.unshift(id);
     else ids.splice(at, 1);
     // Atomic, like every other vault write: a crash mid-write must not
-    // leave a truncated file that reads as "nothing is pinned".
-    writePins(ids);
-    return c.json({ id, pinned });
+    // leave a truncated file that reads as "nothing is bookmarked".
+    writeMarks(ids);
+    return c.json({ id, bookmarked });
   });
 
   api.get(`/${base}`, (c) => {
@@ -362,7 +373,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     if (existsSync(pathOf(to))) return c.json({ error: 'a study with that name exists' }, 409);
     mkdirSync(resolve(pathOf(to), '..'), { recursive: true });
     renameSync(pathOf(from), pathOf(to));
-    repin(from, to);
+    remark(from, to);
     return c.json({ moved: to });
   });
 
@@ -381,10 +392,10 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     if (existsSync(toPath)) return c.json({ error: 'a collection with that name exists' }, 409);
     mkdirSync(resolve(toPath, '..'), { recursive: true });
     renameSync(fromPath, toPath);
-    // The documents inside went with the directory, so their pins must too.
-    const ids = readPins();
+    // The documents inside went with the directory, so their marks must too.
+    const ids = readMarks();
     const moved = ids.map((id) => (id.startsWith(`${from}/`) ? `${to}${id.slice(from.length)}` : id));
-    if (moved.some((id, at) => id !== ids[at])) writePins(moved);
+    if (moved.some((id, at) => id !== ids[at])) writeMarks(moved);
     return c.json({ moved: to });
   });
 
@@ -463,7 +474,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     const path = pathOf(id);
     if (!existsSync(path)) return c.json({ error: 'no such study' }, 404);
     rmSync(path);
-    repin(id, null);
+    remark(id, null);
     return c.json({ deleted: id });
   });
 
