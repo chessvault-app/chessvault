@@ -143,8 +143,11 @@ export function ActionSheet({
           'bg-surface border-line border p-2 shadow-[var(--shadow-pop)]',
           popover
             ? 'w-56 rounded-lg'
-            : // The phone's home indicator lives under the sheet's last row.
-              'w-full max-w-lg rounded-t-2xl pb-[calc(0.5rem+var(--safe-b))]',
+            : // The phone's home indicator lives under the sheet's last
+              // row — 1rem of air above it, matching the breathing room
+              // Sheet and Modal keep (their content is denser, so they
+              // carry a little more).
+              'w-full max-w-lg rounded-t-2xl pb-[calc(1rem+var(--safe-b))]',
         )}
       >
         {/* The handle, and nothing else. It carried an X beside it for a

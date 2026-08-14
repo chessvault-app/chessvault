@@ -87,7 +87,12 @@ export function Sheet({
           // screen is under the notch. So its ceiling is the safe area
           // rather than the viewport, and it stops short of the status bar
           // instead of putting its first row behind the clock.
-          'max-sm:rounded-t-2xl max-sm:pb-[calc(0.75rem+var(--safe-b))]',
+          // 1.25rem under the last row, not the card's own 0.75: a small
+          // sheet — a confirm is a question and two buttons — ended right
+          // at the home indicator and read as cramped. The extra half rem
+          // is air, not a minimum height: a sheet is exactly as tall as
+          // its content plus room to end comfortably.
+          'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
           'max-sm:max-h-[calc(100%-env(safe-area-inset-top)-0.75rem)]',
           'sm:max-w-sm sm:rounded-xl',
           className,

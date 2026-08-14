@@ -169,7 +169,10 @@ export function Modal({
           // rise to clear the keys, but it does not have to GROW on the
           // way, and one that fills the band arrives at the top of the
           // screen looking like a different window.
-          'max-sm:max-h-[88%] max-sm:rounded-t-2xl max-sm:pb-[calc(0.75rem+var(--safe-b))]',
+          // The same 1.25rem floor Sheet keeps under its last row: a tall
+          // window barely notices, and a short one stops reading as cut
+          // off at the home indicator.
+          'max-sm:max-h-[88%] max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
           // The desktop card, which `full` is entirely about.
           'sm:h-auto sm:max-h-full sm:rounded-xl',
           full ? 'sm:max-w-4xl' : 'sm:max-w-[32rem]',
