@@ -2,10 +2,11 @@ import { parseSquare } from 'chessops/util';
 import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
-import { treeToPgn } from '@shared/pgn';
-import type { MoveTree, NodeId } from '@shared/types';
-import { Board } from '@/board/Board';
+import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, pathTo, positionAt } from '@shared/tree';
+import { pgnToChapters, treeToPgn } from '@shared/pgn';
+import type { Chapter, MoveTree, NodeId } from '@shared/types';
+import { Board, type BoardApi } from '@/board/Board';
+import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
@@ -162,6 +163,49 @@ function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
   }
   return playable[playable.length - 1] ?? null;
 }
+
+/**
+ * Drill mode: the trainer tests you against one of your own studies.
+ *
+ * Sparring plays anything; drilling holds you to what a chosen study
+ * chapter prepared. Your moves are checked against the chapter's tree —
+ * a wrong one is refused, named, and remembered as a miss — while the
+ * field keeps playing the OTHER side from the database, so the replies
+ * you face arrive in proportion to how often real games play them. When
+ * the field plays something the study never answered, that is a coverage
+ * gap: the drill ends there and the record keeps it, because a gap is
+ * fixed by editing the study, not by drilling harder. The record lives
+ * in the vault (server/repertoire.ts); missed positions form a review
+ * pool under the puzzle trainer's own rule — latest attempt decides.
+ */
+type Mode = 'spar' | 'drill';
+
+/** Position identity for the drill record: the FEN without its move
+    counters, so a transposition lands on one entry. */
+const fenKey = (fen: string): string => fen.split(' ').slice(0, 4).join(' ');
+
+interface ReviewEntry {
+  chapter: string;
+  key: string;
+  path: string[];
+  expected: string[];
+}
+
+const studyChild = (tree: MoveTree, id: NodeId, san: string): NodeId | null =>
+  getNode(tree, id).children.find((c) => getNode(tree, c).san === san) ?? null;
+
+const studyMoves = (tree: MoveTree, id: NodeId): string[] =>
+  getNode(tree, id).children.flatMap((c) => {
+    const san = getNode(tree, c).san;
+    return san ? [san] : [];
+  });
+
+/** The SANs from the root down to a node — the drill record's evidence. */
+const sansTo = (tree: MoveTree, id: NodeId): string[] =>
+  pathTo(tree, id).flatMap((n) => {
+    const san = getNode(tree, n).san;
+    return san ? [san] : [];
+  });
 
 /** orig+dest, queening a pawn that reaches the far rank (the opening never
     needs under-promotion). */
@@ -594,10 +638,108 @@ export function RepertoireView() {
   const [tipId, setTipId] = useState<NodeId>(tree.rootId);
   const [cursorId, setCursorId] = useState<NodeId>(tree.rootId);
   const [phase, setPhase] = useState<Phase>('idle');
+
+  // Drill mode: which study is being drilled and where the drill stands.
+  const [mode, setMode] = useState<Mode>('spar');
+  const [studyList, setStudyList] = useState<string[] | null>(null);
+  const [drillStudy, setDrillStudy] = useState('');
+  const [drillChapters, setDrillChapters] = useState<Chapter[] | null>(null);
+  const [chapterIdx, setChapterIdx] = useState(0);
+  const [summary, setSummary] = useState<{ review: ReviewEntry[]; gaps: number } | null>(null);
+  const [drillNotice, setDrillNotice] = useState<string | null>(null);
+  /** Why the line ended: past the database, the study's edge, or a gap. */
+  const [endKind, setEndKind] = useState<'book' | 'line' | 'gap'>('book');
+  const [gapMsg, setGapMsg] = useState('');
+  /** The live drill: the study tree being followed, mutated in place as
+      moves match — render state never reads it, so a ref is honest. */
+  const drillRef = useRef<{
+    studyTree: MoveTree;
+    nodeId: NodeId;
+    study: string;
+    chapter: string;
+    missed: Set<string>;
+  } | null>(null);
+
+  // The studies list, first needed when drilling is chosen.
+  useEffect(() => {
+    if (mode !== 'drill' || studyList !== null) return;
+    void fetch('/api/studies')
+      .then((r) => r.json())
+      .then((body: { studies?: { id: string }[] }) => {
+        const ids = (body.studies ?? []).map((st) => st.id);
+        setStudyList(ids);
+        setDrillStudy((d) => d || (ids[0] ?? ''));
+      })
+      .catch(() => setStudyList([]));
+  }, [mode, studyList]);
+
+  // The chosen study's chapters, through the same codec the editor uses.
+  useEffect(() => {
+    if (mode !== 'drill' || !drillStudy) return;
+    let cancelled = false;
+    setDrillChapters(null);
+    setChapterIdx(0);
+    void fetch(`/api/studies/${encodeURIComponent(drillStudy)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { pgn?: string } | null) => {
+        if (!cancelled) setDrillChapters(typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : []);
+      })
+      .catch(() => {
+        if (!cancelled) setDrillChapters([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, drillStudy]);
+
+  // What the record says about this chapter. Re-asked when a session ends
+  // (phase is a dependency) so the idle panel's counts are never stale.
+  useEffect(() => {
+    const chapter = drillChapters?.[chapterIdx];
+    if (mode !== 'drill' || !drillStudy || !chapter || phase !== 'idle') {
+      return;
+    }
+    let cancelled = false;
+    void fetch(
+      `/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}&chapter=${encodeURIComponent(chapter.name)}`,
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { review?: ReviewEntry[]; gaps?: unknown[] } | null) => {
+        if (!cancelled) {
+          setSummary(body ? { review: body.review ?? [], gaps: (body.gaps ?? []).length } : null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setSummary(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, drillStudy, drillChapters, chapterIdx, phase]);
+
+  /** One drilled position, into the vault. Losing the record must never
+      stop the drill, so failures are swallowed. */
+  const recordDrill = (entry: {
+    key: string;
+    result: 'hit' | 'miss' | 'gap';
+    path: string[];
+    expected?: string[];
+    played?: string;
+  }): void => {
+    const d = drillRef.current;
+    if (!d) return;
+    void fetch('/api/repertoire/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ study: d.study, chapter: d.chapter, ...entry }),
+    }).catch(() => {});
+  };
   const [flipped, setFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Guards against a stale reply landing after a new game.
   const runId = useRef(0);
+  /** Imperative chessground handle, for snapping a refused move back. */
+  const boardApi = useRef<BoardApi | null>(null);
 
   // Saving the sparred line into the vault: the session used to
   // evaporate — leaving lost the line, and nothing recorded that you
@@ -621,15 +763,24 @@ export function RepertoireView() {
     return { t, id };
   };
 
-  // Idle previews the chosen opening immediately, last move highlighted.
+  // Idle previews the chosen opening immediately, last move highlighted —
+  // or, in drill mode, the chosen chapter's starting position.
   useEffect(() => {
     if (phase !== 'idle') return;
+    if (mode === 'drill') {
+      const chapter = drillChapters?.[chapterIdx];
+      const t = chapter ? createTree(getNode(chapter.tree, chapter.tree.rootId).fen) : createTree();
+      setTree(t);
+      setTipId(t.rootId);
+      setCursorId(t.rootId);
+      return;
+    }
     const { t, id } = seedTree(template);
     setTree(t);
     setTipId(id);
     setCursorId(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, phase]);
+  }, [template, phase, mode, drillChapters, chapterIdx]);
 
   const node = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
@@ -641,6 +792,10 @@ export function RepertoireView() {
   const orientation = flipped ? (userColor === 'white' ? 'black' : 'white') : userColor;
 
   const canMove = phase === 'playing' && atTip && pos.turn === userColor;
+  // A chapter with no moves has nothing to drill.
+  const drillChapter = drillChapters?.[chapterIdx] ?? null;
+  const drillReady =
+    drillChapter !== null && getNode(drillChapter.tree, drillChapter.tree.rootId).children.length > 0;
   const dests = useMemo(() => (canMove ? legalDests(tree, cursorId) : new Map()), [canMove, tree, cursorId]);
 
   // Fetch the field's reply and play it. The runId guard drops replies that
@@ -692,6 +847,40 @@ export function RepertoireView() {
         setTree(added.tree);
         setTipId(added.nodeId);
         setCursorId(added.nodeId);
+        const d = drillRef.current;
+        if (d) {
+          const san = getNode(added.tree, added.nodeId).san ?? '';
+          const child = studyChild(d.studyTree, d.nodeId, san);
+          if (!child) {
+            // The field walked out of the study: a coverage gap, and the
+            // most useful thing a drill can find — the field probes the
+            // prep in probability order, so the commonest unanswered
+            // reply surfaces first. Fixed in the study, not by replaying.
+            const games = body.moves.reduce((sum, m) => sum + m.total, 0);
+            const pct = games > 0 ? Math.max(1, Math.round((100 * choice.total) / games)) : 0;
+            recordDrill({
+              key: fenKey(getNode(added.tree, added.nodeId).fen),
+              result: 'gap',
+              path: sansTo(added.tree, added.nodeId),
+              played: san,
+            });
+            setGapMsg(
+              t('The field answered {san} — {pct}% of games here — and your study holds no reply.', {
+                san,
+                pct,
+              }),
+            );
+            setEndKind('gap');
+            setPhase('ended');
+            return;
+          }
+          d.nodeId = child;
+          if (getNode(d.studyTree, child).children.length === 0) {
+            setEndKind('line');
+            setPhase('ended');
+            return;
+          }
+        }
         setPhase('playing');
       } catch {
         if (token === runId.current) {
@@ -707,6 +896,60 @@ export function RepertoireView() {
     if (!canMove) return;
     const added = addUci(tree, cursorId, toUci(tree, cursorId, orig, dest));
     if (!added) return;
+    const d = drillRef.current;
+    if (d) {
+      const san = getNode(added.tree, added.nodeId).san ?? '';
+      const key = fenKey(getNode(tree, cursorId).fen);
+      const expected = studyMoves(d.studyTree, d.nodeId);
+      const child = studyChild(d.studyTree, d.nodeId, san);
+      if (!child) {
+        // A recall miss: the move is refused, the book move is named, and
+        // the position waits to be answered right. Recorded once per
+        // position per session — the retry that follows the reveal is
+        // practice, not evidence.
+        if (!d.missed.has(key)) {
+          d.missed.add(key);
+          recordDrill({ key, result: 'miss', path: sansTo(tree, cursorId), expected, played: san });
+        }
+        setDrillNotice(
+          t('Your study plays {moves} here — try it again.', { moves: expected.join(' / ') }),
+        );
+        // The tree never takes the move, but chessground has already
+        // played it on screen. Let it stand for a beat — the same rhythm
+        // as the puzzle trainer's wrong-move rollback — then snap the
+        // board back to the position that is still waiting.
+        const back = getNode(tree, cursorId);
+        const backDests = dests;
+        const token = runId.current;
+        setTimeout(() => {
+          if (runId.current !== token) return;
+          boardApi.current?.set({
+            fen: back.fen,
+            turnColor: userColor,
+            // Square names either way — the same cast Board.tsx makes.
+            lastMove: back.uci ? ([back.uci.slice(0, 2), back.uci.slice(2, 4)] as Key[]) : undefined,
+            movable: { color: userColor, dests: backDests as Dests },
+          });
+        }, 650);
+        return;
+      }
+      if (!d.missed.has(key)) {
+        recordDrill({ key, result: 'hit', path: sansTo(tree, cursorId), expected, played: san });
+      }
+      setDrillNotice(null);
+      d.nodeId = child;
+      playSound(san.includes('x') ? 'capture' : 'move');
+      setTree(added.tree);
+      setTipId(added.nodeId);
+      setCursorId(added.nodeId);
+      if (getNode(d.studyTree, child).children.length === 0) {
+        setEndKind('line');
+        setPhase('ended');
+        return;
+      }
+      void reply(added.tree, added.nodeId, source, band);
+      return;
+    }
     playSound(getNode(added.tree, added.nodeId).san?.includes('x') ? 'capture' : 'move');
     setTree(added.tree);
     setTipId(added.nodeId);
@@ -717,11 +960,33 @@ export function RepertoireView() {
   const startGame = (): void => {
     runId.current += 1;
     const token = runId.current;
+    setFlipped(false);
+    setError(null);
+    setDrillNotice(null);
+    setGapMsg('');
+    setEndKind('book');
+    if (mode === 'drill') {
+      const chapter = drillChapters?.[chapterIdx];
+      if (!chapter) return;
+      drillRef.current = {
+        studyTree: chapter.tree,
+        nodeId: chapter.tree.rootId,
+        study: drillStudy,
+        chapter: chapter.name,
+        missed: new Set(),
+      };
+      const fresh = createTree(getNode(chapter.tree, chapter.tree.rootId).fen);
+      setTree(fresh);
+      setTipId(fresh.rootId);
+      setCursorId(fresh.rootId);
+      if (positionAt(fresh, fresh.rootId).turn === userColor) setPhase('playing');
+      else void reply(fresh, fresh.rootId, source, band);
+      return;
+    }
+    drillRef.current = null;
     const { t, id } = seedTree(template);
     setTree(t);
     setTipId(id);
-    setFlipped(false);
-    setError(null);
     const last = getNode(t, id);
     if (positionAt(t, id).turn === userColor) {
       // The line ends on the OPPONENT'S move and no reply will follow, so
@@ -750,9 +1015,60 @@ export function RepertoireView() {
     // Back to setup. The runId bump drops any in-flight reply; the idle
     // effect above reseeds the board to the chosen opening's preview.
     runId.current += 1;
+    drillRef.current = null;
     setFlipped(false);
     setError(null);
+    setDrillNotice(null);
+    setGapMsg('');
     setPhase('idle');
+  };
+
+  /**
+   * Re-drill a position the record says was fumbled: replay its path
+   * against both trees and start there. A study edited since the miss may
+   * no longer contain the line — then the drill starts from the top
+   * rather than inventing a position the study cannot answer for.
+   */
+  const startFromMiss = (): void => {
+    const chapter = drillChapters?.[chapterIdx];
+    const pool = summary?.review ?? [];
+    if (mode !== 'drill' || !chapter || pool.length === 0) return;
+    const entry = pool[Math.floor(Math.random() * pool.length)]!;
+    let gameTree = createTree(getNode(chapter.tree, chapter.tree.rootId).fen);
+    let gameId = gameTree.rootId;
+    let studyId: NodeId | null = chapter.tree.rootId;
+    for (const san of entry.path) {
+      const added = addSan(gameTree, gameId, san);
+      studyId = studyId ? studyChild(chapter.tree, studyId, san) : null;
+      if (!added || !studyId) {
+        studyId = null;
+        break;
+      }
+      gameTree = added.tree;
+      gameId = added.nodeId;
+    }
+    if (studyId === null) {
+      startGame();
+      return;
+    }
+    runId.current += 1;
+    setFlipped(false);
+    setError(null);
+    setDrillNotice(null);
+    setGapMsg('');
+    setEndKind('book');
+    drillRef.current = {
+      studyTree: chapter.tree,
+      nodeId: studyId,
+      study: drillStudy,
+      chapter: chapter.name,
+      missed: new Set(),
+    };
+    setTree(gameTree);
+    setTipId(gameId);
+    setCursorId(gameId);
+    if (positionAt(gameTree, gameId).turn === userColor) setPhase('playing');
+    else void reply(gameTree, gameId, source, band);
   };
 
   const goTo = (targetIndex: number): void => {
@@ -772,7 +1088,9 @@ export function RepertoireView() {
     loggedRun.current = runId.current;
     setLog(
       appendLog({
-        opening: template.name,
+        opening: drillRef.current
+          ? `${drillRef.current.study} — ${drillRef.current.chapter}`
+          : template.name,
         source: sourceLabel,
         moves: line.length - 1,
         at: new Date().toISOString(),
@@ -814,7 +1132,8 @@ export function RepertoireView() {
       <InfoTip label="Repertoire">
         {t(
           'Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.',
-        )}
+        )}{' '}
+        {t('Drilling a study checks your moves against it and remembers what you fumble.')}
       </InfoTip>
     </>
   );
@@ -842,6 +1161,7 @@ export function RepertoireView() {
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
           <Board
+            apiRef={boardApi}
             fen={node.fen}
             orientation={orientation}
             dests={dests}
@@ -880,6 +1200,21 @@ export function RepertoireView() {
           <Panel flush fit className="shrink-0">
             <PanelHeader title={t('New game')} />
             <div className="flex flex-col gap-3 p-3">
+              {/* Spar plays anything; drill holds you to a study. The two
+                  toggles share one shape — segmented, not actions. */}
+              <div className="flex gap-1">
+                {(['spar', 'drill'] as const).map((m) => (
+                  <Button
+                    key={m}
+                    size="sm"
+                    variant={mode === m ? 'primary' : 'secondary'}
+                    className="h-7 flex-1 pointer-coarse:h-8"
+                    onClick={() => setMode(m)}
+                  >
+                    {m === 'spar' ? t('Spar') : t('Drill a study')}
+                  </Button>
+                ))}
+              </div>
               <div className="flex gap-1">
                 {(['white', 'black'] as const).map((c) => (
                   <Button
@@ -941,14 +1276,85 @@ export function RepertoireView() {
                   />
                 </label>
               )}
-              <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">{t('Opening')}</span>
-                <OpeningPicker value={template} onChange={setTemplate} />
-              </label>
-              <Button variant="primary" size="sm" className="self-start" onClick={startGame}>
-                <Play className="size-3.5" />
-                {t('Start')}
-              </Button>
+              {mode === 'drill' ? (
+                studyList !== null && studyList.length === 0 ? (
+                  <p className="text-muted text-xs leading-relaxed">
+                    {t('No studies yet — create one in Studies, or save a sparred line first.')}
+                  </p>
+                ) : (
+                  <>
+                    <label className="flex flex-col gap-1">
+                      <span className="text-muted text-xs font-medium">{t('Study')}</span>
+                      <Select
+                        value={drillStudy}
+                        onChange={setDrillStudy}
+                        ariaLabel={t('Study to drill')}
+                        steady
+                        groups={[
+                          { options: (studyList ?? []).map((id) => ({ value: id, label: id })) },
+                        ]}
+                      />
+                    </label>
+                    {drillChapters && drillChapters.length > 1 && (
+                      <label className="flex flex-col gap-1">
+                        <span className="text-muted text-xs font-medium">{t('Chapter')}</span>
+                        <Select
+                          value={String(chapterIdx)}
+                          onChange={(v) => setChapterIdx(Number(v))}
+                          ariaLabel={t('Chapter to drill')}
+                          steady
+                          groups={[
+                            {
+                              options: drillChapters.map((c, i) => ({
+                                value: String(i),
+                                label: c.name,
+                              })),
+                            },
+                          ]}
+                        />
+                      </label>
+                    )}
+                  </>
+                )
+              ) : (
+                <label className="flex flex-col gap-1">
+                  <span className="text-muted text-xs font-medium">{t('Opening')}</span>
+                  <OpeningPicker value={template} onChange={setTemplate} />
+                </label>
+              )}
+              {/* A disabled Start with no word is a riddle; the reason
+                  is one line. */}
+              {mode === 'drill' && drillChapter && !drillReady && (
+                <p className="text-subtle text-xs leading-relaxed">
+                  {t('This chapter has no moves yet — nothing to drill.')}
+                </p>
+              )}
+              {/* What the record holds against this chapter, and a way to
+                  work it off. */}
+              {mode === 'drill' && summary && (summary.review.length > 0 || summary.gaps > 0) && (
+                <p className="text-subtle text-xs leading-relaxed">
+                  {summary.review.length > 0 &&
+                    t('{n} positions to review', { n: summary.review.length })}
+                  {summary.review.length > 0 && summary.gaps > 0 && ' · '}
+                  {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={mode === 'drill' && !drillReady}
+                  onClick={startGame}
+                >
+                  <Play className="size-3.5" />
+                  {t('Start')}
+                </Button>
+                {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
+                  <Button variant="secondary" size="sm" disabled={!drillReady} onClick={startFromMiss}>
+                    {t('Drill a missed position')}
+                  </Button>
+                )}
+              </div>
             </div>
           </Panel>
           {/* The record that you practised — the one trainer with none.
@@ -994,16 +1400,29 @@ export function RepertoireView() {
                 }
               />
               <div className="flex flex-col gap-3 p-3">
-                <p className="text-muted text-xs leading-relaxed">
+                <p
+                  className={cn(
+                    'text-xs leading-relaxed',
+                    (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
+                      ? 'text-warn'
+                      : 'text-muted',
+                  )}
+                >
                   {phase === 'ended'
-                    ? t('This line has run past the database — you are on your own now.')
+                    ? endKind === 'gap'
+                      ? gapMsg
+                      : endKind === 'line'
+                        ? t('End of your prepared line — every move matched the study.')
+                        : t('This line has run past the database — you are on your own now.')
                     : error
                       ? error
-                      : phase === 'thinking'
-                        ? 'Your opponent is replying…'
-                        : pos.turn === userColor && atTip
-                          ? 'Your move.'
-                          : 'Reviewing an earlier move — step to the end to keep playing.'}
+                      : drillNotice
+                        ? drillNotice
+                        : phase === 'thinking'
+                          ? 'Your opponent is replying…'
+                          : pos.turn === userColor && atTip
+                            ? 'Your move.'
+                            : 'Reviewing an earlier move — step to the end to keep playing.'}
                 </p>
                 {/* The dependency arrow, pointed back: Settings knows it
                     powers this, but this error never said Settings was

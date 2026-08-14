@@ -291,6 +291,28 @@ export const ko: Record<string, string> = {
   'Any event': '모든 대회',
   Apply: '적용',
   'Result and strength': '결과와 기력',
+  Adaptive: '적응형',
+  'follows your solving': '풀이 실력을 따라감',
+  Spar: '스파링',
+  'Drill a study': '스터디 드릴',
+  Chapter: '챕터',
+  'Study to drill': '드릴할 스터디',
+  'Chapter to drill': '드릴할 챕터',
+  'No studies yet — create one in Studies, or save a sparred line first.':
+    '아직 스터디가 없습니다. 스터디에서 만들거나, 스파링한 라인을 먼저 저장해 보세요.',
+  '{n} positions to review': '복습할 포지션 {n}개',
+  '{n} replies with no answer yet': '아직 대비 없는 응수 {n}개',
+  'Drill a missed position': '놓친 포지션 드릴',
+  'This chapter has no moves yet — nothing to drill.':
+    '이 챕터에는 아직 수가 없습니다. 드릴할 것이 없습니다.',
+  'Your study plays {moves} here — try it again.':
+    '여기서 스터디는 {moves}입니다. 다시 시도해 보세요.',
+  'The field answered {san} — {pct}% of games here — and your study holds no reply.':
+    '필드가 {san}으로 응수했습니다(이 포지션의 {pct}%). 스터디에 준비된 답이 없습니다.',
+  'End of your prepared line — every move matched the study.':
+    '준비한 라인의 끝입니다. 모든 수가 스터디와 일치했습니다.',
+  'Drilling a study checks your moves against it and remembers what you fumble.':
+    '스터디 드릴은 내 수를 스터디와 대조하고, 틀린 곳을 기억해 둡니다.',
   'No databases yet — build one from an uploaded collection.':
     '아직 데이터베이스가 없습니다. 업로드한 컬렉션으로 만들어 보세요.',
   'Your side, result and notes': '내 색, 결과, 노트',

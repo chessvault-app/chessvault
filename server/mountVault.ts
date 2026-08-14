@@ -6,6 +6,7 @@ import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { refGamesApi } from './refgames.ts';
+import { repertoireApi } from './repertoire.ts';
 import { studiesApi } from './studies.ts';
 import { DATA_PUZZLES, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
 
@@ -42,6 +43,8 @@ export interface VaultRoutes {
   refgamesDb?: string;
   /** The live index over the vault's own games. Derived, rebuildable. */
   myGamesDb?: string;
+  /** Directory holding the repertoire drill history. */
+  repertoireState?: string;
 }
 
 export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
@@ -71,4 +74,6 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
       : puzzlesApi(),
   );
   app.route('/api', paths.refgamesDb ? refGamesApi(paths.refgamesDb) : refGamesApi());
+  // The repertoire drill's record: which prepared positions were recalled.
+  app.route('/api', paths.repertoireState ? repertoireApi(paths.repertoireState) : repertoireApi());
 }

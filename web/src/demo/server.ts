@@ -53,6 +53,7 @@ function buildApp(): Hono {
     // Nothing is fetched for this one: it is built in the page from the
     // seeded vault, the same way the real server builds it from disk.
     myGamesDb: MYGAMES_DB,
+    repertoireState: `${VAULT}/repertoire`,
   });
 
   app.get('/api/health', (c) => c.json({ ok: true, crossOriginIsolated: false, demo: true }));
