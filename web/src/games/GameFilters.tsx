@@ -109,7 +109,7 @@ export function StrengthSelect({
       groups={[
         {
           options: [
-            { value: '0', label: t('Any strength') },
+            { value: '0', label: t('Any rating') },
             { value: '2300', label: '2300+' },
             { value: '2500', label: '2500+' },
             { value: '2700', label: '2700+' },

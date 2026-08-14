@@ -278,7 +278,7 @@ export const ko: Record<string, string> = {
   'Nothing matches that search': '검색 결과가 없습니다',
   'With notes': '노트가 있는 게임',
   Strength: '기력',
-  'Any strength': '모든 기력',
+  'Any rating': '모든 레이팅',
   'More filters': '필터 더 보기',
   'Filter games': '게임 거르기',
   Player: '플레이어',
