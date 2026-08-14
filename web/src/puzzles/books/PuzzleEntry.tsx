@@ -190,7 +190,11 @@ export function PuzzleEntry({
       />
     );
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    // Capped and centred like every other page: the scan pane at its
+    // default width plus the editor at its own 76rem ceiling is ~96rem,
+    // so up to there nothing moves — beyond it the workbench stops
+    // spreading across the window while the rest of the app stays put.
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] flex-col">
       {/* Same borderless header as everywhere else; image import lives in
           the editor's own Position panel, not up here. */}
       <div className="flex h-12 shrink-0 items-center gap-2 px-4">
