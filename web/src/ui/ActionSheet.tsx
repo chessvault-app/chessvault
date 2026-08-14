@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -65,6 +65,20 @@ export function ActionSheet({
   const [wide] = useState(() => window.matchMedia('(min-width: 40rem)').matches);
   const popover = wide && (at !== null || rect !== null);
 
+  // Where the popover's top edge goes. It starts under the anchor (or at
+  // the pointer) and is clamped to the viewport once the real height is
+  // known — a ⋯ on the last card of a long shelf used to open a menu
+  // whose rows were below the bottom of the screen. Measured once,
+  // before paint, so nothing visibly jumps and nothing re-anchors later.
+  const dialogEl = useRef<HTMLDivElement | null>(null);
+  const [top, setTop] = useState(() => (at ? at.y : rect ? rect.bottom + 4 : 0));
+  useLayoutEffect(() => {
+    if (!popover || !dialogEl.current) return;
+    const height = dialogEl.current.offsetHeight;
+    setTop((desired) => Math.max(8, Math.min(desired, window.innerHeight - height - 8)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
@@ -105,6 +119,7 @@ export function ActionSheet({
         // A sheet drags from anywhere on it; a popover is not a sheet.
         ref={(node) => {
           focusRef(node);
+          dialogEl.current = node;
           if (!popover) drag.ref(node);
         }}
         style={
@@ -115,12 +130,12 @@ export function ActionSheet({
                 // window so a right-click near an edge is still readable.
                 {
                   position: 'fixed',
-                  top: Math.min(at.y, window.innerHeight - 8 - 44 * actions.length - 32),
+                  top,
                   left: Math.min(at.x, window.innerWidth - 232),
                 }
               : {
                   position: 'fixed',
-                  top: rect!.bottom + 4,
+                  top,
                   right: Math.max(8, window.innerWidth - rect!.right),
                 }
         }
