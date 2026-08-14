@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { puzzlesApi } from './puzzles.ts';
@@ -249,5 +249,124 @@ describe('puzzles api (rating_counts fast path)', () => {
   it('404s on a filter that matches nothing', async () => {
     expect((await app.request('/api/puzzles/next?theme=nosuchtheme')).status).toBe(404);
     expect((await app.request('/api/puzzles/next?min=3000')).status).toBe(404);
+  });
+});
+
+describe('adaptive difficulty', () => {
+  let dir: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+  let statePath: string;
+
+  const makeDb = (path: string): void => {
+    const db = new Database(path);
+    db.exec(`
+      CREATE TABLE puzzles (
+        id TEXT PRIMARY KEY, fen TEXT NOT NULL, moves TEXT NOT NULL,
+        rating INTEGER NOT NULL, rd INTEGER NOT NULL, popularity INTEGER NOT NULL,
+        plays INTEGER NOT NULL, themes TEXT NOT NULL, game_url TEXT, opening_tags TEXT
+      );
+      CREATE TABLE themes (theme TEXT NOT NULL, rating INTEGER NOT NULL, id TEXT NOT NULL);
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('puzzles', '3');
+      INSERT INTO puzzles VALUES
+        ('low1', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1000, 80, 90, 10, 'endgame', NULL, NULL),
+        ('mid1', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1500, 80, 90, 10, 'endgame', NULL, NULL),
+        ('high1', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 2400, 80, 90, 10, 'endgame', NULL, NULL);
+    `);
+    db.close();
+  };
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzles-adaptive-'));
+    const dbPath = join(dir, 'puzzles.sqlite');
+    makeDb(dbPath);
+    statePath = join(dir, 'state', 'state.json');
+    puzzles = puzzlesApi(dbPath, join(dir, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterAll(() => {
+    puzzles.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const readSkill = (): { skill?: number; skillAttempts?: number } =>
+    JSON.parse(readFileSync(statePath, 'utf-8'));
+
+  it('seeds the estimate mid-pool and serves near it', async () => {
+    const res = await app.request('/api/puzzles/next?adaptive=1');
+    const { puzzle } = await res.json();
+    // A fresh estimate is 1500; the first window is [1400, 1700].
+    expect(puzzle.id).toBe('mid1');
+    expect(readSkill().skill).toBe(1500);
+    expect(readSkill().skillAttempts).toBe(0);
+  });
+
+  it('serves around a stored estimate, widening when the window is empty', async () => {
+    writeFileSync(
+      statePath,
+      JSON.stringify({ attempts: 0, wins: 0, streak: 0, skill: 2400, skillAttempts: 50 }),
+    );
+    const at2400 = await (await app.request('/api/puzzles/next?adaptive=1')).json();
+    expect(at2400.puzzle.id).toBe('high1');
+    // 1800: [1700, 2000] holds nothing, [1500, 2200] catches mid1.
+    writeFileSync(
+      statePath,
+      JSON.stringify({ attempts: 0, wins: 0, streak: 0, skill: 1800, skillAttempts: 50 }),
+    );
+    const at1800 = await (await app.request('/api/puzzles/next?adaptive=1')).json();
+    expect(at1800.puzzle.id).toBe('mid1');
+  });
+
+  it('moves the estimate on counted attempts and never reveals it', async () => {
+    writeFileSync(
+      statePath,
+      JSON.stringify({ attempts: 0, wins: 0, streak: 0, skill: 1500, skillAttempts: 50 }),
+    );
+    const win = await app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'high1', win: true }),
+    });
+    const winBody = await win.json();
+    expect(winBody.user).toEqual({ attempts: 1, wins: 1, streak: 1 });
+    const afterWin = readSkill();
+    // Beating a 2400 puzzle from 1500 is worth nearly the whole K of 20.
+    expect(afterWin.skill!).toBeGreaterThan(1515);
+    expect(afterWin.skillAttempts).toBe(51);
+
+    await app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: 'low1', win: false }),
+    });
+    // Losing to a 1000 puzzle costs nearly the whole K.
+    expect(readSkill().skill!).toBeLessThan(afterWin.skill! - 15);
+
+    const meta = await (await app.request('/api/puzzles/meta')).json();
+    expect(meta.user).toEqual({ attempts: 2, wins: 1, streak: 0 });
+  });
+
+  it('seeds from the attempt history when no estimate is stored yet', async () => {
+    const dir2 = mkdtempSync(join(tmpdir(), 'puzzles-adaptive-seed-'));
+    const dbPath = join(dir2, 'puzzles.sqlite');
+    makeDb(dbPath);
+    mkdirSync(join(dir2, 'state'), { recursive: true });
+    const lines = Array.from({ length: 10 }, () =>
+      JSON.stringify({ id: 'old', win: true, counted: true, puzzleRating: 2400 }),
+    );
+    // An uncounted replay and a prehistoric line without a rating fold in as nothing.
+    lines.push(JSON.stringify({ id: 'old', win: false, counted: false, puzzleRating: 2400 }));
+    lines.push(JSON.stringify({ id: 'older', win: false }));
+    writeFileSync(join(dir2, 'state', 'history.jsonl'), `${lines.join('\n')}\n`);
+    const seeded = puzzlesApi(dbPath, join(dir2, 'state'));
+    const app2 = new Hono().route('/api', seeded);
+    await app2.request('/api/puzzles/next?adaptive=1');
+    const state = JSON.parse(readFileSync(join(dir2, 'state', 'state.json'), 'utf-8'));
+    expect(state.skill).toBeGreaterThan(1700);
+    expect(state.skillAttempts).toBe(10);
+    seeded.closeDb();
+    rmSync(dir2, { recursive: true, force: true });
   });
 });

@@ -36,9 +36,40 @@ interface UserState {
   attempts: number;
   wins: number;
   streak: number;
+  /**
+   * The adaptive picker's skill estimate — a plain Elo against the
+   * puzzles' own ratings. It exists to CHOOSE puzzles, never to be
+   * shown: the house rule (difficulty is a word, a rating is not a
+   * verdict) still stands, so this never leaves state.json — every
+   * response strips it via publicState. Absent until the first adaptive
+   * pick or counted attempt seeds it from the whole attempt history.
+   */
+  skill?: number;
+  /** Counted attempts folded into `skill` — sets the K step. */
+  skillAttempts?: number;
 }
 
 const DEFAULT_STATE: UserState = { attempts: 0, wins: 0, streak: 0 };
+
+/** What the API answers with: the counters, never the skill estimate. */
+const publicState = (s: UserState): { attempts: number; wins: number; streak: number } => ({
+  attempts: s.attempts,
+  wins: s.wins,
+  streak: s.streak,
+});
+
+/** Everyone starts mid-pool; the clamp keeps a bad streak from walking
+    the estimate off the edge of the rating range. */
+const SKILL_START = 1500;
+const clampSkill = (v: number): number => Math.min(3000, Math.max(600, v));
+
+/** One Elo step: a fast K while the estimate is finding its level, a
+    settled one after. */
+const skillStep = (skill: number, folded: number, puzzleRating: number, win: boolean): number => {
+  const k = folded < 30 ? 40 : 20;
+  const expected = 1 / (1 + 10 ** ((puzzleRating - skill) / 400));
+  return clampSkill(skill + k * ((win ? 1 : 0) - expected));
+};
 
 /**
  * COUNT(*) over the rating index walks every matching row — measured at
@@ -237,6 +268,8 @@ export function puzzlesApi(
         attempts: raw.attempts ?? 0,
         wins: raw.wins ?? 0,
         streak: raw.streak ?? 0,
+        ...(typeof raw.skill === 'number' && { skill: raw.skill }),
+        ...(typeof raw.skillAttempts === 'number' && { skillAttempts: raw.skillAttempts }),
       };
     } catch {
       return { ...DEFAULT_STATE };
@@ -294,6 +327,32 @@ export function puzzlesApi(
       if (entry.counted !== false) trained.add(entry.id);
     }
     return [...latest].filter(([id, win]) => !win && trained.has(id)).map(([id]) => id);
+  };
+
+  /**
+   * The state with a live skill estimate, seeding it on first need by
+   * replaying every counted attempt in the history — each line carries
+   * the puzzle's rating, so the whole record folds in without touching
+   * the database. Old lines that predate the rating field are skipped
+   * rather than guessed at. The seeded value is persisted so the replay
+   * happens once, not per request.
+   */
+  const ensureSkill = (state: UserState): UserState & { skill: number; skillAttempts: number } => {
+    if (typeof state.skill === 'number') {
+      return { ...state, skill: state.skill, skillAttempts: state.skillAttempts ?? 0 };
+    }
+    let skill = SKILL_START;
+    let folded = 0;
+    for (const entry of historyEntries()) {
+      if (entry.counted === false) continue;
+      const rating = (entry as { puzzleRating?: unknown }).puzzleRating;
+      if (typeof rating !== 'number') continue;
+      skill = skillStep(skill, folded, rating, entry.win);
+      folded += 1;
+    }
+    const seeded = { ...state, skill, skillAttempts: folded };
+    writeState(seeded);
+    return seeded;
   };
 
   // Lazily opened read-only handle for the process lifetime. A rebuild
@@ -456,7 +515,7 @@ export function puzzlesApi(
   api.get('/puzzles/meta', (c) => {
     const db = puzzleDb();
     const user = readState();
-    if (!db) return c.json({ ready: false as const, user });
+    if (!db) return c.json({ ready: false as const, user: publicState(user) });
     const meta = Object.fromEntries(
       (db.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
         (r) => [r.key, r.value],
@@ -467,7 +526,7 @@ export function puzzlesApi(
       puzzles: Number(meta.puzzles ?? 0),
       themes: themeCounts(db),
       failed: failedPool().length,
-      user,
+      user: publicState(user),
     });
   });
 
@@ -501,6 +560,27 @@ export function puzzlesApi(
     }
 
     const theme = c.req.query('theme') || null;
+
+    // Adaptive: a window around the skill estimate, aimed slightly above
+    // it — training lives at the edge of what is comfortable. The centre
+    // is quantised so the bucket cache re-uses entries instead of growing
+    // one per Elo point, and the window widens if the pool (a rare theme,
+    // an extreme estimate) comes up empty.
+    if (c.req.query('adaptive')) {
+      const { skill } = ensureSkill(readState());
+      const centre = Math.round(skill / 50) * 50;
+      const attempted = attemptedIds();
+      for (const spread of [
+        [centre - 100, centre + 200],
+        [centre - 300, centre + 400],
+        [0, 9999],
+      ] as const) {
+        const puzzle = pickPuzzle(db, spread[0], spread[1], theme, attempted);
+        if (puzzle) return c.json({ puzzle });
+      }
+      return c.json({ error: 'No puzzle matches that filter.' }, 404);
+    }
+
     const min = Number(c.req.query('min')) || 0;
     const max = Number(c.req.query('max')) || 9999;
     const puzzle = pickPuzzle(db, min, max, theme, attemptedIds());
@@ -537,12 +617,16 @@ export function puzzlesApi(
     // Review attempts don't move the counters — the solver has seen the
     // answer — but they DO update the failed pool through the history.
     const counted = body.counted !== false;
-    const state = readState();
+    // Seeded BEFORE this attempt is appended, so the replay and the live
+    // update never fold the same attempt twice.
+    const state = counted ? ensureSkill(readState()) : readState();
     const next: UserState = counted
       ? {
           attempts: state.attempts + 1,
           wins: state.wins + (body.win ? 1 : 0),
           streak: body.win ? state.streak + 1 : 0,
+          skill: skillStep(state.skill!, state.skillAttempts!, row.rating, body.win),
+          skillAttempts: state.skillAttempts! + 1,
         }
       : state;
     if (counted) writeState(next);
@@ -557,7 +641,7 @@ export function puzzlesApi(
         at: new Date().toISOString(),
       })}\n`,
     );
-    return c.json({ user: next });
+    return c.json({ user: publicState(next) });
   });
 
   // Wipe counters, history, and with it the failed pool — everything the

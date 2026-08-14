@@ -72,6 +72,11 @@ interface Meta {
  */
 const DIFFICULTIES = [
   { id: 'any', label: 'Any', query: {} },
+  // The one band the trainer works out instead of being told: a hidden
+  // skill estimate, kept and updated server-side, picks puzzles just
+  // above your level. Still no rating shown anywhere — the estimate
+  // chooses, it is never a verdict (see server/puzzles.ts).
+  { id: 'adaptive', label: 'Adaptive', query: { adaptive: true }, hint: 'follows your solving' },
   { id: 'easy', label: 'Easy', query: { max: 1400 }, hint: 'up to 1400' },
   { id: 'medium', label: 'Medium', query: { min: 1400, max: 1800 }, hint: '1400–1800' },
   { id: 'hard', label: 'Hard', query: { min: 1800, max: 2200 }, hint: '1800–2200' },
@@ -274,6 +279,7 @@ function Trainer({
         else {
           if (selectedTheme) query.set('theme', selectedTheme);
           const range = DIFFICULTIES.find((d) => d.id === selectedDifficulty)?.query ?? {};
+          if ('adaptive' in range) query.set('adaptive', '1');
           if ('min' in range) query.set('min', String(range.min));
           if ('max' in range) query.set('max', String(range.max));
         }
@@ -816,7 +822,7 @@ function Trainer({
                     ? t('Finding a puzzle…')
                     : failed
                       ? t('Keep looking — find the best move.')
-                      : t(hiddenNote(difficulty !== 'any', Boolean(theme)))}
+                      : t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)))}
                 </p>
               </div>
             )}
@@ -944,14 +950,15 @@ function DifficultyRow({
   onPick: (id: DifficultyId) => void;
 }) {
   return (
-    <div className="flex gap-1">
+    // Six options no longer fit one row; two rows of three.
+    <div className="flex flex-wrap gap-1">
       {DIFFICULTIES.map((d) => (
         <Button
           key={d.id}
           size="sm"
           variant={active === d.id ? 'primary' : 'secondary'}
-          className="min-w-0 flex-1 px-0"
-          title={'hint' in d ? t('Difficulty {hint}', { hint: d.hint }) : t('Any difficulty')}
+          className="min-w-0 flex-1 basis-[30%] px-0"
+          title={'hint' in d ? t('Difficulty {hint}', { hint: t(d.hint) }) : t('Any difficulty')}
           onClick={() => onPick(d.id)}
         >
           {t(d.label)}
