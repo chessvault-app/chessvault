@@ -55,6 +55,32 @@ describe('tagLine motifs', () => {
     expect(tags.motif).toBeUndefined();
     expect(tags.sacrifice).toBeUndefined();
   });
+
+  it('does not call a queen trade a skewer (found live on the opening mainline)', () => {
+    // Qxd8+ Kxd8: the geometry (queen on d8, king in front of the f8
+    // rook... or on the file) matches, but the queen is simply captured.
+    const tags = tagLine('3qk3/8/8/8/8/8/8/3QK3 w - - 0 1', ['d1d8', 'e8d8']);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('does not call a capturable attacker a trap (found live: Nxc6 vs the d8 queen)', () => {
+    // After 5.Nxc6 the queen's only flight square is covered — but
+    // ...dxc6 takes the knight, and that ends the "hunt".
+    const tags = tagLine(INITIAL, [
+      'e2e4', 'e7e5', 'g1f3', 'b8c6', 'd2d4', 'e5d4', 'f3d4', 'g8f6', 'd4c6',
+    ]);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('does not call an ordinary trade sequence a sacrifice (found live on a QGD line)', () => {
+    // ...Bxc3 bxc3 dxc4 Qxc4: the balance dips while recaptures are
+    // pending, but nobody sacrificed anything.
+    const tags = tagLine(INITIAL, [
+      'd2d4', 'd7d5', 'c2c4', 'e7e6', 'b1c3', 'f8b4', 'd1b3', 'b8c6',
+      'e2e3', 'g8f6', 'a2a3', 'b4c3', 'b2c3', 'd5c4', 'b3c4',
+    ]);
+    expect(tags.sacrifice).toBeUndefined();
+  });
 });
 
 describe('summarisePlan', () => {
@@ -112,6 +138,13 @@ describe('summarisePlan', () => {
 
   it('returns null for a line too short to carry a plan', () => {
     expect(summarisePlan(INITIAL, ['e2e4', 'e7e5'])).toBeNull();
+  });
+
+  it('never reads central pawn play as a storm against an uncastled king (found live)', () => {
+    const plan = summarisePlan(INITIAL, [
+      'e2e4', 'e7e5', 'g1f3', 'b8c6', 'd2d4', 'e5d4', 'f3d4', 'g8f6',
+    ]);
+    expect(plan?.gestures.some((g) => g.type === 'storm')).not.toBe(true);
   });
 });
 

@@ -288,6 +288,12 @@ export function tagLine(fen: string, uciMoves: string[]): LineTags {
         const behind = attacks(step.piece, to, occupied.without(frontSq))
           .intersect(board[enemy])
           .without(frontSq);
+        // If the front piece can simply take an undefended slider there is
+        // no pin and no skewer — Qxd8+ Kxd8 is a trade, not a tactic.
+        // Found live: the opening mainline wore a skewer chip because the
+        // geometry alone matched the queen trade.
+        const sliderDefended = attackersOf(to, replay.mover, board, occupied).without(to).nonEmpty();
+        if (attacks(front, frontSq, occupied).has(to) && !sliderDefended) continue;
         for (const backSq of behind) {
           if (!onRayBeyond(to, frontSq, backSq)) continue;
           const back = board.get(backSq);
@@ -345,6 +351,17 @@ export function tagLine(fen: string, uciMoves: string[]): LineTags {
         cheapestOf(hunters, board) < VALUE[victim.role] ||
         attackersOf(s, enemy, board, occupied).isEmpty();
       if (!worthHunting) continue;
+      // A hunter that can itself be profitably captured breaks the trap —
+      // found live: 5.Nxc6 "trapped" the queen that ...dxc6 was about to
+      // solve. Escaping is not the only way out of a hunt.
+      let breakable = false;
+      for (const h of hunters) {
+        const hunter = board.get(h);
+        if (!hunter) continue;
+        const counter = attackersOf(h, enemy, board, occupied);
+        if (cheapestOf(counter, board) <= VALUE[hunter.role]) breakable = true;
+      }
+      if (breakable) continue;
 
       const flights = attacks(victim, s, occupied).diff(board[enemy]);
       if (flights.size() > 6) continue;
@@ -381,32 +398,56 @@ function pickMotif(found: MotifTag[]): MotifTag | undefined {
 /**
  * Sacrifice: the mover's material balance (relative to the start of the
  * line, measured after each opponent reply — a piece en prise for half a
- * move is bookkeeping, not a sacrifice) dips by two pawns or more, then
- * either recovers inside the line (sham — a combination) or never does
- * (real — the compensation is positional and the material is not coming
- * back). The same after-the-reply rule the review's brilliancy check uses.
+ * move is bookkeeping, not a sacrifice) dips by two pawns or more and
+ * STAYS down across consecutive measurements, then either recovers
+ * inside the line (sham — a combination) or never does (real — the
+ * compensation is positional and the material is not coming back).
+ *
+ * Two hard-won rules, both from watching it mislabel ordinary openings:
+ * the ledger runs over the WHOLE replay, because cutting at the motif
+ * horizon mid-exchange manufactured a phantom sacrifice out of a delayed
+ * recapture; and a single-measurement dip does not count — when the
+ * opponent captures first in a trade the balance is briefly down with
+ * nothing sacrificed by anyone. The one exception is a dip straight into
+ * mate, which has no second measurement to persist across.
  */
 function findSacrifice(replay: Replay): SacrificeTag | undefined {
   const start = balance(replay.startBoard, replay.mover);
 
+  const measured: { ply: number; delta: number }[] = [];
+  for (const step of replay.steps) {
+    if (step.piece.color === replay.mover) continue;
+    measured.push({ ply: step.ply, delta: balance(step.boardAfter, replay.mover) - start });
+  }
+  if (measured.length === 0) return undefined;
+
   let deepest = 0;
   let deepestPly = 0;
-  let recovered = false;
-
-  for (const step of replay.steps) {
-    if (step.ply >= MOTIF_HORIZON) break;
-    if (step.piece.color === replay.mover) continue;
-    const delta = balance(step.boardAfter, replay.mover) - start;
-    if (delta < deepest) {
-      deepest = delta;
-      deepestPly = step.ply;
+  let persistentAt = -1;
+  for (let i = 0; i < measured.length; i++) {
+    const m = measured[i]!;
+    if (m.delta < deepest) {
+      deepest = m.delta;
+      deepestPly = m.ply;
     }
-    if (deepest <= -2 && delta >= 0) recovered = true;
+    if (
+      persistentAt < 0 &&
+      m.ply < MOTIF_HORIZON && // the sacrifice itself must be in the trusted head
+      m.delta <= -2 &&
+      measured[i + 1] !== undefined &&
+      measured[i + 1]!.delta <= -2
+    ) {
+      persistentAt = i;
+    }
   }
-  if (deepest > -2) return undefined;
 
   const last = replay.steps.at(-1);
   const mates = last !== undefined && last.mates && last.piece.color === replay.mover;
+  const dipIntoMate = mates && measured.at(-1)!.delta <= -2;
+  if (persistentAt < 0 && !dipIntoMate) return undefined;
+
+  const recovered =
+    persistentAt >= 0 && measured.some((m, i) => i > persistentAt + 1 && m.delta >= -0.5);
   return { kind: recovered || mates ? 'sham' : 'real', amount: -deepest, ply: deepestPly };
 }
 
@@ -534,6 +575,19 @@ export function summarisePlan(fen: string, uciMoves: string[]): PlanSummary | nu
 
   // --- per-step reading ---------------------------------------------------
   const breakFiles = new Set<number>();
+  // Storms exist only against a king that has committed to a wing: found
+  // live reading 1.e4/2.d4 as a "kingside storm" against a king still on
+  // e8. Central kings get no storm, and only the wing's own three files
+  // count, only once a pawn actually crosses into the enemy half.
+  const kingFile = enemyKingStart !== undefined ? squareFile(enemyKingStart) : null;
+  const stormWing =
+    kingFile === null
+      ? null
+      : kingFile >= 5
+        ? { wing: 'kingside' as const, files: [5, 6, 7] }
+        : kingFile <= 2
+          ? { wing: 'queenside' as const, files: [0, 1, 2] }
+          : null;
   const stormFiles = new Set<number>();
   let stormFirstPly = 0;
   let kingSteps = 0;
@@ -560,9 +614,13 @@ export function summarisePlan(fen: string, uciMoves: string[]): PlanSummary | nu
         breakFiles.add(file);
         gestures.push({ type: 'break', square: makeSquare(move.to), ply: step.ply });
       }
-      if (enemyKingStart !== undefined && Math.abs(file - squareFile(enemyKingStart)) <= 2) {
-        if (stormFiles.size === 0) stormFirstPly = step.ply;
-        stormFiles.add(file);
+      if (stormWing !== null && stormWing.files.includes(file)) {
+        const crossed =
+          replay.mover === 'white' ? squareRank(move.to) >= 3 : squareRank(move.to) <= 4;
+        if (crossed) {
+          if (stormFiles.size === 0) stormFirstPly = step.ply;
+          stormFiles.add(file);
+        }
       }
       continue;
     }
@@ -669,9 +727,8 @@ export function summarisePlan(fen: string, uciMoves: string[]): PlanSummary | nu
     }
   }
 
-  if (stormFiles.size >= 2 && enemyKingStart !== undefined) {
-    const wing = squareFile(enemyKingStart) >= 4 ? 'kingside' : 'queenside';
-    gestures.push({ type: 'storm', wing, ply: stormFirstPly });
+  if (stormFiles.size >= 2 && stormWing !== null) {
+    gestures.push({ type: 'storm', wing: stormWing.wing, ply: stormFirstPly });
   }
   // A king WALK goes somewhere: two-plus steps ending at least two squares
   // from home. Without the distance test a king shuffling on the spot read
