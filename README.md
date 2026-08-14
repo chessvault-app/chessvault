@@ -75,7 +75,9 @@ is one connected body of work, and the links are what make it that.
   a **Repertoire** trainer that spars an opening against the field — the
   Lichess database filtered to a rating band, or any local reference database,
   the bundled one included, so it works offline (weighted-random replies,
-  seamless hand-off to the engine when the line leaves book).
+  seamless hand-off to the engine when the line leaves book) — or drills
+  one of your studies against that same field, remembering what you
+  fumble ([how it works](docs/repertoire.md)).
 - **Your own games, in the explorer.** Alongside the reference databases and the
   Lichess databases, the explorer has a **My games** source: every game
   in the vault, answering *what have I played here, and how did it go* —
@@ -456,6 +458,8 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
   become verified puzzle books, with a runbook.
 - [Prepared databases](docs/databases.md) — the puzzle and reference-game
   databases: built once, copied to the server, rarely touched again.
+- [The repertoire trainer](docs/repertoire.md) — sparring and drilling,
+  and exactly how the drill decides hit, miss and gap.
 - [ML history](docs/ml-history.md) — how the book reader got good.
 - [Update log](docs/update-log.md) — what changed, newest first.
 
