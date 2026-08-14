@@ -6,7 +6,7 @@ import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, pathTo, 
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
-import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, studyChild, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -669,6 +669,14 @@ export function RepertoireView() {
     study: string;
     /** For the practice memo: the chapter's name, or "Whole study". */
     label: string;
+    /** Where the shared lead-in ends — gap relevance turns on it. */
+    trunkPly: number;
+    trunkFen: string;
+    /** The trunk end's opening family, fetched once on first need;
+        undefined = not asked yet, null = the position has no name. */
+    subjectFamily?: string | null;
+    /** Position key -> opening family, so one deviation asks once. */
+    families: Map<string, string | null>;
     missed: Set<string>;
     gapNoted: Set<string>;
   } | null>(null);
@@ -738,6 +746,20 @@ export function RepertoireView() {
       cancelled = true;
     };
   }, [mode, drillStudy, drillChapters, chapterIdx, wholeStudy, phase]);
+
+  /** A position's opening family, from the vendored catalogue. Failures
+      answer null — no name, no filtering. */
+  const fetchFamily = async (fen: string): Promise<string | null> => {
+    try {
+      const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
+      const body = (await res.json().catch(() => null)) as {
+        opening?: { name?: string } | null;
+      } | null;
+      return openingFamily(body?.opening?.name ?? null);
+    } catch {
+      return null;
+    }
+  };
 
   /** One drilled position, into the vault. Losing the record must never
       stop the drill, so failures are swallowed. */
@@ -892,14 +914,38 @@ export function RepertoireView() {
             const uncovered = body.moves
               .filter((m) => m.total > 0 && !inBook(m))
               .sort((a, b) => b.total - a.total)[0];
-            if (uncovered && games > 0 && uncovered.total / games >= GAP_NOTE_SHARE) {
-              note = t(
-                'Gap noted — the field also plays {san} ({pct}% of games), and your study has no answer to it.',
-                { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
-              );
-              const probe = addUci(curTree, curId, uncovered.uci);
-              if (probe) {
-                const key = fenKey(getNode(probe.tree, probe.nodeId).fen);
+            const probe =
+              uncovered && games > 0 && uncovered.total / games >= GAP_NOTE_SHARE
+                ? addUci(curTree, curId, uncovered.uci)
+                : undefined;
+            if (uncovered && probe) {
+              // Relevance: a gap is a SIDELINE of the study's subject.
+              // Past the trunk the study branches here anyway, so
+              // everything counts; before it, only a deviation that
+              // stays in the trunk end's opening family does — 1...c5
+              // is not a hole in a Ruy Lopez study, 3...Nf6 is
+              // (lanph3re's point). An unnamed subject gives no basis
+              // to filter, so everything counts, as before.
+              const probeFen = getNode(probe.tree, probe.nodeId).fen;
+              const key = fenKey(probeFen);
+              let relevant = sansTo(curTree, curId).length >= drill.trunkPly;
+              if (!relevant) {
+                if (drill.subjectFamily === undefined) {
+                  drill.subjectFamily = await fetchFamily(drill.trunkFen);
+                }
+                let family = drill.families.get(key);
+                if (family === undefined) {
+                  family = await fetchFamily(probeFen);
+                  drill.families.set(key, family);
+                }
+                relevant =
+                  drill.subjectFamily === null ? true : family === drill.subjectFamily;
+              }
+              if (relevant) {
+                note = t(
+                  'Gap noted — the field also plays {san} ({pct}% of games), and your study has no answer to it.',
+                  { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
+                );
                 if (!drill.gapNoted.has(key)) {
                   drill.gapNoted.add(key);
                   recordDrill({
@@ -1056,12 +1102,16 @@ export function RepertoireView() {
       // drill that is each chapter opening from the same board.
       const cands = posIndex.get(fenKey(rootFen)) ?? [];
       if (cands.length === 0) return;
+      const trunk = trunkOf(scoped, posIndex, cands, rootFen);
       drillRef.current = {
         chapters: scoped,
         posIndex,
         cands,
         study: drillStudy,
         label: wholeStudy ? t('Whole study') : startChapter.name,
+        trunkPly: trunk.ply,
+        trunkFen: trunk.fen,
+        families: new Map(),
         missed: new Set(),
         gapNoted: new Set(),
       };
@@ -1159,12 +1209,17 @@ export function RepertoireView() {
     setEndKind('book');
     const posIndex = buildPosIndex(scoped);
     const cands = posIndex.get(fenKey(getNode(gameTree, gameId).fen)) ?? [{ ci, nodeId: studyId }];
+    const rootFen = getNode(chapter.tree, chapter.tree.rootId).fen;
+    const trunk = trunkOf(scoped, posIndex, posIndex.get(fenKey(rootFen)) ?? [], rootFen);
     drillRef.current = {
       chapters: scoped,
       posIndex,
       cands,
       study: drillStudy,
       label: wholeStudy ? t('Whole study') : chapter.name,
+      trunkPly: trunk.ply,
+      trunkFen: trunk.fen,
+      families: new Map(),
       missed: new Set(),
       gapNoted: new Set(),
     };

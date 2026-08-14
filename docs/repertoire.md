@@ -97,13 +97,29 @@ line, the pool would be e5 and c5 at 26 : 35 — the Sicilian slightly
 more often, as in life.
 
 The uncovered replies are not discarded. The most common one, if it
-accounts for **at least 5% of games** in the position, produces a quiet
-note under the status — "Gap noted — the field also plays c5 (35% of
-games), and your study has no answer to it" — and one `gap` record per
-position per session. The move itself is never played; the drill keeps
-testing memory. (Steering ending sessions on every rare sideline was
-the original design, and it made drills unfinishable — the field found
-the same hole every time instead of exercising the lines that exist.)
+accounts for **at least 5% of games** in the position *and is relevant
+to the study's subject*, produces a quiet note under the status — "Gap
+noted — the field also plays a6 (24% of games), and your study has no
+answer to it" — and one `gap` record per position per session. The move
+itself is never played; the drill keeps testing memory. (Steering
+ending sessions on every rare sideline was the original design, and it
+made drills unfinishable — the field found the same hole every time
+instead of exercising the lines that exist.)
+
+**Relevance** is what keeps 1...c5 from being reported as a hole in a
+Ruy Lopez study. The scope's **trunk** is the shared single-line
+lead-in every line plays before the study first branches — for a study
+of the Ruy sidelines, 1.e4 e5 2.Nf3 Nc6 3.Bb5. A deviation at or past
+the trunk's end is study territory and always counts (3...a6, or
+anything deep in a chapter). A deviation *before* the trunk ends counts
+only if the position it produces stays in the same opening family as
+the trunk's end — the ECO name's part before the colon. 3...Nf6 gives
+"Ruy Lopez: Berlin Defense", same family, reported; 1...c5 gives
+"Sicilian Defense", a different opening altogether, suppressed. A broad
+repertoire study that branches at once (a whole-1.e4 study) has a
+one-ply trunk, so every reply deviation is study territory and nothing
+is suppressed. Positions the catalogue does not name fall back to
+reporting everything, as before.
 
 Only when **nothing** is covered does the sampler fall back to the
 honest full-field distribution: it plays whatever it draws, records the

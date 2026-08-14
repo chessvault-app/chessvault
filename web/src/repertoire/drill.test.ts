@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree, getNode } from '@shared/tree';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
-import { advanceCands, buildPosIndex, expectedSans, fenKey, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, expectedSans, fenKey, openingFamily, trunkOf, type DrillCand } from './drill';
 
 /** A chapter whose mainline is the given SANs. */
 function chapterOf(name: string, sans: string[]): Chapter {
@@ -107,5 +107,43 @@ describe('repertoire drill candidates', () => {
     }
     expect(cands).toHaveLength(1);
     expect(expectedSans(chapters, cands)).toEqual(['e6']);
+  });
+});
+
+describe('gap relevance helpers', () => {
+  const seedOf = (chapters: Parameters<typeof buildPosIndex>[0]) => {
+    const posIndex = buildPosIndex(chapters);
+    const rootFen = getNode(chapters[0]!.tree, chapters[0]!.tree.rootId).fen;
+    return { posIndex, rootFen, seed: posIndex.get(fenKey(rootFen))! };
+  };
+
+  it('finds the trunk of a study that branches late', () => {
+    // Every line shares five plies before Black's answers diverge.
+    const chapters = [
+      chapterOf('Cozio', ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nge7']),
+      chapterOf('Berlin', ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nf6']),
+    ];
+    const { posIndex, rootFen, seed } = seedOf(chapters);
+    const trunk = trunkOf(chapters, posIndex, seed, rootFen);
+    expect(trunk.ply).toBe(5);
+    // 1...c5 deviates at ply 1 — before the trunk end, so its relevance
+    // falls to the opening-family comparison, which the view resolves.
+    expect(1).toBeLessThan(trunk.ply);
+    // 3...a6 deviates at ply 5 — study territory, always relevant.
+    expect(5).toBeGreaterThanOrEqual(trunk.ply);
+  });
+
+  it('a repertoire that branches at once has no trunk to hide behind', () => {
+    const chapters = [chapterOf('Open', ['e4', 'e5']), chapterOf('Sicilian', ['e4', 'c5'])];
+    const { posIndex, rootFen, seed } = seedOf(chapters);
+    // The trunk is just 1.e4: every reply deviation is at or past it.
+    expect(trunkOf(chapters, posIndex, seed, rootFen).ply).toBe(1);
+  });
+
+  it('splits an opening name into its family', () => {
+    expect(openingFamily('Ruy Lopez: Berlin Defense')).toBe('Ruy Lopez');
+    expect(openingFamily('Sicilian Defense')).toBe('Sicilian Defense');
+    expect(openingFamily(null)).toBe(null);
+    expect(openingFamily('')).toBe(null);
   });
 });

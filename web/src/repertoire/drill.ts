@@ -1,4 +1,4 @@
-import { getNode } from '@shared/tree';
+import { addSan, createTree, getNode } from '@shared/tree';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 
 /**
@@ -93,4 +93,42 @@ export const advanceCands = (
   }
   for (const hit of posIndex.get(resultKey) ?? []) push(hit);
   return out;
+};
+
+/**
+ * The scope's trunk: the shared single-line lead-in every line plays
+ * before the study first branches. Deviations past the trunk are inside
+ * the study's own territory; deviations before it are only relevant
+ * when they stay in the same opening (see openingFamily) — 1...c5 is
+ * not a hole in a Ruy Lopez study, 3...Nf6 is (lanph3re's point).
+ */
+export const trunkOf = (
+  chapters: Chapter[],
+  posIndex: Map<string, DrillCand[]>,
+  seed: DrillCand[],
+  startFen: string,
+): { ply: number; fen: string } => {
+  let game = createTree(startFen);
+  let tip = game.rootId;
+  let cands = seed;
+  let ply = 0;
+  for (;;) {
+    const exp = expectedSans(chapters, cands);
+    if (exp.length !== 1) break;
+    const added = addSan(game, tip, exp[0]!);
+    if (!added) break;
+    game = added.tree;
+    tip = added.nodeId;
+    cands = advanceCands(chapters, posIndex, cands, exp[0]!, fenKey(getNode(game, tip).fen));
+    if (cands.length === 0) break;
+    ply += 1;
+  }
+  return { ply, fen: getNode(game, tip).fen };
+};
+
+/** "Sicilian Defense: Najdorf Variation" -> "Sicilian Defense". */
+export const openingFamily = (name: string | null | undefined): string | null => {
+  if (!name) return null;
+  const family = name.split(':')[0]!.trim();
+  return family || null;
 };
