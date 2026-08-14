@@ -201,6 +201,10 @@ export class StockfishEngine {
     this.send(`setoption name Threads value ${threads}`);
     this.send(`setoption name Hash value ${this.options.hashMb}`);
     this.send(`setoption name MultiPV value ${this.options.multiPv}`);
+    // Free extra output: the engine's own model of how this eval converts
+    // to win/draw/loss at its strength. An engine without the option just
+    // logs a complaint that handleLine ignores.
+    this.send('setoption name UCI_ShowWDL value true');
   }
 
   private isMultiThreaded(): boolean {

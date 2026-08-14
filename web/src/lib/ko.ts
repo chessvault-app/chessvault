@@ -1287,4 +1287,8 @@ export const ko: Record<string, string> = {
   "Nothing attempted yet": "아직 시도한 것이 없습니다",
   "{solved} solved · {failed} failed · {left} remaining": "{solved}개 해결 · {failed}개 실패 · {left}개 남음",
   "{games} games · {positions} positions · {mb} MB": "{games}개 게임 · {positions}개 포지션 · {mb} MB",
+
+  // --- engine explanations --------------------------------------------------
+  'White wins · draw · Black wins, in per cent — the engine’s own estimate at full strength.':
+    '백 승 · 무승부 · 흑 승 (퍼센트) — 엔진이 자기 기량 기준으로 추정한 값입니다.',
 };

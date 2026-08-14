@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatScore, parseBestMove, parseInfo, toWhitePov, winningChances } from './uci.ts';
+import {
+  formatScore,
+  formatWdl,
+  parseBestMove,
+  parseInfo,
+  toWhitePov,
+  wdlToWhitePov,
+  winningChances,
+} from './uci.ts';
 
 describe('parseInfo', () => {
   it('parses a full info line', () => {
@@ -46,6 +54,17 @@ describe('parseInfo', () => {
     expect(info!.moves).toEqual(['a7a8q', 'b8a8']);
     expect(info!.multipv).toBe(2);
   });
+
+  it('parses wdl alongside the score', () => {
+    const info = parseInfo(
+      'info depth 20 seldepth 30 multipv 1 score cp 35 wdl 340 610 50 nodes 1000 nps 100 time 10 pv e2e4 e7e5',
+    );
+    expect(info!.wdl).toEqual([340, 610, 50]);
+    expect(info!.cp).toBe(35);
+    expect(info!.moves).toEqual(['e2e4', 'e7e5']);
+    // And its absence stays absent, not [NaN, NaN, NaN].
+    expect(parseInfo('info depth 5 score cp 10 pv e2e4')!.wdl).toBeUndefined();
+  });
 });
 
 describe('parseBestMove', () => {
@@ -72,6 +91,17 @@ describe('toWhitePov', () => {
     expect(toWhitePov({ cp: 200 }, 'black')).toEqual({ cp: -200 });
     expect(toWhitePov({ mate: 2 }, 'black')).toEqual({ mate: -2 });
     expect(toWhitePov({ mate: -2 }, 'black')).toEqual({ mate: 2 });
+  });
+});
+
+describe('wdl helpers', () => {
+  it('swaps win and loss for Black to move', () => {
+    expect(wdlToWhitePov([340, 610, 50], 'black')).toEqual([50, 610, 340]);
+    expect(wdlToWhitePov([340, 610, 50], 'white')).toEqual([340, 610, 50]);
+  });
+
+  it('formats per mille as per cent', () => {
+    expect(formatWdl([340, 610, 50])).toBe('34·61·5');
   });
 });
 

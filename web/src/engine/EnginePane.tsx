@@ -9,7 +9,7 @@ import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { formatPv } from './pv.ts';
-import { formatScore, toWhitePov, type PvLine } from './uci.ts';
+import { formatScore, formatWdl, toWhitePov, wdlToWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
 
 /**
@@ -82,6 +82,18 @@ export function EngineBlock({ className }: { className?: string }) {
                   {top.selDepth ? `/${top.selDepth}` : ''}
                   {finished ? '' : '…'}
                 </span>
+                {/* The practical reading of the number: how the engine's own
+                    model says this converts to results at its full strength.
+                    White POV like the score, so the two never disagree in
+                    sign. */}
+                {top.wdl && (
+                  <span
+                    className="text-subtle font-mono text-[10px] normal-case tabular-nums tracking-normal"
+                    title={t('White wins · draw · Black wins, in per cent — the engine’s own estimate at full strength.')}
+                  >
+                    {formatWdl(wdlToWhitePov(top.wdl, turn))}
+                  </span>
+                )}
               </>
             )}
           </span>

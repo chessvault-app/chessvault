@@ -21,6 +21,13 @@ export interface PvLine {
   timeMs?: number;
   /** True when the score is a lower/upper bound rather than exact. */
   bound?: 'lower' | 'upper';
+  /**
+   * Win/draw/loss in per mille from the side to move's point of view,
+   * reported when UCI_ShowWDL is on. The engine's own model of how its
+   * evaluation converts to results at ITS playing strength — a practical
+   * reading of the score, not another score.
+   */
+  wdl?: [number, number, number];
 }
 
 /**
@@ -69,6 +76,15 @@ export function parseInfo(line: string): PvLine | undefined {
         }
         break;
       }
+      case 'wdl': {
+        const w = Number(tokens[++i]);
+        const d = Number(tokens[++i]);
+        const l = Number(tokens[++i]);
+        if (Number.isFinite(w) && Number.isFinite(d) && Number.isFinite(l)) {
+          result.wdl = [w, d, l];
+        }
+        break;
+      }
       case 'pv':
         // `pv` is always last: everything after it is the variation.
         result.moves = tokens.slice(i + 1).filter(Boolean);
@@ -94,7 +110,21 @@ export function parseInfo(line: string): PvLine | undefined {
     ...(result.nps !== undefined ? { nps: result.nps } : {}),
     ...(result.timeMs !== undefined ? { timeMs: result.timeMs } : {}),
     ...(result.bound ? { bound: result.bound } : {}),
+    ...(result.wdl ? { wdl: result.wdl } : {}),
   };
+}
+
+/** Compact WDL display in per cent, e.g. `34·61·5`. */
+export function formatWdl(wdl: [number, number, number]): string {
+  return wdl.map((v) => Math.round(v / 10)).join('·');
+}
+
+/** WDL to White's point of view: for Black to move, wins and losses swap. */
+export function wdlToWhitePov(
+  wdl: [number, number, number],
+  turn: 'white' | 'black',
+): [number, number, number] {
+  return turn === 'white' ? wdl : [wdl[2], wdl[1], wdl[0]];
 }
 
 /** Extract the move from a `bestmove` line. */
