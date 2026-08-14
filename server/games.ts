@@ -139,12 +139,23 @@ function parseFileSummaries(dir: string, path: string): GameSummary[] {
   return games;
 }
 
+// Cached by mtime like the summaries above, and for the same reason:
+// /games/pgn is hit once per game OPENED, so browsing through a 300-game
+// month used to re-read and re-parse the same 1–2 MB file on every click
+// while the summary cache sat beside it. Callers must not mutate the
+// returned games.
+const gamesCache = new Map<string, { mtimeMs: number; games: Game<PgnNodeData>[] }>();
+
 function parseGames(path: string): Game<PgnNodeData>[] {
+  const mtimeMs = statSync(path).mtimeMs;
+  const cached = gamesCache.get(path);
+  if (cached && cached.mtimeMs === mtimeMs) return cached.games;
   const games: Game<PgnNodeData>[] = [];
   const parser = new PgnParser((game, err) => {
     if (!err) games.push(game);
   });
   parser.parse(readFileSync(path, 'utf-8'));
+  gamesCache.set(path, { mtimeMs, games });
   return games;
 }
 
@@ -364,7 +375,11 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
 
     const ids: string[] = [];
     for (const index of wanted) {
-      const game = games[index]!;
+      // Copied headers: parseGames now serves a shared cached object, and
+      // stamping VaultSide onto it would leak into every later export of
+      // the same archive game.
+      const source = games[index]!;
+      const game = { ...source, headers: new Map(source.headers) };
       const white = (game.headers.get('White') ?? '').toLowerCase();
       const black = (game.headers.get('Black') ?? '').toLowerCase();
       if (pathUser === white) game.headers.set('VaultSide', 'white');
