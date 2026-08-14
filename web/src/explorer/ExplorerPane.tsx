@@ -865,7 +865,6 @@ export function BooksManager({
               key={b.name}
               book={b}
               busy={running}
-              onRebuild={() => void build(b.name, b.sources)}
               onDelete={async () => {
                 const failure = await deleteBook(b.name);
                 if (failure) setError(failure);
@@ -1004,26 +1003,25 @@ export function BooksManager({
 function BookRow({
   book,
   busy,
-  onRebuild,
   onDelete,
 }: {
   book: BookInfo;
   busy: boolean;
-  onRebuild: () => void;
   onDelete: () => void;
 }) {
   return (
     <li className="bg-surface border-line flex items-center gap-2 rounded-md border px-2 py-1.5">
       <div className="min-w-0 flex-1">
         <p className="text-fg truncate font-mono font-semibold">{book.name}</p>
-        {/* On screen, not only in the Rebuild tooltip: a phone has no hover,
-            and "rebuild" means nothing until you know it re-reads THESE
-            files — links into vault/sources, never copies, so a rebuild
-            picks up whatever they say now. */}
+        {/* There is no Rebuild any more (lanph3re's call: the same files
+            always build the same book, and re-reading changed uploads is
+            a scenario nobody hits). Building under an existing name still
+            replaces that book, which covers it. The sources stay on
+            screen: they say what the book IS. */}
         <p className="text-subtle truncate text-[0.6875rem]">
           {book.sources.length > 0
-            ? t('Rebuilds from {sources}', { sources: book.sources.join(', ') })
-            : t('Came with the app — nothing to rebuild from')}
+            ? t('Built from {sources}', { sources: book.sources.join(', ') })
+            : t('Came with the app')}
         </p>
         <p className="text-subtle tabular-nums">
           {t('{games} games · {positions} positions · {mb} MB', {
@@ -1033,19 +1031,6 @@ function BookRow({
           })}
         </p>
       </div>
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        disabled={busy || book.sources.length === 0}
-        onClick={onRebuild}
-        title={
-          book.sources.length > 0
-            ? t('Rebuild from {sources}', { sources: book.sources.join(', ') })
-            : t('Original sources unknown')
-        }
-      >
-        <Hammer className="size-3.5" />
-      </Button>
       <ConfirmSheet
         icon={Trash2}
         triggerTitle="Delete this book (the source PGNs stay)"
