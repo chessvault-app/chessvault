@@ -4,6 +4,7 @@ import {
   Eye,
   Loader2,
   Plus,
+  SlidersHorizontal,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -21,9 +22,11 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 
 import { Select } from '@/ui/Select';
-import { Input, SearchInput } from '@/ui/Input';
+import { DateInput, Input, SearchInput } from '@/ui/Input';
+import { Modal } from '@/ui/Modal';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { FilterRow, ResultSelect, type ResultFilter } from './GameFilters';
+import { Field } from '@/ui/Field';
 import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -44,6 +47,158 @@ interface RefGame {
   eco: string | null;
   opening: string | null;
 }
+
+/**
+ * The structured search, drafted in a window and applied on Done.
+ *
+ * "List the games [who] played [opening] as [white/black] at [dates] in
+ * [tournament], and [won/lost/drew]" — every slot its own field, every
+ * combination composable, resolved server-side (lanph3re's ask). A draft
+ * rather than live application: these are text fields, and re-searching
+ * two million rows per keystroke would be noise.
+ */
+function EliteFiltersWindow({
+  initial,
+  onApply,
+  onClose,
+}: {
+  initial: EliteFilters;
+  onApply: (filters: EliteFilters) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<EliteFilters>(initial);
+  const patch = (part: Partial<EliteFilters>): void => setDraft((d) => ({ ...d, ...part }));
+
+  return (
+    <Modal title="Filter games" icon={SlidersHorizontal} onClose={onClose}>
+      <Field label="Player">
+        <div className="flex gap-2">
+          <Input
+            autoFocus
+            inputSize="sm"
+            value={draft.player}
+            onChange={(e) => patch({ player: e.target.value })}
+            placeholder={t('Any player')}
+            className="min-w-0 flex-1"
+          />
+          <Select
+            value={draft.side}
+            onChange={(v) => patch({ side: v as EliteFilters['side'] })}
+            ariaLabel={t('Side')}
+            size="sm"
+            groups={[
+              {
+                options: [
+                  { value: 'any', label: t('Either side') },
+                  { value: 'white', label: t('As White') },
+                  { value: 'black', label: t('As Black') },
+                ],
+              },
+            ]}
+          />
+          <Select
+            value={draft.outcome}
+            onChange={(v) => patch({ outcome: v as EliteFilters['outcome'] })}
+            ariaLabel={t('Outcome')}
+            size="sm"
+            groups={[
+              {
+                options: [
+                  { value: 'any', label: t('Any outcome') },
+                  { value: 'won', label: t('Won') },
+                  { value: 'lost', label: t('Lost') },
+                  { value: 'drawn', label: t('Drew') },
+                ],
+              },
+            ]}
+          />
+        </div>
+        {/* The outcome is the player's, so it needs one. */}
+        {draft.outcome !== 'any' && !draft.player.trim() && (
+          <p className="text-subtle mt-1 text-xs">{t('Won or lost by whom? Name a player above.')}</p>
+        )}
+      </Field>
+
+      <Field label="Opening or ECO">
+        <Input
+          inputSize="sm"
+          value={draft.opening}
+          onChange={(e) => patch({ opening: e.target.value })}
+          placeholder={t('Najdorf, B90…')}
+          className="w-full"
+        />
+      </Field>
+
+      <Field label="Tournament">
+        <Input
+          inputSize="sm"
+          value={draft.event}
+          onChange={(e) => patch({ event: e.target.value })}
+          placeholder={t('Any event')}
+          className="w-full"
+        />
+      </Field>
+
+      <Field label="Played between">
+        <div className="flex items-center gap-2">
+          <DateInput
+            value={draft.from}
+            onChange={(e) => patch({ from: e.target.value })}
+            aria-label={t('From date')}
+            className="w-[9.5rem]"
+          />
+          <span className="text-subtle" aria-hidden>
+            –
+          </span>
+          <DateInput
+            value={draft.to}
+            onChange={(e) => patch({ to: e.target.value })}
+            aria-label={t('To date')}
+            className="w-[9.5rem]"
+          />
+        </div>
+      </Field>
+
+      <div className="mt-1 flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mr-auto"
+          onClick={() => setDraft(EMPTY_ELITE_FILTERS)}
+        >
+          {t('Clear filters')}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          {t('Cancel')}
+        </Button>
+        <Button variant="primary" size="sm" onClick={() => onApply(draft)}>
+          {t('Apply')}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+/** The structured search constraints, all optional, all composable. */
+interface EliteFilters {
+  player: string;
+  side: 'any' | 'white' | 'black';
+  outcome: 'any' | 'won' | 'lost' | 'drawn';
+  opening: string;
+  event: string;
+  from: string;
+  to: string;
+}
+
+const EMPTY_ELITE_FILTERS: EliteFilters = {
+  player: '',
+  side: 'any',
+  outcome: 'any',
+  opening: '',
+  event: '',
+  from: '',
+  to: '',
+};
 
 export interface RefDb {
   name: string;
@@ -375,8 +530,24 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   // was typed.
   const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
   const [minElo, setMinElo] = useState(0);
-  const filterRef = useRef({ resultFilter, minElo });
-  filterRef.current = { resultFilter, minElo };
+  /**
+   * The structured constraints — "[who] played [opening] as [side] at
+   * [dates] in [event] and [won/lost/drew]", every slot optional and
+   * composable (lanph3re's ask). Drafted in a window and applied on Done:
+   * text fields firing a 2M-row search per keystroke would be noise.
+   */
+  const [structured, setStructured] = useState<EliteFilters>(EMPTY_ELITE_FILTERS);
+  const [editingFilters, setEditingFilters] = useState(false);
+  const structuredOn =
+    structured.player !== '' ||
+    structured.opening !== '' ||
+    structured.event !== '' ||
+    structured.from !== '' ||
+    structured.to !== '' ||
+    structured.side !== 'any' ||
+    structured.outcome !== 'any';
+  const filterRef = useRef({ resultFilter, minElo, structured });
+  filterRef.current = { resultFilter, minElo, structured };
 
   const searchSeq = useRef(0);
   const search = useCallback(async (q: string, offset: number, db: string | null) => {
@@ -384,11 +555,20 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     setLoading(true);
     try {
       const f = filterRef.current;
+      const params = new URLSearchParams({ q, offset: String(offset) });
+      if (db) params.set('db', db);
+      if (f.resultFilter !== 'any') params.set('result', f.resultFilter);
+      if (f.minElo > 0) params.set('minElo', String(f.minElo));
+      const st = f.structured;
+      if (st.player) params.set('player', st.player);
+      if (st.player && st.side !== 'any') params.set('side', st.side);
+      if (st.player && st.outcome !== 'any') params.set('outcome', st.outcome);
+      if (st.opening) params.set('opening', st.opening);
+      if (st.event) params.set('event', st.event);
+      if (st.from) params.set('from', st.from);
+      if (st.to) params.set('to', st.to);
       const data = await api<{ total: number | null; rows: RefGame[] }>(
-        `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}` +
-          (db ? `&db=${encodeURIComponent(db)}` : '') +
-          (f.resultFilter !== 'any' ? `&result=${encodeURIComponent(f.resultFilter)}` : '') +
-          (f.minElo > 0 ? `&minElo=${f.minElo}` : ''),
+        `/api/refgames/search?${params.toString()}`,
       );
       if (seq !== searchSeq.current) return;
       // Only the first page of a search carries a total — counting matches
@@ -444,7 +624,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     }
     void search(query, 0, curDb);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resultFilter, minElo]);
+  }, [resultFilter, minElo, structured]);
 
   // Infinite scroll: a sentinel row near the list's end pulls the next
   // page as it approaches the viewport.
@@ -637,6 +817,29 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           },
         ]}
       />
+      {/* The rest of the constraints — who, which side, which outcome,
+          which opening, which tournament, which dates — live in a window:
+          they are text, not chips, and a lit icon says they are on. */}
+      <Button
+        variant="secondary"
+        size="icon-sm"
+        active={structuredOn}
+        title={t('More filters')}
+        className="shrink-0"
+        onClick={() => setEditingFilters(true)}
+      >
+        <SlidersHorizontal className="size-3.5" />
+      </Button>
+      {editingFilters && (
+        <EliteFiltersWindow
+          initial={structured}
+          onApply={(next) => {
+            setEditingFilters(false);
+            setStructured(next);
+          }}
+          onClose={() => setEditingFilters(false)}
+        />
+      )}
     </FilterRow>
   );
 

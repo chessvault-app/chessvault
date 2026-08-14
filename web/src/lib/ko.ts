@@ -283,6 +283,21 @@ export const ko: Record<string, string> = {
   'With notes': '노트가 있는 게임',
   Strength: '기력',
   'Any strength': '모든 기력',
+  'More filters': '필터 더 보기',
+  'Filter games': '게임 거르기',
+  Player: '플레이어',
+  'Any player': '모든 플레이어',
+  'Any outcome': '모든 결과',
+  'Won or lost by whom? Name a player above.': '누구의 승패인가요? 위에 플레이어를 입력하세요.',
+  'Opening or ECO': '오프닝 또는 ECO',
+  'Najdorf, B90…': '나이도르프, B90…',
+  Tournament: '대회',
+  'Any event': '모든 대회',
+  Apply: '적용',
+  'Index positions': '포지션 색인 만들기',
+  '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.':
+    '“{name}”에는 아직 포지션 색인이 없습니다. 색인은 이미 들어 있는 기보를 읽어 만들며 — 올릴 것은 없습니다 — 1~2분 걸립니다.',
+  'indexing failed — see the Databases page': '색인 실패 — 데이터베이스 페이지를 확인하세요',
   'Nothing matches those filters': '필터에 맞는 게임이 없습니다',
   'No game in your collection gets through the filters above. Clearing them shows the whole collection again.':
     '위 필터를 통과하는 게임이 컬렉션에 없습니다. 필터를 지우면 전체 컬렉션이 다시 보입니다.',
@@ -730,8 +745,8 @@ export const ko: Record<string, string> = {
   'Reference games': '참고 게임',
   'Opening books and reference games, built from uploaded PGNs':
     '올린 PGN으로 만드는 오프닝 북과 참고 게임',
-  'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser.':
-    '둘 다 같은 PGN 모음으로 만듭니다: 오프닝 북은 탐색기와 레퍼토리 훈련용 포지션 색인이고, 참고 데이터베이스는 엘리트 게임 브라우저용 전체 기보 색인입니다.',
+  'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser — and carries a position index of its own, so the explorer can answer from it with filters.':
+    '둘 다 같은 PGN 모음으로 만듭니다: 오프닝 북은 탐색기와 레퍼토리 훈련용 포지션 색인이고, 참고 데이터베이스는 엘리트 게임 브라우저용 전체 기보 색인입니다 — 자체 포지션 색인도 갖추어 탐색기가 필터와 함께 답할 수 있습니다.',
   'Delete this database — deleting is final': '이 데이터베이스 삭제 — 지우면 그것으로 끝입니다',
   'PGN collections': 'PGN 모음',
   'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export — and the same uploads build opening books.':
