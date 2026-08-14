@@ -29,12 +29,25 @@ import {
 const SOURCE_PANE_WIDTH_KEY = 'vault:panel-w:book-source';
 const SOURCE_PANE_DEFAULT_W = 340;
 
-export function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvidence }) {
+export function SourcePane({
+  slug,
+  evidence,
+  maxWidth,
+}: {
+  slug: string;
+  evidence: BookEvidence;
+  /** The most the pane may take of the row it shares with the editor —
+      a width dragged out on a big monitor must not squeeze the editor
+      off a smaller one. The STORED width survives untouched, so the big
+      monitor gets it back. */
+  maxWidth?: number;
+}) {
   const [tab, setTab] = useState<'diagram' | 'solutions'>('diagram');
   const [width, setWidth] = useState<number>(() => {
     const stored = Number(localStorage.getItem(SOURCE_PANE_WIDTH_KEY));
     return Number.isFinite(stored) && stored > 0 ? stored : SOURCE_PANE_DEFAULT_W;
   });
+  const shown = Math.max(280, Math.min(width, maxWidth ?? width));
   const drag = useRef<{ x: number; w: number } | null>(null);
   useEffect(() => {
     if (width === SOURCE_PANE_DEFAULT_W) localStorage.removeItem(SOURCE_PANE_WIDTH_KEY);
@@ -42,7 +55,7 @@ export function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvi
   }, [width]);
   return (
     <div className="flex min-h-0 shrink-0">
-      <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width }}>
+      <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width: shown }}>
       {evidence.solutionPage && (
         <PaneTabs
           className="mb-1"
@@ -56,7 +69,7 @@ export function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvi
       )}
       {tab === 'diagram' && evidence.page ? (
         <>
-          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={width - 32} />
+          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={shown - 32} />
           <p className="text-subtle text-xs leading-relaxed">
             {t('The book’s own scan — make the board match it.')}
           </p>
@@ -65,7 +78,7 @@ export function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvi
         <ZoomablePage
           src={diagramUrl(slug, evidence.solutionPage)}
           alt={t('solutions page')}
-          width={width - 32}
+          width={shown - 32}
         />
       ) : null}
       </aside>
@@ -77,13 +90,17 @@ export function SourcePane({ slug, evidence }: { slug: string; evidence: BookEvi
         }}
         onPointerDown={(e) => {
           e.preventDefault();
-          drag.current = { x: e.clientX, w: width };
+          // From the width on SCREEN, not the stored one — dragging a
+          // clamped pane must not jump to where the big monitor left it.
+          drag.current = { x: e.clientX, w: shown };
           e.currentTarget.setPointerCapture(e.pointerId);
         }}
         onPointerMove={(e) => {
           if (!drag.current || (e.buttons & 1) === 0) return;
           const next = drag.current.w + e.clientX - drag.current.x;
-          setWidth(Math.min(Math.max(next, 280), Math.min(820, window.innerWidth * 0.55)));
+          setWidth(
+            Math.min(Math.max(next, 280), Math.min(820, maxWidth ?? Infinity, window.innerWidth * 0.55)),
+          );
         }}
         onPointerUp={() => {
           drag.current = null;

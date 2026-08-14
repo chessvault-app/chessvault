@@ -123,6 +123,10 @@ export function PuzzleEntry({
   const [stackedView, setStackedView] = useState<'board' | 'diagram' | 'solutions'>('board');
   // The evidence views span the ACTUAL pane width (measured), not a guess.
   const [stackedPane, stackedPaneW] = useElementWidth();
+  // The wide row is measured so the scan pane can be capped against it:
+  // the editor beside it must keep room to work in whatever window this
+  // opens on, not whatever window the pane was dragged out on.
+  const [wideRow, wideRowW] = useElementWidth();
 
   const confirmPosition = (confirmed: string): void => {
     // Fire-and-forget: template learning must never block puzzle entry.
@@ -206,9 +210,14 @@ export function PuzzleEntry({
         </h1>
       </div>
       {wide ? (
-        <div className="flex min-h-0 flex-1">
+        <div ref={wideRow} className="flex min-h-0 flex-1">
           {evidence?.page ? (
-            <SourcePane slug={slug} evidence={evidence} />
+            <SourcePane
+              slug={slug}
+              evidence={evidence}
+              // 40rem is a workable wide editor (board + its side column).
+              maxWidth={wideRowW > 0 ? Math.max(280, wideRowW - 640) : undefined}
+            />
           ) : draft ? (
             <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
               <img src={draft.imageUrl} alt={t('book diagram')} className="border-line rounded-md border" />
