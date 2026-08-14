@@ -39,7 +39,7 @@ import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
-import { Sheet } from '@/ui/Sheet';
+import { Modal } from '@/ui/Modal';
 import { t } from '@/lib/i18n';
 import { GamePreview, OpeningTag, ResultScore, isCoarsePointer, type Preview } from './shared';
 
@@ -766,12 +766,16 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     </FilterRow>
   );
 
+  // A Modal, not a Sheet: managing databases is a task with an upload
+  // and a delete in it, not a one-question layer — and written inside
+  // the elite WINDOW it is that window's second page (see ui/Modal),
+  // where the Sheet used to stack a second scrim on top of it. In the
+  // column and page variants there is no window above it, so it opens
+  // as an ordinary window of its own.
   const manageSheet = manage && dbs && (
-    <Sheet label={t('Reference databases')} onClose={() => setManage(false)}>
-      <div className="overflow-y-auto">
-        <RefDbManager databases={dbs} onChanged={loadMeta} />
-      </div>
-    </Sheet>
+    <Modal title="Reference databases" icon={Database} onClose={() => setManage(false)}>
+      <RefDbManager databases={dbs} onChanged={loadMeta} />
+    </Modal>
   );
 
   const list = (

@@ -1,4 +1,11 @@
-import { useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react';
 import { ChevronLeft, X, type LucideIcon } from 'lucide-react';
 import { Button } from './Button';
 import { createPortal } from 'react-dom';
@@ -28,6 +35,28 @@ import { useSheetDrag } from './sheetDrag';
  * ways out are both invisible. A phone shows no X — the sheet drags away
  * from anywhere on itself, which is the gesture it was given instead.
  */
+
+/**
+ * A Modal rendered inside another Modal's tree IS that window's second
+ * page, automatically: while it is up the parent hides (state intact,
+ * exactly the `hidden` prop), and the child's title row grows the back
+ * chevron, wired to its own onClose — closing a page is going back.
+ *
+ * The distinction this rests on: a Modal is a PAGE and a Sheet is a
+ * LAYER. Two Modals stacked were two scrims deep with the form you came
+ * from dimly visible and half-covered — the second-page shape had to be
+ * hand-wired everywhere it was wanted (see EditorView) and so mostly
+ * was not. A Select's option sheet or a ConfirmSheet over a window is a
+ * different thing: a question asked and answered in one tap, whose
+ * whole point is that the window stays visibly behind it. Those are
+ * Sheets, and Sheets do not join this.
+ *
+ * The context flows through the REACT tree, not the DOM — portals do
+ * not break it — so it reaches exactly the windows written inside the
+ * window that showed them. A sibling window (the editor's photo page)
+ * still wires `hidden` by hand, and the two sources merge.
+ */
+const CoverParent = createContext<(() => () => void) | null>(null);
 export function Modal({
   title,
   icon: Icon,
@@ -79,17 +108,38 @@ export function Modal({
    */
   full?: boolean;
 }) {
+  // The second-page bookkeeping. `covered` counts child windows currently
+  // over this one; `cover` is what those children call, handed down by
+  // context. Registering is an effect, so a child that unmounts — or is
+  // itself hidden — always releases what it took.
+  const [covered, setCovered] = useState(0);
+  const cover = useCallback(() => {
+    setCovered((c) => c + 1);
+    return () => setCovered((c) => c - 1);
+  }, []);
+  const coverParent = useContext(CoverParent);
+  useEffect(() => {
+    if (hidden || !coverParent) return;
+    return coverParent();
+  }, [hidden, coverParent]);
+  // Out of sight for either reason: told to be (the sibling-window case),
+  // or covered by a page of its own.
+  const shut = hidden || covered > 0;
+  // A nested window that names no destination goes back to the window it
+  // covered — closing a page IS going back.
+  const back = onBack ?? (coverParent ? onClose : undefined);
+
   useEffect(() => {
     // Not while hidden: a window parked behind the one it opened must not
     // also swallow the Escape aimed at the top window — that dismissed
     // both at once.
-    if (hidden) return;
+    if (shut) return;
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, hidden]);
+  }, [onClose, shut]);
 
   // EVERY window is a sheet on a phone, and none is on a desktop — a
   // centred card that slides away downwards is not answering any question
@@ -98,12 +148,13 @@ export function Modal({
   const drag = useSheetDrag(onClose);
   // Inactive while hidden: a window parked behind the one it opened must
   // not hold the focus trap against it.
-  const focusRef = useDialogFocus(!hidden);
+  const focusRef = useDialogFocus(!shut);
 
   // On the body, not wherever it was written: a window is a floating layer
   // and must not inherit a containing block from whatever opened it — a
   // transformed ancestor turns `fixed` into "fixed inside that element".
   return createPortal(
+    <CoverParent.Provider value={cover}>
     <div
       className={cn(
         // The desktop layer is a centring grid; the phone packs to the
@@ -117,8 +168,13 @@ export function Modal({
         'vv-band fixed inset-0 z-50 grid place-items-center bg-black/60',
         'max-sm:flex max-sm:items-end max-sm:justify-center max-sm:p-0',
         full ? 'sm:p-6' : 'sm:p-4',
-        hidden && 'hidden',
+        shut && 'hidden',
       )}
+      // The class alone lost on phones: `hidden` and `max-sm:flex` are
+      // equal-specificity display rules, and the media-query variant is
+      // emitted later, so a parked window stayed painted under the page
+      // covering it. Inline style outranks the whole stylesheet.
+      style={shut ? { display: 'none' } : undefined}
       onClick={onClose}
       role="presentation"
     >
@@ -204,14 +260,14 @@ export function Modal({
             aria-hidden
           />
           <div className="flex items-center gap-2">
-            {onBack && (
+            {back && (
               <Button
                 variant="ghost"
                 size="icon-sm"
                 title={t('Back')}
                 aria-label={t('Back')}
                 className="-my-1 -ml-1 shrink-0"
-                onClick={onBack}
+                onClick={back}
               >
                 <ChevronLeft className="size-3.5" />
               </Button>
@@ -240,7 +296,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>,
+    </div>
+    </CoverParent.Provider>,
     document.body,
   );
 }
