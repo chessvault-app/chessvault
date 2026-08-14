@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/cn';
 import { navigate, type Section } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
@@ -320,19 +321,30 @@ export function HomePage() {
 
         {/* Everything else, reachable: these five destinations had no way
             in from this page at all. */}
-        {/* Two clusters that wrap as units, not five buttons in one run:
-            on a phone the run broke 4+1 and left the last button sitting
-            on a row of its own. Clusters make the narrow shape 3+2. */}
-        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-          {[MORE.slice(0, 3), MORE.slice(3)].map((cluster) => (
-            <span key={cluster[0]!.label} className="flex gap-1.5">
-              {cluster.map(({ label, icon: Icon, go }) => (
-                <Button key={label} variant="ghost" size="sm" onClick={go}>
-                  <Icon className="size-3.5" />
-                  {t(label)}
-                </Button>
-              ))}
-            </span>
+        {/* One row on every width. Five labelled buttons never fit side by
+            side on a phone, and any wrap — 4+1, or the 3+2 clusters that
+            replaced it — still reads as an accident. So below sm they
+            become a launcher row: five equal columns, icon over label,
+            with labels free to break ("Puzzle books") inside their cell. */}
+        <div className="mt-4 grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5">
+          {MORE.map(({ label, icon: Icon, go }) => (
+            <Button
+              key={label}
+              variant="ghost"
+              size="sm"
+              onClick={go}
+              className={cn(
+                'max-sm:h-auto max-sm:flex-col max-sm:gap-1.5 max-sm:whitespace-normal',
+                'max-sm:rounded-lg max-sm:px-1 max-sm:py-2',
+                'max-sm:text-center max-sm:text-[0.6875rem] max-sm:leading-tight',
+                // The size's own coarse-pointer overrides would win the
+                // cascade back without coarse-specific counters.
+                'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',
+              )}
+            >
+              <Icon className="size-3.5 shrink-0 max-sm:size-4" />
+              {t(label)}
+            </Button>
           ))}
         </div>
       </div>
