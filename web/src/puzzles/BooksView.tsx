@@ -53,6 +53,7 @@ import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { EditorView } from '@/editor/EditorView';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
@@ -245,11 +246,12 @@ function usePuzzleEvidence(slug: string, id: string | undefined): BookEvidence |
         const res = await fetch(
           `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(id)}/evidence`,
         );
+        // A missing scan is a missing button, not a broken puzzle.
         const body = res.ok ? ((await res.json()) as { evidence?: BookEvidence }) : {};
         evidenceCache.set(key, body.evidence);
       } catch {
-        // A missing scan is a missing button, not a broken puzzle.
-        evidenceCache.set(key, undefined);
+        // But a transient failure must not be REMEMBERED as "no evidence"
+        // for the rest of the session — the next look simply asks again.
       }
       if (live) bump((n) => n + 1);
     })();
@@ -308,7 +310,15 @@ async function loadBook(slug: string, force = false): Promise<BookDetail | null>
     const hit = bookCache.get(slug);
     if (hit) return hit;
   }
-  const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
+  let res: Response;
+  try {
+    res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
+  } catch {
+    // A thrown fetch used to escape every caller and pin the view on its
+    // skeleton with nothing to say. Offline, the cached copy (even a
+    // force-refresh wanted fresher) beats both that and an error.
+    return bookCache.get(slug) ?? null;
+  }
   if (!res.ok) return null;
   const detail = (await res.json()) as BookDetail;
   bookCache.set(slug, detail);
@@ -415,10 +425,17 @@ function Shelf() {
   // change as you solve, so the list is never trusted to stay right — only
   // to be right ENOUGH to draw while the real answer is on its way.
   const load = useCallback(async () => {
-    const res = await fetch('/api/puzzlebooks');
-    const fresh = ((await res.json()) as { books: BookSummary[] }).books;
-    shelfCache = fresh;
-    setBooks(fresh);
+    try {
+      const fresh = (await api<{ books: BookSummary[] }>('/api/puzzlebooks')).books;
+      shelfCache = fresh;
+      setBooks(fresh);
+      setError(null);
+    } catch (e) {
+      // The skeleton must not spin forever on a blip: show the cached
+      // shelf (or an empty one) under a line that says what happened.
+      setBooks((prev) => prev ?? shelfCache ?? []);
+      setError(apiErrorMessage(e));
+    }
   }, []);
   useEffect(() => void load(), [load]);
 
@@ -506,17 +523,19 @@ function Shelf() {
     const taken = new Set((books ?? []).map((b) => b.title));
     let title = base;
     for (let n = 2; taken.has(title); n += 1) title = `${base} ${n}`;
-    const res = await fetch('/api/puzzlebooks', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title }),
-    });
-    const body = (await res.json()) as { slug?: string; error?: string };
-    if (!res.ok || !body.slug) {
-      setError(t(body.error ?? 'could not create the book'));
-      return;
+    try {
+      const body = await api<{ slug?: string }>('/api/puzzlebooks', {
+        method: 'POST',
+        json: { title },
+      });
+      if (!body.slug) {
+        setError(t('could not create the book'));
+        return;
+      }
+      navigate('puzzles', 'books', body.slug);
+    } catch (e) {
+      setError(apiErrorMessage(e));
     }
-    navigate('puzzles', 'books', body.slug);
   };
 
   return (
@@ -2358,23 +2377,25 @@ function SolutionRecorder({
   const save = async (): Promise<void> => {
     setSaving(true);
     forgetBook(slug);
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        fen,
-        uci: line.map((m) => m.uci),
-        san: line.map((m) => m.san),
-        wildcards: [...wildcards],
-        ...(replaceId ? { replaceId } : {}),
-      }),
-    });
-    setSaving(false);
-    if (!res.ok) {
-      setError(((await res.json()) as { error?: string }).error ?? t('save failed'));
-      return;
+    try {
+      // The finally matters: a thrown fetch used to leave `saving` true
+      // for good — Save disabled, the entered solution unrecoverable.
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
+        method: 'POST',
+        json: {
+          fen,
+          uci: line.map((m) => m.uci),
+          san: line.map((m) => m.san),
+          wildcards: [...wildcards],
+          ...(replaceId ? { replaceId } : {}),
+        },
+      });
+      onDone();
+    } catch (e) {
+      setError(apiErrorMessage(e));
+    } finally {
+      setSaving(false);
     }
-    onDone();
   };
 
   return (

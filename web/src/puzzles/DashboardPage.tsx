@@ -1,5 +1,6 @@
 import { BookMarked, Check, ChevronRight, Eraser, Eye, LayoutGrid, Puzzle, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { api, apiErrorMessage } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Board } from '@/board/Board';
@@ -56,19 +57,26 @@ export function DashboardPage() {
   const pending = useSlowLoad(history === null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
+  const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(() => {
-    void fetch('/api/puzzles/meta')
-      .then((r) => r.json())
-      .then((d: { user: MetaUser; failed?: number }) => {
+    // Three loads, one rule: a failure renders an empty page under an
+    // error line, never a skeleton that spins forever with nothing to say.
+    setError(null);
+    void api<{ user: MetaUser; failed?: number }>('/api/puzzles/meta')
+      .then((d) => {
         setUser(d.user);
         setFailed(d.failed ?? 0);
+      })
+      .catch((e: unknown) => setError(apiErrorMessage(e)));
+    void api<{ attempts: HistoryEntry[] }>('/api/puzzles/history?limit=500')
+      .then((d) => setHistory(d.attempts))
+      .catch((e: unknown) => {
+        setHistory((prev) => prev ?? []);
+        setError(apiErrorMessage(e));
       });
-    void fetch('/api/puzzles/history?limit=500')
-      .then((r) => r.json())
-      .then((d: { attempts: HistoryEntry[] }) => setHistory(d.attempts));
-    void fetch('/api/puzzlebooks')
-      .then((r) => r.json())
-      .then((d: { books: BookSummary[] }) => setBooks(d.books));
+    void api<{ books: BookSummary[] }>('/api/puzzlebooks')
+      .then((d) => setBooks(d.books))
+      .catch(() => setBooks((prev) => prev ?? []));
   }, []);
   useEffect(() => refresh(), [refresh]);
 
@@ -146,6 +154,7 @@ export function DashboardPage() {
   return (
     <div className="h-full min-h-0 overflow-y-auto">
       <div className="mx-auto max-w-3xl p-4 pb-8">
+        {error && <p className="text-bad mb-3 text-xs">{error}</p>}
         <div className="mb-4 flex items-center gap-2">
           <h1 className="text-fg text-base font-semibold">{t('Puzzle dashboard')}</h1>
           <span className="min-w-0 flex-1" />

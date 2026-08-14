@@ -1,5 +1,6 @@
 import { ChevronLeft, Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { navigate } from '@/lib/router';
@@ -119,13 +120,18 @@ export function ThemesPage() {
   const [total, setTotal] = useState(0);
   const [failed, setFailed] = useState(0);
 
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    void fetch('/api/puzzles/meta')
-      .then((r) => r.json())
-      .then((d: { themes?: ThemeCount[]; puzzles?: number; failed?: number }) => {
+    void api<{ themes?: ThemeCount[]; puzzles?: number; failed?: number }>('/api/puzzles/meta')
+      .then((d) => {
         setThemes(d.themes ?? []);
         setTotal(d.puzzles ?? 0);
         setFailed(d.failed ?? 0);
+      })
+      // An empty page under an error line, never an immortal skeleton.
+      .catch((e: unknown) => {
+        setThemes([]);
+        setError(apiErrorMessage(e));
       });
   }, []);
 
@@ -154,6 +160,7 @@ export function ThemesPage() {
             <ChevronLeft className="size-3.5" />
           </Button>
           <h1 className="text-fg text-base font-semibold">{t('Puzzle themes')}</h1>
+          {error && <span className="text-bad text-xs">{error}</span>}
           <span className="min-w-0 flex-1" />
           <SearchInput
             inputSize="sm"
