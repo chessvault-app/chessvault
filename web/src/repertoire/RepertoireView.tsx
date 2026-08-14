@@ -234,7 +234,7 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
  * repertoire answering — so they say that rather than pretending to be a
  * game, and the side to move is the one shown in full strength.
  */
-function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
+function PlayerSlot({ side, fen, className }: { side: 'white' | 'black'; fen: string; className?: string }) {
   const toMove = (fen.split(' ')[1] === 'b' ? 'black' : 'white') === side;
   return (
     // Shown at every width, like the Board tab's. These were hidden on
@@ -243,7 +243,7 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
     // not: the panel's own column was a nested scroll container that
     // clipped what its min-height under-measured. With that fixed the rows
     // cost nothing but the height they occupy, and the page scrolls.
-    <div className="flex h-6 w-full items-center gap-2 px-0.5">
+    <div className={cn('flex h-6 w-full items-center gap-2 px-0.5', className)}>
       <SideDot side={side} />
       <span className={cn('min-w-0 flex-1 truncate text-sm', toMove ? 'text-fg font-medium' : 'text-subtle')}>
         {side === 'white' ? t('White') : t('Black')}
@@ -1214,7 +1214,14 @@ export function RepertoireView() {
 
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-          <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
+          {/* wide:h-10 + the column's gap-2 equals the other board pages'
+              top strip, so this board's top edge sits level with theirs
+              (and with the side column's first panel: h-9 + gap-3). */}
+          <PlayerSlot
+            side={orientation === 'white' ? 'black' : 'white'}
+            fen={node.fen}
+            className="wide:h-10 wide:items-end"
+          />
           <Board
             apiRef={boardApi}
             fen={node.fen}
