@@ -1,6 +1,7 @@
 import { parseSquare } from 'chessops/util';
 import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, positionAt } from '@shared/tree';
 import { treeToPgn } from '@shared/pgn';
 import type { MoveTree, NodeId } from '@shared/types';
@@ -212,16 +213,15 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
 /**
  * Pick an opening to spar from.
  *
- * ONE control for every pointer, and it is the app's own Sheet — a
- * bottom sheet on a phone, a centred card on a desktop, with the drag,
- * the scrim and the Escape that every other window here has.
- *
- * It used to be two hand-rolled things: a floating list portalled and
- * positioned against the input by hand (because a Panel clips its
- * children), and, on touch, a fixed overlay with its own backdrop, its
- * own close chevron and its own pointerdown dance to stop the dismissing
- * tap pressing what was behind it. Both were solving problems Sheet had
- * already solved, and neither looked like the rest of the app.
+ * Two shapes for two pointers. On a phone it is the app's own Sheet —
+ * rising from the bottom with the drag, the scrim and the Escape every
+ * other window has. On a desktop it is a combobox: the list drops
+ * anchored under the field itself (portalled past the Panel's clipping,
+ * like every floating layer here), capped in height with the search
+ * pinned above the scroll — so the board stays on screen while an
+ * opening is being chosen, instead of disappearing behind a centred
+ * card. lanph3re's report: the modal covered the board and broke the
+ * visual context.
  */
 function OpeningPicker({
   value,
@@ -233,6 +233,16 @@ function OpeningPicker({
   const [all, setAll] = useState<Template[] | null>(null);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
+  /** Where the desktop popover goes; null means the phone's sheet. */
+  const [anchor, setAnchor] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,13 +281,72 @@ function OpeningPicker({
     setOpen(false);
   };
 
+  /**
+   * Open under the field on a desktop, as a sheet otherwise.
+   *
+   * The anchor is read once, when it opens — the same rule ActionSheet
+   * follows — and the list prefers to hang BELOW the field, flipping
+   * above only when the field is near the bottom and there is more room
+   * over it. Height is capped so the whole thing stays inside the
+   * viewport and the list scrolls instead.
+   */
+  const openPicker = (): void => {
+    setQuery('');
+    const rect = window.matchMedia('(min-width: 40rem)').matches
+      ? triggerRef.current?.getBoundingClientRect()
+      : undefined;
+    if (rect) {
+      const wanted = 384;
+      const width = Math.max(rect.width, 288);
+      const left = Math.min(rect.left, window.innerWidth - width - 8);
+      const below = window.innerHeight - rect.bottom - 12;
+      setAnchor(
+        below >= 240 || below >= rect.top - 12
+          ? { top: rect.bottom + 4, left, width, maxHeight: Math.min(wanted, below) }
+          : {
+              bottom: window.innerHeight - rect.top + 4,
+              left,
+              width,
+              maxHeight: Math.min(wanted, rect.top - 12),
+            },
+      );
+    } else {
+      setAnchor(null);
+    }
+    setOpen(true);
+  };
+
+  // The popover has no scrim, so it dismisses itself: Escape, and any
+  // press outside it (a press on the field again just closes it).
+  useEffect(() => {
+    if (!open || !anchor) return;
+    const onDown = (e: PointerEvent): void => {
+      const target = e.target as Node;
+      if (popoverRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open, anchor]);
+
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => {
-          setQuery('');
-          setOpen(true);
+          if (open) {
+            setOpen(false);
+            return;
+          }
+          openPicker();
         }}
         className={cn(
           'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border',
@@ -292,55 +361,98 @@ function OpeningPicker({
         </span>
       </button>
 
-      {open && (
-        <Sheet label={t('Opening')} onClose={() => setOpen(false)} className="gap-2">
-          <Input
-            autoFocus
-            inputSize="sm"
-            className="w-full"
-            value={query}
-            placeholder={t('Search any opening or ECO code…')}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {/* The sheet owns the height; the list scrolls inside it rather
-              than growing the sheet past the keyboard. */}
-          <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-            {matches.length === 0 ? (
-              <li className="text-subtle px-2 py-1.5 text-xs">
-                {all === null ? t('Reading the catalogue…') : t('No opening matches that.')}
-              </li>
-            ) : (
-              matches.map((o, i) => (
-                <li key={`${o.eco}-${o.name}-${i}`} className="[content-visibility:auto]">
-                  <button
-                    type="button"
-                    onClick={() => pick(o)}
-                    className={cn(
-                      'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
-                      'hover:bg-surface-2 transition-colors duration-100 pointer-coarse:py-2.5',
-                      o.name === value.name && o.eco === value.eco
-                        ? 'text-primary font-medium'
-                        : 'text-fg',
-                    )}
-                  >
-                    {o.eco && (
-                      <span className="text-subtle w-7 shrink-0 font-mono text-[0.6875rem]">
-                        {o.eco}
-                      </span>
-                    )}
-                    <span className="min-w-0 flex-1 truncate">{t(o.name)}</span>
-                  </button>
+      {open &&
+        (() => {
+          // One search box and one list, whichever container they open in.
+          const searchBox = (
+            <Input
+              autoFocus
+              inputSize="sm"
+              className="w-full"
+              value={query}
+              placeholder={t('Search any opening or ECO code…')}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          );
+          // The container owns the height; the list scrolls inside it
+          // rather than growing past the keyboard (sheet) or the
+          // viewport (popover).
+          const list = (
+            <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              {matches.length === 0 ? (
+                <li className="text-subtle px-2 py-1.5 text-xs">
+                  {all === null ? t('Reading the catalogue…') : t('No opening matches that.')}
                 </li>
-              ))
-            )}
-            {hidden > 0 && (
-              <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
-                {t('{count} more — type to narrow.', { count: hidden.toLocaleString() })}
-              </li>
-            )}
-          </ul>
-        </Sheet>
-      )}
+              ) : (
+                matches.map((o, i) => (
+                  <li key={`${o.eco}-${o.name}-${i}`} className="[content-visibility:auto]">
+                    <button
+                      type="button"
+                      onClick={() => pick(o)}
+                      className={cn(
+                        'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                        'hover:bg-surface-2 transition-colors duration-100 pointer-coarse:py-2.5',
+                        o.name === value.name && o.eco === value.eco
+                          ? 'text-primary font-medium'
+                          : 'text-fg',
+                      )}
+                    >
+                      {o.eco && (
+                        <span className="text-subtle w-7 shrink-0 font-mono text-[0.6875rem]">
+                          {o.eco}
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1 truncate">{t(o.name)}</span>
+                    </button>
+                  </li>
+                ))
+              )}
+              {hidden > 0 && (
+                <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
+                  {t('{count} more — type to narrow.', { count: hidden.toLocaleString() })}
+                </li>
+              )}
+            </ul>
+          );
+
+          if (!anchor) {
+            return (
+              <Sheet label={t('Opening')} onClose={() => setOpen(false)} className="gap-2">
+                {searchBox}
+                {list}
+              </Sheet>
+            );
+          }
+
+          // Portalled past the Panel: a Panel clips its children, and a
+          // floating layer has no business living inside the thing it
+          // floats over (see ActionSheet).
+          return createPortal(
+            <div
+              ref={popoverRef}
+              role="dialog"
+              aria-label={t('Opening')}
+              style={{
+                position: 'fixed',
+                top: anchor.top,
+                bottom: anchor.bottom,
+                left: anchor.left,
+                width: anchor.width,
+                maxHeight: anchor.maxHeight,
+              }}
+              className={cn(
+                'bg-surface border-line z-50 flex flex-col overflow-hidden rounded-lg border',
+                'shadow-[var(--shadow-pop)]',
+              )}
+            >
+              {/* Above the scroll, not inside it: the search stays put
+                  while the catalogue scrolls under it. */}
+              <div className="border-line shrink-0 border-b p-2">{searchBox}</div>
+              <div className="flex min-h-0 flex-1 flex-col p-1">{list}</div>
+            </div>,
+            document.body,
+          );
+        })()}
     </>
   );
 }
