@@ -27,6 +27,7 @@ import {
   getNode,
   legalDests,
   mainlineFrom,
+  moveSquares,
   positionAt,
   promoteToMainline,
   updateNode,
@@ -430,7 +431,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               fen={node.fen}
               orientation={orientation}
               dests={dests}
-              lastMove={node.uci ? [node.uci.slice(0, 2), node.uci.slice(2, 4)] : undefined}
+              lastMove={moveSquares(node)}
               check={pos.isCheck()}
               onMove={onMove}
             />

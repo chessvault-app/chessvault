@@ -58,6 +58,26 @@ export interface AddMoveResult {
 }
 
 /**
+ * The two squares a move visually occupies — for last-move highlights and
+ * board badges. A node's uci comes from chessops, which encodes castling
+ * as king-takes-rook ("e1h1"), but the king a viewer follows lands on the
+ * g- or c-file of its own rank; the SAN says which. Slicing is kept for
+ * everything else, and is also what happens when the uci is already in
+ * king-destination form ("e1g1"), so either encoding reads correctly.
+ */
+export function moveSquares(node: {
+  uci?: string;
+  san?: string;
+}): [string, string] | undefined {
+  const { uci, san } = node;
+  if (!uci || uci.length < 4) return undefined;
+  const dest = san?.startsWith('O-O')
+    ? `${san.startsWith('O-O-O') ? 'c' : 'g'}${uci[1]}`
+    : uci.slice(2, 4);
+  return [uci.slice(0, 2), dest];
+}
+
+/**
  * Play a move from `parentId`.
  *
  * If the move is already a child, that child is returned rather than creating a

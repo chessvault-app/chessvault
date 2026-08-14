@@ -9,7 +9,7 @@ import {
 import { useEffect, useMemo, useRef } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
-import { getNode, legalDests, pathTo, positionAt } from '@shared/tree';
+import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
@@ -69,12 +69,12 @@ export function AnalysisBoard({
   // every engine info line, and a fresh array/Map each time made chessground
   // re-run set()/setShapes()/setAutoShapes() — three full board redraws per
   // tick for a position that never changed.
+  // moveSquares, not a plain slice: castling highlights the king's real
+  // destination (lichess-style), not the rook square its uci encodes.
   const lastMove = useMemo(
-    () =>
-      node.uci
-        ? ([node.uci.slice(0, 2), node.uci.slice(2, 4)] as [string, string])
-        : undefined,
-    [node.uci],
+    () => moveSquares(node),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the values the helper reads
+    [node.uci, node.san],
   );
   const shapes = useMemo(() => toDrawShapes(node.shapes), [node.shapes]);
 
@@ -225,15 +225,9 @@ function NagBadge({
   book?: boolean;
 }) {
   const nag = node.nags.find((n) => BOARD_NAGS[n]);
-  if ((!nag && !book) || !node.uci || node.uci.length < 4) return null;
+  const dest = moveSquares(node)?.[1];
+  if ((!nag && !book) || !dest) return null;
   const badge = nag ? BOARD_NAGS[nag]! : { glyph: null, className: 'bg-nag-book' };
-
-  // chessops encodes castling as king-takes-rook ("e1h1"), so slicing the
-  // uci would pin the badge to the rook's home square. The king really
-  // lands on the g- or c-file of its own rank; the SAN says which.
-  const dest = node.san?.startsWith('O-O')
-    ? `${node.san.startsWith('O-O-O') ? 'c' : 'g'}${node.uci[1]}`
-    : node.uci.slice(2, 4);
   const file = dest.charCodeAt(0) - 97;
   const rank = dest.charCodeAt(1) - 49;
   const column = orientation === 'white' ? file : 7 - file;

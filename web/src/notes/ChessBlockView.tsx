@@ -18,6 +18,7 @@ import {
   legalDests,
   mainlineFrom,
   moveNumberLabel,
+  moveSquares,
   pathTo,
   positionAt,
 } from '@shared/tree';
@@ -110,9 +111,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   const current = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
   const dests = useMemo(() => legalDests(tree, cursorId), [tree, cursorId]);
-  const lastMove = current.uci
-    ? ([current.uci.slice(0, 2), current.uci.slice(2, 4)] as [string, string])
-    : undefined;
+  const lastMove = moveSquares(current);
 
   const commit = (nextTree: MoveTree, nextCursor: NodeId): void => {
     setTree(nextTree);

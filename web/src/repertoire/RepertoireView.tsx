@@ -2,7 +2,7 @@ import { parseSquare } from 'chessops/util';
 import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, pathTo, positionAt } from '@shared/tree';
+import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
@@ -1061,7 +1061,7 @@ export function RepertoireView() {
             fen: back.fen,
             turnColor: userColor,
             // Square names either way — the same cast Board.tsx makes.
-            lastMove: back.uci ? ([back.uci.slice(0, 2), back.uci.slice(2, 4)] as Key[]) : undefined,
+            lastMove: moveSquares(back) as Key[] | undefined,
             movable: { color: userColor, dests: backDests as Dests },
           });
         }, 650);
@@ -1326,7 +1326,7 @@ export function RepertoireView() {
             fen={node.fen}
             orientation={orientation}
             dests={dests}
-            lastMove={node.uci ? [node.uci.slice(0, 2), node.uci.slice(2, 4)] : undefined}
+            lastMove={moveSquares(node)}
             check={pos.isCheck()}
             onMove={onMove}
           />

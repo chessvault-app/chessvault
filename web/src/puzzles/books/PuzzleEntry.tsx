@@ -13,6 +13,7 @@ import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
 import { parseSquare, parseUci, squareRank } from 'chessops/util';
 import type { Color, Role } from 'chessops/types';
+import { moveSquares } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
@@ -411,11 +412,7 @@ function SolutionRecorder({
               fen={currentFen}
               orientation={solverSide}
               dests={dests}
-              lastMove={
-                line.at(-1)
-                  ? [line.at(-1)!.uci.slice(0, 2), line.at(-1)!.uci.slice(2, 4)]
-                  : undefined
-              }
+              lastMove={line.at(-1) ? moveSquares(line.at(-1)!) : undefined}
               check={pos.isCheck()}
               onMove={onMove}
             />
