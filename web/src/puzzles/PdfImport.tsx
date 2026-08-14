@@ -277,7 +277,7 @@ export function PdfImport({
   }, [grown, scanning]);
 
   const save = async (): Promise<void> => {
-    const chosen = found.filter((f) => f.selected);
+    const chosen = found.map((f, index) => ({ f, index })).filter(({ f }) => f.selected);
     if (chosen.length === 0) return;
     setSaving(true);
     try {
@@ -293,7 +293,7 @@ export function PdfImport({
             // where on it the diagram sat, and the answers page for its
             // number. Without these the editor has no Diagram or
             // Solutions tab to read the answer off.
-            drafts: chunk.map((f) => ({
+            drafts: chunk.map(({ f }) => ({
               image: f.dataUrl,
               fen: f.fen,
               ...(f.number === undefined ? {} : { number: f.number }),
@@ -306,6 +306,13 @@ export function PdfImport({
           }),
         });
         if (!res.ok) throw new Error(`save failed (${res.status})`);
+        // This chunk is on disk: deselect its rows NOW, so a later
+        // chunk's failure leaves only the unsaved rows selected and
+        // retrying Save cannot duplicate the drafts that already landed.
+        const done = new Set(chunk.map(({ index }) => index));
+        useImportJob.setState((s) => ({
+          found: s.found.map((row, i) => (done.has(i) ? { ...row, selected: false } : row)),
+        }));
       }
       job.clear();
       onDone();
