@@ -298,6 +298,16 @@ async function loadSolutions(slug: string): Promise<Record<string, PuzzleSolutio
     if (!res.ok) return {};
     const body = (await res.json()) as { solutions?: Record<string, PuzzleSolution> };
     const solutions = body.solutions ?? {};
+    // One corrupt fen in vault data must cost ONE puzzle, not the book:
+    // the trainer and the judge unwrap() these, and a single bad row
+    // white-paged the whole trainer. A dropped entry degrades to the
+    // same "no solution recorded" path a draft takes.
+    for (const [id, solution] of Object.entries(solutions)) {
+      if (!parseFen(solution.fen).isOk) {
+        console.warn(`[books] puzzle ${id} in ${slug} has an unreadable position; skipping it`);
+        delete solutions[id];
+      }
+    }
     solutionCache.set(slug, solutions);
     return solutions;
   } catch {
