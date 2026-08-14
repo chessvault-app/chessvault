@@ -1295,4 +1295,12 @@ export const ko: Record<string, string> = {
   Critical: '고비',
   'The best move keeps {best}% winning chances for the side to move; the second best only {second}%.':
     '최선 수는 두는 쪽의 승산 {best}%를 지키지만, 차선 수로는 {second}%뿐입니다.',
+  'Tablebase: White wins': '테이블베이스: 백 승',
+  'Tablebase: White wins, mate in {n}': '테이블베이스: 백 승, {n}수 메이트',
+  'Tablebase: Black wins': '테이블베이스: 흑 승',
+  'Tablebase: Black wins, mate in {n}': '테이블베이스: 흑 승, {n}수 메이트',
+  'Tablebase: draw': '테이블베이스: 무승부',
+  'Tablebase: draw (50-move rule)': '테이블베이스: 무승부 (50수 규칙)',
+  'Exact endgame verdict from the Syzygy tablebases — proven, not evaluated.':
+    'Syzygy 테이블베이스의 정확한 엔드게임 판정 — 평가값이 아니라 증명된 결과입니다.',
 };

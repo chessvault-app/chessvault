@@ -1,4 +1,4 @@
-import { AlertTriangle, Settings2 } from 'lucide-react';
+import { AlertTriangle, Database, Settings2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
@@ -10,6 +10,7 @@ import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { formatPv } from './pv.ts';
 import { moverChances } from './review.ts';
+import { lookupTablebase, tablebaseEligible, tbVerdict, type TbResult } from './tablebase.ts';
 import { formatScore, formatWdl, toWhitePov, wdlToWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
 
@@ -41,6 +42,23 @@ export function EngineBlock({ className }: { className?: string }) {
   useEffect(() => {
     analyse(node.fen);
   }, [node.fen, enabled, analyse]);
+
+  // Exact endgame verdicts, fetched only when a tablebase can answer at
+  // all (≤7 men, no castling). Silent on failure: the row is an
+  // enhancement, not something the pane may error over.
+  const [tablebase, setTablebase] = useState<TbResult | null>(null);
+  useEffect(() => {
+    setTablebase(null);
+    if (!enabled || !tablebaseEligible(node.fen)) return;
+    let stale = false;
+    void lookupTablebase(node.fen).then((r) => {
+      if (!stale) setTablebase(r);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [node.fen, enabled]);
+  const tablebaseText = tablebase ? tbVerdict(tablebase, turn) : null;
 
   // SPA leak guard: navigating away unmounts this block but nothing else
   // would halt an in-flight `go` — Stockfish would keep burning threads
@@ -177,6 +195,16 @@ export function EngineBlock({ className }: { className?: string }) {
 
       {enabled && !error && (
         <>
+          {/* A proof outranks an estimate, so it stands above the lines. */}
+          {tablebaseText && (
+            <p
+              className="text-muted flex items-center gap-1.5 px-3 pt-1.5 text-xs"
+              title={t('Exact endgame verdict from the Syzygy tablebases — proven, not evaluated.')}
+            >
+              <Database className="text-primary size-3.5 shrink-0" />
+              {tablebaseText}
+            </p>
+          )}
           {/* Alternating tint down the lines, full-bleed like the game
               lists' stripe — as inset rounded pills the one tinted row
               read as a selection, not as zebra (lanph3re's report). On
