@@ -5,6 +5,7 @@ import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { usePrefs } from '@/store/prefs';
+import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/cn';
 
 /** The underlying chessground handle, for callers that need direct calls
@@ -26,6 +27,7 @@ export interface BoardProps {
   /** Engine arrows and similar: drawn by the app, not editable by the user. */
   autoShapes?: DrawShape[];
   viewOnly?: boolean;
+  /** Overrides the Settings preference when set; leave unset to follow it. */
   coordinates?: boolean;
   /** Editor mode: any piece may go to any square, ignoring the rules. */
   free?: boolean;
@@ -64,7 +66,7 @@ export function Board({
   shapes,
   autoShapes,
   viewOnly = false,
-  coordinates = true,
+  coordinates,
   free = false,
   deleteOnDropOff = false,
   onMove,
@@ -89,6 +91,9 @@ export function Board({
   const rookCastlesRef = useRef(usePrefs.getState().castleStyle === 'rook');
   const castleStyle = usePrefs((p) => p.castleStyle);
   rookCastlesRef.current = castleStyle === 'rook';
+  // The prop, when a caller sets one, outranks the Settings preference.
+  const coordinatesPref = usePrefs((p) => p.coordinates);
+  const showCoordinates = coordinates ?? coordinatesPref;
   onMoveRef.current = onMove;
   onSelectRef.current = onSelect;
   onShapesRef.current = onShapesChange;
@@ -102,7 +107,7 @@ export function Board({
     const config: CgConfig = {
       fen,
       orientation,
-      coordinates,
+      coordinates: showCoordinates,
       viewOnly,
       // Right-drag draws arrows and right-click draws circles. Without this the
       // browser context menu opens on mouseup and swallows the gesture, so
@@ -121,7 +126,10 @@ export function Board({
         // expects to reach for. Either still plays the same move.
         rookCastle: rookCastlesRef.current,
         events: {
-          after: (orig, dest) => onMoveRef.current?.(orig, dest),
+          after: (orig, dest) => {
+            moveHaptic();
+            onMoveRef.current?.(orig, dest);
+          },
         },
       },
       draggable: { enabled: !viewOnly, showGhost: true, deleteOnDropOff },
@@ -153,6 +161,10 @@ export function Board({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only by design
   }, []);
 
+  // chessground's set() merges state but only redrawAll() rebuilds the
+  // wrap the coordinate labels live in, so a toggle needs the extra call.
+  const coordsWere = useRef(showCoordinates);
+
   // Push position and interaction state.
   useEffect(() => {
     const board = api.current;
@@ -165,7 +177,7 @@ export function Board({
       check: check ? sideToMove : false,
       lastMove: lastMove as Key[] | undefined,
       viewOnly,
-      coordinates,
+      coordinates: showCoordinates,
       movable: {
         free,
         // In free (editor) mode either colour may be dragged and legality is not
@@ -180,6 +192,10 @@ export function Board({
       },
       draggable: { enabled: !viewOnly, showGhost: true, deleteOnDropOff },
     });
+    if (coordsWere.current !== showCoordinates) {
+      coordsWere.current = showCoordinates;
+      board.redrawAll();
+    }
   }, [
     fen,
     orientation,
@@ -189,7 +205,7 @@ export function Board({
     lastMove,
     check,
     viewOnly,
-    coordinates,
+    showCoordinates,
     free,
     deleteOnDropOff,
     // Read at line ~179; leaving it out froze a castle-style change on any

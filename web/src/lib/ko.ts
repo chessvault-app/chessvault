@@ -616,6 +616,10 @@ export const ko: Record<string, string> = {
     '사용자명은 게임 페이지의 보관함 검색에 미리 채워집니다.',
   'Save profile': '프로필 저장',
   'Play a click on moves and captures.': '수와 기물 잡기에 소리를 냅니다.',
+  'Vibrate on moves': '수를 둘 때 진동',
+  'One short tick when your piece lands.': '기물을 놓을 때 짧게 한 번 진동합니다.',
+  'Board coordinates': '보드 좌표',
+  'File and rank labels on the board edge.': '보드 가장자리의 파일·랭크 표시입니다.',
   'Two-factor authentication': '2단계 인증',
   'Turning it off needs a current code from your authenticator app.':
     '끄려면 인증 앱의 현재 코드가 필요합니다.',

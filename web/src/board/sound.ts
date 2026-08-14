@@ -127,3 +127,21 @@ export function previewSound(kind: 'move' | 'capture', id: string): void {
 export function soundForSan(san: string): SoundKind {
   return san.includes('x') ? 'capture' : 'move';
 }
+
+/**
+ * One short tick when the user's own piece lands — fired from the board's
+ * move event, so replaying or stepping through a line never buzzes.
+ * Android only: iOS Safari exposes no haptics API to web pages, so there
+ * this is a silent no-op (a native shell would be the route to iOS
+ * haptics). Desktop browsers without a motor accept the call and do
+ * nothing, which is also fine.
+ */
+export function moveHaptic(): void {
+  if (!usePrefs.getState().haptics) return;
+  try {
+    navigator.vibrate?.(10);
+  } catch {
+    // Some engines throw instead of ignoring; a missing buzz is not an
+    // error worth surfacing.
+  }
+}

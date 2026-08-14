@@ -173,6 +173,11 @@ interface PrefsState {
   moveSound: string;
   captureSound: string;
   castleStyle: CastleStyle;
+  /** File and rank labels on the board edge. */
+  coordinates: boolean;
+  /** One short vibration when a piece lands. Android only — iOS Safari
+      exposes no haptics to web pages, so there the setting is inert. */
+  haptics: boolean;
   /** Which preset is selected. */
   schemeId: string;
   scheme: Scheme;
@@ -184,6 +189,8 @@ interface PrefsState {
   setCaptureSound: (id: string) => void;
   setSchemeId: (id: string) => void;
   setCastleStyle: (style: CastleStyle) => void;
+  setCoordinates: (on: boolean) => void;
+  setHaptics: (on: boolean) => void;
 }
 
 const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
@@ -224,6 +231,8 @@ export const usePrefs = create<PrefsState>()(
       moveSound: 'take-1',
       captureSound: 'take-1',
       castleStyle: 'king',
+      coordinates: true,
+      haptics: true,
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
       setBoardTheme: (boardTheme) => {
@@ -239,6 +248,8 @@ export const usePrefs = create<PrefsState>()(
       setMoveSound: (moveSound) => set({ moveSound }),
       setCaptureSound: (captureSound) => set({ captureSound }),
       setCastleStyle: (castleStyle) => set({ castleStyle }),
+      setCoordinates: (coordinates) => set({ coordinates }),
+      setHaptics: (haptics) => set({ haptics }),
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
         const scheme = preset ? preset.scheme : get().scheme;

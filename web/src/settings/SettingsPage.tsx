@@ -394,7 +394,7 @@ function DesktopCard() {
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, castleStyle, setBoardTheme, setPieces, setSchemeId, setCastleStyle } =
+  const { boardTheme, pieces, schemeId, castleStyle, coordinates, setBoardTheme, setPieces, setSchemeId, setCastleStyle, setCoordinates } =
     usePrefs();
 
   return (
@@ -491,6 +491,18 @@ function AppearanceCard() {
         />
       </Field>
 
+      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+        <div className="min-w-0">
+          <div className="text-sm font-medium">{t('Board coordinates')}</div>
+          <div className="text-subtle text-xs">{t('File and rank labels on the board edge.')}</div>
+        </div>
+        <Switch
+          checked={coordinates}
+          onToggle={() => setCoordinates(!coordinates)}
+          label={t('Board coordinates')}
+        />
+      </div>
+
     </Card>
   );
 }
@@ -525,7 +537,7 @@ const soundOption =
  * preview step to find.
  */
 function SoundCard() {
-  const { sound, soundVolume, moveSound, captureSound, setSound, setSoundVolume, setMoveSound, setCaptureSound } =
+  const { sound, soundVolume, moveSound, captureSound, haptics, setSound, setSoundVolume, setMoveSound, setCaptureSound, setHaptics } =
     usePrefs();
 
   return (
@@ -537,6 +549,23 @@ function SoundCard() {
         </div>
         <Switch checked={sound} onToggle={() => setSound(!sound)} label={t('Move sounds')} />
       </div>
+
+      {/* Only where the browser has the API at all (Android, in practice).
+          iOS Safari has no web haptics, and a switch that can only ever
+          no-op is worse than an absent one. */}
+      {'vibrate' in navigator && (
+        <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+          <div className="min-w-0">
+            <div className="text-sm font-medium">{t('Vibrate on moves')}</div>
+            <div className="text-subtle text-xs">{t('One short tick when your piece lands.')}</div>
+          </div>
+          <Switch
+            checked={haptics}
+            onToggle={() => setHaptics(!haptics)}
+            label={t('Vibrate on moves')}
+          />
+        </div>
+      )}
 
       <label className={cn('grid gap-1', !sound && 'opacity-50')}>
         <span className="flex items-baseline justify-between text-xs">
