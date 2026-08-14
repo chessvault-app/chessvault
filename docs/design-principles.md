@@ -39,6 +39,33 @@ digit is also bold, tier marks also differ by icon shape.
 
 ## Layout rules
 
+- **Every scrolling page sits in `PageShell`, on one of three named
+  widths**: `wide` (72rem) for pages that split into columns or card
+  grids (Games, Studies, Notes), `medium` (48rem) for one column read
+  top to bottom (Puzzles, Databases), `narrow` (42rem) for forms
+  (Settings). A width is a statement about the kind of content, so
+  pages of the same kind must agree — a page picks a tier, never a
+  number. One gutter scale (1rem, 1.5rem from `md`, where the sidebar
+  appears) and one safe-area-aware bottom inset come with it.
+- Board-family pages (Board, studies/games viewer, trainers,
+  repertoire, editor) are the other family: they fit the viewport
+  instead of scrolling, capped at 76rem by the shared constants in
+  `ui/layout.ts` — one place, not eight copies.
+- **One page title**: `PageHeader` — `text-lg font-semibold
+  tracking-tight`, actions pushed right, the phone-only back chevron
+  where a page is reached through More. `ShelfToolbar` is built on it.
+  (Four title sizes had accumulated; a page's name is one voice.)
+- A page that scrolls scrolls its **outer** wrapper — the scrollbar
+  belongs at the viewport edge, and it is shown: hiding it is a
+  mobile idiom, and panels' internal bars were already visible.
+- List rows stripe with a **full-bleed** `nth-child(even)` tint, the
+  same alpha family everywhere. Inset rounded pills are forbidden for
+  striping: with few rows, one tinted pill reads as a selection, not
+  as alternation (the engine PVs learned this).
+- A list's **count row** leads with the tally in the small-caps label
+  voice (`text-[0.6875rem] font-semibold uppercase tracking-[0.08em]`)
+  and keeps its controls on the right — the elite and archive panels
+  share this shape because they take turns in one column.
 - Column header bands are `h-9`; with the column's `gap-3` this equals
   the board's `h-10` strip + `gap-2`, so panel tops align with the
   board across Studies/Games/Board/Puzzles.
