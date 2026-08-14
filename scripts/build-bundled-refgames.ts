@@ -33,6 +33,7 @@ import { basename, dirname, resolve } from 'node:path';
 import { REPO_ROOT } from '../server/paths.ts';
 import { REFGAMES_INDEXES } from './lib/db-tuning.ts';
 import { biggestRefgames } from './lib/refgamesFiles.ts';
+import { indexPositions } from '../server/refgamesIndex.ts';
 
 const argValue = (flag: string): string | undefined => {
   const at = process.argv.indexOf(flag);
@@ -121,6 +122,11 @@ out.exec(REFGAMES_INDEXES);
 out.exec('VACUUM');
 out.close();
 from.close();
+
+// The position index, in the shipped asset itself: a fresh install's
+// explorer and repertoire trainer answer from the seeded database the
+// moment the app opens — the bundled opening book this replaced is gone.
+indexPositions(tmp, { log: console.log });
 
 renameSync(tmp, OUT);
 

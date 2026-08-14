@@ -16,5 +16,3 @@ export function isDemo(): boolean {
   return typeof __DEMO__ !== 'undefined' && __DEMO__;
 }
 
-/** How deep the demo's curated opening book goes, in plies. */
-export const DEMO_BOOK_PLIES = 16;

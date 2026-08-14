@@ -14,6 +14,7 @@
  * empty states that the real app would never show.
  */
 import Database from 'better-sqlite3';
+import { indexPositions } from '../server/refgamesIndex.ts';
 import { existsSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DATA_PUZZLES, REPO_ROOT } from '../server/paths.ts';
@@ -174,6 +175,9 @@ if (gamesSource !== null) {
   gameCount = rows.length;
   to.close();
   from.close();
+  // The position index, so the demo's explorer and repertoire answer from
+  // this same slice — the opening books it used to ship are gone.
+  indexPositions(gamesOut, { log: console.log });
 } else {
   console.warn('no reference-games database on this machine — the demo will show its empty state');
 }

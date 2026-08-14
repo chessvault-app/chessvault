@@ -63,26 +63,7 @@ writeFileSync(join(out, 'package.json'), `${JSON.stringify({ version }, null, 2)
 `);
 console.log(`version ${version} stamped beside the bundle`);
 
-// The opening-book builder is a repo script the server SPAWNS, so bundling
-// the server alone left packaged builds unable to build a book at all —
-// there is no scripts/ and no tsx beside the installer. It ships as its own
-// bundle next to the server, which looks for it there before falling back
-// to the repo script.
-await build({
-  entryPoints: [join(repo, 'scripts', 'build-book.ts')],
-  outfile: join(out, 'build-book.mjs'),
-  bundle: true,
-  platform: 'node',
-  format: 'esm',
-  target: 'node20',
-  external: ['better-sqlite3'],
-  banner: {
-    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
-  },
-});
-console.log('book builder bundled');
-
-// Same story for the puzzle database: the Puzzles page asks the server to
+// The puzzle database: the Puzzles page asks the server to
 // build it, the server spawns this, and an installed app has no scripts/.
 await build({
   entryPoints: [join(repo, 'scripts', 'build-puzzles.ts')],

@@ -3,7 +3,7 @@ import { installBuffer } from './nodeShim/buffer.ts';
 import { seedFile } from './nodeShim/fs.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { mountVault } from '../../../server/mountVault.ts';
-import { DATA_BOOKS, DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
+import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
 
 /**
@@ -25,8 +25,6 @@ const VAULT = '/vault';
 /** Keys the sqlite shim resolves; the routes only ever see these as paths. */
 const PUZZLES_DB = '/demo/puzzles.sqlite';
 const REFGAMES_DB = '/demo/refgames.sqlite';
-/** The curated opening book, at the path books.ts resolves for a book named 'demo'. */
-const BOOK_DB = `${DATA_BOOKS}/demo.sqlite`;
 /** Built in the page rather than fetched — see the sqlite shim's write path. */
 const MYGAMES_DB = '/demo/mygames.sqlite';
 
@@ -70,7 +68,7 @@ function buildApp(): Hono {
     }),
   );
   /**
-   * The opening explorer, served from the curated book.
+   * The opening explorer, served from the demo's own reference games.
    *
    * Calling Lichess from the page was the plan and it does not work:
    * measured, explorer.lichess.org answers 401 without a token, and a token
@@ -78,22 +76,22 @@ function buildApp(): Hono {
    * answers the question locally instead — which is what the app's own
    * local-first explorer does anyway, and needs no network at all.
    *
-   * Delegated to the real /api/books route rather than reimplemented: it
-   * already returns moves with w/d/b/total and its hash-collision guard,
-   * and its shape is what the client expects.
+   * Delegated to the real /api/refgames/explore route rather than
+   * reimplemented: the demo's refgames.sqlite carries the same position
+   * index every reference database does (built by build-demo-dbs.ts), and
+   * the route already returns moves with w/d/b/total behind its
+   * hash-collision guard.
    */
   app.get('/api/explorer/:db', async (c) => {
     const fen = c.req.query('fen') ?? '';
-    const answer = await app.request(
-      `/api/books/demo?fen=${encodeURIComponent(fen)}`,
-    );
+    const answer = await app.request(`/api/refgames/explore?fen=${encodeURIComponent(fen)}`);
     if (!answer.ok) {
-      // Past the book's depth is not an error — it is the position the
+      // Past the slice's depth is not an error — it is the position the
       // repertoire trainer calls "out of book", and it expects no moves.
       return c.json({ opening: null, moves: [], topGames: [] });
     }
-    const book = (await answer.json()) as { moves?: unknown[]; topGames?: unknown[] };
-    return c.json({ opening: null, moves: book.moves ?? [], topGames: book.topGames ?? [] });
+    const body = (await answer.json()) as { moves?: unknown[]; topGames?: unknown[] };
+    return c.json({ opening: null, moves: body.moves ?? [], topGames: body.topGames ?? [] });
   });
 
   // Book puzzles are read from commercial books and are not in the demo at
@@ -149,7 +147,6 @@ export async function installDemoBackend(): Promise<void> {
     await loadDemoDatabases({
       [PUZZLES_DB]: 'demo/puzzles.sqlite',
       [REFGAMES_DB]: 'demo/refgames.sqlite',
-      [BOOK_DB]: 'demo/book.sqlite',
     });
   } catch (error) {
     console.warn('demo: puzzles and reference games unavailable —', error);

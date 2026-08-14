@@ -90,7 +90,6 @@ describe('the static demo keeps up with the app', () => {
     for (const file of [
       'web/demo-assets/puzzles.sqlite',
       'web/demo-assets/refgames.sqlite',
-      'web/demo-assets/book.sqlite',
       'web/demo-assets/openings.json',
     ]) {
       expect(existsSync(resolve(REPO_ROOT, file)), `missing ${file}`).toBe(true);
@@ -135,7 +134,9 @@ describe('curated databases match the real ones', () => {
       // Reference databases are plural now; the biggest is the one the
       // demo subset would have been curated from.
       real: biggestRefgames() ?? resolve(DATA, 'refgames.sqlite'),
-      tables: ['games', 'meta'],
+      // `plies` too: the demo's explorer and repertoire answer from the
+      // position index, exactly like a real reference database.
+      tables: ['games', 'meta', 'plies'],
     },
   ];
 
@@ -157,18 +158,17 @@ describe('curated databases match the real ones', () => {
     });
   }
 
-  it('the opening book carries the tables its route joins', () => {
-    const book = resolve(REPO_ROOT, 'web/demo-assets/book.sqlite');
-    if (!existsSync(book)) return;
-    const small = schema(book);
-    // books.ts joins top_games to games; both must exist even when empty,
-    // because a missing table is an error rather than no rows. This is the
-    // exact failure that took two rounds to find by hand.
-    for (const table of ['book', 'top_games', 'games']) {
-      expect(small[table], `book.sqlite has no ${table} table`).toBeDefined();
+  it('the demo reference games carry the position index its routes join', () => {
+    const demo = resolve(REPO_ROOT, 'web/demo-assets/refgames.sqlite');
+    if (!existsSync(demo)) return;
+    const small = schema(demo);
+    // refgames.ts joins plies to games; both must exist even when empty,
+    // because a missing table is an error rather than no rows.
+    for (const table of ['games', 'plies', 'meta']) {
+      expect(small[table], `refgames.sqlite has no ${table} table`).toBeDefined();
     }
-    for (const column of ['pos', 'game_id', 'uci', 'elo']) {
-      expect(small.top_games, `top_games has no ${column}`).toContain(column);
+    for (const column of ['pos', 'game_id', 'uci', 'ply']) {
+      expect(small.plies, `plies has no ${column}`).toContain(column);
     }
   });
 });
