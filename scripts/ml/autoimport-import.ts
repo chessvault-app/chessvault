@@ -25,14 +25,15 @@ import { makeSanAndPlay, parseSan } from 'chessops/san';
 import { makeUci } from 'chessops/util';
 
 const REPO = resolve(import.meta.dirname, '..', '..');
-// --book <config> mirrors autoimport-measure; defaults = the 1001 book.
+// --book <config> is required, mirroring autoimport-measure: the title
+// and report path are book facts, and book facts are data, not code.
 const bookAt = process.argv.indexOf('--book');
-const CFG = {
-  title: '1001 Chess Exercises for Beginners',
-  report: 'data/ml/autoimport-report.json',
-  ...(bookAt > 0
-    ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
-    : {}),
+if (bookAt < 0 || !process.argv[bookAt + 1]) {
+  throw new Error('--book <scripts/ml/books/*.json> is required — book facts are data, not code');
+}
+const CFG = JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as {
+  title: string;
+  report: string;
 };
 const BOOK = resolve(REPO, 'vault', 'puzzlebooks', CFG.title);
 const emitDirArg = process.argv[2];

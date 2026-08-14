@@ -40,24 +40,36 @@ const RENDER_WIDTH = 1400;
 // --- inputs -------------------------------------------------------------------
 
 const pagesDir = process.argv[2];
-if (!pagesDir) throw new Error('usage: autoimport-measure <pages_dir> [--book <config.json>] [--limit N] [--emit <dir>]');
+if (!pagesDir) throw new Error('usage: autoimport-measure <pages_dir> --book <config.json> [--limit N] [--emit <dir>]');
 
-// --book <config>: every book-specific fact lives in scripts/ml/books/*.json.
-// Defaults preserve the original 1001 behaviour (and its artifact names).
+// --book <config> is REQUIRED: every book-specific fact lives in
+// scripts/ml/books/*.json, never here. The identity fields used to have
+// hard-coded 1001 defaults "preserving the original behaviour" — and they
+// had already drifted from the book's own config (moveMarkers said
+// 'dotted' here and 'dotless' there), which is exactly the two-sources-
+// of-truth failure the data files exist to prevent.
 const bookAt = process.argv.indexOf('--book');
+if (bookAt < 0 || !process.argv[bookAt + 1]) {
+  throw new Error('--book <scripts/ml/books/*.json> is required — book facts are data, not code');
+}
+
+/** What a book's config must state about itself. */
+interface BookIdentity {
+  slug: string;
+  title: string;
+  pages: [number, number];
+  solutionsAfterPage: number;
+  maxNumber: number;
+  text: string;
+  cache: string;
+  report: string;
+}
+
 const BOOK = {
-  slug: '1001',
-  title: '1001 Chess Exercises for Beginners',
-  pages: [5, 105] as [number, number],
-  solutionsAfterPage: 100,
   /** Books whose answers are interleaved (one section per chapter) list the
    *  page spans here; it replaces the "everything after solutionsAfterPage"
    *  rule, which would swallow the puzzle pages in between. */
   solutionRanges: null as [number, number][] | null,
-  maxNumber: 1001,
-  text: 'data/ml/1001-text.json',
-  cache: 'data/ml/1001-reads.json',
-  report: 'data/ml/autoimport-report.json',
   /** 'bare' = plain digits above the diagram; 'paren' = "123)". */
   numberStyle: 'bare' as 'bare' | 'paren',
   /** Solutions entry anchor: 'dash' = "N - 1."; 'paren' = "N) ...". */
@@ -77,9 +89,7 @@ const BOOK = {
    *  (left, top, right, bottom) — for books that print coordinates in a
    *  gutter outside the frame, which would warp into the cells. */
   cropTrim: [0, 0, 0, 0] as [number, number, number, number],
-  ...(bookAt > 0
-    ? (JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as object)
-    : {}),
+  ...(JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as BookIdentity),
 };
 /** True when the book prints the side beside each puzzle, however it does
  *  it — those books trust their own label over the chapter carry-over. */
