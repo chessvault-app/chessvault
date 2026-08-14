@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
 export interface BookInfo {
@@ -296,21 +297,26 @@ export const useExplorer = create<ExplorerState>()(
         },
 
         deleteBook: async (name) => {
-          const res = await fetch(`/api/books/${encodeURIComponent(name)}`, { method: 'DELETE' });
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
+          // A thrown fetch used to escape past the caller's confirm — the
+          // dialog closed and nothing happened, with nothing said.
+          let failure: string | null = null;
+          try {
+            await api(`/api/books/${encodeURIComponent(name)}`, { method: 'DELETE' });
+          } catch (e) {
+            failure = apiErrorMessage(e);
+          }
           await get().refreshBooks();
           if (latestFen) get().lookup(latestFen);
-          return res.ok ? null : (body?.error ?? 'delete failed');
+          return failure;
         },
 
         startBuild: async (req) => {
-          const res = await fetch('/api/books/build', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(req),
-          });
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          return res.ok ? null : (body?.error ?? 'build failed to start');
+          try {
+            await api('/api/books/build', { method: 'POST', json: req });
+            return null;
+          } catch (e) {
+            return apiErrorMessage(e);
+          }
         },
 
         fetchBuildStatus: async () => {
