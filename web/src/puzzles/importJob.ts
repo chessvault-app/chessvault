@@ -116,7 +116,7 @@ const detailPending = new Map<
   (r: { cells: CellCandidates[]; labels: string[] } | null) => void
 >();
 
-function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
+function ensureWorker(): Worker {
   worker ??= (() => {
     const w = new Worker(new URL('./ocr/cellnet.worker.ts', import.meta.url), {
       type: 'module',
@@ -141,8 +141,24 @@ function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
       pending.get(id)?.(readings ?? null);
       pending.delete(id);
     };
+    // A crashed worker must not strand its callers: every waiting promise
+    // resolves to "unread" (which degrades to a draft), and the worker is
+    // dropped so the next board boots a fresh one.
+    w.onerror = () => {
+      for (const resolve of pending.values()) resolve(null);
+      for (const resolve of detailPending.values()) resolve(null);
+      pending.clear();
+      detailPending.clear();
+      w.terminate();
+      if (worker === w) worker = null;
+    };
     return w;
   })();
+  return worker;
+}
+
+function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
+  const w = ensureWorker();
   const id = ++nextId;
   const buffer = board.data.buffer.slice(
     board.data.byteOffset,
@@ -150,7 +166,7 @@ function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
   );
   return new Promise((resolve) => {
     pending.set(id, resolve);
-    worker!.postMessage({ id, w: board.w, h: board.h, data: buffer }, [buffer]);
+    w.postMessage({ id, w: board.w, h: board.h, data: buffer }, [buffer]);
   });
 }
 
@@ -158,6 +174,10 @@ function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
 function classifyDetailInWorker(
   board: Gray,
 ): Promise<{ cells: CellCandidates[]; labels: string[] } | null> {
+  // ensureWorker, not worker!: a resumed import whose checkpoint was
+  // written after the final page never runs the page loop, so the repair
+  // pass used to be the first caller — and dereferenced null.
+  const w = ensureWorker();
   const id = ++nextId;
   const buffer = board.data.buffer.slice(
     board.data.byteOffset,
@@ -165,7 +185,7 @@ function classifyDetailInWorker(
   );
   return new Promise((resolve) => {
     detailPending.set(id, resolve);
-    worker!.postMessage({ id, w: board.w, h: board.h, data: buffer, detail: true }, [buffer]);
+    w.postMessage({ id, w: board.w, h: board.h, data: buffer, detail: true }, [buffer]);
   });
 }
 
@@ -205,14 +225,21 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   solve: null,
   error: null,
 
+  // 'reading' is as live as 'scanning': the text half runs for minutes
+  // with repair on, and a second start() during it used to run two scans
+  // fighting over this one store — progress flipping between books, the
+  // first job still saving to its captured slug, and whichever finished
+  // last clobbering the other's terminal state.
   start: (slug, file, templates, options) => {
-    if (get().status === 'scanning') return;
+    const { status } = get();
+    if (status === 'scanning' || status === 'reading') return;
     set({ slug, status: 'scanning', page: 0, pages: 0, found: [], solve: null, error: null });
     void scan(file, templates, options ?? {}, set, get, null);
   },
 
   resume: (slug, templates, options) => {
-    if (get().status === 'scanning') return;
+    const { status } = get();
+    if (status === 'scanning' || status === 'reading') return;
     void (async () => {
       const saved = await readCheckpoint(slug);
       if (!saved) return;
