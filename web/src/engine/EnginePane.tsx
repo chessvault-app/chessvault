@@ -8,7 +8,6 @@ import { PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
-import { EvalBar } from './EvalBar';
 import { formatPv } from './pv.ts';
 import { formatScore, toWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
@@ -61,14 +60,29 @@ export function EngineBlock({ className }: { className?: string }) {
     <div className={cn('shrink-0', className)}>
       <PanelHeader
         title={
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-baseline gap-2">
             {t('Engine')}
-            {enabled && top && (
-              <span className="text-subtle font-mono normal-case tracking-normal">
-                {t('depth')} {top.depth}
-                {top.selDepth ? `/${top.selDepth}` : ''}
-                {finished ? '' : '…'}
-              </span>
+            {/* The evaluation lives HERE now, not on a bar row of its
+                own: the number is the answer, the board's vertical bar
+                already draws the picture, and a second bar inside the
+                panel bought nothing for the row it cost (lanph3re's
+                call). */}
+            {enabled && top && score && (
+              <>
+                <span
+                  className={cn(
+                    'font-mono text-xs font-semibold normal-case tabular-nums tracking-normal',
+                    (score.mate ?? score.cp ?? 0) >= 0 ? 'text-good' : 'text-bad',
+                  )}
+                >
+                  {formatScore(score)}
+                </span>
+                <span className="text-subtle font-mono normal-case tracking-normal">
+                  {t('depth')} {top.depth}
+                  {top.selDepth ? `/${top.selDepth}` : ''}
+                  {finished ? '' : '…'}
+                </span>
+              </>
             )}
           </span>
         }
@@ -117,17 +131,11 @@ export function EngineBlock({ className }: { className?: string }) {
 
       {enabled && !error && (
         <>
-          {/* The horizontal eval bar is redundant on phones — the board's
-              vertical eval bar is always visible there — so hide it and give
-              the room to the PV lines (three of them, multiPv=3). */}
-          <div className="flex items-center gap-2 px-3 pt-2.5 max-lg:hidden">
-            <span className="text-fg min-w-[3.75rem] font-mono text-lg font-semibold tabular-nums">
-              {score ? formatScore(score) : '…'}
-            </span>
-            <EvalBar score={score} orientation="horizontal" className="flex-1" />
-          </div>
-
-          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2 max-lg:max-h-none">
+          {/* Alternating tint down the lines, the stripe every list here
+              uses — at three-plus PVs of small mono text the rows bled
+              into one another. On the li, not the button, so hover still
+              paints over it. */}
+          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2 max-lg:max-h-none [&>li]:rounded-md [&>li:nth-child(even)]:bg-fg/[0.035]">
             {visibleLines.length === 0 ? (
               <li className="text-subtle px-1.5 py-1 text-xs">{t('Thinking…')}</li>
             ) : (
