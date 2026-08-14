@@ -42,9 +42,31 @@ export { sanitizeSegment, validId } from '../shared/vaultNames.ts';
 
 const MAX_PGN_BYTES = 20 * 1024 * 1024;
 
-/** Count chapters without parsing: every game carries an Event header. */
-function countChapters(pgn: string): number {
-  return pgn.match(/^\[Event /gm)?.length ?? (pgn.trim() ? 1 : 0);
+/**
+ * Chapter count and names without parsing: every game carries an Event
+ * header, and a Lichess export names each chapter outright in
+ * `[ChapterName "…"]` — with `[Event "Study: Chapter"]` as the fallback,
+ * the same order pgnToChapters resolves a chapter's name in. Only the
+ * first few names ship: they are a card's caption, not a table of
+ * contents.
+ */
+function chapterInfo(pgn: string): { count: number; names: string[] } {
+  const events = [...pgn.matchAll(/^\[Event\s+"([^"]*)"\]/gm)].map((m) => m[1]!.trim());
+  const count = events.length || (pgn.trim() ? 1 : 0);
+  const stated = [...pgn.matchAll(/^\[ChapterName\s+"([^"]*)"\]/gm)].map((m) => m[1]!.trim());
+  let names = stated.length === events.length && stated.length > 0 ? stated : events;
+  if (names === events && events.length > 0) {
+    // Every event naming the same "Study:" is the study's own name
+    // repeated; the card is already on the study, so it goes.
+    const prefixes = events.map((v) => {
+      const at = v.indexOf(':');
+      return at === -1 ? null : v.slice(0, at).trim();
+    });
+    if (prefixes[0] && prefixes.every((p) => p === prefixes[0])) {
+      names = events.map((v) => v.slice(v.indexOf(':') + 1).trim());
+    }
+  }
+  return { count, names: names.filter((n) => n && n !== '?').slice(0, 4) };
 }
 
 /**
@@ -199,16 +221,17 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
   const api = new Hono();
   const pathOf = (id: string): string => resolve(dir, `${id}${ext}`);
 
-  // Chapter counts parsed per file and cached by mtime, the same pattern as
-  // the games list cache — a listing must not re-read every study body.
-  const chapterCache = new Map<string, { mtimeMs: number; chapters: number }>();
+  // Chapter counts and names parsed per file and cached by mtime, the same
+  // pattern as the games list cache — a listing must not re-read every
+  // study body.
+  const chapterCache = new Map<string, { mtimeMs: number; info: { count: number; names: string[] } }>();
 
-  const countChaptersCached = (path: string, mtimeMs: number): number => {
+  const chapterInfoCached = (path: string, mtimeMs: number): { count: number; names: string[] } => {
     const hit = chapterCache.get(path);
-    if (hit && hit.mtimeMs === mtimeMs) return hit.chapters;
-    const chapters = countChapters(readFileSync(path, 'utf-8'));
-    chapterCache.set(path, { mtimeMs, chapters });
-    return chapters;
+    if (hit && hit.mtimeMs === mtimeMs) return hit.info;
+    const info = chapterInfo(readFileSync(path, 'utf-8'));
+    chapterCache.set(path, { mtimeMs, info });
+    return info;
   };
 
   // The same cache, for everything a note's card shows beyond its stat.
@@ -334,10 +357,12 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
       .map(({ file, size, mtime }) => {
         const path = resolve(dir, file);
         const preview = previewCached(path, mtime.getTime());
+        const info = ext === '.pgn' ? chapterInfoCached(path, mtime.getTime()) : null;
         return {
           // Ids always use forward slashes, whatever the OS separator is.
           id: file.slice(0, -ext.length).split(sep).join('/'),
-          chapters: ext === '.pgn' ? countChaptersCached(path, mtime.getTime()) : 1,
+          chapters: info ? info.count : 1,
+          ...(info && info.names.length > 0 ? { chapterNames: info.names } : {}),
           bytes: size,
           updatedAt: mtime.toISOString(),
           ...preview,

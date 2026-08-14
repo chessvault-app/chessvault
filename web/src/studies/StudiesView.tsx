@@ -713,12 +713,12 @@ function GroupedStudies({
           {groups.get(folder)!.length === 0 ? (
             <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
           ) : (
-            // Two abreast from lg, one below it: the cards are a fixed
-            // height and read left to right, so a second column costs
-            // nothing and halves the scrolling. Both columns are 1fr, so
-            // the pair stretches with the container rather than leaving a
-            // gutter down the right.
-            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 lg:grid-cols-2' : 'flex flex-col gap-1.5'}>
+            // Up to three abreast: two from sm, three from xl, one on a
+            // phone. The cards are a fixed height and read left to right,
+            // so more columns cost nothing and cut the scrolling; every
+            // column is 1fr, so the row stretches with the container
+            // rather than leaving a gutter down the right.
+            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((study) => (
                 <StudyCard
                   key={study.id}
@@ -795,7 +795,13 @@ function StudyCard({
           {t('edited {when}', { when: formatAgo(study.updatedAt) })}
         </span>
       }
-      fen={study.fen}
+      // A study with no position worth showing still gets a board — an
+      // empty one. The shelf reads as a shelf of boards either way, and
+      // an empty diagram blends into the dark ground where the start
+      // position was sixty-four competing squares of the same picture.
+      fen={study.fen ?? '8/8/8/8/8/8/8/8'}
+      // The first few chapter names, where a note would show its words.
+      preview={study.chapterNames?.join(' · ')}
       marked={marked}
       onToggleMark={onToggleMark}
       layout={layout}

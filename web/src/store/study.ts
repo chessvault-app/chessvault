@@ -12,6 +12,8 @@ export interface StudyMeta {
   updatedAt: string;
   /** Where the first chapter's mainline ends — the card's thumbnail. */
   fen?: string | null;
+  /** The first few chapters' names — the card's caption. */
+  chapterNames?: string[];
 }
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
