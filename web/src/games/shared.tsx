@@ -320,8 +320,10 @@ export function GameRow({
           {/* The opening leads the detail line, because the code is what a
               long list is scanned by; the date and the clock follow it in
               the quietest colour on the row. */}
+          {/* Opening first, date, then who played — the order every plain
+              row leads with (players are its title lines), so a renamed
+              game's detail reads the same left to right. */}
           <p className="text-subtle truncate text-xs" title={openingLabel}>
-            {customName ? `${game.white} vs ${game.black} · ` : ''}
             {game.opening ? (
               <OpeningTag eco={game.opening.eco} name={game.opening.name} />
             ) : game.eco ? (
@@ -329,6 +331,7 @@ export function GameRow({
             ) : null}
             {(game.opening || game.eco) && ' · '}
             {game.date}
+            {customName ? ` · ${game.white} vs ${game.black}` : ''}
             {game.timeControl ? ` · ${formatTimeControl(game.timeControl)}` : ''}
           </p>
         </div>
