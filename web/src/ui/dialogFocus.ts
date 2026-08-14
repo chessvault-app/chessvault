@@ -38,6 +38,14 @@ const TEXT_TYPES = new Set(['text', 'search', 'url', 'tel', 'email', 'password',
  * field of any kind means the window is a form to be read first, and a
  * window with no fields has nothing to type into; both keep the old
  * behaviour (the container takes focus, silently).
+ *
+ * A SEARCH box is the exception, and not by input type — every plain
+ * Input is type="search" for autofill reasons (see ui/Input) — but by
+ * SearchInput's own marker. A search field filters the content below
+ * it: a window whose only field is one (the online archive's username
+ * box, the elite games' player search) was opened to browse that
+ * content, and opening it under a keyboard hides the very thing it is
+ * for. The box is one tap away for whoever wants it.
  */
 function soleTextField(node: HTMLElement): HTMLElement | null {
   const fields = Array.from(
@@ -49,6 +57,7 @@ function soleTextField(node: HTMLElement): HTMLElement | null {
   ).filter((el) => el.offsetParent !== null);
   if (fields.length !== 1) return null;
   const only = fields[0]!;
+  if (only.hasAttribute('data-search-field')) return null;
   if (only instanceof HTMLTextAreaElement) return only;
   if (only instanceof HTMLInputElement && TEXT_TYPES.has(only.type)) return only;
   return null;

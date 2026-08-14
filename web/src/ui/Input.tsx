@@ -202,6 +202,12 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
           }}
           inputSize={inputSize}
           value={value}
+          // Not `type` — every plain Input is type="search" here, for the
+          // autofill reasons above — so a REAL search box has to say so
+          // itself. ui/dialogFocus reads this: a window whose only field
+          // is a search box was opened to browse what is under the box,
+          // not to type in it, and must not open with the keyboard up.
+          data-search-field=""
           className={cn('w-full pl-7', text && 'pr-7')}
           onFocus={(e) => {
             setFocused(true);
