@@ -26,7 +26,7 @@ import { Modal } from '@/ui/Modal';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfSort } from '@/ui/ShelfToolbar';
+import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/ui/ShelfToolbar';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
@@ -128,6 +128,8 @@ function StudyList() {
         onMarkedOnly={setMarkedOnly}
         sort={view.sort}
         onSort={view.setSort}
+        dir={view.dir}
+        onDir={view.setDir}
         layout={view.layout}
         onLayout={view.setLayout}
         create={<CreateMenu />}
@@ -197,6 +199,7 @@ function StudyList() {
           markedIds={markedIds}
           onToggleMark={(id) => void toggleMark(id)}
           sort={view.sort}
+          dir={view.dir}
           layout={view.layout}
           onRemove={dropStudy}
         />
@@ -675,6 +678,7 @@ function GroupedStudies({
   markedIds,
   onToggleMark,
   sort,
+  dir,
   layout,
   onRemove,
 }: {
@@ -683,6 +687,7 @@ function GroupedStudies({
   markedIds: Set<string>;
   onToggleMark: (id: string) => void;
   sort: ShelfSort;
+  dir: ShelfDir;
   layout: ShelfLayout;
   onRemove: (id: string) => void;
 }) {
@@ -691,7 +696,7 @@ function GroupedStudies({
   // One order, the chosen one. Bookmarks used to be pins and pins jumped
   // to the top; a mark is a filter now, so the list you are reading does
   // not rearrange itself the moment you mark something in it.
-  for (const study of sortDocs(studies, sort)) {
+  for (const study of sortDocs(studies, sort, dir)) {
     const slash = study.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : study.id.slice(0, slash);
     const list = groups.get(folder);

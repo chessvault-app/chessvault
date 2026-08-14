@@ -1,4 +1,4 @@
-import { Bookmark, LayoutGrid, List } from 'lucide-react';
+import { ArrowDownWideNarrow, ArrowUpNarrowWide, Bookmark, LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { SearchInput } from './Input';
@@ -18,12 +18,17 @@ import { t } from '@/lib/i18n';
  * fewer, so the shelf sorts by what a file can always answer for.
  */
 export type ShelfSort = 'recent' | 'title' | 'size';
+export type ShelfDir = 'asc' | 'desc';
 
 const SORTS: { value: ShelfSort; label: string }[] = [
   { value: 'recent', label: 'Last modified' },
   { value: 'title', label: 'Title' },
   { value: 'size', label: 'Size' },
 ];
+
+/** The direction each sort starts in — the one its name means. Picking a
+    sort resets to this; the arrow beside the select flips it. */
+const NATURAL: Record<ShelfSort, ShelfDir> = { recent: 'desc', title: 'asc', size: 'desc' };
 
 /**
  * Remember a shelf's sort and layout on the device.
@@ -35,24 +40,31 @@ const SORTS: { value: ShelfSort; label: string }[] = [
 export function useShelfView(shelf: string): {
   sort: ShelfSort;
   setSort: (sort: ShelfSort) => void;
+  dir: ShelfDir;
+  setDir: (dir: ShelfDir) => void;
   layout: ShelfLayout;
   setLayout: (layout: ShelfLayout) => void;
 } {
   const key = `chess-vault:shelf-${shelf}`;
-  const [state, setState] = useState<{ sort: ShelfSort; layout: ShelfLayout }>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
-        sort: ShelfSort;
-        layout: ShelfLayout;
-      }>;
-      return {
-        sort: SORTS.some((s) => s.value === saved.sort) ? saved.sort! : 'recent',
-        layout: saved.layout === 'list' ? 'list' : 'grid',
-      };
-    } catch {
-      return { sort: 'recent', layout: 'grid' };
-    }
-  });
+  const [state, setState] = useState<{ sort: ShelfSort; dir: ShelfDir; layout: ShelfLayout }>(
+    () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
+          sort: ShelfSort;
+          dir: ShelfDir;
+          layout: ShelfLayout;
+        }>;
+        const sort = SORTS.some((s) => s.value === saved.sort) ? saved.sort! : 'recent';
+        return {
+          sort,
+          dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : NATURAL[sort],
+          layout: saved.layout === 'list' ? 'list' : 'grid',
+        };
+      } catch {
+        return { sort: 'recent', dir: NATURAL.recent, layout: 'grid' };
+      }
+    },
+  );
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(state));
@@ -62,7 +74,11 @@ export function useShelfView(shelf: string): {
   }, [key, state]);
   return {
     sort: state.sort,
-    setSort: (sort) => setState((prev) => ({ ...prev, sort })),
+    // A new sort starts in its own natural direction rather than keeping
+    // the previous one's: Title after newest-first means A→Z, not Z→A.
+    setSort: (sort) => setState((prev) => ({ ...prev, sort, dir: NATURAL[sort] })),
+    dir: state.dir,
+    setDir: (dir) => setState((prev) => ({ ...prev, dir })),
     layout: state.layout,
     setLayout: (layout) => setState((prev) => ({ ...prev, layout })),
   };
@@ -72,12 +88,16 @@ export function useShelfView(shelf: string): {
 export function sortDocs<T extends { id: string; bytes: number; updatedAt: string }>(
   docs: T[],
   sort: ShelfSort,
+  dir: ShelfDir = NATURAL[sort],
 ): T[] {
   const name = (doc: T): string => doc.id.split('/').at(-1)!;
+  const flip = dir === 'desc' ? -1 : 1;
   return [...docs].sort((a, b) => {
-    if (sort === 'title') return name(a).localeCompare(name(b), undefined, { sensitivity: 'base' });
-    if (sort === 'size') return b.bytes - a.bytes;
-    return b.updatedAt.localeCompare(a.updatedAt);
+    // Ascending comparisons; `flip` turns the whole order over.
+    if (sort === 'title')
+      return flip * name(a).localeCompare(name(b), undefined, { sensitivity: 'base' });
+    if (sort === 'size') return flip * (a.bytes - b.bytes);
+    return flip * a.updatedAt.localeCompare(b.updatedAt);
   });
 }
 
@@ -106,6 +126,8 @@ export function ShelfToolbar({
   placeholder,
   sort,
   onSort,
+  dir,
+  onDir,
   layout,
   onLayout,
   markedOnly,
@@ -118,6 +140,8 @@ export function ShelfToolbar({
   placeholder: string;
   sort: ShelfSort;
   onSort: (sort: ShelfSort) => void;
+  dir: ShelfDir;
+  onDir: (dir: ShelfDir) => void;
   layout: ShelfLayout;
   onLayout: (layout: ShelfLayout) => void;
   markedOnly: boolean;
@@ -166,6 +190,22 @@ export function ShelfToolbar({
             className="hidden shrink-0 sm:flex"
             groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
           />
+          {/* The select says WHAT the shelf is ordered by; this arrow says
+              WHICH WAY, and flips it. Without it 'Title' never admitted
+              whether it meant A→Z or Z→A. */}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            title={dir === 'asc' ? t('Ascending — press for descending') : t('Descending — press for ascending')}
+            className="hidden shrink-0 sm:inline-flex"
+            onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
+          >
+            {dir === 'asc' ? (
+              <ArrowUpNarrowWide className="size-3.5" />
+            ) : (
+              <ArrowDownWideNarrow className="size-3.5" />
+            )}
+          </Button>
           {/* Two states, so a switch rather than a menu — the same segmented
               control the archive panel picks its site with. */}
           <Segmented

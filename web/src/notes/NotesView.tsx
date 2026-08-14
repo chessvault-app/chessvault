@@ -14,7 +14,7 @@ import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfSort } from '@/ui/ShelfToolbar';
+import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/ui/ShelfToolbar';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
@@ -188,6 +188,8 @@ function NoteList() {
         onMarkedOnly={setMarkedOnly}
         sort={view.sort}
         onSort={view.setSort}
+        dir={view.dir}
+        onDir={view.setDir}
         layout={view.layout}
         onLayout={view.setLayout}
         create={<CreateMenu notes={notes} onDone={refresh} />}
@@ -250,6 +252,7 @@ function NoteList() {
           markedIds={markedIds}
           onToggleMark={(id) => void toggleMark(id)}
           sort={view.sort}
+          dir={view.dir}
           layout={view.layout}
           onChanged={refresh}
           onRemove={dropNote}
@@ -339,6 +342,7 @@ function GroupedNotes({
   markedIds,
   onToggleMark,
   sort,
+  dir,
   layout,
   onChanged,
   onRemove,
@@ -348,6 +352,7 @@ function GroupedNotes({
   markedIds: Set<string>;
   onToggleMark: (id: string) => void;
   sort: ShelfSort;
+  dir: ShelfDir;
   layout: ShelfLayout;
   onChanged: () => Promise<void>;
   onRemove: (id: string) => void;
@@ -356,7 +361,7 @@ function GroupedNotes({
   for (const folder of allFolders) groups.set(folder, []);
   // One order, the chosen one — see GroupedStudies. A mark is a filter,
   // not a place in the list.
-  for (const note of sortDocs(notes, sort)) {
+  for (const note of sortDocs(notes, sort, dir)) {
     const slash = note.id.lastIndexOf('/');
     const folder = slash === -1 ? '' : note.id.slice(0, slash);
     const list = groups.get(folder);

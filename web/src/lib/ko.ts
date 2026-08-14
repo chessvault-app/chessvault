@@ -243,6 +243,8 @@ export const ko: Record<string, string> = {
   'Last modified': '최근 수정순',
   Title: '제목순',
   Size: '크기순',
+  'Ascending — press for descending': '오름차순 — 누르면 내림차순',
+  'Descending — press for ascending': '내림차순 — 누르면 오름차순',
   'Grid view': '격자 보기',
   'List view': '목록 보기',
   'Show all': '모두 보기',
