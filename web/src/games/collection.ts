@@ -1,4 +1,4 @@
-import type { GameSummary } from './GamesView';
+import type { GameSummary } from './shared';
 
 /**
  * The collection list, cached for the session.
