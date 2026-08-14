@@ -37,9 +37,12 @@
    into the `chessground` layer declared above. */
 @import '@lichess-org/chessground/assets/chessground.base.css' layer(chessground);
 @import '@lichess-org/chessground/assets/chessground.cburnett.css' layer(chessground);
-/* Extra piece sets (merida/chessnut/pirouetti), vendored from lila by
-   scripts/setup-pieces.mjs and switched with <html data-pieces>. */
-@import './piece-sets.css' layer(chessground);
+/* The extra piece sets live in web/src/pieces/<set>.css (vendored from
+   lila by scripts/setup-pieces.mjs), switched with <html data-pieces>
+   and lazily imported by store/prefs.ts the first time a set is chosen
+   — nine sets of embedded art have no place in the eager bundle. Their
+   rules arrive unlayered, which is what lets them beat the layered
+   cburnett defaults above. */
 
 @custom-variant dark (&:where(.dark, .dark *));
 /* `keyboard:` — while the on-screen keyboard is up. The class is put on
@@ -779,6 +782,24 @@ cg-board square.check {
 :root[data-board='slate'] {
   --board-light: oklch(87% 0.006 260);
   --board-dark: oklch(55% 0.018 260);
+}
+
+:root[data-board='lavender'] {
+  --board-light: oklch(93% 0.02 300);
+  --board-dark: oklch(64% 0.058 300);
+}
+
+:root[data-board='rosewood'] {
+  --board-light: oklch(92% 0.025 30);
+  --board-dark: oklch(61% 0.065 25);
+}
+
+/* A deliberately dark board — both squares below mid-lightness, for
+   boards that should recede into a dark room. The white pieces carry
+   the contrast. */
+:root[data-board='charcoal'] {
+  --board-light: oklch(56% 0.008 260);
+  --board-dark: oklch(39% 0.008 260);
 }
 
 /* An indeterminate progress bar: a segment that sweeps the track.

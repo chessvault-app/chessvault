@@ -44,9 +44,17 @@ installed app.
 | merida | Armando Hernandez Marroquin | GPL-2.0-or-later |
 | chessnut | Alexis Luengas | Apache-2.0 |
 | pirouetti | pirouetti | AGPL-3.0-or-later |
+| fantasy, spatial, celtic | Maurizio Monge | MIT |
+| kiwen-suwi | neverRare | CC-BY-4.0 |
+| mpchess | Maxime Chupin | GPL-3.0-or-later |
+| rhosgfx | RhosGFX | CC0-1.0 |
 | move / capture sounds | ours | GPL-3.0-only |
 
-The piece sets are vendored from lila as base64 in `web/src/piece-sets.css`.
+The piece sets are vendored from lila as base64, one lazily-loaded file
+per set under `web/src/pieces/`. Sets under CC BY-NC-SA (the sadsnake1
+family, california, caliente, xkcd…) are deliberately not taken: the
+NC clause fails this repository's redistribution bar, and the
+"freeware" sets (alpha, leipzig, chess7…) carry no licence at all.
 
 The sounds are synthesised by
 [chess-sounds-gen](https://github.com/chessvault-app/chess-sounds-gen) — no

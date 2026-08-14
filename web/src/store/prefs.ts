@@ -7,8 +7,26 @@ import { persist } from 'zustand/middleware';
  * the desktop stays walnut — these describe the device, not the chess.
  */
 
-export type BoardTheme = 'default' | 'green' | 'brown' | 'blue' | 'slate';
-export type PieceSet = 'cburnett' | 'merida' | 'chessnut' | 'pirouetti';
+export type BoardTheme =
+  | 'default'
+  | 'green'
+  | 'brown'
+  | 'blue'
+  | 'slate'
+  | 'lavender'
+  | 'rosewood'
+  | 'charcoal';
+export type PieceSet =
+  | 'cburnett'
+  | 'merida'
+  | 'chessnut'
+  | 'pirouetti'
+  | 'fantasy'
+  | 'spatial'
+  | 'celtic'
+  | 'kiwen-suwi'
+  | 'mpchess'
+  | 'rhosgfx';
 
 export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: 'default', label: 'Walnut (adaptive)' },
@@ -16,6 +34,9 @@ export const BOARD_THEMES: { id: BoardTheme; label: string }[] = [
   { id: 'brown', label: 'Classic brown' },
   { id: 'blue', label: 'Ocean' },
   { id: 'slate', label: 'Slate' },
+  { id: 'lavender', label: 'Lavender' },
+  { id: 'rosewood', label: 'Rosewood' },
+  { id: 'charcoal', label: 'Charcoal' },
 ];
 
 /**
@@ -76,6 +97,12 @@ export const PIECE_SETS: { id: PieceSet; label: string }[] = [
   { id: 'merida', label: 'Merida' },
   { id: 'chessnut', label: 'Chessnut' },
   { id: 'pirouetti', label: 'Pirouetti' },
+  { id: 'fantasy', label: 'Fantasy' },
+  { id: 'spatial', label: 'Spatial' },
+  { id: 'celtic', label: 'Celtic' },
+  { id: 'kiwen-suwi', label: 'Kiwen-suwi' },
+  { id: 'mpchess', label: 'MPChess' },
+  { id: 'rhosgfx', label: 'RhosGFX' },
 ];
 
 /**
@@ -164,7 +191,16 @@ const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
   if (boardTheme === 'default') delete el.dataset.board;
   else el.dataset.board = boardTheme;
   if (pieces === 'cburnett') delete el.dataset.pieces;
-  else el.dataset.pieces = pieces;
+  else {
+    el.dataset.pieces = pieces;
+    // Each vendored set is its own CSS chunk, fetched the first time it
+    // is chosen and cached by the service worker like any other chunk —
+    // nine sets of embedded art would otherwise sit in the eager bundle
+    // for a preference most people leave on cburnett. Until the chunk
+    // lands the board simply shows cburnett, and if the fetch fails
+    // (offline, never seen before) that fallback is the behaviour.
+    void import(`../pieces/${pieces}.css`).catch(() => {});
+  }
 };
 
 /** Three custom properties; every token in index.css reads from them. */
