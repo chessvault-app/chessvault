@@ -143,6 +143,8 @@ export const ko: Record<string, string> = {
   'Thinking…': '생각하는 중…',
   'Engine review — judge every move (?!/?/??) and measure accuracy':
     '엔진 리뷰 — 모든 수를 평가하고 (?!/?/??) 정확도를 측정합니다',
+  'Book moves — known opening theory, not judged':
+    '북 무브 — 알려진 오프닝 이론이므로 평가하지 않습니다',
   Dismiss: '닫기',
   'Dismiss review': '리뷰 닫기',
   'Review game': '게임 리뷰',

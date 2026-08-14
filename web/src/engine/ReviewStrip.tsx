@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, Microscope, X } from 'lucide-react';
+import { BookOpen, ChevronDown, Loader2, Microscope, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
@@ -280,6 +280,16 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
         {summary.acpl} acpl
       </span>
       <span className="text-subtle ml-auto flex gap-2 font-mono text-[0.6875rem] tabular-nums">
+        <span
+          title={t('Book moves — known opening theory, not judged')}
+          className={cn(
+            'flex items-center gap-0.5',
+            summary.bookMoves === 0 ? 'text-subtle/50' : 'text-subtle',
+          )}
+        >
+          {summary.bookMoves}
+          <BookOpen className="size-3" />
+        </span>
         <Judged count={summary.brilliancies} glyph="!!" className="text-nag-brilliant" />
         <Judged count={summary.inaccuracies} glyph="?!" className="text-nag-dubious" />
         <Judged count={summary.mistakes} glyph="?" className="text-nag-mistake" />

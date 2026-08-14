@@ -59,6 +59,8 @@ export interface SideSummary {
   mistakes: number;
   blunders: number;
   brilliancies: number;
+  /** Moves inside the opening-book prefix (never judged). */
+  bookMoves: number;
 }
 
 export interface MoveVerdict {
@@ -68,17 +70,27 @@ export interface MoveVerdict {
   nag: number | null;
   accuracy: number;
   cpLoss: number;
+  /** Known theory: judgment withheld, measurement kept. */
+  book: boolean;
 }
 
 /**
  * Judge every move of a line given white-POV scores for each position
  * (scores.length = moves.length + 1; scores[0] is before the first move).
+ *
+ * `bookPlies` is how many leading moves are known theory — each reached a
+ * position in the opening catalogue, with no gap (once out of book a game
+ * never re-enters, however it transposes). Book moves get NO quality NAG:
+ * theory is memory, not calculation, and judging it flags every sound
+ * gambit as an inaccuracy. Accuracy and cp-loss are still MEASURED for
+ * them — suppressing a verdict is not the same as faking a number.
  */
 export function judgeLine(
   scores: Score[],
   firstMover: 'white' | 'black',
   /** Per-move flag: material sacrificed and not immediately recouped. */
   sacrifices?: boolean[],
+  bookPlies = 0,
 ): MoveVerdict[] {
   const verdicts: MoveVerdict[] = [];
   for (let i = 1; i < scores.length; i++) {
@@ -89,14 +101,17 @@ export function judgeLine(
     const drop = Math.max(0, before - after);
     const cpBefore = cpOf(scores[i - 1]!) * (mover === 'white' ? 1 : -1);
     const cpAfter = cpOf(scores[i]!) * (mover === 'white' ? 1 : -1);
+    const book = i - 1 < bookPlies;
+    // No brilliancies in book either: a memorised sacrifice is preparation.
     const brilliant =
-      sacrifices?.[i - 1] === true && drop <= 0.02 && before > 0.35 && before < 0.9;
+      !book && sacrifices?.[i - 1] === true && drop <= 0.02 && before > 0.35 && before < 0.9;
     verdicts.push({
       ply: i - 1,
       mover,
-      nag: brilliant ? 3 : judgeNag(drop),
+      nag: book ? null : brilliant ? 3 : judgeNag(drop),
       accuracy: moveAccuracy(before * 100, after * 100),
       cpLoss: Math.min(1000, Math.max(0, cpBefore - cpAfter)),
+      book,
     });
   }
   return verdicts;
@@ -114,5 +129,6 @@ export function summarise(verdicts: MoveVerdict[], side: 'white' | 'black'): Sid
     mistakes: own.filter((v) => v.nag === 2).length,
     blunders: own.filter((v) => v.nag === 4).length,
     brilliancies: own.filter((v) => v.nag === 3).length,
+    bookMoves: own.filter((v) => v.book).length,
   };
 }

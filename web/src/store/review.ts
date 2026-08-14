@@ -10,6 +10,7 @@ import {
 } from '@/engine/StockfishEngine';
 import { judgeLine, summarise, type Score, type SideSummary } from '@/engine/review';
 import { toWhitePov, winningChances } from '@/engine/uci';
+import { isNamedPosition, NAMED_PLIES } from '@/lib/opening';
 import { useAnalysis } from './analysis';
 import { useEngine } from './engine';
 
@@ -30,6 +31,8 @@ export interface GraphPoint {
   chances: number;
   /** Quality NAG the review stamped on the move reaching this position. */
   nag: number | null;
+  /** The move reaching this position was book — theory, not judged. */
+  book: boolean;
 }
 
 interface ReviewState {
@@ -92,9 +95,27 @@ export const useReview = create<ReviewState>()((set, get) => ({
 
     try {
       const ids = [tree.rootId, ...line];
+      const fens = ids.map((id) => getNode(tree, id).fen);
+
+      // The opening-book prefix, the way lichess and chess.com mean it:
+      // a move is book while the POSITION it reaches is in the opening
+      // catalogue (so transpositions count), and only while every move
+      // before it was book too — once out, never back in. Walked before
+      // the engine starts; each hit is one cached /api/opening lookup and
+      // the walk stops at the first miss. A game from a set-up position
+      // misses immediately and has no book phase, and if the catalogue is
+      // unreachable the lookups all miss — the review just judges from
+      // move one, which is what it did before it knew about books.
+      let bookPlies = 0;
+      while (bookPlies < line.length && bookPlies < NAMED_PLIES) {
+        if (!(await isNamedPosition(fens[bookPlies + 1]!))) break;
+        bookPlies += 1;
+      }
+      if (get().status !== 'running') return;
+
       const scores: Score[] = [];
       for (let i = 0; i < ids.length; i++) {
-        const fen = getNode(tree, ids[i]!).fen;
+        const fen = fens[i]!;
         const update = await new Promise<SearchUpdate>((resolve) => {
           resolveUpdate = resolve;
           void engine.analyse(fen, REVIEW_DEPTH);
@@ -132,15 +153,13 @@ export const useReview = create<ReviewState>()((set, get) => ({
         }
         return bal;
       };
-      // ids is [root, ...line], so this is one lookup per node, not two walks.
-      const fens = ids.map((id) => getNode(tree, id).fen);
       const sacrifices = line.map((_, i) => {
         const mover: 'white' | 'black' =
           i % 2 === 0 ? rootTurn : rootTurn === 'white' ? 'black' : 'white';
         const settled = fens[Math.min(i + 2, fens.length - 1)]!;
         return balance(settled, mover) <= balance(fens[i]!, mover) - 2;
       });
-      const verdicts = judgeLine(scores, rootTurn, sacrifices);
+      const verdicts = judgeLine(scores, rootTurn, sacrifices, bookPlies);
 
       // The review owns quality NAGs (1..6) on the mainline, like lichess
       // server analysis: judged moves get theirs, unjudged moves lose any
@@ -168,6 +187,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
           id,
           chances: winningChances(scores[i]!),
           nag: i === 0 ? null : verdicts[i - 1]!.nag,
+          book: i > 0 && verdicts[i - 1]!.book,
         })),
       });
     } catch (error) {

@@ -46,6 +46,30 @@ describe('review judgments (lichess criteria)', () => {
     expect(black.accuracy).toBe(100);
   });
 
+  it('withholds judgment inside the book prefix, but keeps measuring', () => {
+    // White opens with a gambit worth ~7% of winning chances, black keeps
+    // the pawn, then white blunders. Judged cold, move one is a ?!.
+    const scores = [{ cp: 20 }, { cp: -60 }, { cp: -70 }, { cp: -400 }];
+    expect(judgeLine(scores, 'white')[0]!.nag).toBe(6);
+
+    // The same line with its first two moves known theory: the gambit is
+    // book, not an inaccuracy — and judgment resumes the move after.
+    const booked = judgeLine(scores, 'white', undefined, 2);
+    expect(booked[0]!.book).toBe(true);
+    expect(booked[0]!.nag).toBeNull();
+    expect(booked[1]!.book).toBe(true);
+    expect(booked[2]!.book).toBe(false);
+    expect(booked[2]!.nag).toBe(4); // ??
+    // Suppressed verdict, honest measurement: accuracy still took the hit.
+    expect(booked[0]!.accuracy).toBeLessThan(100);
+
+    const white = summarise(booked, 'white');
+    expect(white.bookMoves).toBe(1);
+    expect(white.inaccuracies).toBe(0);
+    expect(white.blunders).toBe(1);
+    expect(summarise(booked, 'black').bookMoves).toBe(1);
+  });
+
   it('handles a black-to-move start (puzzle-like FENs)', () => {
     const scores = [{ cp: 0 }, { cp: 0 }, { cp: 0 }];
     const verdicts = judgeLine(scores, 'black');
