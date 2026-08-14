@@ -1,5 +1,6 @@
-import { AlertTriangle, Database, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, Database, HelpCircle, Settings2, Thermometer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { summarisePlan, tagLine } from '@shared/explain';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -9,6 +10,8 @@ import { PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
+import { ExplainCard } from './ExplainCard.tsx';
+import { motifChips, planText } from './explainText.ts';
 import { formatPv } from './pv.ts';
 import { moverChances } from './review.ts';
 import { lookupTablebase, tablebaseEligible, tbVerdict, type TbResult } from './tablebase.ts';
@@ -39,6 +42,8 @@ export function EngineBlock({ className }: { className?: string }) {
   const heatOn = useExplain((s) => s.heatOn);
   const heatUnsupported = useExplain((s) => s.heatUnsupported);
   const toggleHeat = useExplain((s) => s.toggleHeat);
+  const cardOpen = useExplain((s) => s.cardOpen);
+  const toggleCard = useExplain((s) => s.toggleCard);
 
   const node = getNode(tree, cursorId);
   const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
@@ -96,6 +101,19 @@ export function EngineBlock({ className }: { className?: string }) {
     if (gap < 0.15) return null;
     return { onlyMove: gap >= 0.3, best: Math.round(best * 100), second: Math.round(second * 100) };
   }, [visibleLines, turn]);
+
+  /**
+   * The top line's plan, one phrase list under the lines. Depth-gated
+   * like the sharpness chip: a plan read off a depth-6 iteration would
+   * change three times a second. Keyed on the PV STRING for the same
+   * reason PvRow's memo is — parseInfo allocates a fresh moves array per
+   * info line.
+   */
+  const topPvKey = top && top.depth >= 12 ? top.moves.join(' ') : '';
+  const planLine = useMemo(
+    () => (topPvKey ? planText(summarisePlan(node.fen, topPvKey.split(' '))) : null),
+    [node.fen, topPvKey],
+  );
 
   return (
     // The identical header the standalone Engine panel had — the merge
@@ -157,6 +175,16 @@ export function EngineBlock({ className }: { className?: string }) {
         }
         actions={
           <>
+            {/* The Why card: threat + last-move probes, on demand. */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              active={cardOpen}
+              onClick={toggleCard}
+              title={t('Explain this position')}
+            >
+              <HelpCircle className="size-3.5" />
+            </Button>
             {/* Board overlay of NNUE piece values. Hidden outright once an
                 engine build proves it cannot answer — a control that can
                 never do anything is worse than none. */}
@@ -243,6 +271,12 @@ export function EngineBlock({ className }: { className?: string }) {
               ))
             )}
           </ul>
+          {planLine && (
+            <p className="text-subtle px-3 pt-0.5 pb-1.5 text-xs">
+              <span className="text-muted font-medium">{t('Plan:')}</span> {planLine}
+            </p>
+          )}
+          <ExplainCard />
         </>
       )}
       {/* Closes the expanded engine body so the Moves header below reads
@@ -275,6 +309,13 @@ function PvRow({
   const pv = useMemo(() => formatPv(fen, pvKey ? pvKey.split(' ') : []), [fen, pvKey]);
   const advantage = score.mate ?? score.cp ?? 0;
 
+  // What the tactic IS, when there is one: a chip per line, silent for
+  // the overwhelming majority of quiet lines. Depth-gated for stability.
+  const chips = useMemo(
+    () => (line.depth >= 10 && pvKey ? motifChips(tagLine(fen, pvKey.split(' '))) : []),
+    [fen, pvKey, line.depth],
+  );
+
   return (
     <li>
       <button
@@ -298,6 +339,14 @@ function PvRow({
         >
           {formatScore(score)}
         </span>
+        {chips.map((chip) => (
+          <span
+            key={chip}
+            className="bg-primary-soft text-primary shrink-0 rounded px-1 py-px text-[9px] font-semibold"
+          >
+            {chip}
+          </span>
+        ))}
         <span className="text-muted min-w-0 flex-1 truncate text-xs">{pv.text}</span>
       </button>
     </li>
