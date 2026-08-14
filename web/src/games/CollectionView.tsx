@@ -402,7 +402,7 @@ export function CollectionView() {
       scroll={false}
       // Below sm the whole page scrolls; from sm up the two panels scroll
       // themselves, so the column pins to the viewport instead.
-      className="h-full overflow-y-auto scrollbar-hidden sm:overflow-hidden pb-4 md:pb-6"
+      className="h-full overflow-y-auto sm:overflow-hidden pb-4 md:pb-6"
     >
       {/* The heading carries what is ABOUT the page; the two controls that
           NARROW it — search, then the bookmark switch — belong with the
