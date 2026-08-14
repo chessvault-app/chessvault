@@ -18,7 +18,7 @@ import { Segmented } from '@/ui/Segmented';
 import { CloudBoardArt } from '@/ui/CloudBoardArt';
 
 import { Select } from '@/ui/Select';
-import { Input } from '@/ui/Input';
+import { SearchInput } from '@/ui/Input';
 
 import { SkeletonGameRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -647,15 +647,16 @@ export function ArchiveBrowser({
         />
 
         <div className="flex items-center gap-1">
-          <Input
-            type="text"
+          {/* SearchInput, not a bare Input: a mistyped handle needed
+              selecting and retyping — the X empties it in one press. */}
+          <SearchInput
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && username.trim()) void loadMonths();
             }}
             placeholder={provider === 'chesscom' ? t('chess.com username') : t('Lichess username')}
-            className="w-auto min-w-0 flex-1 font-mono"
+            className="min-w-0 flex-1 font-mono"
             inputSize="sm"
           />
           <Button
