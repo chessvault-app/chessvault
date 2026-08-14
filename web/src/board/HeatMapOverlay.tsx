@@ -42,7 +42,9 @@ export function HeatMapOverlay({
   if (!heatOn || !heat || heat.fen !== fen) return null;
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-20">
+    // z-30 like NagBadge: chessground's pieces paint over anything lower,
+    // and a wide piece (the queen) swallowed its own value chip at z-20.
+    <div aria-hidden className="pointer-events-none absolute inset-0 z-30">
       {Object.entries(heat.pieces).map(([sq, info]) => {
         const file = sq.charCodeAt(0) - 97;
         const rank = Number(sq[1]) - 1;
