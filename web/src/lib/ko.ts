@@ -318,6 +318,7 @@ export const ko: Record<string, string> = {
   'No databases yet — build one from an uploaded collection.':
     '아직 데이터베이스가 없습니다. 업로드한 컬렉션으로 만들어 보세요.',
   'Your side, result and notes': '내 색, 결과, 노트',
+  "Searched player's side and result": '검색한 플레이어의 색과 결과',
   'Index positions': '포지션 색인 만들기',
   '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.':
     '“{name}”에는 아직 포지션 색인이 없습니다. 색인은 이미 들어 있는 기보를 읽어 만들며 — 올릴 것은 없습니다 — 1~2분 걸립니다.',

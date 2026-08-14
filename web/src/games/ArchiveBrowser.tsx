@@ -3,6 +3,7 @@ import {
   Info,
   Loader2,
   Plus,
+  SlidersHorizontal,
   X,
 } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
@@ -19,13 +20,24 @@ import { CloudBoardArt } from '@/ui/CloudBoardArt';
 
 import { Select } from '@/ui/Select';
 import { SearchInput } from '@/ui/Input';
+import { Field } from '@/ui/Field';
 
 import { SkeletonGameRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
-import { ResultSelect, SideSelect, type ResultFilter, type SideFilter } from './GameFilters';
+import {
+  EMPTY_STRUCTURED_FILTERS,
+  hasStructuredFilters,
+  matchesStructured,
+  ResultSelect,
+  SideSelect,
+  StructuredFiltersWindow,
+  type ResultFilter,
+  type SideFilter,
+  type StructuredFilters,
+} from './GameFilters';
 
 interface ArchiveMonth {
   month: string;
@@ -464,10 +476,19 @@ export function ArchiveBrowser({
   const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
   const [sideFilter, setSideFilter] = useState<SideFilter>('any');
   const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
+  // The structured sentence, answered client-side like the collection's:
+  // a cached month is already in the page (see matchesStructured).
+  const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
+  const [editingFilters, setEditingFilters] = useState(false);
+  const [quickDraft, setQuickDraft] = useState<{ side: SideFilter; result: ResultFilter }>({
+    side: 'any',
+    result: 'any',
+  });
   const visibleMonthGames = monthGames.filter(
     (g) =>
       (sideFilter === 'any' || g.userSide === sideFilter) &&
-      (resultFilter === 'any' || g.result === resultFilter),
+      (resultFilter === 'any' || g.result === resultFilter) &&
+      matchesStructured(structured, g),
   );
 
   /**
@@ -770,6 +791,54 @@ export function ArchiveBrowser({
           />
           <SideSelect value={sideFilter} onChange={setSideFilter} />
           <ResultSelect value={resultFilter} onChange={setResultFilter} />
+          {/* The same More-filters window the collection and the elite
+              browser carry, answered client-side against the loaded
+              month. No Tournament field — matchesStructured has no event
+              answer, exactly as in the collection. */}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            active={hasStructuredFilters(structured)}
+            title={t('More filters')}
+            className="shrink-0"
+            onClick={() => {
+              setQuickDraft({ side: sideFilter, result: resultFilter });
+              setEditingFilters(true);
+            }}
+          >
+            <SlidersHorizontal className="size-3.5" />
+          </Button>
+          {editingFilters && (
+            <StructuredFiltersWindow
+              initial={structured}
+              showEvent={false}
+              extraFields={
+                // The row's selects, mirrored — side here is the SEARCHED
+                // player's seat, a different question from the named
+                // player's side above, which is why both exist.
+                <Field label="Searched player's side and result">
+                  <div className="flex gap-2">
+                    <SideSelect
+                      value={quickDraft.side}
+                      onChange={(side) => setQuickDraft((d) => ({ ...d, side }))}
+                    />
+                    <ResultSelect
+                      value={quickDraft.result}
+                      onChange={(result) => setQuickDraft((d) => ({ ...d, result }))}
+                    />
+                  </div>
+                </Field>
+              }
+              onClear={() => setQuickDraft({ side: 'any', result: 'any' })}
+              onApply={(next) => {
+                setEditingFilters(false);
+                setStructured(next);
+                setSideFilter(quickDraft.side);
+                setResultFilter(quickDraft.result);
+              }}
+              onClose={() => setEditingFilters(false)}
+            />
+          )}
         </div>
         </div>
       )}
