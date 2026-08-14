@@ -50,6 +50,17 @@ interface EngineState {
 let engine: StockfishEngine | null = null;
 /** Position requested while the worker was still booting. */
 let pendingFen: string | null = null;
+/**
+ * The fen a live search was last STARTED for. Two EngineBlocks are
+ * mounted at once (desktop docked + phone tab, one CSS-hidden) and both
+ * run the re-analyse effect, so every position change used to arrive
+ * here twice: the second call saw a running search and go→stop→go'd the
+ * SAME fen — a flash of shallow "finished" eval and a wasted restart.
+ * A repeat of the fen already being searched is dropped instead. Reset
+ * wherever the search stops being live, so a remounted pane (navigate
+ * away and back) re-analyses the same position.
+ */
+let requestedFen: string | null = null;
 
 export const useEngine = create<EngineState>()(
   persist(
@@ -68,6 +79,7 @@ export const useEngine = create<EngineState>()(
         set({ error: message, enabled: false });
         engine?.terminate();
         engine = null;
+        requestedFen = null;
       };
 
       const ensureEngine = (): StockfishEngine => {
@@ -119,11 +131,15 @@ export const useEngine = create<EngineState>()(
             engine?.terminate();
             engine = null;
             pendingFen = null;
+            requestedFen = null;
             set({ enabled: false, lines: [], resultFen: null, finished: false });
             return;
           }
           set({ enabled: true, error: null, threadsAvailable: supportsThreads() });
-          if (pendingFen) void ensureEngine().analyse(pendingFen, get().depth);
+          if (pendingFen) {
+            requestedFen = pendingFen;
+            void ensureEngine().analyse(pendingFen, get().depth);
+          }
         },
 
         toggle: () => get().setEnabled(!get().enabled),
@@ -140,14 +156,19 @@ export const useEngine = create<EngineState>()(
         },
 
         analyse: (fen) => {
+          if (get().enabled && fen === requestedFen) return; // the twin pane's echo
           pendingFen = fen;
           if (!get().enabled) return;
+          requestedFen = fen;
           // Clear straight away so the pane never shows another position's eval.
           set({ lines: [], finished: false, resultFen: null });
           void ensureEngine().analyse(fen, get().depth);
         },
 
-        stop: () => engine?.stop(),
+        stop: () => {
+          requestedFen = null;
+          engine?.stop();
+        },
       };
     },
     {
