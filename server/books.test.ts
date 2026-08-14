@@ -112,6 +112,19 @@ describe('books api', () => {
     expect((await upload('uploaded.pgn', PGN)).status).toBe(409);
   });
 
+  it('refuses an upload declaring more than the route cap', async () => {
+    // The route is exempt from the API-wide 32 MB body cap (a real elite
+    // month is far bigger), so it must state its own bound.
+    const res = await app.request('/api/sources?name=huge.pgn', {
+      method: 'POST',
+      headers: { 'content-length': String(3 * 1024 ** 3) },
+      body: PGN,
+    });
+    expect(res.status).toBe(413);
+    expect(existsSync(join(dir, 'huge.pgn'))).toBe(false);
+    expect(existsSync(join(dir, 'huge.pgn.part'))).toBe(false);
+  });
+
   it('refuses uploads that are not a plain .pgn filename', async () => {
     for (const name of ['../escape.pgn', 'nested/file.pgn', 'notpgn.txt', '']) {
       const res = await app.request(`/api/sources?name=${encodeURIComponent(name)}`, {

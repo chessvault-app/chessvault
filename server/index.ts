@@ -139,7 +139,17 @@ app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_BIND }));
 // routes (studies, notes, draft images) otherwise accept unbounded input.
 // 32 MB clears the largest legitimate case (a book's draft batch) with room
 // to spare; the per-route byte checks refine it.
-app.use('/api/*', bodyLimit({ maxSize: 32 * 1024 * 1024 }));
+//
+// One exemption: the PGN source upload is streamed to disk precisely
+// because an elite month is hundreds of megabytes, and this middleware
+// broke it two ways — a declared Content-Length over the cap 413s the
+// route outright, and a chunked body is BUFFERED WHOLE to measure it,
+// defeating the streaming on the 2 GB box the route exists to protect.
+// The route enforces its own cap on the bytes as they stream past.
+const apiBodyCap = bodyLimit({ maxSize: 32 * 1024 * 1024 });
+app.use('/api/*', (c, next) =>
+  c.req.method === 'POST' && c.req.path === '/api/sources' ? next() : apiBodyCap(c, next),
+);
 
 // Auth first: its own routes stay reachable while everything /api after
 // this point requires the session (no-op unless appPassword is set).

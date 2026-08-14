@@ -442,6 +442,16 @@ export function booksApi(
     if (existsSync(target)) return c.json({ error: 'a file with that name is already here' }, 409);
     if (!c.req.raw.body) return c.json({ error: 'empty upload' }, 400);
 
+    // This route is exempt from the API-wide 32 MB body cap (which would
+    // buffer or refuse exactly the uploads it exists for), so it carries
+    // its own: generous enough for any elite month or Gigabase export,
+    // bounded so a runaway upload cannot fill the disk.
+    const CAP = 2 * 1024 ** 3;
+    const declared = Number(c.req.header('content-length'));
+    if (Number.isFinite(declared) && declared > CAP) {
+      return c.json({ error: 'source file too large (2 GB cap)' }, 413);
+    }
+
     mkdirSync(dirs.sources, { recursive: true });
     // Write beside the target, then rename: a dropped connection leaves a
     // .part behind rather than a truncated PGN that looks importable.
@@ -456,10 +466,26 @@ export function booksApi(
       const { createWriteStream } = await import('node:fs');
       const { Readable } = await import('node:stream');
       const { pipeline } = await import('node:stream/promises');
-      await pipeline(Readable.fromWeb(c.req.raw.body as NodeReadableStream), createWriteStream(part));
+      // Chunked uploads declare no length up front, so the cap is enforced
+      // on the bytes as they stream past.
+      let seen = 0;
+      await pipeline(
+        Readable.fromWeb(c.req.raw.body as NodeReadableStream),
+        async function* (source) {
+          for await (const chunk of source) {
+            seen += (chunk as Buffer).byteLength;
+            if (seen > CAP) throw new Error('source file too large');
+            yield chunk;
+          }
+        },
+        createWriteStream(part),
+      );
       renameSync(part, target);
     } catch (error) {
       rmSync(part, { force: true });
+      if ((error as Error).message === 'source file too large') {
+        return c.json({ error: 'source file too large (2 GB cap)' }, 413);
+      }
       return c.json({ error: `upload failed: ${(error as Error).message}` }, 500);
     }
     return c.json({ name, bytes: statSync(target).size });
