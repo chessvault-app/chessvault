@@ -164,6 +164,33 @@ The file is damage-tolerant (a torn last line loses one attempt, never
 the trainer) and lives in the vault: it travels with backups, and the
 studies themselves are never touched by any of this.
 
+### Where this converges
+
+The pieces above form a loop with a deliberate fixed point. Drilling
+surfaces gaps; you answer them by editing the study; the next drill
+probes deeper and surfaces the next layer. Left running, the loop does
+NOT converge on "every line in the database" — it converges on the
+study's **5%-closure**: every position reachable by playing your
+prepared moves against replies that each clear a 5% share of games
+locally, within the study's own opening family, out to the depth where
+the source still has games. The database's tail of one-game oddities
+stays invisible by design — never reported, and never played, since
+steering keeps the field inside your coverage.
+
+Meanwhile the review pool converges on the other half: recalling
+everything the study contains. Together the two limits say what the
+trainer is for — mastering the opening *as the field actually plays
+it*, not the database.
+
+Two properties of the loop are worth knowing. It is paced: only the
+single most common uncovered reply is noted per position per session,
+so three sidelines surface across three sessions, not as an audit
+dump. And it has a human in it: the trainer reports gaps but never
+writes a line into a study — the closure grows exactly as fast as you
+edit, and if you broaden the study's subject (answering a gap with a
+new opening's chapter), the trunk shortens and the frontier widens to
+match your new definition of the subject.
+
 ### What the drill does not promise
 
 - The field plays the intersection of your study and its own games. A
