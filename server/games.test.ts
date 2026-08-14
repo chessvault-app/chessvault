@@ -40,7 +40,11 @@ describe('games api (collection model)', () => {
     dir = mkdtempSync(join(tmpdir(), 'games-api-'));
     mkdirSync(join(dir, 'chesscom', 'lanph3re'), { recursive: true });
     writeFileSync(join(dir, 'chesscom', 'lanph3re', '2026-07.pgn'), MONTH_PGN);
-    app = new Hono().route('/api', gamesApi(dir));
+    // The vault side is only stamped for the profile's own archives, so
+    // the tests claim the handle the fixtures use.
+    const configPath = join(dir, 'config.json');
+    writeFileSync(configPath, JSON.stringify({ profile: { chesscom: 'lanph3re', lichess: 'lanph3re' } }));
+    app = new Hono().route('/api', gamesApi(dir, configPath));
   });
 
   afterAll(() => {
@@ -69,6 +73,42 @@ describe('games api (collection model)', () => {
       userSide: 'white', // from the VaultSide header written at collect time
       annotated: false, // clock comments alone are not annotations
     });
+  });
+
+  it('stamps the side for a Lichess archive too', async () => {
+    // Only chess.com paths were stamped, so your own Lichess games
+    // landed in the collection with no side at all.
+    mkdirSync(join(dir, 'lichess', 'lanph3re'), { recursive: true });
+    writeFileSync(
+      join(dir, 'lichess', 'lanph3re', '2026-06.pgn'),
+      '[White "other"]\n[Black "lanph3re"]\n[Result "0-1"]\n[UTCDate "2026.06.01"]\n\n1. e4 e5 0-1\n',
+    );
+    await app.request('/api/games/collect', {
+      method: 'POST',
+      body: JSON.stringify({ file: 'lichess/lanph3re/2026-06.pgn', index: 0 }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const { games } = await (await app.request('/api/games')).json();
+    const lichess = games.find((g: { white: string }) => g.white === 'other');
+    expect(lichess).toMatchObject({ userSide: 'black' });
+  });
+
+  it("keeps another player's archive games as reference (no side)", async () => {
+    // The browser searches any handle; only the profile's own archive
+    // may claim a seat, or "mine" filters would own a stranger's games.
+    mkdirSync(join(dir, 'chesscom', 'somegm'), { recursive: true });
+    writeFileSync(
+      join(dir, 'chesscom', 'somegm', '2026-05.pgn'),
+      '[White "somegm"]\n[Black "rival"]\n[Result "1-0"]\n[UTCDate "2026.05.02"]\n\n1. d4 d5 1-0\n',
+    );
+    await app.request('/api/games/collect', {
+      method: 'POST',
+      body: JSON.stringify({ file: 'chesscom/somegm/2026-05.pgn', index: 0 }),
+      headers: { 'content-type': 'application/json' },
+    });
+    const { games } = await (await app.request('/api/games')).json();
+    const kept = games.find((g: { white: string }) => g.white === 'somegm');
+    expect(kept).toMatchObject({ userSide: null });
   });
 
   it('detects real annotations (text comments) in collected games', async () => {

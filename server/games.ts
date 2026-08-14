@@ -16,7 +16,7 @@ import { parseSan } from 'chessops/san';
 import { hashSetup } from '../shared/zobrist.ts';
 import { pathUser, userSideOf } from '../shared/gameIndex.ts';
 import { openingsIndex, type Opening } from './openings.ts';
-import { VAULT_GAMES } from './paths.ts';
+import { VAULT_CONFIG, VAULT_GAMES } from './paths.ts';
 
 /**
  * The Games section is a curated COLLECTION: one PGN file per kept game in
@@ -264,10 +264,23 @@ function writeBookmarks(dir: string, keys: Set<string>): void {
 
 // ---------------------------------------------------------------------------
 
-export function gamesApi(dir: string = VAULT_GAMES): Hono {
+export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_CONFIG): Hono {
   const collectionDir = resolve(dir, 'collection');
   mkdirSync(collectionDir, { recursive: true });
   const api = new Hono();
+
+  /** The handle the vault owner claimed for a provider, lowercased —
+      read per request so a profile edit needs no restart. */
+  const profileUser = (provider: 'chesscom' | 'lichess'): string | null => {
+    try {
+      const config = JSON.parse(readFileSync(configPath, 'utf-8')) as {
+        profile?: { chesscom?: string; lichess?: string };
+      };
+      return config.profile?.[provider]?.trim().toLowerCase() || null;
+    } catch {
+      return null;
+    }
+  };
 
   /** The collection: one game per file, newest date first. */
   api.get('/games', (c) => {
@@ -389,10 +402,16 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       return c.json({ error: 'index out of range' }, 400);
     }
 
-    // Which side the vault owner played, for board orientation.
-    const pathUser = body.file.startsWith('chesscom/')
-      ? (body.file.split('/')[1]?.toLowerCase() ?? null)
-      : null;
+    // Which side the vault OWNER played. The path only names whose
+    // archive this is; the profile says who the owner is. The two must
+    // agree before a side is stamped — anyone else's archive (the
+    // browser searches any handle) is kept as reference games, or the
+    // collection's "mine" filters would claim games that are not. Used
+    // to stamp from the path alone, and only for chess.com paths, so a
+    // Lichess game of your own carried no side at all.
+    const archiveUser = pathUser(body.file);
+    const provider = body.file.startsWith('lichess/') ? ('lichess' as const) : ('chesscom' as const);
+    const owner = archiveUser !== null && archiveUser === profileUser(provider) ? archiveUser : null;
 
     const ids: string[] = [];
     for (const index of wanted) {
@@ -403,8 +422,8 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       const game = { ...source, headers: new Map(source.headers) };
       const white = (game.headers.get('White') ?? '').toLowerCase();
       const black = (game.headers.get('Black') ?? '').toLowerCase();
-      if (pathUser === white) game.headers.set('VaultSide', 'white');
-      else if (pathUser === black) game.headers.set('VaultSide', 'black');
+      if (owner === white) game.headers.set('VaultSide', 'white');
+      else if (owner === black) game.headers.set('VaultSide', 'black');
       ids.push(addToCollection(game));
     }
 
