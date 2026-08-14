@@ -597,7 +597,6 @@ export const ko: Record<string, string> = {
   'Lichess token': 'Lichess 토큰',
   'Add a Lichess token in Settings': '설정에서 Lichess 토큰을 추가하세요',
   'Save line to study': '라인을 스터디로 저장',
-  'Recent practice': '최근 연습',
   '{n} moves': '{n}수',
   'Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.':
     '실제 게임의 상대와 오프닝을 연습합니다. 내가 수를 두면, 이 포지션에서 실제로 두어진 수 가운데 응수가 뽑힙니다.',

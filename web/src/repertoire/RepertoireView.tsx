@@ -19,7 +19,6 @@ import { navigate, up } from '@/lib/router';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/cn';
-import { formatAgo } from '@/lib/dates';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
@@ -119,39 +118,36 @@ interface ExplorerMove {
 }
 
 /**
- * The practice log: the one trainer with no record now keeps a small one.
- *
- * Device-local, like the trainer's difficulty choice — a memory aid for
- * "what did I spar last", not vault data. Newest first, capped.
+ * The last drilled study and chapter, device-local like the puzzle
+ * trainer's difficulty: a user drills the same opening for weeks, so
+ * the pickers open on it instead of on the alphabet's first study.
+ * Written when a drill starts, not when one is browsed to.
  */
-const LOG_KEY = 'vault:repertoire-log';
-const LOG_MAX = 8;
+const DRILL_KEY = 'vault:repertoire-drill';
 
-interface PracticeEntry {
-  opening: string;
-  source: string;
-  moves: number;
-  at: string;
-}
-
-function readLog(): PracticeEntry[] {
+function readDrillPick(): { study: string; chapter: string } | null {
   try {
-    const raw = localStorage.getItem(LOG_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? (parsed as PracticeEntry[]) : [];
+    const raw = localStorage.getItem(DRILL_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (
+      parsed &&
+      typeof (parsed as { study?: unknown }).study === 'string' &&
+      typeof (parsed as { chapter?: unknown }).chapter === 'string'
+    ) {
+      return parsed as { study: string; chapter: string };
+    }
   } catch {
-    return [];
+    /* an unreadable memo is no memo */
   }
+  return null;
 }
 
-function appendLog(entry: PracticeEntry): PracticeEntry[] {
-  const next = [entry, ...readLog()].slice(0, LOG_MAX);
+function writeDrillPick(study: string, chapter: string): void {
   try {
-    localStorage.setItem(LOG_KEY, JSON.stringify(next));
+    localStorage.setItem(DRILL_KEY, JSON.stringify({ study, chapter }));
   } catch {
     /* full or blocked storage loses the memo, nothing else */
   }
-  return next;
 }
 
 /** Weighted-random pick by game count — the field's move, not the best move. */
@@ -691,7 +687,10 @@ export function RepertoireView() {
       .then((body: { studies?: { id: string }[] }) => {
         const ids = (body.studies ?? []).map((st) => st.id);
         setStudyList(ids);
-        setDrillStudy((d) => d || (ids[0] ?? ''));
+        const remembered = readDrillPick();
+        setDrillStudy(
+          (d) => d || (remembered && ids.includes(remembered.study) ? remembered.study : (ids[0] ?? '')),
+        );
       })
       .catch(() => setStudyList([]));
   }, [mode, studyList]);
@@ -705,7 +704,18 @@ export function RepertoireView() {
     void fetch(`/api/studies/${encodeURIComponent(drillStudy)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((body: { pgn?: string } | null) => {
-        if (!cancelled) setDrillChapters(typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : []);
+        if (cancelled) return;
+        const chapters = typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : [];
+        setDrillChapters(chapters);
+        // The memo names a chapter of THIS study: reopen on it.
+        const remembered = readDrillPick();
+        if (
+          remembered &&
+          remembered.study === drillStudy &&
+          (remembered.chapter === 'all' || Number(remembered.chapter) < chapters.length)
+        ) {
+          setChapterPick(remembered.chapter);
+        }
       })
       .catch(() => {
         if (!cancelled) setDrillChapters([]);
@@ -793,8 +803,6 @@ export function RepertoireView() {
   // practised at all.
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [log, setLog] = useState<PracticeEntry[]>(readLog);
-  const loggedRun = useRef(-1);
 
   // Seed a tree with the template's line — used both for the idle preview
   // (picking an opening shows its position at once) and for starting a game.
@@ -1103,6 +1111,7 @@ export function RepertoireView() {
       const cands = posIndex.get(fenKey(rootFen)) ?? [];
       if (cands.length === 0) return;
       const trunk = trunkOf(scoped, posIndex, cands, rootFen);
+      writeDrillPick(drillStudy, chapterPick);
       drillRef.current = {
         chapters: scoped,
         posIndex,
@@ -1211,6 +1220,7 @@ export function RepertoireView() {
     const cands = posIndex.get(fenKey(getNode(gameTree, gameId).fen)) ?? [{ ci, nodeId: studyId }];
     const rootFen = getNode(chapter.tree, chapter.tree.rootId).fen;
     const trunk = trunkOf(scoped, posIndex, posIndex.get(fenKey(rootFen)) ?? [], rootFen);
+    writeDrillPick(drillStudy, chapterPick);
     drillRef.current = {
       chapters: scoped,
       posIndex,
@@ -1240,23 +1250,6 @@ export function RepertoireView() {
     source === ONLINE_SOURCE
       ? `Lichess · ${RATING_BANDS.find((b) => b.ratings === band)?.label ?? ''}`
       : bookLabel(source);
-
-  // One log entry per run, written when the line runs out of book.
-  useEffect(() => {
-    if (phase !== 'ended' || loggedRun.current === runId.current) return;
-    loggedRun.current = runId.current;
-    setLog(
-      appendLog({
-        opening: drillRef.current
-          ? `${drillRef.current.study} — ${drillRef.current.label}`
-          : template.name,
-        source: sourceLabel,
-        moves: line.length - 1,
-        at: new Date().toISOString(),
-      }),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
 
   const saveLine = async (name: string): Promise<void> => {
     setSaveError(null);
@@ -1553,32 +1546,6 @@ export function RepertoireView() {
               </div>
             </div>
           </Panel>
-          {/* The record that you practised — the one trainer with none.
-              Device-local memos, newest first. */}
-          {log.length > 0 && (
-            <Panel flush fit className="shrink-0">
-              <PanelHeader title={t('Recent practice')} />
-              <ul>
-                {log.map((entry, i) => (
-                  <li
-                    key={`${entry.at}-${i}`}
-                    className="border-line flex items-center gap-2.5 border-b px-3 py-1.5 text-xs last:border-b-0"
-                  >
-                    <span className="text-fg min-w-0 flex-1 truncate font-medium">
-                      {t(entry.opening)}
-                    </span>
-                    <span className="text-subtle shrink-0 truncate">{entry.source}</span>
-                    <span className="text-subtle shrink-0 font-mono tabular-nums">
-                      {t('{n} moves', { n: entry.moves })}
-                    </span>
-                    <span className="text-subtle w-16 shrink-0 text-right tabular-nums">
-                      {formatAgo(entry.at)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </Panel>
-          )}
           </>
         ) : (
           <>
