@@ -2,7 +2,9 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
+import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
 
 /**
@@ -11,6 +13,13 @@ import { t } from '@/lib/i18n';
  * could not reach (and lanph3re's standing verdict on bare selects: "plain and
  * not aesthetically good"). The trigger reads like an input; the list is
  * a fixed-position popover, so it escapes overflow-hidden panels.
+ *
+ * On a PHONE the open list is a bottom sheet instead — the same Sheet as
+ * every other phone window, scrim, drag and all. The popover was a
+ * desktop shape shrunk to fit: anchored to wherever the trigger happened
+ * to sit, capped to the space left under it, its rows a compromise
+ * between a menu and a thumb. A sheet rises where the thumb already is
+ * and gives every option a full-width row.
  */
 
 export interface SelectOption {
@@ -105,6 +114,14 @@ export function Select({
   // Open upward when the trigger sits below mid-screen, so a long list has
   // room instead of being crushed into the gap under a low field.
   const [dropUp, setDropUp] = useState(false);
+  // The Sheet/Modal breakpoint: below it the open list is a bottom sheet,
+  // not a popover, so everything anchored — the rect, the dismiss-on-tap
+  // and dismiss-on-scroll listeners, the touch backdrop — is popover-only.
+  const phone = useMediaQuery('(max-width: 39.9375rem)');
+  // The sheet centres its current option once per opening — a months list
+  // is longer than a sheet — and only once, so a browse of the list is not
+  // yanked back to where it started by a later re-render.
+  const centered = useRef(false);
 
   const flat = useMemo(() => groups.flatMap((g) => g.options), [groups]);
   // The prefix rides on the trigger only, and on the invisible sizers too,
@@ -113,6 +130,11 @@ export function Select({
   const selected = flat.find((o) => o.value === value) ?? null;
 
   const show = (): void => {
+    if (phone) {
+      centered.current = false;
+      setOpen(true);
+      return;
+    }
     const r = trigger.current?.getBoundingClientRect() ?? null;
     setRect(r);
     setDropUp(r ? r.bottom > window.innerHeight * 0.55 : false);
@@ -129,7 +151,9 @@ export function Select({
   // invalidates it, so dismiss — but scrolling INSIDE the list (a long
   // options list scrolls) must not close it. A click elsewhere dismisses too.
   useEffect(() => {
-    if (!open) return;
+    // The sheet needs none of this: its scrim owns the outside tap, and a
+    // sheet is not anchored to anything a scroll could carry away.
+    if (!open || phone) return;
     const close = (): void => setOpen(false);
     // Both mousedown AND touchstart: iOS never synthesizes mouse events for
     // document-level listeners when the tap lands on dead space, so without
@@ -166,7 +190,7 @@ export function Select({
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', close);
     };
-  }, [open]);
+  }, [open, phone]);
 
   /**
    * The gesture stops here, whatever the browser thinks.
@@ -239,7 +263,7 @@ export function Select({
         ref={trigger}
         type="button"
         aria-label={ariaLabel}
-        aria-haspopup="listbox"
+        aria-haspopup={phone ? 'dialog' : 'listbox'}
         aria-expanded={open}
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={onKeyDown}
@@ -284,8 +308,10 @@ export function Select({
           so a drag here moves nothing at all; the tap that dismisses is
           the document listener above, which already treats anything
           outside the list as a dismissal. Its own portal rather than a
-          fragment, so it is a sibling of the list and paints below it. */}
-      {open && rect && createPortal(
+          fragment, so it is a sibling of the list and paints below it.
+          Coarse-pointer DESKTOPS and tablets only in practice: a phone
+          gets the sheet below, whose scrim does this job properly. */}
+      {open && !phone && rect && createPortal(
         <div aria-hidden className="pointer-fine:hidden fixed inset-0 z-50 touch-none" />,
         document.body,
       )}
@@ -300,7 +326,7 @@ export function Select({
           inside the thing it floats over. Dismissal is unaffected — it
           asks `list.contains(target)`, which does not care where the node
           sits. */}
-      {open && rect && createPortal(
+      {open && !phone && rect && createPortal(
         <div
           ref={list}
           role="listbox"
@@ -389,6 +415,50 @@ export function Select({
           ))}
         </div>,
         document.body,
+      )}
+
+      {/* The phone's version of the open list: the same bottom sheet as
+          every other phone window, titled with what the trigger says it
+          is. Sheet brings the scrim, the drag, Escape, the focus trap and
+          the scrolling, so the anchored machinery above — rect, backdrop,
+          dismiss-on-scroll — has no phone duties at all. */}
+      {open && phone && (
+        <Sheet label={prefix ?? ariaLabel} onClose={() => setOpen(false)}>
+          {groups.map((group, gi) => (
+            <div key={gi}>
+              {group.label && (
+                <p className="text-subtle px-2 pb-1 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                  {t(group.label)}
+                </p>
+              )}
+              {group.options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  // The current option starts on screen — a months list is
+                  // longer than a sheet, and a picker that opens on rows
+                  // far from the one that is picked reads as a fresh list.
+                  ref={(el) => {
+                    if (el && option.value === value && !centered.current) {
+                      centered.current = true;
+                      el.scrollIntoView({ block: 'center' });
+                    }
+                  }}
+                  onClick={() => pick(option.value)}
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-sm',
+                    'hover:bg-surface-2 transition-colors duration-100',
+                    option.value === value ? 'text-primary font-medium' : 'text-fg',
+                    mono && 'font-mono',
+                  )}
+                >
+                  <span className="min-w-0 flex-1 truncate">{t(option.label)}</span>
+                  {option.value === value && <Check className="size-4 shrink-0" />}
+                </button>
+              ))}
+            </div>
+          ))}
+        </Sheet>
       )}
     </>
   );
