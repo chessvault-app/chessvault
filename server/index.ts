@@ -17,6 +17,7 @@ import { puzzleBooksApi } from './puzzlebooks.ts';
 import { migrateLegacyRefgames, seedBundledRefgames } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { startVaultBackup } from './vaultBackup.ts';
+import { seedWelcomeDocs } from './welcome.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
@@ -48,6 +49,9 @@ for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) 
 seedBundledBook();
 migrateLegacyRefgames();
 seedBundledRefgames();
+// A fresh vault opens with a welcome study and note — onboarding as
+// content, seeded once and never resurrected (see welcome.ts).
+seedWelcomeDocs();
 
 const app = new Hono();
 app.use('*', logger());

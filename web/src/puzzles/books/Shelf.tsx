@@ -377,13 +377,19 @@ export function Shelf() {
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
         ) : visibleBooks.length === 0 ? (
-          <div className="bg-surface border-line rounded-xl border p-6 text-center">
-            <BookMarked className="text-subtle mx-auto mb-2 size-6" />
+          <div className="bg-surface border-line flex flex-col items-center gap-3 rounded-xl border p-6 text-center">
+            <BookMarked className="text-subtle size-6" />
             <p className="text-muted text-sm">
               No puzzle books yet. Create one per paper book, then enter its
-              puzzles from the board — solutions and progress live here, not
-              in the back of the book.
+              puzzles from the board or import the book's own PDF — solutions
+              and progress live here, not in the back of the book.
             </p>
+            {/* The empty state ends on the press that fills it, like every
+                other shelf's. */}
+            <Button variant="primary" size="sm" onClick={() => void create()}>
+              <BookMarked className="mr-1 size-3.5" />
+              {t('New book')}
+            </Button>
           </div>
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
