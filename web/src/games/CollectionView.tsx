@@ -26,6 +26,13 @@ import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { Select } from '@/ui/Select';
+import {
+  FilterRow,
+  ResultSelect,
+  SideSelect,
+  type ResultFilter,
+  type SideFilter,
+} from './GameFilters';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
@@ -151,8 +158,8 @@ export function CollectionView() {
   const [markedOnly, setMarkedOnly] = useState(false);
   // The quick filters, session-only like the archive's: what you want to
   // see is a question of the moment, not a preference.
-  const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
-  const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
+  const [sideFilter, setSideFilter] = useState<SideFilter>('any');
+  const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
   const [notesFilter, setNotesFilter] = useState<'any' | 'annotated'>('any');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
@@ -447,45 +454,13 @@ export function CollectionView() {
               </span>
             }
           />
-          {/* The archive's own filter row, on the collection: three
-              selects, one line, each stating its value. Side is YOUR
-              side, so it matches only the games you played; reference
-              games (no side of yours) answer to the other two. */}
+          {/* The shared filter row (GameFilters): side is YOUR side, so
+              it matches only the games you played; reference games (no
+              side of yours) answer to the other two. */}
           {games.length > 0 && (
-            <div className="border-line flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
-              <Select
-                value={sideFilter}
-                onChange={(v) => setSideFilter(v as typeof sideFilter)}
-                ariaLabel={t('Side')}
-                size="sm"
-                className="min-w-0 flex-1"
-                groups={[
-                  {
-                    options: [
-                      { value: 'any', label: t('Either side') },
-                      { value: 'white', label: t('As White') },
-                      { value: 'black', label: t('As Black') },
-                    ],
-                  },
-                ]}
-              />
-              <Select
-                value={resultFilter}
-                onChange={(v) => setResultFilter(v as typeof resultFilter)}
-                ariaLabel={t('Outcome')}
-                size="sm"
-                className="min-w-0 flex-1"
-                groups={[
-                  {
-                    options: [
-                      { value: 'any', label: t('Any result') },
-                      { value: '1-0', label: t('White won') },
-                      { value: '0-1', label: t('Black won') },
-                      { value: '1/2-1/2', label: t('Drawn') },
-                    ],
-                  },
-                ]}
-              />
+            <FilterRow className="border-b">
+              <SideSelect value={sideFilter} onChange={setSideFilter} />
+              <ResultSelect value={resultFilter} onChange={setResultFilter} />
               <Select
                 value={notesFilter}
                 onChange={(v) => setNotesFilter(v as typeof notesFilter)}
@@ -501,7 +476,7 @@ export function CollectionView() {
                   },
                 ]}
               />
-            </div>
+            </FilterRow>
           )}
           {loaded && games.length === 0 ? (
             <EmptyState

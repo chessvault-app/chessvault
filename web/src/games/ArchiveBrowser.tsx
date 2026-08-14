@@ -25,6 +25,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
+import { ResultSelect, SideSelect, type ResultFilter, type SideFilter } from './GameFilters';
 
 interface ArchiveMonth {
   month: string;
@@ -461,8 +462,8 @@ export function ArchiveBrowser({
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
-  const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
-  const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
+  const [sideFilter, setSideFilter] = useState<SideFilter>('any');
+  const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
   const visibleMonthGames = monthGames.filter(
     (g) =>
       (sideFilter === 'any' || g.userSide === sideFilter) &&
@@ -766,39 +767,8 @@ export function ArchiveBrowser({
               },
             ]}
           />
-          <Select
-            value={sideFilter}
-            onChange={(v) => setSideFilter(v as typeof sideFilter)}
-            ariaLabel={t('Side')}
-            size="sm"
-            className="min-w-0 flex-1"
-            groups={[
-              {
-                options: [
-                  { value: 'any', label: t('Either side') },
-                  { value: 'white', label: t('As White') },
-                  { value: 'black', label: t('As Black') },
-                ],
-              },
-            ]}
-          />
-          <Select
-            value={resultFilter}
-            onChange={(v) => setResultFilter(v as typeof resultFilter)}
-            ariaLabel={t('Outcome')}
-            size="sm"
-            className="min-w-0 flex-1"
-            groups={[
-              {
-                options: [
-                  { value: 'any', label: t('Any result') },
-                  { value: '1-0', label: t('White won') },
-                  { value: '0-1', label: t('Black won') },
-                  { value: '1/2-1/2', label: t('Drawn') },
-                ],
-              },
-            ]}
-          />
+          <SideSelect value={sideFilter} onChange={setSideFilter} />
+          <ResultSelect value={resultFilter} onChange={setResultFilter} />
         </div>
         </div>
       )}
