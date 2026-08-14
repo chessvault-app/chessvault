@@ -320,12 +320,19 @@ export function HomePage() {
 
         {/* Everything else, reachable: these five destinations had no way
             in from this page at all. */}
+        {/* Two clusters that wrap as units, not five buttons in one run:
+            on a phone the run broke 4+1 and left the last button sitting
+            on a row of its own. Clusters make the narrow shape 3+2. */}
         <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-          {MORE.map(({ label, icon: Icon, go }) => (
-            <Button key={label} variant="ghost" size="sm" onClick={go}>
-              <Icon className="size-3.5" />
-              {t(label)}
-            </Button>
+          {[MORE.slice(0, 3), MORE.slice(3)].map((cluster) => (
+            <span key={cluster[0]!.label} className="flex gap-1.5">
+              {cluster.map(({ label, icon: Icon, go }) => (
+                <Button key={label} variant="ghost" size="sm" onClick={go}>
+                  <Icon className="size-3.5" />
+                  {t(label)}
+                </Button>
+              ))}
+            </span>
           ))}
         </div>
       </div>
