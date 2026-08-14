@@ -289,6 +289,10 @@ export function ArchiveBrowser({
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
+  /** Games already on disk across every cached month — what "All dates"
+      can show without touching the network. */
+  const cachedGames = months.reduce((n, m) => (m.cached ? n + (m.games ?? 0) : n), 0);
+
   const loadMonths = async (who?: string): Promise<void> => {
     const user = (who ?? username).trim();
     if (!user) return;
@@ -725,7 +729,18 @@ export function ArchiveBrowser({
             groups={[
               {
                 options: [
-                  { value: ALL_MONTHS, label: t('All dates') },
+                  {
+                    value: ALL_MONTHS,
+                    // The months below each state what they hold; this row
+                    // states what is already on disk — the games a pick
+                    // gets without the network. Only known for cached
+                    // months, so that is what the number is.
+                    label:
+                      cachedGames > 0
+                        ? `${t('All dates')} · ${t('{n} games cached', { n: cachedGames })}`
+                        : t('All dates'),
+                    short: t('All dates'),
+                  },
                   ...months.map((m) => ({
                     value: m.month,
                     label: `${m.month}${
