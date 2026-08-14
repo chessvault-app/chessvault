@@ -290,6 +290,8 @@ export const ko: Record<string, string> = {
   Tournament: '대회',
   'Any event': '모든 대회',
   Apply: '적용',
+  'Result and strength': '결과와 기력',
+  'Your side, result and notes': '내 색, 결과, 노트',
   'Index positions': '포지션 색인 만들기',
   '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.':
     '“{name}”에는 아직 포지션 색인이 없습니다. 색인은 이미 들어 있는 기보를 읽어 만들며 — 올릴 것은 없습니다 — 1~2분 걸립니다.',

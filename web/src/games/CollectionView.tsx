@@ -26,19 +26,21 @@ import { EmptyState } from '@/ui/EmptyState';
 import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 
 import { Input, SearchInput, TextArea } from '@/ui/Input';
-import { Select } from '@/ui/Select';
 import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
   hasStructuredFilters,
   matchesStructured,
+  NotesSelect,
   ResultSelect,
   SideSelect,
   StructuredFiltersWindow,
+  type NotesFilter,
   type ResultFilter,
   type SideFilter,
   type StructuredFilters,
 } from './GameFilters';
+import { Field } from '@/ui/Field';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
@@ -166,11 +168,18 @@ export function CollectionView() {
   // see is a question of the moment, not a preference.
   const [sideFilter, setSideFilter] = useState<SideFilter>('any');
   const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
-  const [notesFilter, setNotesFilter] = useState<'any' | 'annotated'>('any');
+  const [notesFilter, setNotesFilter] = useState<NotesFilter>('any');
   // The same sentence the elite browser answers, filtered client-side —
   // a few dozen games are already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
+  // The row's selects, drafted for the window: one state, two views —
+  // Apply commits both (see StructuredFiltersWindow's extraFields).
+  const [quickDraft, setQuickDraft] = useState({
+    side: 'any' as SideFilter,
+    result: 'any' as ResultFilter,
+    notes: 'any' as NotesFilter,
+  });
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column. */
@@ -477,28 +486,17 @@ export function CollectionView() {
             <FilterRow className="border-b">
               <SideSelect value={sideFilter} onChange={setSideFilter} />
               <ResultSelect value={resultFilter} onChange={setResultFilter} />
-              <Select
-                value={notesFilter}
-                onChange={(v) => setNotesFilter(v as typeof notesFilter)}
-                ariaLabel={t('Notes')}
-                size="sm"
-                className="min-w-0 flex-1"
-                groups={[
-                  {
-                    options: [
-                      { value: 'any', label: t('All games') },
-                      { value: 'annotated', label: t('With notes') },
-                    ],
-                  },
-                ]}
-              />
+              <NotesSelect value={notesFilter} onChange={setNotesFilter} />
               <Button
                 variant="secondary"
                 size="icon-sm"
                 active={hasStructuredFilters(structured)}
                 title={t('More filters')}
                 className="shrink-0"
-                onClick={() => setEditingFilters(true)}
+                onClick={() => {
+                  setQuickDraft({ side: sideFilter, result: resultFilter, notes: notesFilter });
+                  setEditingFilters(true);
+                }}
               >
                 <SlidersHorizontal className="size-3.5" />
               </Button>
@@ -507,9 +505,34 @@ export function CollectionView() {
                   initial={structured}
                   // No Tournament field: collection games carry no Event.
                   showEvent={false}
+                  extraFields={
+                    // The row's selects, mirrored. "Your side" is YOURS —
+                    // a different question from the named player's seat
+                    // above, which is why both exist.
+                    <Field label="Your side, result and notes">
+                      <div className="flex gap-2">
+                        <SideSelect
+                          value={quickDraft.side}
+                          onChange={(side) => setQuickDraft((d) => ({ ...d, side }))}
+                        />
+                        <ResultSelect
+                          value={quickDraft.result}
+                          onChange={(result) => setQuickDraft((d) => ({ ...d, result }))}
+                        />
+                        <NotesSelect
+                          value={quickDraft.notes}
+                          onChange={(notes) => setQuickDraft((d) => ({ ...d, notes }))}
+                        />
+                      </div>
+                    </Field>
+                  }
+                  onClear={() => setQuickDraft({ side: 'any', result: 'any', notes: 'any' })}
                   onApply={(next) => {
                     setEditingFilters(false);
                     setStructured(next);
+                    setSideFilter(quickDraft.side);
+                    setResultFilter(quickDraft.result);
+                    setNotesFilter(quickDraft.notes);
                   }}
                   onClose={() => setEditingFilters(false)}
                 />

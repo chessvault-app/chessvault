@@ -28,10 +28,12 @@ import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
   ResultSelect,
+  StrengthSelect,
   StructuredFiltersWindow,
   type ResultFilter,
   type StructuredFilters,
 } from './GameFilters';
+import { Field } from '@/ui/Field';
 import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -397,6 +399,10 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
    */
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
   const [editingFilters, setEditingFilters] = useState(false);
+  // The row's selects, drafted for the window: one state, two views —
+  // the window mirrors them so it is the complete editor, and Apply is
+  // what commits (see StructuredFiltersWindow's extraFields).
+  const [quickDraft, setQuickDraft] = useState({ result: 'any' as ResultFilter, minElo: 0 });
   const structuredOn =
     structured.player !== '' ||
     structured.opening !== '' ||
@@ -659,23 +665,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   const filterRow = (className: string): React.ReactNode => (
     <FilterRow className={className}>
       <ResultSelect value={resultFilter} onChange={setResultFilter} />
-      <Select
-        value={String(minElo)}
-        onChange={(v) => setMinElo(Number(v))}
-        ariaLabel={t('Strength')}
-        size="sm"
-        className="min-w-0 flex-1"
-        groups={[
-          {
-            options: [
-              { value: '0', label: t('Any strength') },
-              { value: '2300', label: '2300+' },
-              { value: '2500', label: '2500+' },
-              { value: '2700', label: '2700+' },
-            ],
-          },
-        ]}
-      />
+      <StrengthSelect value={minElo} onChange={setMinElo} />
       {/* The rest of the constraints — who, which side, which outcome,
           which opening, which tournament, which dates — live in a window:
           they are text, not chips, and a lit icon says they are on. */}
@@ -685,16 +675,36 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         active={structuredOn}
         title={t('More filters')}
         className="shrink-0"
-        onClick={() => setEditingFilters(true)}
+        onClick={() => {
+          setQuickDraft({ result: resultFilter, minElo });
+          setEditingFilters(true);
+        }}
       >
         <SlidersHorizontal className="size-3.5" />
       </Button>
       {editingFilters && (
         <StructuredFiltersWindow
           initial={structured}
+          extraFields={
+            <Field label="Result and strength">
+              <div className="flex gap-2">
+                <ResultSelect
+                  value={quickDraft.result}
+                  onChange={(result) => setQuickDraft((d) => ({ ...d, result }))}
+                />
+                <StrengthSelect
+                  value={quickDraft.minElo}
+                  onChange={(minElo) => setQuickDraft((d) => ({ ...d, minElo }))}
+                />
+              </div>
+            </Field>
+          }
+          onClear={() => setQuickDraft({ result: 'any', minElo: 0 })}
           onApply={(next) => {
             setEditingFilters(false);
             setStructured(next);
+            setResultFilter(quickDraft.result);
+            setMinElo(quickDraft.minElo);
           }}
           onClose={() => setEditingFilters(false)}
         />

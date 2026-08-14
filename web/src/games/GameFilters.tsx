@@ -90,6 +90,65 @@ export function ResultSelect({
   );
 }
 
+/** A floor under BOTH players' ratings — a 2700 flagged against a 2200
+    is not a 2700-level game. */
+export function StrengthSelect({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <Select
+      value={String(value)}
+      onChange={(v) => onChange(Number(v))}
+      ariaLabel={t('Strength')}
+      size="sm"
+      className="min-w-0 flex-1"
+      groups={[
+        {
+          options: [
+            { value: '0', label: t('Any strength') },
+            { value: '2300', label: '2300+' },
+            { value: '2500', label: '2500+' },
+            { value: '2700', label: '2700+' },
+          ],
+        },
+      ]}
+    />
+  );
+}
+
+export type NotesFilter = 'any' | 'annotated';
+
+/** Only the games with your annotations on them. */
+export function NotesSelect({
+  value,
+  onChange,
+}: {
+  value: NotesFilter;
+  onChange: (value: NotesFilter) => void;
+}) {
+  return (
+    <Select
+      value={value}
+      onChange={(v) => onChange(v as NotesFilter)}
+      ariaLabel={t('Notes')}
+      size="sm"
+      className="min-w-0 flex-1"
+      groups={[
+        {
+          options: [
+            { value: 'any', label: t('All games') },
+            { value: 'annotated', label: t('With notes') },
+          ],
+        },
+      ]}
+    />
+  );
+}
+
 /**
  * The structured search, drafted in a window and applied on Done.
  *
@@ -104,12 +163,24 @@ export function StructuredFiltersWindow({
   onApply,
   onClose,
   showEvent = true,
+  extraFields,
+  onClear,
 }: {
   initial: StructuredFilters;
   onApply: (filters: StructuredFilters) => void;
   onClose: () => void;
   /** The collection's games carry no Event header worth filtering. */
   showEvent?: boolean;
+  /**
+   * The caller's quick filters, mirrored into this window so it is the
+   * COMPLETE editor: the row outside and these fields edit the same
+   * state — a toolbar button and its menu item, never two filters. The
+   * caller drafts them alongside this window's own draft and commits
+   * both on Apply.
+   */
+  extraFields?: ReactNode;
+  /** Reset the caller's mirrored drafts when Clear filters is pressed. */
+  onClear?: () => void;
 }) {
   const [draft, setDraft] = useState<StructuredFilters>(initial);
   const patch = (part: Partial<StructuredFilters>): void => setDraft((d) => ({ ...d, ...part }));
@@ -206,12 +277,17 @@ export function StructuredFiltersWindow({
         </div>
       </Field>
 
+      {extraFields}
+
       <div className="mt-1 flex items-center justify-end gap-2">
         <Button
           variant="ghost"
           size="sm"
           className="mr-auto"
-          onClick={() => setDraft(EMPTY_STRUCTURED_FILTERS)}
+          onClick={() => {
+            setDraft(EMPTY_STRUCTURED_FILTERS);
+            onClear?.();
+          }}
         >
           {t('Clear filters')}
         </Button>
