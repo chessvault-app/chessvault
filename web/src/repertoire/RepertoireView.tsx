@@ -1252,7 +1252,11 @@ export function RepertoireView() {
           panel off with a scrollbar a touch device never shows. That is the
           Safari clipping. `overflow: visible` cannot clip, whatever the
           height resolves to, so the bug has nowhere left to live. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      {/* wide:pb-4 — the column scrolls at wide, and its last panel ended
+          flush against the column's own bottom edge; padding inside the
+          scroll area gives it somewhere to finish, as stacked:pb-8 does
+          for the page column on a phone. */}
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {/* fit: a short form under a tall board. Left to shrink, the panel
