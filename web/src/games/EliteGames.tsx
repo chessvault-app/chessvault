@@ -22,6 +22,7 @@ import { Button } from '@/ui/Button';
 
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
+import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -121,7 +122,7 @@ function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onChanged:
   // One at a time as a raw body, which streams — these files run to
   // hundreds of megabytes, and FormData would buffer the whole thing in
   // the page before a byte left. Same route the book manager uses.
-  const upload = async (files: FileList | null): Promise<void> => {
+  const upload = async (files: FileList | File[] | null): Promise<void> => {
     if (!files?.length) return;
     setError(null);
     for (const file of Array.from(files)) {
@@ -178,6 +179,13 @@ function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onChanged:
 
   const running = status?.running === true;
   const failed = !running && status?.exitCode != null && status.exitCode !== 0;
+
+  const pgnDrop = useFileDrop({
+    accept: byExtension('.pgn'),
+    onFiles: (files) => void upload(files),
+    onReject: () => setError(t('Only .pgn files can be uploaded here')),
+    disabled: uploading !== null,
+  });
 
   return (
     <div className="flex flex-col gap-3 text-xs">
@@ -242,9 +250,13 @@ function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onChanged:
           </ul>
         )}
         <label
+          {...pgnDrop.handlers}
           className={cn(
-            'border-line text-muted hover:border-primary/40 flex h-8 cursor-pointer items-center',
+            'text-muted flex h-8 cursor-pointer items-center',
             'justify-center gap-1.5 rounded-md border border-dashed transition-colors duration-100',
+            pgnDrop.dragging
+              ? 'border-primary bg-primary-soft'
+              : 'border-line hover:border-primary/40',
           )}
         >
           <input

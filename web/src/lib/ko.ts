@@ -299,6 +299,8 @@ export const ko: Record<string, string> = {
   'Loading older games…': '이전 게임 불러오는 중…',
   '{n} games · {at} of {total} months': '게임 {n}개 · {total}달 중 {at}달',
   '{n} games · all {total} months': '게임 {n}개 · {total}달 전체',
+  '{n} games cached': '캐시된 게임 {n}개',
+  'Only .pgn files can be uploaded here': '여기에는 .pgn 파일만 올릴 수 있습니다',
   'Adding {done}/{total}…': '추가 중 {done}/{total}…',
   // Every way to get a game, gathered behind one button.
   'Add games': '게임 추가',
