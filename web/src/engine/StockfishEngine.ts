@@ -101,6 +101,7 @@ export class StockfishEngine {
 
     if (line === 'readyok') {
       this.ready = true;
+      this.clearHandshakeTimer();
       for (const waiter of this.readyWaiters.splice(0)) waiter();
       return;
     }
@@ -166,16 +167,31 @@ export class StockfishEngine {
     });
   }
 
+  /**
+   * Owned so it can be DISARMED. This used to be an anonymous setTimeout
+   * checking `!this.ready` — but terminate() sets ready back to false, so
+   * the stale timer of an instance torn down and restarted within 20 s
+   * fired onError against the store, which killed the NEW, healthy engine
+   * (store/review.ts still guards against the same ghost from its side).
+   */
+  private handshakeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private clearHandshakeTimer(): void {
+    if (this.handshakeTimer !== null) {
+      clearTimeout(this.handshakeTimer);
+      this.handshakeTimer = null;
+    }
+  }
+
   private waitForReady(): Promise<void> {
     if (this.ready) return Promise.resolve();
     return new Promise((resolve) => {
       this.readyWaiters.push(resolve);
       // Don't hang forever if the worker never answers.
-      setTimeout(() => {
-        if (!this.ready) {
-          this.onError('Engine did not respond to the UCI handshake.');
-          resolve();
-        }
+      this.handshakeTimer ??= setTimeout(() => {
+        this.handshakeTimer = null;
+        if (!this.ready) this.onError('Engine did not respond to the UCI handshake.');
+        for (const waiter of this.readyWaiters.splice(0)) waiter();
       }, 20_000);
     });
   }
@@ -244,6 +260,9 @@ export class StockfishEngine {
       clearTimeout(this.emitTimer);
       this.emitTimer = null;
     }
+    this.clearHandshakeTimer();
+    // A start() awaiting the handshake must not hang on a dead worker.
+    for (const waiter of this.readyWaiters.splice(0)) waiter();
     this.queued = null;
     this.searching = false;
     this.pendingStop = false;
