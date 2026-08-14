@@ -4,6 +4,7 @@ import {
   Check,
   ChevronRight,
   Compass,
+  Database,
   SquarePen,
   Library,
   NotebookPen,
@@ -45,7 +46,7 @@ const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof G
 const MORE: { label: string; icon: typeof Grid3x3; go: () => void }[] = [
   { label: 'Repertoire', icon: SwatchBook, go: () => navigate('repertoire') },
   { label: 'Explorer', icon: Compass, go: () => navigate('analysis', 'explorer') },
-  { label: 'Opening books', icon: BookOpen, go: () => navigate('books') },
+  { label: 'Databases', icon: Database, go: () => navigate('books') },
   { label: 'Puzzle books', icon: BookMarked, go: () => navigate('puzzles', 'books') },
   { label: 'Settings', icon: Settings, go: () => navigate('settings') },
 ];

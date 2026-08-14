@@ -44,7 +44,7 @@ interface RefGame {
   opening: string | null;
 }
 
-interface RefDb {
+export interface RefDb {
   name: string;
   games: number;
   sources: string;
@@ -64,7 +64,7 @@ interface RefDb {
  * ready browser. Databases are plural like books, so replacing one is not
  * a mode — build a new name beside it and delete the old.
  */
-function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onChanged: () => void }) {
+export function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onChanged: () => void }) {
   const [sources, setSources] = useState<{ name: string; bytes: number }[] | null>(null);
   // null until the first listing arrives, so "tick everything" happens
   // once and a user's unticking is never overwritten by a refresh.

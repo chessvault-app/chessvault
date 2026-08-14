@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
+  Database,
   Compass,
   Ellipsis,
   House,
@@ -45,7 +46,7 @@ const HomePage = lazyRoute(() => import('@/home/HomePage').then((m) => ({ defaul
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
-const BooksManager = lazyRoute(() => import('@/explorer/ExplorerPane').then((m) => ({ default: m.BooksManager })));
+const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
@@ -71,10 +72,13 @@ const TOOLS_SUBNAV: {
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
   { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
-  { key: 'books', label: 'Opening books', icon: BookOpen, nav: ['books'], active: (s) => s === 'books' },
 ];
+// Databases (#/books, the key the URL has always had) is deliberately NOT
+// in Tools: the entries there are boards you play on, and it is where
+// their data is looked after — so it stands on its own row below the
+// group, beside nothing.
 const inTools = (s: Section): boolean =>
-  s === 'analysis' || s === 'editor' || s === 'repertoire' || s === 'books';
+  s === 'analysis' || s === 'editor' || s === 'repertoire';
 
 /**
  * Tells the launch screen the app is really on screen.
@@ -219,9 +223,7 @@ function Shell() {
         ) : section === 'repertoire' ? (
           <RepertoireView />
         ) : section === 'books' ? (
-          <div className="h-full overflow-y-auto">
-            <BooksManager page />
-          </div>
+          <DatabasesPage />
         ) : section === 'settings' ? (
           <SettingsPage />
         ) : section === 'more' ? (
@@ -418,6 +420,23 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             onClick={() => navigate(...nav)}
           />
         ))}
+
+        {/* Databases: a top-level row of its own — management, not a tool. */}
+        <button
+          type="button"
+          onClick={() => navigate('books')}
+          title={t('Databases')}
+          aria-current={active === 'books' ? 'page' : undefined}
+          className={cn(
+            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
+            'transition-colors duration-150 justify-center lg:justify-start',
+            active === 'books' ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
+          )}
+        >
+          {active === 'books' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
+          <Database className="size-[1.15rem] shrink-0" strokeWidth={active === 'books' ? 2.4 : 2} />
+          <span className="hidden lg:block">{t('Databases')}</span>
+        </button>
       </div>
 
       <div className="border-line flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
@@ -458,12 +477,12 @@ const MORE_GROUPS: {
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
-      { section: 'books', label: 'Opening books', icon: BookOpen, blurb: 'Build a book from collections or your own games' },
     ],
   },
   {
     heading: 'App',
     items: [
+      { section: 'books', label: 'Databases', icon: Database, blurb: 'Opening books and reference games, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
     ],
   },

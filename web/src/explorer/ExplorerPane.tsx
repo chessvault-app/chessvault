@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, Compass, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
+import { BookOpen, Compass, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
@@ -711,11 +711,18 @@ function EmptyBooks({ onOpenManager }: { onOpenManager: () => void }) {
 /**
  * Build and manage opening books.
  *
- * Rendered both as a panel inside the explorer and as its own page under
- * Tools (`#/books`), because building a book from a season of your own
- * games is a sit-down job, not something to do in a 300 px sidebar.
+ * Rendered two ways: as a panel inside the explorer, and `plain` —
+ * content only — inside the Databases page (#/books), which brings its
+ * own frame and heading. Building a book from a season of games is a
+ * sit-down job, not something to do in a 300 px sidebar.
  */
-export function BooksManager({ onClose, page = false }: { onClose?: () => void; page?: boolean }) {
+export function BooksManager({
+  onClose,
+  plain = false,
+}: {
+  onClose?: () => void;
+  plain?: boolean;
+}) {
   const books = useExplorer((s) => s.books);
   const refreshBooks = useExplorer((s) => s.refreshBooks);
   const deleteBook = useExplorer((s) => s.deleteBook);
@@ -846,31 +853,11 @@ export function BooksManager({ onClose, page = false }: { onClose?: () => void; 
   return (
     <div
       className={
-        page
-          ? 'mx-auto flex max-w-2xl flex-col gap-3 p-4 pb-10 text-xs md:p-6'
+        plain
+          ? 'flex flex-col gap-3 text-xs'
           : 'border-line bg-surface-inset flex min-h-0 flex-col gap-3 overflow-y-auto border-b px-3 py-3 text-xs'
       }
     >
-      {/* As a page this is the whole screen, and it had no title and no way
-          back — every other page in the app has both. In the explorer's
-          panel the surrounding header already says where you are. */}
-      {page && (
-        <header className="flex items-center gap-2">
-          {/* Phones only: on a desktop this is a sidebar destination, and
-              the app's own rule is no back arrows on top-level pages. */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="md:hidden"
-            title={t('Back to the board')}
-            onClick={() => navigate('analysis', 'explorer')}
-          >
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Opening books')}</h1>
-        </header>
-      )}
-
       {books.length > 0 && (
         <ul className="flex flex-col gap-1">
           {books.map((b) => (

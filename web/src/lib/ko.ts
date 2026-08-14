@@ -724,6 +724,11 @@ export const ko: Record<string, string> = {
     'PGN 모음을 올리고, 게임 전체를 검색할 수 있는 데이터베이스로 색인하세요.',
   'This server has no reference games database.': '이 서버에는 참고 게임 데이터베이스가 없습니다.',
   Databases: '데이터베이스',
+  'Reference games': '참고 게임',
+  'Opening books and reference games, built from uploaded PGNs':
+    '올린 PGN으로 만드는 오프닝 북과 참고 게임',
+  'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser.':
+    '둘 다 같은 PGN 모음으로 만듭니다: 오프닝 북은 탐색기와 레퍼토리 훈련용 포지션 색인이고, 참고 데이터베이스는 엘리트 게임 브라우저용 전체 기보 색인입니다.',
   'Delete this database — deleting is final': '이 데이터베이스 삭제 — 지우면 그것으로 끝입니다',
   'PGN collections': 'PGN 모음',
   'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export — and the same uploads build opening books.':
