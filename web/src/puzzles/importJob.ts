@@ -192,6 +192,30 @@ function classifyDetailInWorker(
 const RENDER_WIDTH = 1400;
 
 /**
+ * Open the document and drop it again: the "is this a PDF we can read at
+ * all" probe. The rebuild path clears a book's puzzles before importing
+ * the replacement, and used to do so on nothing but the file picker's
+ * word — an unreadable file emptied the book and imported nothing.
+ */
+export async function canReadPdf(file: File): Promise<boolean> {
+  try {
+    const pdfjs = await import('pdfjs-dist');
+    const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
+    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+    const task = pdfjs.getDocument({
+      data: await file.arrayBuffer(),
+      useWasm: false,
+      wasmUrl: `${window.location.origin}/pdfjs-wasm/`,
+    });
+    const pages = (await task.promise).numPages;
+    await task.destroy();
+    return pages > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * A whole-book scan as a BACKGROUND JOB: close the dialog, browse other
  * pages, come back — the scan keeps going and the book page shows its
  * progress. Classification runs in a worker, page rendering yields to the

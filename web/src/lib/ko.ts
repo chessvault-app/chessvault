@@ -942,6 +942,8 @@ export const ko: Record<string, string> = {
     '번호가 붙은 다이어그램 {n}개는 정답을 읽지 못했습니다.',
   '{n} solved puzzles could not be saved — they are kept below as drafts.':
     '풀이까지 읽어낸 퍼즐 {n}개를 저장하지 못했습니다 — 아래에 초안으로 남겨 두었습니다.',
+  'That file could not be read as a PDF — the book was left untouched.':
+    '그 파일은 PDF로 읽을 수 없습니다 — 책은 그대로 두었습니다.',
   'Answers found on {pages}.': '정답을 찾은 곳: {pages}.',
   'no page we could identify': '알아낼 수 있는 쪽 없음',
   '{n} diagrams found — untick any false positives, then add the rest as drafts.': 

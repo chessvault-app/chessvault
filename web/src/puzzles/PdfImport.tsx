@@ -7,7 +7,7 @@ import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { Skeleton } from '@/ui/Skeleton';
-import { useImportJob, type FoundDiagram } from './importJob';
+import { canReadPdf, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
@@ -160,16 +160,23 @@ export function PdfImport({
     if (existing > 0 && mode === 'rebuild') {
       setPreparing(true);
       try {
+        // Prove the file opens as a PDF before anything irreversible: the
+        // clear used to run on nothing but the file picker's word, so an
+        // unreadable file emptied the book and then imported nothing.
+        if (!(await canReadPdf(file))) {
+          setSaveError(t('That file could not be read as a PDF — the book was left untouched.'));
+          return;
+        }
         const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
           method: 'DELETE',
         });
         if (!res.ok) throw new Error(`could not clear the book (${res.status})`);
       } catch (e) {
         setSaveError((e as Error).message);
-        setPreparing(false);
         return;
+      } finally {
+        setPreparing(false);
       }
-      setPreparing(false);
     }
     job.start(slug, file, templates, { repair });
   };
