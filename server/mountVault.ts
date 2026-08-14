@@ -1,13 +1,13 @@
 import type { Hono } from 'hono';
 import { resolve } from 'node:path';
-import { booksApi } from './books.ts';
+import { sourcesApi } from './sources.ts';
 import { gamesApi } from './games.ts';
 import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { refGamesApi } from './refgames.ts';
 import { studiesApi } from './studies.ts';
-import { DATA_BOOKS, DATA_PUZZLES, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
+import { DATA_PUZZLES, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
 
 /**
  * Every route that reads or writes the vault, mounted in one place.
@@ -32,7 +32,7 @@ export interface VaultRoutes {
   notes?: string;
   /** Directory holding `collection/` and the archive caches. */
   games?: string;
-  /** Directory of uploaded PGN collections, usable as book sources. */
+  /** Directory of uploaded PGN collections, the databases' raw material. */
   sources?: string;
   /** The puzzle database file. */
   puzzlesDb?: string;
@@ -50,9 +50,9 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   const games = paths.games ?? VAULT_GAMES;
 
   // Given the caller's paths, not the module defaults: the demo mounts a
-  // vault at /vault, and booksApi() with no arguments looked at the real
-  // one instead — so its own uploads were invisible as book sources.
-  app.route('/api', booksApi({ books: DATA_BOOKS, sources: paths.sources ?? VAULT_SOURCES }));
+  // vault at /vault, and a no-argument mount looked at the real one
+  // instead — so its own uploads were invisible.
+  app.route('/api', sourcesApi(paths.sources ?? VAULT_SOURCES));
   app.route('/api', openingsApi());
   app.route('/api', studiesApi(studies));
   // The games collection speaks the same document API as studies: an

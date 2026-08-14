@@ -59,7 +59,7 @@ export interface LichessExplorerResponse {
   opening?: { eco: string; name: string } | null;
 }
 
-/** Reshape a Lichess explorer payload to the local /api/books/:name contract. */
+/** Reshape a Lichess explorer payload to the local explorer contract. */
 export function normalizeLichess(body: LichessExplorerResponse, db: ExplorerDb) {
   const refs = [...(body.topGames ?? []), ...(body.recentGames ?? [])];
   return {

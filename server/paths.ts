@@ -25,7 +25,6 @@ export const VAULT_CONFIG = resolve(VAULT, 'config.json');
 
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
-export const DATA_BOOKS = resolve(DATA, 'books');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 export const DATA_OPENINGS = resolve(DATA, 'openings.json');
 /** The live index over the vault's own games (see server/myGames.ts). */

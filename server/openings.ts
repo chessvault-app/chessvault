@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { Hono } from 'hono';
 import { Chess } from 'chessops/chess';
+import { parseFen } from 'chessops/fen';
 import { parseSan } from 'chessops/san';
 import { DATA_OPENINGS, REPO_ROOT } from './paths.ts';
 import { BOOK_SCHEMA_VERSION, hashSetup } from '../shared/zobrist.ts';
@@ -158,6 +159,19 @@ export function openingsApi(): Hono {
       return c.json({ openings });
     } catch {
       return c.json({ error: 'the opening catalogue is missing from this install' }, 503);
+    }
+  });
+
+  // One position's name, for the explorer pane's title line. It lived in
+  // books.ts while opening books existed; the name map never needed one.
+  api.get('/opening', (c) => {
+    const fen = c.req.query('fen');
+    if (!fen) return c.json({ error: 'missing ?fen=' }, 400);
+    try {
+      const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+      return c.json({ opening: openingForKey(hashSetup(pos.toSetup()).toString(16)) });
+    } catch {
+      return c.json({ error: 'invalid FEN' }, 400);
     }
   });
   return api;

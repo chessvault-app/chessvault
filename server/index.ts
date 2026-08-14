@@ -9,7 +9,6 @@ import { networkInterfaces } from 'node:os';
 import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
-import { seedBundledBook } from './books.ts';
 import { crossSiteGuard } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
@@ -40,13 +39,13 @@ for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) 
   mkdirSync(d, { recursive: true });
 }
 
-// The opening book and starter reference games that ship with the app,
-// copied in the first time this data directory is used — so the explorer,
-// the repertoire trainer and the elite game browser all have something to
-// answer from on a fresh install. Deletable like anything the user built,
-// and neither comes back once it has been. The single-file refgames
-// layout migrates first, so the seed lands beside it, never over it.
-seedBundledBook();
+// The starter reference games that ship with the app, copied in the
+// first time this data directory is used — so the explorer, the
+// repertoire trainer and the elite game browser all have something to
+// answer from on a fresh install. Deletable like anything the user
+// built, and it does not come back once it has been. The single-file
+// refgames layout migrates first, so the seed lands beside it, never
+// over it.
 migrateLegacyRefgames();
 seedBundledRefgames();
 // A fresh vault opens with a welcome study and note — onboarding as
