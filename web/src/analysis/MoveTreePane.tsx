@@ -202,8 +202,17 @@ export function MainlineTable({
   let cursor: NodeId | undefined = tree.rootId;
   while (cursor) {
     const node = getNode(tree, cursor);
-    const [mainChildId, ...variationIds] = node.children;
+    // Which child the table follows. Normally the mainline's; in reading
+    // mode, the one on the way to the current move — otherwise a cursor
+    // standing in a side line still showed the WHOLE mainline after the
+    // branch point, and the mode looked like it only worked from the
+    // mainline. Past the cursor there is nothing on the path, so the
+    // line's own continuation is followed as before.
+    const mainChildId = currentLineOnly
+      ? (node.children.find((id) => onPath.has(id)) ?? node.children[0])
+      : node.children[0];
     if (!mainChildId) break;
+    const variationIds = node.children.filter((id) => id !== mainChildId);
     const child = getNode(tree, mainChildId);
     const effectivePly = child.ply + (blackFirst ? 1 : 0);
     const number = Math.ceil(effectivePly / 2);
