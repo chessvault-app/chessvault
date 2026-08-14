@@ -195,6 +195,10 @@ export function useSheetDrag(onClose: () => void): {
       onPointerDown: (e) => {
         // Touch has its own path above, which knows about the scrollers.
         if (e.pointerType === 'touch') return;
+        // A press on a control IN the grab area is a press. Capturing it
+        // retargets the pointerup — and with it the click — to the strip,
+        // so the header's Back chevron ate its own clicks under a mouse.
+        if ((e.target as Element).closest('button, a, input')) return;
         from.current = e.clientY;
         // Capture keeps the moves coming when the pointer leaves the
         // header, and throws for one the browser no longer holds active —
