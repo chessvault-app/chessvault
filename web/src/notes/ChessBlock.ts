@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Node, mergeAttributes, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { ChessBlockView } from './ChessBlockView';
 
@@ -45,5 +45,18 @@ export const ChessBlock = Node.create({
         ({ commands }) =>
           commands.insertContent({ type: this.name, attrs: { pgn: '*' } }),
     };
+  },
+
+  addInputRules() {
+    // Typed, not only pressed: "/board" at the start of a line becomes a
+    // board the moment the word completes, so the hands never have to
+    // leave the keyboard for the toolbar's knight.
+    return [
+      nodeInputRule({
+        find: /^\/board$/,
+        type: this.type,
+        getAttributes: () => ({ pgn: '*' }),
+      }),
+    ];
   },
 });
