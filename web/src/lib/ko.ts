@@ -313,8 +313,11 @@ export const ko: Record<string, string> = {
     '필드가 {san}으로 응수했습니다(이 포지션의 {pct}%). 스터디에 준비된 답이 없습니다.',
   'End of your prepared line — every move matched the study.':
     '준비한 라인의 끝입니다. 모든 수가 스터디와 일치했습니다.',
-  'Drilling a study checks your moves against it and remembers what you fumble.':
-    '스터디 드릴은 내 수를 스터디와 대조하고, 틀린 곳을 기억해 둡니다.',
+  'Drilling one of your studies holds you to your preparation: a move off the study is named and rolled back, replies come from real games among the lines you cover, and common replies you have no answer to are recorded as gaps. Missed positions come back for review.':
+    '스터디 드릴은 나를 내 준비에 붙들어 둡니다. 스터디를 벗어난 수는 정답을 알려주며 되돌리고, 응수는 내가 준비한 라인 안에서 실제 기보의 빈도대로 나오며, 답이 없는 흔한 응수는 갭으로 기록됩니다. 놓친 포지션은 복습으로 돌아옵니다.',
+  'Whole study': '스터디 전체',
+  'This study has no moves yet — nothing to drill.':
+    '이 스터디에는 아직 수가 없습니다. 드릴할 것이 없습니다.',
   'No databases yet — build one from an uploaded collection.':
     '아직 데이터베이스가 없습니다. 업로드한 컬렉션으로 만들어 보세요.',
   'Whose games, result and notes': '누구의 게임인지, 결과, 노트',

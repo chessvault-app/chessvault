@@ -6,6 +6,7 @@ import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, pathTo, 
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
+import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, studyChild, type DrillCand } from './drill';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -181,32 +182,23 @@ function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
  * field's replies ends the drill on one. The record lives in the vault
  * (server/repertoire.ts); missed positions form a review pool under the
  * puzzle trainer's own rule — latest attempt decides.
+ *
+ * Scope is a choice: one chapter (the default), or the whole study as
+ * one repertoire. The drill's position is a SET of study nodes — every
+ * node in scope holding the current position — so chapters written as
+ * one-variation-each compose, and a transposition into a line another
+ * chapter (or move order) reached is recognised, not called a miss.
+ * See docs/repertoire.md for the algorithm end to end.
  */
 type Mode = 'spar' | 'drill';
 
-/** Position identity for the drill record: the FEN without its move
-    counters, so a transposition lands on one entry. */
-const fenKey = (fen: string): string => fen.split(' ').slice(0, 4).join(' ');
-
-/** An uncovered field reply is worth a note (and a vault record) from
-    this share of games — below it, oddballs would drown the panel. */
-const GAP_NOTE_SHARE = 0.05;
-
+/** One review-pool entry, as the summary endpoint returns it. */
 interface ReviewEntry {
   chapter: string;
   key: string;
   path: string[];
   expected: string[];
 }
-
-const studyChild = (tree: MoveTree, id: NodeId, san: string): NodeId | null =>
-  getNode(tree, id).children.find((c) => getNode(tree, c).san === san) ?? null;
-
-const studyMoves = (tree: MoveTree, id: NodeId): string[] =>
-  getNode(tree, id).children.flatMap((c) => {
-    const san = getNode(tree, c).san;
-    return san ? [san] : [];
-  });
 
 /** The SANs from the root down to a node — the drill record's evidence. */
 const sansTo = (tree: MoveTree, id: NodeId): string[] =>
@@ -652,7 +644,9 @@ export function RepertoireView() {
   const [studyList, setStudyList] = useState<string[] | null>(null);
   const [drillStudy, setDrillStudy] = useState('');
   const [drillChapters, setDrillChapters] = useState<Chapter[] | null>(null);
-  const [chapterIdx, setChapterIdx] = useState(0);
+  // 'all' drills the whole study as one repertoire; a number scopes to
+  // that chapter, the original behaviour and still the default.
+  const [chapterPick, setChapterPick] = useState('0');
   const [summary, setSummary] = useState<{ review: ReviewEntry[]; gaps: number } | null>(null);
   const [drillNotice, setDrillNotice] = useState<string | null>(null);
   /** A gap noted in passing — shown under the status, never stopping play. */
@@ -660,16 +654,21 @@ export function RepertoireView() {
   /** Why the line ended: past the database, the study's edge, or a gap. */
   const [endKind, setEndKind] = useState<'book' | 'line' | 'gap'>('book');
   const [gapMsg, setGapMsg] = useState('');
-  /** The live drill: the study tree being followed, mutated in place as
-      moves match — render state never reads it, so a ref is honest. */
+  /** The live drill: the chapters in scope, their position index, and
+      the current candidate nodes — mutated in place as moves match;
+      render state never reads it, so a ref is honest. */
   const drillRef = useRef<{
-    studyTree: MoveTree;
-    nodeId: NodeId;
+    chapters: Chapter[];
+    posIndex: Map<string, DrillCand[]>;
+    cands: DrillCand[];
     study: string;
-    chapter: string;
+    /** For the practice memo: the chapter's name, or "Whole study". */
+    label: string;
     missed: Set<string>;
     gapNoted: Set<string>;
   } | null>(null);
+  const wholeStudy = chapterPick === 'all';
+  const chapterIdx = wholeStudy ? 0 : Number(chapterPick) || 0;
 
   // The studies list, first needed when drilling is chosen.
   useEffect(() => {
@@ -689,7 +688,7 @@ export function RepertoireView() {
     if (mode !== 'drill' || !drillStudy) return;
     let cancelled = false;
     setDrillChapters(null);
-    setChapterIdx(0);
+    setChapterPick('0');
     void fetch(`/api/studies/${encodeURIComponent(drillStudy)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((body: { pgn?: string } | null) => {
@@ -711,9 +710,8 @@ export function RepertoireView() {
       return;
     }
     let cancelled = false;
-    void fetch(
-      `/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}&chapter=${encodeURIComponent(chapter.name)}`,
-    )
+    const scope = wholeStudy ? '' : `&chapter=${encodeURIComponent(chapter.name)}`;
+    void fetch(`/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((body: { review?: ReviewEntry[]; gaps?: unknown[] } | null) => {
         if (!cancelled) {
@@ -726,7 +724,7 @@ export function RepertoireView() {
     return () => {
       cancelled = true;
     };
-  }, [mode, drillStudy, drillChapters, chapterIdx, phase]);
+  }, [mode, drillStudy, drillChapters, chapterIdx, wholeStudy, phase]);
 
   /** One drilled position, into the vault. Losing the record must never
       stop the drill, so failures are swallowed. */
@@ -739,10 +737,13 @@ export function RepertoireView() {
   }): void => {
     const d = drillRef.current;
     if (!d) return;
+    // Attributed to the first candidate's chapter, so a whole-study
+    // drill still files its record under a real chapter name.
+    const chapter = d.chapters[d.cands[0]?.ci ?? 0]?.name ?? '';
     void fetch('/api/repertoire/attempt', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ study: d.study, chapter: d.chapter, ...entry }),
+      body: JSON.stringify({ study: d.study, chapter, ...entry }),
     }).catch(() => {});
   };
   const [flipped, setFlipped] = useState(false);
@@ -803,10 +804,12 @@ export function RepertoireView() {
   const orientation = flipped ? (userColor === 'white' ? 'black' : 'white') : userColor;
 
   const canMove = phase === 'playing' && atTip && pos.turn === userColor;
-  // A chapter with no moves has nothing to drill.
+  // A chapter (or study) with no moves has nothing to drill.
   const drillChapter = drillChapters?.[chapterIdx] ?? null;
-  const drillReady =
-    drillChapter !== null && getNode(drillChapter.tree, drillChapter.tree.rootId).children.length > 0;
+  const drillReady = wholeStudy
+    ? (drillChapters ?? []).some((c) => getNode(c.tree, c.tree.rootId).children.length > 0)
+    : drillChapter !== null &&
+      getNode(drillChapter.tree, drillChapter.tree.rootId).children.length > 0;
   const dests = useMemo(() => (canMove ? legalDests(tree, cursorId) : new Map()), [canMove, tree, cursorId]);
 
   // Fetch the field's reply and play it. The runId guard drops replies that
@@ -856,8 +859,20 @@ export function RepertoireView() {
         let note: string | null = null;
         if (drill) {
           const games = body.moves.reduce((sum, m) => sum + m.total, 0);
-          const inBook = (m: ExplorerMove): boolean =>
-            studyChild(drill.studyTree, drill.nodeId, m.san) !== null;
+          // In book: some candidate prepares the move, or it transposes
+          // into a position the scope holds anywhere (probed on a
+          // scratch tree; nothing is committed).
+          const inBook = (m: ExplorerMove): boolean => {
+            if (
+              drill.cands.some(
+                (c) => studyChild(drill.chapters[c.ci]!.tree, c.nodeId, m.san) !== null,
+              )
+            ) {
+              return true;
+            }
+            const probe = addUci(curTree, curId, m.uci);
+            return probe != null && drill.posIndex.has(fenKey(getNode(probe.tree, probe.nodeId).fen));
+          };
           const covered = body.moves.filter((m) => m.total > 0 && inBook(m));
           if (covered.length > 0) {
             choice = sampleMove(covered) ?? choice;
@@ -900,15 +915,16 @@ export function RepertoireView() {
         const d = drillRef.current;
         if (d) {
           const san = getNode(added.tree, added.nodeId).san ?? '';
-          const child = studyChild(d.studyTree, d.nodeId, san);
-          if (!child) {
-            // The study covers none of the field's replies here — with
+          const newKey = fenKey(getNode(added.tree, added.nodeId).fen);
+          const next = advanceCands(d.chapters, d.posIndex, d.cands, san, newKey);
+          if (next.length === 0) {
+            // The scope covers none of the field's replies here — with
             // nothing to steer to, the drill has hit the edge of the
             // prep, and the honest full-field sample says what beat it.
             const games = body.moves.reduce((sum, m) => sum + m.total, 0);
             const pct = games > 0 ? Math.max(1, Math.round((100 * choice.total) / games)) : 0;
             recordDrill({
-              key: fenKey(getNode(added.tree, added.nodeId).fen),
+              key: newKey,
               result: 'gap',
               path: sansTo(added.tree, added.nodeId),
               played: san,
@@ -923,9 +939,9 @@ export function RepertoireView() {
             setPhase('ended');
             return;
           }
-          d.nodeId = child;
+          d.cands = next;
           setGapNote(note);
-          if (getNode(d.studyTree, child).children.length === 0) {
+          if (expectedSans(d.chapters, next).length === 0) {
             setEndKind('line');
             setPhase('ended');
             return;
@@ -950,9 +966,10 @@ export function RepertoireView() {
     if (d) {
       const san = getNode(added.tree, added.nodeId).san ?? '';
       const key = fenKey(getNode(tree, cursorId).fen);
-      const expected = studyMoves(d.studyTree, d.nodeId);
-      const child = studyChild(d.studyTree, d.nodeId, san);
-      if (!child) {
+      const expected = expectedSans(d.chapters, d.cands);
+      const newKey = fenKey(getNode(added.tree, added.nodeId).fen);
+      const next = advanceCands(d.chapters, d.posIndex, d.cands, san, newKey);
+      if (next.length === 0) {
         // A recall miss: the move is refused, the book move is named, and
         // the position waits to be answered right. Recorded once per
         // position per session — the retry that follows the reveal is
@@ -987,12 +1004,12 @@ export function RepertoireView() {
         recordDrill({ key, result: 'hit', path: sansTo(tree, cursorId), expected, played: san });
       }
       setDrillNotice(null);
-      d.nodeId = child;
+      d.cands = next;
       playSound(san.includes('x') ? 'capture' : 'move');
       setTree(added.tree);
       setTipId(added.nodeId);
       setCursorId(added.nodeId);
-      if (getNode(d.studyTree, child).children.length === 0) {
+      if (expectedSans(d.chapters, next).length === 0) {
         setEndKind('line');
         setPhase('ended');
         return;
@@ -1017,17 +1034,25 @@ export function RepertoireView() {
     setGapMsg('');
     setEndKind('book');
     if (mode === 'drill') {
-      const chapter = drillChapters?.[chapterIdx];
-      if (!chapter) return;
+      const scoped = wholeStudy ? (drillChapters ?? []) : drillChapter ? [drillChapter] : [];
+      const startChapter = scoped[0];
+      if (!startChapter) return;
+      const posIndex = buildPosIndex(scoped);
+      const rootFen = getNode(startChapter.tree, startChapter.tree.rootId).fen;
+      // Every node in scope at the starting position — for a whole-study
+      // drill that is each chapter opening from the same board.
+      const cands = posIndex.get(fenKey(rootFen)) ?? [];
+      if (cands.length === 0) return;
       drillRef.current = {
-        studyTree: chapter.tree,
-        nodeId: chapter.tree.rootId,
+        chapters: scoped,
+        posIndex,
+        cands,
         study: drillStudy,
-        chapter: chapter.name,
+        label: wholeStudy ? t('Whole study') : startChapter.name,
         missed: new Set(),
         gapNoted: new Set(),
       };
-      const fresh = createTree(getNode(chapter.tree, chapter.tree.rootId).fen);
+      const fresh = createTree(rootFen);
       setTree(fresh);
       setTipId(fresh.rootId);
       setCursorId(fresh.rootId);
@@ -1036,11 +1061,12 @@ export function RepertoireView() {
       return;
     }
     drillRef.current = null;
-    const { t, id } = seedTree(template);
-    setTree(t);
+    // `seeded`, not `t`: the drill branch above needs the translator.
+    const { t: seeded, id } = seedTree(template);
+    setTree(seeded);
     setTipId(id);
-    const last = getNode(t, id);
-    if (positionAt(t, id).turn === userColor) {
+    const last = getNode(seeded, id);
+    if (positionAt(seeded, id).turn === userColor) {
       // The line ends on the OPPONENT'S move and no reply will follow, so
       // nothing would ever animate (the idle preview already sits on the
       // final position). Start one move back and play it in a beat later —
@@ -1059,7 +1085,7 @@ export function RepertoireView() {
     } else {
       // The bot moves first; its reply animates on its own.
       setCursorId(id);
-      void reply(t, id, source, band);
+      void reply(seeded, id, source, band);
     }
   };
 
@@ -1083,10 +1109,17 @@ export function RepertoireView() {
    * rather than inventing a position the study cannot answer for.
    */
   const startFromMiss = (): void => {
-    const chapter = drillChapters?.[chapterIdx];
     const pool = summary?.review ?? [];
-    if (mode !== 'drill' || !chapter || pool.length === 0) return;
+    const scoped = wholeStudy ? (drillChapters ?? []) : drillChapter ? [drillChapter] : [];
+    if (mode !== 'drill' || scoped.length === 0 || pool.length === 0) return;
     const entry = pool[Math.floor(Math.random() * pool.length)]!;
+    // The record names the chapter its path belongs to.
+    const ci = scoped.findIndex((c) => c.name === entry.chapter);
+    const chapter = scoped[ci];
+    if (!chapter) {
+      startGame();
+      return;
+    }
     let gameTree = createTree(getNode(chapter.tree, chapter.tree.rootId).fen);
     let gameId = gameTree.rootId;
     let studyId: NodeId | null = chapter.tree.rootId;
@@ -1111,11 +1144,14 @@ export function RepertoireView() {
     setGapNote(null);
     setGapMsg('');
     setEndKind('book');
+    const posIndex = buildPosIndex(scoped);
+    const cands = posIndex.get(fenKey(getNode(gameTree, gameId).fen)) ?? [{ ci, nodeId: studyId }];
     drillRef.current = {
-      studyTree: chapter.tree,
-      nodeId: studyId,
+      chapters: scoped,
+      posIndex,
+      cands,
       study: drillStudy,
-      chapter: chapter.name,
+      label: wholeStudy ? t('Whole study') : chapter.name,
       missed: new Set(),
       gapNoted: new Set(),
     };
@@ -1144,7 +1180,7 @@ export function RepertoireView() {
     setLog(
       appendLog({
         opening: drillRef.current
-          ? `${drillRef.current.study} — ${drillRef.current.chapter}`
+          ? `${drillRef.current.study} — ${drillRef.current.label}`
           : template.name,
         source: sourceLabel,
         moves: line.length - 1,
@@ -1188,7 +1224,9 @@ export function RepertoireView() {
         {t(
           'Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.',
         )}{' '}
-        {t('Drilling a study checks your moves against it and remembers what you fumble.')}
+        {t(
+          'Drilling one of your studies holds you to your preparation: a move off the study is named and rolled back, replies come from real games among the lines you cover, and common replies you have no answer to are recorded as gaps. Missed positions come back for review.',
+        )}
       </InfoTip>
     </>
   );
@@ -1365,11 +1403,15 @@ export function RepertoireView() {
                       <label className="flex flex-col gap-1">
                         <span className="text-muted text-xs font-medium">{t('Chapter')}</span>
                         <Select
-                          value={String(chapterIdx)}
-                          onChange={(v) => setChapterIdx(Number(v))}
+                          value={chapterPick}
+                          onChange={setChapterPick}
                           ariaLabel={t('Chapter to drill')}
                           steady
                           groups={[
+                            // The whole study as one repertoire — every
+                            // chapter's lines count, transpositions
+                            // included — or one chapter alone.
+                            { options: [{ value: 'all', label: t('Whole study') }] },
                             {
                               options: drillChapters.map((c, i) => ({
                                 value: String(i),
@@ -1392,7 +1434,9 @@ export function RepertoireView() {
                   is one line. */}
               {mode === 'drill' && drillChapter && !drillReady && (
                 <p className="text-subtle text-xs leading-relaxed">
-                  {t('This chapter has no moves yet — nothing to drill.')}
+                  {wholeStudy
+                    ? t('This study has no moves yet — nothing to drill.')
+                    : t('This chapter has no moves yet — nothing to drill.')}
                 </p>
               )}
               {/* What the record holds against this chapter, and a way to
