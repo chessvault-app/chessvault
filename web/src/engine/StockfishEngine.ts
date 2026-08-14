@@ -55,7 +55,14 @@ export class StockfishEngine {
   private currentFen: string | null = null;
   /** Set while waiting for `bestmove` after a `stop`, so we don't overlap searches. */
   private pendingStop = false;
-  private queued: { fen: string; depth: number } | null = null;
+  private queued: { fen: string; depth: number; searchMoves?: string[] } | null = null;
+
+  /**
+   * While set, every engine line is diverted here instead of the UCI
+   * parser — the `eval` trace is plain prose (a board of piece values),
+   * not `info` messages, and handleLine would drop all of it.
+   */
+  private traceSink: ((line: string) => void) | null = null;
 
   private lines = new Map<number, PvLine>();
 
@@ -94,6 +101,11 @@ export class StockfishEngine {
   }
 
   private handleLine(line: string): void {
+    if (this.traceSink) {
+      this.traceSink(line);
+      return;
+    }
+
     if (line === 'uciok') {
       this.send('isready');
       return;
@@ -125,7 +137,7 @@ export class StockfishEngine {
       this.pendingStop = false;
       const next = this.queued;
       this.queued = null;
-      if (next) void this.analyse(next.fen, next.depth);
+      if (next) void this.analyse(next.fen, next.depth, next.searchMoves);
       return;
     }
   }
@@ -222,13 +234,16 @@ export class StockfishEngine {
    * If a search is already running it is stopped first, and the new position is
    * queued until `bestmove` arrives. Issuing `go` while a search is live is the
    * classic way to desynchronise a UCI engine, so it is avoided.
+   *
+   * `searchMoves` restricts the root to those moves (UCI `searchmoves`) —
+   * how a probe asks "and if I play THIS?" and gets the honest reply line.
    */
-  async analyse(fen: string, depth = 22): Promise<void> {
+  async analyse(fen: string, depth = 22, searchMoves?: string[]): Promise<void> {
     if (!this.worker) await this.start();
     if (!this.worker) return;
 
     if (this.searching || this.pendingStop) {
-      this.queued = { fen, depth };
+      this.queued = { fen, depth, ...(searchMoves ? { searchMoves } : {}) };
       if (!this.pendingStop) {
         this.pendingStop = true;
         this.send('stop');
@@ -246,7 +261,44 @@ export class StockfishEngine {
     this.currentFen = fen;
     this.searching = true;
     this.send(`position fen ${fen}`);
-    this.send(`go depth ${depth}`);
+    this.send(`go depth ${depth}${searchMoves?.length ? ` searchmoves ${searchMoves.join(' ')}` : ''}`);
+  }
+
+  /**
+   * Run the NNUE `eval` trace for a position and return its raw lines.
+   *
+   * The trace ends with a "Final evaluation" line; if that never comes
+   * (an engine built without the command) the partial capture is returned
+   * after a timeout and the caller's parser will find no grid in it —
+   * absence, not an error. Must not be called while a search is in
+   * flight; callers serialise (see probe.ts).
+   */
+  evalTrace(fen: string): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+      if (!this.worker || !this.ready) {
+        reject(new Error('engine not ready'));
+        return;
+      }
+      if (this.searching || this.pendingStop || this.traceSink) {
+        reject(new Error('engine busy'));
+        return;
+      }
+      const lines: string[] = [];
+      const timer = setTimeout(() => {
+        this.traceSink = null;
+        resolve(lines);
+      }, 5_000);
+      this.traceSink = (line) => {
+        lines.push(line);
+        if (line.startsWith('Final evaluation')) {
+          clearTimeout(timer);
+          this.traceSink = null;
+          resolve(lines);
+        }
+      };
+      this.send(`position fen ${fen}`);
+      this.send('eval');
+    });
   }
 
   /** Halt the current search but keep the worker warm. */
@@ -273,6 +325,9 @@ export class StockfishEngine {
     this.ready = false;
     this.currentFen = null;
     this.lines.clear();
+    // A trace in flight resolves partial via its own timer; the sink just
+    // must not outlive the worker it was reading.
+    this.traceSink = null;
     this.worker?.terminate();
     this.worker = null;
   }
