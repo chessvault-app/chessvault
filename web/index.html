@@ -96,6 +96,20 @@
     <style>
       /* Inline, because a stylesheet that has not arrived cannot draw the
          thing that covers the wait for it. */
+      /* The page's own ground, before any stylesheet. The app's stylesheet
+         is loaded without blocking paint (vite.launchScreen.ts), so every
+         path that shows the document before it lands — the launch screen's
+         4s backstop on a slow network, a first install fetching chunks, a
+         browser tab — was showing an UNSTYLED page, and an unstyled page
+         is white whatever the theme. This is the white screen lanph3re
+         sometimes saw on launch. The media query follows the OS for the
+         no-JS case; the theme script below then pins the STORED preference
+         inline, which wins, so an app set to light on a dark phone gets
+         light, not the OS's guess. */
+      html { background-color: #f9fafc; }
+      @media (prefers-color-scheme: dark) {
+        html { background-color: #090c12; }
+      }
       /* The same screen the OS drew a moment ago — and it follows the OS,
          NOT the app.
 
@@ -186,6 +200,10 @@
             pref === 'dark' ||
             (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
+          // Pin the page's ground to the RESOLVED theme (inline style beats
+          // the media query above): the stored preference can disagree with
+          // the OS, and the ground must be the app's colour, not the OS's.
+          document.documentElement.style.backgroundColor = dark ? '#090c12' : '#f9fafc';
         } catch (e) {
           /* first run, or storage blocked — fall through to light */
         }
