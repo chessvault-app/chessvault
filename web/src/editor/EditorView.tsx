@@ -255,7 +255,18 @@ export function EditorView({
   const positionPanels = (titled: boolean, nested = false) => (
     <>
         <Panel flush>
-          {titled && <PanelHeader title={t('Position')} />}
+          {/* The Load button lives up here with the panel's name, not
+              buried at the end of the FEN footer (lanph3re's call) — the
+              sheet keeps its page-turn button in the footer, having no
+              header to carry it. */}
+          {titled && (
+            <PanelHeader
+              title={t('Position')}
+              actions={
+                !nested && <LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />
+              }
+            />
+          )}
           <div className="grid gap-3 p-3">
             <Field label={t('Side to move')}>
               <div className="flex gap-1">
@@ -361,14 +372,12 @@ export function EditorView({
             <Button variant="ghost" size="sm" onClick={() => void copyFen()}>
               {copied === 'ok' ? t('Copied') : copied === 'failed' ? t('Failed') : t('Copy')}
             </Button>
-            {/* Same Load-position dialog as the Board tab (lanph3re: one
-                dialog everywhere); here it lands on the editor state. */}
-            {/* Opened from the sheet, this REPLACES the sheet rather than
-                stacking a second one on it: the sheet closes as the
+            {/* Opened from the sheet, the loader REPLACES the sheet rather
+                than stacking a second one on it: the sheet closes as the
                 loader opens, and the loader's back chevron brings it
                 straight back. Two scrims deep on a phone is a window you
                 have to dismiss twice to get out of. */}
-            {nested ? (
+            {nested && (
               // Inside the sheet this is a page turn, not a new window.
               <Button
                 variant="ghost"
@@ -378,8 +387,6 @@ export function EditorView({
               >
                 <FolderInput className="size-3.5" />
               </Button>
-            ) : (
-              <LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />
             )}
           </div>
         </Panel>
