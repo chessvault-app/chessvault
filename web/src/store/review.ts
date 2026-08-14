@@ -10,7 +10,7 @@ import {
 } from '@/engine/StockfishEngine';
 import { judgeLine, summarise, type Score, type SideSummary } from '@/engine/review';
 import { toWhitePov, winningChances } from '@/engine/uci';
-import { isNamedPosition, NAMED_PLIES } from '@/lib/opening';
+import { isBookPosition, NAMED_PLIES } from '@/lib/opening';
 import { useAnalysis } from './analysis';
 import { useEngine } from './engine';
 
@@ -108,7 +108,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
       // move one, which is what it did before it knew about books.
       let bookPlies = 0;
       while (bookPlies < line.length && bookPlies < NAMED_PLIES) {
-        if (!(await isNamedPosition(fens[bookPlies + 1]!))) break;
+        if (!(await isBookPosition(fens[bookPlies + 1]!))) break;
         bookPlies += 1;
       }
       if (get().status !== 'running') return;

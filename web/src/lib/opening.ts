@@ -16,8 +16,16 @@ import type { MoveTree, NodeId } from '@shared/types';
  * this": the last thing it was still called.
  */
 
-/** Shared across every panel that asks; a position's name never changes. */
-const known = new Map<string, string | null>();
+/** What one lookup answers: the position's name, if any row ends there,
+    and whether it lies anywhere along the catalogue's lines. `book` can be
+    true with a null name — a waypoint inside theory. */
+interface KnownOpening {
+  name: string | null;
+  book: boolean;
+}
+
+/** Shared across every panel that asks; a position's answer never changes. */
+const known = new Map<string, KnownOpening>();
 const inFlight = new Map<string, Promise<void>>();
 
 function lookup(fen: string): Promise<void> {
@@ -30,16 +38,21 @@ function lookup(fen: string): Promise<void> {
   const request = (async () => {
     try {
       const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
-      const body = (await res.json()) as { opening?: { eco: string; name: string } | null };
+      const body = (await res.json()) as {
+        opening?: { eco: string; name: string } | null;
+        book?: boolean;
+      };
       // The ECO code rides with the name — "B90 Sicilian, Najdorf" says more
       // than either half, and it is what every book and database prints.
-      known.set(
-        fen,
-        body.opening ? [body.opening.eco, body.opening.name].filter(Boolean).join(' ') : null,
-      );
+      const name = body.opening
+        ? [body.opening.eco, body.opening.name].filter(Boolean).join(' ')
+        : null;
+      // A server from before membership existed sends no `book`; a name is
+      // then the best available proxy.
+      known.set(fen, { name, book: body.book ?? name !== null });
     } catch {
       // A name is decoration; a failed lookup must not break the panel.
-      known.set(fen, null);
+      known.set(fen, { name: null, book: false });
     } finally {
       inFlight.delete(fen);
     }
@@ -49,13 +62,15 @@ function lookup(fen: string): Promise<void> {
 }
 
 /**
- * Whether a position is in the opening catalogue at all — the membership
- * test behind "book move": a move whose resulting position is named is
- * theory, whatever the engine thinks of it. Same cache as the names.
+ * Whether a position lies anywhere along the opening catalogue's lines —
+ * the membership test behind "book move": a move that keeps the game
+ * inside known theory is book, whatever the engine thinks of it and
+ * whether or not a row happens to end (and so put a name) exactly there.
+ * Same cache as the names.
  */
-export async function isNamedPosition(fen: string): Promise<boolean> {
+export async function isBookPosition(fen: string): Promise<boolean> {
   await lookup(fen);
-  return (known.get(fen) ?? null) !== null;
+  return known.get(fen)?.book ?? false;
 }
 
 /**
@@ -86,9 +101,9 @@ function classifyBook(tree: MoveTree): { book: Set<NodeId>; unresolved: string[]
     for (const childId of node.children) {
       const child = tree.nodes[childId];
       if (!child || child.ply > NAMED_PLIES) continue;
-      const name = known.get(child.fen);
-      if (name === undefined) unresolved.push(child.fen);
-      else if (name !== null) {
+      const entry = known.get(child.fen);
+      if (entry === undefined) unresolved.push(child.fen);
+      else if (entry.book) {
         book.add(childId);
         frontier.push(childId);
       }
@@ -97,17 +112,28 @@ function classifyBook(tree: MoveTree): { book: Set<NodeId>; unresolved: string[]
   return { book, unresolved };
 }
 
+const NO_TAGS: Set<NodeId> = new Set();
+const NOTHING_UNRESOLVED: string[] = [];
+
 /**
  * The tree's book moves, live: classification re-runs as lookups land and
  * whenever the tree changes, so a variation played just now tags itself.
  * Costs nothing per render — the walk is memoized on the tree, and every
  * position asked about lands in the same cache the opening names use.
+ *
+ * `enabled: false` returns the empty set AND fires no lookups — the
+ * analysis views defer the tags (and their traffic) until a review has
+ * run, lanph3re's call: before that the icons are ink, not information.
  */
-export function useBookTags(tree: MoveTree): Set<NodeId> {
+export function useBookTags(tree: MoveTree, enabled = true): Set<NodeId> {
   const [version, setVersion] = useState(0);
   // `version` only exists to re-run the walk once lookups resolve.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const { book, unresolved } = useMemo(() => classifyBook(tree), [tree, version]);
+  const { book, unresolved } = useMemo(
+    () =>
+      enabled ? classifyBook(tree) : { book: NO_TAGS, unresolved: NOTHING_UNRESOLVED },
+    [tree, enabled, version],
+  );
   useEffect(() => {
     if (unresolved.length === 0) return;
     let live = true;
@@ -159,7 +185,7 @@ export function useOpeningName(fens: string[]): string | null {
   }, [current]);
 
   for (let at = Math.min(fens.length, NAMED_PLIES + 1) - 1; at >= 0; at--) {
-    const name = known.get(fens[at]!);
+    const name = known.get(fens[at]!)?.name;
     if (name) return name;
   }
   return null;

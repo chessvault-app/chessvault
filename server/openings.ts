@@ -9,8 +9,9 @@ import { BOOK_SCHEMA_VERSION, hashSetup } from '../shared/zobrist.ts';
 
 /**
  * The vendored lichess chess-openings TSVs: 3,810 named lines, and the
- * source BOTH opening indexes are made from — the picker's catalogue, and
- * the hash → name map the explorer titles positions with.
+ * source every opening index is made from — the picker's catalogue, the
+ * hash → name map the explorer titles positions with, and the membership
+ * set behind the analysis views' book tags.
  *
  * They are runtime data, not build input, which is why they ship with the
  * app (package.json build.extraResources). An installed desktop app has no
@@ -28,6 +29,13 @@ interface OpeningsFile {
   schemaVersion: number;
   count: number;
   byKey: Record<string, [string, string]>;
+  /** Every position ALONG every line, not only each line's last. A
+      position can sit deep inside known theory without any row happening
+      to stop there — after 3...a6 4.Ba4 in the Ruy Lopez, the dataset
+      continues in a dozen rows but ends in none — and membership, not
+      naming, is what "is this move book?" asks. Optional because indexes
+      compiled before it existed lack it; loading rebuilds those. */
+  memberKeys?: string[];
 }
 
 /** Every `eco / name / pgn` row of the vendored dataset, headers skipped. */
@@ -47,26 +55,35 @@ function* openingRows(): Generator<[string, string, string]> {
  */
 function compileOpenings(): { file: OpeningsFile; lines: number; collisions: number } {
   const byKey: OpeningsFile['byKey'] = {};
+  const members = new Set<string>();
   let lines = 0;
   let collisions = 0;
 
   for (const [eco, name, pgn] of openingRows()) {
     const pos = Chess.default();
+    let key = '';
     for (const token of pgn.split(/\s+/)) {
       if (!token || /^\d+\.+$/.test(token)) continue; // move numbers
       const move = parseSan(pos, token);
       if (!move) throw new Error(`bad SAN "${token}" in ${eco} ${name}`);
       pos.play(move);
+      // Every waypoint is a member; only the row's end carries the name.
+      key = hashSetup(pos.toSetup()).toString(16);
+      members.add(key);
     }
 
-    const key = hashSetup(pos.toSetup()).toString(16);
     if (byKey[key]) collisions += 1;
     else byKey[key] = [eco, name];
     lines += 1;
   }
 
   return {
-    file: { schemaVersion: BOOK_SCHEMA_VERSION, count: Object.keys(byKey).length, byKey },
+    file: {
+      schemaVersion: BOOK_SCHEMA_VERSION,
+      count: Object.keys(byKey).length,
+      byKey,
+      memberKeys: [...members],
+    },
     lines,
     collisions,
   };
@@ -80,20 +97,24 @@ export function writeOpenings(): { path: string; count: number; lines: number; c
   return { path: DATA_OPENINGS, count: file.count, lines, collisions };
 }
 
-let cache: { mtimeMs: number; byKey: OpeningsFile['byKey'] } | null = null;
+let cache: {
+  mtimeMs: number;
+  byKey: OpeningsFile['byKey'];
+  members: Set<string>;
+} | null = null;
 /** One failure is enough: without this, a missing TSV would be re-read, and
     re-fail, on every explorer request for the life of the process. */
 let unbuildable = false;
 
 /**
- * Name a position by its Zobrist hash (unsigned hex, as produced by
- * `hashSetup(...).toString(16)`). Backed by data/openings.json, which is
- * COMPILED ON FIRST USE if it is not there — a fresh vault, a fresh
- * checkout and a fresh install all have opening names without anybody
- * running anything. Returns null only if the vendored TSVs are missing too.
- * The file is reloaded if it changes on disk.
+ * The loaded index — names AND membership. Backed by data/openings.json,
+ * which is COMPILED ON FIRST USE if it is not there — a fresh vault, a
+ * fresh checkout and a fresh install all have opening names without
+ * anybody running anything — and RECOMPILED if it predates the membership
+ * set. Returns null only if the vendored TSVs are missing too. The file
+ * is reloaded if it changes on disk.
  */
-export function openingsIndex(): OpeningsFile['byKey'] | null {
+function loadIndex(): { byKey: OpeningsFile['byKey']; members: Set<string> } | null {
   let mtimeMs: number;
   try {
     mtimeMs = statSync(DATA_OPENINGS).mtimeMs;
@@ -110,10 +131,39 @@ export function openingsIndex(): OpeningsFile['byKey'] | null {
     }
   }
   if (!cache || cache.mtimeMs !== mtimeMs) {
-    const parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as OpeningsFile;
-    cache = { mtimeMs, byKey: parsed.byKey };
+    let parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as OpeningsFile;
+    if (!parsed.memberKeys && !unbuildable) {
+      // An index from before membership existed. If the TSVs are gone the
+      // old file still answers names; membership then degrades to the
+      // terminal positions it has, rather than to nothing.
+      try {
+        writeOpenings();
+        console.log(`openings: recompiled ${DATA_OPENINGS} with the membership set`);
+        mtimeMs = statSync(DATA_OPENINGS).mtimeMs;
+        parsed = JSON.parse(readFileSync(DATA_OPENINGS, 'utf-8')) as OpeningsFile;
+      } catch (error) {
+        unbuildable = true;
+        console.warn(`openings: stale index kept, none could be rebuilt (${(error as Error).message})`);
+      }
+    }
+    cache = {
+      mtimeMs,
+      byKey: parsed.byKey,
+      members: new Set(parsed.memberKeys ?? Object.keys(parsed.byKey)),
+    };
   }
-  return cache.byKey;
+  return cache;
+}
+
+/** Name a position by its Zobrist hash (unsigned hex, as produced by
+    `hashSetup(...).toString(16)`). */
+export function openingsIndex(): OpeningsFile['byKey'] | null {
+  return loadIndex()?.byKey ?? null;
+}
+
+/** Whether a position is anywhere in the catalogue's lines — the book test. */
+export function isBookKey(hexKey: string): boolean {
+  return loadIndex()?.members.has(hexKey) ?? false;
 }
 
 export function openingForKey(hexKey: string): Opening | null {
@@ -162,14 +212,16 @@ export function openingsApi(): Hono {
     }
   });
 
-  // One position's name, for the explorer pane's title line. It lived in
-  // books.ts while opening books existed; the name map never needed one.
+  // One position's name and book membership, for the explorer pane's
+  // title line and the analysis views' book tags. `book` can be true with
+  // a null name: a waypoint inside theory that no row happens to end on.
   api.get('/opening', (c) => {
     const fen = c.req.query('fen');
     if (!fen) return c.json({ error: 'missing ?fen=' }, 400);
     try {
       const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
-      return c.json({ opening: openingForKey(hashSetup(pos.toSetup()).toString(16)) });
+      const key = hashSetup(pos.toSetup()).toString(16);
+      return c.json({ opening: openingForKey(key), book: isBookKey(key) });
     } catch {
       return c.json({ error: 'invalid FEN' }, 400);
     }

@@ -124,8 +124,8 @@ export async function installDemoBackend(): Promise<void> {
   // show when there genuinely is none.
   // The ECO catalogue is a plain file the openings lookup reads off disk,
   // so it is fetched once and written into the in-memory filesystem at the
-  // exact path the real code resolves. 284 KB, and without it every line
-  // in the app is nameless.
+  // exact path the real code resolves. ~430 KB, and without it every line
+  // in the app is nameless and no move is book.
   try {
     const eco = await fetch(new URL('demo/openings.json', document.baseURI));
     if (eco.ok) seedFile(DATA_OPENINGS, await eco.text(), Date.now());
