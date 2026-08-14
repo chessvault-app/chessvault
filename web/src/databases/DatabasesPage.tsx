@@ -1,7 +1,7 @@
-import { ChevronLeft, Database } from 'lucide-react';
+import { Database } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { navigate } from '@/lib/router';
-import { Button } from '@/ui/Button';
+import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { RefDbManager, type RefDb } from '@/games/EliteGames';
 import { t } from '@/lib/i18n';
@@ -33,25 +33,15 @@ export function DatabasesPage() {
 
   return (
     <PageShell width="medium">
-        <header className="flex items-center gap-2">
-          {/* Phones reach this from More; a desktop has it in the sidebar,
-              and top-level pages carry no back arrow there. */}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="md:hidden"
-            title={t('Back')}
-            onClick={() => navigate('more')}
-          >
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Databases')}</h1>
-        </header>
-        <p className="text-muted -mt-2 max-w-2xl text-xs leading-relaxed">
-          {t(
+        {/* Phones reach this from More; a desktop has it in the sidebar,
+            and top-level pages carry no back arrow there. */}
+        <PageHeader
+          title={t('Databases')}
+          back={() => navigate('more')}
+          description={t(
             'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.',
           )}
-        </p>
+        />
 
         <Section icon={<Database className="size-3.5" />} title={t('Reference games')}>
           {meta === null ? null : meta.databases ? (

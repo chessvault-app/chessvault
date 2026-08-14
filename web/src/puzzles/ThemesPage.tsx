@@ -1,8 +1,8 @@
-import { ChevronLeft, Puzzle, RotateCcw } from 'lucide-react';
+import { Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { Button } from '@/ui/Button';
+import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
@@ -151,28 +151,24 @@ export function ThemesPage() {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-        <div className="mb-4 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="md:hidden"
-            title={t('Back to the dashboard')}
-            onClick={() => navigate('puzzles', 'dashboard')}
-          >
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          <h1 className="text-fg text-base font-semibold">{t('Puzzle themes')}</h1>
-          {error && <span className="text-bad text-xs">{error}</span>}
-          <span className="min-w-0 flex-1" />
-          <SearchInput
-            inputSize="sm"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('Find a theme')}
-            aria-label={t('Find a theme')}
-            className="w-44 max-w-full"
-          />
-        </div>
+        <PageHeader
+          className="mb-4"
+          title={t('Puzzle themes')}
+          back={() => navigate('puzzles', 'dashboard')}
+          actions={
+            <>
+              {error && <span className="text-bad text-xs">{error}</span>}
+              <SearchInput
+                inputSize="sm"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('Find a theme')}
+                aria-label={t('Find a theme')}
+                className="w-44 max-w-full"
+              />
+            </>
+          }
+        />
 
         <ChipRow className="mb-5" innerClassName="gap-2">
           <ThemeCard

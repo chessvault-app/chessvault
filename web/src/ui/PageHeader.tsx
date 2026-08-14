@@ -1,6 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from './Button';
+import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 
 /**
@@ -17,15 +18,17 @@ export function PageHeader({
   back,
   description,
   actions,
+  className,
 }: {
   title: string;
   /** Where the phone's back chevron goes; omit on top-level pages. */
   back?: () => void;
   description?: string;
   actions?: ReactNode;
+  className?: string;
 }) {
   const header = (
-    <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
+    <header className={cn('flex flex-wrap items-center gap-x-3 gap-y-2', !description && className)}>
       {back && (
         <Button
           variant="ghost"
@@ -45,7 +48,7 @@ export function PageHeader({
   );
   if (!description) return header;
   return (
-    <div className="flex flex-col gap-2">
+    <div className={cn('flex flex-col gap-2', className)}>
       {header}
       <p className="text-muted text-xs leading-relaxed">{description}</p>
     </div>

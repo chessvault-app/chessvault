@@ -21,6 +21,7 @@ import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/ui/Button';
+import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 
 import { EmptyState } from '@/ui/EmptyState';
@@ -411,27 +412,29 @@ export function CollectionView() {
           header, so they take a line under the title. Declared once in
           `finders` and placed twice; only one is ever on screen. */}
       <div className="flex flex-col gap-2.5">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold tracking-tight">{t('Games')}</h1>
-          {/* Every way to get a game, in one place — but only while there
-              is nowhere better for them. At lg the two browsers live in
-              the column to the right, where they are on screen rather
-              than behind a press, and offering a window over a panel you
-              can already see is worse than not offering it. So at lg this
-              is what it says on it: import a game. */}
-          <CreateControl
-            label="Add games"
-            actions={[
-              { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
-              ...(wide
-                ? []
-                : [
-                    { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
-                    { label: 'Elite games', icon: Trophy, onSelect: () => setElite(true) },
-                  ]),
-            ]}
-          />
-        </header>
+        <PageHeader
+          title={t('Games')}
+          actions={
+            /* Every way to get a game, in one place — but only while there
+               is nowhere better for them. At lg the two browsers live in
+               the column to the right, where they are on screen rather
+               than behind a press, and offering a window over a panel you
+               can already see is worse than not offering it. So at lg this
+               is what it says on it: import a game. */
+            <CreateControl
+              label="Add games"
+              actions={[
+                { label: 'Import a game', icon: Plus, onSelect: () => setImporting(true) },
+                ...(wide
+                  ? []
+                  : [
+                      { label: 'Browse an online archive', icon: Globe, onSelect: () => setBrowsing(true) },
+                      { label: 'Elite games', icon: Trophy, onSelect: () => setElite(true) },
+                    ]),
+              ]}
+            />
+          }
+        />
 
         <div className="flex items-center gap-2 lg:hidden">{finders('flex-1')}</div>
       </div>

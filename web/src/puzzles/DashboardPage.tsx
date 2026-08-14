@@ -7,6 +7,7 @@ import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { Button } from '@/ui/Button';
+import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { Select } from '@/ui/Select';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -157,11 +158,11 @@ export function DashboardPage() {
     // the shell's column gap.
     <PageShell width="medium" className="block">
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
-        <div className="mb-4 flex items-center gap-2">
-          <h1 className="text-fg text-base font-semibold">{t('Puzzle dashboard')}</h1>
-          <span className="min-w-0 flex-1" />
-          <ResetButton onDone={refresh} />
-        </div>
+        <PageHeader
+          className="mb-4"
+          title={t('Puzzle dashboard')}
+          actions={<ResetButton onDone={refresh} />}
+        />
 
         {/* Phones land HERE from the Puzzles tab (the trainer is one more
             tap), so the three destinations get big, thumbable buttons.

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { ChevronLeft, Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
+import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
@@ -85,20 +86,7 @@ export function SettingsPage() {
   // only pushed the bottom of the page out of a box with nothing under it.
   return (
     <PageShell width="narrow">
-        <header className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="md:hidden"
-              title={t('Back')}
-              onClick={() => up('home')}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <h1 className="text-lg font-semibold tracking-tight">{t('Settings')}</h1>
-          </div>
-        </header>
+        <PageHeader title={t('Settings')} back={() => up('home')} />
 
         {/* Appearance is the only card that works without a server: it
             writes to this device, not to a vault. The rest change a vault or

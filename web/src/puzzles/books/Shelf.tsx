@@ -3,7 +3,6 @@ import {
   ArrowUpNarrowWide,
   Bookmark,
   BookMarked,
-  ChevronLeft,
   FileUp,
   MoreHorizontal,
   Loader2,
@@ -21,6 +20,7 @@ import { navigate } from '@/lib/router';
 import { ActionSheet } from '@/ui/ActionSheet';
 
 import { Button } from '@/ui/Button';
+import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 
 import { SearchInput } from '@/ui/Input';
@@ -315,18 +315,11 @@ export function Shelf() {
             switch rides beside the search below sm, exactly as in
             ShelfToolbar. */}
         <div className="mb-4 flex flex-col gap-2.5">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="md:hidden"
-              title={t('Back to the dashboard')}
-              onClick={() => navigate('puzzles', 'dashboard')}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <h1 className="text-fg text-base font-semibold">{t('Puzzle books')}</h1>
-            <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+          <PageHeader
+            title={t('Puzzle books')}
+            back={() => navigate('puzzles', 'dashboard')}
+            actions={
+              <>
               {bookmarkToggle('hidden sm:inline-flex')}
               <Select
                 value={view.sort}
@@ -357,11 +350,12 @@ export function Shelf() {
                   <ArrowDownWideNarrow className="size-3.5" />
                 )}
               </Button>
-              <CreateControl
-                actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
-              />
-            </div>
-          </div>
+                <CreateControl
+                  actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
+                />
+              </>
+            }
+          />
           <div className="flex items-center gap-2">
             <SearchInput
               inputSize="sm"

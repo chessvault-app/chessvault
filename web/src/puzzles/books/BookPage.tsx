@@ -272,7 +272,7 @@ export function BookPage({ slug }: { slug: string }) {
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                 if (e.key === 'Escape') setRenaming(false);
               }}
-              className="min-w-0 flex-1 text-base font-semibold"
+              className="min-w-0 flex-1 text-lg font-semibold tracking-tight"
             />
           ) : (
             <>
@@ -282,7 +282,7 @@ export function BookPage({ slug }: { slug: string }) {
                   setRenaming(true);
                 }}
                 title={t('Double-click to rename')}
-                className="text-fg min-w-0 flex-1 truncate text-base font-semibold"
+                className="text-fg min-w-0 flex-1 truncate text-lg font-semibold tracking-tight"
               >
                 {book?.title ?? slug}
               </h1>
