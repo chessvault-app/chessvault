@@ -711,27 +711,14 @@ function Trainer({
                 {puzzle && phase === 'done' && (
                   <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
                 )}
-                {/* Stand-ins for the folded Training panel. The chip
-                    states what is being trained — difficulty and theme —
-                    right on the panel that shows the puzzle it picked,
-                    and opens the window that changes it. */}
-                <span className="flex min-w-0 items-center gap-1">
-                  {mode === 'fresh' && (
-                    <DifficultyChip
-                      difficulty={difficulty}
-                      theme={theme}
-                      onOpen={() => setShowDifficulty(true)}
-                    />
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t('Dashboard')}
-                    onClick={() => navigate('puzzles', 'dashboard')}
-                  >
-                    <BarChart3 className="size-3.5" />
-                  </Button>
-                </span>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Dashboard')}
+                  onClick={() => navigate('puzzles', 'dashboard')}
+                >
+                  <BarChart3 className="size-3.5" />
+                </Button>
               </>
             }
           />
@@ -891,6 +878,19 @@ function Trainer({
                 </>
               )}
             </div>
+
+            {/* What is being trained — difficulty and theme — as the
+                panel's own last row, and the way into the window that
+                changes it. It sat on the header for a while, where a
+                labelled control among icon buttons read as chrome
+                (lanph3re's call: into the body). */}
+            {mode === 'fresh' && (
+              <DifficultyChip
+                difficulty={difficulty}
+                theme={theme}
+                onOpen={() => setShowDifficulty(true)}
+              />
+            )}
           </div>
         </Panel>
 
@@ -937,8 +937,9 @@ function Trainer({
 }
 
 /** Fixed-height strip under the board: whose move, and how it's going. */
-/** The four difficulty chips — shared by the Training panel (wide) and
-    the Puzzle panel's gear reveal (stacked). */
+/** The difficulty chips inside the Puzzle settings window. No padding of
+    their own: the window's gap spaces them, and their edges align with
+    the theme row below — the old p-2.5 inset them 10px on every side. */
 function DifficultyRow({
   active,
   onPick,
@@ -947,7 +948,7 @@ function DifficultyRow({
   onPick: (id: DifficultyId) => void;
 }) {
   return (
-    <div className="flex gap-1 p-2.5">
+    <div className="flex gap-1">
       {DIFFICULTIES.map((d) => (
         <Button
           key={d.id}
@@ -985,15 +986,19 @@ function DifficultyChip({
     <Button
       variant="secondary"
       size="sm"
-      className="min-w-0"
+      // A settings row, not a chip: it owns the panel's width, states the
+      // current pick on the left and carries the "opens something" mark
+      // on the right, like the theme row inside the window it opens.
+      className="w-full min-w-0 justify-start"
       title={t('Puzzle settings')}
       onClick={onOpen}
     >
-      <Settings2 className="size-3.5" />
+      <Settings2 className="size-3.5 shrink-0" />
       <span className="truncate">
         {difficulty === 'any' ? t('Any difficulty') : t(label)}
         {theme && ` · ${themeLabel(theme)}`}
       </span>
+      <ChevronRight className="text-subtle ml-auto size-3.5 shrink-0" />
     </Button>
   );
 }
