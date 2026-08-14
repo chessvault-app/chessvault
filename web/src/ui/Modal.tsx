@@ -80,12 +80,16 @@ export function Modal({
   full?: boolean;
 }) {
   useEffect(() => {
+    // Not while hidden: a window parked behind the one it opened must not
+    // also swallow the Escape aimed at the top window — that dismissed
+    // both at once.
+    if (hidden) return;
     const onKey = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, hidden]);
 
   // EVERY window is a sheet on a phone, and none is on a desktop — a
   // centred card that slides away downwards is not answering any question

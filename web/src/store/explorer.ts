@@ -178,6 +178,8 @@ export function activeBook(s: Pick<ExplorerState, 'book' | 'books'>): string | n
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let latestFen: string | null = null;
 let controller: AbortController | null = null;
+/** Ordering token for refreshMyStats — see the note there. */
+let myStatsSeq = 0;
 
 export const useExplorer = create<ExplorerState>()(
   persist(
@@ -264,12 +266,16 @@ export const useExplorer = create<ExplorerState>()(
         },
 
         refreshMyStats: async () => {
+          // Ordered like the main lookup: rapid filter taps fire several of
+          // these, and a slow early answer landing last showed a count that
+          // did not match the chips on screen.
+          const seq = ++myStatsSeq;
           try {
             // With the filters: the count in the filter window answers "how
             // many games are these chips letting through", which is the
             // question being asked while they are being tapped.
             const res = await fetch(`/api/mygames/status?${myFilterQuery(get().myFilters)}`);
-            if (!res.ok) return;
+            if (!res.ok || seq !== myStatsSeq) return;
             set({
               myStats: (await res.json()) as { games: number; positions: number; matching: number },
             });

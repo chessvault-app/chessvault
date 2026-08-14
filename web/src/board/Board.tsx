@@ -192,6 +192,9 @@ export function Board({
     coordinates,
     free,
     deleteOnDropOff,
+    // Read at line ~179; leaving it out froze a castle-style change on any
+    // already-mounted board until the next position change.
+    castleStyle,
   ]);
 
   // User-owned shapes (arrows/circles saved into the study).

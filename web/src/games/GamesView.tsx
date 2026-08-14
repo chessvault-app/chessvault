@@ -101,9 +101,17 @@ interface ArchiveBrowseState {
    */
   cache: Record<string, GameSummary[]>;
 }
+// Remembered PER PROVIDER: one shared key meant looking up a Lichess
+// handle and reloading prefilled it into the chess.com box. The old
+// single key seeds the chesscom entry so nobody loses their prefill.
+const userKey = (provider: string): string => `chess-vault:archive-user:${provider}`;
+const savedUser = (provider: string): string =>
+  localStorage.getItem(userKey(provider)) ??
+  (provider === 'chesscom' ? (localStorage.getItem('chess-vault:chesscom-user') ?? '') : '');
+
 const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
   provider: 'chesscom',
-  username: localStorage.getItem('chess-vault:chesscom-user') ?? '',
+  username: savedUser('chesscom'),
   months: [],
   offline: false,
   month: '',
@@ -633,7 +641,9 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   // database, so a bare id would collide across them.
   const pgnUrl = (id: number): string =>
     `/api/refgames/${id}/pgn${curDb ? `?db=${encodeURIComponent(curDb)}` : ''}`;
-  const gameKey = (id: number): string => `${curDb ?? ''}:${id}`;
+  // Named apart from the module-level gameKey(summary) — the shadow made
+  // any future edit in this component grab the wrong one silently.
+  const refGameKey = (id: number): string => `${curDb ?? ''}:${id}`;
 
   const openGame = async (game: RefGame): Promise<void> => {
     const res = await fetch(pgnUrl(game.id));
@@ -657,7 +667,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
       .catch(() => {});
   }, []);
   const inCollection = (g: RefGame): boolean =>
-    added.has(gameKey(g.id)) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
+    added.has(refGameKey(g.id)) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
   const collect = async (game: RefGame): Promise<void> => {
     const res = await fetch(pgnUrl(game.id));
     if (!res.ok) return;
@@ -669,7 +679,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
     });
     // 409 = already there; either way this game is now in the collection.
     if (posted.ok) forgetCollection();
-    if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(gameKey(game.id)));
+    if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(refGameKey(game.id)));
   };
 
   // Preview eye, matching the collection rows: the DB stores movetext,
@@ -681,7 +691,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   const previewFor = useRef<number | null>(null);
   const showPreview = async (game: RefGame, anchor: Element, viaTap = false): Promise<void> => {
     const seq = ++previewSeq.current;
-    let fen = fenCache.current.get(gameKey(game.id));
+    let fen = fenCache.current.get(refGameKey(game.id));
     if (!fen) {
       const res = await fetch(pgnUrl(game.id));
       if (!res.ok) return;
@@ -694,7 +704,7 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
       } catch {
         return;
       }
-      fenCache.current.set(gameKey(game.id), fen);
+      fenCache.current.set(refGameKey(game.id), fen);
     }
     if (seq !== previewSeq.current) return;
     const rect = anchor.getBoundingClientRect();
@@ -1541,7 +1551,9 @@ function ArchiveBrowser({
   const { provider, username, months, offline, month, monthGames, cursor } = useArchiveBrowse();
   const setUsername = (v: string | ((p: string) => string)): void =>
     useArchiveBrowse.setState((s) => ({ username: typeof v === 'function' ? v(s.username) : v }));
-  const setProvider = (v: 'chesscom' | 'lichess'): void => useArchiveBrowse.setState({ provider: v });
+  const setProvider = (v: 'chesscom' | 'lichess'): void =>
+    // Switching providers swaps in that provider's own remembered name.
+    useArchiveBrowse.setState({ provider: v, username: savedUser(v) });
   const setMonths = (v: ArchiveMonth[]): void => useArchiveBrowse.setState({ months: v });
   const setOffline = (v: boolean): void => useArchiveBrowse.setState({ offline: v });
   const setMonth = (v: string): void => useArchiveBrowse.setState({ month: v });
@@ -1616,7 +1628,7 @@ function ArchiveBrowser({
   const loadMonths = async (who?: string): Promise<void> => {
     const user = (who ?? username).trim();
     if (!user) return;
-    localStorage.setItem('chess-vault:chesscom-user', user);
+    localStorage.setItem(userKey(provider), user);
     rememberRecent(user);
     setLoading('months');
     setError(null);
