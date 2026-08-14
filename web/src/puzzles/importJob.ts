@@ -30,7 +30,7 @@ import {
   clearCheckpoint,
   fingerprintOf,
   readCheckpoint,
-  saveCheckpoint,
+  savePage,
   type ImportCheckpoint,
 } from './importCheckpoint';
 
@@ -352,6 +352,9 @@ async function scan(
       // written after the last finished one to carry on from.
       if (get().status !== 'scanning') return;
       set({ page: pageNo });
+      // Where this page's diagrams begin in `results` — the checkpoint
+      // below stores exactly that slice.
+      const pageStart = results.length;
       const page = await pdf.getPage(pageNo);
       const base = page.getViewport({ scale: 1 });
       const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
@@ -410,20 +413,30 @@ async function scan(
       // The page is done, so record it. Awaited rather than fired and
       // forgotten: a put that is still in flight when the tab dies is a
       // checkpoint that does not exist, and one page of writing is cheap
-      // beside rendering and classifying the next.
+      // beside rendering and classifying the next. Only THIS page's
+      // payload goes to disk — writing the whole accumulated scan here
+      // made the last pages of a big book each serialise tens of
+      // megabytes, O(n²) across the scan.
       const slugNow = get().slug;
       if (slugNow) {
-        await saveCheckpoint({
-          slug: slugNow,
-          file,
-          fingerprint,
-          page: pageNo,
-          pages: pdf.numPages,
-          results,
-          texts,
-          geometry,
-          updatedAt: Date.now(),
-        });
+        await savePage(
+          {
+            slug: slugNow,
+            file,
+            fingerprint,
+            page: pageNo,
+            pages: pdf.numPages,
+            diagrams: results.length,
+            updatedAt: Date.now(),
+          },
+          {
+            slug: slugNow,
+            page: pageNo,
+            results: results.slice(pageStart),
+            text: texts.at(-1)!,
+            geometry: geometry.at(-1)!,
+          },
+        );
       }
       // Yield so navigation and rendering stay smooth between pages.
       await new Promise((r) => setTimeout(r, 0));

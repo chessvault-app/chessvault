@@ -11,8 +11,13 @@ import type { TextPage } from '@shared/bookImport';
  * start the book again from page one.
  *
  * The first half of the pipeline is per-page and accumulates nothing
- * across pages, which is what makes this possible at all: a checkpoint is
- * three arrays and a page number, and resuming is continuing the loop.
+ * across pages, which is what makes this possible at all. The layout
+ * matches that: one small MANIFEST per book (progress, and the PDF so a
+ * resume asks for nothing) and one record PER PAGE holding what that page
+ * contributed. Checkpointing a page writes that page and the manifest,
+ * atomically, and nothing else — the first cut of this rewrote the whole
+ * accumulated scan every page, so on a big book the last pages each
+ * serialised tens of megabytes of crops to disk, O(n²) across the scan.
  * The second half — numbering, notation, replaying the printed solutions
  * — needs the whole book at once, and is quick, so it is never
  * checkpointed; it simply runs at the end as before.
@@ -23,8 +28,10 @@ import type { TextPage } from '@shared/bookImport';
  */
 const DB = 'chess-vault-import';
 const STORE = 'scans';
-const VERSION = 1;
+const PAGES = 'scan-pages';
+const VERSION = 2;
 
+/** The whole of a saved scan, as the resume path consumes it. */
 export interface ImportCheckpoint {
   slug: string;
   /** The book's own PDF, so resuming asks for nothing. */
@@ -44,6 +51,31 @@ export interface ImportCheckpoint {
   updatedAt: number;
 }
 
+/** The manifest row: everything except the per-page payloads. */
+interface Manifest {
+  slug: string;
+  file: File;
+  fingerprint: string;
+  page: number;
+  pages: number;
+  /** Running diagram count, so the shelf list never reads the pages. */
+  diagrams: number;
+  updatedAt: number;
+  /** Present only on records written by the v1 schema — see migration. */
+  results?: FoundDiagram[];
+  texts?: TextPage[];
+  geometry?: PageGeometry[];
+}
+
+/** One page's contribution, keyed [slug, page]. */
+export interface CheckpointPage {
+  slug: string;
+  page: number;
+  results: FoundDiagram[];
+  text: TextPage;
+  geometry: PageGeometry;
+}
+
 /** What the shelf needs to offer a resume, without loading the PDF. */
 export type CheckpointSummary = Pick<
   ImportCheckpoint,
@@ -60,6 +92,9 @@ function open(): Promise<IDBDatabase> {
       if (!req.result.objectStoreNames.contains(STORE)) {
         req.result.createObjectStore(STORE, { keyPath: 'slug' });
       }
+      if (!req.result.objectStoreNames.contains(PAGES)) {
+        req.result.createObjectStore(PAGES, { keyPath: ['slug', 'page'] });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error ?? new Error('indexedDB unavailable'));
@@ -68,50 +103,147 @@ function open(): Promise<IDBDatabase> {
 
 /** Every failure here is survivable: a checkpoint that cannot be written
     costs a resume, not the scan. Nothing in this module throws. */
-async function withStore<T>(
+async function withTx<T>(
   mode: IDBTransactionMode,
-  run: (store: IDBObjectStore) => IDBRequest,
+  run: (tx: IDBTransaction) => IDBRequest | null,
 ): Promise<T | null> {
   try {
     const db = await open();
     return await new Promise<T | null>((resolve) => {
-      const tx = db.transaction(STORE, mode);
-      const req = run(tx.objectStore(STORE));
-      req.onsuccess = () => resolve((req.result ?? null) as T | null);
-      req.onerror = () => resolve(null);
-      tx.oncomplete = () => db.close();
+      const tx = db.transaction([STORE, PAGES], mode);
+      const req = run(tx);
+      let value: T | null = null;
+      if (req) {
+        req.onsuccess = () => {
+          value = (req.result ?? null) as T | null;
+        };
+        req.onerror = () => {};
+      }
+      // Resolve on tx completion, not request success: a page write is
+      // two puts, and "saved" must mean both are on disk.
+      tx.oncomplete = () => {
+        db.close();
+        resolve(value);
+      };
+      tx.onerror = () => {
+        db.close();
+        resolve(null);
+      };
+      tx.onabort = () => {
+        db.close();
+        resolve(null);
+      };
     });
   } catch {
     return null;
   }
 }
 
-export async function saveCheckpoint(checkpoint: ImportCheckpoint): Promise<void> {
-  await withStore('readwrite', (store) => store.put(checkpoint));
-}
+const pageRange = (slug: string): IDBKeyRange =>
+  IDBKeyRange.bound([slug, 0], [slug, Number.MAX_SAFE_INTEGER]);
 
-export async function readCheckpoint(slug: string): Promise<ImportCheckpoint | null> {
-  return withStore<ImportCheckpoint>('readonly', (store) => store.get(slug));
-}
-
-export async function clearCheckpoint(slug: string): Promise<void> {
-  await withStore('readwrite', (store) => store.delete(slug));
+/**
+ * Record one finished page: that page's payload plus the refreshed
+ * manifest, in one transaction — a checkpoint is either advanced whole or
+ * not at all.
+ */
+export async function savePage(
+  manifest: Omit<Manifest, 'results' | 'texts' | 'geometry'>,
+  page: CheckpointPage,
+): Promise<void> {
+  await withTx('readwrite', (tx) => {
+    tx.objectStore(PAGES).put(page);
+    tx.objectStore(STORE).put(manifest);
+    return null;
+  });
 }
 
 /**
- * Summaries for every book with an unfinished scan.
+ * The saved scan, reassembled in page order.
  *
- * Reads whole records — IndexedDB has no projection — and keeps only the
- * few fields the shelf shows, so the PDFs and crops are not held in
- * memory behind a list of books.
+ * A record written by the v1 schema carried every page inside the
+ * manifest; it is read as it is and rewritten in the split layout, so
+ * the scan it belongs to keeps its progress across the upgrade.
+ */
+export async function readCheckpoint(slug: string): Promise<ImportCheckpoint | null> {
+  const manifest = await withTx<Manifest>('readonly', (tx) => tx.objectStore(STORE).get(slug));
+  if (!manifest) return null;
+
+  // v1 record: the arrays live on the manifest itself. Migrate by
+  // splitting them into page records, then serve the assembled result.
+  if (manifest.results && manifest.texts && manifest.geometry) {
+    const legacy = manifest as Required<Manifest>;
+    await withTx('readwrite', (tx) => {
+      for (const g of legacy.geometry) {
+        tx.objectStore(PAGES).put({
+          slug,
+          page: g.page,
+          results: legacy.results.filter((r) => r.page === g.page),
+          text: legacy.texts.find((t) => t.page === g.page) ?? { page: g.page, width: 0, text: '', words: [] },
+          geometry: g,
+        } satisfies CheckpointPage);
+      }
+      tx.objectStore(STORE).put({
+        slug,
+        file: legacy.file,
+        fingerprint: legacy.fingerprint,
+        page: legacy.page,
+        pages: legacy.pages,
+        diagrams: legacy.results.length,
+        updatedAt: legacy.updatedAt,
+      } satisfies Manifest);
+      return null;
+    });
+    return {
+      slug,
+      file: legacy.file,
+      fingerprint: legacy.fingerprint,
+      page: legacy.page,
+      pages: legacy.pages,
+      results: legacy.results,
+      texts: legacy.texts,
+      geometry: legacy.geometry,
+      updatedAt: legacy.updatedAt,
+    };
+  }
+
+  const pages =
+    (await withTx<CheckpointPage[]>('readonly', (tx) =>
+      tx.objectStore(PAGES).getAll(pageRange(slug)),
+    )) ?? [];
+  pages.sort((a, b) => a.page - b.page);
+  return {
+    slug,
+    file: manifest.file,
+    fingerprint: manifest.fingerprint,
+    page: manifest.page,
+    pages: manifest.pages,
+    results: pages.flatMap((p) => p.results),
+    texts: pages.map((p) => p.text),
+    geometry: pages.map((p) => p.geometry),
+    updatedAt: manifest.updatedAt,
+  };
+}
+
+export async function clearCheckpoint(slug: string): Promise<void> {
+  await withTx('readwrite', (tx) => {
+    tx.objectStore(PAGES).delete(pageRange(slug));
+    tx.objectStore(STORE).delete(slug);
+    return null;
+  });
+}
+
+/**
+ * Summaries for every book with an unfinished scan. Manifests only — the
+ * crops and PDFs stay on disk behind a list of books.
  */
 export async function listCheckpoints(): Promise<CheckpointSummary[]> {
-  const all = await withStore<ImportCheckpoint[]>('readonly', (store) => store.getAll());
+  const all = await withTx<Manifest[]>('readonly', (tx) => tx.objectStore(STORE).getAll());
   return (all ?? []).map((c) => ({
     slug: c.slug,
     page: c.page,
     pages: c.pages,
     updatedAt: c.updatedAt,
-    diagrams: c.results.length,
+    diagrams: c.results?.length ?? c.diagrams,
   }));
 }
