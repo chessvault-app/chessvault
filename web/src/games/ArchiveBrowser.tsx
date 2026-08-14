@@ -852,24 +852,20 @@ export function ArchiveBrowser({
       )}
 
       {month && visibleMonthGames.length > 0 && (
-        <div className="border-line flex flex-wrap items-center gap-2 border-t px-3 py-1.5 text-xs">
+        // The elite panel's count row, exactly: the tally leads in the
+        // small-caps label voice, the mode switch sits with the controls
+        // on the right — the two lists take turns in one column and
+        // their furniture should read as one design (lanph3re's call).
+        <div className="border-line flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-xs">
           {!selecting ? (
             <>
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={pickable.length === 0}
-                onClick={() => setSelecting(true)}
-              >
-                {t('Select…')}
-              </Button>
               {/* How much of the archive is in hand. It used to be all of
                   it, so there was nothing to say; now the list grows as it
                   is scrolled and the count is the only thing that tells
                   you Select all does not mean the whole decade. */}
-              {month === ALL_MONTHS && (
-                <span className="text-subtle tabular-nums">
-                  {cursor >= months.length
+              <span className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em] tabular-nums">
+                {month === ALL_MONTHS
+                  ? cursor >= months.length
                     ? t('{n} games · all {total} months', {
                         n: visibleMonthGames.length,
                         total: months.length,
@@ -878,9 +874,17 @@ export function ArchiveBrowser({
                         n: visibleMonthGames.length,
                         at: cursor,
                         total: months.length,
-                      })}
-                </span>
-              )}
+                      })
+                  : t('{n} games', { n: visibleMonthGames.length })}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pickable.length === 0}
+                onClick={() => setSelecting(true)}
+              >
+                {t('Select…')}
+              </Button>
             </>
           ) : (
             /* What is selected on the left, what to do with it on the
