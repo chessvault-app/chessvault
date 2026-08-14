@@ -312,7 +312,8 @@ export function CollectionView() {
    *
    * A function rather than a constant because the two homes want the
    * field sized differently: a line of its own gives it everything left
-   * over, a panel header gives it a set width beside the panel's name.
+   * over, a panel header gives it the header's spare width beside the
+   * panel's name.
    * Everything else about them is identical, which is the point of
    * writing them once.
    */
@@ -415,13 +416,18 @@ export function CollectionView() {
               Add games now. A panel header should say what the panel
               holds, not offer a way somewhere else. */}
           {/* At lg the pair lives here, with the list it filters, and the
-              row under the page title is not rendered. w-48 rather than
-              flex-1: the panel's own name must keep its place, and a
-              field that grows to fill a wide column reads as the panel's
-              content rather than as a control on its header. */}
+              row under the page title is not rendered. The field grows
+              into whatever the header has spare — on a wide panel a
+              48-wide box sat beside dead space — while the title's own
+              flex share keeps the panel's name in place. */}
           <PanelHeader
             title={`${t('Collection')} · ${visible.length}`}
-            actions={<span className="hidden items-center gap-2 lg:flex">{finders('w-48')}</span>}
+            actionsClassName="min-w-0 grow"
+            actions={
+              <span className="hidden min-w-0 grow items-center justify-end gap-2 lg:flex">
+                {finders('w-48 grow')}
+              </span>
+            }
           />
           {loaded && games.length === 0 ? (
             <EmptyState
