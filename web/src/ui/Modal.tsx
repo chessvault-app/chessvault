@@ -1,8 +1,9 @@
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -56,7 +57,12 @@ import { useSheetDrag } from './sheetDrag';
  * window that showed them. A sibling window (the editor's photo page)
  * still wires `hidden` by hand, and the two sources merge.
  */
-const CoverParent = createContext<(() => () => void) | null>(null);
+const CoverParent = createContext<{
+  /** Park the parent; returns the release. */
+  cover: () => () => void;
+  /** The parent card's current height, read BEFORE it is parked. */
+  height: () => number;
+} | null>(null);
 export function Modal({
   title,
   icon: Icon,
@@ -113,14 +119,30 @@ export function Modal({
   // context. Registering is an effect, so a child that unmounts — or is
   // itself hidden — always releases what it took.
   const [covered, setCovered] = useState(0);
-  const cover = useCallback(() => {
-    setCovered((c) => c + 1);
-    return () => setCovered((c) => c - 1);
-  }, []);
+  const dialogEl = useRef<HTMLElement | null>(null);
+  const cover = useMemo(
+    () => ({
+      cover: () => {
+        setCovered((c) => c + 1);
+        return () => setCovered((c) => c - 1);
+      },
+      height: () => dialogEl.current?.offsetHeight ?? 0,
+    }),
+    [],
+  );
   const coverParent = useContext(CoverParent);
+  // A page opens AS TALL AS the window it replaces, on a phone: the elite
+  // window is pinned at 88% and its database manager is three rows, and a
+  // sheet that snaps between those heights reads as two windows, not one
+  // window turning its page. Measured once, in the same effect that parks
+  // the parent — the parent is still painted when the effect runs, since
+  // its own re-render only follows the setState. A floor, not a size, so
+  // a page taller than its window still grows.
+  const [pageMinH, setPageMinH] = useState(0);
   useEffect(() => {
     if (hidden || !coverParent) return;
-    return coverParent();
+    setPageMinH(coverParent.height());
+    return coverParent.cover();
   }, [hidden, coverParent]);
   // Out of sight for either reason: told to be (the sibling-window case),
   // or covered by a page of its own.
@@ -189,9 +211,17 @@ export function Modal({
         // drag ref that makes the WHOLE sheet draggable — see sheetDrag.
         ref={(node) => {
           focusRef(node);
+          dialogEl.current = node;
           if (sheet) drag.ref(node);
         }}
-        style={sheet ? drag.style : undefined}
+        style={{
+          ...(sheet ? drag.style : undefined),
+          // The page floor, phones only. min() with the same 88% the
+          // max-height uses, so a floor measured with the keyboard down
+          // cannot pin the sheet taller than the band the keyboard
+          // leaves — min-height outranks max-height when they disagree.
+          ...(sheet && pageMinH ? { minHeight: `min(${pageMinH}px, 88%)` } : undefined),
+        }}
         className={cn(
           // overscroll-contain: a scroll this window cannot use is its own
           // business. Without it, reaching the end of the list inside a
