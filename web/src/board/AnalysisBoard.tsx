@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   ChevronFirst,
   ChevronLast,
   ChevronLeft,
@@ -21,6 +22,7 @@ import { EvalBar } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
+import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
 import { SideDot } from '@/ui/SideDot';
 import { dialogOpen } from '@/ui/dialogFocus';
@@ -74,6 +76,15 @@ export function AnalysisBoard({
     [node.uci],
   );
   const shapes = useMemo(() => toDrawShapes(node.shapes), [node.shapes]);
+
+  // Whether the move on screen was book in the last review. Points is a
+  // stable array (set once per review), so this memo only re-runs on
+  // cursor moves — not on the store's progress ticks while one runs.
+  const reviewPoints = useReview((s) => s.points);
+  const bookMove = useMemo(
+    () => reviewPoints?.some((p) => p.id === cursorId && p.book) ?? false,
+    [reviewPoints, cursorId],
+  );
 
   const engineOn = useEngine((s) => s.enabled);
   const engineLines = useEngine((s) => s.lines);
@@ -175,7 +186,7 @@ export function AnalysisBoard({
               />
             )}
             <HeatMapOverlay fen={node.fen} orientation={orientation} />
-            <NagBadge node={node} orientation={orientation} />
+            <NagBadge node={node} orientation={orientation} book={bookMove} />
           </div>
         </div>
         <PlayerBar side={orientation} editable={editablePlayers} />
@@ -202,18 +213,21 @@ const BOARD_NAGS: Record<number, { glyph: string; className: string }> = {
 /**
  * Badge pinned to the destination square's top-right corner when the move on
  * screen carries a quality NAG — the annotation is visible on the board
- * itself, not only in the move list.
+ * itself, not only in the move list. A book move (review state, never a
+ * tree NAG) wears the open book instead; an explicit NAG outranks it.
  */
 function NagBadge({
   node,
   orientation,
+  book = false,
 }: {
   node: { uci?: string; nags: number[] };
   orientation: 'white' | 'black';
+  book?: boolean;
 }) {
   const nag = node.nags.find((n) => BOARD_NAGS[n]);
-  if (!nag || !node.uci || node.uci.length < 4) return null;
-  const badge = BOARD_NAGS[nag]!;
+  if ((!nag && !book) || !node.uci || node.uci.length < 4) return null;
+  const badge = nag ? BOARD_NAGS[nag]! : { glyph: null, className: 'bg-nag-book' };
 
   const dest = node.uci.slice(2, 4);
   const file = dest.charCodeAt(0) - 97;
@@ -234,7 +248,7 @@ function NagBadge({
         badge.className,
       )}
     >
-      {badge.glyph}
+      {badge.glyph ?? <BookOpen className="size-3.5" />}
     </span>
   );
 }

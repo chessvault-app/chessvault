@@ -145,6 +145,7 @@ export const ko: Record<string, string> = {
     '엔진 리뷰 — 모든 수를 평가하고 (?!/?/??) 정확도를 측정합니다',
   'Book moves — known opening theory, not judged':
     '북 무브 — 알려진 오프닝 이론이므로 평가하지 않습니다',
+  'Book move': '북 무브',
   Dismiss: '닫기',
   'Dismiss review': '리뷰 닫기',
   'Review game': '게임 리뷰',

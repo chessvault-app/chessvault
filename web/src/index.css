@@ -205,6 +205,7 @@
   --nag-blunder: #fa412d;
   --nag-interesting: #c46ad4;
   --nag-dubious: #f0c15c;
+  --nag-book: #a88865;
   --nag-fg: oklch(100% 0 0);
 
   /* Toggle-switch knob: white on the filled track in both themes. */
@@ -331,6 +332,7 @@
   --color-nag-blunder: var(--nag-blunder);
   --color-nag-interesting: var(--nag-interesting);
   --color-nag-dubious: var(--nag-dubious);
+  --color-nag-book: var(--nag-book);
   --color-nag-fg: var(--nag-fg);
 
   --color-knob: var(--knob);

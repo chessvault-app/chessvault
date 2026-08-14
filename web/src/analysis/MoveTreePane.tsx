@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ArrowUpToLine, GitBranch } from 'lucide-react';
+import { ArrowUpToLine, BookOpen, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
+import { useReview } from '@/store/review';
 import { t } from '@/lib/i18n';
 
 /** Glyphs for the NAGs a study realistically uses. */
@@ -174,6 +175,17 @@ export function MainlineTable({
   // is not in does not exist; walking into one therefore reveals it, and
   // its continuation, without leaving the mode.
   const onPath = useMemo(() => new Set(pathTo(tree, cursorId)), [tree, cursorId]);
+
+  // Moves the review classified as book. Ephemeral by design — book is
+  // review output, not an annotation, so it is never written to the tree
+  // (there is no PGN NAG for it); the tag lives and dies with the review.
+  // Selected as the stable points array, THEN reduced: a Set built inside
+  // the selector would be a fresh object every store tick.
+  const points = useReview((s) => s.points);
+  const bookIds = useMemo(
+    () => new Set((points ?? []).filter((p) => p.book).map((p) => p.id)),
+    [points],
+  );
   const keep = (ids: NodeId[]): NodeId[] =>
     currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
 
@@ -192,8 +204,8 @@ export function MainlineTable({
         <span className="bg-surface-inset/60 border-line/60 text-subtle flex items-center justify-center border-r font-mono text-[0.6875rem]">
           {number}
         </span>
-        <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} />
-        <MoveCell entry={black} cursorId={cursorId} onSelect={onSelect} />
+        <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
+        <MoveCell entry={black} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
       </div>,
     );
     row = null;
@@ -279,10 +291,13 @@ function MoveCell({
   entry,
   cursorId,
   onSelect,
+  bookIds,
 }: {
   entry: { id: NodeId; node: MoveNode } | 'ellipsis' | null;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
+  /** Mainline nodes the engine review classified as book. */
+  bookIds: Set<NodeId>;
 }) {
   if (entry === null) return <span />;
   if (entry === 'ellipsis') {
@@ -304,6 +319,11 @@ function MoveCell({
       {node.nags.length > 0 && (
         <span className={cn('font-semibold', !active && nagClass(node.nags))}>
           {nagText(node.nags)}
+        </span>
+      )}
+      {bookIds.has(id) && (
+        <span className="self-center" title={t('Book move')}>
+          <BookOpen className={cn('size-3', active ? 'text-primary-fg/80' : 'text-nag-book')} />
         </span>
       )}
     </button>

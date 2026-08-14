@@ -258,7 +258,9 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
                     ? 'bg-nag-mistake size-2 rounded-[1px]'
                     : p.nag === 6
                       ? 'bg-nag-dubious size-2 rounded-full'
-                      : 'bg-line-strong size-1 rounded-full',
+                      : p.book
+                        ? 'bg-nag-book size-1 rounded-full'
+                        : 'bg-line-strong size-1 rounded-full',
                 i === cursorIndex && 'ring-primary ring-2',
               )}
             />
