@@ -177,10 +177,12 @@ export function Modal({
         )}
       >
         {/* Full-bleed rule: the card pads by 3, so the row un-pads itself
-            and the line reaches both edges, as it does in a Panel. */}
+            and the line reaches both edges, as it does in a Panel. The
+            line is the desktop card's; a bottom sheet draws none, to match
+            ActionSheet — one sheet idiom per phone. */}
         <div
           className={cn(
-            'border-line -mx-3 shrink-0 border-b px-3 pb-2',
+            'border-line -mx-3 shrink-0 px-3 pb-2 sm:border-b',
             // The header is the one place the browser must never pan:
             // it is not a scroller, and a drag begun here is a push on the
             // sheet by definition. The BODY keeps touch-action auto, since

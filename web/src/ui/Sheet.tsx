@@ -95,12 +95,15 @@ export function Sheet({
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* The same rule every other window and panel draws under its
-            title; full-bleed against the card's own padding. On a phone
-            the grabber sits above it, and the whole strip is the mouse's
-            drag handle — see sheetDrag for why a finger needs neither. */}
+        {/* The rule under the title is the DESKTOP's, where every window
+            and panel draws one; full-bleed against the card's own padding.
+            A bottom sheet draws none — ActionSheet never had one, and two
+            kinds of sheet on one phone read as two different windows. On a
+            phone the grabber sits above the title, and the whole strip is
+            the mouse's drag handle — see sheetDrag for why a finger needs
+            neither. */}
         <div
-          className="border-line -mx-3 -mt-1 border-b px-3 pb-2 pt-1 max-sm:touch-none max-sm:select-none"
+          className="border-line -mx-3 -mt-1 px-3 pb-2 pt-1 max-sm:touch-none max-sm:select-none sm:border-b"
           {...(phone ? drag.handlers : {})}
         >
           <div className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
