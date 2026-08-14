@@ -540,6 +540,8 @@ export function legalMoves(pos: Chess): NormalMove[] {
 
 const SQ = /[a-h][1-8]/g;
 
+const PROMOTION_ROLES = { Q: 'queen', R: 'rook', B: 'bishop', N: 'knight' } as const;
+
 export function tokenPrefix(token: string): string | null {
   const squares = token.match(SQ);
   if (!squares) return null;
@@ -661,11 +663,24 @@ export function resolveToken(
     }
   }
   // Promotion ambiguity only survives if several promo pieces satisfy all
-  // constraints; a claimed mate usually pins it to one.
+  // constraints. The token's own suffix decides it: books print the piece
+  // AFTER the destination ("e8=N", "e8N"), which tokenPrefix never looks
+  // at — before this read, every non-mating underpromotion was resolved
+  // to the queen, replayed legally, and imported as verified with the
+  // wrong move. A bare letter must be uppercase to count; lowercase is
+  // believed only behind "=", where it cannot be OCR noise for anything
+  // else. No readable claim (or a figurine suffix) still falls back to
+  // the queen, by far the common case.
   if (candidates.length > 1) {
     const unique = new Set(candidates.map((m) => `${m.from}-${m.to}`));
     if (unique.size === 1 && candidates.every((m) => m.promotion)) {
-      candidates = [candidates.find((m) => m.promotion === 'queen')!];
+      const tail = token.slice(token.lastIndexOf(dest) + 2);
+      const claimed =
+        /^=\s*([QRBNqrbn])[+#!?\s]*$/.exec(tail)?.[1] ?? /^([QRBN])[+#!?\s]*$/.exec(tail)?.[1];
+      const wanted = claimed ? PROMOTION_ROLES[claimed.toUpperCase() as 'Q' | 'R' | 'B' | 'N'] : 'queen';
+      const pick = candidates.find((m) => m.promotion === wanted);
+      if (!pick) return { ok: false, reason: `no ${wanted} promotion to ${dest} ("${token}")` };
+      candidates = [pick];
     }
   }
   if (candidates.length === 0) return { ok: false, reason: `no legal move to ${dest} ("${token}")` };

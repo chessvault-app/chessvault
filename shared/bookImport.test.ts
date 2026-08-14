@@ -228,6 +228,21 @@ describe('resolving a printed token against a position', () => {
     expect(hinted.san).toBe('Rxd5');
   });
 
+  it('honors a printed underpromotion instead of assuming the queen', () => {
+    // All four promotions are legal and land on the same square; only the
+    // token's own suffix can say which piece the book meant.
+    const p = pos('8/4P3/8/8/7k/8/8/K7 w - - 0 1');
+    expect(resolveToken(p, 'e8=N', false).san).toBe('e8=N');
+    expect(resolveToken(p, 'e8N', false).san).toBe('e8=N');
+    // The book's "+" may be its own optimism; the suffix still reads.
+    expect(resolveToken(p, 'e8=R+', false).san).toBe('e8=R');
+    // Lowercase is believed only behind "=", where it cannot be noise.
+    expect(resolveToken(p, 'e8=n', false).san).toBe('e8=N');
+    // No suffix still means the queen, by far the common case.
+    expect(resolveToken(p, 'e8', false).san).toBe('e8=Q');
+    expect(resolveToken(p, 'e8=Q', false).san).toBe('e8=Q');
+  });
+
   it('names the prefix a figurine left behind, and ignores SAN letters', () => {
     expect(tokenPrefix('tt:lxe5+')).toBe('tt:l');
     expect(tokenPrefix('cxd6')).toBeNull();
