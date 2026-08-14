@@ -1,5 +1,5 @@
 import { parseSquare } from 'chessops/util';
-import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
+import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, pathTo, positionAt } from '@shared/tree';
@@ -24,6 +24,7 @@ import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Sheet } from '@/ui/Sheet';
 import { InfoTip } from '@/ui/InfoTip';
 import { SideDot } from '@/ui/SideDot';
@@ -647,7 +648,11 @@ export function RepertoireView() {
   // 'all' drills the whole study as one repertoire; a number scopes to
   // that chapter, the original behaviour and still the default.
   const [chapterPick, setChapterPick] = useState('0');
-  const [summary, setSummary] = useState<{ review: ReviewEntry[]; gaps: number } | null>(null);
+  const [summary, setSummary] = useState<{
+    attempted: number;
+    review: ReviewEntry[];
+    gaps: number;
+  } | null>(null);
   const [drillNotice, setDrillNotice] = useState<string | null>(null);
   /** A gap noted in passing — shown under the status, never stopping play. */
   const [gapNote, setGapNote] = useState<string | null>(null);
@@ -713,9 +718,17 @@ export function RepertoireView() {
     const scope = wholeStudy ? '' : `&chapter=${encodeURIComponent(chapter.name)}`;
     void fetch(`/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((body: { review?: ReviewEntry[]; gaps?: unknown[] } | null) => {
+      .then((body: { attempted?: number; review?: ReviewEntry[]; gaps?: unknown[] } | null) => {
         if (!cancelled) {
-          setSummary(body ? { review: body.review ?? [], gaps: (body.gaps ?? []).length } : null);
+          setSummary(
+            body
+              ? {
+                  attempted: body.attempted ?? 0,
+                  review: body.review ?? [],
+                  gaps: (body.gaps ?? []).length,
+                }
+              : null,
+          );
         }
       })
       .catch(() => {
@@ -1439,15 +1452,33 @@ export function RepertoireView() {
                     : t('This chapter has no moves yet — nothing to drill.')}
                 </p>
               )}
-              {/* What the record holds against this chapter, and a way to
-                  work it off. */}
-              {mode === 'drill' && summary && (summary.review.length > 0 || summary.gaps > 0) && (
-                <p className="text-subtle text-xs leading-relaxed">
-                  {summary.review.length > 0 &&
-                    t('{n} positions to review', { n: summary.review.length })}
-                  {summary.review.length > 0 && summary.gaps > 0 && ' · '}
-                  {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
-                </p>
+              {/* What the record holds against this chapter, a way to work
+                  it off — and the one way to forget it, behind a confirm.
+                  Shown whenever anything was ever drilled, so a clean
+                  record can still be wiped. */}
+              {mode === 'drill' && summary && summary.attempted > 0 && (
+                <div className="flex items-center gap-2">
+                  <p className="text-subtle min-w-0 flex-1 text-xs leading-relaxed">
+                    {summary.review.length > 0 &&
+                      t('{n} positions to review', { n: summary.review.length })}
+                    {summary.review.length > 0 && summary.gaps > 0 && ' · '}
+                    {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
+                    {summary.review.length === 0 &&
+                      summary.gaps === 0 &&
+                      t('Every drilled position stands recalled.')}
+                  </p>
+                  <ConfirmSheet
+                    icon={Eraser}
+                    triggerTitle="Forget the drill record — misses, gaps and recalls in every study"
+                    question="Forget the whole drill record, across all studies?"
+                    confirmLabel={t('Forget everything')}
+                    onConfirm={() => {
+                      void fetch('/api/repertoire/reset', { method: 'POST' })
+                        .then(() => setSummary({ attempted: 0, review: [], gaps: 0 }))
+                        .catch(() => {});
+                    }}
+                  />
+                </div>
               )}
               <div className="flex flex-wrap gap-2">
                 <Button

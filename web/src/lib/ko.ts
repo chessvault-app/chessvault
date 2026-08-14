@@ -303,6 +303,12 @@ export const ko: Record<string, string> = {
   '{n} positions to review': '복습할 포지션 {n}개',
   '{n} replies with no answer yet': '아직 대비 없는 응수 {n}개',
   'Drill a missed position': '놓친 포지션 드릴',
+  'Every drilled position stands recalled.': '드릴한 모든 포지션을 기억하고 있습니다.',
+  'Forget the drill record — misses, gaps and recalls in every study':
+    '드릴 기록 지우기 — 모든 스터디의 미스, 갭, 회상 기록',
+  'Forget the whole drill record, across all studies?':
+    '모든 스터디의 드릴 기록 전체를 지울까요?',
+  'Forget everything': '전부 지우기',
   'This chapter has no moves yet — nothing to drill.':
     '이 챕터에는 아직 수가 없습니다. 드릴할 것이 없습니다.',
   'Your study plays {moves} here — try it again.':
