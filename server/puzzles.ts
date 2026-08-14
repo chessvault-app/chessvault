@@ -1,8 +1,9 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
 
 /**
@@ -15,6 +16,9 @@ import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
  *  - fresh training never re-serves an attempted puzzle (6.1 M is plenty);
  *  - puzzles whose latest attempt failed form the review pool.
  */
+
+/** One history.jsonl line; attempts carry more fields than the two rules read. */
+type Attempt = { id: string; win: boolean; counted?: boolean } & Record<string, unknown>;
 
 interface PuzzleRow {
   id: string;
@@ -241,20 +245,39 @@ export function puzzlesApi(
 
   const writeState = (state: UserState): void => {
     mkdirSync(stateDir, { recursive: true });
-    writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`);
+    writeAtomic(statePath, `${JSON.stringify(state, null, 2)}\n`);
   };
 
-  const historyLines = (): string[] => {
+  /**
+   * The attempt log, parsed with damage tolerated. appendFileSync can
+   * leave a partial last line behind a crash or a full disk, and one such
+   * line must not 500 every trainer route until someone edits the file by
+   * hand — recovery would need a shell, which the house rules call a bug.
+   * A line that does not parse (or parses to something without an id) is
+   * dropped: one attempt forgotten beats the whole trainer down.
+   */
+  const historyEntries = (): Attempt[] => {
+    let raw: string;
     try {
-      return readFileSync(historyPath, 'utf-8').trimEnd().split('\n');
+      raw = readFileSync(historyPath, 'utf-8');
     } catch {
       return [];
     }
+    return raw
+      .trimEnd()
+      .split('\n')
+      .flatMap((line) => {
+        try {
+          const entry = JSON.parse(line) as Attempt;
+          return typeof entry?.id === 'string' ? [entry] : [];
+        } catch {
+          return [];
+        }
+      });
   };
 
   /** Every puzzle ever attempted — fresh training never repeats one. */
-  const attemptedIds = (): Set<string> =>
-    new Set(historyLines().map((l) => (JSON.parse(l) as { id: string }).id));
+  const attemptedIds = (): Set<string> => new Set(historyEntries().map((e) => e.id));
 
   /**
    * Puzzles whose LATEST attempt was a loss: solving one cleanly (in any
@@ -263,11 +286,10 @@ export function puzzlesApi(
    * re-add a trained puzzle but never introduce a new one, which keeps
    * the dashboard invariant attempts >= review pool.
    */
-  const failedPool = (lines = historyLines()): string[] => {
+  const failedPool = (entries = historyEntries()): string[] => {
     const latest = new Map<string, boolean>();
     const trained = new Set<string>();
-    for (const line of lines) {
-      const entry = JSON.parse(line) as { id: string; win: boolean; counted?: boolean };
+    for (const entry of entries) {
       latest.set(entry.id, entry.win);
       if (entry.counted !== false) trained.add(entry.id);
     }
@@ -461,10 +483,9 @@ export function puzzlesApi(
     // Practice mode: re-serve puzzles whose latest attempt failed.
     if (c.req.query('mode') === 'failed') {
       // One read of the history log serves both the pool and the last id.
-      const lines = historyLines();
-      const pool = failedPool(lines);
-      const last = lines.at(-1);
-      const lastId = last ? (JSON.parse(last) as { id: string }).id : null;
+      const entries = historyEntries();
+      const pool = failedPool(entries);
+      const lastId = entries.at(-1)?.id ?? null;
       const candidates = pool.length > 1 ? pool.filter((id) => id !== lastId) : pool;
       if (candidates.length === 0) {
         return c.json({ error: 'No failed puzzles to review — nothing to fix.' }, 404);
@@ -549,13 +570,7 @@ export function puzzlesApi(
 
   api.get('/puzzles/history', (c) => {
     const limit = Math.min(Number(c.req.query('limit') || 50), 500);
-    const lines = historyLines();
-    return c.json({
-      attempts: lines
-        .slice(-limit)
-        .reverse()
-        .map((l) => JSON.parse(l)),
-    });
+    return c.json({ attempts: historyEntries().slice(-limit).reverse() });
   });
 
   return Object.assign(api, { closeDb });

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { puzzlesApi } from './puzzles.ts';
@@ -139,6 +139,26 @@ describe('puzzles api', () => {
     expect(meta.failed).toBe(0);
     const history = await (await app.request('/api/puzzles/history')).json();
     expect(history.attempts).toEqual([]);
+  });
+
+  it('tolerates a damaged history line instead of failing every route', async () => {
+    // A crash mid-append leaves a partial last line. That line is one lost
+    // attempt; it must never 500 the trainer until someone edits the file
+    // by hand.
+    await attempt('bbb', false);
+    appendFileSync(join(dir, 'state', 'history.jsonl'), '{"id":"aaa","wi');
+
+    const history = await (await app.request('/api/puzzles/history')).json();
+    expect(history.attempts.map((a: { id: string }) => a.id)).toEqual(['bbb']);
+
+    const meta = await app.request('/api/puzzles/meta');
+    expect(meta.status).toBe(200);
+    expect((await meta.json()).failed).toBe(1);
+
+    const failed = await app.request('/api/puzzles/next?mode=failed');
+    expect(failed.status).toBe(200);
+
+    await app.request('/api/puzzles/reset', { method: 'POST' });
   });
 
   it('rejects malformed attempts and unknown puzzles', async () => {

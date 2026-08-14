@@ -11,6 +11,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
+import { writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
 import { sanitizeSegment, validId } from '../shared/vaultNames.ts';
 
@@ -139,7 +140,10 @@ function readJson<T>(path: string, fallback: T): T {
 }
 
 function writeJson(path: string, value: unknown): void {
-  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+  // Atomically: puzzles.json is hundreds of hand-transcribed puzzles and
+  // progress.json is rewritten on every attempt — the two files least
+  // affordable to lose to a crash mid-write.
+  writeAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {

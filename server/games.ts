@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { sanitizeSegment } from '../shared/vaultNames.ts';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { writeAtomic } from './atomic.ts';
 import { relative, resolve, sep } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { makeFen } from 'chessops/fen';
@@ -182,7 +183,7 @@ function readCacheMeta(dir: string, provider: string, user: string): CacheMeta {
 
 function writeCacheMeta(dir: string, provider: string, user: string, meta: CacheMeta): void {
   mkdirSync(resolve(dir, provider, user.toLowerCase()), { recursive: true });
-  writeFileSync(metaPath(dir, provider, user), `${JSON.stringify(meta, null, 2)}\n`);
+  writeAtomic(metaPath(dir, provider, user), `${JSON.stringify(meta, null, 2)}\n`);
 }
 
 /**
@@ -220,7 +221,9 @@ async function cacheMonth(dir: string, user: string, month: string): Promise<voi
   const body = (await res.json()) as { games: { pgn?: string }[] };
   const pgns = body.games.map((g) => g.pgn).filter((p): p is string => Boolean(p));
   mkdirSync(resolve(dir, 'chesscom', user.toLowerCase()), { recursive: true });
-  writeFileSync(path, pgns.length > 0 ? `${pgns.join('\n\n')}\n` : '');
+  // Atomically: a month truncated mid-write would then be KEPT — the meta
+  // remembers Last-Modified, so the next visit 304s and trusts the file.
+  writeAtomic(path, pgns.length > 0 ? `${pgns.join('\n\n')}\n` : '');
   meta.months[month] = {
     lastModified: res.headers.get('last-modified') ?? undefined,
     fetchedAt: Date.now(),
@@ -245,7 +248,7 @@ function readBookmarks(dir: string): Set<string> {
 }
 
 function writeBookmarks(dir: string, keys: Set<string>): void {
-  writeFileSync(bookmarksPath(dir), `${JSON.stringify({ keys: [...keys].sort() }, null, 2)}\n`);
+  writeAtomic(bookmarksPath(dir), `${JSON.stringify({ keys: [...keys].sort() }, null, 2)}\n`);
 }
 
 // ---------------------------------------------------------------------------
