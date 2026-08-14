@@ -6,6 +6,7 @@ import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { DateInput, Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
+import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
 /**
@@ -237,7 +238,10 @@ export function StructuredFiltersWindow({
       <Field label="Player">
         <div className="flex gap-2">
           <Input
-            autoFocus
+            // Desktop only — the mouse saves a click; a thumb gets the
+            // keyboard over a window that is six fields to be READ, and
+            // this window opens as a page of the list it filters.
+            autoFocus={autoFocusField()}
             inputSize="sm"
             value={draft.player}
             onChange={(e) => patch({ player: e.target.value })}
