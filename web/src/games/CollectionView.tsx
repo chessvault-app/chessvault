@@ -32,14 +32,15 @@ import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
   hasStructuredFilters,
+  matchesOwnership,
   matchesStructured,
   NotesSelect,
+  OwnershipSelect,
   ResultSelect,
-  SideSelect,
   StructuredFiltersWindow,
   type NotesFilter,
+  type OwnershipFilter,
   type ResultFilter,
-  type SideFilter,
   type StructuredFilters,
 } from './GameFilters';
 import { Field } from '@/ui/Field';
@@ -168,7 +169,7 @@ export function CollectionView() {
   const [markedOnly, setMarkedOnly] = useState(false);
   // The quick filters, session-only like the archive's: what you want to
   // see is a question of the moment, not a preference.
-  const [sideFilter, setSideFilter] = useState<SideFilter>('any');
+  const [ownFilter, setOwnFilter] = useState<OwnershipFilter>('any');
   const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
   const [notesFilter, setNotesFilter] = useState<NotesFilter>('any');
   // The same sentence the elite browser answers, filtered client-side —
@@ -178,7 +179,7 @@ export function CollectionView() {
   // The row's selects, drafted for the window: one state, two views —
   // Apply commits both (see StructuredFiltersWindow's extraFields).
   const [quickDraft, setQuickDraft] = useState({
-    side: 'any' as SideFilter,
+    own: 'any' as OwnershipFilter,
     result: 'any' as ResultFilter,
     notes: 'any' as NotesFilter,
   });
@@ -335,10 +336,11 @@ export function CollectionView() {
   const visible = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
     if (markedOnly && !bookmarks.has(gameKey(g))) return false;
-    // The same quick filters the archive rows next door have — a side is
-    // YOUR side, so it only ever matches games you played (userSide comes
-    // from a VaultSide header or the archive path a game was kept from).
-    if (sideFilter !== 'any' && g.userSide !== sideFilter) return false;
+    // Ownership, not "side": the collection holds reference games beside
+    // your own, so mine-ness is asked openly (userSide comes from the
+    // VaultSide header stamped when collecting from the profile's own
+    // archive; a reference game has none).
+    if (!matchesOwnership(ownFilter, g.userSide)) return false;
     if (resultFilter !== 'any' && g.result !== resultFilter) return false;
     if (notesFilter === 'annotated' && !g.annotated) return false;
     if (!matchesStructured(structured, g)) return false;
@@ -348,12 +350,12 @@ export function CollectionView() {
       .includes(needle);
   });
   const filtersOn =
-    sideFilter !== 'any' ||
+    ownFilter !== 'any' ||
     resultFilter !== 'any' ||
     notesFilter !== 'any' ||
     hasStructuredFilters(structured);
   const clearFilters = (): void => {
-    setSideFilter('any');
+    setOwnFilter('any');
     setResultFilter('any');
     setNotesFilter('any');
     setStructured(EMPTY_STRUCTURED_FILTERS);
@@ -494,7 +496,7 @@ export function CollectionView() {
               side of yours) answer to the other two. */}
           {games.length > 0 && (
             <FilterRow className="border-b">
-              <SideSelect value={sideFilter} onChange={setSideFilter} />
+              <OwnershipSelect value={ownFilter} onChange={setOwnFilter} />
               <ResultSelect value={resultFilter} onChange={setResultFilter} />
               <NotesSelect value={notesFilter} onChange={setNotesFilter} />
               <Button
@@ -504,7 +506,7 @@ export function CollectionView() {
                 title={t('More filters')}
                 className="shrink-0"
                 onClick={() => {
-                  setQuickDraft({ side: sideFilter, result: resultFilter, notes: notesFilter });
+                  setQuickDraft({ own: ownFilter, result: resultFilter, notes: notesFilter });
                   setEditingFilters(true);
                 }}
               >
@@ -516,14 +518,14 @@ export function CollectionView() {
                   // No Tournament field: collection games carry no Event.
                   showEvent={false}
                   extraFields={
-                    // The row's selects, mirrored. "Your side" is YOURS —
-                    // a different question from the named player's seat
-                    // above, which is why both exist.
-                    <Field label="Your side, result and notes">
+                    // The row's selects, mirrored. Ownership is about YOUR
+                    // games — a different question from the named player's
+                    // seat above, which is why both exist.
+                    <Field label="Whose games, result and notes">
                       <div className="flex gap-2">
-                        <SideSelect
-                          value={quickDraft.side}
-                          onChange={(side) => setQuickDraft((d) => ({ ...d, side }))}
+                        <OwnershipSelect
+                          value={quickDraft.own}
+                          onChange={(own) => setQuickDraft((d) => ({ ...d, own }))}
                         />
                         <ResultSelect
                           value={quickDraft.result}
@@ -536,11 +538,11 @@ export function CollectionView() {
                       </div>
                     </Field>
                   }
-                  onClear={() => setQuickDraft({ side: 'any', result: 'any', notes: 'any' })}
+                  onClear={() => setQuickDraft({ own: 'any', result: 'any', notes: 'any' })}
                   onApply={(next) => {
                     setEditingFilters(false);
                     setStructured(next);
-                    setSideFilter(quickDraft.side);
+                    setOwnFilter(quickDraft.own);
                     setResultFilter(quickDraft.result);
                     setNotesFilter(quickDraft.notes);
                   }}

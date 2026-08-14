@@ -120,6 +120,53 @@ export function StrengthSelect({
   );
 }
 
+export type OwnershipFilter = 'any' | 'mine' | 'white' | 'black';
+
+/**
+ * Whose games — the collection holds reference games beside your own,
+ * so "mine" is a filter, not an assumption. Picking a seat implies
+ * mine: a reference game has nobody's seat to answer for, and the old
+ * bare "As White" quietly dropped every reference game with nothing to
+ * say it had.
+ */
+export function OwnershipSelect({
+  value,
+  onChange,
+}: {
+  value: OwnershipFilter;
+  onChange: (value: OwnershipFilter) => void;
+}) {
+  return (
+    <Select
+      value={value}
+      onChange={(v) => onChange(v as OwnershipFilter)}
+      ariaLabel={t('Whose games')}
+      size="sm"
+      className="min-w-0 flex-1"
+      groups={[
+        {
+          options: [
+            { value: 'any', label: t("Anyone's games") },
+            { value: 'mine', label: t('My games') },
+            { value: 'white', label: t('Mine as White') },
+            { value: 'black', label: t('Mine as Black') },
+          ],
+        },
+      ]}
+    />
+  );
+}
+
+/** The ownership sentence, answered against a game's userSide. */
+export function matchesOwnership(
+  f: OwnershipFilter,
+  userSide: 'white' | 'black' | null,
+): boolean {
+  if (f === 'any') return true;
+  if (f === 'mine') return userSide !== null;
+  return userSide === f;
+}
+
 export type NotesFilter = 'any' | 'annotated';
 
 /** Only the games with your annotations on them. */

@@ -317,7 +317,12 @@ export const ko: Record<string, string> = {
     '스터디 드릴은 내 수를 스터디와 대조하고, 틀린 곳을 기억해 둡니다.',
   'No databases yet — build one from an uploaded collection.':
     '아직 데이터베이스가 없습니다. 업로드한 컬렉션으로 만들어 보세요.',
-  'Your side, result and notes': '내 색, 결과, 노트',
+  'Whose games, result and notes': '누구의 게임인지, 결과, 노트',
+  'Whose games': '누구의 게임',
+  // 'My games' is translated in the explorer section, same words.
+  "Anyone's games": '모두의 게임',
+  'Mine as White': '내가 백으로',
+  'Mine as Black': '내가 흑으로',
   "Searched player's side and result": '검색한 플레이어의 색과 결과',
   'Index positions': '포지션 색인 만들기',
   '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.':
