@@ -412,8 +412,25 @@ export function refGamesApi(
 
     // One box searches everything a game is findable by: players, the
     // opening name, and the ECO code (prefix match, so "B9" finds B90-B99).
-    const where = q ? 'WHERE white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?' : '';
-    const args = q ? [`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`] : [];
+    // Beside it, the filters every game list has: the result, and a floor
+    // under BOTH players' ratings.
+    const clauses: string[] = [];
+    const args: unknown[] = [];
+    if (q) {
+      clauses.push('(white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?)');
+      args.push(`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`);
+    }
+    const result = c.req.query('result');
+    if (result === '1-0' || result === '0-1' || result === '1/2-1/2') {
+      clauses.push('result = ?');
+      args.push(result);
+    }
+    const minElo = Math.max(0, Number(c.req.query('minElo')) || 0);
+    if (minElo > 0) {
+      clauses.push('white_elo >= ? AND black_elo >= ?');
+      args.push(minElo, minElo);
+    }
+    const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
     // COUNT(*) here scans; the leading-wildcard LIKEs are not seekable, so
     // no index can turn that into a lookup. Infinite scroll asks for the
@@ -421,7 +438,7 @@ export function refGamesApi(
     // null afterwards — the client keeps the total it already has. The
     // empty query is free: it is the whole table, which meta already knows.
     const total =
-      q === ''
+      where === ''
         ? tableCount(name, db)
         : offset === 0
           ? (db.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }).n

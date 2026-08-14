@@ -23,6 +23,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
+import { FilterRow, ResultSelect, type ResultFilter } from './GameFilters';
 import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -368,14 +369,26 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   // A slow answer for "naj" must not overwrite the rows for "najdorf"
   // typed after it; whoever holds the latest number owns the state. Also
   // the reason for the finally: a thrown fetch used to strand `loading`.
+  // The shared filter row's state. Read through a ref inside `search` so
+  // its identity stays stable — the meta/curDb effect below clears the
+  // query whenever `search` changes, and a filter press must not eat what
+  // was typed.
+  const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
+  const [minElo, setMinElo] = useState(0);
+  const filterRef = useRef({ resultFilter, minElo });
+  filterRef.current = { resultFilter, minElo };
+
   const searchSeq = useRef(0);
   const search = useCallback(async (q: string, offset: number, db: string | null) => {
     const seq = ++searchSeq.current;
     setLoading(true);
     try {
+      const f = filterRef.current;
       const data = await api<{ total: number | null; rows: RefGame[] }>(
         `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}` +
-          (db ? `&db=${encodeURIComponent(db)}` : ''),
+          (db ? `&db=${encodeURIComponent(db)}` : '') +
+          (f.resultFilter !== 'any' ? `&result=${encodeURIComponent(f.resultFilter)}` : '') +
+          (f.minElo > 0 ? `&minElo=${f.minElo}` : ''),
       );
       if (seq !== searchSeq.current) return;
       // Only the first page of a search carries a total — counting matches
@@ -421,6 +434,17 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(() => void search(q, 0, curDb), 250);
   };
+
+  // A filter press re-asks from the top, with the query still in the box.
+  const filtersLive = useRef(false);
+  useEffect(() => {
+    if (!filtersLive.current) {
+      filtersLive.current = true;
+      return;
+    }
+    void search(query, 0, curDb);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultFilter, minElo]);
 
   // Infinite scroll: a sentinel row near the list's end pulls the next
   // page as it approaches the viewport.
@@ -587,6 +611,35 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
       </Button>
     </>
   );
+  /**
+   * The shared filter row (GameFilters), answered server-side: two
+   * million rows only ever reach the client a page at a time, so the
+   * WHERE lives in the search endpoint. No side select — these are
+   * nobody-you-know's games. The strength floor is on BOTH players.
+   */
+  const filterRow = (className: string): React.ReactNode => (
+    <FilterRow className={className}>
+      <ResultSelect value={resultFilter} onChange={setResultFilter} />
+      <Select
+        value={String(minElo)}
+        onChange={(v) => setMinElo(Number(v))}
+        ariaLabel={t('Strength')}
+        size="sm"
+        className="min-w-0 flex-1"
+        groups={[
+          {
+            options: [
+              { value: '0', label: t('Any strength') },
+              { value: '2300', label: '2300+' },
+              { value: '2500', label: '2500+' },
+              { value: '2700', label: '2700+' },
+            ],
+          },
+        ]}
+      />
+    </FilterRow>
+  );
+
   const manageSheet = manage && dbs && (
     <Sheet label={t('Reference databases')} onClose={() => setManage(false)}>
       <div className="overflow-y-auto">
@@ -715,6 +768,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
             className="w-full"
           />
         </div>
+        {filterRow('border-t')}
         <div className="border-line shrink-0 border-t px-3 py-1 pr-1.5">
           <div className="flex min-h-6 items-center gap-1">
             <span className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
@@ -748,6 +802,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           browser does in the same window. */}
       <Panel flush className={page ? 'mt-1 min-h-0 flex-1' : 'shrink-0 sm:min-h-0 sm:flex-1'}>
         <PanelHeader title={count} actions={dbControls} />
+        {filterRow('border-b')}
         {list}
       </Panel>
       <GamePreview preview={preview} onClose={hidePreview} />

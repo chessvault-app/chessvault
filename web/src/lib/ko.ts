@@ -281,6 +281,8 @@ export const ko: Record<string, string> = {
     '검색어와 맞는 노트가 없습니다. 검색을 지우면 전체 목록이 다시 보입니다.',
   'Nothing matches that search': '검색 결과가 없습니다',
   'With notes': '노트가 있는 게임',
+  Strength: '기력',
+  'Any strength': '모든 기력',
   'Nothing matches those filters': '필터에 맞는 게임이 없습니다',
   'No game in your collection gets through the filters above. Clearing them shows the whole collection again.':
     '위 필터를 통과하는 게임이 컬렉션에 없습니다. 필터를 지우면 전체 컬렉션이 다시 보입니다.',
