@@ -25,6 +25,7 @@ import { EmptyState } from '@/ui/EmptyState';
 import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 
 import { Input, SearchInput, TextArea } from '@/ui/Input';
+import { Select } from '@/ui/Select';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
@@ -148,6 +149,11 @@ export function CollectionView() {
   const [error, setError] = useState<string | null>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [markedOnly, setMarkedOnly] = useState(false);
+  // The quick filters, session-only like the archive's: what you want to
+  // see is a question of the moment, not a preference.
+  const [sideFilter, setSideFilter] = useState<'any' | 'white' | 'black'>('any');
+  const [resultFilter, setResultFilter] = useState<'any' | '1-0' | '0-1' | '1/2-1/2'>('any');
+  const [notesFilter, setNotesFilter] = useState<'any' | 'annotated'>('any');
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column. */
@@ -301,11 +307,23 @@ export function CollectionView() {
   const visible = games.filter((g) => {
     if (hidden.has(gameKey(g))) return false;
     if (markedOnly && !bookmarks.has(gameKey(g))) return false;
+    // The same quick filters the archive rows next door have — a side is
+    // YOUR side, so it only ever matches games you played (userSide comes
+    // from a VaultSide header or the archive path a game was kept from).
+    if (sideFilter !== 'any' && g.userSide !== sideFilter) return false;
+    if (resultFilter !== 'any' && g.result !== resultFilter) return false;
+    if (notesFilter === 'annotated' && !g.annotated) return false;
     if (!needle) return true;
     return `${customName(g) ?? ''} ${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
       .toLowerCase()
       .includes(needle);
   });
+  const filtersOn = sideFilter !== 'any' || resultFilter !== 'any' || notesFilter !== 'any';
+  const clearFilters = (): void => {
+    setSideFilter('any');
+    setResultFilter('any');
+    setNotesFilter('any');
+  };
 
   /**
    * Search, then the bookmark switch — the pair that narrows the list.
@@ -429,6 +447,62 @@ export function CollectionView() {
               </span>
             }
           />
+          {/* The archive's own filter row, on the collection: three
+              selects, one line, each stating its value. Side is YOUR
+              side, so it matches only the games you played; reference
+              games (no side of yours) answer to the other two. */}
+          {games.length > 0 && (
+            <div className="border-line flex flex-wrap items-center gap-1.5 border-b px-3 py-2">
+              <Select
+                value={sideFilter}
+                onChange={(v) => setSideFilter(v as typeof sideFilter)}
+                ariaLabel={t('Side')}
+                size="sm"
+                className="min-w-0 flex-1"
+                groups={[
+                  {
+                    options: [
+                      { value: 'any', label: t('Either side') },
+                      { value: 'white', label: t('As White') },
+                      { value: 'black', label: t('As Black') },
+                    ],
+                  },
+                ]}
+              />
+              <Select
+                value={resultFilter}
+                onChange={(v) => setResultFilter(v as typeof resultFilter)}
+                ariaLabel={t('Outcome')}
+                size="sm"
+                className="min-w-0 flex-1"
+                groups={[
+                  {
+                    options: [
+                      { value: 'any', label: t('Any result') },
+                      { value: '1-0', label: t('White won') },
+                      { value: '0-1', label: t('Black won') },
+                      { value: '1/2-1/2', label: t('Drawn') },
+                    ],
+                  },
+                ]}
+              />
+              <Select
+                value={notesFilter}
+                onChange={(v) => setNotesFilter(v as typeof notesFilter)}
+                ariaLabel={t('Notes')}
+                size="sm"
+                className="min-w-0 flex-1"
+                groups={[
+                  {
+                    options: [
+                      { value: 'any', label: t('All games') },
+                      { value: 'annotated', label: t('With notes') },
+                    ],
+                  },
+                ]}
+              />
+            </div>
+          )}
           {loaded && games.length === 0 ? (
             <EmptyState
               // Centred in the PANEL, not parked under its header: an empty
@@ -452,7 +526,7 @@ export function CollectionView() {
                emptied. Each of these ends on the press that undoes it —
                an empty state whose only advice is "go and do something
                else" leaves the reader looking at dead space. */
-            markedOnly && !needle ? (
+            markedOnly && !needle && !filtersOn ? (
               <EmptyState
                 className="min-h-0 flex-1"
                 art={<BookmarkArt />}
@@ -462,6 +536,19 @@ export function CollectionView() {
                   <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
                     <BookOpen className="mr-1 size-3.5" />
                     {t('Browse all games')}
+                  </Button>
+                }
+              />
+            ) : filtersOn && !needle ? (
+              <EmptyState
+                className="min-h-0 flex-1"
+                art={<NoMatchArt />}
+                title="Nothing matches those filters"
+                body="No game in your collection gets through the filters above. Clearing them shows the whole collection again."
+                action={
+                  <Button variant="secondary" size="sm" onClick={clearFilters}>
+                    <X className="mr-1 size-3.5" />
+                    {t('Clear filters')}
                   </Button>
                 }
               />
