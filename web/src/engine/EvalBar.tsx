@@ -46,11 +46,17 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
             : { top: 0, bottom: 0, left: 0, width: percent }
         }
       />
-      {/* Midpoint marker, so a near-equal position is readable at a glance. */}
+      {/* Midpoint marker, so a near-equal position is readable at a
+          glance. 3px and stronger tint — a hairline at 45% opacity
+          disappeared against the halves it separates (lanph3re's
+          report), and the marker only earns its place if it can be seen
+          without leaning in. Centred on the midline, not below it. */}
       <div
         className={cn(
-          'absolute bg-primary/45',
-          orientation === 'vertical' ? 'left-0 right-0 h-px top-1/2' : 'top-0 bottom-0 w-px left-1/2',
+          'bg-primary/80 absolute',
+          orientation === 'vertical'
+            ? 'left-0 right-0 top-1/2 h-[3px] -translate-y-1/2'
+            : 'bottom-0 top-0 left-1/2 w-[3px] -translate-x-1/2',
         )}
       />
     </div>
