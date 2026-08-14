@@ -10,7 +10,7 @@ import {
   Trophy,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { cachedCollection, forgetCollection, loadCollection } from './collection';
 
 import { sanitizeSegment } from '@shared/vaultNames';
@@ -44,6 +44,98 @@ const SOURCES: { id: SourceId; label: string }[] = [
   { id: 'archive', label: 'Online archives' },
   { id: 'elite', label: 'Elite games' },
 ];
+
+/**
+ * One collection row, memoised on primitives so a bookmark toggle or a
+ * rename re-renders the rows whose state changed instead of the whole
+ * list. The row's chrome (the tray star, the ⋯ menu) is built here from
+ * those primitives; the callbacks are stable by contract (see rowHandlers
+ * in CollectionView).
+ */
+const CollectionRow = memo(function CollectionRow({
+  game,
+  bookmarked,
+  customName,
+  renaming,
+  onOpen,
+  onPreview,
+  onDrop,
+  onToggleBookmark,
+  onRename,
+  onStartRename,
+  onContext,
+}: {
+  game: GameSummary;
+  bookmarked: boolean;
+  customName: string | null;
+  renaming: boolean;
+  onOpen: (game: GameSummary) => void;
+  onPreview: (p: Preview | null) => void;
+  onDrop: (game: GameSummary) => void;
+  onToggleBookmark: (game: GameSummary) => void;
+  onRename: (game: GameSummary, to: string) => void;
+  onStartRename: (key: string) => void;
+  onContext: (game: GameSummary, x: number, y: number) => void;
+}) {
+  return (
+    <GameRow
+      onSwipeAway={() => onDrop(game)}
+      onBookmark={() => onToggleBookmark(game)}
+      bookmarked={bookmarked}
+      game={game}
+      customName={customName}
+      renaming={renaming}
+      onRename={(to) => onRename(game, to)}
+      onOpen={() => onOpen(game)}
+      onPreview={onPreview}
+      onContext={(x, y) => onContext(game, x, y)}
+      actions={
+        // The star is a CONTROL, so it lives where controls live:
+        // in the hover tray on a desktop, and not on a phone at
+        // all, where the row is swiped right or its ⋯ is used.
+        // What a bookmarked game says for itself is the amber
+        // edge down its left — which costs no width at all, and
+        // a lit star standing permanently at the end of a 390px
+        // row cost the player names about 36px of theirs.
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={bookmarked ? t('Remove bookmark') : t('Bookmark')}
+          className="pointer-coarse:hidden shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleBookmark(game);
+          }}
+        >
+          <Bookmark className={cn('size-3.5', bookmarked && 'fill-warn text-warn')} />
+        </Button>
+      }
+      menu={[
+        {
+          // Same rule as the preview: on a desktop the mark is
+          // already in the row's tray, and repeating it here
+          // just makes the menu longer to read.
+          label: bookmarked ? 'Remove bookmark' : 'Bookmark',
+          icon: Bookmark,
+          className: 'pointer-fine:hidden',
+          onSelect: () => onToggleBookmark(game),
+        },
+        { label: 'Rename', icon: Pencil, onSelect: () => onStartRename(gameKey(game)) },
+        ...(game.link
+          ? [
+              {
+                label: 'View online',
+                icon: ExternalLink,
+                onSelect: () => window.open(game.link!, '_blank', 'noreferrer'),
+              },
+            ]
+          : []),
+        { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onDrop(game) },
+      ]}
+      showLink={false}
+    />
+  );
+});
 
 /**
  * The collection: games deliberately kept for reference, each annotatable.
@@ -179,6 +271,27 @@ export function CollectionView() {
     const loose = (s: string): string => s.replace(/[,.]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
     return loose(name).startsWith(loose(autoPrefix)) ? null : name;
   };
+
+  // The rows memoise on primitives — see CollectionRow. These forward
+  // through a ref to the LATEST handlers, so their identity never changes
+  // while their closures stay fresh (a bookmark toggle used to re-render
+  // every row in the list; now it re-renders the one that changed).
+  const rowHandlers = useRef({ dropGame, toggleBookmark, renameGame, openGame, setContext });
+  rowHandlers.current = { dropGame, toggleBookmark, renameGame, openGame, setContext };
+  const rowOpen = useCallback((g: GameSummary) => rowHandlers.current.openGame(g), []);
+  const rowDrop = useCallback((g: GameSummary) => rowHandlers.current.dropGame(g), []);
+  const rowBookmark = useCallback(
+    (g: GameSummary) => void rowHandlers.current.toggleBookmark(g),
+    [],
+  );
+  const rowRename = useCallback(
+    (g: GameSummary, to: string) => void rowHandlers.current.renameGame(g, to),
+    [],
+  );
+  const rowContext = useCallback(
+    (g: GameSummary, x: number, y: number) => rowHandlers.current.setContext({ game: g, x, y }),
+    [],
+  );
 
   // Built once and shared: the archive renders twice (beside the
   // collection, and in the phone's window) and each copy needs it.
@@ -372,67 +485,19 @@ export function CollectionView() {
           // to read as a highlight.
           <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022] sm:max-h-[38dvh] lg:max-h-none">
             {visible.map((game) => (
-              <GameRow
+              <CollectionRow
                 key={gameKey(game)}
-                onSwipeAway={() => dropGame(game)}
-                onBookmark={() => void toggleBookmark(game)}
-                bookmarked={bookmarks.has(gameKey(game))}
                 game={game}
+                bookmarked={bookmarks.has(gameKey(game))}
                 customName={customName(game)}
                 renaming={renamingKey === gameKey(game)}
-                onRename={(to) => void renameGame(game, to)}
-                onOpen={() => openGame(game)}
+                onOpen={rowOpen}
                 onPreview={setPreview}
-                onContext={(x, y) => setContext({ game, x, y })}
-                actions={
-                  // The star is a CONTROL, so it lives where controls live:
-                  // in the hover tray on a desktop, and not on a phone at
-                  // all, where the row is swiped right or its ⋯ is used.
-                  // What a bookmarked game says for itself is the amber
-                  // edge down its left — which costs no width at all, and
-                  // a lit star standing permanently at the end of a 390px
-                  // row cost the player names about 36px of theirs.
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={bookmarks.has(gameKey(game)) ? t('Remove bookmark') : t('Bookmark')}
-                    className="pointer-coarse:hidden shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void toggleBookmark(game);
-                    }}
-                  >
-                    <Bookmark
-                      className={cn(
-                        'size-3.5',
-                        bookmarks.has(gameKey(game)) && 'fill-warn text-warn',
-                      )}
-                    />
-                  </Button>
-                }
-                menu={[
-                  {
-                    // Same rule as the preview: on a desktop the mark is
-                    // already in the row's tray, and repeating it here
-                    // just makes the menu longer to read.
-                    label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
-                    icon: Bookmark,
-                    className: 'pointer-fine:hidden',
-                    onSelect: () => void toggleBookmark(game),
-                  },
-                  { label: 'Rename', icon: Pencil, onSelect: () => setRenamingKey(gameKey(game)) },
-                  ...(game.link
-                    ? [
-                        {
-                          label: 'View online',
-                          icon: ExternalLink,
-                          onSelect: () => window.open(game.link!, '_blank', 'noreferrer'),
-                        },
-                      ]
-                    : []),
-                  { label: 'Remove', icon: Trash2, danger: true, onSelect: () => dropGame(game) },
-                ]}
-                showLink={false}
+                onDrop={rowDrop}
+                onToggleBookmark={rowBookmark}
+                onRename={rowRename}
+                onStartRename={setRenamingKey}
+                onContext={rowContext}
               />
             ))}
           </ul>

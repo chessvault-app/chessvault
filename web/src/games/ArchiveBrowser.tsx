@@ -5,7 +5,7 @@ import {
   Plus,
   X,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 
 import { cn } from '@/lib/cn';
@@ -110,6 +110,78 @@ const MAX_ROWS = 1000;
  * the first time they are opened, so revisiting works offline; games are
  * added to the collection one by one.
  */
+/**
+ * One archive row, memoised on primitives so a selection tick re-renders
+ * the rows whose state changed and nothing else. `picked` arrives as THIS
+ * row's boolean, never the Set — a Set prop would change identity on
+ * every tick and take the whole month with it. The callbacks are stable
+ * by contract (see rowHandlers in ArchiveBrowser).
+ */
+const ArchiveRow = memo(function ArchiveRow({
+  game,
+  selecting,
+  picked,
+  inCollection,
+  onOpen,
+  onPreview,
+  onToggle,
+  onCollect,
+}: {
+  game: GameSummary;
+  selecting: boolean;
+  picked: boolean;
+  inCollection: boolean;
+  onOpen: (game: GameSummary) => void;
+  onPreview: (p: Preview | null) => void;
+  onToggle: (key: string, on: boolean) => void;
+  onCollect: (game: GameSummary) => void;
+}) {
+  return (
+    <GameRow
+      game={game}
+      onOpen={() => onOpen(game)}
+      onPreview={onPreview}
+      // Outside the hover tray: Add is what this list is FOR, and a
+      // selection checkbox that only appears under the pointer is one
+      // you cannot tick with your eyes.
+      actions={null}
+      standing={
+        <>
+          {selecting && (
+            <input
+              type="checkbox"
+              className="accent-primary mr-1 shrink-0"
+              aria-label={t('Select this game')}
+              checked={picked}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => onToggle(gameKey(game), e.target.checked)}
+            />
+          )}
+          <Button
+            variant={inCollection ? 'ghost' : 'secondary'}
+            size="sm"
+            disabled={inCollection}
+            className="w-16 shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              onCollect(game);
+            }}
+          >
+            {inCollection ? (
+              t('Added')
+            ) : (
+              <>
+                <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+                {t('Add')}
+              </>
+            )}
+          </Button>
+        </>
+      }
+    />
+  );
+});
+
 export function ArchiveBrowser({
   collectionKeys,
   onCollected,
@@ -484,6 +556,26 @@ export function ArchiveBrowser({
     }
   };
 
+  // The rows memoise on primitives, so every callback handed to them must
+  // keep one identity for the component's life. Each forwards through a
+  // ref to the LATEST handler — stable outside, fresh closure inside —
+  // which is what lets ticking one checkbox re-render one row instead of
+  // the whole month (measured before: 562 GameRow renders per tick on a
+  // 281-game month; after: the two rows whose props changed).
+  const rowHandlers = useRef({ openInAnalysis, collect });
+  rowHandlers.current = { openInAnalysis, collect };
+  const rowOpen = useCallback((g: GameSummary) => void rowHandlers.current.openInAnalysis(g), []);
+  const rowCollect = useCallback((g: GameSummary) => void rowHandlers.current.collect(g), []);
+  const rowToggle = useCallback((key: string, on: boolean) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }, []);
+
+
   const body = (
     <>
       {/* pt-3, not flush under the header's rule: the tab bar is a raised
@@ -803,61 +895,22 @@ export function ArchiveBrowser({
               <SkeletonGameRows rows={6} />
             </li>
           ) : (
-            visibleMonthGames.slice(0, MAX_ROWS).map((game) => {
-              const inCollection =
-                added.has(gameKey(game)) ||
-                collectionKeys.has(`${game.white}|${game.black}|${game.date}`);
-              return (
-                <GameRow
-                  key={gameKey(game)}
-                  game={game}
-                  onOpen={() => void openInAnalysis(game)}
-                  onPreview={onPreview}
-                  // Outside the hover tray: Add is what this list is FOR,
-                  // and a selection checkbox that only appears under the
-                  // pointer is one you cannot tick with your eyes.
-                  actions={null}
-                  standing={
-                    <>
-                    {selecting && (
-                      <input
-                        type="checkbox"
-                        className="accent-primary mr-1 shrink-0"
-                        aria-label={t('Select this game')}
-                        checked={picked.has(gameKey(game))}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const next = new Set(picked);
-                          if (e.target.checked) next.add(gameKey(game));
-                          else next.delete(gameKey(game));
-                          setPicked(next);
-                        }}
-                      />
-                    )}
-                    <Button
-                      variant={inCollection ? 'ghost' : 'secondary'}
-                      size="sm"
-                      disabled={inCollection}
-                      className="w-16 shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void collect(game);
-                      }}
-                    >
-                      {inCollection ? (
-                        t('Added')
-                      ) : (
-                        <>
-                          <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-                          {t('Add')}
-                        </>
-                      )}
-                    </Button>
-                    </>
-                  }
-                />
-              );
-            })
+            visibleMonthGames.slice(0, MAX_ROWS).map((game) => (
+              <ArchiveRow
+                key={gameKey(game)}
+                game={game}
+                selecting={selecting}
+                picked={picked.has(gameKey(game))}
+                inCollection={
+                  added.has(gameKey(game)) ||
+                  collectionKeys.has(`${game.white}|${game.black}|${game.date}`)
+                }
+                onOpen={rowOpen}
+                onPreview={onPreview}
+                onToggle={rowToggle}
+                onCollect={rowCollect}
+              />
+            ))
           )}
 
           {/* The end of the list asks for the next months. Older play is
