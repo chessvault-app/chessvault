@@ -151,24 +151,24 @@ export function ThemesPage() {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-        <PageHeader
-          className="mb-4"
-          title={t('Puzzle themes')}
-          back={() => navigate('puzzles', 'dashboard')}
-          actions={
-            <>
-              {error && <span className="text-bad text-xs">{error}</span>}
-              <SearchInput
-                inputSize="sm"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('Find a theme')}
-                aria-label={t('Find a theme')}
-                className="w-44 max-w-full"
-              />
-            </>
-          }
-        />
+        {/* The shelves' two-row shape: the heading row carries what is
+            ABOUT the page, and the search gets a full-width line of its
+            own instead of a stub squeezed beside the title. */}
+        <div className="mb-4 flex flex-col gap-2.5">
+          <PageHeader
+            title={t('Puzzle themes')}
+            back={() => navigate('puzzles', 'dashboard')}
+            actions={error && <span className="text-bad text-xs">{error}</span>}
+          />
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('Find a theme')}
+            aria-label={t('Find a theme')}
+            className="w-full"
+          />
+        </div>
 
         <ChipRow className="mb-5" innerClassName="gap-2">
           <ThemeCard
