@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /**
  * The desktop shell. Two modes, chosen on first run and kept in
@@ -50,9 +50,24 @@ let serverProc = null;
  * browser.
  */
 function isOwnOrigin(url) {
-  if (url.startsWith(`http://127.0.0.1:${LOCAL_PORT}`)) return true;
+  // Compared as PARSED origins, never as string prefixes: with the vault
+  // at https://vault.example.com, a prefix match also passed
+  // https://vault.example.com.evil.io — and whatever a navigation lands
+  // on inherits the preload bridge.
+  let origin;
+  try {
+    origin = new URL(url).origin;
+  } catch {
+    return false;
+  }
+  if (origin === `http://127.0.0.1:${LOCAL_PORT}`) return true;
   const settings = readSettings();
-  return Boolean(settings.mode === 'remote' && settings.url && url.startsWith(settings.url));
+  if (settings.mode !== 'remote' || !settings.url) return false;
+  try {
+    return origin === new URL(settings.url).origin;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -147,7 +162,15 @@ function createWindow() {
     backgroundColor: '#14161d',
     autoHideMenuBar: true,
     icon: join(here, 'icon.png'),
-    webPreferences: { preload: join(here, 'preload.cjs') },
+    // Chromium's defaults already isolate and sandbox, but the window that
+    // carries the shell bridge states them itself: an Electron downgrade
+    // or a changed default must not be able to regress this silently.
+    webPreferences: {
+      preload: join(here, 'preload.cjs'),
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+    },
   });
   // Links to lichess/chess.com open in the real browser, not a new shell —
   // but only http(s), so a hostile page can't hand the OS an arbitrary URI
@@ -194,11 +217,12 @@ function createWindow() {
   });
 
   win.webContents.on('will-navigate', (event, url) => {
-    const settings = readSettings();
-    const allowed =
-      url.startsWith(`http://127.0.0.1:${LOCAL_PORT}`) ||
-      (settings.mode === 'remote' && settings.url && url.startsWith(settings.url)) ||
-      url.startsWith('file://');
+    // Own origins (parsed, not prefix-matched — see isOwnOrigin) and the
+    // shell's OWN chooser page. `file://` as a whole was allowed here,
+    // which would have let a page navigate the bridge-carrying window to
+    // any local file; only the chooser needs it.
+    const chooser = pathToFileURL(join(here, 'chooser.html')).href;
+    const allowed = isOwnOrigin(url) || url.split('?')[0] === chooser;
     if (!allowed) event.preventDefault();
   });
   return win;
