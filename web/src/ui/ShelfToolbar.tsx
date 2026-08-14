@@ -2,6 +2,7 @@ import { ArrowDownWideNarrow, ArrowUpNarrowWide, Bookmark, LayoutGrid, List } fr
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { SearchInput } from './Input';
+import { PageHeader } from './PageHeader';
 import { Segmented } from './Segmented';
 import { Select } from './Select';
 import type { ShelfLayout } from './ShelfCard';
@@ -172,56 +173,58 @@ export function ShelfToolbar({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
-        <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
-          {/* Wide screens only — below sm this toolbar is just Create, and
-              the switch travels down to the search row. */}
-          {bookmark('hidden sm:inline-flex')}
-          <Select
-            value={sort}
-            onChange={(value) => onSort(value as ShelfSort)}
-            ariaLabel={t('Sort by')}
-            size="sm"
-            align="end"
-            // Otherwise picking Title after Last modified pulls the layout
-            // switch and Create left by 40-odd pixels.
-            steady
-            className="hidden shrink-0 sm:flex"
-            groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
-          />
-          {/* The select says WHAT the shelf is ordered by; this arrow says
-              WHICH WAY, and flips it. Without it 'Title' never admitted
-              whether it meant A→Z or Z→A. */}
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            title={dir === 'asc' ? t('Ascending — press for descending') : t('Descending — press for ascending')}
-            className="hidden shrink-0 sm:inline-flex"
-            onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
-          >
-            {dir === 'asc' ? (
-              <ArrowUpNarrowWide className="size-3.5" />
-            ) : (
-              <ArrowDownWideNarrow className="size-3.5" />
-            )}
-          </Button>
-          {/* Two states, so a switch rather than a menu — the same segmented
-              control the archive panel picks its site with. */}
-          <Segmented
-            value={layout}
-            onChange={onLayout}
-            ariaLabel="Layout"
-            size="sm"
-            className="hidden sm:flex"
-            segments={[
-              { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
-              { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
-            ]}
-          />
-          {create}
-        </div>
-      </header>
+      <PageHeader
+        title={title}
+        actions={
+          <>
+            {/* Wide screens only — below sm this toolbar is just Create, and
+                the switch travels down to the search row. */}
+            {bookmark('hidden sm:inline-flex')}
+            <Select
+              value={sort}
+              onChange={(value) => onSort(value as ShelfSort)}
+              ariaLabel={t('Sort by')}
+              size="sm"
+              align="end"
+              // Otherwise picking Title after Last modified pulls the layout
+              // switch and Create left by 40-odd pixels.
+              steady
+              className="hidden shrink-0 sm:flex"
+              groups={[{ options: SORTS.map(({ value, label }) => ({ value, label: t(label) })) }]}
+            />
+            {/* The select says WHAT the shelf is ordered by; this arrow says
+                WHICH WAY, and flips it. Without it 'Title' never admitted
+                whether it meant A→Z or Z→A. */}
+            <Button
+              variant="secondary"
+              size="icon-sm"
+              title={dir === 'asc' ? t('Ascending — press for descending') : t('Descending — press for ascending')}
+              className="hidden shrink-0 sm:inline-flex"
+              onClick={() => onDir(dir === 'asc' ? 'desc' : 'asc')}
+            >
+              {dir === 'asc' ? (
+                <ArrowUpNarrowWide className="size-3.5" />
+              ) : (
+                <ArrowDownWideNarrow className="size-3.5" />
+              )}
+            </Button>
+            {/* Two states, so a switch rather than a menu — the same segmented
+                control the archive panel picks its site with. */}
+            <Segmented
+              value={layout}
+              onChange={onLayout}
+              ariaLabel="Layout"
+              size="sm"
+              className="hidden sm:flex"
+              segments={[
+                { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },
+                { value: 'list', label: <List className="size-3.5" />, title: 'List view' },
+              ]}
+            />
+            {create}
+          </>
+        }
+      />
 
       <div className="flex items-center gap-2">
         <SearchInput
