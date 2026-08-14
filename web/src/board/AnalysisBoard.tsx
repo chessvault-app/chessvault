@@ -220,7 +220,7 @@ function NagBadge({
   orientation,
   book = false,
 }: {
-  node: { uci?: string; nags: number[] };
+  node: { uci?: string; san?: string; nags: number[] };
   orientation: 'white' | 'black';
   book?: boolean;
 }) {
@@ -228,7 +228,12 @@ function NagBadge({
   if ((!nag && !book) || !node.uci || node.uci.length < 4) return null;
   const badge = nag ? BOARD_NAGS[nag]! : { glyph: null, className: 'bg-nag-book' };
 
-  const dest = node.uci.slice(2, 4);
+  // chessops encodes castling as king-takes-rook ("e1h1"), so slicing the
+  // uci would pin the badge to the rook's home square. The king really
+  // lands on the g- or c-file of its own rank; the SAN says which.
+  const dest = node.san?.startsWith('O-O')
+    ? `${node.san.startsWith('O-O-O') ? 'c' : 'g'}${node.uci[1]}`
+    : node.uci.slice(2, 4);
   const file = dest.charCodeAt(0) - 97;
   const rank = dest.charCodeAt(1) - 49;
   const column = orientation === 'white' ? file : 7 - file;
