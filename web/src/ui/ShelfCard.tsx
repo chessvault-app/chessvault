@@ -40,8 +40,9 @@ export function ShelfCard({
   title: string;
   /** The second line: chapters and when, or size and when. */
   meta: ReactNode;
-  /** Two lines of the note's own words. */
-  preview?: string | null;
+  /** Two lines of the note's own words — or any caption the card wants
+      there (the studies shelf puts icon-prefixed chapter names in it). */
+  preview?: ReactNode;
   /** Where the document's first embedded board starts, if it has one. */
   fen?: string | null;
   marked?: boolean;

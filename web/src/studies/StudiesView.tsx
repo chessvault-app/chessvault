@@ -1,6 +1,7 @@
 import {
   Bookmark,
   CloudDownload,
+  FileText,
   FileUp,
   Folder as FolderIcon,
   FolderInput,
@@ -800,8 +801,15 @@ function StudyCard({
       // an empty diagram blends into the dark ground where the start
       // position was sixty-four competing squares of the same picture.
       fen={study.fen ?? '8/8/8/8/8/8/8/8'}
-      // The first few chapter names, where a note would show its words.
-      preview={study.chapterNames?.join(' · ')}
+      // The first few chapter names, where a note would show its words —
+      // each behind a small page mark, so the caption reads as a list of
+      // chapters rather than as a sentence of the study's own.
+      preview={study.chapterNames?.map((chapter, at) => (
+        <span key={at} className="mr-2.5 inline-flex max-w-full items-center gap-1 align-top">
+          <FileText className="size-3 shrink-0 opacity-60" strokeWidth={1.75} />
+          <span className="truncate">{chapter}</span>
+        </span>
+      ))}
       marked={marked}
       onToggleMark={onToggleMark}
       layout={layout}
