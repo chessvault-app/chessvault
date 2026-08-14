@@ -48,7 +48,7 @@ survives a rebuild.
 **More reference games.** They are plural, like books:
 `data/refgames/<name>.sqlite`, each an independent database, listed and
 switched in the elite browser. Its manager uploads PGN collections (the
-same `vault/sources/` uploads that build opening books), indexes any
+same `vault/sources/` uploads), indexes any
 selection of them under a name, and deletes what is no longer wanted —
 so unlike puzzles there is no replace-wrinkle here: build the same name
 again to replace it, or a new name beside it. The same indexer runs from
@@ -80,7 +80,7 @@ page that needs it.
 `refgames.sqlite` followed, and its input being different in kind — not
 one public dump, but whatever PGN collections you happen to have — is
 what dictated the shape of the fix: uploading collections already worked
-(it is how opening books are built), so the elite browser's build offer
+(the pattern every database build here uses), so the build offer
 indexes those same uploads rather than inventing a second way to get
 files in.
 
@@ -88,7 +88,7 @@ The desktop installer softens the empty start besides: it carries a
 starter set — the strongest games of every ECO code from one Lichess
 Elite month, ~39 k games in 25 MB, built by `build-bundled-refgames.ts`
 at release time — seeded into `data/refgames/` on first run, the same
-way the bundled opening book is. It is an ordinary database from then
+way the bundled starter is. It is an ordinary database from then
 on, one name among however many are built beside it, and deleting it is
 final. A server install gets no seed; it takes the commit, not the
 release artefacts.

@@ -38,7 +38,7 @@ That rule is what lets `data/mygames.sqlite` exist without contradicting
 it. The explorer answers "what have I played here" from an index over the
 vault's PGN files (`server/myGames.ts`) — one row per position, move and
 game, so the question can be filtered by side, result, speed and date
-rather than pre-summed the way an opening book must be. The index is not
+rather than pre-summed the way the retired opening books were. The index is not
 the games; it notices a changed file and reindexes that file alone, and
 deleting it costs one rebuild. The PGN on disk stays the only thing that
 matters.

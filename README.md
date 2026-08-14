@@ -21,7 +21,7 @@ for chess, and this app is built on both.
 PGN, markdown, JSON — that any editor can open and any backup tool can
 copy. There is no database holding your work hostage, no export step, and
 nothing that stops being readable if this app does. The parts that ARE
-databases (opening books, the puzzle pool, indexes) are all derived: they
+databases (the puzzle pool, reference games, indexes) are all derived: they
 live apart from the vault, and any of them can be deleted and rebuilt.
 
 *Everything can point at everything else.* A note links a study, a study
@@ -73,10 +73,10 @@ is one connected body of work, and the links are what make it that.
 - **Tools** — the interactive boards, grouped: the analysis **Board**,
   the position **Editor**, a shortcut into the opening **Explorer**, and
   a **Repertoire** trainer that spars an opening against the field — the
-  Lichess database filtered to a rating band, or any local opening book,
+  Lichess database filtered to a rating band, or any local reference database,
   the bundled one included, so it works offline (weighted-random replies,
   seamless hand-off to the engine when the line leaves book).
-- **Your own games, in the explorer.** Alongside opening books and the
+- **Your own games, in the explorer.** Alongside the reference databases and the
   Lichess databases, the explorer has a **My games** source: every game
   in the vault, answering *what have I played here, and how did it go* —
   filtered by which side you had, whether you won, the speed, and the
@@ -126,7 +126,7 @@ B.) Then it asks which folder:
 - **App-managed vault** — it picks one in your user profile and gets on
   with it.
 - **Open a folder…** — any folder becomes your vault, including one you
-  already have. Derived data (opening books, indexes) lives inside that
+  already have. Derived data (reference databases, indexes) lives inside that
   folder too, so moving or syncing the folder takes everything with it.
 
 Updates arrive through the app itself, from those same releases.
@@ -255,8 +255,7 @@ terminal alternative, not the requirement.
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames/*.sqlite` | the elite game browser | a starter set comes with the app; more in the app, or `npm run build:refgames` |
-| `data/books/*.sqlite` | the local opening explorer | one comes with the app; more in the app, or `npm run build:book` |
+| `data/refgames/*.sqlite` | the elite browser, the local explorer and the repertoire trainer | a starter set comes with the app; more in the app, or `npm run build:refgames` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
 `data/mygames.sqlite` is not in the table because you never build it: the
@@ -265,72 +264,53 @@ keeps up as you collect more. `data/openings.json` is in it only to say
 where the names come from — the server compiles it from the ECO tables it
 ships with, the first time something asks for a name.
 
-**The installer bundles two starter databases**, so a fresh desktop
+**The installer bundles a starter database**, so a fresh desktop
 install answers from the first minute instead of showing empty pages.
-An *opening book* is an index of positions — in this position, what was
-played and how did it score? — and it is what the local opening explorer
-reads and the repertoire trainer can spar against, no token needed. The
-bundled book is a curated walk of a recent Lichess Elite month: 29,297
-positions to move 12, 1.5 MB, CC0. The
-*reference games* are whole games, searchable by player, opening and ECO
-in the Games tab, any of them openable on the board. The bundled set
-keeps the strongest games of every opening from that same month: 38,977
-games, 25 MB, CC0. Both are copied into `data/` the first time the app
-runs and are ordinary files after that: delete them, build over them.
-Deleting is final; neither is put back.
+A *reference database* is whole games plus a position index in one
+SQLite file: the games are searchable by player, opening, ECO,
+tournament, result and rating in the Games tab (any of them openable on
+the board), and the position index is what the local explorer and the
+repertoire trainer answer from — filterable, because the games survive
+beside it. The bundled set keeps the strongest games of every opening
+from a recent Lichess Elite month: 38,977 games, CC0, indexed to move
+15. It is copied into `data/` the first time the app runs and is an
+ordinary file after that: delete it, build over it. Deleting is final;
+it is not put back. (Earlier releases also bundled a summed-away
+"opening book"; the position index replaced it — one artifact answers
+both questions now, and answers them filtered.)
 
-Both are built when a release is cut, not kept in the repo, so each
+It is built when a release is cut, not kept in the repo, so each
 release carries data from a month that was current then. **A server
 install and a source checkout have neither** — they take the commit, not
 the release artefacts — and start with an empty explorer and an empty
-game browser. **When you outgrow the starters, build your own** — that
-is the ordinary way round anyway: upload your PGN collections in the
-book manager and press Build for a fuller book than the bundled one, and
-do the same in the elite browser's manager for game databases of your
-own (see below). Neither `deploy.sh` nor the app downloads games
-for this; only the release workflow does. (`npm run build:bundled-book`
-and `build:bundled-refgames` shrink data you already have into what an
-installer carries — they are for packaging installers by hand, not for
-getting your first databases.)
+game browser. **When you outgrow the starter, build your own** — that
+is the ordinary way round anyway: upload your PGN collections on the
+Databases page and press Build. Neither `deploy.sh` nor the app
+downloads games for this; only the release workflow does.
+(`npm run build:bundled-refgames` shrinks data you already have into
+what an installer carries — it is for packaging installers by hand, not
+for getting your first database.)
 
-**Opening books need no shell.** Open the explorer's book manager, upload
-your PGN collections, tick the ones to merge and press Build. Good free
-sources: [Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite"
-and the [Lichess Elite Database](https://database.nikonoel.fr/) — the
-second is CC0, the first CC BY-NC-SA 4.0, which is fine for a book you
-build for yourself and not for one you pass on. Positions
-are keyed by a 64-bit Zobrist hash and streamed with bounded memory — one
-month of Lichess Elite (280,059 games) indexes 361 k positions in 97 s into
-125 MB.
+**Building needs no shell.** Open the Databases page, upload your PGN
+collections, tick the ones to merge and press Build. Good free sources:
+[Lumbra's Gigabase](https://lumbrasgigabase.com/en/) "OTB Elite" and the
+[Lichess Elite Database](https://database.nikonoel.fr/) — the second is
+CC0, the first CC BY-NC-SA 4.0, which is fine for a database you build
+for yourself and not for one you pass on. Positions are keyed by a
+64-bit Zobrist hash — one month of Lichess Elite (280,059 games) builds
+in ~100 s and its position index (8.3 M rows to move 15) in a further
+~80 s.
 
-**From a terminal, if you prefer one.** The same builder, with the knobs
-the app does not offer yet. This is exactly what the release workflow runs
-to make the bundled book, so it doubles as a worked example of where the
-games come from:
+**From a terminal, if you prefer one.**
 
 ```bash
 # one month of Lichess Elite — CC0, ~80 MB zipped, ~280 k games
 curl -O https://database.nikonoel.fr/lichess_elite_2025-11.zip
 unzip lichess_elite_2025-11.zip -d vault/sources/
 
-# the full book: 361 k positions, 125 MB, ~100 s
-npm run build:book -- lichess_elite_2025-11.pgn --name elite
-
-# optional: shrink it to the 1.5 MB book an installer carries
-npm run build:bundled-book
+# the full database, position index included: ~540 MB, ~3 min
+npm run build:refgames -- lichess_elite_2025-11.pgn
 ```
-
-Anything in `vault/sources/` is fair game, and a bare `npm run build:book`
-indexes every PGN there, one book each. The flags, all optional:
-
-| flag | default | what it changes |
-| --- | --- | --- |
-| `--name` | the file's name | what the book is called |
-| `--max-ply` | 24 | how deep each game is read — 24 plies is move 12 |
-| `--min-games` | 2 | drop a position reached by fewer games than this |
-| `--top-games` | 8 | games kept for a position too busy for a full list |
-| `--all-below` | worked out | keep EVERY game of a position reached by this many or fewer |
-| `--stage-cap` | 200 | ceiling on the worked-out threshold, and on games staged per position |
 
 A book also keeps the games themselves, so the explorer can list who played
 a position and open any of them on the board. Every game is kept where a
@@ -368,7 +348,7 @@ npm run build:refgames -- elite.pgn --name elite
 ```
 
 Builds land by rename, so a running server keeps serving until they do.
-A deleted database is gone for good, like the bundled book.
+A deleted database is gone for good, like the bundled starter.
 
 Running **on a server**: the puzzle build streams a 304 MB compressed dump
 into a 2.6 GB database, and it will OOM on a small instance — it did on a
@@ -394,7 +374,7 @@ augmentation, which you can leave off.
 
 **With no network at all: yes.** That is the default arrangement — the
 app and the vault both on your machine — and nothing about it needs the
-internet. Engine, opening books, puzzles, your whole collection.
+internet. Engine, reference databases, puzzles, your whole collection.
 
 If you have moved the vault to a server (way B), you need to be able to
 reach that server. The PWA keeps its shell offline so the app still opens,
@@ -409,7 +389,7 @@ shared/     pure TS: move tree + PGN codec (the core everything reuses)
 server/     Hono server: vault I/O, auth gate + 2FA, settings, proxies
 web/        Vite + React UI
 desktop/    Electron shell (remote-client or self-hosted)
-scripts/    builders: engine setup, opening book, refgames index, ML pipeline
+scripts/    builders: engine setup, refgames index, ML pipeline
 data/       DERIVED — rebuildable, gitignored
 vault/      YOUR DATA — plain files, git-friendly
 ```
@@ -453,11 +433,9 @@ npm start              # serve the built app
 npm test               # unit tests
 npm run typecheck      # tsc --noEmit
 npm run setup:engine   # copy Stockfish into web/public/engine/
-npm run build:book     # index vault/sources PGNs into opening books
-npm run build:bundled-book     # shrink the biggest book into the one an installer ships
 npm run build:bundled-refgames # curate reference games into the starter set an installer ships
 npm run build:openings # recompile ECO names (the app does this itself)
-npm run build:refgames # index reference games for the elite browser
+npm run build:refgames # build a reference database (games + position index)
 npm run build:puzzles  # build the puzzle trainer's pool from the Lichess dump
 npm run desktop:package        # Windows installer (:mac, :linux for the others)
 npm run desktop:package:mac    # macOS dmg (needs a Mac, or GitHub Actions)

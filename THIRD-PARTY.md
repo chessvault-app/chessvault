@@ -23,7 +23,6 @@ Anything here travels with the app to whoever installs or visits it.
 | lucide icons | npm, bundled | ISC |
 | Inter, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | CC0-1.0 |
-| Bundled opening book (a curated walk of one Lichess Elite month) | `assets/*.sqlite` without the `refgames-` prefix, copied into `data/books/` on first run | CC0-1.0, derived from the Lichess database |
 | Bundled starter reference games (the strongest games of each opening, one Lichess Elite month) | `assets/refgames-*.sqlite`, copied into `data/refgames/` on first run | CC0-1.0, derived from the Lichess database |
 | Lichess puzzles | `data/puzzles.sqlite`, demo subset | CC0-1.0 |
 | Reference games | `data/refgames/`, demo subset | CC0-1.0, derived from the Lichess database |

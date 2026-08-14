@@ -30,8 +30,9 @@
 과정은 이렇습니다:
 
 1. `desktop/build-server.mjs`: 서버를 esbuild로 묶어
-   `release/server/index.mjs`로, 북 빌더를
-   `release/server/build-book.mjs`로 만들고, better-sqlite3를 그 옆에
+   `release/server/index.mjs`로, 데이터베이스 빌더들을
+   (`build-refgames.mjs`, `build-puzzles.mjs`,
+   `index-refgames-positions.mjs`) 그 옆에 만들고, better-sqlite3를
    복사하며(v13은 Node-API 프리빌드를 제공합니다 — Electron 아래에서
    ABI가 안정적이라 다시 빌드할 필요가 없습니다), `icon.ico`를
    렌더링합니다.
@@ -45,11 +46,11 @@ Node로(`ELECTRON_RUN_AS_NODE`) 돌리며, `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA`�
 `%APPDATA%/Chess Vault/{vault,data}`로 향하게 합니다 — 기기 프로필마다
 새 보관함이 생깁니다.
 
-패키징된 앱 안에서 오프닝 북, 퍼즐 풀, 참고 게임을 전부 만들 수
-있습니다. `build-book.mjs`, `build-puzzles.mjs`, `build-refgames.mjs`가
-서버 번들 옆에 실려 있고 서버가 저장소 스크립트보다 그것들을 먼저
-씁니다. 설치 프로그램은 여기에 더해 첫 실행 때 시작용 북과 시작용 참고
-게임을 심어 줍니다.
+패키징된 앱 안에서 퍼즐 풀과 참고 데이터베이스를 전부 만들 수
+있습니다. `build-puzzles.mjs`, `build-refgames.mjs`,
+`index-refgames-positions.mjs`가 서버 번들 옆에 실려 있고 서버가
+저장소 스크립트보다 그것들을 먼저 씁니다. 설치 프로그램은 여기에 더해
+첫 실행 때 시작용 참고 데이터베이스(포지션 색인 포함)를 심어 줍니다.
 
 ## 자동 업데이트
 

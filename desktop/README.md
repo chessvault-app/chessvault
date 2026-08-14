@@ -27,8 +27,9 @@ canonical.
 (NSIS one-click; macOS dmg target is pre-configured for later). Pipeline:
 
 1. `desktop/build-server.mjs`: esbuild-bundles the server to
-   `release/server/index.mjs` and the book builder to
-   `release/server/build-book.mjs`, copies better-sqlite3 beside them
+   `release/server/index.mjs` and the database builders beside it
+   (`build-refgames.mjs`, `build-puzzles.mjs`,
+   `index-refgames-positions.mjs`), copies better-sqlite3 next to them
    (v13 ships Node-API prebuilds — ABI-stable under Electron, no
    rebuild), renders `icon.ico`.
 2. `npm run build`: the SPA (with engine/model assets) into `dist/`.
@@ -41,11 +42,12 @@ The packaged local mode runs the bundled server on Electron's own Node
 pointed at `%APPDATA%/Chess Vault/{vault,data}` — a fresh vault per
 machine profile.
 
-Opening books, the puzzle pool and the reference games all build in the
-packaged app: `build-book.mjs`, `build-puzzles.mjs` and
-`build-refgames.mjs` ship beside the server bundle and the server
-prefers them over the repo scripts. The installer seeds a starter book
-and starter reference games on first run besides.
+The puzzle pool and the reference databases all build in the
+packaged app: `build-puzzles.mjs`, `build-refgames.mjs` and
+`index-refgames-positions.mjs` ship beside the server bundle and the
+server prefers them over the repo scripts. The installer seeds a
+starter reference database (position index included) on first run
+besides.
 
 ## Auto-update
 
