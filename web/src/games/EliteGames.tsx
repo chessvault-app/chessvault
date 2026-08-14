@@ -780,8 +780,11 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
       {/* The same stripe the collection list has: at three lines a row is
           tall enough that a hairline between rows disappears. */}
       <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022]">
+          {/* gap-3/pr-3 on each row: the shared GameRow's rhythm — these
+              rows sat a third as far apart as the archive's, and the two
+              lists take turns in the same column. */}
           {rows.map((g) => (
-            <li key={g.id} className="group hover:bg-surface-2 flex items-center gap-1 pr-2 transition-colors duration-100">
+            <li key={g.id} className="group hover:bg-surface-2 flex items-center gap-3 pr-3 transition-colors duration-100">
               {/* Mirrors the collection's GameRow — same bold names, same
                   ECO badge, same result tag — so the two lists read as one
                   family rather than as two takes on a game list. */}
@@ -789,7 +792,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 type="button"
                 onClick={() => void openGame(g)}
                 title={t('Open on the analysis board')}
-                className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3.5 text-left"
+                className="flex min-w-0 flex-1 items-center gap-3 py-3.5 pl-3 text-left"
               >
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate text-sm">
