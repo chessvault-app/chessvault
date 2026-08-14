@@ -467,6 +467,8 @@ npm run desktop:package:linux  # Linux AppImage + deb
   검증된 퍼즐 책이 되기까지, 실행 안내서 포함.
 - [준비된 데이터베이스](docs/databases.ko.md) — 퍼즐과 참고 게임
   데이터베이스: 한 번 만들어 서버로 복사하고, 이후엔 거의 손대지 않습니다.
+- [엔진 설명하기](docs/explaining.ko.md) — 위협, 반박, 플랜, 모티프,
+  기물 가치: 엔진 출력을 사람의 언어로, 결정론적으로 되읽기.
 - [ML 히스토리](docs/ml-history.ko.md) — 책 읽기가 좋아진 과정.
 - [업데이트 로그](docs/update-log.ko.md) — 무엇이 바뀌었는지, 최신순.
 
