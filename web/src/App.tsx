@@ -198,7 +198,14 @@ function Shell() {
         {section === 'home' ? (
           <HomePage />
         ) : section === 'analysis' ? (
-          <AnalysisView params={params} />
+          // Keyed on the sub-mode: AnalysisView makes its param-dependent
+          // decisions once per mount (initial pane, explorer on/off, the
+          // stateless reset), so Board ↔ Explorer must REMOUNT it — same
+          // section, so React would otherwise reconcile the same instance
+          // and the sidebar click would change nothing but the title. A
+          // handoff set before navigate() survives: the mount effect
+          // consumes the flag wherever the mount came from.
+          <AnalysisView key={params[0] === 'explorer' ? 'explorer' : 'board'} params={params} />
         ) : section === 'editor' ? (
           <EditorView />
         ) : section === 'studies' ? (
