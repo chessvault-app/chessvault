@@ -183,35 +183,44 @@ export function LoadPositionForm({
 
   return (
     <>
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => void pasteFromClipboard()}
-          title={t('Paste from clipboard')}
-        >
-          <ClipboardPaste className="size-3.5" />
-          {t('Paste')}
-        </Button>
+      {/* The Paste button lives INSIDE the field it fills, in the corner
+          the text reaches last — not on the window's top edge, where it
+          sat in the row dialogs keep their close button and read as
+          chrome (lanph3re's report). It shows only while the field is
+          empty, which is exactly as long as it is useful. */}
+      <div className="relative">
+        <TextArea
+          ref={textarea}
+          autoFocus={autoFocusField()}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter submits; Shift+Enter keeps a newline for multi-line PGN.
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          rows={5}
+          spellCheck={false}
+          placeholder={t('Paste a FEN or PGN, then press Enter')}
+          className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
+        />
+        {!text && (
+          <Button
+            variant="secondary"
+            size="sm"
+            // pointerdown would blur-then-refocus; the handler refocuses
+            // the field itself after filling it.
+            onClick={() => void pasteFromClipboard()}
+            title={t('Paste from clipboard')}
+            className="absolute bottom-2 right-2"
+          >
+            <ClipboardPaste className="size-3.5" />
+            {t('Paste')}
+          </Button>
+        )}
       </div>
-
-      <TextArea
-        ref={textarea}
-        autoFocus={autoFocusField()}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => {
-          // Enter submits; Shift+Enter keeps a newline for multi-line PGN.
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            submit();
-          }
-        }}
-        rows={5}
-        spellCheck={false}
-        placeholder={t('Paste a FEN or PGN, then press Enter')}
-        className="w-full resize-none font-mono leading-relaxed placeholder:font-sans"
-      />
 
       {error && (
         <p className="text-bad flex items-start gap-1.5 text-xs">
