@@ -177,6 +177,8 @@ function Trainer({
   // One attempt per puzzle: recorded at the first mistake or the clean solve.
   const reported = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Which loadNext call owns the state — see the note inside loadNext.
+  const loadSeq = useRef(0);
   const after = (ms: number, fn: () => void): void => {
     timers.current.push(setTimeout(fn, ms));
   };
@@ -236,6 +238,13 @@ function Trainer({
 
   const loadNext = useCallback(
     async (selectedTheme: string, selectedDifficulty: DifficultyId) => {
+      // Clearing the timers does not clear a fetch already in flight: two
+      // quick Skips used to leave load A's continuation running after load
+      // B took over, so A's puzzle landed in state — or A's 700 ms setup
+      // timer positioned the board on A while `puzzle` was B, and a
+      // correct move was then graded (and reported) against the wrong
+      // puzzle. Whoever holds the latest sequence number owns the state.
+      const seq = ++loadSeq.current;
       timers.current.forEach(clearTimeout);
       timers.current = [];
       setPhase('loading');
@@ -270,15 +279,19 @@ function Trainer({
       try {
         res = await fetch(url);
       } catch {
+        if (seq !== loadSeq.current) return;
         setError(navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
         return;
       }
+      if (seq !== loadSeq.current) return;
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        if (seq !== loadSeq.current) return;
         setError(body?.error ?? t('Request failed ({status})', { status: res.status }));
         return;
       }
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
+      if (seq !== loadSeq.current) return;
       setPuzzle(next);
       setPlies(0);
       setReview(null);
@@ -287,6 +300,7 @@ function Trainer({
       setPhase('setup');
       // Let the position register, then play the opponent's setup move.
       after(700, () => {
+        if (seq !== loadSeq.current) return;
         setPlies(1);
         setView(positionAt(next, 1));
         setPhase('solving');
