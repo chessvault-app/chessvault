@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
+import { writeAtomic } from './atomic.ts';
 import { timingSafeEqual } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
@@ -47,11 +48,11 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   const writeConfig = (mutate: (config: Config) => void): void => {
     const config = readConfig();
     mutate(config);
-    const tmp = `${configPath}.tmp`;
     // 0600: config.json holds the password, TOTP secret and Lichess token —
-    // keep it owner-only on multi-user hosts.
-    writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
-    renameSync(tmp, configPath);
+    // keep it owner-only on multi-user hosts. writeAtomic also carries the
+    // Windows EPERM retry: a settings save 500ed when Defender briefly
+    // held the file the rename was replacing.
+    writeAtomic(configPath, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
   };
 
   /** Constant-time string compare — same reason auth.ts uses one. */

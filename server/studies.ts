@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { writeAtomic } from './atomic.ts';
 import {
   closeSync,
   existsSync,
@@ -302,10 +303,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
   };
 
   const writeMarks = (ids: string[]): void => {
-    const tmp = `${marksPath}.tmp`;
-    writeFileSync(tmp, `${JSON.stringify({ ids }, null, 2)}
-`);
-    renameSync(tmp, marksPath);
+    writeAtomic(marksPath, `${JSON.stringify({ ids }, null, 2)}\n`);
   };
 
   /**
@@ -490,10 +488,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     if (Buffer.byteLength(body.pgn) > MAX_PGN_BYTES) return c.json({ error: "study too large" }, 413);
     if (!existsSync(pathOf(id))) return c.json({ error: 'no such study' }, 404);
 
-    const path = pathOf(id);
-    const tmp = `${path}.tmp`;
-    writeFileSync(tmp, body.pgn);
-    renameSync(tmp, path);
+    writeAtomic(pathOf(id), body.pgn);
     return c.json({ saved: id, bytes: body.pgn.length });
   });
 

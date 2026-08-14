@@ -1,4 +1,4 @@
-import { renameSync, writeFileSync } from 'node:fs';
+import { renameSync, writeFileSync, type WriteFileOptions } from 'node:fs';
 
 /**
  * Replace a file's content with no window where it is truncated.
@@ -11,8 +11,36 @@ import { renameSync, writeFileSync } from 'node:fs';
  * ever one complete version or the other; the studies PUT has always done
  * this, and everything that overwrites vault data should match it.
  */
-export function writeAtomic(path: string, data: string): void {
+export function writeAtomic(path: string, data: string, options?: WriteFileOptions): void {
   const tmp = `${path}.tmp`;
-  writeFileSync(tmp, data);
-  renameSync(tmp, path);
+  if (options === undefined) writeFileSync(tmp, data);
+  else writeFileSync(tmp, data, options);
+  renameOverRetrying(tmp, path);
+}
+
+/**
+ * renameSync, surviving Windows' transient EPERM.
+ *
+ * On Windows a rename over a file something else briefly holds open —
+ * Defender scanning the bytes that were just written, the search indexer
+ * — throws EPERM/EACCES/EBUSY even though nothing is actually wrong, and
+ * a settings save 500ed on exactly this (caught as a once-in-several-runs
+ * test flake). Retried a handful of times with a short synchronous pause;
+ * anything still failing after that, or failing with any other code, is a
+ * real error and is thrown. POSIX never takes the retry path.
+ */
+function renameOverRetrying(from: string, to: string): void {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      renameSync(from, to);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      const transient = code === 'EPERM' || code === 'EACCES' || code === 'EBUSY';
+      if (!transient || attempt >= 4) throw error;
+      // Synchronous on purpose: every caller is synchronous, and the
+      // pause is 5–25ms a handful of times in a path that runs rarely.
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5 * (attempt + 1));
+    }
+  }
 }

@@ -4,7 +4,6 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
-  renameSync,
   rmSync,
   statSync,
   unlinkSync,
@@ -224,9 +223,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   };
   const writeMarks = (slugs: string[]): void => {
     mkdirSync(dir, { recursive: true });
-    writeFileSync(`${marksPath}.tmp`, `${JSON.stringify({ slugs }, null, 2)}
-`);
-    renameSync(`${marksPath}.tmp`, marksPath);
+    writeAtomic(marksPath, `${JSON.stringify({ slugs }, null, 2)}\n`);
   };
 
   const api = new Hono();
