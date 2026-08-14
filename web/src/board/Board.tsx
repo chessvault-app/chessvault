@@ -48,6 +48,57 @@ export interface BoardProps {
   className?: string;
 }
 
+/** The piece on `square`, as its FEN letter, or null for an empty square. */
+function pieceAt(fen: string, square: string): string | null {
+  const row = fen.split(' ')[0]!.split('/')[8 - Number(square[1])];
+  if (!row) return null;
+  const file = square.charCodeAt(0) - 97;
+  let at = 0;
+  for (const ch of row) {
+    const run = Number(ch);
+    if (Number.isInteger(run)) {
+      at += run;
+      if (at > file) return null; // the empty run covers the square
+    } else {
+      if (at === file) return ch;
+      at += 1;
+    }
+  }
+  return null;
+}
+
+/**
+ * The rook-castle style's own dest prune. chessground's rookCastle: false
+ * drops the rook-square destination and keeps g1/c1; with rookCastle: true
+ * it drops NOTHING, so both entrances stayed live and the "move the king
+ * onto the rook" choice quietly still accepted e1→g1. Mirror of
+ * chessground's config.js filter: when the king stands on its home square
+ * and both squares of a castle are offered, keep only the rook's.
+ */
+function pruneKingCastleDests(
+  dests: Map<string, string[]>,
+  fen: string,
+): Map<string, string[]> {
+  let out = dests;
+  for (const [kingSq, king, rank] of [
+    ['e1', 'K', '1'],
+    ['e8', 'k', '8'],
+  ] as const) {
+    const offered = out.get(kingSq);
+    if (!offered || pieceAt(fen, kingSq) !== king) continue;
+    const pruned = offered.filter(
+      (d) =>
+        !(d === `g${rank}` && offered.includes(`h${rank}`)) &&
+        !(d === `c${rank}` && offered.includes(`a${rank}`)),
+    );
+    if (pruned.length !== offered.length) {
+      if (out === dests) out = new Map(dests);
+      out.set(kingSq, pruned);
+    }
+  }
+  return out;
+}
+
 /**
  * React wrapper around chessground.
  *
@@ -121,9 +172,10 @@ export function Board({
       movable: {
         free,
         showDests: !free,
-        // legalDests offers BOTH castling squares; chessground shows one of
-        // them according to this, so the board matches what the player
-        // expects to reach for. Either still plays the same move.
+        // legalDests offers BOTH castling squares. rookCastle: false makes
+        // chessground prune the rook square, leaving g1/c1; the rook style
+        // has no chessground-side mirror, so pruneKingCastleDests below
+        // does it. Each style offers, and accepts, exactly one way in.
         rookCastle: rookCastlesRef.current,
         events: {
           after: (orig, dest) => {
@@ -186,7 +238,10 @@ export function Board({
         color: free ? 'both' : viewOnly ? undefined : (movableColor ?? sideToMove),
         // Our tree yields plain strings; chessground wants its `Key` union. The
         // values are square names either way, so this cast is safe.
-        dests: (dests as Dests | undefined) ?? new Map<Key, Key[]>(),
+        dests:
+          ((castleStyle === 'rook' && dests
+            ? pruneKingCastleDests(dests, fen)
+            : dests) as Dests | undefined) ?? new Map<Key, Key[]>(),
         showDests: !free,
         rookCastle: castleStyle === 'rook',
       },

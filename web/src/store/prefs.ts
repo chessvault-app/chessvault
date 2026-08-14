@@ -81,9 +81,11 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
  * 'king' — drop the king on g1/c1, where it lands. chess.com's current way.
  * 'rook' — drop the king on its own rook. Lichess, and chess.com before.
  *
- * Both are always LEGAL; this only decides which chessground offers, since
- * showing both means a click on the rook is ambiguous with capturing it in
- * the mind of someone who expects one or the other.
+ * Exactly one is offered AND accepted (chessground prunes the rook square
+ * for 'king'; Board prunes g1/c1 for 'rook'): showing both makes a click
+ * on the rook ambiguous with capturing it in the mind of someone who
+ * expects one or the other, and accepting the unchosen one quietly
+ * defeats having chosen.
  */
 export type CastleStyle = 'king' | 'rook';
 
