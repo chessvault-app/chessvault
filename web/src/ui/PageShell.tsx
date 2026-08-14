@@ -1,0 +1,64 @@
+import type { ReactNode } from 'react';
+import { cn } from '@/lib/cn';
+
+/**
+ * How wide a scrolling page's column is allowed to get. Three named
+ * widths instead of one per page: a width is a statement about the kind
+ * of content, not about the page, so pages of the same kind must agree.
+ *
+ * - `wide`: layouts that split into columns or card grids and would
+ *   waste the split on anything narrower (games, studies, notes).
+ * - `medium`: one column read top to bottom — dashboards, shelves,
+ *   reference pages. Wider only stretches the lines.
+ * - `narrow`: forms and settings, where the eye travels label→control
+ *   and the shortest line wins.
+ */
+export type PageWidth = 'wide' | 'medium' | 'narrow';
+
+// Complete literals — the Tailwind scanner reads class names from this
+// file, and names assembled from fragments would never be emitted.
+const WIDTHS: Record<PageWidth, string> = {
+  wide: 'max-w-6xl',
+  medium: 'max-w-3xl',
+  narrow: 'max-w-2xl',
+};
+
+/**
+ * The shared shell of every scrolling page: a centered column with one
+ * gutter scale and one bottom inset, so pages differ by their chosen
+ * width and nothing else.
+ *
+ * The shell scrolls the OUTER element, keeping the scrollbar at the
+ * viewport edge rather than at the column's. Pages that manage their own
+ * scrolling (the games collection's per-panel scroll, viewport-fitting
+ * lists) pass `scroll={false}` and take over via `className`, which is
+ * merged onto the inner column and wins on conflict.
+ *
+ * The bottom inset includes `--safe-b` so the last row clears the iOS
+ * home indicator; on anything without safe areas it is plain 2rem.
+ */
+export function PageShell({
+  width,
+  scroll = true,
+  className,
+  children,
+}: {
+  width: PageWidth;
+  scroll?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className={cn('h-full min-h-0', scroll && 'overflow-y-auto')}>
+      <div
+        className={cn(
+          'mx-auto flex w-full flex-col gap-4 px-4 pt-4 pb-[calc(2rem+var(--safe-b))] md:px-6 md:pt-6',
+          WIDTHS[width],
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
