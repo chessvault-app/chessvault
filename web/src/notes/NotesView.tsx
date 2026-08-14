@@ -15,6 +15,7 @@ import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/ui/ShelfToolbar';
+import { PageShell } from '@/ui/PageShell';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { MoveToPopover } from '@/ui/MoveToPopover';
@@ -176,9 +177,9 @@ function NoteList() {
   };
 
   return (
-    // The studies shelf's shell, exactly: the two shelves hold the same kind
+    // The studies shelf's tier, exactly: the two shelves hold the same kind
     // of thing and had no business being different sizes.
-    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
+    <PageShell width="wide">
       <ShelfToolbar
         title={t('Notes')}
         query={query}
@@ -270,7 +271,7 @@ function NoteList() {
       )}
 
       <FabSpacer />
-    </div>
+    </PageShell>
   );
 }
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
 import { SearchInput } from '@/ui/Input';
@@ -147,8 +148,9 @@ export function ThemesPage() {
   const leftovers = (themes ?? []).filter((t) => !known.has(t.theme) && matches(t.theme));
 
   return (
-    <div className="h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto max-w-4xl p-4 pb-8">
+    // `block`: this page spaces its sections with their own margins, not
+    // the shell's column gap.
+    <PageShell width="medium" className="block">
         <div className="mb-4 flex items-center gap-2">
           <Button
             variant="ghost"
@@ -230,8 +232,7 @@ export function ThemesPage() {
               ) && <p className="text-subtle text-xs">{t('No theme matches it.')}</p>}
           </>
         )}
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

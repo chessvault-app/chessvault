@@ -21,6 +21,7 @@ import { navigate } from '@/lib/router';
 import { ActionSheet } from '@/ui/ActionSheet';
 
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 
 import { SearchInput } from '@/ui/Input';
 import { Select } from '@/ui/Select';
@@ -296,7 +297,9 @@ export function Shelf() {
   );
 
   return (
-    <div className="h-full min-h-0 overflow-y-auto">
+    // `block`: this page spaces its sections with their own margins, not
+    // the shell's column gap.
+    <PageShell width="medium" className="block">
       {undoable.pending && (
         <UndoBar
           label={undoable.pending.label}
@@ -306,7 +309,6 @@ export function Shelf() {
           onRelease={undoable.release}
         />
       )}
-      <div className="mx-auto max-w-3xl p-4 pb-8">
         {/* The other shelves' two-row shape: the heading row carries what
             is ABOUT the shelf — filter, order, create — and the search
             gets a full-width line of its own underneath. The bookmark
@@ -408,8 +410,7 @@ export function Shelf() {
         )}
 
         <FabSpacer />
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

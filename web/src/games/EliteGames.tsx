@@ -20,6 +20,7 @@ import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 
 import { Select } from '@/ui/Select';
 import { Input, SearchInput } from '@/ui/Input';
@@ -931,7 +932,12 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   if (!page) return body;
 
   return (
-    <div className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-4 p-4 lg:p-6">
+    <PageShell
+      width="wide"
+      scroll={false}
+      // The list panel scrolls itself, so the column pins to the viewport.
+      className="h-full min-h-0 pb-4 md:pb-6"
+    >
       <div className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
           <ChevronLeft className="size-3.5" />
@@ -949,6 +955,6 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         </h1>
       </div>
       {body}
-    </div>
+    </PageShell>
   );
 }

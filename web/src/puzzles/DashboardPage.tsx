@@ -7,6 +7,7 @@ import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 import { Select } from '@/ui/Select';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
@@ -152,8 +153,9 @@ export function DashboardPage() {
   });
 
   return (
-    <div className="h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto max-w-3xl p-4 pb-8">
+    // `block`: this page spaces its sections with their own margins, not
+    // the shell's column gap.
+    <PageShell width="medium" className="block">
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
         <div className="mb-4 flex items-center gap-2">
           <h1 className="text-fg text-base font-semibold">{t('Puzzle dashboard')}</h1>
@@ -396,7 +398,6 @@ export function DashboardPage() {
             </ul>
           )}
         </Panel>
-      </div>
 
       {preview && (
         <>
@@ -431,7 +432,7 @@ export function DashboardPage() {
         </div>
         </>
       )}
-    </div>
+    </PageShell>
   );
 }
 

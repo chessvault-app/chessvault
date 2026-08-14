@@ -21,6 +21,7 @@ import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 
 import { EmptyState } from '@/ui/EmptyState';
 import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
@@ -395,7 +396,13 @@ export function CollectionView() {
   );
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-4xl flex-col gap-4 overflow-y-auto p-4 scrollbar-hidden sm:overflow-hidden lg:max-w-7xl lg:p-6">
+    <PageShell
+      width="wide"
+      scroll={false}
+      // Below sm the whole page scrolls; from sm up the two panels scroll
+      // themselves, so the column pins to the viewport instead.
+      className="h-full overflow-y-auto scrollbar-hidden sm:overflow-hidden pb-4 md:pb-6"
+    >
       {/* The heading carries what is ABOUT the page; the two controls that
           NARROW it — search, then the bookmark switch — belong with the
           thing they narrow. At lg that is the Collection panel, which has
@@ -759,7 +766,7 @@ export function CollectionView() {
       )}
 
       <FabSpacer />
-    </div>
+    </PageShell>
   );
 }
 

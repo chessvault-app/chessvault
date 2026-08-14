@@ -28,6 +28,7 @@ import { PromptSheet } from '@/ui/PromptSheet';
 import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/ui/ShelfToolbar';
+import { PageShell } from '@/ui/PageShell';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
@@ -115,11 +116,9 @@ function StudyList() {
   );
 
   return (
-    // Two columns of cards on a desktop, so the shelf shows twice as many
-    // studies as the single file did — and a ceiling on the width, because a
-    // card stretched across a 1400px monitor is a line of text with a title
-    // at one end and a date at the other.
-    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 overflow-y-auto p-4 lg:p-6">
+    // Wide tier: two columns of cards on a desktop, so the shelf shows
+    // twice as many studies as the single file did.
+    <PageShell width="wide">
       <ShelfToolbar
         title={t('Studies')}
         query={query}
@@ -217,7 +216,7 @@ function StudyList() {
       )}
 
       <FabSpacer />
-    </div>
+    </PageShell>
   );
 }
 

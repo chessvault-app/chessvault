@@ -2,6 +2,7 @@ import { ChevronLeft, Database } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 import { RefDbManager, type RefDb } from '@/games/EliteGames';
 import { t } from '@/lib/i18n';
 
@@ -31,8 +32,7 @@ export function DatabasesPage() {
   }, [loadMeta]);
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-2xl flex-col md:max-w-4xl gap-4 p-4 pb-10 md:p-6">
+    <PageShell width="medium">
         <header className="flex items-center gap-2">
           {/* Phones reach this from More; a desktop has it in the sidebar,
               and top-level pages carry no back arrow there. */}
@@ -62,8 +62,7 @@ export function DatabasesPage() {
             </p>
           )}
         </Section>
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

@@ -229,12 +229,12 @@ function NoteEditor({
     // ends at the keyboard now (lib/keyboardInset, index.css), so this box
     // is already entirely above it and padding again pushed the last lines
     // of the note up out of a container that had nothing under it.
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] lg:px-6 lg:pb-6">
+    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6">
       {/* Header AND palette pin together. Pinning only the palette left the
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it
           read as narrower than the text it formats. */}
-      <div className="border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 lg:-mx-6 lg:px-6 lg:pt-6">
+      <div className="border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 md:-mx-6 md:px-6 md:pt-6">
       <header className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />

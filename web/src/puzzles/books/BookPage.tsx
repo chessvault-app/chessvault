@@ -16,6 +16,7 @@ import { SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 
 import { Input } from '@/ui/Input';
 
@@ -245,8 +246,9 @@ export function BookPage({ slug }: { slug: string }) {
       : null;
 
   return (
-    <div className="h-full min-h-0 overflow-y-auto">
-      <div className="mx-auto max-w-3xl p-4 pb-8">
+    // `block`: this page spaces its sections with their own margins, not
+    // the shell's column gap.
+    <PageShell width="medium" className="block">
         <div className="mb-4 flex items-center gap-2">
           <Button
             variant="ghost"
@@ -428,8 +430,7 @@ export function BookPage({ slug }: { slug: string }) {
             onDraft={(d) => setDraft(d)}
           />
         )}
-      </div>
-    </div>
+    </PageShell>
   );
 }
 

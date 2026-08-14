@@ -3,6 +3,7 @@ import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
 import { ChevronLeft, Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
+import { PageShell } from '@/ui/PageShell';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Select } from '@/ui/Select';
@@ -61,20 +62,19 @@ export function SettingsPage() {
   // Settings arrive fast on a local server, so nothing is shown at all
   // unless the wait is long enough to notice.
   if (!settings) {
-    return (
-      <div className="h-full overflow-y-auto">
-        {loadError ? (
-          <div className="mx-auto max-w-2xl p-4 md:p-6">
+    if (loadError)
+      return (
+        <PageShell width="narrow">
+          <div>
             <p className="text-bad mb-3 text-xs">{loadError}</p>
             <Button variant="secondary" size="sm" onClick={() => void refresh()}>
               {t('Try again')}
             </Button>
           </div>
-        ) : (
-          pending && <SkeletonForm groups={3} />
-        )}
-      </div>
-    );
+        </PageShell>
+      );
+    // SkeletonForm centers and pads itself, so it keeps the bare wrapper.
+    return <div className="h-full overflow-y-auto">{pending && <SkeletonForm groups={3} />}</div>;
   }
 
   // Nothing here knows about the keyboard any more. This box used to pad
@@ -84,8 +84,7 @@ export function SettingsPage() {
   // keyboard now and the bar hides itself while typing, so padding again
   // only pushed the bottom of the page out of a box with nothing under it.
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
+    <PageShell width="narrow">
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Button
@@ -139,8 +138,7 @@ export function SettingsPage() {
             {t('— every game, study and puzzle lives there as plain files. Display settings live on this device.')}
           </p>
         )}
-      </div>
-    </div>
+    </PageShell>
   );
 }
 
