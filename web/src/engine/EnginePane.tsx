@@ -1,8 +1,9 @@
-import { AlertTriangle, Database, Settings2 } from 'lucide-react';
+import { AlertTriangle, Database, Settings2, Thermometer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
+import { useExplain } from '@/store/explain';
 import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
@@ -34,6 +35,10 @@ export function EngineBlock({ className }: { className?: string }) {
   const error = useEngine((s) => s.error);
   const analyse = useEngine((s) => s.analyse);
   const [showSettings, setShowSettings] = useState(false);
+
+  const heatOn = useExplain((s) => s.heatOn);
+  const heatUnsupported = useExplain((s) => s.heatUnsupported);
+  const toggleHeat = useExplain((s) => s.toggleHeat);
 
   const node = getNode(tree, cursorId);
   const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
@@ -152,6 +157,20 @@ export function EngineBlock({ className }: { className?: string }) {
         }
         actions={
           <>
+            {/* Board overlay of NNUE piece values. Hidden outright once an
+                engine build proves it cannot answer — a control that can
+                never do anything is worse than none. */}
+            {!heatUnsupported && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                active={heatOn}
+                onClick={toggleHeat}
+                title={t('Piece values on the board')}
+              >
+                <Thermometer className="size-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon-sm"

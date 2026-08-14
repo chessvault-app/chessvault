@@ -1303,4 +1303,5 @@ export const ko: Record<string, string> = {
   'Tablebase: draw (50-move rule)': '테이블베이스: 무승부 (50수 규칙)',
   'Exact endgame verdict from the Syzygy tablebases — proven, not evaluated.':
     'Syzygy 테이블베이스의 정확한 엔드게임 판정 — 평가값이 아니라 증명된 결과입니다.',
+  'Piece values on the board': '보드에 기물 가치 표시',
 };

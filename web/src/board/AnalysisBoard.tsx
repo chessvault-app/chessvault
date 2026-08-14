@@ -14,6 +14,7 @@ import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
 import { noAutofill, noAutofillClass } from '@/ui/Input';
 import { Board } from '@/board/Board';
+import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
 import { EvalBar } from '@/engine/EvalBar';
@@ -173,6 +174,7 @@ export function AnalysisBoard({
                 onCancel={cancelPromotion}
               />
             )}
+            <HeatMapOverlay fen={node.fen} orientation={orientation} />
             <NagBadge node={node} orientation={orientation} />
           </div>
         </div>
