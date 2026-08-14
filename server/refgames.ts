@@ -5,10 +5,10 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, s
 import { basename, resolve, sep } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
-import { makeSan } from 'chessops/san';
+import { makeSan, parseSan } from 'chessops/san';
 import { parseUci } from 'chessops/util';
 import { hashSetup, toDbKey } from '../shared/zobrist.ts';
-import { openingForKey } from './openings.ts';
+import { openingForKey, type Opening } from './openings.ts';
 import { positionIndexInfo } from './refgamesIndex.ts';
 import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
@@ -545,6 +545,31 @@ export function refGamesApi(
     return c.json({ ready: databases.length > 0, databases });
   });
 
+  /**
+   * The deepest catalogued opening along a game's first plies.
+   *
+   * A database only knows the name its source PGN carried, and the big
+   * dumps often carry none — the user's Elite build listed bare ECO
+   * codes. The moves are in the row and the vendored opening set is in
+   * memory, so the name is derived the way the explorer derives it,
+   * instead of shrugging. Query-time, not a rebuild: it works on every
+   * database already built.
+   */
+  const OPENING_PLIES = 24;
+  const deriveOpening = (moves: string): Opening | null => {
+    const pos = Chess.default();
+    let found: Opening | null = null;
+    const sans = moves.split(' ');
+    for (let i = 0; i < sans.length && i < OPENING_PLIES; i += 1) {
+      const move = parseSan(pos, sans[i]!);
+      if (!move) break;
+      pos.play(move);
+      const hit = openingForKey(hashSetup(pos.toSetup()).toString(16));
+      if (hit) found = hit;
+    }
+    return found;
+  };
+
   api.get('/refgames/search', (c) => {
     const found = fromQuery(c);
     if (!found) return c.json({ error: 'no reference games database' }, 503);
@@ -577,13 +602,22 @@ export function refGamesApi(
         : offset === 0
           ? (db.prepare(`SELECT COUNT(*) AS n FROM games ${where}`).get(...args) as { n: number }).n
           : null;
+    // moves ride along only to name the openings the source PGN left
+    // nameless; the page is 50 rows, so the replay cost is nothing.
     const rows = db
       .prepare(
-        `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening
+        `SELECT id, white, black, white_elo, black_elo, result, date, event, eco, opening, moves
          FROM games ${where} ORDER BY id DESC LIMIT ${PAGE} OFFSET ?`,
       )
-      .all(...args, offset) as RefGameRow[];
-    return c.json({ total, rows });
+      .all(...args, offset) as (RefGameRow & { moves: string })[];
+    return c.json({
+      total,
+      rows: rows.map(({ moves, ...row }) => {
+        if (row.opening) return row;
+        const derived = deriveOpening(moves);
+        return derived ? { ...row, eco: row.eco ?? derived.eco, opening: derived.name } : row;
+      }),
+    });
   });
 
   /**
@@ -718,7 +752,7 @@ export function refGamesApi(
       header('BlackElo', row.black_elo ? String(row.black_elo) : null) +
       header('Date', row.date) +
       header('ECO', row.eco) +
-      header('Opening', row.opening) +
+      header('Opening', row.opening ?? deriveOpening(row.moves)?.name ?? null) +
       header('Result', row.result) +
       `\n${row.moves} ${row.result}\n`;
     return c.json({ pgn });

@@ -8,6 +8,56 @@ import { migrateLegacyRefgames, refGamesApi, seedBundledRefgames } from './refga
 import { indexPositions } from './refgamesIndex.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
+/**
+ * The big dumps often carry no [Opening] header, so a built database
+ * lists bare ECO codes — the name is derived from the moves at query
+ * time, against the vendored opening set, on databases already built.
+ */
+describe('opening names derived from moves', () => {
+  let dir: string;
+  let refgames: ReturnType<typeof refGamesApi>;
+  let app: Hono;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refgames-derive-'));
+    const dbPath = join(dir, 'refgames.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '1'), ('sources', 'bare.pgn');
+    `);
+    db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run('Bare', 'Headers', 2600, 2600, '1-0', '2026.02.02', null, null, null, 'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6');
+    tune(db);
+    db.close();
+    refgames = refGamesApi(dbPath);
+    app = new Hono().route('/api', refgames);
+  });
+
+  afterAll(() => {
+    refgames.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('names a game whose source PGN never did', async () => {
+    const { rows } = await (
+      await app.request('/api/refgames/search?q=Bare&offset=0')
+    ).json();
+    expect(rows).toHaveLength(1);
+    expect(rows[0].opening).toContain('Najdorf');
+    expect(rows[0].eco).toBe('B90');
+    expect(rows[0].moves).toBeUndefined(); // rides along server-side only
+  });
+});
+
 describe('reference games api', () => {
   let dir: string;
   let app: Hono;
