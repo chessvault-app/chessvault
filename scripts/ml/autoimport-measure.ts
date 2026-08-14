@@ -29,6 +29,7 @@ import {
   solutionEntries as parseSolutionEntries,
   type BookText,
 } from '../../shared/bookImport.ts';
+import { repairBoard } from '../../shared/bookRepair.ts';
 import { detectBoardQuad, detectDiagrams } from '../../web/src/puzzles/ocr/detect';
 import { warpQuad, type Gray } from '../../web/src/puzzles/ocr/image';
 import { cellTile, classifyBoardNet, parseCellNet, runCellNet } from '../../web/src/puzzles/ocr/cellnet';
@@ -619,119 +620,37 @@ if (process.argv.includes('--repair')) {
         cells.push({ probs, top, votes });
       }
     }
-    const labels = cells.map((c) => net.labels[c.top]!);
-    // Disagreeing TTA votes outrank probability runner-ups; no floor —
-    // the uniqueness gate protects against inventions.
-    const alternates = (i: number, take: number): number[] => {
-      const c = cells[i]!;
-      const voted = [...c.votes.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-      const byProb = [...c.probs.keys()]
-        .filter((k) => k !== c.top && !voted.includes(k))
-        .sort((a, b) => c.probs[b]! - c.probs[a]!);
-      return [...voted, ...byProb].slice(0, take);
-    };
-
-    const test = (
-      ls: string[],
-    ): { fen: string; side: 'w' | 'b'; sans: string[] } | null => {
+    // The search itself is shared/bookRepair.ts — the browser importer and
+    // this script must never drift on the uniqueness gate or the tie-break
+    // (this block used to be a hand-kept copy of it). Only the replay
+    // callback is ours: the book's parsed mainline, dialect and side rules
+    // belong to this measure run.
+    const outcome = repairBoard(cells, [...net.labels], (ls) => {
       const fen = labelsToFen(
         ls.map((ch) => (ch === '1' ? 'empty' : ch)) as Parameters<typeof labelsToFen>[0],
         false,
       ).split(' ')[0]!;
       for (const side of sides) {
-        const outcome = replayLine(fen, side, mainline.tokens, dialect, mergedHints);
-        if (!('fail' in outcome)) return { fen, side, sans: outcome.sans };
+        const replayed = replayLine(fen, side, mainline.tokens, dialect, mergedHints);
+        if (!('fail' in replayed)) return { placement: fen, side, sans: replayed.sans };
       }
       return null;
-    };
+    });
 
-    const wins = new Map<string, { side: 'w' | 'b'; sans: string[]; edits: number; cells: [number, number][] }>();
-    // 1-cell repairs across the whole board.
-    for (let i = 0; i < 64; i++) {
-      for (const alt of alternates(i, 3)) {
-        const ls = labels.slice();
-        ls[i] = net.labels[alt]!;
-        const got = test(ls);
-        if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 1, cells: [[i, alt]] });
-      }
-    }
-    // 2-cell repairs only among the least-confident cells, and only if no
-    // single edit worked — a wider net would start inventing positions.
-    const margin = (i: number): number => {
-      const p = [...cells[i]!.probs].sort((a, b) => b - a);
-      return p[0]! - p[1]!;
-    };
-    const disagree = (i: number): number => [...cells[i]!.votes.values()].reduce((s, v) => s + v, 0);
-    const shaky = [...Array(64).keys()]
-      .sort((a, b) => disagree(b) - disagree(a) || margin(a) - margin(b))
-      .slice(0, 20);
-    if (wins.size === 0) {
-      for (let a = 0; a < shaky.length; a++) {
-        for (let b = a + 1; b < shaky.length; b++) {
-          for (const altA of alternates(shaky[a]!, 2)) {
-            for (const altB of alternates(shaky[b]!, 2)) {
-              const ls = labels.slice();
-              ls[shaky[a]!] = net.labels[altA]!;
-              ls[shaky[b]!] = net.labels[altB]!;
-              const got = test(ls);
-              if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 2, cells: [[shaky[a]!, altA], [shaky[b]!, altB]] });
-            }
-          }
-        }
-      }
-    }
-    // 3-cell repairs: an even tighter pool, reached only when nothing
-    // simpler replayed. The uniqueness gate, TTA-support tie-break and
-    // sanity counts are what keep this from inventing positions.
-    if (wins.size === 0) {
-      const pool = shaky.slice(0, 12);
-      for (let a = 0; a < pool.length; a++) {
-        for (let b = a + 1; b < pool.length; b++) {
-          for (let c = b + 1; c < pool.length; c++) {
-            for (const altA of alternates(pool[a]!, 2)) {
-              for (const altB of alternates(pool[b]!, 2)) {
-                for (const altC of alternates(pool[c]!, 2)) {
-                  const ls = labels.slice();
-                  ls[pool[a]!] = net.labels[altA]!;
-                  ls[pool[b]!] = net.labels[altB]!;
-                  ls[pool[c]!] = net.labels[altC]!;
-                  const got = test(ls);
-                  if (got) wins.set(got.fen, { side: got.side, sans: got.sans, edits: 3, cells: [[pool[a]!, altA], [pool[b]!, altB], [pool[c]!, altC]] });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (wins.size > 1) {
-      // Several positions replay the line: accept the one the augmented
-      // votes actually support, if a single winner emerges.
-      const support = (w: { cells: [number, number][] }): number =>
-        w.cells.reduce((sum, [i, alt]) => sum + (cells[i]!.votes.get(alt) ?? 0), 0);
-      const ranked = [...wins.entries()].sort((a, b) => support(b[1]) - support(a[1]));
-      if (support(ranked[0]![1]) > 0 && (ranked.length < 2 || support(ranked[0]![1]) > support(ranked[1]![1]))) {
-        wins.clear();
-        wins.set(ranked[0]![0], ranked[0]![1]);
-      }
-    }
-    if (wins.size === 1) {
-      const [fen, win] = [...wins.entries()][0]!;
-      entry.fen = fen;
+    if (outcome.repaired) {
+      const win = outcome.repaired;
+      entry.fen = win.placement;
       entry.side = win.side;
       entry.sans = win.sans;
       entry.status = 'validated';
       entry.repairedCells = win.edits;
       delete entry.detail;
-      repairsOut.push({ number: entry.number, fen, side: win.side, sans: win.sans, repairedCells: win.edits });
+      repairsOut.push({ number: entry.number, fen: win.placement, side: win.side, sans: win.sans, repairedCells: win.edits });
       repaired++;
       byEdits.set(win.edits, (byEdits.get(win.edits) ?? 0) + 1);
-    } else if (wins.size > 1) {
+    } else if (outcome.ambiguous.length > 0) {
       ambiguous++;
-      entry.repairCandidates = [...wins.entries()]
-        .slice(0, 4)
-        .map(([fen, w]) => ({ fen, side: w.side, sans: w.sans, edits: w.edits }));
+      entry.repairCandidates = outcome.ambiguous.map((w) => ({ fen: w.placement, side: w.side, sans: w.sans, edits: w.edits }));
       candidatesOut.push({ number: entry.number, candidates: entry.repairCandidates });
     }
   }
