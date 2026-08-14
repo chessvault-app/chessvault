@@ -20,7 +20,6 @@ import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
-import { AnalysisMoveEntry } from '@/board/MoveEntry';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -568,9 +567,6 @@ function Trainer({
               }
             />
             <MoveTreePane />
-            <div className="border-line border-t px-2 py-1.5 max-md:hidden">
-              <AnalysisMoveEntry />
-            </div>
             <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
             <StatusBar />
           </Panel>

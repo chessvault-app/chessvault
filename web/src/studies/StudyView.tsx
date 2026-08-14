@@ -18,7 +18,6 @@ import { getNode, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useOpeningName } from '@/lib/opening';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
-import { AnalysisMoveEntry } from '@/board/MoveEntry';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
@@ -250,12 +249,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
           <MoveTreePane />
           <ReviewStrip />
-          {/* Typed entry while editing — reading mode does not add moves. */}
-          {editing && (
-            <div className="border-line border-t px-2 py-1.5 max-md:hidden">
-              <AnalysisMoveEntry />
-            </div>
-          )}
           <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
           <AnnotationPane
             editing={editing}
