@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { VAULT_CONFIG } from './paths.ts';
 import { verifyTotp } from './totp.ts';
@@ -31,30 +31,60 @@ const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
  */
 const UNREADABLE = '\0unreadable\0';
 
-function configPassword(): string | null {
-  let raw: string;
+/**
+ * One parsed copy of config.json, refreshed when its mtime moves.
+ *
+ * requireAuth runs on every /api request and used to read AND parse the
+ * file twice per hit (password, then totp) — blocking sync I/O on the
+ * hottest path, where the explorer fires a request per arrow-key press.
+ * A stat is far cheaper than two read+parse rounds, and the settings
+ * routes replace config.json by rename, so any credential change moves
+ * the mtime and is seen on the very next request.
+ */
+interface AuthConfig {
+  password: string | null;
+  totp: string | null;
+}
+let cachedConfig: { mtimeMs: number; value: AuthConfig } | null = null;
+
+function readAuthConfig(): AuthConfig {
+  let mtimeMs: number;
   try {
-    raw = readFileSync(VAULT_CONFIG, 'utf-8');
+    mtimeMs = statSync(VAULT_CONFIG).mtimeMs;
   } catch (err) {
+    cachedConfig = null;
     // ENOENT: no config at all → local, ungated. Anything else (EACCES,
     // a directory, a transient FS error) must not open the vault.
-    return (err as NodeJS.ErrnoException).code === 'ENOENT' ? null : UNREADABLE;
+    return (err as NodeJS.ErrnoException).code === 'ENOENT'
+      ? { password: null, totp: null }
+      : { password: UNREADABLE, totp: null };
   }
+  if (cachedConfig && cachedConfig.mtimeMs === mtimeMs) return cachedConfig.value;
+
+  let value: AuthConfig;
   try {
-    return (JSON.parse(raw) as { appPassword?: string }).appPassword?.trim() || null;
+    const parsed = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as {
+      appPassword?: string;
+      totpSecret?: string;
+    };
+    value = {
+      password: parsed.appPassword?.trim() || null,
+      totp: parsed.totpSecret?.trim() || null,
+    };
   } catch {
-    // Present but corrupt — deny, don't admit.
-    return UNREADABLE;
+    // Present but corrupt or vanished mid-read — deny, don't admit.
+    value = { password: UNREADABLE, totp: null };
   }
+  cachedConfig = { mtimeMs, value };
+  return value;
+}
+
+function configPassword(): string | null {
+  return readAuthConfig().password;
 }
 
 function configTotp(): string | null {
-  try {
-    const config = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as { totpSecret?: string };
-    return config.totpSecret?.trim() || null;
-  } catch {
-    return null;
-  }
+  return readAuthConfig().totp;
 }
 
 /**
