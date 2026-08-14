@@ -66,7 +66,11 @@ function chapterInfo(pgn: string): { count: number; names: string[] } {
       names = events.map((v) => v.slice(v.indexOf(':') + 1).trim());
     }
   }
-  return { count, names: names.filter((n) => n && n !== '?').slice(0, 4) };
+  const kept = names.filter((n) => n && n !== '?');
+  // A run of "Chapter 1 · Chapter 2" is numbering, not naming — a card
+  // caption made of it says nothing, so it is dropped whole.
+  if (kept.every((n) => /^Chapter \d+$/.test(n))) return { count, names: [] };
+  return { count, names: kept.slice(0, 4) };
 }
 
 /**
