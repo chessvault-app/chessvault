@@ -214,7 +214,7 @@ export function LoadPositionForm({
             // the field itself after filling it.
             onClick={() => void pasteFromClipboard()}
             title={t('Paste from clipboard')}
-            className="absolute bottom-2 right-2"
+            className="absolute bottom-3.5 right-2"
           >
             <ClipboardPaste className="size-3.5" />
             {t('Paste')}
