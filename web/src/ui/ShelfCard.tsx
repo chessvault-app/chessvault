@@ -61,7 +61,21 @@ export function ShelfCard({
   const swipe = useSwipeRow({ onRemove: onSwipeAway, onBookmark: onToggleMark });
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const board = layout === 'grid' && fen ? <MiniBoard fen={fen} size={64} /> : null;
+  // Dimmed until the card is pointed at: a shelf of full-colour boards is
+  // a wall of competing pictures, and the thumbnail is a reminder, not
+  // the content. Hover brings the position back to full colour — on the
+  // same transition the card lifts with, so the two read as one gesture.
+  const board =
+    layout === 'grid' && fen ? (
+      <MiniBoard
+        fen={fen}
+        size={64}
+        className={cn(
+          'brightness-[0.65] saturate-[0.55] transition-[filter] duration-200 ease-in-out',
+          'group-hover:brightness-100 group-hover:saturate-100',
+        )}
+      />
+    ) : null;
 
   return (
     // h-full through both: in a two-column grid a card with a preview line
