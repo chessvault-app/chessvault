@@ -311,6 +311,8 @@ export const ko: Record<string, string> = {
   'Recent searches': '최근 검색',
   'Forget this search': '이 검색 지우기',
   'Rename this study': '이 스터디 이름 바꾸기',
+  'Rename this book': '이 책 이름 바꾸기',
+  Progress: '진행률',
   'Choose file': '파일 선택',
   'Import from Lichess': 'Lichess에서 가져오기',
   'No studies found.': '스터디가 없습니다.',

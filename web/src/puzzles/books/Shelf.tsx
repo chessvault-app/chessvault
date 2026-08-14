@@ -1,10 +1,13 @@
 import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
   Bookmark,
   BookMarked,
   ChevronLeft,
   FileUp,
   MoreHorizontal,
   Loader2,
+  Pencil,
   Trash2,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +23,8 @@ import { ActionSheet } from '@/ui/ActionSheet';
 import { Button } from '@/ui/Button';
 
 import { SearchInput } from '@/ui/Input';
+import { Select } from '@/ui/Select';
+import { PromptSheet } from '@/ui/PromptSheet';
 import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 
 import { CreateControl, FabSpacer } from '@/ui/Fab';
@@ -41,6 +46,58 @@ import {
 
 // ---------------------------------------------------------------------------
 // Shelf
+
+/**
+ * How the book shelf is ordered. Not sortDocs: a book has no mtime or
+ * byte size worth ordering by — what it has is a count and a score.
+ */
+type BookSort = 'title' | 'puzzles' | 'progress';
+type BookDir = 'asc' | 'desc';
+
+const BOOK_SORTS: { value: BookSort; label: string }[] = [
+  { value: 'title', label: 'Title' },
+  { value: 'puzzles', label: 'Puzzles' },
+  { value: 'progress', label: 'Progress' },
+];
+
+/** The direction each sort starts in — the one its name means. */
+const NATURAL: Record<BookSort, BookDir> = { title: 'asc', puzzles: 'desc', progress: 'desc' };
+
+/** Remembered on the device, like the other shelves' view settings. */
+function useBookSort(): {
+  sort: BookSort;
+  setSort: (sort: BookSort) => void;
+  dir: BookDir;
+  setDir: (dir: BookDir) => void;
+} {
+  const key = 'chess-vault:shelf-books';
+  const [state, setState] = useState<{ sort: BookSort; dir: BookDir }>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
+        sort: BookSort;
+        dir: BookDir;
+      }>;
+      const sort = BOOK_SORTS.some((s) => s.value === saved.sort) ? saved.sort! : 'title';
+      return { sort, dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : NATURAL[sort] };
+    } catch {
+      return { sort: 'title', dir: NATURAL.title };
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      /* private mode — the shelf just forgets between visits */
+    }
+  }, [state]);
+  return {
+    sort: state.sort,
+    // A new sort starts in its own natural direction — see ShelfToolbar.
+    setSort: (sort) => setState({ sort, dir: NATURAL[sort] }),
+    dir: state.dir,
+    setDir: (dir) => setState((prev) => ({ ...prev, dir })),
+  };
+}
 
 export function Shelf() {
   // Seeded from the last visit, so coming back from a book shows the shelf
@@ -186,12 +243,22 @@ export function Shelf() {
     return saved ? { page: saved.page, pages: saved.pages, live: false } : undefined;
   };
 
-  const visibleBooks = (books ?? []).filter(
-    (b) =>
-      !hidden.has(b.slug) &&
-      (!markedOnly || markedSlugs.has(b.slug)) &&
-      (!needle || b.title.toLowerCase().includes(needle)),
-  );
+  const view = useBookSort();
+  const frac = (b: BookSummary): number => (b.puzzles ? b.solved / b.puzzles : 0);
+  const flip = view.dir === 'desc' ? -1 : 1;
+  const visibleBooks = (books ?? [])
+    .filter(
+      (b) =>
+        !hidden.has(b.slug) &&
+        (!markedOnly || markedSlugs.has(b.slug)) &&
+        (!needle || b.title.toLowerCase().includes(needle)),
+    )
+    .sort((a, b) => {
+      // Ascending comparisons; `flip` turns the whole order over.
+      if (view.sort === 'puzzles') return flip * (a.puzzles - b.puzzles);
+      if (view.sort === 'progress') return flip * (frac(a) - frac(b));
+      return flip * a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    });
 
   const create = async (): Promise<void> => {
     const base = t('Untitled book');
@@ -213,6 +280,21 @@ export function Shelf() {
     }
   };
 
+  // The same switch in both its homes — see ShelfToolbar's bookmark.
+  const bookmarkToggle = (className: string): React.ReactNode => (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={markedOnly}
+      aria-pressed={markedOnly}
+      title={markedOnly ? t('Show all') : t('Show bookmarked only')}
+      className={cn('shrink-0', className)}
+      onClick={() => setMarkedOnly((v) => !v)}
+    >
+      <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+    </Button>
+  );
+
   return (
     <div className="h-full min-h-0 overflow-y-auto">
       {undoable.pending && (
@@ -225,41 +307,68 @@ export function Shelf() {
         />
       )}
       <div className="mx-auto max-w-3xl p-4 pb-8">
-        <div className="mb-4 flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="md:hidden"
-            title={t('Back to the dashboard')}
-            onClick={() => navigate('puzzles', 'dashboard')}
-          >
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          <h1 className="text-fg text-base font-semibold">{t('Puzzle books')}</h1>
-          {/* Search, then the filter, then create — the order the other
-              three toolbars use. */}
-          <div className="ml-auto flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:flex-nowrap">
+        {/* The other shelves' two-row shape: the heading row carries what
+            is ABOUT the shelf — filter, order, create — and the search
+            gets a full-width line of its own underneath. The bookmark
+            switch rides beside the search below sm, exactly as in
+            ShelfToolbar. */}
+        <div className="mb-4 flex flex-col gap-2.5">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="md:hidden"
+              title={t('Back to the dashboard')}
+              onClick={() => navigate('puzzles', 'dashboard')}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <h1 className="text-fg text-base font-semibold">{t('Puzzle books')}</h1>
+            <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+              {bookmarkToggle('hidden sm:inline-flex')}
+              <Select
+                value={view.sort}
+                onChange={(value) => view.setSort(value as BookSort)}
+                ariaLabel={t('Sort by')}
+                size="sm"
+                align="end"
+                steady
+                className="hidden shrink-0 sm:flex"
+                groups={[
+                  { options: BOOK_SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
+                ]}
+              />
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                title={
+                  view.dir === 'asc'
+                    ? t('Ascending — press for descending')
+                    : t('Descending — press for ascending')
+                }
+                className="hidden shrink-0 sm:inline-flex"
+                onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
+              >
+                {view.dir === 'asc' ? (
+                  <ArrowUpNarrowWide className="size-3.5" />
+                ) : (
+                  <ArrowDownWideNarrow className="size-3.5" />
+                )}
+              </Button>
+              <CreateControl
+                actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <SearchInput
               inputSize="sm"
               value={query}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
               placeholder={t('Search books…')}
-              className="w-44 max-sm:w-auto max-sm:min-w-0 max-sm:flex-1"
+              className="min-w-0 flex-1"
             />
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              active={markedOnly}
-              aria-pressed={markedOnly}
-              title={markedOnly ? t('Show all') : t('Show bookmarked only')}
-              className="shrink-0"
-              onClick={() => setMarkedOnly((v) => !v)}
-            >
-              <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
-            </Button>
-            <CreateControl
-              actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
-            />
+            {bookmarkToggle('sm:hidden')}
           </div>
         </div>
 
@@ -285,6 +394,7 @@ export function Shelf() {
                 marked={markedSlugs.has(b.slug)}
                 onToggleMark={() => void toggleMark(b.slug)}
                 onRemove={() => dropBook(b.slug, b.title)}
+                onChanged={() => void load()}
                 scan={scanOf(b.slug)}
               />
             ))}
@@ -312,12 +422,15 @@ function BookCard({
   marked,
   onToggleMark,
   onRemove,
+  onChanged,
   scan,
 }: {
   book: BookSummary;
   marked: boolean;
   onToggleMark: () => void;
   onRemove: () => void;
+  /** The shelf reloads — a rename changed what this card says. */
+  onChanged: () => void;
   /** An unfinished import of this book: live if it is running now, or
       the checkpoint it stopped at. */
   scan?: { page: number; pages: number; live: boolean };
@@ -325,6 +438,24 @@ function BookCard({
   const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+
+  // The same PATCH the book's own header uses: the title changes, the
+  // slug (the folder, the URL, the progress key) stays put.
+  const rename = async (value: string): Promise<void> => {
+    setRenaming(false);
+    const next = value.trim();
+    if (!next || next === book.title) return;
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(book.slug)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: next }),
+    });
+    if (res.ok) {
+      forgetBook(book.slug);
+      onChanged();
+    }
+  };
 
   return (
     <li className="h-full">
@@ -430,6 +561,7 @@ function BookCard({
                 icon: Bookmark,
                 onSelect: onToggleMark,
               },
+              { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
               {
                 label: 'Remove this book and its progress',
                 icon: Trash2,
@@ -437,6 +569,15 @@ function BookCard({
                 onSelect: onRemove,
               },
             ]}
+          />
+        )}
+
+        {renaming && (
+          <PromptSheet
+            label={t('Rename this book')}
+            initial={book.title}
+            onSubmit={(value) => void rename(value)}
+            onClose={() => setRenaming(false)}
           />
         )}
       </div>
