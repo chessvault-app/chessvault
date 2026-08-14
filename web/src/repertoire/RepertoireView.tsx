@@ -171,18 +171,25 @@ function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
  * chapter prepared. Your moves are checked against the chapter's tree —
  * a wrong one is refused, named, and remembered as a miss — while the
  * field keeps playing the OTHER side from the database, so the replies
- * you face arrive in proportion to how often real games play them. When
- * the field plays something the study never answered, that is a coverage
- * gap: the drill ends there and the record keeps it, because a gap is
- * fixed by editing the study, not by drilling harder. The record lives
- * in the vault (server/repertoire.ts); missed positions form a review
- * pool under the puzzle trainer's own rule — latest attempt decides.
+ * you face arrive in proportion to how often real games play them —
+ * steered to the replies the study covers, so a rare sideline cannot end
+ * every session (lanph3re's report: gaps ended drills too often). A
+ * common reply the study never answered is a coverage gap: noted in
+ * passing and recorded, because a gap is fixed by editing the study, not
+ * by drilling harder. Only a position where the study covers NONE of the
+ * field's replies ends the drill on one. The record lives in the vault
+ * (server/repertoire.ts); missed positions form a review pool under the
+ * puzzle trainer's own rule — latest attempt decides.
  */
 type Mode = 'spar' | 'drill';
 
 /** Position identity for the drill record: the FEN without its move
     counters, so a transposition lands on one entry. */
 const fenKey = (fen: string): string => fen.split(' ').slice(0, 4).join(' ');
+
+/** An uncovered field reply is worth a note (and a vault record) from
+    this share of games — below it, oddballs would drown the panel. */
+const GAP_NOTE_SHARE = 0.05;
 
 interface ReviewEntry {
   chapter: string;
@@ -647,6 +654,8 @@ export function RepertoireView() {
   const [chapterIdx, setChapterIdx] = useState(0);
   const [summary, setSummary] = useState<{ review: ReviewEntry[]; gaps: number } | null>(null);
   const [drillNotice, setDrillNotice] = useState<string | null>(null);
+  /** A gap noted in passing — shown under the status, never stopping play. */
+  const [gapNote, setGapNote] = useState<string | null>(null);
   /** Why the line ended: past the database, the study's edge, or a gap. */
   const [endKind, setEndKind] = useState<'book' | 'line' | 'gap'>('book');
   const [gapMsg, setGapMsg] = useState('');
@@ -658,6 +667,7 @@ export function RepertoireView() {
     study: string;
     chapter: string;
     missed: Set<string>;
+    gapNoted: Set<string>;
   } | null>(null);
 
   // The studies list, first needed when drilling is chosen.
@@ -830,10 +840,49 @@ export function RepertoireView() {
           setPhase('playing');
           return;
         }
-        const choice = sampleMove(body.moves);
+        let choice = sampleMove(body.moves);
         if (!choice) {
           setPhase('ended');
           return;
+        }
+        // Drill: steer the field toward the replies the study covers, so
+        // the session keeps testing memory instead of ending on every
+        // rare sideline. The commonest uncovered reply is still noted —
+        // and recorded as a gap — it just no longer stops play. Only a
+        // position where the study covers none of the field's replies
+        // falls through to the honest full-field sample, and ends below.
+        const drill = drillRef.current;
+        let note: string | null = null;
+        if (drill) {
+          const games = body.moves.reduce((sum, m) => sum + m.total, 0);
+          const inBook = (m: ExplorerMove): boolean =>
+            studyChild(drill.studyTree, drill.nodeId, m.san) !== null;
+          const covered = body.moves.filter((m) => m.total > 0 && inBook(m));
+          if (covered.length > 0) {
+            choice = sampleMove(covered) ?? choice;
+            const uncovered = body.moves
+              .filter((m) => m.total > 0 && !inBook(m))
+              .sort((a, b) => b.total - a.total)[0];
+            if (uncovered && games > 0 && uncovered.total / games >= GAP_NOTE_SHARE) {
+              note = t(
+                'Gap noted — the field also plays {san} ({pct}% of games), and your study has no answer to it.',
+                { san: uncovered.san, pct: Math.round((100 * uncovered.total) / games) },
+              );
+              const probe = addUci(curTree, curId, uncovered.uci);
+              if (probe) {
+                const key = fenKey(getNode(probe.tree, probe.nodeId).fen);
+                if (!drill.gapNoted.has(key)) {
+                  drill.gapNoted.add(key);
+                  recordDrill({
+                    key,
+                    result: 'gap',
+                    path: sansTo(probe.tree, probe.nodeId),
+                    played: uncovered.san,
+                  });
+                }
+              }
+            }
+          }
         }
         const wait = 550 - (Date.now() - started);
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));
@@ -852,10 +901,9 @@ export function RepertoireView() {
           const san = getNode(added.tree, added.nodeId).san ?? '';
           const child = studyChild(d.studyTree, d.nodeId, san);
           if (!child) {
-            // The field walked out of the study: a coverage gap, and the
-            // most useful thing a drill can find — the field probes the
-            // prep in probability order, so the commonest unanswered
-            // reply surfaces first. Fixed in the study, not by replaying.
+            // The study covers none of the field's replies here — with
+            // nothing to steer to, the drill has hit the edge of the
+            // prep, and the honest full-field sample says what beat it.
             const games = body.moves.reduce((sum, m) => sum + m.total, 0);
             const pct = games > 0 ? Math.max(1, Math.round((100 * choice.total) / games)) : 0;
             recordDrill({
@@ -875,6 +923,7 @@ export function RepertoireView() {
             return;
           }
           d.nodeId = child;
+          setGapNote(note);
           if (getNode(d.studyTree, child).children.length === 0) {
             setEndKind('line');
             setPhase('ended');
@@ -963,6 +1012,7 @@ export function RepertoireView() {
     setFlipped(false);
     setError(null);
     setDrillNotice(null);
+    setGapNote(null);
     setGapMsg('');
     setEndKind('book');
     if (mode === 'drill') {
@@ -974,6 +1024,7 @@ export function RepertoireView() {
         study: drillStudy,
         chapter: chapter.name,
         missed: new Set(),
+        gapNoted: new Set(),
       };
       const fresh = createTree(getNode(chapter.tree, chapter.tree.rootId).fen);
       setTree(fresh);
@@ -1019,6 +1070,7 @@ export function RepertoireView() {
     setFlipped(false);
     setError(null);
     setDrillNotice(null);
+    setGapNote(null);
     setGapMsg('');
     setPhase('idle');
   };
@@ -1055,6 +1107,7 @@ export function RepertoireView() {
     setFlipped(false);
     setError(null);
     setDrillNotice(null);
+    setGapNote(null);
     setGapMsg('');
     setEndKind('book');
     drillRef.current = {
@@ -1063,6 +1116,7 @@ export function RepertoireView() {
       study: drillStudy,
       chapter: chapter.name,
       missed: new Set(),
+      gapNoted: new Set(),
     };
     setTree(gameTree);
     setTipId(gameId);
@@ -1424,6 +1478,9 @@ export function RepertoireView() {
                             ? 'Your move.'
                             : 'Reviewing an earlier move — step to the end to keep playing.'}
                 </p>
+                {gapNote && phase !== 'ended' && (
+                  <p className="text-subtle text-xs leading-relaxed">{gapNote}</p>
+                )}
                 {/* The dependency arrow, pointed back: Settings knows it
                     powers this, but this error never said Settings was
                     the fix. A tokenless user read "could not reach" as

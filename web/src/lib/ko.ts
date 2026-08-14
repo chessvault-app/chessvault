@@ -307,6 +307,8 @@ export const ko: Record<string, string> = {
     '이 챕터에는 아직 수가 없습니다. 드릴할 것이 없습니다.',
   'Your study plays {moves} here — try it again.':
     '여기서 스터디는 {moves}입니다. 다시 시도해 보세요.',
+  'Gap noted — the field also plays {san} ({pct}% of games), and your study has no answer to it.':
+    '갭 발견 — 필드는 {san}도 둡니다(게임의 {pct}%). 스터디에 아직 준비된 답이 없습니다.',
   'The field answered {san} — {pct}% of games here — and your study holds no reply.':
     '필드가 {san}으로 응수했습니다(이 포지션의 {pct}%). 스터디에 준비된 답이 없습니다.',
   'End of your prepared line — every move matched the study.':
