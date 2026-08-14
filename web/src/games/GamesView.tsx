@@ -25,6 +25,7 @@ import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 import { Board } from '@/board/Board';
 import { sanitizeSegment } from '@shared/vaultNames';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
@@ -554,20 +555,28 @@ function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window' | 'col
   const searching = useSlowLoad(loading && rows.length === 0);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // A slow answer for "naj" must not overwrite the rows for "najdorf"
+  // typed after it; whoever holds the latest number owns the state. Also
+  // the reason for the finally: a thrown fetch used to strand `loading`.
+  const searchSeq = useRef(0);
   const search = useCallback(async (q: string, offset: number, db: string | null) => {
+    const seq = ++searchSeq.current;
     setLoading(true);
-    const res = await fetch(
-      `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}` +
-        (db ? `&db=${encodeURIComponent(db)}` : ''),
-    );
-    if (res.ok) {
-      const data = (await res.json()) as { total: number | null; rows: RefGame[] };
+    try {
+      const data = await api<{ total: number | null; rows: RefGame[] }>(
+        `/api/refgames/search?q=${encodeURIComponent(q)}&offset=${offset}` +
+          (db ? `&db=${encodeURIComponent(db)}` : ''),
+      );
+      if (seq !== searchSeq.current) return;
       // Only the first page of a search carries a total — counting matches
       // means scanning, and every later page would count the same thing.
       if (data.total !== null) setTotal(data.total);
       setRows((prev) => (offset === 0 ? data.rows : [...prev, ...data.rows]));
+    } catch {
+      /* the rows keep their last answer; the spinner below stops */
+    } finally {
+      if (seq === searchSeq.current) setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const loadMeta = useCallback(() => {
@@ -2764,17 +2773,15 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
 
     setBusy(true);
     setFailure(null);
-    const res = await fetch('/api/games/collect-pgn', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ pgn: text }),
-    });
-    setBusy(false);
-    if (res.ok) {
+    try {
+      await api('/api/games/collect-pgn', { method: 'POST', json: { pgn: text } });
       onDone();
-    } else {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setFailure(t(body?.error ?? 'could not import that game'));
+    } catch (error) {
+      // Including the thrown case: a network blip here used to leave the
+      // import button disabled for good, with the typed game unsendable.
+      setFailure(t(apiErrorMessage(error)));
+    } finally {
+      setBusy(false);
     }
   };
 
