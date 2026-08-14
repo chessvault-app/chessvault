@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { migrateLegacyRefgames, refGamesApi, seedBundledRefgames } from './refgames.ts';
+import { indexPositions } from './refgamesIndex.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
 describe('reference games api', () => {
@@ -253,5 +254,123 @@ describe('directory mount', () => {
   it('offers no build or delete off the real data directory', async () => {
     expect((await app.request('/api/refgames/build', { method: 'POST' })).status).toBe(404);
     expect((await app.request('/api/refgames/alpha', { method: 'DELETE' })).status).toBe(404);
+  });
+});
+
+/**
+ * The unified index: positions inside the games database, filterable —
+ * the property that separates it from an opening book.
+ */
+describe('position index and explore', () => {
+  let dir: string;
+  let dbPath: string;
+  let app: Hono;
+  let refgames: ReturnType<typeof refGamesApi>;
+
+  const START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+
+  const explore = async (query: string): Promise<{
+    indexed: boolean;
+    games: number;
+    moves: { uci: string; san: string; w: number; d: number; b: number; total: number }[];
+    topGames: { white: string; black: string }[];
+  }> => (await (await app.request(`/api/refgames/explore?${query}`)).json());
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'refgames-explore-'));
+    dbPath = join(dir, 'games.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '3'), ('sources', 'test.pgn');
+    `);
+    const insert = db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    );
+    insert.run('Carlsen', 'Nepo', 2850, 2790, '1-0', '2021.12.03', 'WCh', 'C88', 'Ruy Lopez', 'e4 e5 Nf3');
+    insert.run('Nepo', 'Carlsen', 2790, 2850, '1/2-1/2', '2021.12.04', 'WCh', 'B90', 'Sicilian', 'e4 c5 Nf3');
+    insert.run('Ding', 'Firouzja', 2800, 2780, '0-1', '2022.01.01', 'Tata', 'D02', 'London System', 'd4 d5 Bf4');
+    tune(db);
+    db.close();
+    refgames = refGamesApi(dbPath);
+    app = new Hono().route('/api', refgames);
+  });
+
+  afterAll(() => {
+    refgames.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('says so, without erroring, while the index is missing', async () => {
+    const body = await explore(`fen=${encodeURIComponent(START)}`);
+    expect(body).toMatchObject({ indexed: false, games: 0, moves: [], topGames: [] });
+  });
+
+  it('indexes in place and answers from the start position', async () => {
+    const { games, plies } = indexPositions(dbPath);
+    expect(games).toBe(3);
+    expect(plies).toBe(9); // three games, three plies each
+    refgames.closeDb(); // fresh handle sees the new table
+
+    const body = await explore(`fen=${encodeURIComponent(START)}`);
+    expect(body.indexed).toBe(true);
+    expect(body.games).toBe(3);
+    expect(body.moves.map((m) => [m.san, m.total, m.w, m.d, m.b])).toEqual([
+      ['e4', 2, 1, 1, 0],
+      ['d4', 1, 0, 0, 1],
+    ]);
+    // Strongest pair first; the two WCh games tie on combined rating and
+    // the later id wins the tiebreak.
+    expect(body.topGames[0]).toMatchObject({ white: 'Nepo', black: 'Carlsen' });
+    expect(body.topGames[2]).toMatchObject({ white: 'Ding', black: 'Firouzja' });
+  });
+
+  it('follows the line', async () => {
+    const body = await explore(`fen=${encodeURIComponent(AFTER_E4)}`);
+    expect(body.moves.map((m) => m.san).sort()).toEqual(['c5', 'e5']);
+  });
+
+  it('answers filtered — the question a book cannot', async () => {
+    const strong = await explore(`fen=${encodeURIComponent(START)}&minElo=2790`);
+    expect(strong.games).toBe(2); // Ding–Firouzja's 2780 drops out
+    expect(strong.moves).toHaveLength(1);
+    expect(strong.moves[0]).toMatchObject({ san: 'e4', total: 2 });
+
+    const carlsenWins = await explore(
+      `fen=${encodeURIComponent(START)}&player=Carlsen&outcome=won`,
+    );
+    expect(carlsenWins.games).toBe(1);
+    expect(carlsenWins.moves[0]).toMatchObject({ san: 'e4', w: 1 });
+
+    const decisive = await explore(`fen=${encodeURIComponent(START)}&result=0-1`);
+    expect(decisive.moves.map((m) => m.san)).toEqual(['d4']);
+  });
+
+  it('composes the structured search: who, side, outcome, event, dates', async () => {
+    const rows = async (query: string): Promise<{ white: string; black: string }[]> =>
+      (await (await app.request(`/api/refgames/search?${query}`)).json()).rows;
+
+    expect(await rows('player=carlsen&side=black')).toMatchObject([{ white: 'Nepo' }]);
+    expect(await rows('player=carlsen&outcome=won')).toMatchObject([{ white: 'Carlsen' }]);
+    expect(await rows('player=carlsen&outcome=drawn')).toMatchObject([{ white: 'Nepo' }]);
+    expect(await rows('event=Tata')).toMatchObject([{ white: 'Ding' }]);
+    expect((await rows('from=2021-12-04&to=2022-01-01')).map((r) => r.white).sort()).toEqual([
+      'Ding',
+      'Nepo',
+    ]);
+    expect(await rows('opening=london')).toMatchObject([{ white: 'Ding' }]);
+    // Every slot at once, the sentence from the ask: who, opening, side,
+    // dates, event, outcome.
+    expect(
+      await rows('player=nepo&side=white&opening=sicilian&from=2021-12-01&to=2021-12-31&event=WCh&outcome=drawn'),
+    ).toMatchObject([{ white: 'Nepo', black: 'Carlsen' }]);
   });
 });

@@ -19,6 +19,7 @@ import { createReadStream, existsSync, mkdirSync, readdirSync, renameSync, rmSyn
 import { basename, isAbsolute, resolve } from 'node:path';
 import { PgnParser, type Game, type PgnNodeData } from 'chessops/pgn';
 import { DATA, VAULT_SOURCES } from '../server/paths.ts';
+import { indexPositions } from '../server/refgamesIndex.ts';
 import { REFGAMES_INDEXES } from './lib/db-tuning.ts';
 
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
@@ -151,6 +152,13 @@ setMeta.run('sources', sources.map((s) => basename(s)).join(', '));
 setMeta.run('built_at', new Date().toISOString());
 
 db.close();
+
+// The position index, in the same pass: one row per (position, move,
+// game) for the opening plies, which is what lets the explorer answer —
+// and answer FILTERED — from this database. Built into the .building file
+// before the rename, so a database is never live without its index.
+console.log('position index…');
+indexPositions(tmp, { log: console.log });
 try {
   renameSync(tmp, OUT);
 } catch (error) {

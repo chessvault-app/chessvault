@@ -3,6 +3,13 @@ import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
+import { Chess } from 'chessops/chess';
+import { parseFen } from 'chessops/fen';
+import { makeSan } from 'chessops/san';
+import { parseUci } from 'chessops/util';
+import { hashSetup, toDbKey } from '../shared/zobrist.ts';
+import { openingForKey } from './openings.ts';
+import { positionIndexInfo } from './refgamesIndex.ts';
 import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
 
 /**
@@ -157,6 +164,98 @@ interface RefGameRow {
   opening: string | null;
 }
 
+/**
+ * The structured game filters, shared by /search and /explore.
+ *
+ * This is where "list the games [player] played [opening] as [side] at
+ * [dates] in [event] and [won/lost/drew]" becomes SQL — every slot
+ * optional, every combination composable (lanph3re's ask). `alias`
+ * prefixes the columns for the explore route's join. Dates are compared
+ * with the dots normalised to dashes, because Lichess exports write
+ * `2025.11.30` and OTB collections write `2025-11-30`; neither form is
+ * seekable here, but neither is the search's leading-wildcard LIKE, and
+ * both routes already scan their candidate rows.
+ */
+function gamesWhere(
+  get: (key: string) => string | undefined,
+  alias = '',
+): { clauses: string[]; binds: unknown[] } {
+  const clauses: string[] = [];
+  const binds: unknown[] = [];
+  const like = (value: string): string => `%${value}%`;
+
+  const result = get('result');
+  if (result === '1-0' || result === '0-1' || result === '1/2-1/2') {
+    clauses.push(`${alias}result = ?`);
+    binds.push(result);
+  }
+
+  const minElo = Math.max(0, Number(get('minElo')) || 0);
+  if (minElo > 0) {
+    clauses.push(`${alias}white_elo >= ? AND ${alias}black_elo >= ?`);
+    binds.push(minElo, minElo);
+  }
+
+  const player = get('player')?.trim();
+  const side = get('side');
+  if (player) {
+    if (side === 'white') {
+      clauses.push(`${alias}white LIKE ?`);
+      binds.push(like(player));
+    } else if (side === 'black') {
+      clauses.push(`${alias}black LIKE ?`);
+      binds.push(like(player));
+    } else {
+      clauses.push(`(${alias}white LIKE ? OR ${alias}black LIKE ?)`);
+      binds.push(like(player), like(player));
+    }
+    // Outcome is the PLAYER'S, so without a side it splits by which seat
+    // the name matched — "won" is a white win in the games they had White.
+    const outcome = get('outcome');
+    if (outcome === 'drawn') {
+      clauses.push(`${alias}result = '1/2-1/2'`);
+    } else if (outcome === 'won' || outcome === 'lost') {
+      const asWhite = outcome === 'won' ? '1-0' : '0-1';
+      const asBlack = outcome === 'won' ? '0-1' : '1-0';
+      if (side === 'white' || side === 'black') {
+        clauses.push(`${alias}result = ?`);
+        binds.push(side === 'white' ? asWhite : asBlack);
+      } else {
+        clauses.push(
+          `((${alias}white LIKE ? AND ${alias}result = ?) OR (${alias}black LIKE ? AND ${alias}result = ?))`,
+        );
+        binds.push(like(player), asWhite, like(player), asBlack);
+      }
+    }
+  }
+
+  const opening = get('opening')?.trim();
+  if (opening) {
+    clauses.push(`(${alias}opening LIKE ? OR ${alias}eco LIKE ?)`);
+    binds.push(like(opening), `${opening}%`);
+  }
+
+  const event = get('event')?.trim();
+  if (event) {
+    clauses.push(`${alias}event LIKE ?`);
+    binds.push(like(event));
+  }
+
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  const from = get('from');
+  const to = get('to');
+  if (from && DATE_RE.test(from)) {
+    clauses.push(`REPLACE(${alias}date, '.', '-') >= ?`);
+    binds.push(from);
+  }
+  if (to && DATE_RE.test(to)) {
+    clauses.push(`REPLACE(${alias}date, '.', '-') <= ?`);
+    binds.push(to);
+  }
+
+  return { clauses, binds };
+}
+
 /** One build at a time, like books — the indexer is CPU-bound. */
 interface BuildJob {
   name: string;
@@ -274,16 +373,23 @@ export function refGamesApi(
       return existsSync(path) ? path : null;
     };
 
-    const startBuild = (name: string, sources: string[]): void => {
-      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+    /**
+     * Spawn one job child (a build, or the position-index pass), feeding
+     * its output into the shared job log — the packaged server runs the
+     * bundled .mjs beside it, the repo runs the source through tsx.
+     */
+    const spawnJob = (
+      current: BuildJob,
+      bundledName: string,
+      scriptPath: string,
+      scriptArgs: string[],
+      onClose: (code: number | null) => void,
+    ): void => {
       job = current;
-
-      // A packaged build has no scripts/ and no tsx, so the builder ships
-      // as a bundle beside the server; the repo runs the source directly.
-      const bundled = resolve(REPO_ROOT, 'server', 'build-refgames.mjs');
+      const bundled = resolve(REPO_ROOT, 'server', bundledName);
       const args = existsSync(bundled)
-        ? [bundled, ...sources, '--name', name]
-        : ['--import', 'tsx', 'scripts/build-refgames.ts', ...sources, '--name', name];
+        ? [bundled, ...scriptArgs]
+        : ['--import', 'tsx', scriptPath, ...scriptArgs];
       const child = spawn(process.execPath, args, {
         cwd: REPO_ROOT,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -299,6 +405,13 @@ export function refGamesApi(
       child.on('close', (code) => {
         current.running = false;
         current.exitCode = code;
+        onClose(code);
+      });
+    };
+
+    const startBuild = (name: string, sources: string[]): void => {
+      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      spawnJob(current, 'build-refgames.mjs', 'scripts/build-refgames.ts', [...sources, '--name', name], (code) => {
         close(name); // reopen the freshly renamed file on next query
         // Windows: our own read handle blocks the script's rename-over, so
         // it leaves the fresh file beside the target and we swap it in
@@ -347,6 +460,31 @@ export function refGamesApi(
       return c.json({ started: true, name });
     });
 
+    /**
+     * Add the position index to a database built before the index existed
+     * — a pure derived pass over the movetext already in the file, so no
+     * re-upload and no rebuild. Shares the one-job-at-a-time slot with
+     * builds; progress shows through the same /build/status the manager
+     * already polls. New builds never need this: they index themselves.
+     */
+    api.post('/refgames/index-positions', async (c) => {
+      if (job?.running) return c.json({ error: 'a build is already running' }, 409);
+      const body = await c.req.json<{ db?: string }>().catch(() => null);
+      const name = body?.db ?? names()[0];
+      if (!name || !NAME_RE.test(name) || !names().includes(name)) {
+        return c.json({ error: 'no such database' }, 400);
+      }
+      const current: BuildJob = { name, startedAt: Date.now(), running: true, exitCode: null, log: [] };
+      spawnJob(
+        current,
+        'index-refgames-positions.mjs',
+        'scripts/index-refgames-positions.ts',
+        [name],
+        () => close(name), // reopen so the fresh plies table and meta show
+      );
+      return c.json({ started: true, name });
+    });
+
     api.get('/refgames/build/status', (c) =>
       c.json(
         job
@@ -390,6 +528,7 @@ export function refGamesApi(
       const db = open(name);
       if (!db) return [];
       const meta = readMeta(db);
+      const index = positionIndexInfo(db);
       return [
         {
           name,
@@ -397,6 +536,9 @@ export function refGamesApi(
           sources: meta.sources ?? '',
           bytes: statSync(fileFor(name)).size,
           builtAt: meta.built_at ?? null,
+          // Whether the explorer can answer from this database yet.
+          indexed: index.indexed,
+          positions: index.plies,
         },
       ];
     });
@@ -412,23 +554,15 @@ export function refGamesApi(
 
     // One box searches everything a game is findable by: players, the
     // opening name, and the ECO code (prefix match, so "B9" finds B90-B99).
-    // Beside it, the filters every game list has: the result, and a floor
-    // under BOTH players' ratings.
-    const clauses: string[] = [];
-    const args: unknown[] = [];
+    // Beside it, the structured filters — player/side/outcome, opening,
+    // event, dates, result, strength — every combination composable (see
+    // gamesWhere).
+    const structured = gamesWhere((k) => c.req.query(k));
+    const clauses = [...structured.clauses];
+    const args = [...structured.binds];
     if (q) {
-      clauses.push('(white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?)');
-      args.push(`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`);
-    }
-    const result = c.req.query('result');
-    if (result === '1-0' || result === '0-1' || result === '1/2-1/2') {
-      clauses.push('result = ?');
-      args.push(result);
-    }
-    const minElo = Math.max(0, Number(c.req.query('minElo')) || 0);
-    if (minElo > 0) {
-      clauses.push('white_elo >= ? AND black_elo >= ?');
-      args.push(minElo, minElo);
+      clauses.unshift('(white LIKE ? OR black LIKE ? OR opening LIKE ? OR eco LIKE ?)');
+      args.unshift(`%${q}%`, `%${q}%`, `%${q}%`, `${q}%`);
     }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
@@ -450,6 +584,95 @@ export function refGamesApi(
       )
       .all(...args, offset) as RefGameRow[];
     return c.json({ total, rows });
+  });
+
+  /**
+   * The explorer's question, answered from a reference database: what was
+   * played from this position, under any combination of gamesWhere's
+   * filters — which is the whole point of the unified index. A book could
+   * never answer "2700+ only": its build summed the games away.
+   *
+   * Moves are aggregated per uci and legality-checked against the actual
+   * position, because two positions can share a 64-bit hash and a move
+   * that is not legal here proves its rows belong to the other one — the
+   * same guard the my-games index uses. Top games are strongest-first
+   * (yours are newest-first; a reference corpus's authority is its
+   * rating), in the exact shape the explorer pane already renders, so
+   * opening one goes through the /refgames/find path books use.
+   */
+  api.get('/refgames/explore', (c) => {
+    const found = fromQuery(c);
+    if (!found) return c.json({ error: 'no reference games database' }, 503);
+    const { db } = found;
+    const fen = c.req.query('fen')?.trim();
+    if (!fen) return c.json({ error: 'expected fen' }, 400);
+    const setup = parseFen(fen);
+    if (setup.isErr) return c.json({ error: 'bad fen' }, 400);
+    const position = Chess.fromSetup(setup.unwrap());
+    if (position.isErr) return c.json({ error: 'bad position' }, 400);
+    const pos = position.unwrap();
+
+    if (!positionIndexInfo(db).indexed) {
+      // Not an error: the database predates the index. The client offers
+      // to build it.
+      return c.json({ indexed: false, opening: null, games: 0, moves: [], topGames: [] });
+    }
+
+    const key = toDbKey(hashSetup(pos.toSetup()));
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.');
+    const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
+
+    const rows = db
+      .prepare(
+        `SELECT p.uci AS uci,
+                SUM(g.result = '1-0') AS w,
+                SUM(g.result = '1/2-1/2') AS d,
+                SUM(g.result = '0-1') AS b
+         FROM plies p JOIN games g ON g.id = p.game_id
+         WHERE p.pos = ?${sql}
+         GROUP BY p.uci
+         ORDER BY w + d + b DESC, p.uci`,
+      )
+      .all(key, ...binds) as { uci: string; w: number; d: number; b: number }[];
+
+    const moves = rows.flatMap((row) => {
+      const move = parseUci(row.uci);
+      if (!move || !pos.isLegal(move)) return [];
+      return [{ uci: row.uci, san: makeSan(pos, move), w: row.w, d: row.d, b: row.b, total: row.w + row.d + row.b }];
+    });
+
+    const topGames = (
+      db
+        .prepare(
+          `SELECT p.uci AS uci, g.white, g.black, g.white_elo AS whiteElo,
+                  g.black_elo AS blackElo, g.result, g.date
+           FROM plies p JOIN games g ON g.id = p.game_id
+           WHERE p.pos = ?${sql}
+           ORDER BY g.white_elo + g.black_elo DESC, g.id DESC
+           LIMIT 8`,
+        )
+        .all(key, ...binds) as {
+        uci: string;
+        white: string;
+        black: string;
+        whiteElo: number;
+        blackElo: number;
+        result: string;
+        date: string | null;
+      }[]
+    ).filter((g) => {
+      const move = parseUci(g.uci);
+      return move !== undefined && pos.isLegal(move);
+    });
+
+    return c.json({
+      indexed: true,
+      // The position's name, same as every other source's answer carries.
+      opening: openingForKey(hashSetup(pos.toSetup()).toString(16)),
+      games: moves.reduce((sum, m) => sum + m.total, 0),
+      moves,
+      topGames: topGames.map((g) => ({ ...g, site: null })),
+    });
   });
 
   // Match a book's top-game reference (metadata only) to a full game in

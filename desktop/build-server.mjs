@@ -98,6 +98,22 @@ await build({
 });
 console.log('puzzle builder bundled');
 
+// The position-index pass over an existing reference database, spawned
+// from the explorer's "Index positions" offer — same contract again.
+await build({
+  entryPoints: [join(repo, 'scripts', 'index-refgames-positions.ts')],
+  outfile: join(out, 'index-refgames-positions.mjs'),
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  external: ['better-sqlite3'],
+  banner: {
+    js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);",
+  },
+});
+console.log('position indexer bundled');
+
 // And the reference-games indexer, spawned by the elite browser's build
 // offer — same contract as the two above.
 await build({
