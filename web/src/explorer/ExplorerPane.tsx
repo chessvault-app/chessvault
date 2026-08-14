@@ -373,6 +373,16 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 
   return (
     <div className="flex flex-col gap-3">
+      {/* What "My games" actually is, said outright: the corpus quietly
+          includes every archive month the browser has cached, and nothing
+          on screen admitted it (lanph3re's report). This window is where
+          the corpus gets interrogated, so this is where it introduces
+          itself. */}
+      <p className="text-muted text-xs leading-relaxed">
+        {t(
+          'Answers come from your collection plus every chess.com and Lichess month you have browsed — a month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
+        )}
+      </p>
       <FilterGroup label="Side">
         {SIDES.map(({ id, label }) => (
           <FilterChip

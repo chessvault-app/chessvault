@@ -1177,6 +1177,8 @@ export const ko: Record<string, string> = {
   "Explorer source": "탐색기 소스",
   "Your vault": "내 보관함",
   "My games": "내 게임",
+  'Answers come from your collection plus every chess.com and Lichess month you have browsed — a month, once viewed, keeps counting here. "Kept only" narrows to the collection.':
+    '컬렉션과 함께, 둘러본 모든 chess.com·Lichess 월 기보에서 답합니다 — 한 번 본 달은 계속 집계에 남습니다. "보관한 게임만"은 컬렉션으로 좁힙니다.',
   "As white": "백으로",
   "As black": "흑으로",
   "Won": "승",
