@@ -5,6 +5,7 @@ import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
+import { useReview } from '@/store/review';
 import { useBookTags } from '@/lib/opening';
 import { t } from '@/lib/i18n';
 
@@ -179,8 +180,12 @@ export function MainlineTable({
   // Book moves, live from the opening catalogue — every branch, not just
   // the mainline, so a variation that stays in (or transposes into)
   // theory is tagged too. Never written to the tree: there is no PGN NAG
-  // for "book", so the tag is derived state, not an annotation.
-  const bookIds = useBookTags(tree);
+  // for "book", so the tag is derived state, not an annotation. Deferred
+  // until a review has run (and hidden again when it is dismissed or a
+  // new game clears it): the tag explains why theory went unjudged, and
+  // before any judgment exists it is clutter.
+  const reviewed = useReview((s) => s.points !== null);
+  const bookIds = useBookTags(tree, reviewed);
   const keep = (ids: NodeId[]): NodeId[] =>
     currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
 
