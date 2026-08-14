@@ -622,6 +622,10 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
       fenCache.current.set(refGameKey(game.id), fen);
     }
     if (seq !== previewSeq.current) return;
+    // The anchor can be unmounted while the fetch was out (switching
+    // databases replaces every row, and removal fires no mouseleave) —
+    // a dead node measures 0,0 and the preview drew in the corner.
+    if (!anchor.isConnected) return;
     const rect = anchor.getBoundingClientRect();
     setPreview({
       fen,
@@ -639,6 +643,12 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     previewFor.current = null;
     setPreview(null);
   };
+  // A pinned preview must not outlive its game list: the rows it
+  // described are gone once the database changes.
+  useEffect(() => {
+    hidePreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [curDb]);
   const coarse = isCoarsePointer;
 
   if (meta && !meta.ready) {

@@ -110,6 +110,9 @@ export function DashboardPage() {
       puzzleCache.current.set(id, cached);
     }
     if (seq !== previewSeq.current) return; // pointer moved on
+    // Unmounted while the fetch was out (removal fires no mouseleave):
+    // a dead node measures 0,0 and the preview would draw in the corner.
+    if (!anchor.isConnected) return;
     const rect = anchor.getBoundingClientRect();
     setPreview({
       fen: positionAt(cached, 1).fen,
