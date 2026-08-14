@@ -586,11 +586,7 @@ cg-board square.check {
   );
 }
 
-/* Coordinate labels.
-
-   These alternate to match the square each label sits on: odd children land on
-   light squares, even on dark. Both variants are pushed well past the contrast
-   chessground ships with, which is close to illegible on a themed board. */
+/* Coordinate labels. */
 .cg-wrap coords {
   font-family: var(--font-mono);
   font-size: 0.66em;
@@ -605,29 +601,32 @@ cg-board square.check {
 /* chessground positions coordinates with fixed pixel offsets (files at
    bottom:-4px left:24px, ranks at top:-20px), which hang outside the board
    edge and collide with pieces once squares get small. Percentages scale
-   with the board at every size. */
+   with the board at every size. The `.left` variant must be restated: the
+   Board always configures ranksPosition: 'left' (so chessground computes
+   the label colours for the edge the labels actually sit on), and the
+   base stylesheet's `.ranks.left { left: -15px }` outranks a plain
+   `.ranks` override. */
 .cg-wrap coords.files {
   bottom: 0.5%;
   left: 3%;
 }
-.cg-wrap coords.ranks {
+.cg-wrap coords.ranks,
+.cg-wrap coords.ranks.left {
   top: -2.5%;
   left: 1%;
+  align-items: flex-start;
 }
 
-.orientation-white .ranks :nth-child(odd),
-.orientation-white .files :nth-child(even),
-.orientation-black .ranks :nth-child(even),
-.orientation-black .files :nth-child(odd) {
-  /* On a light square: go dark. */
+/* chessground marks every label with the colour of the square it sits on
+   (coord-light / coord-dark), accounting for orientation, DOM order and
+   ranksPosition — parity arithmetic here got the ranks wrong on all four
+   of those at once. On a light square: go dark; on a dark square: go
+   bright. Both are pushed well past the contrast chessground ships with,
+   which is close to illegible on a themed board. */
+.cg-wrap coords coord.coord-light {
   color: color-mix(in oklch, var(--board-dark), black 55%);
 }
-
-.orientation-white .ranks :nth-child(even),
-.orientation-white .files :nth-child(odd),
-.orientation-black .ranks :nth-child(odd),
-.orientation-black .files :nth-child(even) {
-  /* On a dark square: go bright. */
+.cg-wrap coords coord.coord-dark {
   color: color-mix(in oklch, var(--board-light), white 60%);
 }
 

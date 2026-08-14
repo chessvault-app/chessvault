@@ -159,6 +159,10 @@ export function Board({
       fen,
       orientation,
       coordinates: showCoordinates,
+      // The labels are repositioned onto the board's left edge (index.css);
+      // telling chessground so makes it compute each label's square colour
+      // for that edge instead of its default right-hand one.
+      ranksPosition: 'left',
       viewOnly,
       // Right-drag draws arrows and right-click draws circles. Without this the
       // browser context menu opens on mouseup and swallows the gesture, so
