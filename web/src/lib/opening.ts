@@ -17,26 +17,44 @@ import { useEffect, useState } from 'react';
 
 /** Shared across every panel that asks; a position's name never changes. */
 const known = new Map<string, string | null>();
-const inFlight = new Set<string>();
+const inFlight = new Map<string, Promise<void>>();
 
-async function lookup(fen: string): Promise<void> {
-  if (known.has(fen) || inFlight.has(fen)) return;
-  inFlight.add(fen);
-  try {
-    const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
-    const body = (await res.json()) as { opening?: { eco: string; name: string } | null };
-    // The ECO code rides with the name — "B90 Sicilian, Najdorf" says more
-    // than either half, and it is what every book and database prints.
-    known.set(
-      fen,
-      body.opening ? [body.opening.eco, body.opening.name].filter(Boolean).join(' ') : null,
-    );
-  } catch {
-    // A name is decoration; a failed lookup must not break the panel.
-    known.set(fen, null);
-  } finally {
-    inFlight.delete(fen);
-  }
+function lookup(fen: string): Promise<void> {
+  if (known.has(fen)) return Promise.resolve();
+  // One request per position even when callers race — and every caller's
+  // await resolves only once the answer is actually in `known`, which the
+  // review's sequential book walk depends on.
+  const pending = inFlight.get(fen);
+  if (pending) return pending;
+  const request = (async () => {
+    try {
+      const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
+      const body = (await res.json()) as { opening?: { eco: string; name: string } | null };
+      // The ECO code rides with the name — "B90 Sicilian, Najdorf" says more
+      // than either half, and it is what every book and database prints.
+      known.set(
+        fen,
+        body.opening ? [body.opening.eco, body.opening.name].filter(Boolean).join(' ') : null,
+      );
+    } catch {
+      // A name is decoration; a failed lookup must not break the panel.
+      known.set(fen, null);
+    } finally {
+      inFlight.delete(fen);
+    }
+  })();
+  inFlight.set(fen, request);
+  return request;
+}
+
+/**
+ * Whether a position is in the opening catalogue at all — the membership
+ * test behind "book move": a move whose resulting position is named is
+ * theory, whatever the engine thinks of it. Same cache as the names.
+ */
+export async function isNamedPosition(fen: string): Promise<boolean> {
+  await lookup(fen);
+  return (known.get(fen) ?? null) !== null;
 }
 
 /**
@@ -47,7 +65,7 @@ async function lookup(fen: string): Promise<void> {
  * How deep to bother asking. The catalogue runs out long before this; a
  * line is not going to acquire a name at move forty.
  */
-const NAMED_PLIES = 30;
+export const NAMED_PLIES = 30;
 
 export function useOpeningName(fens: string[]): string | null {
   const [, bump] = useState(0);
