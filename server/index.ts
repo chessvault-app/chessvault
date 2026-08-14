@@ -9,6 +9,7 @@ import { networkInterfaces } from 'node:os';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
 import { seedBundledBook } from './books.ts';
+import { crossSiteGuard } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
@@ -18,6 +19,18 @@ import { startVaultBackup } from './vaultBackup.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
+
+/**
+ * Which interfaces to answer on.
+ *
+ * Unset means every one, which is what a server wants — devices on the
+ * tailnet have to reach it. The desktop app's LOCAL mode sets this to
+ * loopback, because that server is for the window in front of you and
+ * has no password: without it, opening the app on a café network put an
+ * unauthenticated vault on that network.
+ */
+const BIND = process.env.CHESS_BIND?.trim() || undefined;
+const LOOPBACK_BIND = BIND === '127.0.0.1' || BIND === 'localhost' || BIND === '::1';
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
 // up front so every listing endpoint finds its directory.
@@ -115,6 +128,12 @@ app.use('/*', async (c, next) => {
   if (!COMPRESSIBLE.test(c.req.path)) return next();
   return compress()(c, next);
 });
+
+// Before anything that can write: refuse cross-site requests. An ungated
+// vault has no session for the cookie-based gate to protect, so without
+// this any web page open in the user's own browser could reach the API on
+// loopback — including /api/settings/wipe. See server/crossSite.ts.
+app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_BIND }));
 
 // Cap request bodies before any handler buffers them: the vault-write
 // routes (studies, notes, draft images) otherwise accept unbounded input.
@@ -267,17 +286,6 @@ if (existsSync(dist)) {
 void startVaultBackup().catch((error: Error) =>
   console.error('[vault-backup] disabled:', error.message),
 );
-
-/**
- * Which interfaces to answer on.
- *
- * Unset means every one, which is what a server wants — devices on the
- * tailnet have to reach it. The desktop app's LOCAL mode sets this to
- * loopback, because that server is for the window in front of you and
- * has no password: without it, opening the app on a café network put an
- * unauthenticated vault on that network.
- */
-const BIND = process.env.CHESS_BIND?.trim() || undefined;
 
 serve({ fetch: app.fetch, port: PORT, hostname: BIND }, (info) => {
   console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
