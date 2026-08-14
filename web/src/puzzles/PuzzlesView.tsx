@@ -20,7 +20,7 @@ import { parseSquare, squareRank } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
-import { AnalysisMoveEntry, MoveEntry } from '@/board/MoveEntry';
+import { AnalysisMoveEntry } from '@/board/MoveEntry';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -599,13 +599,6 @@ function Trainer({
         </Button>
         <h1 className="text-fg text-sm font-semibold">{title}
         </h1>
-        {mode === 'fresh' && (
-          <DifficultyChip
-            difficulty={difficulty}
-            theme={theme}
-            onOpen={() => setShowDifficulty(true)}
-          />
-        )}
       </div>
       {/* Board column, matching the shared budget so the board sits where
           every other view puts it. */}
@@ -670,13 +663,6 @@ function Trainer({
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
             <h1 className="text-fg text-sm font-semibold">{title}
           </h1>
-          {mode === 'fresh' && (
-            <DifficultyChip
-              difficulty={difficulty}
-              theme={theme}
-              onOpen={() => setShowDifficulty(true)}
-            />
-          )}
           <span className="min-w-0 flex-1" />
           {/* How the session is going — words and counts, never a rating. */}
           {mode === 'fresh' && solvedToday !== null && (
@@ -725,18 +711,17 @@ function Trainer({
                 {puzzle && phase === 'done' && (
                   <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
                 )}
-                {/* Stand-ins for the folded Training panel. */}
-                <span className="flex items-center gap-1">
+                {/* Stand-ins for the folded Training panel. The chip
+                    states what is being trained — difficulty and theme —
+                    right on the panel that shows the puzzle it picked,
+                    and opens the window that changes it. */}
+                <span className="flex min-w-0 items-center gap-1">
                   {mode === 'fresh' && (
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      active={showDifficulty}
-                      title={t('Difficulty')}
-                      onClick={() => setShowDifficulty((v) => !v)}
-                    >
-                      <Settings2 className="size-3.5" />
-                    </Button>
+                    <DifficultyChip
+                      difficulty={difficulty}
+                      theme={theme}
+                      onOpen={() => setShowDifficulty(true)}
+                    />
                   )}
                   <Button
                     variant="ghost"
@@ -756,7 +741,7 @@ function Trainer({
               a phone it is a bottom sheet. */}
           {showDifficulty && mode === 'fresh' && (
             <Modal
-              title="Which puzzles"
+              title="Puzzle settings"
               icon={Settings2}
               onClose={() => setShowDifficulty(false)}
             >
@@ -906,18 +891,6 @@ function Trainer({
                 </>
               )}
             </div>
-            {/* The typed way to answer: the board has no focusable squares,
-                so without this a puzzle cannot be solved by keyboard at
-                all. Any legal move is accepted and judged like a drag. */}
-            {phase === 'solving' && !reviewing && displayed && (
-              <MoveEntry
-                fen={displayed.fen}
-                onPlay={(uci) => {
-                  applyUserMove(uci);
-                }}
-                className="max-md:hidden"
-              />
-            )}
           </div>
         </Panel>
 
@@ -1013,7 +986,7 @@ function DifficultyChip({
       variant="secondary"
       size="sm"
       className="min-w-0"
-      title={t('Which puzzles')}
+      title={t('Puzzle settings')}
       onClick={onOpen}
     >
       <Settings2 className="size-3.5" />
