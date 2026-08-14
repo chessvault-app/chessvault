@@ -15,6 +15,7 @@ import { Button } from '@/ui/Button';
 import { SideDot } from '@/ui/SideDot';
 
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
+import { useCloseRequest } from '@/ui/dialogFocus';
 import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 
 import { PromptSheet } from '@/ui/PromptSheet';
@@ -65,6 +66,10 @@ export interface Preview {
     Any click outside the preview dismisses it (in either mode). */
 export function GamePreview({ preview, onClose }: { preview: Preview | null; onClose: () => void }) {
   const card = useRef<HTMLDivElement>(null);
+  // The PINNED peek only: it is the modal one, and on Android the Back
+  // gesture is how a scrimmed layer is put away. The hover popover
+  // follows the pointer out on its own.
+  useCloseRequest(onClose, preview?.pinned ?? false);
   useEffect(() => {
     if (!preview) return;
     // Capture-phase click: fires BEFORE the game row's own onClick, so a

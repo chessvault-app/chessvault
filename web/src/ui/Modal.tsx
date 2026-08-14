@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
-import { useDialogFocus } from './dialogFocus';
+import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 
 /**
@@ -151,17 +151,10 @@ export function Modal({
   // covered — closing a page IS going back.
   const back = onBack ?? (coverParent ? onClose : undefined);
 
-  useEffect(() => {
-    // Not while hidden: a window parked behind the one it opened must not
-    // also swallow the Escape aimed at the top window — that dismissed
-    // both at once.
-    if (shut) return;
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, shut]);
+  // Escape, and Android's Back gesture with it — see useCloseRequest.
+  // Not while hidden: a window parked behind the one it opened must not
+  // also answer the close request aimed at the top window.
+  useCloseRequest(onClose, !shut);
 
   // EVERY window is a sheet on a phone, and none is on a desktop — a
   // centred card that slides away downwards is not answering any question

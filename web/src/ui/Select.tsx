@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { useCloseRequest } from './dialogFocus';
 import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
 
@@ -146,6 +147,12 @@ export function Select({
     setOpen(false);
     if (v !== value) onChange(v);
   };
+
+  // The POPOVER's close request — an Android tablet's Back gesture must
+  // put an open list away, and the trigger's own Escape handling only
+  // hears a keyboard while the trigger has focus. In sheet mode the
+  // Sheet brings its own.
+  useCloseRequest(() => setOpen(false), open && !phone);
 
   // The popover is position-fixed off a measured rect: a scroll of the PAGE
   // invalidates it, so dismiss — but scrolling INSIDE the list (a long

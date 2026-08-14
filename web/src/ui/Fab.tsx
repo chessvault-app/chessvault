@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { ActionSheet } from './ActionSheet';
 import { Button } from './Button';
+import { useCloseRequest } from './dialogFocus';
 import { t } from '@/lib/i18n';
 
 export interface FabAction {
@@ -119,18 +120,16 @@ export function Fab({
     const onDown = (e: MouseEvent | TouchEvent): void => {
       if (!host.current?.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false);
-    };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('touchstart', onDown);
-    document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('touchstart', onDown);
-      document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+  // Escape, and Android's Back gesture — open pills are the most
+  // Back-shaped thing on the screen while they are up.
+  useCloseRequest(() => setOpen(false), open);
 
   return (
     <div

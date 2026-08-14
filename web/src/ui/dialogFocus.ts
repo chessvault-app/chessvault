@@ -21,6 +21,55 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *  - hands focus back to whatever had it when the dialog closes.
  */
 
+/** The platform's close-request primitive; not yet in TS's DOM lib. */
+declare global {
+  interface Window {
+    CloseWatcher?: new () => {
+      onclose: (() => void) | null;
+      destroy: () => void;
+    };
+  }
+}
+
+/**
+ * Close this dialog the way the PLATFORM asks, not only the keyboard.
+ *
+ * A "close request" is Escape on a desktop and the system Back gesture
+ * on Android — and in an installed PWA that gesture is the only chrome
+ * an Android phone has. Before this, every window listened for Escape
+ * itself and Back was untranslated: it walked the browser history under
+ * the open sheet, or backed out of the PWA entirely with the sheet
+ * still up.
+ *
+ * CloseWatcher is the purpose-built API: no history entries to push and
+ * silently consume (which would poison the router's history-floor
+ * arithmetic in `up()`), the MOST RECENT watcher alone answers each
+ * request (so one Escape no longer falls through a stacked option sheet
+ * into the window beneath it), and Android's predictive-back animation
+ * rides it for free. Where the API is missing — older WebKit — the
+ * fallback is exactly the per-dialog Escape listener this replaced, and
+ * iOS has no Back gesture to lose.
+ */
+export function useCloseRequest(onClose: () => void, active = true): void {
+  // The latest closer, so a watcher attached once never calls a stale one.
+  const close = useRef(onClose);
+  close.current = onClose;
+
+  useEffect(() => {
+    if (!active) return;
+    if (window.CloseWatcher) {
+      const watcher = new window.CloseWatcher();
+      watcher.onclose = () => close.current();
+      return () => watcher.destroy();
+    }
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') close.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [active]);
+}
+
 /** Everything Tab can land on. `[tabindex="-1"]` is focusable but not tabbable. */
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +

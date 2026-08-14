@@ -1,9 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
-import { useDialogFocus } from './dialogFocus';
+import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 import { t } from '@/lib/i18n';
 
@@ -79,13 +79,8 @@ export function ActionSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Escape, and Android's Back gesture with it — see useCloseRequest.
+  useCloseRequest(onClose);
 
   // The same gesture every bottom sheet in the app is pushed away with.
   const drag = useSheetDrag(onClose);

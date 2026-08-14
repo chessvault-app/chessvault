@@ -1,9 +1,9 @@
-import { useEffect, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
-import { useDialogFocus } from './dialogFocus';
+import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 import { t } from '@/lib/i18n';
 
@@ -41,13 +41,8 @@ export function Sheet({
   const drag = useSheetDrag(onClose);
   const focusRef = useDialogFocus();
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  // Escape, and Android's Back gesture with it — see useCloseRequest.
+  useCloseRequest(onClose);
 
   // Portalled for the same reason ActionSheet is: a rename opened from a
   // shelf card is a child of that card, and a card that lifts under the
