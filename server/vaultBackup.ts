@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
+import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
 import { VAULT } from './paths.ts';
 
@@ -98,17 +98,53 @@ export async function startVaultBackup(
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running: Promise<void> = Promise.resolve();
 
+  /**
+   * A commit interrupted mid-write (the server killed between `add` and
+   * `commit`) leaves `index.lock` behind, and git then refuses every
+   * commit after it — which silently turns the safety net off for good;
+   * seen live on this vault, where a morning of edits (deleted games, a
+   * book scan) sat unrecorded behind 38 straight lock failures. Nothing
+   * else ever writes to this repo, so a lock old
+   * enough that no live git process can be holding it is stale by
+   * construction and safe to clear.
+   */
+  const STALE_LOCK_MS = 60_000;
+  const clearStaleLock = (): boolean => {
+    const lock = resolve(gitDir, 'index.lock');
+    try {
+      if (Date.now() - statSync(lock).mtimeMs < STALE_LOCK_MS) return false;
+      unlinkSync(lock);
+      console.error('[vault-backup] cleared a stale index.lock');
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const commitNow = (): Promise<void> => {
     // Serialised: git locks its index, and overlapping runs would just fail.
     running = running.then(async () => {
-      try {
+      const commit = async (): Promise<void> => {
         const status = await git(gitDir, dir, ['status', '--porcelain']);
         if (!status.trim()) return;
         await git(gitDir, dir, ['add', '-A']);
         await git(gitDir, dir, ['commit', '-q', '-m', `vault autosave ${new Date().toISOString()}`]);
+      };
+      try {
+        await commit();
       } catch (error) {
-        // Never let the safety net take the server down; a failed commit
-        // retries on the next change.
+        // A stale lock is repaired and the commit retried once; anything
+        // else is logged and retried on the next change — the safety net
+        // must never take the server down.
+        if ((error as Error).message.includes('index.lock') && clearStaleLock()) {
+          try {
+            await commit();
+            return;
+          } catch (retryError) {
+            console.error('[vault-backup]', (retryError as Error).message);
+            return;
+          }
+        }
         console.error('[vault-backup]', (error as Error).message);
       }
     });
