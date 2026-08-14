@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { MoveTree, NodeId } from '@shared/types';
 
 /**
  * The name of the opening a line has reached.
@@ -55,6 +56,69 @@ function lookup(fen: string): Promise<void> {
 export async function isNamedPosition(fen: string): Promise<boolean> {
   await lookup(fen);
   return (known.get(fen) ?? null) !== null;
+}
+
+/**
+ * One pass of book classification over what the cache already knows.
+ *
+ * The rule is path-gated and position-based, on EVERY branch of the tree,
+ * not just the mainline: a move is book when the position it reaches is in
+ * the catalogue AND its parent was book. So a variation that branches
+ * within theory — or transposes into it move by move — is tagged, while
+ * "once out of book, never back in" still holds along any single path,
+ * which is the same rule the review's judgment suppression applies to the
+ * played moves. The root opens the gate without a lookup of its own: the
+ * starting position has no catalogue row, and a custom root's children
+ * simply miss.
+ *
+ * A position the cache has not answered yet is returned in `unresolved`
+ * rather than guessed at, and its subtree is not descended — the caller
+ * looks those up and classifies again; each round settles one ply deeper,
+ * and NAMED_PLIES bounds the whole affair.
+ */
+function classifyBook(tree: MoveTree): { book: Set<NodeId>; unresolved: string[] } {
+  const book = new Set<NodeId>();
+  const unresolved: string[] = [];
+  const frontier: NodeId[] = [tree.rootId];
+  while (frontier.length > 0) {
+    const node = tree.nodes[frontier.pop()!];
+    if (!node) continue;
+    for (const childId of node.children) {
+      const child = tree.nodes[childId];
+      if (!child || child.ply > NAMED_PLIES) continue;
+      const name = known.get(child.fen);
+      if (name === undefined) unresolved.push(child.fen);
+      else if (name !== null) {
+        book.add(childId);
+        frontier.push(childId);
+      }
+    }
+  }
+  return { book, unresolved };
+}
+
+/**
+ * The tree's book moves, live: classification re-runs as lookups land and
+ * whenever the tree changes, so a variation played just now tags itself.
+ * Costs nothing per render — the walk is memoized on the tree, and every
+ * position asked about lands in the same cache the opening names use.
+ */
+export function useBookTags(tree: MoveTree): Set<NodeId> {
+  const [version, setVersion] = useState(0);
+  // `version` only exists to re-run the walk once lookups resolve.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const { book, unresolved } = useMemo(() => classifyBook(tree), [tree, version]);
+  useEffect(() => {
+    if (unresolved.length === 0) return;
+    let live = true;
+    void Promise.all(unresolved.map(lookup)).then(() => {
+      if (live) setVersion((v) => v + 1);
+    });
+    return () => {
+      live = false;
+    };
+  }, [unresolved]);
+  return book;
 }
 
 /**

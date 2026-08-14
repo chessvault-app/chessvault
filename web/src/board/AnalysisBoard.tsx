@@ -22,7 +22,7 @@ import { EvalBar } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
-import { useReview } from '@/store/review';
+import { useBookTags } from '@/lib/opening';
 import { Button } from '@/ui/Button';
 import { SideDot } from '@/ui/SideDot';
 import { dialogOpen } from '@/ui/dialogFocus';
@@ -77,14 +77,10 @@ export function AnalysisBoard({
   );
   const shapes = useMemo(() => toDrawShapes(node.shapes), [node.shapes]);
 
-  // Whether the move on screen was book in the last review. Points is a
-  // stable array (set once per review), so this memo only re-runs on
-  // cursor moves — not on the store's progress ticks while one runs.
-  const reviewPoints = useReview((s) => s.points);
-  const bookMove = useMemo(
-    () => reviewPoints?.some((p) => p.id === cursorId && p.book) ?? false,
-    [reviewPoints, cursorId],
-  );
+  // Whether the move on screen is book — live from the opening catalogue,
+  // on any branch, so the badge follows the cursor into variations. The
+  // walk inside is memoized on the tree; engine ticks don't re-run it.
+  const bookMove = useBookTags(tree).has(cursorId);
 
   const engineOn = useEngine((s) => s.enabled);
   const engineLines = useEngine((s) => s.lines);

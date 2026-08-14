@@ -5,7 +5,7 @@ import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
-import { useReview } from '@/store/review';
+import { useBookTags } from '@/lib/opening';
 import { t } from '@/lib/i18n';
 
 /** Glyphs for the NAGs a study realistically uses. */
@@ -176,16 +176,11 @@ export function MainlineTable({
   // its continuation, without leaving the mode.
   const onPath = useMemo(() => new Set(pathTo(tree, cursorId)), [tree, cursorId]);
 
-  // Moves the review classified as book. Ephemeral by design — book is
-  // review output, not an annotation, so it is never written to the tree
-  // (there is no PGN NAG for it); the tag lives and dies with the review.
-  // Selected as the stable points array, THEN reduced: a Set built inside
-  // the selector would be a fresh object every store tick.
-  const points = useReview((s) => s.points);
-  const bookIds = useMemo(
-    () => new Set((points ?? []).filter((p) => p.book).map((p) => p.id)),
-    [points],
-  );
+  // Book moves, live from the opening catalogue — every branch, not just
+  // the mainline, so a variation that stays in (or transposes into)
+  // theory is tagged too. Never written to the tree: there is no PGN NAG
+  // for "book", so the tag is derived state, not an annotation.
+  const bookIds = useBookTags(tree);
   const keep = (ids: NodeId[]): NodeId[] =>
     currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
 
@@ -272,6 +267,7 @@ export function MainlineTable({
               cursorId={cursorId}
               onSelect={onSelect}
               keep={keep}
+              bookIds={bookIds}
             />
           </div>,
         );
@@ -339,6 +335,8 @@ interface LineProps {
   continued?: boolean;
   /** Reading-mode filter, applied to every branch at every depth. */
   keep: (ids: NodeId[]) => NodeId[];
+  /** Nodes the opening catalogue classifies as book, at every depth. */
+  bookIds: Set<NodeId>;
 }
 
 /**
@@ -374,7 +372,7 @@ export function PromoteStrip({
  * child continues inline, and every further child becomes a parenthesised
  * variation rendered as a nested block.
  */
-function Line({ tree, fromId, cursorId, onSelect, continued = false, keep }: LineProps) {
+function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookIds }: LineProps) {
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
   const blackFirst = blackToMoveAtRoot(tree);
@@ -400,6 +398,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep }: Lin
         nags={child.nags}
         hasComment={Boolean(child.comment)}
         active={mainChildId === cursorId}
+        book={bookIds.has(mainChildId)}
         onClick={() => onSelect(mainChildId)}
       />,
     );
@@ -435,6 +434,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep }: Lin
             cursorId={cursorId}
             onSelect={onSelect}
             keep={keep}
+            bookIds={bookIds}
           />
         </div>,
       );
@@ -454,12 +454,14 @@ function VariationBranch({
   cursorId,
   onSelect,
   keep,
+  bookIds,
 }: {
   tree: MoveTree;
   startId: NodeId;
   cursorId: NodeId;
   onSelect: (id: NodeId) => void;
   keep: (ids: NodeId[]) => NodeId[];
+  bookIds: Set<NodeId>;
 }) {
   const node = getNode(tree, startId);
   return (
@@ -470,6 +472,7 @@ function VariationBranch({
         nags={node.nags}
         hasComment={Boolean(node.comment)}
         active={startId === cursorId}
+        book={bookIds.has(startId)}
         onClick={() => onSelect(startId)}
       />
       {/* The variation's own first move is rendered here rather than by `Line`,
@@ -486,6 +489,7 @@ function VariationBranch({
         onSelect={onSelect}
         continued={!node.comment}
         keep={keep}
+        bookIds={bookIds}
       />
     </>
   );
@@ -497,10 +501,11 @@ interface MoveChipProps {
   nags: number[];
   hasComment: boolean;
   active: boolean;
+  book?: boolean;
   onClick: () => void;
 }
 
-function MoveChip({ label, number, nags, hasComment, active, onClick }: MoveChipProps) {
+function MoveChip({ label, number, nags, hasComment, active, book = false, onClick }: MoveChipProps) {
   return (
     <span className="inline-flex items-baseline gap-1">
       {number && <span className="text-subtle font-mono text-[0.6875rem]">{number}</span>}
@@ -518,6 +523,13 @@ function MoveChip({ label, number, nags, hasComment, active, onClick }: MoveChip
         {nags.length > 0 && (
           <span className={cn('ml-px font-semibold', !active && nagClass(nags))}>
             {nagText(nags)}
+          </span>
+        )}
+        {book && (
+          <span className="ml-1 inline-block align-middle" title={t('Book move')}>
+            <BookOpen
+              className={cn('size-3', active ? 'text-primary-fg/80' : 'text-nag-book')}
+            />
           </span>
         )}
         {hasComment && (
