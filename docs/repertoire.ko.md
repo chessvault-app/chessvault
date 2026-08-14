@@ -133,7 +133,7 @@ Defense" — 같은 계열, 보고. 1...c5는 "Sicilian Defense" — 전혀 다�
 ```json
 {"study":"Ruy Lopez","chapter":"Main line","key":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","result":"miss","path":[],"expected":["e4"],"played":"d4","at":"…"}
 {"study":"Ruy Lopez","chapter":"Main line","key":"…","result":"hit","path":["e4","e5"],"expected":["Nf3"],"played":"Nf3","at":"…"}
-{"study":"Ruy Lopez","chapter":"Main line","key":"…","result":"gap","path":["e4","c5"],"played":"c5","at":"…"}
+{"study":"Ruy Lopez","chapter":"Main line","key":"…","result":"gap","path":["e4","e5","Nf3","Nc6","Bb5","a6"],"played":"a6","at":"…"}
 ```
 
 포지션의 상태는 **가장 최근** 항목이 결정합니다. 미스는 복습 풀이 되고,
