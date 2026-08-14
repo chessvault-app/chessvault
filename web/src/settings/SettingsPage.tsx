@@ -8,6 +8,7 @@ import { Modal } from '@/ui/Modal';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { up } from '@/lib/router';
 import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
@@ -39,11 +40,19 @@ const reauth = (): void => {
 
 export function SettingsPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
-  const pending = useSlowLoad(settings === null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const pending = useSlowLoad(settings === null && loadError === null);
 
   const refresh = async (): Promise<void> => {
-    const res = await fetch('/api/settings');
-    if (res.ok) setSettings((await res.json()) as Settings);
+    // Uncaught, this stranded the page on its skeleton with no way out —
+    // and the skeleton only shows after a beat, so a fast failure showed
+    // NOTHING at all.
+    try {
+      setSettings(await api<Settings>('/api/settings'));
+      setLoadError(null);
+    } catch (e) {
+      setLoadError(apiErrorMessage(e));
+    }
   };
   useEffect(() => {
     void refresh();
@@ -53,7 +62,18 @@ export function SettingsPage() {
   // unless the wait is long enough to notice.
   if (!settings) {
     return (
-      <div className="h-full overflow-y-auto">{pending && <SkeletonForm groups={3} />}</div>
+      <div className="h-full overflow-y-auto">
+        {loadError ? (
+          <div className="mx-auto max-w-2xl p-4 md:p-6">
+            <p className="text-bad mb-3 text-xs">{loadError}</p>
+            <Button variant="secondary" size="sm" onClick={() => void refresh()}>
+              {t('Try again')}
+            </Button>
+          </div>
+        ) : (
+          pending && <SkeletonForm groups={3} />
+        )}
+      </div>
     );
   }
 

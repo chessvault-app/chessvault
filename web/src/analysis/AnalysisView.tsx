@@ -6,6 +6,7 @@ import { AnalysisMoveEntry } from '@/board/MoveEntry';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
+import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
@@ -201,14 +202,21 @@ function CollectGameButton() {
   if (!hasGame) return null;
   const collect = async (): Promise<void> => {
     setState('busy');
-    const res = await fetch('/api/games/collect-pgn', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ pgn: useAnalysis.getState().exportPgn() }),
-    });
-    // 409 = already collected; that is still a success for the user.
-    if (res.ok) forgetCollection(); // the Games list is now a game short
-    setState(res.ok || res.status === 409 ? 'done' : 'failed');
+    let ok: boolean;
+    try {
+      await api('/api/games/collect-pgn', {
+        method: 'POST',
+        json: { pgn: useAnalysis.getState().exportPgn() },
+      });
+      forgetCollection(); // the Games list is now a game short
+      ok = true;
+    } catch (e) {
+      // 409 = already collected; that is still a success for the user.
+      // A network failure used to throw past the reset and pin the
+      // button on its spinner — now it lands on 'failed' like any error.
+      ok = e instanceof ApiError && e.status === 409;
+    }
+    setState(ok ? 'done' : 'failed');
     setTimeout(() => setState('idle'), 2000);
   };
   return (
