@@ -4,8 +4,9 @@ import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
-import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { networkInterfaces } from 'node:os';
+import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
 import { authApi, requireAuth } from './auth.ts';
 import { seedBundledBook } from './books.ts';
@@ -185,11 +186,34 @@ app.get('/updates/:file', (c) => {
   // resolve() collapses any traversal the pattern let through.
   if (!path.startsWith(resolve(UPDATES))) return c.json({ error: 'not an update file' }, 404);
   if (!existsSync(path)) return c.json({ error: 'no such update file' }, 404);
-  return c.body(new Uint8Array(readFileSync(path)), 200, {
+
+  // Streamed, and with Range honoured. readFileSync here held a whole
+  // ~80 MB installer in memory PER REQUEST on the 2 GB box, and without
+  // Range electron-updater's blockmap differential update degrades to a
+  // full download every time.
+  const size = statSync(path).size;
+  const headers: Record<string, string> = {
     'content-type': file.endsWith('.yml') ? 'text/yaml' : 'application/octet-stream',
     // latest.yml must never be cached — it is the thing that changes.
     'cache-control': file.endsWith('.yml') ? 'no-store' : 'public, max-age=31536000, immutable',
-  });
+    'accept-ranges': 'bytes',
+  };
+  const match = /^bytes=(\d*)-(\d*)$/.exec(c.req.header('range') ?? '');
+  if (match && (match[1] || match[2])) {
+    const start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+    const end = match[1] && match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+    if (start > end || start >= size) {
+      return c.body(null, 416, { 'content-range': `bytes */${size}` });
+    }
+    const part = Readable.toWeb(createReadStream(path, { start, end })) as ReadableStream;
+    return c.body(part, 206, {
+      ...headers,
+      'content-range': `bytes ${start}-${end}/${size}`,
+      'content-length': String(end - start + 1),
+    });
+  }
+  const whole = Readable.toWeb(createReadStream(path)) as ReadableStream;
+  return c.body(whole, 200, { ...headers, 'content-length': String(size) });
 });
 
 // In production the built SPA is served from ./dist; in dev Vite serves it.
