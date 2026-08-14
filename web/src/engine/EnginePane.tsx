@@ -131,13 +131,13 @@ export function EngineBlock({ className }: { className?: string }) {
 
       {enabled && !error && (
         <>
-          {/* Alternating tint down the lines, the stripe every list here
-              uses — at three-plus PVs of small mono text the rows bled
-              into one another. On the li, not the button, so hover still
-              paints over it. */}
-          <ul className="flex max-h-44 min-h-0 flex-col gap-px overflow-y-auto px-1.5 py-2 max-lg:max-h-none [&>li]:rounded-md [&>li:nth-child(even)]:bg-fg/[0.035]">
+          {/* Alternating tint down the lines, full-bleed like the game
+              lists' stripe — as inset rounded pills the one tinted row
+              read as a selection, not as zebra (lanph3re's report). On
+              the li, not the button, so hover still paints over it. */}
+          <ul className="flex max-h-44 min-h-0 flex-col overflow-y-auto py-1 max-lg:max-h-none [&>li:nth-child(even)]:bg-fg/[0.035]">
             {visibleLines.length === 0 ? (
-              <li className="text-subtle px-1.5 py-1 text-xs">{t('Thinking…')}</li>
+              <li className="text-subtle px-3 py-1 text-xs">{t('Thinking…')}</li>
             ) : (
               visibleLines.map((line) => (
                 <PvRow
@@ -193,7 +193,7 @@ function PvRow({
         // Full line in the tooltip, since the row itself truncates.
         title={pv.text}
         className={cn(
-          'hover:bg-surface-2 flex w-full items-baseline gap-2 rounded-md px-1.5 py-1 text-left',
+          'hover:bg-surface-2 flex w-full items-baseline gap-2 px-3 py-1 text-left',
           'transition-colors duration-100 disabled:pointer-events-none',
         )}
       >
