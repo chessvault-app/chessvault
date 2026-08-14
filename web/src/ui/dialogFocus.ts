@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Focus management for the shared dialog primitives.
@@ -11,9 +11,11 @@ import { useEffect, useState } from 'react';
  * than per window, which is the whole point of having shared primitives.
  *
  * One hook does four things while its dialog is active:
- *  - takes focus into the dialog when it opens (the dialog element
- *    itself unless something inside — a PromptSheet field — already
- *    took it; focusing the container never pops a phone keyboard);
+ *  - takes focus into the dialog when it opens: a dialog whose only
+ *    input field is a text field puts the caret straight in it —
+ *    keyboard and all, on every device (see soleTextField) — and any
+ *    other dialog focuses the dialog element itself, which never pops
+ *    a phone keyboard; a field that autofocused on its own keeps focus;
  *  - keeps Tab inside it, wrapping at both ends;
  *  - locks the page behind it against scrolling;
  *  - hands focus back to whatever had it when the dialog closes.
@@ -23,6 +25,34 @@ import { useEffect, useState } from 'react';
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
   'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** The input types a caret goes into, as opposed to a checkbox or a slider. */
+const TEXT_TYPES = new Set(['text', 'search', 'url', 'tel', 'email', 'password', 'number']);
+
+/**
+ * The field a dialog exists to fill in, if that is the kind of dialog it is.
+ *
+ * The ground rule: a window whose ONLY input field is a text field was
+ * opened to type into it — a rename, a new name, one box to paste into —
+ * so it takes the focus, keyboard and all, on every device. A second
+ * field of any kind means the window is a form to be read first, and a
+ * window with no fields has nothing to type into; both keep the old
+ * behaviour (the container takes focus, silently).
+ */
+function soleTextField(node: HTMLElement): HTMLElement | null {
+  const fields = Array.from(
+    node.querySelectorAll<HTMLElement>(
+      'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])',
+    ),
+    // Visible only, same as the Tab walk below: a phone-only field that is
+    // `hidden sm:block` still counts on a desktop and must not here.
+  ).filter((el) => el.offsetParent !== null);
+  if (fields.length !== 1) return null;
+  const only = fields[0]!;
+  if (only instanceof HTMLTextAreaElement) return only;
+  if (only instanceof HTMLInputElement && TEXT_TYPES.has(only.type)) return only;
+  return null;
+}
 
 /**
  * How many dialogs are up right now.
@@ -69,6 +99,21 @@ function releaseLock(): void {
 export function useDialogFocus(active = true): (node: HTMLElement | null) => void {
   const [node, setNode] = useState<HTMLElement | null>(null);
 
+  // The sole-text-field focus happens HERE, in the ref callback, not in
+  // the effect below: a ref attaches synchronously inside the tap that
+  // opened the dialog, and iOS only raises the keyboard for a focus it
+  // can trace to a user gesture — from a passive effect it focuses the
+  // field and leaves the keyboard down. Guarded per node, because the
+  // callers chain refs in fresh arrows and React re-runs those every
+  // render; the caret must be placed once per opening, not once per paint.
+  const armed = useRef<HTMLElement | null>(null);
+  const ref = useCallback((next: HTMLElement | null) => {
+    setNode(next);
+    if (!next || next === armed.current) return;
+    armed.current = next;
+    if (!next.contains(document.activeElement)) soleTextField(next)?.focus();
+  }, []);
+
   useEffect(() => {
     if (!active || !node) return;
 
@@ -76,11 +121,18 @@ export function useDialogFocus(active = true): (node: HTMLElement | null) => voi
     acquireLock();
 
     // Take focus only if nothing inside already has it — a prompt's field
-    // may have autofocused between mount and this effect, and stealing
-    // focus from it would throw the caret away.
+    // may have autofocused (or the ref callback above put the caret in it)
+    // between mount and this effect, and stealing focus from it would
+    // throw the caret away. The field is asked for again first, for the
+    // one path the ref cannot serve: a window mounted hidden shows no
+    // fields until it is shown, and by then its ref has long since run.
     if (!node.contains(document.activeElement)) {
-      if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '-1');
-      node.focus({ preventScroll: true });
+      const field = soleTextField(node);
+      if (field) field.focus();
+      else {
+        if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '-1');
+        node.focus({ preventScroll: true });
+      }
     }
 
     const onKey = (e: KeyboardEvent): void => {
@@ -127,5 +179,5 @@ export function useDialogFocus(active = true): (node: HTMLElement | null) => voi
     };
   }, [active, node]);
 
-  return setNode;
+  return ref;
 }
