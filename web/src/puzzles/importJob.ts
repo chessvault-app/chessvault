@@ -73,6 +73,8 @@ export interface SolveSummary {
   /** Of those, the ones a misread square had to be fixed on first. */
   repaired: number;
   unresolved: number;
+  /** Solved, but the server refused the save — left selected as drafts. */
+  saveFailed: number;
   confident: boolean;
   /** How the book turned out to write its answers — worked out, not set. */
   settings: SolveResult['settings'];
@@ -549,11 +551,15 @@ async function readSolutions(
   for (let i = 0; i < pages.length; i += 12) {
     const chunk = pages.slice(i, i + 12).filter((p) => p.image);
     if (chunk.length === 0) continue;
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/evidence`, {
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/evidence`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ pages: chunk }),
     });
+    // Evidence is the floor everything else stands on. If it did not land,
+    // stop here: the throw keeps the checkpoint, so this resumes rather
+    // than silently minting puzzles that point at pages that are not there.
+    if (!res.ok) throw new Error(`the server refused the evidence pages (${res.status})`);
   }
 
   /**
@@ -598,6 +604,7 @@ async function readSolutions(
   }
 
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));
+  let saveFailed = 0;
   for (const puzzle of solved) {
     const where = labelled.get(puzzle.number);
     const size = where ? sizes.get(where.page) : undefined;
@@ -605,7 +612,7 @@ async function readSolutions(
     const rect = where.rect;
     // The rect is stored as fractions of the page, so it survives whatever
     // size the evidence image happens to be.
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
+    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -625,6 +632,13 @@ async function readSolutions(
         },
       }),
     });
+    // A refused save must not be reported as an import. The diagram stays
+    // a SELECTED draft — better offered again than silently gone — and the
+    // summary owns up to the count.
+    if (!res.ok) {
+      saveFailed += 1;
+      continue;
+    }
     const index = foundAt.get(`${where.page}:${rect.x}:${rect.y}`);
     if (index !== undefined) {
       found[index]!.solved = true;
@@ -635,9 +649,10 @@ async function readSolutions(
   }
 
   return {
-    solved: solved.length,
+    solved: solved.length - saveFailed,
     repaired: repaired.length,
     unresolved: result.unresolved.length - repaired.length,
+    saveFailed,
     confident: result.confident,
     settings: result.settings,
     answerRanges: result.answerRanges,

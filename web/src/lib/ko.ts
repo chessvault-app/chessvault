@@ -938,8 +938,10 @@ export const ko: Record<string, string> = {
   '{n} puzzles imported with their solutions': '정답과 함께 퍼즐 {n}개를 가져왔습니다',
   '{n} had a square misread, found by the book’s own solution.': 
     '{n}개는 칸을 잘못 읽었고, 책의 정답으로 찾아냈습니다.',
-  '{n} numbered diagrams had no solution we could read.': 
+  '{n} numbered diagrams had no solution we could read.':
     '번호가 붙은 다이어그램 {n}개는 정답을 읽지 못했습니다.',
+  '{n} solved puzzles could not be saved — they are kept below as drafts.':
+    '풀이까지 읽어낸 퍼즐 {n}개를 저장하지 못했습니다 — 아래에 초안으로 남겨 두었습니다.',
   'Answers found on {pages}.': '정답을 찾은 곳: {pages}.',
   'no page we could identify': '알아낼 수 있는 쪽 없음',
   '{n} diagrams found — untick any false positives, then add the rest as drafts.': 

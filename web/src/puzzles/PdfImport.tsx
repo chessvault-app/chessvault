@@ -503,6 +503,8 @@ export function PdfImport({
                 ` ${t('{n} had a square misread, found by the book’s own solution.', { n: solve.repaired })}`}
               {solve.unresolved > 0 &&
                 ` ${t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })}`}
+              {solve.saveFailed > 0 &&
+                ` ${t('{n} solved puzzles could not be saved — they are kept below as drafts.', { n: solve.saveFailed })}`}
             </p>
             <p className="text-subtle pt-1">
               {t('Answers found on {pages}.', {
