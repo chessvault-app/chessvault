@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import { ko } from './ko.ts';
 
 /**
  * Translation, keyed by the English sentence itself.
@@ -26,7 +25,36 @@ export const LANGS: { id: Lang; label: string }[] = [
   { id: 'ko', label: '한국어' },
 ];
 
-const DICTS: Record<Lang, Record<string, string>> = { en: {}, ko };
+/**
+ * Dictionaries load on demand: the Korean file is ~1,200 sentences that
+ * used to ride the LANDING chunk for every English user, directly against
+ * the "landing chunk stays lean" rule the shell documents. English is the
+ * keys themselves; anything else is fetched before the language flips
+ * (and awaited at boot when the saved language needs it), so no frame
+ * ever paints untranslated.
+ */
+const DICTS: Record<Lang, Record<string, string>> = { en: {}, ko: {} };
+
+async function ensureDict(lang: Lang): Promise<void> {
+  if (lang === 'en' || Object.keys(DICTS[lang]).length > 0) return;
+  DICTS.ko = (await import('./ko.ts')).ko;
+}
+
+/**
+ * The placeholder names, known in EVERY language even before its
+ * dictionary loads: isUntitled() must recognise a shelf name minted in
+ * Korean from an English session that never fetched ko.ts. The Korean
+ * dictionary builds its own entries from this table, so the two cannot
+ * drift.
+ */
+export const UNTITLED_NAMES: Record<Lang, Record<string, string>> = {
+  en: {},
+  ko: {
+    'Untitled study': '제목 없는 스터디',
+    'Untitled note': '제목 없는 노트',
+    'Untitled book': '제목 없는 책',
+  },
+};
 
 const STORAGE_KEY = 'chess-vault:lang';
 
@@ -56,14 +84,18 @@ export function getLang(): Lang {
 
 export function setLang(lang: Lang): void {
   if (lang === current) return;
-  current = lang;
-  try {
-    localStorage.setItem(STORAGE_KEY, lang);
-  } catch {
-    // Not persisting is survivable; refusing to switch is not.
-  }
-  document.documentElement.lang = lang;
-  for (const notify of listeners) notify();
+  // The dictionary arrives before the language flips, so the shell's
+  // keyed remount never paints a frame of untranslated UI.
+  void ensureDict(lang).then(() => {
+    current = lang;
+    try {
+      localStorage.setItem(STORAGE_KEY, lang);
+    } catch {
+      // Not persisting is survivable; refusing to switch is not.
+    }
+    document.documentElement.lang = lang;
+    for (const notify of listeners) notify();
+  });
 }
 
 function subscribe(listener: () => void): () => void {
@@ -101,8 +133,11 @@ export function t(text: string, vars?: Record<string, string | number>): string 
  */
 export function isUntitled(name: string, base: string): boolean {
   const bases = new Set([base]);
-  for (const dict of Object.values(DICTS)) {
-    if (dict[base]) bases.add(dict[base]);
+  // UNTITLED_NAMES, not the dictionaries: those load lazily, and the
+  // recognition must work for names minted in a language this session
+  // never loaded.
+  for (const names of Object.values(UNTITLED_NAMES)) {
+    if (names[base]) bases.add(names[base]);
   }
   return [...bases].some((b) => name === b || (name.startsWith(b) && /^ \d+$/.test(name.slice(b.length))));
 }
@@ -119,7 +154,9 @@ export function useLang(): Lang {
   return useSyncExternalStore(subscribe, getLang, getLang);
 }
 
-/** Set `<html lang>` once at startup so screen readers get it right. */
-export function initLang(): void {
+/** Load the saved language's dictionary and set `<html lang>`. Awaited
+    before the first render, so a Korean session never flashes English. */
+export async function initLang(): Promise<void> {
+  await ensureDict(current);
   document.documentElement.lang = current;
 }

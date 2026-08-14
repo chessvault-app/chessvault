@@ -10,7 +10,12 @@
  * Anything missing here renders as its English original, so this file can
  * grow without any component knowing.
  */
+import { UNTITLED_NAMES } from './i18n.ts';
+
 export const ko: Record<string, string> = {
+  // The placeholder names live in i18n.ts (they must be recognisable
+  // before this file loads) and are folded in here so they translate.
+  ...UNTITLED_NAMES.ko,
   // --- shell, navigation ---------------------------------------------------
   'Chess Vault': 'Chess Vault',
   'Your chess, in plain files.': '당신의 체스를, 평범한 파일로.',
@@ -837,9 +842,6 @@ export const ko: Record<string, string> = {
   'Remove this note': '이 노트 삭제',
   'Remove this book and its progress': '이 책과 진행 상황 삭제',
   'New note': '새 노트',
-  'Untitled study': '제목 없는 스터디',
-  'Untitled note': '제목 없는 노트',
-  'Untitled book': '제목 없는 책',
   'Name this study': '스터디 이름 짓기',
   'Name this note': '노트 이름 짓기',
   'Name this book': '책 이름 짓기',

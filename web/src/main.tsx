@@ -21,7 +21,10 @@ if (typeof __DEMO__ !== 'undefined' && __DEMO__) {
 initTheme();
 watchSystemTheme();
 initPrefs();
-initLang();
+// Awaited: the saved language's dictionary loads lazily now, and the
+// first render must not happen before it (English pays nothing — its
+// dictionary is the keys themselves).
+await initLang();
 
 // PWA shell: production only — a worker in dev would fight Vite's HMR.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
