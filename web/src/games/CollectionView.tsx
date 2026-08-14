@@ -1,6 +1,7 @@
 import {
   Bookmark,
   ChevronRight,
+  SlidersHorizontal,
   ExternalLink,
   Globe,
   Pencil,
@@ -27,11 +28,16 @@ import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { Select } from '@/ui/Select';
 import {
+  EMPTY_STRUCTURED_FILTERS,
   FilterRow,
+  hasStructuredFilters,
+  matchesStructured,
   ResultSelect,
   SideSelect,
+  StructuredFiltersWindow,
   type ResultFilter,
   type SideFilter,
+  type StructuredFilters,
 } from './GameFilters';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -161,6 +167,10 @@ export function CollectionView() {
   const [sideFilter, setSideFilter] = useState<SideFilter>('any');
   const [resultFilter, setResultFilter] = useState<ResultFilter>('any');
   const [notesFilter, setNotesFilter] = useState<'any' | 'annotated'>('any');
+  // The same sentence the elite browser answers, filtered client-side —
+  // a few dozen games are already in the page (see matchesStructured).
+  const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
+  const [editingFilters, setEditingFilters] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [importing, setImporting] = useState(false);
   /** The archive browser as a window — below lg, where it has no column. */
@@ -320,16 +330,22 @@ export function CollectionView() {
     if (sideFilter !== 'any' && g.userSide !== sideFilter) return false;
     if (resultFilter !== 'any' && g.result !== resultFilter) return false;
     if (notesFilter === 'annotated' && !g.annotated) return false;
+    if (!matchesStructured(structured, g)) return false;
     if (!needle) return true;
     return `${customName(g) ?? ''} ${g.white} ${g.black} ${g.eco ?? ''} ${g.opening?.name ?? ''} ${g.date}`
       .toLowerCase()
       .includes(needle);
   });
-  const filtersOn = sideFilter !== 'any' || resultFilter !== 'any' || notesFilter !== 'any';
+  const filtersOn =
+    sideFilter !== 'any' ||
+    resultFilter !== 'any' ||
+    notesFilter !== 'any' ||
+    hasStructuredFilters(structured);
   const clearFilters = (): void => {
     setSideFilter('any');
     setResultFilter('any');
     setNotesFilter('any');
+    setStructured(EMPTY_STRUCTURED_FILTERS);
   };
 
   /**
@@ -476,6 +492,28 @@ export function CollectionView() {
                   },
                 ]}
               />
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                active={hasStructuredFilters(structured)}
+                title={t('More filters')}
+                className="shrink-0"
+                onClick={() => setEditingFilters(true)}
+              >
+                <SlidersHorizontal className="size-3.5" />
+              </Button>
+              {editingFilters && (
+                <StructuredFiltersWindow
+                  initial={structured}
+                  // No Tournament field: collection games carry no Event.
+                  showEvent={false}
+                  onApply={(next) => {
+                    setEditingFilters(false);
+                    setStructured(next);
+                  }}
+                  onClose={() => setEditingFilters(false)}
+                />
+              )}
             </FilterRow>
           )}
           {loaded && games.length === 0 ? (
