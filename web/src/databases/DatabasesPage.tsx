@@ -1,9 +1,9 @@
-import { ChevronLeft, Database } from 'lucide-react';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { navigate } from '@/lib/router';
-import { Button } from '@/ui/Button';
-import { RefDbManager, type RefDb } from '@/games/EliteGames';
-import { t } from '@/lib/i18n';
+import { ChevronLeft, Database } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { navigate } from "@/lib/router";
+import { Button } from "@/ui/Button";
+import { RefDbManager, type RefDb } from "@/games/EliteGames";
+import { t } from "@/lib/i18n";
 
 /**
  * One page for everything built from uploaded PGN collections.
@@ -19,9 +19,12 @@ import { t } from '@/lib/i18n';
 export function DatabasesPage() {
   // `databases` present = the server's directory mount; absent = a
   // single-database mount (the static demo), which has no manager.
-  const [meta, setMeta] = useState<{ ready: boolean; databases?: RefDb[] } | null>(null);
+  const [meta, setMeta] = useState<{
+    ready: boolean;
+    databases?: RefDb[];
+  } | null>(null);
   const loadMeta = useCallback(() => {
-    void fetch('/api/refgames')
+    void fetch("/api/refgames")
       .then((r) => r.json())
       .then((d: { ready: boolean; databases?: RefDb[] }) => setMeta(d))
       .catch(() => setMeta(null));
@@ -32,7 +35,7 @@ export function DatabasesPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-2xl flex-col gap-4 p-4 pb-10 md:p-6">
+      <div className="mx-auto flex max-w-2xl flex-col md:max-w-4xl gap-4 p-4 pb-10 md:p-6">
         <header className="flex items-center gap-2">
           {/* Phones reach this from More; a desktop has it in the sidebar,
               and top-level pages carry no back arrow there. */}
@@ -40,25 +43,34 @@ export function DatabasesPage() {
             variant="ghost"
             size="icon-sm"
             className="md:hidden"
-            title={t('Back')}
-            onClick={() => navigate('more')}
+            title={t("Back")}
+            onClick={() => navigate("more")}
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Databases')}</h1>
+          <h1 className="text-fg text-sm font-semibold tracking-tight">
+            {t("Databases")}
+          </h1>
         </header>
-        <p className="text-muted -mt-2 text-xs leading-relaxed">
+        <p className="text-muted -mt-2 max-w-2xl text-xs leading-relaxed">
           {t(
-            'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.',
+            "A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.",
           )}
         </p>
 
-        <Section icon={<Database className="size-3.5" />} title={t('Reference games')}>
+        <Section
+          icon={<Database className="size-3.5" />}
+          title={t("Reference games")}
+        >
           {meta === null ? null : meta.databases ? (
-            <RefDbManager databases={meta.databases} onChanged={loadMeta} />
+            <RefDbManager
+              databases={meta.databases}
+              onChanged={loadMeta}
+              layout="grid"
+            />
           ) : (
             <p className="text-muted text-xs leading-relaxed">
-              {t('This server has no reference games database.')}
+              {t("This server has no reference games database.")}
             </p>
           )}
         </Section>
@@ -67,7 +79,15 @@ export function DatabasesPage() {
   );
 }
 
-function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  children: ReactNode;
+}) {
   return (
     <section className="bg-surface border-line flex flex-col gap-3 rounded-xl border p-4">
       <h2 className="text-subtle flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">

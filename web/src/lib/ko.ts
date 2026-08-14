@@ -291,6 +291,8 @@ export const ko: Record<string, string> = {
   'Any event': '모든 대회',
   Apply: '적용',
   'Result and strength': '결과와 기력',
+  'No databases yet — build one from an uploaded collection.':
+    '아직 데이터베이스가 없습니다. 업로드한 컬렉션으로 만들어 보세요.',
   'Your side, result and notes': '내 색, 결과, 노트',
   'Index positions': '포지션 색인 만들기',
   '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.':
