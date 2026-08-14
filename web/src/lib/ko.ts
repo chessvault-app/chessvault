@@ -151,15 +151,11 @@ export const ko: Record<string, string> = {
   Reviewing: '리뷰 중',
 
   // --- explorer ------------------------------------------------------------
-  'Opening book': '오프닝 북',
-  'Manage books': '북 관리',
   'Explorer on/off': '탐색기 켜기/끄기',
   'Open this game': '이 게임 열기',
   'Top games': '주요 게임',
   'Show all {n}': '{n}개 모두 보기',
   'Show fewer': '줄여 보기',
-  'Build a book': '북 만들기',
-  'No opening books yet. Drop PGN files into': '아직 오프닝 북이 없습니다. PGN 파일을 넣어 주세요:',
 
   // --- games ---------------------------------------------------------------
   'Back to games': '게임 목록으로',
@@ -455,7 +451,6 @@ export const ko: Record<string, string> = {
   'Opponent strength': '상대 실력',
   'Where replies come from': '응수의 출처',
   'Lichess database': 'Lichess 데이터베이스',
-  'Could not read the opening book.': '오프닝 북을 읽지 못했습니다.',
   'Set up a new game': '새 게임 설정',
   'Make your first move on the board.': '보드에서 첫 수를 두세요.',
   Rating: '레이팅',
@@ -566,8 +561,6 @@ export const ko: Record<string, string> = {
   'The online database goes through your Lichess token.':
     '온라인 데이터베이스는 Lichess 토큰을 통해 접속합니다.',
   'Add one in Settings': '설정에서 추가하기',
-  'No opening books yet — upload PGN files and build one in Manage books.':
-    '오프닝 북이 없습니다 — 북 관리에서 PGN 파일을 올려 만들어 보세요.',
   'Danger zone': '보관함 내 데이터 초기화',
   Server: '서버',
   Vault: '보관함',
@@ -728,12 +721,7 @@ export const ko: Record<string, string> = {
   '{n} chapters': '챕터 {n}개',
   'not parseable': '읽을 수 없음',
   'that PGN parses into zero chapters': '이 PGN에서 챕터를 하나도 읽지 못했습니다',
-  'No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.':
-    '아직 PGN 모음이 없습니다. 아래에서 추가하세요. 북은 참고할 만하려면 수천 판이 필요하므로, 보통 한 달치나 데이터베이스 전체를 내보낸 파일을 씁니다 — Lichess Elite 월별 파일, Gigabase 같은 것들입니다.',
   'Add PGN files': 'PGN 파일 추가',
-  'Opening books': '오프닝 북',
-  'Build a book from collections or your own games': '모음이나 내 기보로 북을 만듭니다',
-  'Your games in this vault': '이 보관함의 내 기보',
   'Uploaded collections': '올린 모음',
   'Small collection. Fine as a database of your own games — it will tell you what you played and how it went. As a reference for what is normally played it will mislead: too few games, so every position answers with one move at 100%.':
     '작은 모음입니다. 내 기보 데이터베이스로는 괜찮습니다 — 무엇을 뒀고 결과가 어땠는지 알려 줍니다. 다만 일반적으로 어떻게 두는지에 대한 참고 자료로는 오해를 부릅니다. 판수가 적어 포지션마다 한 수가 100%로 나오기 때문입니다.',
@@ -742,15 +730,17 @@ export const ko: Record<string, string> = {
     'PGN 모음을 올리고, 게임 전체를 검색할 수 있는 데이터베이스로 색인하세요.',
   'This server has no reference games database.': '이 서버에는 참고 게임 데이터베이스가 없습니다.',
   Databases: '데이터베이스',
+  'Reference game databases, built from uploaded PGNs': '올린 PGN으로 만드는 참고 게임 데이터베이스',
+  'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.':
+    '아직 올린 파일이 없습니다. 모음은 게임이 담긴 아무 .pgn이면 됩니다 — Lichess Elite 월간, Lumbra 내보내기.',
+  'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.':
+    '참고 데이터베이스는 올린 PGN 모음으로 만들며 모든 것을 한꺼번에 답합니다: 엘리트 게임 브라우저용 전체 기보와, 탐색기·레퍼토리 훈련이 참조하는 포지션 색인 — 필터와 함께.',
+  'Could not read the reference database.': '참고 데이터베이스를 읽지 못했습니다.',
+  'The demo database holds a curated slice of games.': '데모 데이터베이스에는 엄선한 일부 게임만 담겨 있습니다.',
+  'no position index': '포지션 색인 없음',
   'Reference games': '참고 게임',
-  'Opening books and reference games, built from uploaded PGNs':
-    '올린 PGN으로 만드는 오프닝 북과 참고 게임',
-  'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser — and carries a position index of its own, so the explorer can answer from it with filters.':
-    '둘 다 같은 PGN 모음으로 만듭니다: 오프닝 북은 탐색기와 레퍼토리 훈련용 포지션 색인이고, 참고 데이터베이스는 엘리트 게임 브라우저용 전체 기보 색인입니다 — 자체 포지션 색인도 갖추어 탐색기가 필터와 함께 답할 수 있습니다.',
   'Delete this database — deleting is final': '이 데이터베이스 삭제 — 지우면 그것으로 끝입니다',
   'PGN collections': 'PGN 모음',
-  'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export — and the same uploads build opening books.':
-    '아직 올린 것이 없습니다. 모음은 게임이 담긴 .pgn 파일이면 무엇이든 됩니다 — Lichess Elite 월별 파일, Lumbra 내보내기 — 같은 업로드로 오프닝 북도 만듭니다.',
   'Upload PGN collections': 'PGN 모음 올리기',
   'Name — the file’s name if blank': '이름 — 비우면 파일 이름',
   'The build failed.': '만들기에 실패했습니다.',
@@ -772,7 +762,6 @@ export const ko: Record<string, string> = {
   'book page': '책 페이지',
   'book diagram in its page': '페이지 안의 책 다이어그램',
   'book diagram': '책 다이어그램',
-  'book name': '북 이름',
   Training: '훈련',
   'TOTP enrolment QR code': 'TOTP 등록 QR 코드',
   'Book title, e.g. “1001 Winning Chess Sacrifices”': '책 제목, 예: “1001 Winning Chess Sacrifices”',
@@ -817,7 +806,6 @@ export const ko: Record<string, string> = {
   'Black O-O-O': '흑 O-O-O',
 
   // --- explorer ------------------------------------------------------------
-  'Local books': '로컬 북',
   'Online (via proxy)': '온라인 (프록시 경유)',
   'Hide the explorer': '탐색기 숨기기',
   'Show the explorer': '탐색기 보기',

@@ -1,8 +1,7 @@
-import { BookOpen, ChevronLeft, Database } from 'lucide-react';
+import { ChevronLeft, Database } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
-import { BooksManager } from '@/explorer/ExplorerPane';
 import { RefDbManager, type RefDb } from '@/games/EliteGames';
 import { t } from '@/lib/i18n';
 
@@ -50,13 +49,9 @@ export function DatabasesPage() {
         </header>
         <p className="text-muted -mt-2 text-xs leading-relaxed">
           {t(
-            'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser — and carries a position index of its own, so the explorer can answer from it with filters.',
+            'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.',
           )}
         </p>
-
-        <Section icon={<BookOpen className="size-3.5" />} title={t('Opening books')}>
-          <BooksManager plain />
-        </Section>
 
         <Section icon={<Database className="size-3.5" />} title={t('Reference games')}>
           {meta === null ? null : meta.databases ? (

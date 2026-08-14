@@ -1,9 +1,8 @@
-import { BookOpen, Compass, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal, Trash2, Upload } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Database, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
-import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
 import {
@@ -19,8 +18,6 @@ import {
   refDbName,
   REMOTE_DBS,
   useExplorer,
-  type BookInfo,
-  type BuildStatus,
   type ExplorerMove,
   type MyGamesFilters,
   type Opening,
@@ -30,15 +27,14 @@ import {
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { DateInput, Input } from '@/ui/Input';
+import { DateInput } from '@/ui/Input';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { SideDot } from '@/ui/SideDot';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Switch } from '@/ui/Switch';
 import { t } from '@/lib/i18n';
-import { isDemo, DEMO_BOOK_PLIES } from '@/lib/demo';
+import { isDemo } from '@/lib/demo';
 
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const exact = new Intl.NumberFormat('en');
@@ -59,11 +55,9 @@ export function ExplorerPane({
 
   const enabled = useExplorer((s) => s.enabled);
   const toggle = useExplorer((s) => s.toggle);
-  const books = useExplorer((s) => s.books);
-  const booksLoaded = useExplorer((s) => s.booksLoaded);
   const selectedBook = useExplorer((s) => s.book);
   const selectBook = useExplorer((s) => s.selectBook);
-  const refreshBooks = useExplorer((s) => s.refreshBooks);
+  const refreshDbs = useExplorer((s) => s.refreshDbs);
   const lookup = useExplorer((s) => s.lookup);
   const resultFen = useExplorer((s) => s.resultFen);
   const moves = useExplorer((s) => s.moves);
@@ -78,7 +72,6 @@ export function ExplorerPane({
   const refFilters = useExplorer((s) => s.refFilters);
   const refIndexed = useExplorer((s) => s.refIndexed);
 
-  const [showManager, setShowManager] = useState(false);
   // The My-games filters, as a window rather than two rows of the pane.
   const [showFilters, setShowFilters] = useState(false);
   // What the filters were when the window opened. The chips apply as they
@@ -115,14 +108,14 @@ export function ExplorerPane({
   const [allMoves, setAllMoves] = useState(false);
 
   const node = getNode(tree, cursorId);
-  const book = activeBook({ book: selectedBook, books });
+  const book = activeBook({ book: selectedBook, refDbs });
   const mine = isMyGames(book);
   const refdb = isRefDb(book);
   const filtered = mine ? hasMyFilters(myFilters) : refdb && hasRefFilters(refFilters);
 
   useEffect(() => {
-    void refreshBooks();
-  }, [refreshBooks]);
+    void refreshDbs();
+  }, [refreshDbs]);
 
   useEffect(() => {
     if (enabled && mine) void refreshMyStats();
@@ -171,17 +164,10 @@ export function ExplorerPane({
                   // First, and always present: it needs no build step, so
                   // it is the one source a new vault can already explore.
                   { label: 'Your vault', options: [{ value: MY_GAMES, label: 'My games' }] },
-                  ...(books.length > 0
-                    ? [
-                        {
-                          label: 'Local books',
-                          options: books.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
-                        },
-                      ]
-                    : []),
                   // The unified index: the same databases the elite
-                  // browser reads, exploring — and, unlike a book,
-                  // exploring FILTERED (see server/refgamesIndex.ts).
+                  // browser reads, exploring — and, unlike the old
+                  // summed-away books, exploring FILTERED (see
+                  // server/refgamesIndex.ts).
                   ...(refDbs.length > 0
                     ? [
                         {
@@ -227,11 +213,10 @@ export function ExplorerPane({
               <Button
                 variant="ghost"
                 size="icon-sm"
-                active={showManager}
-                onClick={() => setShowManager((v) => !v)}
-                title={t('Manage books')}
+                onClick={() => navigate('books')}
+                title={t('Databases')}
               >
-                <BookOpen className="size-3.5" />
+                <Database className="size-3.5" />
               </Button>
             )}
             <Switch
@@ -243,8 +228,6 @@ export function ExplorerPane({
           </>
         }
       />
-
-      {enabled && showManager && <BooksManager onClose={() => setShowManager(false)} />}
 
       {showFilters && (
         <Modal title="Filters" icon={SlidersHorizontal} onClose={() => closeFilters(true)}>
@@ -259,7 +242,7 @@ export function ExplorerPane({
         </Modal>
       )}
 
-      {!enabled ? null : !showManager && (
+      {!enabled ? null : (
         <>
           <div className="border-line flex h-8 shrink-0 items-center gap-2 border-b px-3">
             {lineOpening ? (
@@ -300,7 +283,7 @@ export function ExplorerPane({
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  void refreshBooks();
+                  void refreshDbs();
                   lookup(node.fen);
                 }}
               >
@@ -312,12 +295,10 @@ export function ExplorerPane({
             <IndexPositionsCta
               name={refDbName(book!)}
               onDone={() => {
-                void refreshBooks();
+                void refreshDbs();
                 lookup(node.fen);
               }}
             />
-          ) : booksLoaded && books.length === 0 && !isRemoteDb(book) && !mine && !refdb ? (
-            <EmptyBooks onOpenManager={() => setShowManager(true)} />
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
               {moves.length === 0 && fresh ? (
@@ -329,15 +310,13 @@ export function ExplorerPane({
                     : t('No games from this position in “{book}”.', {
                       book: refdb ? bookLabel(refDbName(book!)) : bookLabel(book ?? ''),
                     })}
-                  {/* In the demo, running out of book is the expected edge of
-                      a curated file rather than a gap in the data — say which,
-                      or it reads as the app failing to answer. */}
+                  {/* In the demo, running out is the expected edge of a
+                      curated slice rather than a gap in the data — say
+                      which, or it reads as the app failing to answer. */}
                   {isDemo() && !mine && (
                     <>
                       {' '}
-                      {t('The demo book covers the first {plies} plies.', {
-                        plies: DEMO_BOOK_PLIES,
-                      })}
+                      {t('The demo database holds a curated slice of games.')}
                     </>
                   )}
                 </p>
@@ -910,361 +889,5 @@ function ResultBadge({ result }: { result: string }) {
     >
       {label}
     </span>
-  );
-}
-
-function EmptyBooks({ onOpenManager }: { onOpenManager: () => void }) {
-  return (
-    <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
-      <Compass className="text-subtle size-5" strokeWidth={1.75} />
-      {/* The copy used to say to drop files into vault/sources/ — a
-          shell instruction, stale since the manager grew its own upload.
-          Point at the thing in the app instead. */}
-      <p className="text-muted text-xs leading-relaxed">
-        {t('No opening books yet — upload PGN files and build one in Manage books.')}
-      </p>
-      <Button variant="ghost" size="sm" onClick={onOpenManager}>
-        <Hammer className="mr-1 size-3.5" />
-        {t('Manage books')}
-      </Button>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Book manager: list/build/delete books over the /api/books endpoints.
-
-/**
- * Build and manage opening books.
- *
- * Rendered two ways: as a panel inside the explorer, and `plain` —
- * content only — inside the Databases page (#/books), which brings its
- * own frame and heading. Building a book from a season of games is a
- * sit-down job, not something to do in a 300 px sidebar.
- */
-export function BooksManager({
-  onClose,
-  plain = false,
-}: {
-  onClose?: () => void;
-  plain?: boolean;
-}) {
-  const books = useExplorer((s) => s.books);
-  const refreshBooks = useExplorer((s) => s.refreshBooks);
-  const deleteBook = useExplorer((s) => s.deleteBook);
-  const startBuild = useExplorer((s) => s.startBuild);
-  const fetchBuildStatus = useExplorer((s) => s.fetchBuildStatus);
-
-  const [sources, setSources] = useState<{ name: string; bytes: number }[]>([]);
-  const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [name, setName] = useState('');
-  const [status, setStatus] = useState<BuildStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState<string | null>(null);
-
-  /**
-   * Say when a collection is too small to be worth consulting.
-   *
-   * A book is a reference — what do strong players do here — and a handful
-   * of games answers every position with one move at 100%, which reads as
-   * authority and is noise. This warning used to be hedged, because vault
-   * games were buildable into books and a three-game answer about YOUR
-   * games is the point. They are not anymore: your own games are indexed
-   * live and queried with filters (see server/myGames.ts), so the only
-   * thing a book is now for is the case where small is simply wrong.
-   *
-   * Judged on bytes because that is all we know before parsing: a game is
-   * roughly a kilobyte or two, so this is about three thousand games.
-   */
-  const BOOK_MIN_BYTES = 4_000_000;
-  const pickedBytes = sources
-    .filter((s) => picked.has(s.name))
-    .reduce((sum, s) => sum + s.bytes, 0);
-  const tooSmall = picked.size > 0 && pickedBytes < BOOK_MIN_BYTES;
-  const wasRunning = useRef(false);
-
-  const refreshSources = useCallback(async (): Promise<void> => {
-    try {
-      const res = await fetch('/api/sources');
-      const body = (await res.json()) as { sources: { name: string; bytes: number }[] };
-      setSources(body.sources);
-    } catch {
-      setError(t('could not list the PGN collections'));
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshSources();
-  }, [refreshSources]);
-
-  /**
-   * Upload PGN collections.
-   *
-   * Sent one at a time as a raw body, which streams: these files run to
-   * hundreds of megabytes, and FormData would buffer the whole thing in the
-   * page before a byte left. The panel used to tell people to copy files
-   * into vault/sources/ themselves, which a phone or a remote browser
-   * cannot do.
-   */
-  const upload = async (files: FileList | null): Promise<void> => {
-    if (!files?.length) return;
-    setError(null);
-    for (const file of Array.from(files)) {
-      if (!file.name.toLowerCase().endsWith('.pgn')) {
-        setError(t('{name} is not a .pgn', { name: file.name }));
-        continue;
-      }
-      setUploading(file.name);
-      try {
-        const res = await fetch(`/api/sources?name=${encodeURIComponent(file.name)}`, {
-          method: 'POST',
-          body: file,
-        });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          setError(`${file.name}: ${t(body?.error ?? res.statusText)}`);
-        }
-      } catch {
-        setError(t('{name}: upload failed', { name: file.name }));
-      }
-    }
-    setUploading(null);
-    await refreshSources();
-  };
-
-  // The vault may be on a server across the network, so uploading a
-  // collection is the only way in — and dragging one onto the window is
-  // the gesture a desktop expects for that. `upload` takes a FileList, so
-  // the dropped files are handed over as one.
-  const pgnDrop = useFileDrop({
-    accept: byExtension('.pgn'),
-    disabled: uploading !== null,
-    onFiles: (files) => {
-      const list = new DataTransfer();
-      for (const f of files) list.items.add(f);
-      void upload(list.files);
-    },
-  });
-
-  // Poll the build while one runs; refresh the shelf when it finishes.
-  useEffect(() => {
-    const tick = async (): Promise<void> => {
-      const s = await fetchBuildStatus();
-      setStatus(s);
-      if (s?.running) {
-        wasRunning.current = true;
-      } else if (wasRunning.current) {
-        wasRunning.current = false;
-        void refreshBooks();
-      }
-    };
-    void tick();
-    const interval = setInterval(() => void tick(), 1500);
-    return () => clearInterval(interval);
-  }, [fetchBuildStatus, refreshBooks]);
-
-  const build = async (buildName: string, buildSources: string[]): Promise<void> => {
-    setError(null);
-    const failure = await startBuild({ name: buildName, sources: buildSources });
-    if (failure) {
-      setError(failure);
-      return;
-    }
-    setStatus({ running: true, name: buildName, log: [] });
-    wasRunning.current = true;
-  };
-
-  const running = status?.running === true;
-
-  return (
-    <div
-      className={
-        plain
-          ? 'flex flex-col gap-3 text-xs'
-          : 'border-line bg-surface-inset flex min-h-0 flex-col gap-3 overflow-y-auto border-b px-3 py-3 text-xs'
-      }
-    >
-      {books.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {books.map((b) => (
-            <BookRow
-              key={b.name}
-              book={b}
-              busy={running}
-              onDelete={async () => {
-                const failure = await deleteBook(b.name);
-                if (failure) setError(failure);
-              }}
-            />
-          ))}
-        </ul>
-      )}
-
-      <div className="flex flex-col gap-1.5">
-        <p className="text-subtle font-semibold uppercase tracking-[0.08em] text-[0.6875rem]">
-          {t('Build a book')}
-        </p>
-        {/* Where your own games went. Books used to be able to index them,
-            which is what people reach for here first — say plainly that the
-            thing they wanted exists and is better, rather than letting them
-            conclude the feature was dropped. */}
-        <p className="text-muted leading-relaxed">
-          {t('For your own games, pick “My games” in the explorer instead — they are always up to date and can be filtered by side, result, speed and date. A book is for a large reference database.')}
-        </p>
-        {sources.length === 0 ? (
-          <p className="text-muted leading-relaxed">
-            {t('No PGN collections yet. Add one below. A book wants thousands of games to be worth consulting, so the usual sources are whole-month or whole-database exports — Lichess Elite months, Gigabase.')}
-          </p>
-        ) : (
-          <>
-            <div className="flex flex-col gap-1">
-              {sources.map((s) => (
-                <label key={s.name} className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={picked.has(s.name)}
-                    onChange={(e) => {
-                      const next = new Set(picked);
-                      if (e.target.checked) next.add(s.name);
-                      else next.delete(s.name);
-                      setPicked(next);
-                    }}
-                    className="accent-primary"
-                  />
-                  <span className="text-fg min-w-0 flex-1 truncate font-mono">{s.name}</span>
-                  <span className="text-subtle shrink-0 tabular-nums">
-                    {s.bytes < 1e6
-                      ? `${Math.max(1, Math.round(s.bytes / 1e3))} KB`
-                      : `${(s.bytes / 1e6).toFixed(0)} MB`}
-                  </span>
-                </label>
-              ))}
-            </div>
-            {tooSmall && (
-              <p className="text-muted mt-1 leading-relaxed">
-                {t(
-                  'Small collection. A book is a reference for what is normally played, and too few games will mislead: every position answers with one move at 100%.',
-                )}
-              </p>
-            )}
-            <div className="mt-1 flex items-center gap-2">
-              <Input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('book name')}
-                inputSize="sm"
-                className="flex-1 font-mono"
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={running || picked.size === 0 || !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(name)}
-                onClick={() => void build(name, [...picked])}
-              >
-                {t('Build')}
-              </Button>
-            </div>
-          </>
-        )}
-
-        {/* Adding a collection has to be possible here: the vault may be on
-            a server across the network, and a phone has no way to copy a
-            file into it. */}
-        <label
-          {...pgnDrop.handlers}
-          className={cn(
-            'mt-1 flex cursor-pointer items-center gap-2 self-start rounded-md',
-            'border border-dashed px-2 py-1 transition-colors',
-            pgnDrop.dragging ? 'border-primary bg-primary-soft' : 'border-transparent',
-          )}
-        >
-          <input
-            type="file"
-            accept=".pgn"
-            multiple
-            disabled={uploading !== null}
-            className="hidden"
-            onChange={(e) => {
-              void upload(e.target.files);
-              e.target.value = '';
-            }}
-          />
-          <span className="border-line text-muted hover:border-line-strong hover:text-fg flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors">
-            {uploading ? <Loader2 className="size-3 animate-spin" /> : <Upload className="size-3" />}
-            {uploading ? t('Uploading {name}…', { name: uploading }) : t('Add PGN files')}
-          </span>
-        </label>
-      </div>
-
-      {(running || (status?.log?.length ?? 0) > 0) && (
-        <div className="flex flex-col gap-1">
-          <p className="text-subtle flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[0.6875rem]">
-            {running && <Loader2 className="size-3 animate-spin" />}
-            {running
-              ? `Building “${status?.name}”…`
-              : status?.exitCode === 0
-                ? `Built “${status?.name}”`
-                : `Build of “${status?.name}” failed`}
-          </p>
-          <pre className="bg-surface text-subtle max-h-24 overflow-y-auto rounded-md p-2 font-mono text-[0.6875rem] leading-relaxed">
-            {(status?.log ?? []).slice(-6).join('\n') || '…'}
-          </pre>
-        </div>
-      )}
-
-      {error && <p className="text-bad">{error}</p>}
-
-      {onClose && (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            {t('Close')}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function BookRow({
-  book,
-  busy,
-  onDelete,
-}: {
-  book: BookInfo;
-  busy: boolean;
-  onDelete: () => void;
-}) {
-  return (
-    <li className="bg-surface border-line flex items-center gap-2 rounded-md border px-2 py-1.5">
-      <div className="min-w-0 flex-1">
-        <p className="text-fg truncate font-mono font-semibold">{book.name}</p>
-        {/* There is no Rebuild any more (lanph3re's call: the same files
-            always build the same book, and re-reading changed uploads is
-            a scenario nobody hits). Building under an existing name still
-            replaces that book, which covers it. The sources stay on
-            screen: they say what the book IS. */}
-        <p className="text-subtle truncate text-[0.6875rem]">
-          {book.sources.length > 0
-            ? t('Built from {sources}', { sources: book.sources.join(', ') })
-            : t('Came with the app')}
-        </p>
-        <p className="text-subtle tabular-nums">
-          {t('{games} games · {positions} positions · {mb} MB', {
-            games: compact.format(book.games),
-            positions: compact.format(book.positions),
-            mb: (book.bytes / 1e6).toFixed(0),
-          })}
-        </p>
-      </div>
-      <ConfirmSheet
-        icon={Trash2}
-        triggerTitle="Delete this book (the source PGNs stay)"
-        question="Delete this opening book?"
-        confirmLabel="Delete"
-        disabled={busy}
-        onConfirm={onDelete}
-      />
-    </li>
   );
 }

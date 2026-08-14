@@ -32,9 +32,9 @@ import { t } from '@/lib/i18n';
  * Repertoire trainer: rehearse an opening against the field. You move; the app
  * replies with a real move, chosen in proportion to how often it was actually
  * played — in the Lichess database, filtered to a rating band you pick, or in
- * any local opening book. A book offers no band: its population was fixed when
- * it was built (the bundled one is elite-only by construction), which is also
- * what makes it work offline with no token. When the line runs past the source
+ * any local reference database. A database offers no band: its population was
+ * fixed when it was built (the bundled one is elite-only by construction),
+ * which is also what makes it work offline with no token. When the line runs past the source
  * the opening is over — the whole line hands off to the Board for engine
  * analysis.
  */
@@ -569,28 +569,24 @@ export function RepertoireView() {
   // 1600–1800: the group the database as a whole averages into.
   const [band, setBand] = useState(RATING_BANDS[4]!.ratings);
   const [template, setTemplate] = useState<Template>(TEMPLATES[0]!);
-  // '' = undecided, resolved when the book list arrives. The demo cannot
+  // '' = undecided, resolved when the database list arrives. The demo cannot
   // offer the online source (no token can ship in a static bundle), so it
-  // starts undecided and settles on the first book.
+  // starts undecided and settles on the first database.
   const [source, setSource] = useState<string>(isDemo() ? '' : ONLINE_SOURCE);
-  const [books, setBooks] = useState<{ name: string }[]>([]);
+  const [databases, setDatabases] = useState<{ name: string }[]>([]);
 
-  // Which local books exist, for the source picker.
+  // Which reference databases exist, for the source picker.
   useEffect(() => {
-    let cancelled = false;
-    void fetch('/api/books')
-      .then((r) => r.json())
-      .then((body: { books?: { name: string }[] }) => {
-        if (cancelled) return;
-        setBooks(body.books ?? []);
-        setSource((s) => (s === '' ? (body.books?.[0]?.name ?? ONLINE_SOURCE) : s));
+    void fetch('/api/refgames')
+      .then((r) => (r.ok ? r.json() : { databases: [] }))
+      .then((body: { databases?: { name: string }[] }) => {
+        setDatabases(body.databases ?? []);
+        setSource((s) => (s === '' ? (body.databases?.[0]?.name ?? ONLINE_SOURCE) : s));
       })
       .catch(() => {
-        if (!cancelled) setSource((s) => (s === '' ? ONLINE_SOURCE : s));
+        setDatabases([]);
+        setSource((s) => (s === '' ? ONLINE_SOURCE : s));
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const [tree, setTree] = useState<MoveTree>(() => createTree());
@@ -663,13 +659,13 @@ export function RepertoireView() {
       const online = src === ONLINE_SOURCE;
       const fallback = online
         ? 'Could not reach the Lichess database.'
-        : 'Could not read the opening book.';
+        : 'Could not read the reference database.';
       try {
         const fen = getNode(curTree, curId).fen;
         const res = await fetch(
           online
             ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
-            : `/api/books/${encodeURIComponent(src)}?fen=${encodeURIComponent(fen)}`,
+            : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`,
         );
         if (token !== runId.current) return;
         const body = (await res.json().catch(() => null)) as { moves?: ExplorerMove[]; error?: string } | null;
@@ -916,11 +912,11 @@ export function RepertoireView() {
                             options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
                           },
                         ]),
-                    ...(books.length > 0
+                    ...(databases.length > 0
                       ? [
                           {
-                            label: 'Local books',
-                            options: books.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
+                            label: 'Reference databases',
+                            options: databases.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
                           },
                         ]
                       : []),

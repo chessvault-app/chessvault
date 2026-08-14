@@ -58,13 +58,14 @@ export interface RefDb {
   games: number;
   sources: string;
   bytes: number;
+  /** Whether the explorer's position index has been built into it. */
+  indexed?: boolean;
+  positions?: number;
 }
 
 /**
  * Manage the reference databases: upload PGN collections, build a named
- * database from a selection of them, delete one — the book manager's
- * shapes over the same vault/sources uploads, because they are the same
- * job. Every part of it works from a phone against a remote server:
+ * database from a selection of them, delete one. Every part of it works from a phone against a remote server:
  * uploads stream, and the build is a server child process that keeps
  * going if the page is left.
  *
@@ -210,6 +211,11 @@ export function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onC
                 <span className="text-subtle shrink-0">
                   {t('{n} games', { n: d.games.toLocaleString() })} · {(d.bytes / 1e6).toFixed(1)} MB
                 </span>
+                {/* Built before the position index existed: the explorer
+                    offers to add it when this database is its source. */}
+                {d.indexed === false && (
+                  <span className="text-warn shrink-0">{t('no position index')}</span>
+                )}
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -229,7 +235,7 @@ export function RefDbManager({ databases, onChanged }: { databases: RefDb[]; onC
         {sources !== null && sources.length === 0 && (
           <p className="text-subtle leading-relaxed">
             {t(
-              'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export — and the same uploads build opening books.',
+              'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.',
             )}
           </p>
         )}

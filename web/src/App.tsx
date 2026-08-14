@@ -482,7 +482,7 @@ const MORE_GROUPS: {
   {
     heading: 'App',
     items: [
-      { section: 'books', label: 'Databases', icon: Database, blurb: 'Opening books and reference games, built from uploaded PGNs' },
+      { section: 'books', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
     ],
   },

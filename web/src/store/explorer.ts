@@ -1,18 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
-
-export interface BookInfo {
-  name: string;
-  sources: string[];
-  bytes: number;
-  games: number;
-  positions: number;
-  maxPly: number;
-  minGames: number;
-  builtAt: string | null;
-}
 
 export interface ExplorerMove {
   uci: string;
@@ -62,24 +50,16 @@ export interface Opening {
   name: string;
 }
 
-export interface BuildStatus {
-  running: boolean;
-  name?: string;
-  exitCode?: number | null;
-  seconds?: number;
-  log?: string[];
-}
-
 interface ExplorerState {
   /** Pane visibility switch (persisted). */
   enabled: boolean;
   /**
-   * The selected source (persisted): a book name, a `lichess:` database, or
-   * MY_GAMES. Null falls back to the first book.
+   * The selected source (persisted): a `refdb:` database, a `lichess:`
+   * database, or MY_GAMES. Null falls back to the first reference
+   * database, then to My games.
    */
   book: string | null;
-  books: BookInfo[];
-  booksLoaded: boolean;
+  dbsLoaded: boolean;
   /** Filters, applied only while MY_GAMES is the source. */
   myFilters: MyGamesFilters;
   /** The reference databases that can also answer (see REF_DB). */
@@ -110,12 +90,10 @@ interface ExplorerState {
   setMyFilters: (patch: Partial<MyGamesFilters>) => void;
   setRefFilters: (patch: Partial<RefDbFilters>) => void;
   refreshMyStats: () => Promise<void>;
-  refreshBooks: () => Promise<void>;
+  /** Fetch the reference databases the switcher can offer. */
+  refreshDbs: () => Promise<void>;
   /** Debounced lookup for the position on screen. */
   lookup: (fen: string) => void;
-  deleteBook: (name: string) => Promise<string | null>;
-  startBuild: (req: { name: string; sources: string[] }) => Promise<string | null>;
-  fetchBuildStatus: () => Promise<BuildStatus | null>;
 }
 
 /**
@@ -218,10 +196,13 @@ export function hasMyFilters(f: MyGamesFilters): boolean {
 }
 
 /** The active source, resolving the persisted choice against what exists. */
-export function activeBook(s: Pick<ExplorerState, 'book' | 'books'>): string | null {
-  if (isRemoteDb(s.book) || isMyGames(s.book) || isRefDb(s.book)) return s.book;
-  if (s.book && s.books.some((b) => b.name === s.book)) return s.book;
-  return s.books[0]?.name ?? null;
+export function activeBook(s: Pick<ExplorerState, 'book' | 'refDbs'>): string | null {
+  if (isRemoteDb(s.book) || isMyGames(s.book)) return s.book;
+  if (isRefDb(s.book) && s.refDbs.some((d) => `${REF_DB}${d.name}` === s.book)) return s.book;
+  // A stale refdb choice (deleted, or first run) falls to the first
+  // database there is, and a vault with none explores its own games.
+  const first = s.refDbs[0];
+  return first ? `${REF_DB}${first.name}` : MY_GAMES;
 }
 
 // Debounce machinery lives outside the store: timers and AbortControllers are
@@ -244,11 +225,7 @@ export const useExplorer = create<ExplorerState>()(
           ? `/api/mygames?${myGamesQuery(fen, get().myFilters)}`
           : isRefDb(book)
             ? `/api/refgames/explore?db=${encodeURIComponent(refDbName(book!))}&fen=${encodeURIComponent(fen)}&${refFilterQuery(get().refFilters)}`
-          : isRemoteDb(book)
-            ? `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`
-            : book
-              ? `/api/books/${encodeURIComponent(book)}?fen=${encodeURIComponent(fen)}`
-              : `/api/opening?fen=${encodeURIComponent(fen)}`;
+            : `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`;
         try {
           const res = await fetch(url, { signal: controller.signal });
           if (fen !== latestFen) return; // user has moved on
@@ -285,8 +262,7 @@ export const useExplorer = create<ExplorerState>()(
       return {
         enabled: false,
         book: null,
-        books: [],
-        booksLoaded: false,
+        dbsLoaded: false,
         myFilters: {},
         refDbs: [],
         refFilters: {},
@@ -352,16 +328,7 @@ export const useExplorer = create<ExplorerState>()(
           }
         },
 
-        refreshBooks: async () => {
-          try {
-            const res = await fetch('/api/books');
-            const body = (await res.json()) as { books: BookInfo[] };
-            set({ books: body.books, booksLoaded: true, error: null });
-          } catch {
-            set({ booksLoaded: true, error: t('explorer server unreachable') });
-          }
-          // The reference databases, beside the books: same page of the
-          // switcher, same refresh. A failure only costs the group.
+        refreshDbs: async () => {
           try {
             const res = await fetch('/api/refgames');
             const body = (await res.json()) as {
@@ -374,9 +341,11 @@ export const useExplorer = create<ExplorerState>()(
                 indexed: d.indexed === true,
                 positions: d.positions ?? 0,
               })),
+              dbsLoaded: true,
+              error: null,
             });
           } catch {
-            /* the group simply is not offered */
+            set({ dbsLoaded: true, error: t('explorer server unreachable') });
           }
         },
 
@@ -388,37 +357,6 @@ export const useExplorer = create<ExplorerState>()(
           debounceTimer = setTimeout(() => void doLookup(fen), 120);
         },
 
-        deleteBook: async (name) => {
-          // A thrown fetch used to escape past the caller's confirm — the
-          // dialog closed and nothing happened, with nothing said.
-          let failure: string | null = null;
-          try {
-            await api(`/api/books/${encodeURIComponent(name)}`, { method: 'DELETE' });
-          } catch (e) {
-            failure = apiErrorMessage(e);
-          }
-          await get().refreshBooks();
-          if (latestFen) get().lookup(latestFen);
-          return failure;
-        },
-
-        startBuild: async (req) => {
-          try {
-            await api('/api/books/build', { method: 'POST', json: req });
-            return null;
-          } catch (e) {
-            return apiErrorMessage(e);
-          }
-        },
-
-        fetchBuildStatus: async () => {
-          try {
-            const res = await fetch('/api/books/build/status');
-            return (await res.json()) as BuildStatus;
-          } catch {
-            return null;
-          }
-        },
       };
     },
     {
