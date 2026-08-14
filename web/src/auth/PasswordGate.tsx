@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/ui/Button';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { Input } from '@/ui/Input';
+import { setUnauthorizedHandler } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
 /**
@@ -35,6 +36,11 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       // If the server is unreachable the app shows its own errors; don't
       // trap the user on a lock screen for that.
       .catch(() => setState('open'));
+    // A 401 from anywhere in the app means the session expired while it
+    // was open. Relock: the fix is signing in again, and every other
+    // surface could only misreport it as the server being away.
+    setUnauthorizedHandler(() => setState('locked'));
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   if (state === 'open') return <>{children}</>;
@@ -45,13 +51,22 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     if (stage === 'password' ? !password : code.trim().length < 6) return;
     setBusy(true);
     setError(null);
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      // Stage one sends the password alone; the server replies needTotp
-      // when an authenticator is configured.
-      body: JSON.stringify(stage === 'code' ? { password, code } : { password }),
-    });
+    let res: Response;
+    try {
+      res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        // Stage one sends the password alone; the server replies needTotp
+        // when an authenticator is configured.
+        body: JSON.stringify(stage === 'code' ? { password, code } : { password }),
+      });
+    } catch {
+      // A tailnet blip at exactly this moment used to leave the button on
+      // "Checking…" for ever — the throw skipped setBusy(false).
+      setBusy(false);
+      setError(navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
+      return;
+    }
     const body = (await res.json().catch(() => ({}))) as { error?: string; needTotp?: boolean };
     setBusy(false);
     if (res.ok) {
