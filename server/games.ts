@@ -282,8 +282,72 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
     }
   };
 
+  /**
+   * Heal VaultSide across the kept games, once per boot.
+   *
+   * Old files carry two historic wrongs: only chess.com collects were
+   * ever stamped, so your own Lichess games sit here with no side —
+   * and stamping trusted the archive path alone, so games kept from
+   * ANYONE's archive wear that player's seat as if it were yours. The
+   * profile defines whose vault this is, so each game is re-derived
+   * from it: a player matching a profile handle sets the side, and a
+   * stamp on a game that provably came from an online archive (its
+   * Site or Link says so) but matches nobody is removed. Anything
+   * else keeps its stamp — a hand-imported game states its side
+   * outright, and that word is not ours to take back. With no profile
+   * there is nothing to derive from, and nothing is touched.
+   *
+   * Runs at boot and again whenever config.json has changed since —
+   * checked on each collection listing, so claiming your username in
+   * Settings makes the Games page honest without a restart.
+   */
+  let healedForMtime = -2;
+  const healVaultSides = (): void => {
+    let mtime = -1;
+    try {
+      mtime = statSync(configPath).mtimeMs;
+    } catch {
+      // No config yet: nothing to derive from.
+    }
+    if (mtime === healedForMtime) return;
+    healedForMtime = mtime;
+    const handles = (['chesscom', 'lichess'] as const)
+      .map(profileUser)
+      .filter((h): h is string => h !== null);
+    if (handles.length === 0) return;
+    for (const f of readdirSync(collectionDir)) {
+      if (!f.endsWith('.pgn')) continue;
+      const path = resolve(collectionDir, f);
+      try {
+        let dirty = false;
+        const healed = parseGames(path).map((source) => {
+          const headers = new Map(source.headers);
+          const white = (headers.get('White') ?? '').toLowerCase();
+          const black = (headers.get('Black') ?? '').toLowerCase();
+          const mine = handles.includes(white) ? 'white' : handles.includes(black) ? 'black' : null;
+          const current = headers.get('VaultSide');
+          const site = headers.get('Site') ?? '';
+          const fromArchive =
+            site === 'Chess.com' || site.startsWith('https://lichess.org') || headers.has('Link');
+          if (mine !== null && current !== mine) headers.set('VaultSide', mine);
+          else if (mine === null && current && fromArchive) headers.delete('VaultSide');
+          else return source;
+          dirty = true;
+          return { ...source, headers };
+        });
+        if (dirty) writeAtomic(path, healed.map((g) => makePgn(g)).join('\n'));
+      } catch {
+        // A file that cannot be parsed is not one to rewrite.
+      }
+    }
+  };
+  healVaultSides();
+
   /** The collection: one game per file, newest date first. */
   api.get('/games', (c) => {
+    // A profile edit since the last look re-derives the stamps first,
+    // so the sides this list reports are the profile's own truth.
+    healVaultSides();
     const games = readdirSync(collectionDir)
       .filter((f) => f.endsWith('.pgn'))
       .flatMap((f) => parseFileSummaries(dir, resolve(collectionDir, f)))

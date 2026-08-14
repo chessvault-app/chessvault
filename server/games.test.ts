@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gamesApi } from './games.ts';
@@ -298,5 +298,65 @@ describe('archive cache', () => {
     expect(existsSync(join(dir, 'lichess', 'someone'))).toBe(false);
     expect(existsSync(join(dir, 'chesscom', 'lanph3re'))).toBe(false);
     expect((await (await app.request('/api/games/cache')).json()).users).toEqual([]);
+  });
+});
+
+/**
+ * Old collections carry stamps from before the profile guard: sides
+ * missing from Lichess collects, and strangers' seats claimed as
+ * yours. Boot heals them from the profile — and leaves alone the one
+ * stamp it cannot re-derive, a hand-imported game's own word.
+ */
+describe('healing VaultSide at boot', () => {
+  let dir: string;
+  let app: Hono;
+
+  const kept = (headers: string[]): string => `${headers.join('\n')}\n\n1. e4 e5 1-0\n`;
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'games-heal-'));
+    const collection = join(dir, 'collection');
+    mkdirSync(collection, { recursive: true });
+    // A stranger's archive game, stamped by the old path-trusting collect.
+    writeFileSync(
+      join(collection, 'stranger.pgn'),
+      kept(['[White "somegm"]', '[Black "rival"]', '[Site "Chess.com"]', '[Result "1-0"]', '[VaultSide "white"]']),
+    );
+    // Your own Lichess game, never stamped (only chesscom/ paths were).
+    writeFileSync(
+      join(collection, 'mylichess.pgn'),
+      kept(['[White "other"]', '[Black "lanph3re"]', '[Site "https://lichess.org/abc"]', '[Result "1-0"]']),
+    );
+    // A hand-imported game that states its side outright: no archive
+    // provenance, players matching no handle — its word stands.
+    writeFileSync(
+      join(collection, 'otb.pgn'),
+      kept(['[White "Me, Really"]', '[Black "Club Rival"]', '[Result "1-0"]', '[VaultSide "black"]']),
+    );
+    const configPath = join(dir, 'config.json');
+    writeFileSync(configPath, JSON.stringify({ profile: { lichess: 'lanph3re' } }));
+    app = new Hono().route('/api', gamesApi(dir, configPath));
+  });
+
+  afterAll(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('re-derives every kept game from the profile', async () => {
+    const { games } = await (await app.request('/api/games')).json();
+    const side = (white: string) =>
+      games.find((g: { white: string }) => g.white === white)?.userSide;
+    expect(side('somegm')).toBe(null); // stripped: archive game, nobody you claimed
+    expect(side('other')).toBe('black'); // gained: your handle, at last
+    expect(side('Me, Really')).toBe('black'); // kept: said outright, not ours to take
+  });
+
+  it('re-derives again when the profile changes, no restart needed', async () => {
+    const configPath = join(dir, 'config.json');
+    writeFileSync(configPath, JSON.stringify({ profile: { lichess: 'lanph3re', chesscom: 'somegm' } }));
+    // The heal keys off config.json's mtime; make the change unmissable.
+    utimesSync(configPath, new Date(), new Date(Date.now() + 1000));
+    const { games } = await (await app.request('/api/games')).json();
+    expect(games.find((g: { white: string }) => g.white === 'somegm')?.userSide).toBe('white');
   });
 });
