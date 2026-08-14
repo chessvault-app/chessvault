@@ -16,6 +16,7 @@ import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -84,7 +85,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ${BOARD_WIDE_SHELL}`}>
       {/* Stacked layouts lead with a header like every other page; games
           opened here from elite/archives get a way back on phones. */}
       <BoardPageHeader explorer={wantExplorer} />
@@ -94,7 +95,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           phones exactly one pane shows, fills the height left under the
           board, and scrolls INTERNALLY (its move table / list own the
           scroll, with a visible scrollbar) — the page itself never scrolls. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}

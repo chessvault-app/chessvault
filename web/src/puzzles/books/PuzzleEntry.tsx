@@ -26,6 +26,7 @@ import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { SideDot } from '@/ui/SideDot';
 
 import {
@@ -388,7 +389,7 @@ function SolutionRecorder({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ${BOARD_WIDE_SHELL}`}>
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
@@ -422,7 +423,7 @@ function SolutionRecorder({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="flex shrink-0 items-center gap-2">
           <Button variant="ghost" size="icon-sm" title={t('Back to the position')} onClick={onBack}>
             <ChevronLeft className="size-3.5" />

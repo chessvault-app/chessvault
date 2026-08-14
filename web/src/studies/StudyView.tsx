@@ -27,6 +27,7 @@ import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -166,7 +167,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ${BOARD_WIDE_SHELL}`}>
       {titleRow('wide:hidden')}
       {/* Reading locks the pieces: studies and games open as documents to
           step through; the pencil switches to annotating/recording. */}
@@ -174,7 +175,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         {titleRow('stacked:hidden')}
 
         <PaneTabs

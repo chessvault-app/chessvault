@@ -27,6 +27,7 @@ import { Sheet } from '@/ui/Sheet';
 import { InfoTip } from '@/ui/InfoTip';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { Select } from '@/ui/Select';
 import { t } from '@/lib/i18n';
 
@@ -1197,7 +1198,7 @@ export function RepertoireView() {
     // panel used to end flush against the bottom navigation with its own
     // border cut off. Padding inside the scroll area gives it somewhere to
     // finish.
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 ${BOARD_WIDE_SHELL}`}>
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
         <Button
           variant="ghost"
@@ -1244,7 +1245,7 @@ export function RepertoireView() {
           panel off with a scrollbar a touch device never shows. That is the
           Safari clipping. `overflow: visible` cannot clip, whatever the
           height resolves to, so the bug has nowhere left to live. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {/* fit: a short form under a tall board. Left to shrink, the panel

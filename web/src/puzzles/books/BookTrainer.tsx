@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 
 import { parseFen } from 'chessops/fen';
 
@@ -417,7 +418,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ${BOARD_WIDE_SHELL}`}>
       {/* Stacked: the identity bar stays glued to the top of the page,
           above the board (lanph3re's spec) — wide keeps it in the side column. */}
       {!wide && header}
@@ -446,7 +447,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         {wide && header}
 
         {/* The Puzzle panel, in the lichess trainer's shape: status and the

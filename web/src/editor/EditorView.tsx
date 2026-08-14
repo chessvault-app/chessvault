@@ -27,6 +27,7 @@ import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
@@ -386,7 +387,7 @@ export function EditorView({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]">
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
       {/* Phones lead with a header like every other page (the Editor title
           otherwise lives only in the wide-only side column). Suppressed when
           embedded (onUse) — the host page carries its own header. */}
@@ -555,7 +556,7 @@ export function EditorView({
 
       {/* Position metadata: a side column when there is width for it, and a
           bottom sheet behind the toolbar's Position button when stacked. */}
-      <div className="hidden min-h-0 flex-col gap-3 overflow-y-auto [&>section]:shrink-0 wide:flex wide:w-[min(27rem,38%)] wide:flex-none">
+      <div className={`hidden min-h-0 flex-col gap-3 overflow-y-auto [&>section]:shrink-0 wide:flex ${BOARD_WIDE_SIDE}`}>
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
