@@ -23,6 +23,7 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Input } from '@/ui/Input';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { Sheet } from '@/ui/Sheet';
+import { InfoTip } from '@/ui/InfoTip';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Select } from '@/ui/Select';
@@ -808,6 +809,13 @@ export function RepertoireView() {
   const header = (
     <>
       <h1 className="text-fg text-sm font-semibold">{t('Repertoire')}</h1>
+      {/* What sparring is, behind a ? instead of a paragraph the idle
+          panel made every visit re-read (lanph3re's call). */}
+      <InfoTip label="Repertoire">
+        {t(
+          'Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.',
+        )}
+      </InfoTip>
     </>
   );
 
@@ -872,11 +880,6 @@ export function RepertoireView() {
           <Panel flush fit className="shrink-0">
             <PanelHeader title={t('New game')} />
             <div className="flex flex-col gap-3 p-3">
-              {/* What sparring is — said here, not only on the phone's
-                  More page. The idle screen used to assume you knew. */}
-              <p className="text-muted text-xs leading-relaxed">
-                {t('Practise an opening against the field: you move, and the reply is drawn from what real games actually played here.')}
-              </p>
               <div className="flex gap-1">
                 {(['white', 'black'] as const).map((c) => (
                   <Button
