@@ -21,7 +21,7 @@
  * only thing left to check is that the printed solution is legal in it,
  * which chessops does. Nothing that fails that check is imported.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { makeBoardFen, makeFen, parseFen } from 'chessops/fen';
@@ -510,8 +510,14 @@ mkdirSync(resolve(dir, 'diagrams'), { recursive: true });
 const write = (name: string, value: unknown): void =>
   writeFileSync(resolve(dir, name), `${JSON.stringify(value, null, 1)}\n`);
 write('puzzles.json', puzzles);
-write('drafts.json', []);
-write('book.json', { title: BOOK.title, createdAt: added });
+// Seeded only when absent: a re-import must not wipe drafts being worked
+// through in the app, reset a title the user chose (renames edit
+// book.json), or move the created date — "progress survives" is the
+// re-import rule, and autoimport-import.ts already behaves this way.
+if (!existsSync(resolve(dir, 'drafts.json'))) write('drafts.json', []);
+if (!existsSync(resolve(dir, 'book.json'))) {
+  write('book.json', { title: BOOK.title, createdAt: added });
+}
 
 console.log(`\nimported ${puzzles.length} of ${diagrams.length} puzzles -> ${dir}`);
 if (unresolved.length > 0) {
