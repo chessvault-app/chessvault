@@ -10,9 +10,13 @@ import {
   activeBook,
   bookLabel,
   hasMyFilters,
+  hasRefFilters,
   isMyGames,
+  isRefDb,
   isRemoteDb,
   MY_GAMES,
+  REF_DB,
+  refDbName,
   REMOTE_DBS,
   useExplorer,
   type BookInfo,
@@ -20,6 +24,7 @@ import {
   type ExplorerMove,
   type MyGamesFilters,
   type Opening,
+  type RefDbFilters,
   type Speed,
   type TopGame,
 } from '@/store/explorer';
@@ -69,6 +74,9 @@ export function ExplorerPane({
   const error = useExplorer((s) => s.error);
   const myFilters = useExplorer((s) => s.myFilters);
   const refreshMyStats = useExplorer((s) => s.refreshMyStats);
+  const refDbs = useExplorer((s) => s.refDbs);
+  const refFilters = useExplorer((s) => s.refFilters);
+  const refIndexed = useExplorer((s) => s.refIndexed);
 
   const [showManager, setShowManager] = useState(false);
   // The My-games filters, as a window rather than two rows of the pane.
@@ -77,17 +85,28 @@ export function ExplorerPane({
   // are tapped — that is the point of the live count — so Cancel has to put
   // back what was there rather than merely stop editing.
   const filtersOnOpen = useRef<MyGamesFilters>({});
+  const refFiltersOnOpen = useRef<RefDbFilters>({});
   const closeFilters = (revert: boolean): void => {
     if (revert) {
-      const was = filtersOnOpen.current;
-      useExplorer.getState().setMyFilters({
-        side: was.side,
-        outcome: was.outcome,
-        speeds: was.speeds ?? [],
-        from: was.from,
-        to: was.to,
-        collectionOnly: was.collectionOnly,
-      });
+      if (mine) {
+        const was = filtersOnOpen.current;
+        useExplorer.getState().setMyFilters({
+          side: was.side,
+          outcome: was.outcome,
+          speeds: was.speeds ?? [],
+          from: was.from,
+          to: was.to,
+          collectionOnly: was.collectionOnly,
+        });
+      } else {
+        const was = refFiltersOnOpen.current;
+        useExplorer.getState().setRefFilters({
+          result: was.result,
+          minElo: was.minElo,
+          from: was.from,
+          to: was.to,
+        });
+      }
     }
     setShowFilters(false);
   };
@@ -98,7 +117,8 @@ export function ExplorerPane({
   const node = getNode(tree, cursorId);
   const book = activeBook({ book: selectedBook, books });
   const mine = isMyGames(book);
-  const filtered = hasMyFilters(myFilters);
+  const refdb = isRefDb(book);
+  const filtered = mine ? hasMyFilters(myFilters) : refdb && hasRefFilters(refFilters);
 
   useEffect(() => {
     void refreshBooks();
@@ -159,6 +179,20 @@ export function ExplorerPane({
                         },
                       ]
                     : []),
+                  // The unified index: the same databases the elite
+                  // browser reads, exploring — and, unlike a book,
+                  // exploring FILTERED (see server/refgamesIndex.ts).
+                  ...(refDbs.length > 0
+                    ? [
+                        {
+                          label: 'Reference databases',
+                          options: refDbs.map((d) => ({
+                            value: `${REF_DB}${d.name}`,
+                            label: bookLabel(d.name),
+                          })),
+                        },
+                      ]
+                    : []),
                   // The online databases are proxied through the server with
                   // its Lichess token. The demo has no server and cannot
                   // carry a token in a bundle everyone can read, so the
@@ -174,13 +208,14 @@ export function ExplorerPane({
                 ]}
               />
             )}
-            {enabled && mine && (
+            {enabled && (mine || refdb) && (
               <Button
                 variant="ghost"
                 size="icon-sm"
                 active={filtered}
                 onClick={() => {
                   filtersOnOpen.current = useExplorer.getState().myFilters;
+                  refFiltersOnOpen.current = useExplorer.getState().refFilters;
                   setShowFilters(true);
                 }}
                 title={t('Filters')}
@@ -216,7 +251,11 @@ export function ExplorerPane({
           {/* Every chip applies as it is tapped, so there is nothing to
               confirm — but a window still needs a stated way out, and it
               belongs on the same line as Clear rather than below it. */}
-          <MyGamesFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
+          {mine ? (
+            <MyGamesFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
+          ) : (
+            <RefDbFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
+          )}
         </Modal>
       )}
 
@@ -269,7 +308,15 @@ export function ExplorerPane({
                 {t('Try again')}
               </Button>
             </div>
-          ) : booksLoaded && books.length === 0 && !isRemoteDb(book) && !mine ? (
+          ) : refdb && fresh && !refIndexed ? (
+            <IndexPositionsCta
+              name={refDbName(book!)}
+              onDone={() => {
+                void refreshBooks();
+                lookup(node.fen);
+              }}
+            />
+          ) : booksLoaded && books.length === 0 && !isRemoteDb(book) && !mine && !refdb ? (
             <EmptyBooks onOpenManager={() => setShowManager(true)} />
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
@@ -279,7 +326,9 @@ export function ExplorerPane({
                     ? filtered
                       ? t('None of your games reached this position under these filters.')
                       : t('None of your games reached this position.')
-                    : t('No games from this position in “{book}”.', { book: book ?? '' })}
+                    : t('No games from this position in “{book}”.', {
+                      book: refdb ? bookLabel(refDbName(book!)) : bookLabel(book ?? ''),
+                    })}
                   {/* In the demo, running out of book is the expected edge of
                       a curated file rather than a gap in the data — say which,
                       or it reads as the app failing to answer. */}
@@ -320,6 +369,173 @@ export function ExplorerPane({
         </>
       )}
     </Panel>
+  );
+}
+
+/**
+ * The filters over a reference database — the question a book could
+ * never answer, and the reason the position index exists: result, a
+ * floor under both players' ratings, and dates. Same chips-in-a-window
+ * shape as My games' filters, applied live like them.
+ */
+function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
+  const filters = useExplorer((s) => s.refFilters);
+  const setFilters = useExplorer((s) => s.setRefFilters);
+
+  const RESULTS: { id: RefDbFilters['result']; label: string }[] = [
+    { id: undefined, label: 'All' },
+    { id: '1-0', label: 'White won' },
+    { id: '0-1', label: 'Black won' },
+    { id: '1/2-1/2', label: 'Drawn' },
+  ];
+  const STRENGTHS: { id: number | undefined; label: string }[] = [
+    { id: undefined, label: 'Any' },
+    { id: 2300, label: '2300+' },
+    { id: 2500, label: '2500+' },
+    { id: 2700, label: '2700+' },
+  ];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <FilterGroup label="Result">
+        {RESULTS.map(({ id, label }) => (
+          <FilterChip
+            key={label}
+            label={label}
+            active={filters.result === id}
+            onClick={() => setFilters({ result: id })}
+          />
+        ))}
+      </FilterGroup>
+
+      {/* Both players over the floor — a 2700 flagged against a 2200 is
+          not a 2700-level game. */}
+      <FilterGroup label="Strength">
+        {STRENGTHS.map(({ id, label }) => (
+          <FilterChip
+            key={label}
+            label={label}
+            active={filters.minElo === id}
+            onClick={() => setFilters({ minElo: id })}
+          />
+        ))}
+      </FilterGroup>
+
+      <FilterGroup label="Played between">
+        <DateInput
+          value={filters.from ?? ''}
+          onChange={(e) => setFilters({ from: e.target.value || undefined })}
+          aria-label={t('From date')}
+          className="w-[9.5rem]"
+        />
+        <span className="text-subtle" aria-hidden>
+          –
+        </span>
+        <DateInput
+          value={filters.to ?? ''}
+          onChange={(e) => setFilters({ to: e.target.value || undefined })}
+          aria-label={t('To date')}
+          className="w-[9.5rem]"
+        />
+      </FilterGroup>
+
+      <div className="border-line flex items-center justify-end gap-2 border-t pt-3 text-xs">
+        {hasRefFilters(filters) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-auto"
+            onClick={() =>
+              setFilters({ result: undefined, minElo: undefined, from: undefined, to: undefined })
+            }
+          >
+            {t('Clear filters')}
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t('Cancel')}
+        </Button>
+        <Button variant="primary" size="sm" onClick={onDone}>
+          {t('Done')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A reference database from before the position index existed: offer to
+ * add it, in place — a pure derived pass over the games already in the
+ * file, run as a server job with its progress shown here.
+ */
+function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void }) {
+  const [state, setState] = useState<'idle' | 'running' | 'failed'>('idle');
+  const [line, setLine] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (state !== 'running') return;
+    let live = true;
+    const tick = async (): Promise<void> => {
+      try {
+        const s = (await (await fetch('/api/refgames/build/status')).json()) as {
+          running: boolean;
+          exitCode?: number | null;
+          log?: string[];
+        };
+        if (!live) return;
+        setLine(s.log?.at(-1) ?? null);
+        if (!s.running) {
+          if ((s.exitCode ?? 1) === 0) onDone();
+          else setState('failed');
+        }
+      } catch {
+        /* next tick asks again */
+      }
+    };
+    void tick();
+    const interval = setInterval(() => void tick(), 1500);
+    return () => {
+      live = false;
+      clearInterval(interval);
+    };
+  }, [state, onDone]);
+
+  const start = async (): Promise<void> => {
+    setState('running');
+    setLine(null);
+    const res = await fetch('/api/refgames/index-positions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ db: name }),
+    });
+    if (!res.ok) setState('failed');
+  };
+
+  return (
+    <div className="flex flex-col gap-2 px-3 py-3">
+      <p className="text-muted text-xs leading-relaxed">
+        {t(
+          '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.',
+          { name: bookLabel(name) },
+        )}
+      </p>
+      {state === 'running' ? (
+        <p className="text-subtle flex items-center gap-2 font-mono text-[0.6875rem]">
+          <Loader2 className="size-3.5 shrink-0 animate-spin" />
+          <span className="min-w-0 truncate">{line ?? '…'}</span>
+        </p>
+      ) : (
+        <div className="flex items-center gap-2">
+          <Button variant="primary" size="sm" onClick={() => void start()}>
+            <Hammer className="size-3.5" />
+            {t('Index positions')}
+          </Button>
+          {state === 'failed' && (
+            <span className="text-bad text-xs">{t('indexing failed — see the Databases page')}</span>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

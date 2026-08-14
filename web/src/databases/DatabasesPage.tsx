@@ -50,7 +50,7 @@ export function DatabasesPage() {
         </header>
         <p className="text-muted -mt-2 text-xs leading-relaxed">
           {t(
-            'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser.',
+            'Both are built from the same uploaded PGN collections: an opening book indexes positions for the explorer and the repertoire trainer; a reference database indexes whole games for the Elite games browser — and carries a position index of its own, so the explorer can answer from it with filters.',
           )}
         </p>
 

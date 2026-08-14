@@ -82,6 +82,12 @@ interface ExplorerState {
   booksLoaded: boolean;
   /** Filters, applied only while MY_GAMES is the source. */
   myFilters: MyGamesFilters;
+  /** The reference databases that can also answer (see REF_DB). */
+  refDbs: RefDbSummary[];
+  /** Filters, applied only while a reference database is the source. */
+  refFilters: RefDbFilters;
+  /** False when the chosen reference database has no position index yet. */
+  refIndexed: boolean;
   /** How much the index holds, for the pane's footer. Null until asked. */
   myStats: { games: number; positions: number; matching: number } | null;
 
@@ -102,6 +108,7 @@ interface ExplorerState {
   toggle: () => void;
   selectBook: (name: string) => void;
   setMyFilters: (patch: Partial<MyGamesFilters>) => void;
+  setRefFilters: (patch: Partial<RefDbFilters>) => void;
   refreshMyStats: () => Promise<void>;
   refreshBooks: () => Promise<void>;
   /** Debounced lookup for the position on screen. */
@@ -137,6 +144,51 @@ export const MY_GAMES = 'vault:mine';
 export const isMyGames = (name: string | null): boolean => name === MY_GAMES;
 
 /**
+ * A reference database as an explorer source — the unified index.
+ *
+ * The same file the elite browser reads games from carries a position
+ * index (see server/refgamesIndex.ts), so it answers the explorer's
+ * question too, and answers it FILTERED — which the summed-away books
+ * never could. Addressed as `refdb:<name>` through the same switcher.
+ */
+export const REF_DB = 'refdb:';
+
+export const isRefDb = (name: string | null): boolean => name !== null && name.startsWith(REF_DB);
+
+export const refDbName = (book: string): string => book.slice(REF_DB.length);
+
+export interface RefDbSummary {
+  name: string;
+  games: number;
+  /** Whether the position index has been built into this database. */
+  indexed: boolean;
+  positions: number;
+}
+
+/** What to count when exploring a reference database. */
+export interface RefDbFilters {
+  result?: '1-0' | '0-1' | '1/2-1/2';
+  /** A floor under BOTH players' ratings. */
+  minElo?: number;
+  /** Inclusive `YYYY-MM-DD` bounds. */
+  from?: string;
+  to?: string;
+}
+
+export function hasRefFilters(f: RefDbFilters): boolean {
+  return Boolean(f.result || f.minElo || f.from || f.to);
+}
+
+function refFilterQuery(f: RefDbFilters): string {
+  const query = new URLSearchParams();
+  if (f.result) query.set('result', f.result);
+  if (f.minElo) query.set('minElo', String(f.minElo));
+  if (f.from) query.set('from', f.from);
+  if (f.to) query.set('to', f.to);
+  return query.toString();
+}
+
+/**
  * A book's NAME is a filename-safe id (`lichess_elite_2025-11`); what a
  * picker shows should not read as the database showing through. Underscores
  * become spaces; the id itself stays what the API and the manager use.
@@ -167,7 +219,7 @@ export function hasMyFilters(f: MyGamesFilters): boolean {
 
 /** The active source, resolving the persisted choice against what exists. */
 export function activeBook(s: Pick<ExplorerState, 'book' | 'books'>): string | null {
-  if (isRemoteDb(s.book) || isMyGames(s.book)) return s.book;
+  if (isRemoteDb(s.book) || isMyGames(s.book) || isRefDb(s.book)) return s.book;
   if (s.book && s.books.some((b) => b.name === s.book)) return s.book;
   return s.books[0]?.name ?? null;
 }
@@ -190,6 +242,8 @@ export const useExplorer = create<ExplorerState>()(
         const book = activeBook(get());
         const url = isMyGames(book)
           ? `/api/mygames?${myGamesQuery(fen, get().myFilters)}`
+          : isRefDb(book)
+            ? `/api/refgames/explore?db=${encodeURIComponent(refDbName(book!))}&fen=${encodeURIComponent(fen)}&${refFilterQuery(get().refFilters)}`
           : isRemoteDb(book)
             ? `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`
             : book
@@ -204,15 +258,17 @@ export const useExplorer = create<ExplorerState>()(
             return;
           }
           const body = (await res.json()) as {
-            opening: Opening | null;
+            opening?: Opening | null;
             moves?: ExplorerMove[];
             topGames?: TopGame[];
+            indexed?: boolean;
           };
           set((s) => ({
+            refIndexed: !isRefDb(book) || body.indexed !== false,
             resultFen: fen,
             moves: body.moves ?? [],
             topGames: body.topGames ?? [],
-            opening: body.opening,
+            opening: body.opening ?? null,
             openingsSeen: body.opening
               ? { ...s.openingsSeen, [fen]: body.opening }
               : s.openingsSeen,
@@ -232,6 +288,9 @@ export const useExplorer = create<ExplorerState>()(
         books: [],
         booksLoaded: false,
         myFilters: {},
+        refDbs: [],
+        refFilters: {},
+        refIndexed: true,
         myStats: null,
         resultFen: null,
         moves: [],
@@ -248,6 +307,15 @@ export const useExplorer = create<ExplorerState>()(
           // Refetch the position on screen under the new source.
           if (latestFen) get().lookup(latestFen);
           if (isMyGames(name)) void get().refreshMyStats();
+        },
+
+        setRefFilters: (patch) => {
+          const next = { ...get().refFilters, ...patch };
+          for (const key of Object.keys(next) as (keyof RefDbFilters)[]) {
+            if (next[key] === undefined) delete next[key];
+          }
+          set({ refFilters: next });
+          if (latestFen) get().lookup(latestFen);
         },
 
         setMyFilters: (patch) => {
@@ -291,6 +359,24 @@ export const useExplorer = create<ExplorerState>()(
             set({ books: body.books, booksLoaded: true, error: null });
           } catch {
             set({ booksLoaded: true, error: t('explorer server unreachable') });
+          }
+          // The reference databases, beside the books: same page of the
+          // switcher, same refresh. A failure only costs the group.
+          try {
+            const res = await fetch('/api/refgames');
+            const body = (await res.json()) as {
+              databases?: { name: string; games: number; indexed?: boolean; positions?: number }[];
+            };
+            set({
+              refDbs: (body.databases ?? []).map((d) => ({
+                name: d.name,
+                games: d.games,
+                indexed: d.indexed === true,
+                positions: d.positions ?? 0,
+              })),
+            });
+          } catch {
+            /* the group simply is not offered */
           }
         },
 
@@ -340,7 +426,7 @@ export const useExplorer = create<ExplorerState>()(
       // The source and its filters persist — visibility is session state,
       // and the app aims to be stateless apart from data (lanph3re's call).
       // A filter is a question the user asked, so it outlives the tab.
-      partialize: (s) => ({ book: s.book, myFilters: s.myFilters }),
+      partialize: (s) => ({ book: s.book, myFilters: s.myFilters, refFilters: s.refFilters }),
     },
   ),
 );
