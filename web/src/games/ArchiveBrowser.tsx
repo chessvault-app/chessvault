@@ -42,6 +42,9 @@ interface ArchiveBrowseState {
   username: string;
   months: ArchiveMonth[];
   offline: boolean;
+  /** Games this player has EVER played, per the provider's own stats —
+      null while unknown (offline, or the stats call failed). */
+  total: number | null;
   month: string;
   monthGames: GameSummary[];
   /** How many of the newest-first months have been pulled in already. */
@@ -70,6 +73,7 @@ const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
   username: savedUser('chesscom'),
   months: [],
   offline: false,
+  total: null,
   month: '',
   monthGames: [],
   cursor: 0,
@@ -212,7 +216,7 @@ export function ArchiveBrowser({
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
-  const { provider, username, months, offline, month, monthGames, cursor } = useArchiveBrowse();
+  const { provider, username, months, offline, total, month, monthGames, cursor } = useArchiveBrowse();
   const setUsername = (v: string | ((p: string) => string)): void =>
     useArchiveBrowse.setState((s) => ({ username: typeof v === 'function' ? v(s.username) : v }));
   const setProvider = (v: 'chesscom' | 'lichess'): void =>
@@ -305,12 +309,13 @@ export function ArchiveBrowser({
     try {
       const res = await fetch(`${apiBase}/months?user=${encodeURIComponent(user)}`);
       const body = (await res.json()) as
-        | { months: ArchiveMonth[]; offline: boolean }
+        | { months: ArchiveMonth[]; offline: boolean; total?: number | null }
         | { error: string };
       if ('error' in body) setError(body.error);
       else {
         setMonths(body.months);
         setOffline(body.offline);
+        useArchiveBrowse.setState({ total: body.total ?? null });
         // All dates rather than one month — the question people open this
         // page with is "have I played this before" — but only the newest
         // page of it. The rest arrives as it is scrolled to.
@@ -732,13 +737,16 @@ export function ArchiveBrowser({
                   {
                     value: ALL_MONTHS,
                     // The months below each state what they hold; this row
-                    // states what is already on disk — the games a pick
-                    // gets without the network. Only known for cached
-                    // months, so that is what the number is.
+                    // states what the whole account holds — the provider's
+                    // own lifetime figure, not just what is cached here.
+                    // Offline (no stats to ask) it falls back to what is
+                    // on disk, saying so.
                     label:
-                      cachedGames > 0
-                        ? `${t('All dates')} · ${t('{n} games cached', { n: cachedGames })}`
-                        : t('All dates'),
+                      total !== null
+                        ? `${t('All dates')} · ${t('{n} games', { n: total.toLocaleString() })}`
+                        : cachedGames > 0
+                          ? `${t('All dates')} · ${t('{n} games cached', { n: cachedGames })}`
+                          : t('All dates'),
                     short: t('All dates'),
                   },
                   ...months.map((m) => ({

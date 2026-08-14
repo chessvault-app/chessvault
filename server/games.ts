@@ -303,9 +303,30 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       offline = true; // cached months still browse fine
     }
 
+    // How many games this player has EVER played — the archive list says
+    // which months exist but not what they hold, and only fetched months
+    // are counted locally. The stats endpoint's per-mode win/loss/draw
+    // records sum to the lifetime figure; a mode with no `record` (tactics,
+    // puzzle rush) is not a game. Best-effort: null when unreachable.
+    let total: number | null = null;
+    if (!offline) {
+      try {
+        const stats = await fetchJson<Record<string, { record?: { win?: number; loss?: number; draw?: number } }>>(
+          `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/stats`,
+        );
+        total = Object.values(stats).reduce((sum, mode) => {
+          const r = mode?.record;
+          return r ? sum + (r.win ?? 0) + (r.loss ?? 0) + (r.draw ?? 0) : sum;
+        }, 0);
+      } catch {
+        /* the months still browse; the label falls back to cached counts */
+      }
+    }
+
     const all = [...new Set([...remote, ...cachedMonths.keys()])].sort().reverse();
     return c.json({
       offline,
+      total,
       months: all.map((month) => ({
         month,
         cached: cachedMonths.has(month),
@@ -471,7 +492,7 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
       }
     }
     try {
-      const profile = await fetchJson<{ createdAt: number }>(
+      const profile = await fetchJson<{ createdAt: number; count?: { all?: number } }>(
         `https://lichess.org/api/user/${encodeURIComponent(user)}`,
       );
       const first = new Date(profile.createdAt);
@@ -489,13 +510,14 @@ export function gamesApi(dir: string = VAULT_GAMES): Hono {
           y -= 1;
         }
       }
-      return c.json({ offline: false, months });
+      // The profile already carries the lifetime figure — count.all.
+      return c.json({ offline: false, total: profile.count?.all ?? null, months });
     } catch {
       if (cachedMonths.size === 0) return c.json({ error: 'lichess unreachable and nothing cached yet' }, 502);
       const months = [...cachedMonths.entries()]
         .sort((a, b) => b[0].localeCompare(a[0]))
         .map(([month, games]) => ({ month, cached: true, games }));
-      return c.json({ offline: true, months });
+      return c.json({ offline: true, total: null, months });
     }
   });
 
