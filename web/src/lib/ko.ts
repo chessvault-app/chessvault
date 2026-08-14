@@ -1291,4 +1291,8 @@ export const ko: Record<string, string> = {
   // --- engine explanations --------------------------------------------------
   'White wins · draw · Black wins, in per cent — the engine’s own estimate at full strength.':
     '백 승 · 무승부 · 흑 승 (퍼센트) — 엔진이 자기 기량 기준으로 추정한 값입니다.',
+  'Only move': '유일수',
+  Critical: '고비',
+  'The best move keeps {best}% winning chances for the side to move; the second best only {second}%.':
+    '최선 수는 두는 쪽의 승산 {best}%를 지키지만, 차선 수로는 {second}%뿐입니다.',
 };

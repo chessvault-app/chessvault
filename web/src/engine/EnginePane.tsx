@@ -9,6 +9,7 @@ import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { formatPv } from './pv.ts';
+import { moverChances } from './review.ts';
 import { formatScore, formatWdl, toWhitePov, wdlToWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
 
@@ -53,6 +54,26 @@ export function EngineBlock({ className }: { className?: string }) {
   const top = visibleLines[0];
   const score = top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
 
+  /**
+   * Sharpness: the winning-chances gap between the best and second-best
+   * move. Free exactly when two lines are already being searched — it is
+   * never worth silently raising MultiPV for, so with one line it simply
+   * doesn't exist. Depth-gated to keep the chip from flickering on the
+   * shallow first iterations.
+   */
+  const sharpness = useMemo(() => {
+    if (visibleLines.length < 2) return null;
+    const [a, b] = visibleLines as [PvLine, PvLine];
+    if (a.depth < 10 || b.depth < 10) return null;
+    const best = moverChances(toWhitePov({ cp: a.cp, mate: a.mate }, turn), turn);
+    const second = moverChances(toWhitePov({ cp: b.cp, mate: b.mate }, turn), turn);
+    // A lost position has no critical move — every road goes downhill.
+    if (best < 0.15) return null;
+    const gap = best - second;
+    if (gap < 0.15) return null;
+    return { onlyMove: gap >= 0.3, best: Math.round(best * 100), second: Math.round(second * 100) };
+  }, [visibleLines, turn]);
+
   return (
     // The identical header the standalone Engine panel had — the merge
     // must not change how the headers look (lanph3re's call), only remove the
@@ -92,6 +113,19 @@ export function EngineBlock({ className }: { className?: string }) {
                     title={t('White wins · draw · Black wins, in per cent — the engine’s own estimate at full strength.')}
                   >
                     {formatWdl(wdlToWhitePov(top.wdl, turn))}
+                  </span>
+                )}
+                {/* Appears only at genuine forks in the road, so it can
+                    afford to be loud when it does. */}
+                {sharpness && (
+                  <span
+                    className="bg-nag-mistake/15 text-nag-mistake rounded px-1.5 py-px text-[10px] font-semibold normal-case tracking-normal"
+                    title={t(
+                      'The best move keeps {best}% winning chances for the side to move; the second best only {second}%.',
+                      { best: sharpness.best, second: sharpness.second },
+                    )}
+                  >
+                    {sharpness.onlyMove ? t('Only move') : t('Critical')}
                   </span>
                 )}
               </>
