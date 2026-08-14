@@ -222,12 +222,22 @@ function Trainer({
     async (id: string, win: boolean) => {
       if (reported.current) return;
       reported.current = true;
-      const res = await fetch('/api/puzzles/attempt', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id, win, counted: mode === 'fresh' }),
-      });
-      if (res.ok) {
+      const send = (): Promise<Response | null> =>
+        fetch('/api/puzzles/attempt', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id, win, counted: mode === 'fresh' }),
+        }).catch(() => null);
+      // One quiet retry a moment later: a blip at exactly the "Solved!"
+      // moment used to lose the attempt for good — streak and history
+      // under-counted with nothing said (and a thrown fetch escaped as an
+      // unhandled rejection besides).
+      let res = await send();
+      if (!res?.ok) {
+        await new Promise((r) => setTimeout(r, 2000));
+        res = await send();
+      }
+      if (res?.ok) {
         const data = (await res.json()) as { user: UserState };
         setMeta((m) => (m ? { ...m, user: data.user } : m));
         if (win && mode === 'fresh') setSolvedToday((n) => (n === null ? n : n + 1));

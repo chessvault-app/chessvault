@@ -2635,14 +2635,22 @@ function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const report = async (win: boolean): Promise<void> => {
     if (reported.current || !puzzle) return;
     reported.current = true;
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id: puzzle.id, win }),
-    });
+    const send = (): Promise<Response | null> =>
+      fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: puzzle.id, win }),
+      }).catch(() => null);
+    // One quiet retry — same reasoning as the trainer's report(): a blip
+    // at the moment of solving must not silently lose the attempt.
+    let res = await send();
+    if (!res?.ok) {
+      await new Promise((r) => setTimeout(r, 2000));
+      res = await send();
+    }
     // Fold the server's own new entry into the cache, so the grid and
     // "next unsolved" are right on the next puzzle without a refetch.
-    if (res.ok) {
+    if (res?.ok) {
       const body = (await res.json().catch(() => null)) as { progress?: PuzzleProgress } | null;
       if (body?.progress) {
         const next = patchProgress(slug, puzzle.id, body.progress);
