@@ -88,6 +88,13 @@ interface StudyState {
 let loadingChapter = false;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 const AUTOSAVE_MS = 1500;
+/**
+ * Saves are serialised on this chain. A slow PUT plus the next autosave
+ * 1.5 s behind it used to put two full-document bodies in flight at
+ * once, and if they reordered across connections the OLDER document
+ * landed last — silently reverting the newest edits on disk.
+ */
+let saveChain: Promise<void> = Promise.resolve();
 
 const asSide = (value: string | undefined): 'white' | 'black' | null =>
   value === 'white' || value === 'black' ? value : null;
@@ -362,32 +369,41 @@ export const useStudy = create<StudyState>()((set, get) => {
     },
 
     save: async () => {
-      const { openId, openBase } = get();
-      if (!openId) return;
-      const chapters = stashCurrent();
-      set({ chapters, saveState: 'saving' });
-      try {
-        const res = await fetch(`/api/${openBase}/${encodeURIComponent(openId)}`, {
-          method: 'PUT',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ pgn: chaptersToPgn(chapters) }),
-        });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          set({ saveState: 'error', error: body?.error ?? `save failed (${res.status})` });
-          return;
-        }
-        // Annotating a collected game changes what its row says about it
-        // (its comments, its glyphs, its variations), so the cached
-        // collection list is stale the moment the save lands.
-        if (openBase === 'games/docs') forgetCollection();
-        // Edits made while the request was in flight stay dirty.
-        set((s) => ({ saveState: s.saveState === 'saving' ? 'saved' : s.saveState, error: null }));
-      } catch {
-        set({ saveState: 'error', error: 'vault server unreachable — changes not saved' });
-      }
+      // Queue behind any PUT still in flight — see saveChain above. The
+      // document is snapshotted when the turn comes, not when the save
+      // was requested, so a queued save always writes the newest state.
+      const turn = saveChain.then(() => doSave());
+      saveChain = turn.catch(() => {});
+      return turn;
     },
   };
+
+  async function doSave(): Promise<void> {
+    const { openId, openBase } = get();
+    if (!openId) return;
+    const chapters = stashCurrent();
+    set({ chapters, saveState: 'saving' });
+    try {
+      const res = await fetch(`/api/${openBase}/${encodeURIComponent(openId)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pgn: chaptersToPgn(chapters) }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        set({ saveState: 'error', error: body?.error ?? `save failed (${res.status})` });
+        return;
+      }
+      // Annotating a collected game changes what its row says about it
+      // (its comments, its glyphs, its variations), so the cached
+      // collection list is stale the moment the save lands.
+      if (openBase === 'games/docs') forgetCollection();
+      // Edits made while the request was in flight stay dirty.
+      set((s) => ({ saveState: s.saveState === 'saving' ? 'saved' : s.saveState, error: null }));
+    } catch {
+      set({ saveState: 'error', error: 'vault server unreachable — changes not saved' });
+    }
+  }
 });
 
 // Any tree change — or a board flip, which is saved as part of the chapter —
