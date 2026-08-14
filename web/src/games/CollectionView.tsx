@@ -455,7 +455,7 @@ export function CollectionView() {
           full height (it showed four rows when the archive browser sat
           under it), and the browser is a tool beside it. One under the
           other below lg, where there is no width to split. */}
-      {/* minmax(0,…), not a bare 7fr/3fr: an fr track is min-content wide
+      {/* minmax(0,…), not a bare fr split: an fr track is min-content wide
           at its narrowest, so the column silently widened to fit the
           longest opening name in whichever list it was showing — the two
           panels changed width when the tab was switched.
@@ -466,7 +466,7 @@ export function CollectionView() {
           the result badge — both shrink-0 — spilled out of it and painted
           over each other. 20rem is the narrowest the list is legible at;
           the collection gives up the difference, having the easier job. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(20rem,3fr)] lg:items-stretch">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)] lg:items-stretch">
       {
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
