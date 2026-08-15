@@ -408,21 +408,21 @@ describe('unsaved-changes swap file', () => {
   let dir: string;
   let app: Hono;
 
-  const create = (name: string): Promise<Response> =>
+  const create = (name: string) =>
     app.request('/api/studies', {
       method: 'POST',
       body: JSON.stringify({ name }),
       headers: { 'content-type': 'application/json' },
     });
 
-  const park = (id: string, pgn: string): Promise<Response> =>
+  const park = (id: string, pgn: string) =>
     app.request(`/api/studies/${encodeURIComponent(id)}?draft=1`, {
       method: 'PUT',
       body: JSON.stringify({ pgn }),
       headers: { 'content-type': 'application/json' },
     });
 
-  const save = (id: string, pgn: string): Promise<Response> =>
+  const save = (id: string, pgn: string) =>
     app.request(`/api/studies/${encodeURIComponent(id)}`, {
       method: 'PUT',
       body: JSON.stringify({ pgn }),
