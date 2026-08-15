@@ -652,7 +652,7 @@ export function MapCanvas({
   return (
     <div
       ref={host}
-      className="h-full w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing"
+      className="h-full w-full cursor-grab touch-none select-none overflow-hidden active:cursor-grabbing [-webkit-touch-callout:none]"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
