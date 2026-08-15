@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
+import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { layoutGraph } from './graph';
@@ -257,6 +258,42 @@ export function MapCanvas({
     });
   };
 
+  // Opening families as nebulae: each node belongs to the family of its
+  // nearest catalogue-named ancestor — the catalogue, not configuration,
+  // is what says where the Ruy ends and the Italian begins — and wears
+  // it as a faint tinted halo BEHIND everything. The force layout keeps
+  // subtrees together, so same-family halos merge into soft regions
+  // while every existing mark (fills, satellites, badges, threads)
+  // stays untouched on top. Hue is hashed from the family name: stable
+  // across sessions, no palette to maintain.
+  const familyHue = useMemo(() => {
+    const out = new Map<string, number>();
+    const familyOf = new Map<string, string | null>();
+    const nameOf = (id: string): string | null => {
+      const label = labels?.get(id);
+      if (!label) return null;
+      // Labels arrive as "B90 Sicilian Defense: …" — the code is not a
+      // family and the variation is not either.
+      return openingFamily(label.replace(/^[A-E]\d{2}\s+/, ''));
+    };
+    const resolve = (id: string): string | null => {
+      if (familyOf.has(id)) return familyOf.get(id)!;
+      const own = nameOf(id);
+      const facts = resolved.nodes.get(id);
+      const family = own ?? (facts?.parentId ? resolve(facts.parentId) : null);
+      familyOf.set(id, family);
+      return family;
+    };
+    for (const id of resolved.nodes.keys()) {
+      const family = resolve(id);
+      if (!family) continue;
+      let h = 2166136261;
+      for (const ch of family) h = (h ^ ch.charCodeAt(0)) * 16777619;
+      out.set(id, Math.abs(h) % 360);
+    }
+    return out;
+  }, [resolved, labels]);
+
   // Frequency scales the DRAWN dot, never the layout: a move played in
   // most games grows, a rarity shrinks, and sizes breathe as field data
   // lands without the physics reshuffling the picture. The start node
@@ -331,6 +368,22 @@ export function MapCanvas({
     >
       <svg width="100%" height="100%" className="block" role="tree" aria-label={t('Opening map')}>
         <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+          {graph.nodes.map(({ id }) => {
+            const hue = familyHue.get(id);
+            if (hue === undefined) return null;
+            const { x, y } = posOf(id);
+            const r = drawnR.get(id)!;
+            return (
+              <circle
+                key={`halo-${id}`}
+                cx={x}
+                cy={y}
+                r={r * 2.6}
+                fill={`hsl(${hue} 65% 55%)`}
+                opacity={0.13}
+              />
+            );
+          })}
           {graph.edges.map(({ from, to }) => {
             const a = posOf(from);
             const b = posOf(to);

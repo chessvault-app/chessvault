@@ -137,7 +137,14 @@ while the stored layout stays deterministic. Labels keep their screen
 size and fade out as the view pulls
 back — far out you read the shape, close in you read the names.
 Covered nodes are filled, plans are hollow and dashed, and the badges
-(field gaps, drill health, the depth arc) ride on the dots.
+(field gaps, drill health, the depth arc) ride on the dots. Beneath it
+all, each node wears a faint halo tinted by its opening family — the
+family of its nearest catalogue-named ancestor, so the catalogue, not
+configuration, says where the Ruy ends and the Italian begins. The
+layout keeps subtrees together, so same-family halos merge into soft
+regions; the hue is hashed from the family name and stable forever,
+and because the halos live behind everything, none of the marks above
+give up their meaning.
 
 ## What is stored
 
