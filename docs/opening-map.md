@@ -44,11 +44,25 @@ counts once. Each covered node shows how deep the union runs and how
 many distinct lines it holds, and the panel offers continuations the
 studies prepare that the map does not chart yet — one tap adds them.
 
+## Growing the map
+
+Moves arrive three ways. **Tap** — the add sheet lists every reply the
+chosen field plays at the position, ordered by share, with what the
+studies prepare and what the map charts marked on the rows. **Type** —
+plain SAN, for the move nobody has played yet. **Grow from my games** —
+from any node (an empty map's root included), the walk charts the move
+you actually play most on your turns and every reply you keep meeting
+on theirs, over a games floor you choose, with a preview before
+anything is written. That is how a blank map becomes your played
+repertoire in one press; studies then hang on it.
+
 ## Gaps against the field
 
 Coverage says what *you* prepared; the gap check says what *they*
-play. Choose a field — the Lichess database at a rating band, or any
-local reference database — and at every position where the opponent
+play. Choose a field — the Lichess database at a rating band, any
+local reference database, or **your own games** (filtered to the map's
+colour: the field you have actually been facing) — and at every
+position where the opponent
 moves, the map fetches what real games played there and flags popular
 replies (5% of games or more, the drill's own threshold) that neither
 the map charts nor any tagged study prepares. The node wears the count
