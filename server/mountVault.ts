@@ -6,6 +6,7 @@ import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { refGamesApi } from './refgames.ts';
+import { openingMapApi } from './openingMap.ts';
 import { repertoireApi } from './repertoire.ts';
 import { studiesApi } from './studies.ts';
 import { DATA_PUZZLES, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
@@ -78,4 +79,6 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   app.route('/api', paths.refgamesDb ? refGamesApi(paths.refgamesDb) : refGamesApi());
   // The repertoire drill's record: which prepared positions were recalled.
   app.route('/api', paths.repertoireState ? repertoireApi(paths.repertoireState) : repertoireApi());
+  // The opening map: the hand-placed tree the studies hang from.
+  app.route('/api', paths.repertoireState ? openingMapApi(paths.repertoireState) : openingMapApi());
 }
