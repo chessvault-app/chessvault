@@ -17,7 +17,13 @@ import type { OpeningMap, ResolvedMap } from './model';
  */
 
 const cache = new Map<string, FieldMove[]>();
-const CONCURRENCY = 4;
+/**
+ * Lanes against a LOCAL field, which is a database on the same machine
+ * or the far end of a fast link rather than somebody's public API. Four
+ * left a big map waiting on round trips it had no reason to take one at
+ * a time; the online source keeps its own much lower number below.
+ */
+const CONCURRENCY = 8;
 /** When a fetch failed, so a band that hit a rate limit RECOVERS: the
     failure is never written into the answer cache — an empty answer
     cached on a 429 blanked that band's statistics for the whole
@@ -91,10 +97,17 @@ export function useGaps(
   // node, so the whole map is asked for once.
   const wanted = useMemo(() => {
     if (!map || !resolved || !source) return [];
-    const out: { id: string; fen: string }[] = [];
+    const out: { id: string; fen: string; ply: number }[] = [];
     for (const [id, facts] of resolved.nodes) {
-      if (facts.fen) out.push({ id, fen: facts.fen });
+      if (facts.fen) out.push({ id, fen: facts.fen, ply: facts.ply });
     }
+    // Shallowest first. `resolved.nodes` is in pre-order, so asking in
+    // its order buries the whole queue in the first branch before the
+    // second one is touched at all — on a 398-node map that is seconds
+    // of the map sitting uncoloured while a single deep line fills in.
+    // Depth order answers the big dots near the root first, which are
+    // the ones the eye is on and the ones every line runs through.
+    out.sort((a, b) => a.ply - b.ply);
     return out;
   }, [map, resolved, source]);
 
