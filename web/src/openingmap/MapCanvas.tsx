@@ -796,32 +796,47 @@ export function MapCanvas({
                     transform={`rotate(-90 ${x} ${y})`}
                   />
                 )}
-                {(cov?.reviewCount ?? 0) > 0 && (
-                  <circle cx={x - r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-warn)" />
-                )}
-                {(cov?.gapCount ?? 0) > 0 && (
-                  <circle cx={x - r * 0.8} cy={y + r * 0.8} r={3 * inv} fill="var(--color-bad)" />
-                )}
-                {/* Muted, not primary: a note is a fact about a dot, and
-                    the accent now means one thing only. */}
-                {noteTags && (
-                  <circle cx={x + r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-muted)" />
-                )}
-                {gapCount > 0 && (
-                  <>
-                    <circle cx={x + r + 7 * inv} cy={y} r={7.5 * inv} fill="var(--color-warn)" />
-                    <text
-                      x={x + r + 7 * inv}
-                      y={y + 3 * inv}
-                      fontSize={9.5 * inv}
-                      fontWeight={700}
-                      textAnchor="middle"
-                      fill="var(--color-warn-fg)"
-                    >
-                      {gapCount}
-                    </text>
-                  </>
-                )}
+                {/* The per-dot detail marks, and they fade on the same
+                    curve as the labels do. They used to hold full
+                    strength at every zoom, which meant pulling back to
+                    read the SHAPE of a map handed you a field of amber
+                    counters instead — loudest of all being the gap
+                    badge, which is a number, and a number is something
+                    you can only read close up anyway. Far out you read
+                    the shape; close in you read the marks. */}
+                <g opacity={labelOpacity}>
+                  {(cov?.reviewCount ?? 0) > 0 && (
+                    <circle cx={x - r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-warn)" />
+                  )}
+                  {(cov?.gapCount ?? 0) > 0 && (
+                    <circle cx={x - r * 0.8} cy={y + r * 0.8} r={3 * inv} fill="var(--color-bad)" />
+                  )}
+                  {/* Muted, not primary: a note is a fact about a dot,
+                      and the accent now means one thing only. */}
+                  {noteTags && (
+                    <circle
+                      cx={x + r * 0.8}
+                      cy={y - r * 0.8}
+                      r={3 * inv}
+                      fill="var(--color-muted)"
+                    />
+                  )}
+                  {gapCount > 0 && (
+                    <>
+                      <circle cx={x + r + 7 * inv} cy={y} r={7.5 * inv} fill="var(--color-warn)" />
+                      <text
+                        x={x + r + 7 * inv}
+                        y={y + 3 * inv}
+                        fontSize={9.5 * inv}
+                        fontWeight={700}
+                        textAnchor="middle"
+                        fill="var(--color-warn-fg)"
+                      >
+                        {gapCount}
+                      </text>
+                    </>
+                  )}
+                </g>
                 <text
                   x={x}
                   y={y + r + 12 * inv}
