@@ -118,9 +118,10 @@ The map draws as a graph view — the constellation the vault's Obsidian
 ancestry promises. Circles are sized by what hangs beneath them — and,
 while a field source is on, by how often the move actually gets played
 at its parent, so the fat dots are the crowd and the small ones the
-sidelines. Edges to each node's most-played child draw heavier, so the
-mainlines read as a spine — follow the thick edges from the root and
-you are walking the line the field walks. The
+sidelines. Edges to each node's most-played child draw in the accent
+colour, so the mainlines read as a lit spine — follow the coloured
+edges from the root and you are walking the line the field walks; the
+selected node's own lineage answers in bright foreground. The
 layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots

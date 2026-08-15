@@ -272,10 +272,14 @@ export function MapCanvas({
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
+                // Colour, not weight: the mainline runs in the accent the
+                // covered dots already wear, the selected lineage answers
+                // in bright foreground, and thickness stays uniform.
                 stroke={
-                  lit ? 'var(--color-primary)' : main ? 'var(--color-line-strong)' : 'var(--color-line)'
+                  lit ? 'var(--color-fg)' : main ? 'var(--color-primary)' : 'var(--color-line)'
                 }
-                strokeWidth={(lit ? 2 : main ? 2.4 : 1.2) / view.k}
+                strokeOpacity={main && !lit ? 0.75 : 1}
+                strokeWidth={(lit ? 1.8 : 1.3) / view.k}
               />
             );
           })}
