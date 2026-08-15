@@ -41,6 +41,8 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { SaveControl } from '@/ui/SaveControl';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
 import { AnnotationPane } from './AnnotationPane';
 import { isUntitled, t } from '@/lib/i18n';
 
@@ -78,6 +80,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const [loadOpen, setLoadOpen] = useState(false);
   const editing = useStudy((s) => s.editing);
   const setEditing = useStudy((s) => s.setEditing);
+  const undoable = useUndoable();
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
@@ -164,6 +167,29 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
 
+  /**
+   * Throw the pending changes away — with a few seconds to change your
+   * mind, which is the app's answer to destructive acts everywhere else
+   * (see useUndoable). A confirm dialog would interrupt every discard to
+   * guard against the rare slip, and be no help at all once answered.
+   *
+   * Nothing has reached the vault either way: the commit is empty, and
+   * undoing simply puts the buffer back where it was.
+   */
+  const discardWithUndo = (): void => {
+    const { chapters, chapterIndex, savedPgn } = useStudy.getState();
+    const { tree, cursorId, orientation } = useAnalysis.getState();
+    undoable.remove(
+      t('your unsaved changes'),
+      () => {},
+      () => {
+        useStudy.setState({ chapters, chapterIndex, savedPgn, saveState: 'dirty' });
+        useAnalysis.setState({ tree, cursorId, orientation });
+      },
+    );
+    useStudy.getState().discard();
+  };
+
   // Rendered twice — at the page top on stacked layouts, in the side column
   // on wide ones — because CSS cannot reparent. Only one is ever visible.
   const titleRow = (className: string) => (
@@ -171,7 +197,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       <Button
         variant="ghost"
         size="icon-sm"
-        title={t(kind === 'game' ? 'All games (saves first)' : 'All studies (saves first)')}
+        title={t(kind === 'game' ? 'All games' : 'All studies')}
         onClick={() => navigate(backSection)}
       >
         <ChevronLeft className="size-3.5" />
@@ -185,13 +211,18 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         variant={editing ? 'primary' : 'secondary'}
         size="sm"
         className="shrink-0"
-        title={editing ? t('Back to reading') : t('Edit moves, NAGs and comments')}
+        title={editing ? t('Hide the editing tools') : t('Show NAGs, comments and move tools')}
         onClick={() => setEditing(!editing)}
       >
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
-      <SaveControl state={saveState} error={error} onSave={() => void save()} />
+      <SaveControl
+        state={saveState}
+        error={error}
+        onSave={() => void save()}
+        onDiscard={discardWithUndo}
+      />
     </div>
   );
 
@@ -305,6 +336,16 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           )}
         />
       </div>
+
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+          onHold={undoable.hold}
+          onRelease={undoable.release}
+        />
+      )}
 
       {/* Phones: move navigation in the bottom bar (see AnalysisView). */}
       <MobileActionBar>

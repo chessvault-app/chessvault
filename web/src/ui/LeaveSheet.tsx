@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Loader2, Save, Trash2 } from 'lucide-react';
 import {
   cancelLeave,
+  currentLeaveGuard,
   discardAndLeave,
   leaveIsBlocked,
   saveAndLeave,
@@ -43,6 +44,32 @@ export function LeaveSheet() {
     };
     window.addEventListener('beforeunload', guard);
     return () => window.removeEventListener('beforeunload', guard);
+  }, []);
+
+  /**
+   * Ctrl/⌘+S saves the open document.
+   *
+   * Registered here because the guard registry is what knows which
+   * document is open, and this component is mounted for the whole app.
+   *
+   * It deliberately breaks the house rule that global key handlers skip
+   * INPUT/TEXTAREA and contenteditable. A comment box and the body of a
+   * note are exactly where you reach for this, and a save shortcut that
+   * stops working the moment you are typing is a save shortcut that does
+   * not work. Nothing here reads a character, so there is nothing to
+   * steal from the field. Without a document open the browser keeps its
+   * own shortcut; with one, preventDefault stops "Save page as…".
+   */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key.toLowerCase() !== 's' || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+      const guard = currentLeaveGuard();
+      if (!guard) return;
+      e.preventDefault();
+      void guard.save();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   if (!name) return null;

@@ -18,6 +18,7 @@ const SHORTCUTS: { keys: string; what: string }[] = [
   { keys: '↓ / End', what: 'Go to the end' },
   { keys: 'f', what: 'Flip the board' },
   { keys: 'Enter', what: 'Play the typed move (in the move box)' },
+  { keys: 'Ctrl/⌘ S', what: 'Save the open document' },
   { keys: 'Esc', what: 'Close the open window' },
   { keys: '?', what: 'This list' },
 ];

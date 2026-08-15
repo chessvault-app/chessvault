@@ -1,4 +1,5 @@
-import { Check, CircleAlert, Loader2 } from 'lucide-react';
+import { Check, CircleAlert, Loader2, Save, Undo2 } from 'lucide-react';
+import { Button } from './Button';
 import { t } from '@/lib/i18n';
 
 /**
@@ -11,23 +12,32 @@ import { t } from '@/lib/i18n';
 export type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
 /**
- * The save badge every open document wears.
+ * Where a document stands, and what can be done about it.
  *
  * Extracted from two near-identical copies — `SaveIndicator` in StudyView
  * and `SaveBadge` in NoteView — which had drifted into disagreeing about
- * one thing: the study's "Unsaved" was a button that saved on click, the
- * note's was inert text. The button is the better of the two, so both get
- * it, and `onSave` is what makes the difference.
+ * whether the badge was clickable. Now saving is manual it is more than a
+ * badge: a pending document shows the two buttons that resolve it, and a
+ * settled one shows neither, so the header is quiet exactly when there is
+ * nothing to decide.
+ *
+ * Both buttons live here rather than one here and one in an overflow
+ * menu, because they are two answers to the same question and a reader
+ * looking for the second should not have to go hunting for it. `Saved`
+ * and `Saving…` stay text: there is nothing to press.
  */
 export function SaveControl({
   state,
   error,
   onSave,
+  onDiscard,
 }: {
   state: SaveState;
   /** Shown as the retry tooltip; the badge itself never spells out a failure. */
   error?: string | null;
   onSave: () => void;
+  /** Back to the vault's copy. Omitted where there is nothing to go back to. */
+  onDiscard?: () => void;
 }) {
   if (state === 'saved') {
     return (
@@ -43,26 +53,44 @@ export function SaveControl({
       </span>
     );
   }
-  if (state === 'error') {
-    return (
-      <button
-        type="button"
-        onClick={onSave}
-        title={error ?? t('Save failed — click to retry')}
-        className="text-bad flex shrink-0 items-center gap-1 text-xs"
-      >
-        <CircleAlert className="size-3.5" /> {t('Retry save')}
-      </button>
-    );
-  }
+
   return (
-    <button
-      type="button"
-      onClick={onSave}
-      title={t('Unsaved changes — click to save now')}
-      className="text-warn flex shrink-0 items-center gap-1 text-xs"
-    >
-      <span className="bg-warn size-1.5 rounded-full" /> {t('Unsaved')}
-    </button>
+    <span className="flex shrink-0 items-center gap-1">
+      {/* The state, then the way out of it. On a phone the words go and
+          the icons carry it — the same collapse the Edit button makes. */}
+      {state === 'error' ? (
+        <span
+          className="text-bad flex items-center gap-1 text-xs"
+          title={error ?? t('Save failed')}
+        >
+          <CircleAlert className="size-3.5" />
+          <span className="max-md:hidden">{t('Not saved')}</span>
+        </span>
+      ) : (
+        <span className="text-warn flex items-center gap-1 text-xs">
+          <span className="bg-warn size-1.5 rounded-full" />
+          <span className="max-md:hidden">{t('Unsaved')}</span>
+        </span>
+      )}
+      {onDiscard && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('Discard changes and go back to the saved version')}
+          onClick={onDiscard}
+        >
+          <Undo2 className="size-3.5" />
+        </Button>
+      )}
+      <Button
+        variant="primary"
+        size="sm"
+        title={error ?? t('Save changes')}
+        onClick={onSave}
+      >
+        <Save className="size-3.5 md:mr-1" />
+        <span className="max-md:hidden">{t(state === 'error' ? 'Retry save' : 'Save')}</span>
+      </Button>
+    </span>
   );
 }

@@ -9,6 +9,8 @@ import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
+import { UndoBar } from '@/ui/UndoBar';
+import { useUndoable } from '@/ui/useUndoable';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
@@ -137,6 +139,7 @@ function NoteEditor({
    */
   const front = useRef(frontMatter);
   front.current = frontMatter;
+  const undoable = useUndoable();
   const editor = useEditor({
     extensions: noteExtensions,
     content: initialDoc,
@@ -227,6 +230,22 @@ function NoteEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
+  /** Discard, with a few seconds to change your mind — see StudyView. */
+  const discardWithUndo = (): void => {
+    if (!editor || editor.isDestroyed) return;
+    const pending = docToMarkdown(editor.state.doc, front.current);
+    undoable.remove(
+      t('your unsaved changes'),
+      () => {},
+      () => {
+        editor.commands.setContent(markdownToDoc(pending).toJSON() as object, { emitUpdate: false });
+        front.current = splitFrontMatter(pending).front;
+        setSaveState('dirty');
+      },
+    );
+    discard();
+  };
+
   // See StudyView: the same claim on the way out, for the same reasons.
   useEffect(() => {
     if (!editor) return;
@@ -282,12 +301,22 @@ function NoteEditor({
         <SaveControl
           state={saveState}
           onSave={() => editor && void save(docToMarkdown(editor.state.doc, front.current))}
+          onDiscard={discardWithUndo}
         />
       </header>
       <EditorPalette editor={editor} editable={editable} />
       </div>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+      {undoable.pending && (
+        <UndoBar
+          label={undoable.pending.label}
+          leaving={undoable.pending.leaving}
+          onUndo={undoable.undo}
+          onHold={undoable.hold}
+          onRelease={undoable.release}
+        />
+      )}
       {/* While editing, the note owns the bottom of the phone: the global
           tabs are pushed above the keyboard by iOS and eat the room the
           note needs. Claiming the bar (with nothing in it) hides them. */}
