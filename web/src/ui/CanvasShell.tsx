@@ -56,12 +56,21 @@ export function CanvasShell({
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      {/* The corner title. The bar does not take clicks; only the chevron
-          inside it does, so a drag that starts under the title still pans
-          the canvas rather than dying on invisible chrome.
-          It is `z-10` over a surface that is in normal flow, so painting
-          first costs it nothing against the canvas — and against the
-          overlays, which are `z-10` too, first means underneath. */}
+      {/* The surface itself — no box, no border, edge to edge. */}
+      {children}
+
+      {/* The corner title, painted after the surface AND after anything
+          the page overlays on it. The bar does not take clicks; only the
+          chevron inside it does, so a drag that starts under the title
+          still pans the canvas rather than dying on invisible chrome.
+
+          The order is the point: an overlay is `absolute inset-0`, so it
+          lies over the title's corner too, and a `z-10` sibling painted
+          later wins the hit test. Painted first, the title kept its
+          pixels — an overlay draws nothing up there — but lost its
+          clicks, which left the back chevron dead on a phone for exactly
+          as long as the map was failing to load. That is the one moment
+          leaving the page is the only thing left to do. */}
       <div className="pointer-events-none absolute left-4 top-3 z-10 flex items-baseline gap-2">
         {back && (
           <Button
@@ -77,9 +86,6 @@ export function CanvasShell({
         <h1 className="text-fg text-sm font-semibold tracking-tight">{title}</h1>
         {meta}
       </div>
-
-      {/* The surface itself — no box, no border, edge to edge. */}
-      {children}
 
       {panel &&
         (phone ? (
