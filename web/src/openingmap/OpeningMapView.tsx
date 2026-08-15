@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpen, Grid3x3, Library, NotebookPen, Plus, Swords, Tag, Trash2, X } from 'lucide-react';
+import { AlertTriangle, BookOpen, Grid3x3, Library, NotebookPen, Plus, Sparkles, Swords, Tag, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -30,6 +30,7 @@ import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
 import {
   addChild,
   addTag,
+  chartLine,
   deleteNode,
   normalizeSan,
   removeTag,
@@ -44,6 +45,7 @@ import {
 import { useOpeningMap } from './store';
 import { AddMoveSheet } from './AddMoveSheet';
 import { DeviationsSheet } from './DeviationsSheet';
+import { GrowSheet } from './GrowSheet';
 import { TagPicker } from './TagPicker';
 import type { NodeGaps } from './gaps';
 import { scopedEntries, useCoverage } from './useCoverage';
@@ -140,6 +142,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [typeFor, setTypeFor] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [gamesOpen, setGamesOpen] = useState(false);
+  const [growFrom, setGrowFrom] = useState<string | null>(null);
 
   const submitMove = (input: string): void => {
     if (!map || !resolved || !typeFor) return;
@@ -167,6 +170,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
         gaps={field.source ? gaps.get(selected) : undefined}
         missing={missing}
         onAddMove={() => setAddTo(selected)}
+        onGrow={() => setGrowFrom(selected)}
         onDelete={() => setSelectedId(null)}
       />
     ) : null;
@@ -267,9 +271,14 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 title="No moves yet"
                 body="Start with your first move for this colour — the rest of the tree grows from it."
                 action={
-                  <Button variant="primary" size="sm" onClick={() => setAddTo(map.root.id)}>
-                    <Plus className="size-3.5" /> {t('Add a move')}
-                  </Button>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Button variant="primary" size="sm" onClick={() => setAddTo(map.root.id)}>
+                      <Plus className="size-3.5" /> {t('Add a move')}
+                    </Button>
+                    <Button size="sm" onClick={() => setGrowFrom(map.root.id)}>
+                      <Sparkles className="size-3.5" /> {t('Grow from my games')}
+                    </Button>
+                  </div>
                 }
               />
             ) : (
@@ -317,6 +326,16 @@ export function OpeningMapView({ params }: { params: string[] }) {
           onClose={() => setAddTo(null)}
         />
       )}
+      {growFrom !== null && map && resolved?.nodes.get(growFrom) && (
+        <GrowSheet
+          map={map}
+          facts={resolved.nodes.get(growFrom)!}
+          onApply={(lines) =>
+            apply((d) => lines.reduce((acc, l) => chartLine(acc, map.id, l), d))
+          }
+          onClose={() => setGrowFrom(null)}
+        />
+      )}
       {typeFor !== null && (
         <PromptSheet
           label={t('Add a move')}
@@ -344,6 +363,7 @@ function NodePanel({
   gaps,
   missing,
   onAddMove,
+  onGrow,
   onDelete,
 }: {
   map: OpeningMap;
@@ -353,6 +373,7 @@ function NodePanel({
   gaps: NodeGaps | undefined;
   missing: ReadonlySet<string>;
   onAddMove: () => void;
+  onGrow: () => void;
   onDelete: () => void;
 }) {
   const { apply } = useOpeningMap();
@@ -588,6 +609,14 @@ function NodePanel({
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
           <Plus className="size-3.5" /> {t('Add a move')}
+        </Button>
+        <Button
+          size="sm"
+          onClick={onGrow}
+          disabled={facts.fen === null}
+          title={t('Chart what your games already play from here')}
+        >
+          <Sparkles className="size-3.5" /> {t('Grow')}
         </Button>
         <Button
           size="sm"

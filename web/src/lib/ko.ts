@@ -551,6 +551,15 @@ export const ko: Record<string, string> = {
   'On the map': '맵에 있음',
   prepared: '준비됨',
   'Type a move…': '수 입력…',
+  'Grow from my games': '내 게임에서 키우기',
+  Grow: '키우기',
+  'Chart what your games already play from here': '여기서 내 게임이 이미 두는 수를 맵에 추가',
+  'Chart moves seen in at least': '최소',
+  games: '게임에 나온 수만',
+  'Your games do not reach this position often enough — lower the floor, or play more.':
+    '이 포지션에 도달한 게임이 충분하지 않습니다 — 기준을 낮추거나 더 두세요.',
+  '{n} moves to chart, ending in {k} lines': '추가할 수 {n}개, 라인 {k}개',
+  'Chart them': '맵에 추가',
   'The games index is not answering.': '게임 색인이 응답하지 않습니다.',
   'None of your recent games left the prepared ground — or none reached it.':
     '최근 게임 중 준비 범위를 벗어난 것이 없습니다 — 또는 도달한 것이 없습니다.',

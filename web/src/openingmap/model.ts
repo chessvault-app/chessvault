@@ -187,6 +187,32 @@ export function addChild(doc: MapDoc, mapId: string, parentId: string, san: stri
   );
 }
 
+/**
+ * Ensure a whole line of SANs from the root exists, creating what is
+ * missing and reusing what is there — how a seeded repertoire folds into
+ * a map that may already chart part of it. SANs must be canonical (they
+ * come from replay, never from typing).
+ */
+export function chartLine(doc: MapDoc, mapId: string, sans: string[]): MapDoc {
+  return editMap(doc, mapId, (root) => {
+    const grow = (node: MapNode, at: number): MapNode => {
+      if (at >= sans.length) return node;
+      const existing = node.children.find((c) => c.san === sans[at]);
+      if (existing) {
+        const grown = grow(existing, at + 1);
+        if (grown === existing) return node;
+        return { ...node, children: node.children.map((c) => (c === existing ? grown : c)) };
+      }
+      let tail: MapNode | null = null;
+      for (let k = sans.length - 1; k >= at; k -= 1) {
+        tail = { id: newId(), san: sans[k]!, children: tail ? [tail] : [] };
+      }
+      return { ...node, children: [...node.children, tail!] };
+    };
+    return grow(root, 0);
+  });
+}
+
 /** Set or clear (via undefined) a node's name, note, or depth. */
 export function updateFields(
   doc: MapDoc,

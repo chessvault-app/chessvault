@@ -3,6 +3,7 @@ import { INITIAL_FEN } from '@shared/tree';
 import {
   addChild,
   addTag,
+  chartLine,
   deleteNode,
   emptyDoc,
   ensureMaps,
@@ -138,6 +139,22 @@ describe('edits', () => {
     doc = removeTag(doc, 'w1', 'c5', tag);
     c5 = doc.maps[0]!.root.children[0]!.children[0]!;
     expect('tags' in c5).toBe(false);
+  });
+
+  it('chartLine reuses what exists and builds only the missing tail', () => {
+    let doc = chartLine(sample(), 'w1', ['e4', 'c5', 'Nf3', 'd6']);
+    const e4 = doc.maps[0]!.root.children[0]!;
+    // e4 and c5 were already charted — reused, not duplicated.
+    expect(doc.maps[0]!.root.children).toHaveLength(1);
+    expect(e4.children.map((c) => c.san)).toEqual(['c5', 'e5']);
+    const c5 = e4.children[0]!;
+    expect(c5.children.map((c) => c.san)).toEqual(['Nf3']);
+    expect(c5.children[0]!.children.map((c) => c.san)).toEqual(['d6']);
+    // A fully charted line is a no-op returning the same reference.
+    expect(chartLine(doc, 'w1', ['e4', 'c5'])).toBe(doc);
+    // A new first move grows beside the old one.
+    doc = chartLine(doc, 'w1', ['d4', 'd5']);
+    expect(doc.maps[0]!.root.children.map((c) => c.san)).toEqual(['e4', 'd4']);
   });
 
   it('deleteNode removes a subtree but never the root', () => {
