@@ -10,6 +10,7 @@ import {
   House,
   LayoutGrid,
   Library,
+  Network,
   NotebookPen,
   Puzzle,
   Settings,
@@ -51,6 +52,7 @@ const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => 
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
+const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
 
 // Top-level destinations, in the reading order lanph3re set. Board and
@@ -77,13 +79,14 @@ const TOOLS_SUBNAV: {
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
   { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
+  { key: 'openingmap', label: 'Opening map', icon: Network, nav: ['openingmap'], active: (s) => s === 'openingmap' },
 ];
 // Databases (#/books, the key the URL has always had) is deliberately NOT
 // in Tools: the entries there are boards you play on, and it is where
 // their data is looked after — so it stands on its own row below the
 // group, beside nothing.
 const inTools = (s: Section): boolean =>
-  s === 'analysis' || s === 'editor' || s === 'repertoire';
+  s === 'analysis' || s === 'editor' || s === 'repertoire' || s === 'openingmap';
 
 export function App() {
   return (
@@ -197,6 +200,8 @@ function Shell() {
           <PuzzlesView params={params} />
         ) : section === 'repertoire' ? (
           <RepertoireView />
+        ) : section === 'openingmap' ? (
+          <OpeningMapView params={params} />
         ) : section === 'books' ? (
           <DatabasesPage />
         ) : section === 'settings' ? (
@@ -452,6 +457,7 @@ const MORE_GROUPS: {
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
       { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
+      { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
     ],
   },
   {
