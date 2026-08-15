@@ -1,10 +1,11 @@
-import { type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
+import { CoverParent } from './Modal';
 import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
 import { useSheetCover } from './sheetCover';
@@ -63,6 +64,34 @@ export function Sheet({
    */
   const { cap, covered, ref: coverRef } = useSheetCover(phone);
 
+  /**
+   * And a sheet is a parent as well as a child.
+   *
+   * `useSheetCover` reads its ceiling from `CoverParent`, but only Modal
+   * ever supplied one — so a sheet opened FROM a sheet found no parent,
+   * took no cap, and grew to the safe area: the move-details sheet is
+   * two thirds of the screen and the add-a-move sheet it opens stood
+   * taller than it, hanging over its top edge. The primitive was already
+   * here; nothing was handing it the measurement.
+   *
+   * `height` is this card, read live, because a sheet's height is its
+   * content's and its content can change. `cover` parks it, the way
+   * Modal parks a window whose page has replaced it — a nested MODAL is
+   * a page, not a layer, and the sheet under it should not show through.
+   */
+  const card = useRef<HTMLElement | null>(null);
+  const [coveredBy, setCoveredBy] = useState(0);
+  const asParent = useMemo(
+    () => ({
+      cover: () => {
+        setCoveredBy((n) => n + 1);
+        return () => setCoveredBy((n) => n - 1);
+      },
+      height: () => card.current?.offsetHeight ?? 0,
+    }),
+    [],
+  );
+
   // Escape, and Android's Back gesture with it — see useCloseRequest.
   useCloseRequest(onClose);
 
@@ -71,11 +100,13 @@ export function Sheet({
   // pointer is a containing block for `fixed` — so the sheet was laid out
   // inside the card and clipped by its overflow.
   return createPortal(
+    <CoverParent.Provider value={asParent}>
     <div
       className={cn(
         'vv-band fixed inset-0 z-50 flex justify-center bg-black/50',
         // Bottom edge on a phone, middle of the band on a desktop.
         'max-sm:items-end max-sm:p-0 sm:items-center sm:p-3',
+        coveredBy > 0 && 'invisible',
       )}
       onPointerDown={() => {
         onClose();
@@ -87,6 +118,7 @@ export function Sheet({
         aria-modal="true"
         aria-label={t(label)}
         ref={(node) => {
+          card.current = node;
           focusRef(node);
           coverRef(node);
           if (phone) drag.ref(node);
@@ -170,7 +202,8 @@ export function Sheet({
         </div>
         {children}
       </div>
-    </div>,
+    </div>
+    </CoverParent.Provider>,
     document.body,
   );
 }

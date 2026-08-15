@@ -212,6 +212,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   useEffect(() => setDetailsOpen(false), [selectedId]);
 
   const empty = map !== null && map.root.children.length === 0;
+  const panelShown = map && resolved && selected && (!phone || detailsOpen);
   const panel =
     map && resolved && selected ? (
       <NodePanel
@@ -231,6 +232,63 @@ export function OpeningMapView({ params }: { params: string[] }) {
         onDelete={() => setSelectedId(null)}
       />
     ) : null;
+
+  /**
+   * The sheets a panel action opens, built once and rendered INSIDE the
+   * panel whenever there is one.
+   *
+   * They used to be siblings of it, and `CoverParent` flows through the
+   * React tree — so a sheet written beside the details sheet rather than
+   * within it found no parent to measure, took no ceiling, and grew to
+   * the safe area: "add a move" stood taller than the details sheet that
+   * opened it and hung over its top edge. TagPicker never had the
+   * problem, because NodePanel renders it in its own children, which is
+   * the shape these three now share.
+   */
+  const opened = (
+    <>
+        {addTo !== null && map && resolved?.nodes.get(addTo) && (
+          <AddMoveSheet
+            facts={resolved.nodes.get(addTo)!}
+            coverage={coverage?.get(addTo)}
+            source={field.source}
+            ratings={field.ratings}
+            side={map.color}
+            onAdd={(san) => apply((d) => addChild(d, map.id, addTo, san))}
+            onSelectChild={setSelectedId}
+            onType={() => {
+              setTypeFor(addTo);
+              setAddTo(null);
+            }}
+            onClose={() => setAddTo(null)}
+          />
+        )}
+        {growFrom !== null && map && resolved?.nodes.get(growFrom) && (
+          <GrowSheet
+            map={map}
+            facts={resolved.nodes.get(growFrom)!}
+            onApply={(lines) =>
+              apply((d) => lines.reduce((acc, l) => chartLine(acc, map.id, l), d))
+            }
+            onClose={() => setGrowFrom(null)}
+          />
+        )}
+        {typeFor !== null && (
+          <PromptSheet
+            label={t('Add a move')}
+            initial=""
+            submitLabel="Add"
+            error={addError}
+            closeOnSubmit={false}
+            onSubmit={submitMove}
+            onClose={() => {
+              setTypeFor(null);
+              setAddError(null);
+            }}
+          />
+        )}
+    </>
+  );
 
   return (
     <CanvasShell
@@ -292,10 +350,15 @@ export function OpeningMapView({ params }: { params: string[] }) {
       // A phone gets the panel only once it has been asked for; a pointer
       // device gets it with the selection, since it costs the map nothing.
       panel={
-        panel && (!phone || detailsOpen)
+        panelShown && panel
           ? {
               label: t('Move details'),
-              content: panel,
+              content: (
+                <>
+                  {panel}
+                  {opened}
+                </>
+              ),
               onClose: () => (phone ? setDetailsOpen(false) : setSelectedId(null)),
             }
           : null
@@ -359,7 +422,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           {/* The app's gutter, not a smaller one of its own: every other
               claimant of this row is a centred button strip, so this is
               the first whose text has a left edge to line up with. */}
-          <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2">
+          <div className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-6 pr-4">
             <button
               type="button"
               className="min-w-0 flex-1 text-left"
@@ -447,46 +510,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
         </Sheet>
       )}
 
-      {addTo !== null && map && resolved?.nodes.get(addTo) && (
-        <AddMoveSheet
-          facts={resolved.nodes.get(addTo)!}
-          coverage={coverage?.get(addTo)}
-          source={field.source}
-          ratings={field.ratings}
-          side={map.color}
-          onAdd={(san) => apply((d) => addChild(d, map.id, addTo, san))}
-          onSelectChild={setSelectedId}
-          onType={() => {
-            setTypeFor(addTo);
-            setAddTo(null);
-          }}
-          onClose={() => setAddTo(null)}
-        />
-      )}
-      {growFrom !== null && map && resolved?.nodes.get(growFrom) && (
-        <GrowSheet
-          map={map}
-          facts={resolved.nodes.get(growFrom)!}
-          onApply={(lines) =>
-            apply((d) => lines.reduce((acc, l) => chartLine(acc, map.id, l), d))
-          }
-          onClose={() => setGrowFrom(null)}
-        />
-      )}
-      {typeFor !== null && (
-        <PromptSheet
-          label={t('Add a move')}
-          initial=""
-          submitLabel="Add"
-          error={addError}
-          closeOnSubmit={false}
-          onSubmit={submitMove}
-          onClose={() => {
-            setTypeFor(null);
-            setAddError(null);
-          }}
-        />
-      )}
+      {!panelShown && opened}
     </CanvasShell>
   );
 }
