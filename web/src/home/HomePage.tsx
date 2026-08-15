@@ -249,10 +249,19 @@ export function HomePage() {
             {Array.from({ length: expectedRows }, (_, i) => (
               <div
                 key={i}
-                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
+                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-xs last:border-b-0"
               >
                 <Skeleton className="size-3.5 shrink-0 rounded" />
-                <Skeleton className="h-4 w-36" />
+                {/* The row's height comes from an INVISIBLE real text line,
+                    not a fixed-height bar: iOS sizes this text line 1pt
+                    shorter than desktop engines do, and a `h-4` bar was
+                    that 1pt taller per row — enough for the centred page
+                    to step when the card filled in (measured on
+                    lanph3re's recording). The bar just paints over it. */}
+                <span className="relative min-w-0 flex-1 font-medium">
+                  <span className="invisible">&nbsp;</span>
+                  <Skeleton className="absolute inset-y-0.5 left-0 w-36 max-w-full" />
+                </span>
               </div>
             ))}
           </div>
