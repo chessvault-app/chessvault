@@ -1,3 +1,6 @@
+import { Chess } from 'chessops/chess';
+import { parseFen } from 'chessops/fen';
+import { makeSanAndPlay, parseSan } from 'chessops/san';
 import { addSan, createTree, getNode, INITIAL_FEN } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 
@@ -125,6 +128,21 @@ export function resolveMap(map: OpeningMap): ResolvedMap {
   };
   walk(map.root, tree.rootId);
   return { nodes, tree };
+}
+
+/**
+ * A typed move checked against a position: the canonical SAN when it is
+ * legal there, null otherwise. Canonical, because the file stores what
+ * chessops would print — "Nf3" typed as "ngf3" must not create a sibling
+ * of the "Nf3" a study derives.
+ */
+export function normalizeSan(fen: string, input: string): string | null {
+  const setup = parseFen(fen);
+  if (setup.isErr) return null;
+  const pos = Chess.fromSetup(setup.value);
+  if (pos.isErr) return null;
+  const move = parseSan(pos.value, input.trim());
+  return move ? makeSanAndPlay(pos.value, move) : null;
 }
 
 // ------------------------------------------------------------------ edits

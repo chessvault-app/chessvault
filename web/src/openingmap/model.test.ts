@@ -6,6 +6,7 @@ import {
   deleteNode,
   emptyDoc,
   ensureMaps,
+  normalizeSan,
   removeTag,
   resolveMap,
   updateFields,
@@ -86,6 +87,16 @@ describe('resolveMap', () => {
     const c5 = nodes.get('c5')!;
     expect(c5.treeId).not.toBeNull();
     expect(tree.nodes[c5.treeId!]!.san).toBe('c5');
+  });
+});
+
+describe('normalizeSan', () => {
+  it('canonicalises what the user typed', () => {
+    expect(normalizeSan(INITIAL_FEN, 'Nf3')).toBe('Nf3');
+    expect(normalizeSan(INITIAL_FEN, ' e4 ')).toBe('e4');
+    expect(normalizeSan(INITIAL_FEN, 'Ke2')).toBeNull();
+    expect(normalizeSan(INITIAL_FEN, 'nonsense')).toBeNull();
+    expect(normalizeSan('not a fen', 'e4')).toBeNull();
   });
 });
 
