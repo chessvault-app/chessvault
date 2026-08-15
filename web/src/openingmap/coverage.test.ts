@@ -142,7 +142,34 @@ describe('computeCoverage', () => {
       preparedMoves: [],
       preparedPlies: 0,
       lineCount: 0,
+      reviewCount: 0,
+      gapCount: 0,
     });
+  });
+
+  it('drill marks are counted over the same walk, parents including children', () => {
+    const map = mapWith([
+      { id: 'e4', san: 'e4', tags: [{ kind: 'study', id: 'A' }], children: [] },
+    ]);
+    const chapters = [chapterOf('A', [['e4', 'c5', 'Nf3', 'd6']])];
+    // Mark the position after 2.Nf3 as fumbled and after 1...c5 as a gap,
+    // keyed the drill's way.
+    let tree = createTree();
+    let cursor = tree.rootId;
+    const keys: string[] = [];
+    for (const san of ['e4', 'c5', 'Nf3']) {
+      const added = addSan(tree, cursor, san)!;
+      tree = added.tree;
+      cursor = added.nodeId;
+      keys.push(tree.nodes[cursor]!.fen.split(' ').slice(0, 4).join(' '));
+    }
+    const marks = { review: new Set([keys[2]!]), gaps: new Set([keys[1]!]) };
+    const cov = computeCoverage(resolveMap(map), chapters, marks);
+    const e4 = cov.get('e4')!;
+    expect(e4.reviewCount).toBe(1);
+    expect(e4.gapCount).toBe(1);
+    // The root's numbers include everything beneath it.
+    expect(cov.get('root')!.reviewCount).toBe(1);
   });
 
   it('a node off the studies\' paths is uncovered while its siblings are not', () => {

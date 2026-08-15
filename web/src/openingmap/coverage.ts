@@ -28,9 +28,26 @@ export interface NodeCoverage {
   preparedPlies: number;
   /** Prepared end-of-line positions beneath this node. */
   lineCount: number;
+  /** Positions here or beneath whose latest drill was a miss. */
+  reviewCount: number;
+  /** Positions here or beneath where a drill found the studies wanting. */
+  gapCount: number;
 }
 
-const NONE: NodeCoverage = { covered: false, preparedMoves: [], preparedPlies: 0, lineCount: 0 };
+/** The drill record's word on positions, keyed the drill's way (fenKey). */
+export interface DrillMarks {
+  review: ReadonlySet<string>;
+  gaps: ReadonlySet<string>;
+}
+
+const NONE: NodeCoverage = {
+  covered: false,
+  preparedMoves: [],
+  preparedPlies: 0,
+  lineCount: 0,
+  reviewCount: 0,
+  gapCount: 0,
+};
 
 /** Every study tag on the map, deduplicated by document and chapter scope. */
 export function collectStudyTags(map: OpeningMap): MapTag[] {
@@ -90,6 +107,7 @@ const MAX_WALK_PLIES = 60;
 export function computeCoverage(
   resolved: ResolvedMap,
   chapters: Chapter[],
+  marks?: DrillMarks,
 ): Map<string, NodeCoverage> {
   const out = new Map<string, NodeCoverage>();
   if (chapters.length === 0) {
@@ -125,6 +143,10 @@ export function computeCoverage(
     let frontier: { cands: DrillCand[]; ply: number }[] = [{ cands: startCands, ply: 0 }];
     let preparedPlies = 0;
     let lineCount = 0;
+    // The drill record's marks, counted over the same walk: a parent's
+    // numbers include everything beneath it, like the rest of coverage.
+    let reviewCount = marks?.review.has(startKey) ? 1 : 0;
+    let gapCount = marks?.gaps.has(startKey) ? 1 : 0;
     while (frontier.length > 0) {
       const next: typeof frontier = [];
       for (const { cands, ply } of frontier) {
@@ -142,6 +164,8 @@ export function computeCoverage(
           // the position was first reached.
           if (visited.has(key)) continue;
           visited.add(key);
+          if (marks?.review.has(key)) reviewCount += 1;
+          if (marks?.gaps.has(key)) gapCount += 1;
           preparedPlies = Math.max(preparedPlies, ply + 1);
           next.push({ cands: advanceCands(chapters, posIndex, cands, san, key), ply: ply + 1 });
         }
@@ -153,6 +177,8 @@ export function computeCoverage(
       preparedMoves: expectedSans(chapters, startCands),
       preparedPlies,
       lineCount,
+      reviewCount,
+      gapCount,
     });
   }
   return out;

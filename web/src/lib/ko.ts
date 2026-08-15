@@ -540,6 +540,8 @@ export const ko: Record<string, string> = {
   'Every popular reply here runs into your preparation.':
     '여기서 자주 나오는 응수는 모두 준비에 걸립니다.',
   'Chart it on the map': '맵에 추가',
+  '{n} fumbled in drills — drill from here': '드릴에서 {n}개 틀림 — 여기서 드릴하세요',
+  '{n} drill gaps — the studies lack an answer': '드릴 갭 {n}개 — 스터디에 답이 없습니다',
 
   // --- repertoire ----------------------------------------------------------
   'From the opening map': '오프닝 맵에서',

@@ -374,6 +374,16 @@ function NodePanel({
               })}
             </p>
           )}
+          {(coverage?.reviewCount ?? 0) > 0 && (
+            <p className="text-warn text-xs">
+              {t('{n} fumbled in drills — drill from here', { n: coverage!.reviewCount })}
+            </p>
+          )}
+          {(coverage?.gapCount ?? 0) > 0 && (
+            <p className="text-bad text-xs">
+              {t('{n} drill gaps — the studies lack an answer', { n: coverage!.gapCount })}
+            </p>
+          )}
           {facts.fen === null && !isRoot && (
             <p className="text-bad text-xs">{t('Not a legal move here')}</p>
           )}

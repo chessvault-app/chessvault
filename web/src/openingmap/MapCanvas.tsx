@@ -134,6 +134,19 @@ export function MapCanvas({
               </text>
             )}
             {noteTags && <circle cx={x + NODE_W - 10} cy={y + 10} r={3} fill="var(--color-primary)" />}
+            {/* Drill health, quietly: amber = fumbled positions beneath,
+                red = the drill found the studies wanting somewhere here. */}
+            {(cov?.reviewCount ?? 0) > 0 && (
+              <circle cx={x + 10} cy={y + NODE_H - 7} r={3} fill="var(--color-warn)" />
+            )}
+            {(cov?.gapCount ?? 0) > 0 && (
+              <circle
+                cx={x + (cov!.reviewCount > 0 ? 19 : 10)}
+                cy={y + NODE_H - 7}
+                r={3}
+                fill="var(--color-bad)"
+              />
+            )}
             {gapCount > 0 && (
               <>
                 {/* Popular replies the map has nothing against — the count

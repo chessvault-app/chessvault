@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { pgnToChapters } from '@shared/pgn';
 import type { Chapter } from '@shared/types';
 import { api } from '@/lib/api';
-import { collectStudyTags, computeCoverage, scopedChapters, type NodeCoverage } from './coverage';
+import {
+  collectStudyTags,
+  computeCoverage,
+  scopedChapters,
+  type DrillMarks,
+  type NodeCoverage,
+} from './coverage';
 import type { MapTag, OpeningMap, ResolvedMap } from './model';
 
 /**
@@ -51,9 +57,44 @@ export function useCoverage(
 } {
   const [version, bump] = useState(0);
   const [missing, setMissing] = useState<ReadonlySet<string>>(new Set());
+  const [marks, setMarks] = useState<DrillMarks>({ review: new Set(), gaps: new Set() });
   const tags = useMemo(() => (map ? collectStudyTags(map) : []), [map]);
   const ids = useMemo(() => [...new Set(tags.map((t) => t.id))].sort(), [tags]);
   const idsKey = ids.join('\n');
+
+  // The drill record's word on the tagged studies: which positions were
+  // fumbled last, and where a drill found them wanting. Re-read per mount
+  // and per tag change — the record grows while the user drills, and a
+  // stale overlay would say a fixed line is still shaky.
+  useEffect(() => {
+    if (ids.length === 0) {
+      setMarks({ review: new Set(), gaps: new Set() });
+      return;
+    }
+    let live = true;
+    void (async () => {
+      const review = new Set<string>();
+      const gaps = new Set<string>();
+      await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const body = await api<{ review?: { key: string }[]; gaps?: { key: string }[] }>(
+              `/api/repertoire/summary?study=${encodeURIComponent(id)}`,
+            );
+            for (const entry of body.review ?? []) review.add(entry.key);
+            for (const entry of body.gaps ?? []) gaps.add(entry.key);
+          } catch {
+            // No record is a clean map, not an error.
+          }
+        }),
+      );
+      if (live) setMarks({ review, gaps });
+    })();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
 
   useEffect(() => {
     if (ids.length === 0) {
@@ -97,10 +138,10 @@ export function useCoverage(
   const coverage = useMemo(() => {
     if (!map || !resolved || tags.length === 0) return undefined;
     const studies = new Map([...parsed].map(([id, hit]) => [id, hit.chapters]));
-    return computeCoverage(resolved, scopedChapters(tags, studies));
+    return computeCoverage(resolved, scopedChapters(tags, studies), marks);
     // `version` stands in for the module cache's contents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, resolved, tags, version]);
+  }, [map, resolved, tags, marks, version]);
 
   return { coverage, missing };
 }
