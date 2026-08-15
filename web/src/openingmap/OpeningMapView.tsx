@@ -1,9 +1,10 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, Library, NotebookPen, Plus, Tag, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
 import { Button } from '@/ui/Button';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
@@ -17,17 +18,24 @@ import { PromptSheet } from '@/ui/PromptSheet';
 import { Segmented } from '@/ui/Segmented';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
+import type { NodeCoverage } from './coverage';
 import {
   addChild,
+  addTag,
   deleteNode,
   normalizeSan,
+  removeTag,
   resolveMap,
   updateFields,
   type MapColor,
+  type MapTag,
   type OpeningMap,
+  type ResolvedMap,
   type ResolvedNode,
 } from './model';
 import { useOpeningMap } from './store';
+import { TagPicker } from './TagPicker';
+import { useCoverage } from './useCoverage';
 
 /**
  * The opening map: the user's prepared openings as a tree, one map per
@@ -46,6 +54,28 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
   const map = doc?.maps.find((m) => m.color === color) ?? null;
   const resolved = useMemo(() => (map ? resolveMap(map) : null), [map]);
+  const { coverage, missing } = useCoverage(map, resolved);
+
+  // One label lookup for the whole canvas: each node's own position, as
+  // deep as the catalogue can possibly name.
+  const labelFens = useMemo(() => {
+    if (!resolved) return [];
+    const fens: string[] = [];
+    for (const facts of resolved.nodes.values()) {
+      if (facts.fen && facts.ply > 0 && facts.ply <= NAMED_PLIES) fens.push(facts.fen);
+    }
+    return fens;
+  }, [resolved]);
+  const names = useOpeningLabels(labelFens);
+  const labels = useMemo(() => {
+    const out = new Map<string, string>();
+    if (!resolved) return out;
+    for (const [id, facts] of resolved.nodes) {
+      const name = facts.fen ? names.get(facts.fen) : null;
+      if (name) out.set(id, name);
+    }
+    return out;
+  }, [resolved, names]);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A selection survives edits but not a map switch or its node's deletion.
@@ -70,6 +100,19 @@ export function OpeningMapView({ params }: { params: string[] }) {
   };
 
   const empty = map !== null && map.root.children.length === 0;
+  const panel =
+    map && resolved && selected ? (
+      <NodePanel
+        key={selected}
+        map={map}
+        resolved={resolved}
+        facts={resolved.nodes.get(selected)!}
+        coverage={coverage?.get(selected)}
+        missing={missing}
+        onAddMove={() => setAddTo(selected)}
+        onDelete={() => setSelectedId(null)}
+      />
+    ) : null;
 
   return (
     <PageShell width="wide" scroll={false} className="h-full">
@@ -125,6 +168,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
               <MapCanvas
                 map={map}
                 resolved={resolved}
+                coverage={coverage}
+                labels={labels}
                 selectedId={selected}
                 onSelect={setSelectedId}
               />
@@ -132,15 +177,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           </div>
           {!phone && !empty && (
             <aside className="border-line bg-surface w-72 shrink-0 overflow-y-auto rounded-xl border p-4">
-              {selected ? (
-                <NodePanel
-                  key={selected}
-                  map={map}
-                  facts={resolved.nodes.get(selected)!}
-                  onAddMove={() => setAddTo(selected)}
-                  onDelete={() => setSelectedId(null)}
-                />
-              ) : (
+              {panel ?? (
                 <p className="text-muted text-xs leading-relaxed">
                   {t('Select a move to see its details, tag studies to it, or grow the line.')}
                 </p>
@@ -149,15 +186,9 @@ export function OpeningMapView({ params }: { params: string[] }) {
           )}
         </div>
       )}
-      {phone && map && resolved && selected && (
+      {phone && panel && (
         <Sheet label={t('Move details')} onClose={() => setSelectedId(null)}>
-          <NodePanel
-            key={selected}
-            map={map}
-            facts={resolved.nodes.get(selected)!}
-            onAddMove={() => setAddTo(selected)}
-            onDelete={() => setSelectedId(null)}
-          />
+          {panel}
         </Sheet>
       )}
       {addTo !== null && (
@@ -181,22 +212,53 @@ export function OpeningMapView({ params }: { params: string[] }) {
 /** The selected node: its position, its editable facts, its actions. */
 function NodePanel({
   map,
+  resolved,
   facts,
+  coverage,
+  missing,
   onAddMove,
   onDelete,
 }: {
   map: OpeningMap;
+  resolved: ResolvedMap;
   facts: ResolvedNode;
+  coverage: NodeCoverage | undefined;
+  missing: ReadonlySet<string>;
   onAddMove: () => void;
   onDelete: () => void;
 }) {
   const { apply } = useOpeningMap();
+  const [picking, setPicking] = useState(false);
   const node = facts.mapNode;
   const isRoot = facts.parentId === null;
   const title = isRoot ? t('Start position') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
 
+  // The line's deepest opening name — what a player calls where they are.
+  const lineFens = useMemo(() => {
+    const fens: string[] = [];
+    let cursor: string | null = node.id;
+    while (cursor) {
+      const step: ResolvedNode | undefined = resolved.nodes.get(cursor);
+      if (!step) break;
+      if (step.fen) fens.push(step.fen);
+      cursor = step.parentId;
+    }
+    return fens.reverse();
+  }, [resolved, node.id]);
+  const lineName = useOpeningName(lineFens);
+
   const commit = (patch: Parameters<typeof updateFields>[3]): void =>
     apply((d) => updateFields(d, map.id, node.id, patch));
+
+  // Continuations the studies prepare that the map does not chart yet:
+  // promoting one onto the map is the primary flow, so it is one tap.
+  const chartable = useMemo(() => {
+    if (!coverage) return [];
+    const charted = new Set(node.children.map((c) => c.san));
+    return coverage.preparedMoves.filter((san) => !charted.has(san));
+  }, [coverage, node.children]);
+
+  const tags = node.tags ?? [];
 
   return (
     <div className="flex flex-col gap-4">
@@ -210,6 +272,15 @@ function NodePanel({
         )}
         <div className="min-w-0">
           <p className="text-fg text-sm font-semibold">{title}</p>
+          {lineName && !isRoot && <p className="text-subtle truncate text-xs">{lineName}</p>}
+          {coverage?.covered && (
+            <p className="text-muted text-xs">
+              {t('Prepared {plies} plies deep, {lines} lines', {
+                plies: coverage.preparedPlies,
+                lines: coverage.lineCount,
+              })}
+            </p>
+          )}
           {facts.fen === null && !isRoot && (
             <p className="text-bad text-xs">{t('Not a legal move here')}</p>
           )}
@@ -218,7 +289,7 @@ function NodePanel({
 
       {!isRoot && (
         <>
-          <Field label="Name" hint={undefined}>
+          <Field label="Name">
             <Input
               defaultValue={node.name ?? ''}
               placeholder={t('Named from the opening catalogue')}
@@ -257,6 +328,65 @@ function NodePanel({
         />
       </Field>
 
+      <Field label="Tags">
+        <div className="flex flex-col gap-1">
+          {tags.map((tag) => {
+            const broken = tag.kind === 'study' && missing.has(tag.id);
+            const Icon = broken ? AlertTriangle : tag.kind === 'note' ? NotebookPen : Library;
+            return (
+              <div
+                key={`${tag.kind}\n${tag.id}\n${tag.chapter ?? ''}`}
+                className="border-line flex items-center gap-2 rounded-lg border px-2 py-1.5"
+              >
+                <Icon className={broken ? 'text-bad size-4 shrink-0' : 'text-muted size-4 shrink-0'} />
+                <button
+                  type="button"
+                  className="text-fg hover:text-primary min-w-0 flex-1 truncate text-left text-xs"
+                  title={tag.id}
+                  onClick={() =>
+                    navigate(tag.kind === 'note' ? 'notes' : 'studies', encodeURIComponent(tag.id))
+                  }
+                >
+                  {tag.id.split('/').pop()}
+                  {tag.chapter ? ` · ${tag.chapter}` : ''}
+                </button>
+                {broken && <span className="text-bad shrink-0 text-xs">{t('Missing')}</span>}
+                <button
+                  type="button"
+                  title={t('Remove tag')}
+                  onClick={() => apply((d) => removeTag(d, map.id, node.id, tag))}
+                  className="text-subtle hover:text-fg shrink-0"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            );
+          })}
+          <Button variant="ghost" size="sm" className="self-start" onClick={() => setPicking(true)}>
+            <Tag className="size-3.5" /> {t('Add a tag')}
+          </Button>
+        </div>
+      </Field>
+
+      {chartable.length > 0 && (
+        <Field
+          label="Prepared, not on the map"
+          hint={<span className="text-subtle text-[0.6875rem]">{t('tap to add')}</span>}
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {chartable.map((san) => (
+              <Button
+                key={san}
+                size="sm"
+                onClick={() => apply((d) => addChild(d, map.id, node.id, san))}
+              >
+                <Plus className="size-3" /> {san}
+              </Button>
+            ))}
+          </div>
+        </Field>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
           <Plus className="size-3.5" /> {t('Add a move')}
@@ -276,6 +406,17 @@ function NodePanel({
           />
         )}
       </div>
+
+      {picking && (
+        <TagPicker
+          existing={tags}
+          onPick={(tag: MapTag) => {
+            apply((d) => addTag(d, map.id, node.id, tag));
+            setPicking(false);
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </div>
   );
 }

@@ -190,3 +190,35 @@ export function useOpeningName(fens: string[]): string | null {
   }
   return null;
 }
+
+/**
+ * Names for many unrelated positions at once — the opening map's canvas,
+ * which labels every node with one hook rather than a hook per node.
+ * Unlike useOpeningName this does NOT walk back along a line: each
+ * position answers for itself, and one without a catalogue row of its
+ * own maps to null. Same shared cache, so nothing is asked twice.
+ */
+export function useOpeningLabels(fens: string[]): ReadonlyMap<string, string | null> {
+  const [version, bump] = useState(0);
+  const key = fens.join('\n');
+
+  useEffect(() => {
+    const wanted = fens.filter((fen) => !known.has(fen));
+    if (wanted.length === 0) return;
+    let live = true;
+    void Promise.all(wanted.map(lookup)).then(() => {
+      if (live) bump((n) => n + 1);
+    });
+    return () => {
+      live = false;
+    };
+    // Keyed on the joined positions: the array identity changes per render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  return useMemo(
+    () => new Map(fens.map((fen) => [fen, known.get(fen)?.name ?? null])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key, version],
+  );
+}
