@@ -142,7 +142,8 @@ the map's shape is a thing people remember. And once settled, the dots
 keep breathing — a slow, few-pixel wander around their homes, threads
 following — so the constellation floats instead of freezing. (All of
 it skipped when the OS asks for reduced motion.) Wheel zooms to the
-cursor, dragging the ground pans, two fingers pinch, and dragging a
+cursor, dragging the ground pans, two fingers pinch, pressing a dot
+selects it and pressing it again lets it go, and dragging a
 dot pulls the web — mouse or touch. The held dot follows the finger,
 its neighbours follow their springs, crowding pushes back, and the
 whole thing coasts to a stop after the release instead of freezing

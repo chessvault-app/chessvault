@@ -278,7 +278,11 @@ export function OpeningMapView({ params }: { params: string[] }) {
           labels={labels}
           matches={matches}
           selectedId={selected}
-          onSelect={setSelectedId}
+          // Pressing the selected dot again lets it go. Selecting is what
+          // opens the panel and lights the mainline, so it needs an undo
+          // that is the same gesture — hunting for empty canvas to click
+          // is not one, and on a dense map there may not be any.
+          onSelect={(id) => setSelectedId((prev) => (prev === id ? null : id))}
         />
       )}
 
