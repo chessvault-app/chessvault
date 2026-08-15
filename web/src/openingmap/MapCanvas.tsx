@@ -31,6 +31,9 @@ const CALM_ABOVE = 160;
     than the map. Long enough not to fire while panning, short enough to
     feel deliberate rather than broken. */
 const HOLD_MS = 350;
+/** How far a finger may wander while holding before it counts as a pan
+    instead. A press never lands on one pixel and never stays on it. */
+const HOLD_SLOP = 10;
 
 /** One focused line wears the app's accent, as any other emphasis does. */
 const ACCENT = 'var(--color-primary)';
@@ -369,9 +372,29 @@ export function MapCanvas({
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const moved = useRef(false);
 
-  /** A finger resting on a dot, not yet long enough to have claimed it. */
+  /**
+   * Which dot is currently held, as STATE rather than a ref, because the
+   * whole point is to draw it. A hold that arms silently is a hold you
+   * cannot learn: the finger has to be told the map let go of the dot
+   * and handed it over, and on a mouse it confirms the press landed on
+   * the dot you meant rather than the one beside it.
+   */
+  const [held, setHeld] = useState<string | null>(null);
+
+  /**
+   * A finger resting on a dot, not yet long enough to have claimed it,
+   * and where it came down.
+   *
+   * The origin is the important half. Cancelling the hold on ANY movement
+   * sounds right and is not: a finger on glass jitters a pixel or two the
+   * whole time it is down, so the hold was being thrown away almost every
+   * time and dots could not be picked up at all. It takes real travel to
+   * mean "I am panning" — `HOLD_SLOP` of it.
+   */
   const holdTimer = useRef(0);
+  const holdFrom = useRef<{ x: number; y: number } | null>(null);
   const cancelHold = (): void => {
+    holdFrom.current = null;
     if (!holdTimer.current) return;
     clearTimeout(holdTimer.current);
     holdTimer.current = 0;
@@ -380,6 +403,7 @@ export function MapCanvas({
 
   const dropNode = (): void => {
     cancelHold();
+    setHeld(null);
     const drag = nodeDrag.current;
     if (!drag) return;
     letGo(drag.id);
@@ -759,6 +783,7 @@ export function MapCanvas({
                   const pointerId = e.pointerId;
                   const fromX = e.clientX;
                   const fromY = e.clientY;
+                  const touch = e.pointerType === 'touch';
                   const begin = (): void => {
                     nodeDrag.current = {
                       id,
@@ -769,6 +794,13 @@ export function MapCanvas({
                       origY: from.y,
                       moved: false,
                     };
+                    setHeld(id);
+                    // The other half of the answer, where the hardware
+                    // offers one: a hold that arrives with a tick under
+                    // the finger needs no explaining. Android honours
+                    // this; iOS Safari does not, which is why the ring
+                    // is the part that has to carry it.
+                    if (touch) navigator.vibrate?.(12);
                   };
                   // A mouse claims the dot at once; a finger has to mean
                   // it. On a map worth exploring there is barely any bare
@@ -778,7 +810,8 @@ export function MapCanvas({
                   // dot, otherwise the surface takes the gesture. This is
                   // what every map app does with its pins, for this
                   // reason.
-                  if (e.pointerType === 'touch') {
+                  if (touch) {
+                    holdFrom.current = { x: fromX, y: fromY };
                     holdTimer.current = window.setTimeout(begin, HOLD_MS);
                   } else {
                     begin();
@@ -786,9 +819,16 @@ export function MapCanvas({
                 }}
                 onPointerMove={(e) => {
                   const drag = nodeDrag.current;
-                  // Moving before the hold has landed is a pan, so let go
-                  // of the dot and let the surface have it.
-                  if (!drag && holdTimer.current) cancelHold();
+                  // Travelling before the hold lands is a pan, so let go
+                  // of the dot and let the surface have it. Jitter is not
+                  // travel: see holdFrom.
+                  if (!drag && holdFrom.current) {
+                    const wander = Math.hypot(
+                      e.clientX - holdFrom.current.x,
+                      e.clientY - holdFrom.current.y,
+                    );
+                    if (wander > HOLD_SLOP) cancelHold();
+                  }
                   if (!drag || drag.id !== id || drag.pointerId !== e.pointerId) return;
                   const dx = e.clientX - drag.fromX;
                   const dy = e.clientY - drag.fromY;
@@ -808,12 +848,14 @@ export function MapCanvas({
                   // Let go of the dot but leave the loop running: what is
                   // still swinging coasts to a stop on its own.
                   cancelHold();
+                  setHeld(null);
                   letGo(id);
                   suppressClick.current = nodeDrag.current?.moved ?? false;
                   nodeDrag.current = null;
                 }}
                 onPointerCancel={() => {
                   cancelHold();
+                  setHeld(null);
                   letGo(id);
                   nodeDrag.current = null;
                 }}
@@ -848,6 +890,24 @@ export function MapCanvas({
                   strokeWidth={selected ? 2 : 1.2}
                   strokeDasharray={planned && !selected ? '3 3' : undefined}
                 />
+                {/* Held: the dot has been picked up and moves with the
+                    pointer now. A ring outside everything else the dot
+                    wears, in the foreground colour so it reads on any
+                    fill, and outside the depth arc so it never looks
+                    like progress. */}
+                {held === id && (
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={r + 7}
+                    fill="none"
+                    stroke="var(--color-fg)"
+                    strokeWidth={2 / view.k}
+                    strokeDasharray={`${3 / view.k} ${3 / view.k}`}
+                    opacity={0.9}
+                  />
+                )}
+
                 {/* Depth progress as an arc around the dot: how far the
                     preparation runs toward the intended move. */}
                 {target !== undefined && reach !== undefined && (
