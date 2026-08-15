@@ -50,7 +50,7 @@ are drilled on. You still choose your side and the field that answers.
 
 A third scope arrives from outside: the [opening map](opening-map.md)'s
 Drill button hands over **every scoped chapter of every study the map
-tags**, as one repertoire, starting from the chosen node. The rules
+links**, as one repertoire, starting from the chosen node. The rules
 below apply unchanged — the candidate set is just larger — and each
 attempt is recorded under the study and chapter the position actually
 belongs to, so per-study summaries stay truthful.

@@ -150,7 +150,7 @@ export function AddMoveSheet({
                 </span>
               )}
               {row.prepared && (
-                <span className="text-good shrink-0 text-xs" title={t('A tagged study prepares it')}>
+                <span className="text-good shrink-0 text-xs" title={t('A linked study prepares it')}>
                   {t('prepared')}
                 </span>
               )}

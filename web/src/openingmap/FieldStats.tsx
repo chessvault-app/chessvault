@@ -136,7 +136,7 @@ export function FieldStats({
                 {share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
               </span>
               {prepared.has(move.san) && (
-                <span className="text-good shrink-0 text-[0.6875rem]" title={t('A tagged study prepares it')}>
+                <span className="text-good shrink-0 text-[0.6875rem]" title={t('A linked study prepares it')}>
                   {t('prepared')}
                 </span>
               )}

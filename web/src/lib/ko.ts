@@ -501,8 +501,8 @@ export const ko: Record<string, string> = {
   'Start with your first move for this colour — the rest of the tree grows from it.':
     '이 색의 첫 수부터 시작하세요 — 나머지 트리는 거기서 자랍니다.',
   'Add a move': '수 추가',
-  'Select a move to see its details, tag studies to it, or grow the line.':
-    '수를 선택하면 상세 정보를 보고, 스터디를 태그하고, 라인을 늘릴 수 있습니다.',
+  'Select a move to see its details, link studies to it, or grow the line.':
+    '수를 선택하면 상세 정보를 보고, 스터디를 연결하고, 라인을 늘릴 수 있습니다.',
   'Move details': '수 상세',
   'Not a legal move in this position': '이 포지션에서 둘 수 없는 수입니다',
   'Not a legal move here': '여기서 둘 수 없는 수',
@@ -512,24 +512,24 @@ export const ko: Record<string, string> = {
   'Named from the opening catalogue': '오프닝 카탈로그에서 자동으로 이름이 붙습니다',
   'Intended depth': '목표 깊이',
   'full moves': '수 기준',
-  Tags: '태그',
-  'Add a tag': '태그 추가',
-  'Remove tag': '태그 제거',
-  'Tag kind': '태그 종류',
-  Tagged: '태그됨',
+  'Linked studies and notes': '연결된 스터디와 노트',
+  'Link a study or note': '스터디·노트 연결',
+  'Remove link': '연결 해제',
+  'What to link': '연결할 종류',
+  Linked: '연결됨',
   Missing: '없음',
-  'Tag one chapter': '챕터 하나만 태그',
+  'Link one chapter': '챕터 하나만 연결',
   'Nothing here matches.': '일치하는 항목이 없습니다.',
   'Filter…': '필터…',
   'Prepared, not on the map': '준비됐지만 맵에 없는 수',
   'tap to add': '눌러서 추가',
   'Delete this move': '이 수 삭제',
-  'Delete this move and everything after it? Tagged studies are untouched.':
-    '이 수와 그 이후를 모두 삭제할까요? 태그된 스터디는 그대로 남습니다.',
+  'Delete this move and everything after it? Linked studies are untouched.':
+    '이 수와 그 이후를 모두 삭제할까요? 연결된 스터디는 그대로 남습니다.',
   Drill: '드릴',
   'Whole map': '맵 전체',
-  'Tag a study first — a drill needs prepared moves':
-    '먼저 스터디를 태그하세요 — 드릴에는 준비된 수가 필요합니다',
+  'Link a study first — a drill needs prepared moves':
+    '먼저 스터디를 연결하세요 — 드릴에는 준비된 수가 필요합니다',
   'Save failed': '저장 실패',
   'Check coverage against': '커버리지 비교 대상',
   'Nothing — hide gaps': '없음 — 갭 숨기기',
@@ -550,7 +550,7 @@ export const ko: Record<string, string> = {
   'What the studies prepare here — pick a field source to see statistics.':
     '스터디가 여기서 준비한 수 — 통계를 보려면 필드 소스를 고르세요.',
   'Nothing to offer — type the move instead.': '보여줄 것이 없습니다 — 수를 직접 입력하세요.',
-  'A tagged study prepares it': '태그된 스터디가 준비한 수',
+  'A linked study prepares it': '연결된 스터디가 준비한 수',
   'On the map': '맵에 있음',
   prepared: '준비됨',
   'Type a move…': '수 입력…',

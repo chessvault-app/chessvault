@@ -81,7 +81,7 @@ export function TagPicker({
   };
 
   return (
-    <Sheet label={t('Add a tag')} onClose={onClose}>
+    <Sheet label={t('Link a study or note')} onClose={onClose}>
       {scoping === null ? (
         <>
           <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export function TagPicker({
                 { value: 'study', label: t('Studies') },
                 { value: 'note', label: t('Notes') },
               ]}
-              ariaLabel="Tag kind"
+              ariaLabel="What to link"
             />
             <SearchInput
               className="flex-1"
@@ -121,14 +121,14 @@ export function TagPicker({
                       <Icon className="text-muted size-4 shrink-0" />
                       <span className="text-fg min-w-0 flex-1 truncate text-sm">{row.id}</span>
                       {tagged(wholeTag) && (
-                        <span className="text-subtle shrink-0 text-xs">{t('Tagged')}</span>
+                        <span className="text-subtle shrink-0 text-xs">{t('Linked')}</span>
                       )}
                     </button>
                     {kind === 'study' && (row.chapters ?? 1) > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        title={t('Tag one chapter')}
+                        title={t('Link one chapter')}
                         onClick={() => void openScoping(row.id)}
                       >
                         <BookOpen className="size-3.5" /> {t('Chapter')}
@@ -161,7 +161,7 @@ export function TagPicker({
                 >
                   <BookOpen className="text-muted size-4 shrink-0" />
                   <span className="text-fg min-w-0 flex-1 truncate text-sm">{name}</span>
-                  {tagged(tag) && <span className="text-subtle shrink-0 text-xs">{t('Tagged')}</span>}
+                  {tagged(tag) && <span className="text-subtle shrink-0 text-xs">{t('Linked')}</span>}
                 </button>
               );
             })}

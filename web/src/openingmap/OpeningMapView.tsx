@@ -302,7 +302,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             <aside className="border-line bg-surface w-72 shrink-0 overflow-y-auto rounded-xl border p-4">
               {panel ?? (
                 <p className="text-muted text-xs leading-relaxed">
-                  {t('Select a move to see its details, tag studies to it, or grow the line.')}
+                  {t('Select a move to see its details, link studies to it, or grow the line.')}
                 </p>
               )}
             </aside>
@@ -512,7 +512,7 @@ function NodePanel({
         />
       </Field>
 
-      <Field label="Tags">
+      <Field label="Linked studies and notes">
         <div className="flex flex-col gap-1">
           {tags.map((tag) => {
             const broken = tag.kind === 'study' && missing.has(tag.id);
@@ -543,7 +543,7 @@ function NodePanel({
                 {broken && <span className="text-bad shrink-0 text-xs">{t('Missing')}</span>}
                 <button
                   type="button"
-                  title={t('Remove tag')}
+                  title={t('Remove link')}
                   onClick={() => apply((d) => removeTag(d, map.id, node.id, tag))}
                   className="text-subtle hover:text-fg shrink-0"
                 >
@@ -553,7 +553,7 @@ function NodePanel({
             );
           })}
           <Button variant="ghost" size="sm" className="self-start" onClick={() => setPicking(true)}>
-            <Tag className="size-3.5" /> {t('Add a tag')}
+            <Tag className="size-3.5" /> {t('Link a study or note')}
           </Button>
         </div>
       </Field>
@@ -604,7 +604,7 @@ function NodePanel({
         <Button
           size="sm"
           disabled={!coverage?.covered}
-          title={coverage?.covered ? undefined : t('Tag a study first — a drill needs prepared moves')}
+          title={coverage?.covered ? undefined : t('Link a study first — a drill needs prepared moves')}
           onClick={() => {
             // The trainer takes the map's whole repertoire — every scoped
             // chapter of every tagged study — starting from this node.
@@ -645,7 +645,7 @@ function NodePanel({
             label={t('Delete')}
             triggerTitle={t('Delete this move')}
             triggerTone="quiet"
-            question={t('Delete this move and everything after it? Tagged studies are untouched.')}
+            question={t('Delete this move and everything after it? Linked studies are untouched.')}
             confirmLabel={t('Delete')}
             onConfirm={() => {
               apply((d) => deleteNode(d, map.id, node.id));
