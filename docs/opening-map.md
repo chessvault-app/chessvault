@@ -71,6 +71,19 @@ charts it in one tap, and reports how much of the field the node
 meets ("62% of games met"). The check is off until a source is chosen
 and the choice is device-local; answers are cached per session.
 
+## Games that left the book
+
+The **My games** button asks the games index where each of your recent
+games of the map's colour first stepped off prepared ground — the
+charted nodes plus everything the tagged studies hold. Results are
+grouped by the position it happened in, because that is the actionable
+unit: five games leaving at one node is one hole, not five incidents.
+Each group names the moves that left and who played them — a reply
+*they* keep playing is a gap to prepare; a move *you* played past your
+own book is a line to extend — and offers a jump to the map node when
+one stands there, plus each game opened on the analysis board at the
+exact deviation.
+
 ## Drill health
 
 The drill record (`vault/repertoire/history.jsonl`) already knows
@@ -94,6 +107,18 @@ node, which is how a shaky line gets fixed.
   starting from the node (see [the repertoire trainer](repertoire.md)).
   Attempts are recorded under the real study and chapter each position
   belongs to, so per-study summaries stay truthful.
+
+## The picture
+
+The map draws as a graph view — the constellation the vault's Obsidian
+ancestry promises. Circles are sized by what hangs beneath them; the
+layout is a deterministic force relaxation, so the same map always
+settles into the same shape and an edit nudges the picture instead of
+reshuffling it. Wheel zooms to the cursor, dragging pans, two fingers
+pinch; labels keep their screen size and fade out as the view pulls
+back — far out you read the shape, close in you read the names.
+Covered nodes are filled, plans are hollow and dashed, and the badges
+(field gaps, drill health, the depth arc) ride on the dots.
 
 ## What is stored
 
