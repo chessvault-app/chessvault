@@ -1,5 +1,5 @@
 import { parseSquare } from 'chessops/util';
-import { BookmarkPlus, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
+import { BookmarkPlus, BookOpen, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -1628,21 +1628,39 @@ export function RepertoireView() {
                         navigate('analysis');
                       }}
                     />
-                    {/* The same generosity as the analysis handoff, pointed
-                        at the vault: the sparred line used to evaporate the
-                        moment you left. */}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="self-start"
-                      onClick={() => {
-                        setSaveError(null);
-                        setSaveOpen(true);
-                      }}
-                    >
-                      <BookmarkPlus className="size-3.5" />
-                      {t('Save line to study')}
-                    </Button>
+                    {/* A drill has nowhere to save TO: the line came out of a
+                        study, and filing it back would write the same moves
+                        into a second one. What is worth offering there is the
+                        way back — to the study just rehearsed, where the gaps
+                        and misses this session recorded are fixed. Sparring
+                        keeps the save: that line exists nowhere else and used
+                        to evaporate the moment you left. */}
+                    {mode === 'drill' ? (
+                      drillStudy && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="self-start"
+                          onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
+                        >
+                          <BookOpen className="size-3.5" />
+                          {t('Go to study')}
+                        </Button>
+                      )
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="self-start"
+                        onClick={() => {
+                          setSaveError(null);
+                          setSaveOpen(true);
+                        }}
+                      >
+                        <BookmarkPlus className="size-3.5" />
+                        {t('Save line to study')}
+                      </Button>
+                    )}
                   </>
                 )}
               </div>

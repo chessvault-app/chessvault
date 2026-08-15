@@ -135,8 +135,10 @@ most useful thing the trainer can say is what actually beat the prep.
 - **Past the database** — the field itself has no games left, same as
   sparring.
 
-All three hand off the same way sparring does: engine verdict, analyse
-on the board, save the line to a study.
+All three hand off almost the same way sparring does: engine verdict,
+analyse on the board. Where sparring offers to save the line — it exists
+nowhere else — a drill offers the way back to the study it came from,
+since filing the line again would only write the same moves twice.
 
 ### The record and the review pool
 
