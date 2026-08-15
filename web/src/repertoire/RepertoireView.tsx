@@ -1473,10 +1473,18 @@ export function RepertoireView() {
                             // chapter's lines count, transpositions
                             // included — or one chapter alone.
                             { options: [{ value: 'all', label: t('Whole study') }] },
+                            // Under a heading and numbered, because a
+                            // chapter's name is the user's to choose: one
+                            // actually called "Whole study" was the same row
+                            // twice, on the closed trigger as much as in the
+                            // list, and nothing said which was which. The
+                            // numbers are the ones the study's own chapter
+                            // list shows.
                             {
+                              label: t('Chapters'),
                               options: drillChapters.map((c, i) => ({
                                 value: String(i),
-                                label: c.name,
+                                label: `${i + 1}. ${c.name}`,
                               })),
                             },
                           ]}
