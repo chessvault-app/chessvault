@@ -73,6 +73,7 @@ interface AnalysisState {
   cancelPromotion: () => void;
   playSan: (san: string) => boolean;
   playUci: (uci: string) => boolean;
+  playLine: (ucis: string[]) => boolean;
   deleteNode: (id: NodeId) => void;
   promoteNode: (id: NodeId, toMainline: boolean) => void;
   setComment: (id: NodeId, comment: string) => void;
@@ -177,6 +178,35 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
       const result = addUci(tree, cursorId, uci);
       if (!result) return false;
       set({ tree: result.tree, cursorId: result.nodeId });
+      return true;
+    },
+
+    /**
+     * Walk a whole line from the cursor in one step — how clicking the
+     * fourth move of an engine line reaches the fourth move.
+     *
+     * Not `playUci` in a loop: every `set` changes the position on screen,
+     * and the engine re-analyses whenever that happens, so N calls would
+     * start N searches and re-render N times to arrive at one position.
+     * The tree is threaded locally and published once.
+     *
+     * Stops at the first move that will not apply rather than discarding
+     * the line, and keeps whatever came before it. `addMove` reuses an
+     * existing child, so replaying a line the tree already holds navigates
+     * it instead of adding a duplicate branch.
+     */
+    playLine: (ucis) => {
+      const { tree, cursorId } = get();
+      let next = tree;
+      let id = cursorId;
+      for (const uci of ucis) {
+        const result = addUci(next, id, uci);
+        if (!result) break;
+        next = result.tree;
+        id = result.nodeId;
+      }
+      if (id === cursorId) return false;
+      set({ tree: next, cursorId: id });
       return true;
     },
 
