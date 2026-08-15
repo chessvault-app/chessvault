@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
+import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import type { NodeCoverage } from './coverage';
 import { GAP_SHARE, type NodeGaps } from './gaps';
 import type { MapNode, ResolvedNode } from './model';
@@ -43,19 +44,37 @@ export function FieldStats({
 }) {
   const [field, setField] = useState<FieldMove[] | null>(null);
 
+  /**
+   * `field` is null both before the answer arrives and when there is no
+   * answer, and the two used to render the same: nothing at all. So the
+   * panel opened without its statistics and grew them a moment later,
+   * which reads as the panel being broken and then fixing itself. The
+   * wait is real — one request per node, answered per position — so it
+   * gets the treatment every other wait in this app gets: the shape of
+   * what is coming, held back long enough that a fast answer never
+   * flashes a skeleton.
+   */
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (!source || !facts.fen) {
       setField(null);
+      setLoading(false);
       return;
     }
     let live = true;
-    void fieldMovesFor(source, ratings, facts.fen, side).then((moves) => {
-      if (live) setField(moves);
-    });
+    setLoading(true);
+    void fieldMovesFor(source, ratings, facts.fen, side)
+      .then((moves) => {
+        if (live) setField(moves);
+      })
+      .finally(() => {
+        if (live) setLoading(false);
+      });
     return () => {
       live = false;
     };
   }, [source, ratings, side, facts.fen]);
+  const pending = useSlowLoad(loading && field === null);
 
   const games = useMemo(() => (field ?? []).reduce((sum, m) => sum + m.total, 0), [field]);
   const rows = useMemo(
@@ -63,7 +82,15 @@ export function FieldStats({
     [field],
   );
 
-  if (!source || games === 0) return null;
+  if (!source) return null;
+  if (pending) {
+    return (
+      <Field label="Against the field">
+        <SkeletonRows rows={4} />
+      </Field>
+    );
+  }
+  if (games === 0) return null;
 
   const charted = new Map<string, string>();
   for (const child of node.children) if (child.san) charted.set(child.san, child.id);

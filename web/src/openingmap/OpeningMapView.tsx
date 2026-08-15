@@ -259,7 +259,13 @@ export function OpeningMapView({ params }: { params: string[] }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search the map')}
             aria-label={t('Search moves and opening names')}
-            className="bg-surface/90 w-full backdrop-blur-md"
+            // No backdrop of its own. SearchInput puts `className` on its
+            // WRAPPER, which is square, so a translucent fill there
+            // painted a phantom rectangle behind the rounded field and
+            // around its clear button. It was there for a header that
+            // floated over the canvas; the header sits above the canvas
+            // now and the page's own background is behind it.
+            className="w-full"
           />
         ) : null
       }
@@ -350,7 +356,10 @@ export function OpeningMapView({ params }: { params: string[] }) {
           exactly as it is on the board and in a study. */}
       {phone && selected && resolved && (
         <MobileActionBar>
-          <div className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2">
+          {/* The app's gutter, not a smaller one of its own: every other
+              claimant of this row is a centred button strip, so this is
+              the first whose text has a left edge to line up with. */}
+          <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2">
             <button
               type="button"
               className="min-w-0 flex-1 text-left"
