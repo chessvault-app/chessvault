@@ -1,9 +1,7 @@
-import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
-import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
-import { Button } from './Button';
+import { PageHeader } from './PageHeader';
 import { Sheet } from './Sheet';
 
 /**
@@ -66,42 +64,34 @@ export function CanvasShell({
       {/* The surface itself — no box, no border, edge to edge. */}
       {children}
 
-      {/* The corner title, painted after the surface AND after anything
-          the page overlays on it. The bar does not take clicks; only the
-          chevron inside it does, so a drag that starts under the title
-          still pans the canvas rather than dying on invisible chrome.
+      {/* The page's heading, painted after the surface AND after anything
+          the page overlays on it.
 
-          The order is the point: an overlay is `absolute inset-0`, so it
-          lies over the title's corner too, and a `z-10` sibling painted
-          later wins the hit test. Painted first, the title kept its
-          pixels — an overlay draws nothing up there — but lost its
-          clicks, which left the back chevron dead on a phone for exactly
-          as long as the map was failing to load. That is the one moment
-          leaving the page is the only thing left to do. */}
-      <div className="pointer-events-none absolute left-4 top-3 z-10 flex max-w-[55%] items-baseline gap-2">
-        {back && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('Back')}
-            className="pointer-events-auto -my-1 -ml-2 self-center md:hidden"
-            onClick={back}
-          >
-            <ChevronLeft className="size-3.5" />
-          </Button>
+          It is `PageHeader` on `PageShell`'s own gutters, not a smaller
+          thing of its own. A canvas page briefly had a `text-sm` title in
+          the corner, on the theory that a heading competing with the
+          canvas is a heading in the way; what it actually did was make
+          this page's name a different size and a different distance from
+          the edge than every other page in the app, which reads as a
+          mistake rather than as restraint. The floating is what makes it
+          a canvas page; the typography is what makes it this app.
+
+          The row itself takes no clicks — a drag that starts in the empty
+          middle of the header still pans the canvas — while everything
+          inside it does. Painting after the overlays is the other half:
+          an overlay is `absolute inset-0`, so it covers the header too,
+          and a `z-10` sibling painted later wins the hit test. Painted
+          first, the header kept its pixels and lost its clicks, which
+          left the back chevron dead for exactly as long as the map was
+          failing to load — the one moment leaving is all there is to do. */}
+      <div
+        className={cn(
+          'pointer-events-none absolute inset-x-0 top-0 z-10 px-4 pt-4 md:px-6 md:pt-6',
+          '[&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto',
         )}
-        <h1 className="text-fg shrink-0 text-sm font-semibold tracking-tight">{title}</h1>
-        {meta}
+      >
+        <PageHeader title={title} back={back} meta={meta} actions={actions} />
       </div>
-
-      {/* The far corner, the same 1rem in from the edge. Its own children
-          decide what they are at each size — the map shows icon buttons
-          here on a pointer device and hands the same actions to its Fab
-          on a phone, where a row of small targets in the top corner is
-          the worst place on the screen to put them. */}
-      {actions && (
-        <div className="absolute right-4 top-3 z-10 flex items-center gap-1.5">{actions}</div>
-      )}
 
       {panel &&
         (phone ? (
@@ -114,13 +104,14 @@ export function CanvasShell({
             // the floating half is a complementary landmark, and one with
             // no name is a landmark nobody can choose from a list.
             aria-label={panel.label}
-            // Starts below the action row rather than beside it, and ends
-            // a gutter off the bottom — the Fab it used to clear is gone
-            // at this size. Wide enough that its fields, its statistics
-            // rows and its button row stop wrapping: at 18rem nearly
-            // every line in it broke, which is a panel that is technically
-            // showing you something and practically hiding it.
-            className="border-line bg-surface/90 absolute bottom-6 right-4 top-14 z-10 w-[22rem] overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
+            // Clears the header row rather than sitting beside it, and
+            // keeps the shell's own gutter on the other three sides — the
+            // Fab it used to leave 6rem for is gone at this size. Wide
+            // enough that its fields, its statistics rows and its button
+            // row stop wrapping: at 18rem nearly every line in it broke,
+            // which is a panel that is technically showing you something
+            // and practically hiding it.
+            className="border-line bg-surface/90 absolute bottom-6 right-6 top-[4.75rem] z-10 w-[22rem] overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
           >
             {panel.content}
           </aside>

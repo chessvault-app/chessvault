@@ -17,6 +17,7 @@ export function PageHeader({
   title,
   back,
   description,
+  meta,
   actions,
   className,
 }: {
@@ -24,6 +25,13 @@ export function PageHeader({
   /** Where the phone's back chevron goes; omit on top-level pages. */
   back?: () => void;
   description?: string;
+  /**
+   * Quiet status that belongs BESIDE the name rather than under it —
+   * which scope is open, whether it has saved. A description explains
+   * the page and gets its own line; this qualifies the title and sits on
+   * the title's own baseline.
+   */
+  meta?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }) {
@@ -41,6 +49,7 @@ export function PageHeader({
         </Button>
       )}
       <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+      {meta}
       {actions && (
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>
       )}

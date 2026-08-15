@@ -57,15 +57,18 @@ digit is also bold, tier marks also differ by icon shape.
   76rem by the shared constants in `ui/layout.ts` — one place, not
   eight copies.
 - Canvas pages (the opening map) sit in `ui/CanvasShell`: one surface
-  edge to edge, with the chrome floating on it — a small corner title,
-  the page's own controls in the opposite corner on the same gutter, a
-  detail panel that floats on a pointer device and becomes a Sheet on a
-  phone, and `CanvasOverlay` for the centred empty and error states.
+  edge to edge, with the chrome floating on it — the ordinary
+  `PageHeader` on `PageShell`'s own gutters, a detail panel that floats
+  on a pointer device and becomes a Sheet on a phone, and
+  `CanvasOverlay` for the centred empty and error states. The header row
+  takes no pointer events, so a drag beginning in its empty middle still
+  pans the canvas; its children take them back.
   A canvas page's Fab is phone-only, and its actions are one array the
   corner draws as icons and the Fab fans out as pills — the same
   two-presentations-one-list shape `CreateControl` uses.
-  The surface *is* the page, so a header row or an inset side column
-  would be carving space out of the only thing worth showing. This is
+  The surface *is* the page, so chrome floats ON it — a header row or a
+  side column taking space in the flow would be carving it out of the
+  only thing worth showing. This is
   also why a canvas cannot be a fourth width: a width answers how long
   a line of text should be, and a canvas wants the whole viewport at
   every size.
@@ -73,9 +76,13 @@ digit is also bold, tier marks also differ by icon shape.
   tracking-tight`, actions pushed right, the phone-only back chevron
   where a page is reached through More. `ShelfToolbar` is built on it.
   (Four title sizes had accumulated; a page's name is one voice.)
-  A canvas page is the exception the shell owns: its title is `text-sm`
-  in a corner, because a heading that competes with the canvas is a
-  heading in the way. The back chevron rule is unchanged.
+  A canvas page uses it too, floating rather than in flow. It briefly
+  had a `text-sm` title of its own, on the theory that a heading
+  competing with the canvas is a heading in the way; what that actually
+  produced was one page whose name was a different size at a different
+  distance from the edge than every other page, which reads as a mistake
+  rather than as restraint. Floating is what makes it a canvas page. The
+  typography is what makes it this app.
 - A page that scrolls scrolls its **outer** wrapper — the scrollbar
   belongs at the viewport edge, and it is shown: hiding it is a
   mobile idiom, and panels' internal bars were already visible.
