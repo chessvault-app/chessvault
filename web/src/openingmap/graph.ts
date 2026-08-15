@@ -193,9 +193,17 @@ export function layoutGraph(root: MapNode): MapGraph {
  *
  * Velocity with damping rather than direct force-to-position, because the
  * feel is the feature: momentum is what makes the neighbours lag behind
- * the hand and coast to a stop after it lets go. The same springs and
- * repulsion as the layout, so a dragged map relaxes into the same kind of
- * spacing the settled one has.
+ * the hand and coast to a stop after it lets go.
+ *
+ * The force laws are `relax`'s, to the constant — and that is load-
+ * bearing, not tidiness. The first cut of this used its own: an
+ * inverse-SQUARE repulsion where the layout uses inverse-linear, and a
+ * spring nearly twenty times weaker. Both are perfectly reasonable
+ * numbers and together they balance somewhere else entirely, so the map
+ * did not sit still when a drag started — it crept toward that other
+ * equilibrium, and the whole constellation gathered into a hairball.
+ * Whatever these two forces are, the settled layout has to be a fixed
+ * point of them, because the settled layout is where every drag begins.
  *
  * There is no pull toward the layout's home positions. A weak one was the
  * first thing tried and it reads as the map undoing your work: you drag a
@@ -211,8 +219,10 @@ export interface LiveSim {
   positions: () => Map<string, { x: number; y: number }>;
 }
 
-const DAMPING = 0.82;
-const SPRING = 0.09;
+const DAMPING = 0.86;
+/** Turns `relax`'s forces into an acceleration. Only the feel rides on
+    this one — the equilibrium is set by the forces, which are shared. */
+const DT = 0.012;
 /** Below this top speed the constellation has stopped, in world units. */
 const ASLEEP = 0.35;
 
@@ -273,14 +283,16 @@ export function createLiveSim(
             dy = 0.05;
             d2 = dx * dx + dy * dy;
           }
-          // Capped: two dots that end up almost coincident would other-
-          // wise trade an impulse big enough to throw both off-screen.
-          const push = Math.min(40, (90 * 90) / d2);
-          const d = Math.sqrt(d2);
-          fx[a]! += (dx / d) * push;
-          fy[a]! += (dy / d) * push;
-          fx[b]! -= (dx / d) * push;
-          fy[b]! -= (dy / d) * push;
+          // `dx * push`, exactly as relax does it, which makes the
+          // magnitude k^2/d — inverse-LINEAR. Dividing by d first would
+          // make it inverse-square, which is the change that imploded
+          // the map. Capped only as a guard against two dots landing on
+          // top of each other; at any real spacing it never binds.
+          const push = Math.min(400 / Math.sqrt(d2), (90 * 90) / d2);
+          fx[a]! += dx * push;
+          fy[a]! += dy * push;
+          fx[b]! -= dx * push;
+          fy[b]! -= dy * push;
         }
       }
 
@@ -289,7 +301,7 @@ export function createLiveSim(
         const dy = bodies[b]!.y - bodies[a]!.y;
         const dist = Math.hypot(dx, dy) || 0.1;
         const rest = bodies[a]!.r + bodies[b]!.r + 58;
-        const pull = (SPRING * (dist - rest)) / dist;
+        const pull = (1.6 * (dist - rest)) / dist;
         fx[a]! += dx * pull;
         fy[a]! += dy * pull;
         fx[b]! -= dx * pull;
@@ -318,10 +330,15 @@ export function createLiveSim(
           fastest = Math.max(fastest, ASLEEP + 1);
           continue;
         }
-        fx[at]! -= (body.x - cx) * 0.0016;
-        fy[at]! -= (body.y - cy) * 0.0016;
-        body.vx = (body.vx + fx[at]! * 0.06) * DAMPING;
-        body.vy = (body.vy + fy[at]! * 0.06) * DAMPING;
+        // relax's `0.02` again, but toward the CENTROID rather than the
+        // origin: the layout is centred on the origin, so the two agree
+        // where a drag starts, and measuring from the centroid means a
+        // branch towed across the map is not also being tugged back to
+        // wherever the origin happens to be.
+        fx[at]! -= (body.x - cx) * 0.02;
+        fy[at]! -= (body.y - cy) * 0.02;
+        body.vx = (body.vx + fx[at]! * DT) * DAMPING;
+        body.vy = (body.vy + fy[at]! * DT) * DAMPING;
         // Terminal velocity: a spring that has been stretched across the
         // whole map must not teleport its node through everything else.
         const speed = Math.hypot(body.vx, body.vy);

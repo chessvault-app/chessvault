@@ -174,4 +174,46 @@ describe('createLiveSim', () => {
       expect(Math.hypot(at.x - start.get(id)!.x, at.y - start.get(id)!.y)).toBeLessThan(3);
     }
   });
+
+  /** Median edge length — the one number that says "hairball" or not. */
+  const spread = (
+    edges: readonly { from: string; to: string }[],
+    at: ReadonlyMap<string, { x: number; y: number }>,
+  ): number => {
+    const lens = edges
+      .map((e) => Math.hypot(at.get(e.to)!.x - at.get(e.from)!.x, at.get(e.to)!.y - at.get(e.from)!.y))
+      .sort((a, b) => a - b);
+    return lens[Math.floor(lens.length / 2)]!;
+  };
+
+  it('holds the layout’s spacing over a long idle run', () => {
+    // The settled layout is an equilibrium of the LAYOUT's forces. If the
+    // live sim's forces balance anywhere else, an untouched map creeps
+    // toward that other balance and the constellation slowly implodes —
+    // which is exactly what a drag looked like: everything gathering into
+    // a hairball. One frame is far too short to see it; 400 is not.
+    const { graph, start } = settled();
+    const sim = createLiveSim(graph.nodes, graph.edges, start);
+    for (let n = 0; n < 400; n += 1) sim.step();
+    const before = spread(graph.edges, start);
+    const after = spread(graph.edges, sim.positions());
+    expect(after).toBeGreaterThan(before * 0.9);
+    expect(after).toBeLessThan(before * 1.1);
+  });
+
+  it('does not collapse the rest of the map while one node is dragged', () => {
+    const { graph, start } = settled();
+    const sim = createLiveSim(graph.nodes, graph.edges, start);
+    const from = start.get('e4')!;
+    for (let n = 1; n <= 120; n += 1) {
+      sim.pin('e4', { x: from.x + n * 3, y: from.y + n * 2 });
+      sim.step();
+    }
+    // The dragged branch stretches; the map at large keeps its spacing.
+    const untouched = graph.edges.filter((e) => !['e4', 'c5', 'e5', 'e6', 'd4r'].includes(e.to));
+    const before = spread(untouched, start);
+    const after = spread(untouched, sim.positions());
+    expect(after).toBeGreaterThan(before * 0.85);
+    expect(after).toBeLessThan(before * 1.15);
+  });
 });
