@@ -1,23 +1,16 @@
 import { EditorContent, useEditor } from '@tiptap/react';
-import {
-  ChevronLeft,
-  Check,
-  CircleAlert,
-  Loader2,
-  Pencil,
-} from 'lucide-react';
+import { ChevronLeft, Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
+import { SaveControl, type SaveState } from '@/ui/SaveControl';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { isUntitled, t } from '@/lib/i18n';
-
-type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
 const AUTOSAVE_MS = 1500;
 
@@ -249,7 +242,10 @@ function NoteEditor({
           <Pencil className="size-3.5 md:mr-1" />
           <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
-        <SaveBadge state={saveState} onRetry={() => editor && void save(docToMarkdown(editor.state.doc, front.current))} />
+        <SaveControl
+          state={saveState}
+          onSave={() => editor && void save(docToMarkdown(editor.state.doc, front.current))}
+        />
       </header>
       <EditorPalette editor={editor} editable={editable} />
       </div>
@@ -340,31 +336,3 @@ function NoteTitle({ id }: { id: string }) {
   );
 }
 
-function SaveBadge({ state, onRetry }: { state: SaveState; onRetry: () => void }) {
-  if (state === 'saved') {
-    return (
-      <span className="text-subtle flex shrink-0 items-center gap-1 text-xs">
-        <Check className="size-3.5" /> {t('Saved')}
-      </span>
-    );
-  }
-  if (state === 'saving') {
-    return (
-      <span className="text-subtle flex shrink-0 items-center gap-1 text-xs">
-        <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}
-      </span>
-    );
-  }
-  if (state === 'error') {
-    return (
-      <button type="button" onClick={onRetry} className="text-bad flex shrink-0 items-center gap-1 text-xs">
-        <CircleAlert className="size-3.5" /> {t('Retry save')}
-      </button>
-    );
-  }
-  return (
-    <span className="text-warn flex shrink-0 items-center gap-1 text-xs">
-      <span className="bg-warn size-1.5 rounded-full" /> {t('Unsaved')}
-    </span>
-  );
-}

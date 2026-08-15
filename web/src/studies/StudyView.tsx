@@ -1,14 +1,11 @@
 import {
   ChevronLeft,
-  Check,
   ChevronDown,
-  CircleAlert,
   Compass,
   Cpu,
   Files,
   ListOrdered,
   ListTree,
-  Loader2,
   Pencil,
   Plus,
   Trash2,
@@ -41,6 +38,7 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { SaveControl } from '@/ui/SaveControl';
 import { AnnotationPane } from './AnnotationPane';
 import { isUntitled, t } from '@/lib/i18n';
 
@@ -51,6 +49,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const pending = useSlowLoad(openId !== id);
   const open = useStudy((s) => s.open);
   const close = useStudy((s) => s.close);
+  const save = useStudy((s) => s.save);
   const saveState = useStudy((s) => s.saveState);
   // What the moves panel is called. A study's moves belong to a chapter,
   // and its name is the useful thing to see while reading — the study's own
@@ -183,7 +182,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
-      <SaveIndicator state={saveState} error={error} />
+      <SaveControl state={saveState} error={error} onSave={() => void save()} />
     </div>
   );
 
@@ -380,46 +379,6 @@ function TitleEditor({
         </Button>
       )}
     </>
-  );
-}
-
-function SaveIndicator({ state, error }: { state: string; error: string | null }) {
-  const save = useStudy((s) => s.save);
-  if (state === 'saved') {
-    return (
-      <span className="text-subtle flex items-center gap-1 text-xs">
-        <Check className="size-3.5" /> {t('Saved')}
-      </span>
-    );
-  }
-  if (state === 'saving') {
-    return (
-      <span className="text-subtle flex items-center gap-1 text-xs">
-        <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}
-      </span>
-    );
-  }
-  if (state === 'error') {
-    return (
-      <button
-        type="button"
-        onClick={() => void save()}
-        title={error ?? t('Save failed — click to retry')}
-        className="text-bad flex items-center gap-1 text-xs"
-      >
-        <CircleAlert className="size-3.5" /> {t('Retry save')}
-      </button>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={() => void save()}
-      title={t('Unsaved changes — click to save now')}
-      className="text-warn flex items-center gap-1 text-xs"
-    >
-      <span className="bg-warn size-1.5 rounded-full" /> {t('Unsaved')}
-    </button>
   );
 }
 

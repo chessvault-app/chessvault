@@ -4,6 +4,9 @@ import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { useAnalysis } from './analysis';
 import { forgetCollection } from '@/games/collection';
+// Type-only, so nothing of the component reaches this module at runtime —
+// the union simply lives beside the badge that renders it.
+import type { SaveState } from '@/ui/SaveControl';
 
 export interface StudyMeta {
   id: string;
@@ -16,7 +19,6 @@ export interface StudyMeta {
   chapterNames?: string[];
 }
 
-type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
 
 /**
  * Which document API the open document belongs to: real studies, or the games
