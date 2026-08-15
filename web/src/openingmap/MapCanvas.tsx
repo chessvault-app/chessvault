@@ -305,12 +305,44 @@ export function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeCount, map.id]);
 
-  // Pointers on the ground: one drags, two pinch. Node clicks stop
-  // propagation, so reaching here means the ground was grabbed.
+  /**
+   * Every pointer on the surface, wherever it landed — including on a
+   * dot.
+   *
+   * A node press used to stop propagation, so a finger that came down on
+   * a dot was invisible here. On a desktop that is harmless; on a phone
+   * it made zooming nearly impossible, because a pinch only counted if
+   * BOTH fingers found bare canvas and a dense map has almost none. The
+   * dots are the whole picture, so "don't touch the dots" is not an
+   * instruction anybody can follow.
+   *
+   * One pointer on a dot still drags the dot. A second pointer is never
+   * a drag — it is the other half of a pinch, and what is being zoomed
+   * is the map, not whatever happens to be under the fingers — so it
+   * cancels the drag in progress and both fingers go to the pinch.
+   */
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const moved = useRef(false);
 
+  const dropNode = (): void => {
+    const drag = nodeDrag.current;
+    if (!drag) return;
+    letGo(drag.id);
+    nodeDrag.current = null;
+    // The gesture turned out to be a pinch. Whatever click trails off
+    // the end of it did not mean "select this dot".
+    suppressClick.current = true;
+  };
+
+  /** Is some OTHER finger already down? Asked without counting this one,
+      because the surface and the dot both handle the same event and
+      whichever runs second would otherwise see the first one's book-
+      keeping and think a second finger had arrived. */
+  const alreadyHeld = (self: number): boolean =>
+    [...pointers.current.keys()].some((id) => id !== self);
+
   const onPointerDown = (e: React.PointerEvent): void => {
+    if (alreadyHeld(e.pointerId)) dropNode();
     (e.target as Element).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved.current = false;
@@ -321,6 +353,13 @@ export function MapCanvas({
     const now = { x: e.clientX, y: e.clientY };
     const others = [...pointers.current.entries()].filter(([id]) => id !== e.pointerId);
     if (others.length === 0) {
+      // A lone finger holding a dot moves the dot; the node's own
+      // handler is doing that, and the map must not slide as well.
+      if (nodeDrag.current) {
+        pointers.current.set(e.pointerId, now);
+        moved.current = true;
+        return;
+      }
       setView((v) => ({ ...v, x: v.x + now.x - before.x, y: v.y + now.y - before.y }));
     } else {
       // Pinch: scale by the distance ratio, anchored on the midpoint.
@@ -623,9 +662,11 @@ export function MapCanvas({
                   onSelect(id);
                 }}
                 onPointerDown={(e) => {
-                  // A node grab is a drag, not a pan: capture the pointer
-                  // here and the ground never hears about it.
-                  e.stopPropagation();
+                  // Deliberately NOT stopping propagation: the surface
+                  // has to count this finger, or a pinch that starts on
+                  // a dot is a pinch that never happens. A second finger
+                  // is the pinch's, never a drag's.
+                  if (alreadyHeld(e.pointerId)) return;
                   moved.current = false;
                   try {
                     (e.currentTarget as Element).setPointerCapture(e.pointerId);
