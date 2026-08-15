@@ -34,6 +34,17 @@ const HOLD_MS = 350;
 /** How far a finger may wander while holding before it counts as a pan
     instead. A press never lands on one pixel and never stays on it. */
 const HOLD_SLOP = 10;
+/**
+ * How far past the dot's edge the held ring is drawn, in SCREEN pixels —
+ * divided by the zoom so it is that far out at any scale.
+ *
+ * It was 7 world units, which is under the fingertip that is holding the
+ * dot: an indicator you cannot see because your own hand is on top of it
+ * indicates nothing. A finger covers roughly 40px across, so the ring has
+ * to clear that to be read at all, and it is paired with a faint fill so
+ * the part that does show reads as one shape rather than a stray arc.
+ */
+const HELD_RING = 26;
 
 /** One focused line wears the app's accent, as any other emphasis does. */
 const ACCENT = 'var(--color-primary)';
@@ -896,16 +907,25 @@ export function MapCanvas({
                     fill, and outside the depth arc so it never looks
                     like progress. */}
                 {held === id && (
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={r + 7}
-                    fill="none"
-                    stroke="var(--color-fg)"
-                    strokeWidth={2 / view.k}
-                    strokeDasharray={`${3 / view.k} ${3 / view.k}`}
-                    opacity={0.9}
-                  />
+                  <>
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={r + HELD_RING / view.k}
+                      fill="var(--color-fg)"
+                      opacity={0.1}
+                    />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r={r + HELD_RING / view.k}
+                      fill="none"
+                      stroke="var(--color-fg)"
+                      strokeWidth={2.5 / view.k}
+                      strokeDasharray={`${5 / view.k} ${4 / view.k}`}
+                      opacity={0.95}
+                    />
+                  </>
                 )}
 
                 {/* Depth progress as an arc around the dot: how far the
