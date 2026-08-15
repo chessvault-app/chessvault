@@ -39,7 +39,12 @@ digit is also bold, tier marks also differ by icon shape.
 
 ## Layout rules
 
-- **Every scrolling page sits in `PageShell`, on one of three named
+- **A page belongs to one of three families**, listed in `ui/layout.ts`.
+  The family says what the page *is*; only the first has widths to pick
+  from. A page that fits none of the three is a fourth family to be
+  named there, not markup written inline — the opening map spent its
+  first release off-template that way.
+- **Scrolling pages sit in `PageShell`, on one of three named
   widths**: `wide` (72rem) for pages that split into columns or card
   grids (Games, Studies, Notes), `medium` (48rem) for one column read
   top to bottom (Puzzles, Databases), `narrow` (42rem) for forms
@@ -48,13 +53,25 @@ digit is also bold, tier marks also differ by icon shape.
   number. One gutter scale (1rem, 1.5rem from `md`, where the sidebar
   appears) and one safe-area-aware bottom inset come with it.
 - Board-family pages (Board, studies/games viewer, trainers,
-  repertoire, editor) are the other family: they fit the viewport
-  instead of scrolling, capped at 76rem by the shared constants in
-  `ui/layout.ts` — one place, not eight copies.
+  repertoire, editor) fit the viewport instead of scrolling, capped at
+  76rem by the shared constants in `ui/layout.ts` — one place, not
+  eight copies.
+- Canvas pages (the opening map) sit in `ui/CanvasShell`: one surface
+  edge to edge, with the chrome floating on it — a small corner title,
+  a detail panel that floats on a pointer device and becomes a Sheet on
+  a phone, and `CanvasOverlay` for the centred empty and error states.
+  The surface *is* the page, so a header row or an inset side column
+  would be carving space out of the only thing worth showing. This is
+  also why a canvas cannot be a fourth width: a width answers how long
+  a line of text should be, and a canvas wants the whole viewport at
+  every size.
 - **One page title**: `PageHeader` — `text-lg font-semibold
   tracking-tight`, actions pushed right, the phone-only back chevron
   where a page is reached through More. `ShelfToolbar` is built on it.
   (Four title sizes had accumulated; a page's name is one voice.)
+  A canvas page is the exception the shell owns: its title is `text-sm`
+  in a corner, because a heading that competes with the canvas is a
+  heading in the way. The back chevron rule is unchanged.
 - A page that scrolls scrolls its **outer** wrapper — the scrollbar
   belongs at the viewport edge, and it is shown: hiding it is a
   mobile idiom, and panels' internal bars were already visible.

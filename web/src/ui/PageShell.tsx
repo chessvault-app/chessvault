@@ -6,6 +6,10 @@ import { cn } from '@/lib/cn';
  * widths instead of one per page: a width is a statement about the kind
  * of content, not about the page, so pages of the same kind must agree.
  *
+ * A width is NOT how a page picks its layout — it is how the scrolling
+ * family, one of the three in `ui/layout.ts`, varies inside itself. Board
+ * and canvas pages have no width to choose.
+ *
  * - `wide`: layouts that split into columns or card grids and would
  *   waste the split on anything narrower (games, studies, notes).
  * - `medium`: one column read top to bottom — dashboards, shelves,

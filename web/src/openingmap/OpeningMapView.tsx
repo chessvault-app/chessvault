@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronLeft, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -11,9 +11,9 @@ import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
 import { t } from '@/lib/i18n';
-import { useMediaQuery } from '@/lib/media';
 import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
 import { Button } from '@/ui/Button';
+import { CanvasOverlay, CanvasShell } from '@/ui/CanvasShell';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { CollectionArt } from '@/ui/EmptyArt';
@@ -80,7 +80,6 @@ const readFieldPick = (): { source: string; ratings: string } => {
 export function OpeningMapView({ params }: { params: string[] }) {
   const color: MapColor = params[0] === 'black' ? 'black' : 'white';
   const { doc, loaded, loadError, saveState, saveError, load, apply } = useOpeningMap();
-  const phone = useMediaQuery('(max-width: 47.9375rem)');
 
   useEffect(() => {
     if (!loaded) void load();
@@ -180,7 +179,26 @@ export function OpeningMapView({ params }: { params: string[] }) {
     ) : null;
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <CanvasShell
+      title={t('Opening map')}
+      // The phone reaches this page through More, and has to get back.
+      back={() => up('more')}
+      meta={
+        <>
+          <span className="text-muted text-xs">{color === 'white' ? t('White') : t('Black')}</span>
+          <span className="text-subtle text-xs">
+            {saveState === 'saving'
+              ? t('Saving…')
+              : saveState === 'dirty'
+                ? t('Unsaved')
+                : saveState === 'error'
+                  ? (saveError ?? t('Save failed'))
+                  : null}
+          </span>
+        </>
+      }
+      panel={panel && { label: t('Move details'), content: panel, onClose: () => setSelectedId(null) }}
+    >
       {/* The universe itself — no box, no border, edge to edge. */}
       {loaded && map && resolved && !empty && (
         <MapCanvas
@@ -195,42 +213,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
         />
       )}
 
-      {/* A quiet name in the corner, the save state beside it — and on a
-          phone, the way back to More, which this page arrived from. */}
-      <div className="pointer-events-none absolute left-4 top-3 z-10 flex items-baseline gap-2">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('Back')}
-          className="pointer-events-auto -my-1 -ml-2 self-center md:hidden"
-          onClick={() => up('more')}
-        >
-          <ChevronLeft className="size-3.5" />
-        </Button>
-        <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Opening map')}</h1>
-        <span className="text-muted text-xs">{color === 'white' ? t('White') : t('Black')}</span>
-        <span className="text-subtle text-xs">
-          {saveState === 'saving'
-            ? t('Saving…')
-            : saveState === 'dirty'
-              ? t('Unsaved')
-              : saveState === 'error'
-                ? (saveError ?? t('Save failed'))
-                : null}
-        </span>
-      </div>
-
       {loadError && (
-        <div className="absolute inset-0 z-10 grid place-items-center p-6">
+        <CanvasOverlay className="z-10 p-6">
           <div className="border-line bg-surface max-w-md rounded-xl border p-6">
             <p className="text-bad text-sm font-medium">{t('The opening map could not be read')}</p>
             <p className="text-muted mt-1 text-xs leading-relaxed">{loadError}</p>
           </div>
-        </div>
+        </CanvasOverlay>
       )}
 
       {loaded && map && empty && (
-        <div className="absolute inset-0 grid place-items-center">
+        <CanvasOverlay>
           <EmptyState
             art={<CollectionArt />}
             title="No moves yet"
@@ -246,14 +239,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
               </div>
             }
           />
-        </div>
-      )}
-
-      {/* The selection floats over the universe rather than framing it. */}
-      {!phone && panel && (
-        <aside className="border-line bg-surface/90 absolute bottom-24 right-4 top-4 z-10 w-72 overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md">
-          {panel}
-        </aside>
+        </CanvasOverlay>
       )}
 
       {/* Every page-level control lives behind the one floating button,
@@ -324,11 +310,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
         </Sheet>
       )}
 
-      {phone && panel && (
-        <Sheet label={t('Move details')} onClose={() => setSelectedId(null)}>
-          {panel}
-        </Sheet>
-      )}
       {addTo !== null && map && resolved?.nodes.get(addTo) && (
         <AddMoveSheet
           facts={resolved.nodes.get(addTo)!}
@@ -369,7 +350,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           }}
         />
       )}
-    </div>
+    </CanvasShell>
   );
 }
 
