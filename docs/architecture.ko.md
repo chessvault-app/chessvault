@@ -22,6 +22,8 @@ vault/
     book.json  puzzles.json  drafts.json  progress.json
     diagrams/  *.jpg          (근거 스캔, 표지)
   puzzles/            history.jsonl  state.json
+  repertoire/         history.jsonl  (드릴 기록)
+                      map.json       (오프닝 맵, 색마다 트리 하나)
   sources/            참고용 PGN 덤프 (참고 게임 색인의 입력)
   .history.git        자동 커밋 히스토리 저장소 (세밀한 되돌리기, config.json 제외)
 ```

@@ -95,7 +95,7 @@ electron-builder가 그것을 찾아 덧붙입니다.
 # 2. 검사, 태그, 푸시 — GitHub이 그 태그에서 빌드합니다
 npm run desktop:release
 # 3. 워크플로가 끝나면 초안을 확인하고 Publish
-gh release view v0.2.4 --web
+gh release view v0.3.0 --web
 ```
 
 셋이 순서대로 합니다:

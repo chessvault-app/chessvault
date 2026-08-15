@@ -92,7 +92,7 @@ where updates come from.
 # 2. check, tag, push — GitHub builds from the tag
 npm run desktop:release
 # 3. when the workflow finishes, check the draft and press Publish
-gh release view v0.2.4 --web
+gh release view v0.3.0 --web
 ```
 
 Three parties, in order:

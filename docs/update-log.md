@@ -5,7 +5,50 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.3.0
+
+- **The opening map is a page of its own, and reads like one.** It was a
+  sub-entry under Tools, one indent down beside Board and Editor, which
+  is not what it is: it is a standing view of the repertoire, the same
+  kind of destination Games and Studies are. It now has a top-level row
+  in the sidebar. Phones still reach it through More, because a seventh
+  tab on the bottom bar leaves every tab about 50px to hold the longest
+  label in the app. The page caught up with the rest of the app while it
+  was there: the same title in the same size at the same distance from
+  the edge as every other page, a search field on a row of its own, the
+  map's two controls drawn straight onto the surface instead of parked
+  in bordered squares, and a detail panel wide enough that its fields
+  and statistics rows stop wrapping — at the old 18rem nearly every line
+  in it broke. The canvas begins under the header now rather than
+  running behind it, so nothing pans through the page's own title.
+- **The accent answers what you are looking at.** Every covered dot used
+  to be drawn in the app's accent, so highlighting a mainline in that
+  same accent was one more accent thing among hundreds. The field is
+  neutral now and the colour is spent on one thing: select a dot and the
+  line the field walks from there lights up, all the way down, while its
+  lineage back to the root answers in bright foreground — where you came
+  from and where the crowd goes next, at a glance. Search, and every hit
+  gets that at once, each line in its own colour, so "which defences do
+  I actually face and where do they go" is one query. Focus on nothing
+  and the map is calm. (The rule underneath changed twice to get here.
+  "Mark the most-played child at every node" sounds like it marks the
+  mainline and marks nearly everything, because an only child is
+  trivially the most played — 54 of 63 edges on a test map. And a colour
+  per search HIT is not a colour per line: searching "Ruy" over six
+  variations matches 18 nodes, most of which stand on another hit's
+  line, which is why the Berlin used to come out the colour of the
+  mainline.)
+- **The constellation behaves like one web.** Dragging a dot used to
+  move that dot and freeze everything else. It now pulls: the held dot
+  follows the finger, its neighbours follow their springs, crowding
+  pushes back, and the whole thing coasts to a stop after you let go
+  rather than stopping dead. Where you leave things is where they stay.
+  Pinch-to-zoom also works from anywhere, including from two dots —
+  it used to need both fingers on bare canvas, and a dense map has
+  almost none, which made zooming on a phone nearly impossible. Pressing
+  the selected dot a second time lets it go, and the floating button no
+  longer wanders: it is parked in its corner, and it is phone-only,
+  because a mouse wants a page's controls in the page's own corner.
 
 - **You save when you choose to, and the pieces move while you read.**
   Games, studies and notes used to write themselves every 1.5 seconds,

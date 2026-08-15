@@ -81,6 +81,15 @@ is one connected body of work, and the links are what make it that.
   seamless hand-off to the engine when the line leaves book) — or drills
   one of your studies against that same field, remembering what you
   fumble ([how it works](docs/repertoire.md)).
+- **Opening map** — your preparation as a constellation: you place the
+  moves that define your repertoire, one map per colour, and link the
+  studies and notes that cover them. Everything below a linked study is
+  derived live from that study rather than stored, so coverage, depth
+  and drill health are always the truth. Point it at a field — your own
+  games, the Lichess database, a local reference database — and it sizes
+  each move by how often it is actually played, badges the replies you
+  have no answer for, and lights the line the field walks from whatever
+  you select or search for ([how it works](docs/opening-map.md)).
 - **Your own games, in the explorer.** Alongside the reference databases and the
   Lichess databases, the explorer has a **My games** source: every game
   in the vault, answering *what have I played here, and how did it go* —
