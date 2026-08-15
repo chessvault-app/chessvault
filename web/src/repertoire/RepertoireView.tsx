@@ -1,6 +1,6 @@
 import { parseSquare } from 'chessops/util';
 import { BookmarkPlus, BookOpen, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
@@ -516,9 +516,12 @@ function OpeningPicker({
 function FinalAssessment({
   fen,
   onAnalyse,
+  children,
 }: {
   fen: string;
   onAnalyse: () => void;
+  /** What else this ending offers, beside Analyse — one row of buttons. */
+  children?: ReactNode;
 }) {
   const enabled = useEngine((s) => s.enabled);
   const setEnabled = useEngine((s) => s.setEnabled);
@@ -583,25 +586,40 @@ function FinalAssessment({
 
   return (
     <div className="flex flex-col gap-2">
-      {/* The number's slot is held whether or not there is a number in it,
+      {/* The verdict is ONE block — the number, the bar and the line that
+          says the search is still running — so it is spaced as one, and
+          only the buttons under it get the panel's own gap. Spread over
+          three equal gaps it read as three separate things with the
+          button pushed a long way clear of the score it belongs to.
+
+          The number's slot is held whether or not there is a number in it,
           and the bar is drawn empty rather than absent, so the answer
           lands in place instead of pushing the button down when it
           arrives. Starting an engine and searching a position takes long
           enough to look like nothing is happening — hence the spinner in
           the slot and a line that says so. */}
-      <div className="flex items-center gap-2">
-        <span className="text-fg flex min-w-[3.75rem] items-center font-mono text-lg font-semibold tabular-nums">
-          {score ? formatScore(score) : <Loader2 className="text-subtle size-4 animate-spin" />}
-        </span>
-        <EvalBar score={score} orientation="horizontal" className="flex-1" />
+      <div className="flex flex-col gap-0.5">
+        <div className="flex items-center gap-2">
+          <span className="text-fg flex min-w-[3.75rem] items-center font-mono text-lg font-semibold tabular-nums">
+            {score ? formatScore(score) : <Loader2 className="text-subtle size-4 animate-spin" />}
+          </span>
+          <EvalBar score={score} orientation="horizontal" className="flex-1" />
+        </div>
+        <p className="text-subtle min-h-[0.875rem] text-[0.6875rem] leading-none">
+          {verdict ? '' : t('Evaluating the position…')}
+        </p>
       </div>
-      <p className="text-subtle min-h-[0.875rem] text-[0.6875rem] leading-none">
-        {verdict ? '' : t('Evaluating the position…')}
-      </p>
-      <Button variant="primary" size="sm" className="self-start" onClick={onAnalyse}>
-        <Microscope className="size-3.5" />
-        {t('Analyse on the board')}
-      </Button>
+      {/* One row: analysing the line and whatever else this ending offers
+          are the same kind of choice, and stacking them spent a whole row
+          of a panel that is already tall on a phone. It wraps where the
+          two do not fit side by side. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" size="sm" onClick={onAnalyse}>
+          <Microscope className="size-3.5" />
+          {t('Analyse on the board')}
+        </Button>
+        {children}
+      </div>
     </div>
   );
 }
@@ -1297,7 +1315,15 @@ export function RepertoireView() {
     // panel used to end flush against the bottom navigation with its own
     // border cut off. Padding inside the scroll area gives it somewhere to
     // finish.
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 ${BOARD_WIDE_SHELL}`}>
+    //
+    // pr-4 and the stable gutter are the same idea sideways. A scrollbar
+    // is drawn OUTSIDE the padding (measured: 12 px of padding, then a
+    // 10 px scrollbar), so p-3 alone left the panels almost touching the
+    // thumb while the whole column sat 10 px left of centre. Reserving the
+    // gutter on both edges squares that up, and the wider right padding is
+    // the air between the panels and the bar — the treatment the other
+    // board pages (puzzles, editor) already had.
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
         <Button
           variant="ghost"
@@ -1611,23 +1637,22 @@ export function RepertoireView() {
                   </p>
                 )}
                 {phase === 'ended' && (
-                  <>
-                    <FinalAssessment
-                      fen={getNode(tree, tipId).fen}
-                      onAnalyse={() => {
-                        // The tree itself, not a PGN round-trip: this is the
-                        // line as played, and the board should open on the
-                        // move it ended on, facing the way it was trained.
-                        useAnalysis.setState({
-                          tree,
-                          cursorId: tipId,
-                          orientation: userColor,
-                          gameHeaders: null,
-                          handoff: true,
-                        });
-                        navigate('analysis');
-                      }}
-                    />
+                  <FinalAssessment
+                    fen={getNode(tree, tipId).fen}
+                    onAnalyse={() => {
+                      // The tree itself, not a PGN round-trip: this is the
+                      // line as played, and the board should open on the
+                      // move it ended on, facing the way it was trained.
+                      useAnalysis.setState({
+                        tree,
+                        cursorId: tipId,
+                        orientation: userColor,
+                        gameHeaders: null,
+                        handoff: true,
+                      });
+                      navigate('analysis');
+                    }}
+                  >
                     {/* A drill has nowhere to save TO: the line came out of a
                         study, and filing it back would write the same moves
                         into a second one. What is worth offering there is the
@@ -1640,7 +1665,6 @@ export function RepertoireView() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          className="self-start"
                           onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
                         >
                           <BookOpen className="size-3.5" />
@@ -1651,7 +1675,6 @@ export function RepertoireView() {
                       <Button
                         variant="secondary"
                         size="sm"
-                        className="self-start"
                         onClick={() => {
                           setSaveError(null);
                           setSaveOpen(true);
@@ -1661,7 +1684,7 @@ export function RepertoireView() {
                         {t('Save line to study')}
                       </Button>
                     )}
-                  </>
+                  </FinalAssessment>
                 )}
               </div>
             </Panel>
