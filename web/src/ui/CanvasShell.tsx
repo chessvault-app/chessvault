@@ -104,8 +104,12 @@ export function CanvasShell({
 /**
  * A centred state laid over the whole canvas: the empty page, a load
  * failure, anything that replaces the surface rather than annotating it.
- * Its own component because "centred over the canvas" is the same geometry
- * every time.
+ *
+ * The gutter and the layer are part of the geometry, not the caller's
+ * choice. Written out per call site they had drifted apart — the error
+ * card had `z-10 p-6` and the empty state had neither, which meant the
+ * two states sat on different layers and the empty state's buttons could
+ * run to the very edge of a narrow phone.
  */
 export function CanvasOverlay({
   className,
@@ -115,6 +119,8 @@ export function CanvasOverlay({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('absolute inset-0 grid place-items-center', className)}>{children}</div>
+    <div className={cn('absolute inset-0 z-10 grid place-items-center p-6', className)}>
+      {children}
+    </div>
   );
 }
