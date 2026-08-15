@@ -2,7 +2,7 @@ import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { navigate } from '@/lib/router';
+import { navigate, navigateNow } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
@@ -277,7 +277,9 @@ function NoteTitle({ id }: { id: string }) {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ from: id, to }),
     });
-    if (res.ok) navigate('notes', encodeURIComponent(to));
+    // navigateNow: a rename lands on the SAME note under a new id, so there
+    // is nothing to ask about leaving.
+    if (res.ok) navigateNow('notes', encodeURIComponent(to));
     else {
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       setFailure(t(body?.error ?? 'could not rename'));

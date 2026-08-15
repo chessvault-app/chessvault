@@ -22,7 +22,7 @@ import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
-import { navigate } from '@/lib/router';
+import { navigate, navigateNow } from '@/lib/router';
 import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
 import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { useEngine } from '@/store/engine';
@@ -325,7 +325,9 @@ function TitleEditor({
     if (!draft.trim() || draft.trim() === name) return;
     const result = await renameOpen(draft);
     setFailure(result.error ?? null);
-    if (result.id && result.id !== id) navigate(backSection, encodeURIComponent(result.id));
+    // navigateNow: a rename lands on the SAME document under a new id, so
+    // there is nothing to ask about leaving.
+    if (result.id && result.id !== id) navigateNow(backSection, encodeURIComponent(result.id));
   };
 
   if (editing) {

@@ -20,21 +20,52 @@ function parse(hash: string): Route {
 }
 
 /**
+ * Where the app actually is, as against what the address bar says at this
+ * instant.
+ *
+ * They are the same except for one moment: the browser's Back changes the
+ * hash before anyone can object to it, so leaving a document with unsaved
+ * changes has to put the address bar back while the question is answered.
+ * This is the value it goes back to. Read lazily for the same reason
+ * `historyFloor` is — node-side tests have no window.
+ */
+let current = typeof window !== 'undefined' ? window.location.hash : '';
+
+/**
  * Hash routing rather than a router dependency: this app is served from the
  * filesystem in packaged builds, where History API paths would 404.
  */
 export function useRoute(): Route {
   const [route, setRoute] = useState<Route>(() => parse(window.location.hash));
   useEffect(() => {
-    const onChange = (): void => setRoute(parse(window.location.hash));
+    const onChange = (): void => {
+      const next = window.location.hash;
+      // Already where we think we are: nothing to do. Today this can only
+      // be a hash set to what it already was, which fires no event anyway;
+      // it earns its keep once a leave question can restore the bar.
+      if (next === current) return;
+      current = next;
+      setRoute(parse(next));
+    };
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
   return route;
 }
 
-export function navigate(section: Section, ...params: string[]): void {
+/**
+ * Go, without asking anyone.
+ *
+ * For navigations that are not leaving anything: a rename moves the open
+ * document to a new id and lands on the same document, so stopping to ask
+ * whether to save it first would be a question about nothing.
+ */
+export function navigateNow(section: Section, ...params: string[]): void {
   window.location.hash = `/${[section, ...params].join('/')}`;
+}
+
+export function navigate(section: Section, ...params: string[]): void {
+  navigateNow(section, ...params);
 }
 
 /** How deep the history was when the app loaded — see `up`. Read lazily:
