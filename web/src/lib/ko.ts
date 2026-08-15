@@ -542,6 +542,15 @@ export const ko: Record<string, string> = {
   'Chart it on the map': '맵에 추가',
   'Prepared to move {reached} — target {target}': '{reached}수까지 준비됨 — 목표 {target}수',
   'Games that left the book': '북을 벗어난 게임',
+  'Every reply the field plays here — tap one to chart it.':
+    '필드가 여기서 두는 모든 응수 — 눌러서 맵에 추가하세요.',
+  'What the studies prepare here — pick a field source to see statistics.':
+    '스터디가 여기서 준비한 수 — 통계를 보려면 필드 소스를 고르세요.',
+  'Nothing to offer — type the move instead.': '보여줄 것이 없습니다 — 수를 직접 입력하세요.',
+  'A tagged study prepares it': '태그된 스터디가 준비한 수',
+  'On the map': '맵에 있음',
+  prepared: '준비됨',
+  'Type a move…': '수 입력…',
   'The games index is not answering.': '게임 색인이 응답하지 않습니다.',
   'None of your recent games left the prepared ground — or none reached it.':
     '최근 게임 중 준비 범위를 벗어난 것이 없습니다 — 또는 도달한 것이 없습니다.',

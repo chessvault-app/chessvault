@@ -19,6 +19,28 @@ import type { OpeningMap, ResolvedMap } from './model';
 const cache = new Map<string, FieldMove[]>();
 const CONCURRENCY = 4;
 
+/**
+ * One position's field, through the same session cache the gap check
+ * fills — selecting a node the gap check already asked about costs
+ * nothing. Failures answer empty: the list simply shows no statistics.
+ */
+export async function fieldMovesFor(
+  source: string,
+  ratings: string,
+  fen: string,
+): Promise<FieldMove[]> {
+  const key = `${source}\n${ratings}\n${fenKey(fen)}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  try {
+    const moves = await fetchField(source, ratings, fen);
+    cache.set(key, moves);
+    return moves;
+  } catch {
+    return [];
+  }
+}
+
 export function useGaps(
   map: OpeningMap | null,
   resolved: ResolvedMap | null,

@@ -42,6 +42,7 @@ import {
   type ResolvedNode,
 } from './model';
 import { useOpeningMap } from './store';
+import { AddMoveSheet } from './AddMoveSheet';
 import { DeviationsSheet } from './DeviationsSheet';
 import { TagPicker } from './TagPicker';
 import type { NodeGaps } from './gaps';
@@ -133,22 +134,25 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const selected = selectedId && resolved?.nodes.get(selectedId) ? selectedId : null;
   useEffect(() => setSelectedId(null), [color]);
 
+  // Two ways in: the explorer-like list (addTo), and typed SAN (typeFor)
+  // for the move nobody has played yet — the whole point of preparing it.
   const [addTo, setAddTo] = useState<string | null>(null);
+  const [typeFor, setTypeFor] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [gamesOpen, setGamesOpen] = useState(false);
 
   const submitMove = (input: string): void => {
-    if (!map || !resolved || !addTo) return;
-    const parent = resolved.nodes.get(addTo);
+    if (!map || !resolved || !typeFor) return;
+    const parent = resolved.nodes.get(typeFor);
     if (!parent?.fen) return;
     const san = normalizeSan(parent.fen, input);
     if (!san) {
       setAddError(t('Not a legal move in this position'));
       return;
     }
-    apply((d) => addChild(d, map.id, addTo, san));
+    apply((d) => addChild(d, map.id, typeFor, san));
     setAddError(null);
-    setAddTo(null);
+    setTypeFor(null);
   };
 
   const empty = map !== null && map.root.children.length === 0;
@@ -295,7 +299,22 @@ export function OpeningMapView({ params }: { params: string[] }) {
           {panel}
         </Sheet>
       )}
-      {addTo !== null && (
+      {addTo !== null && map && resolved?.nodes.get(addTo) && (
+        <AddMoveSheet
+          facts={resolved.nodes.get(addTo)!}
+          coverage={coverage?.get(addTo)}
+          source={field.source}
+          ratings={field.ratings}
+          onAdd={(san) => apply((d) => addChild(d, map.id, addTo, san))}
+          onSelectChild={setSelectedId}
+          onType={() => {
+            setTypeFor(addTo);
+            setAddTo(null);
+          }}
+          onClose={() => setAddTo(null)}
+        />
+      )}
+      {typeFor !== null && (
         <PromptSheet
           label={t('Add a move')}
           initial=""
@@ -304,7 +323,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           closeOnSubmit={false}
           onSubmit={submitMove}
           onClose={() => {
-            setAddTo(null);
+            setTypeFor(null);
             setAddError(null);
           }}
         />
