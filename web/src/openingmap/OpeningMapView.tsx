@@ -258,7 +258,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           )}
         </div>
         <div className="flex min-h-0 flex-1 gap-4">
-          <div className="border-line bg-surface min-w-0 flex-1 overflow-auto rounded-xl border">
+          <div className="border-line bg-surface min-w-0 flex-1 overflow-hidden rounded-xl border">
             {empty ? (
               <EmptyState
                 art={<CollectionArt />}

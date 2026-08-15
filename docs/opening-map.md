@@ -24,9 +24,9 @@ position. It can carry:
   name themselves correctly).
 - An **intended depth** in full moves — what you mean to prepare. The
   node compares it against what the tagged studies actually reach and
-  wears the difference as an underline filling toward the target (amber
-  while short, green once met), with the panel saying it in words:
-  "Prepared to move 7 — target 12".
+  wears the difference as an arc filling around the dot toward the
+  target (amber while short, green once met), with the panel saying it
+  in words: "Prepared to move 7 — target 12".
 - A free-text **note**.
 
 A node with no study tags is a *plan* — drawn dashed — which is how the

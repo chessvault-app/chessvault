@@ -1,22 +1,29 @@
-﻿import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
-import { layoutMap, NODE_H, NODE_W } from './layout';
+import { layoutGraph } from './graph';
 import type { OpeningMap, ResolvedMap } from './model';
 
 /**
- * The map itself: one content-sized SVG inside a scrolling container, so
- * panning is the browser's scrolling and costs no code. Styling leans on
- * the semantic tokens as CSS variables (the eval graph's precedent) and
- * the whole thing stays hand-rolled — a node is a rect, an edge is a
- * bezier, and the layout was computed by a pure function already tested.
+ * The map as a graph view — dots, springs and labels, the way the
+ * vault's Obsidian ancestry draws a constellation of notes. The layout
+ * is a deterministic force relaxation (graph.ts); this component only
+ * renders it and owns the viewport: wheel zoom to the cursor, drag to
+ * pan, two pointers to pinch. Everything is one SVG group under one
+ * transform, so the viewport is three numbers and no scrolling machinery.
  */
 
-/** SVG text cannot ellipsise; cut at what fits the box. */
+/** SVG text cannot ellipsise; cut at what fits under a dot. */
 const clip = (text: string, max: number): string =>
   text.length > max ? `${text.slice(0, max - 1)}…` : text;
+
+interface View {
+  x: number;
+  y: number;
+  k: number;
+}
 
 export function MapCanvas({
   map,
@@ -37,11 +44,84 @@ export function MapCanvas({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
-  const layout = useMemo(() => layoutMap(map.root), [map.root]);
-  const at = useMemo(
-    () => new Map(layout.nodes.map((n) => [n.id, n])),
-    [layout],
-  );
+  const graph = useMemo(() => layoutGraph(map.root), [map.root]);
+  const at = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
+
+  const host = useRef<HTMLDivElement | null>(null);
+  const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
+
+  // Fit the constellation on first light and when the map's node count
+  // changes shape enough to matter (a new node nudges, so refit only on
+  // count — a fit on every edit would yank the viewport while working).
+  const nodeCount = graph.nodes.length;
+  useEffect(() => {
+    const box = host.current?.getBoundingClientRect();
+    if (!box || box.width === 0) return;
+    const w = graph.maxX - graph.minX;
+    const h = graph.maxY - graph.minY;
+    const k = Math.min(2, 0.92 * Math.min(box.width / w, box.height / h));
+    setView({
+      x: box.width / 2 - ((graph.minX + graph.maxX) / 2) * k,
+      y: box.height / 2 - ((graph.minY + graph.maxY) / 2) * k,
+      k,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeCount, map.id]);
+
+  // Pointers on the ground: one drags, two pinch. Node clicks stop
+  // propagation, so reaching here means the ground was grabbed.
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const moved = useRef(false);
+
+  const onPointerDown = (e: React.PointerEvent): void => {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    moved.current = false;
+  };
+  const onPointerMove = (e: React.PointerEvent): void => {
+    const before = pointers.current.get(e.pointerId);
+    if (!before) return;
+    const now = { x: e.clientX, y: e.clientY };
+    const others = [...pointers.current.entries()].filter(([id]) => id !== e.pointerId);
+    if (others.length === 0) {
+      setView((v) => ({ ...v, x: v.x + now.x - before.x, y: v.y + now.y - before.y }));
+    } else {
+      // Pinch: scale by the distance ratio, anchored on the midpoint.
+      const anchor = others[0]![1];
+      const d0 = Math.hypot(before.x - anchor.x, before.y - anchor.y) || 1;
+      const d1 = Math.hypot(now.x - anchor.x, now.y - anchor.y) || 1;
+      const box = host.current!.getBoundingClientRect();
+      const mx = (now.x + anchor.x) / 2 - box.left;
+      const my = (now.y + anchor.y) / 2 - box.top;
+      setView((v) => {
+        const k = Math.min(3, Math.max(0.2, (v.k * d1) / d0));
+        const scale = k / v.k;
+        return { k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale };
+      });
+    }
+    pointers.current.set(e.pointerId, now);
+    moved.current = true;
+  };
+  const onPointerUp = (e: React.PointerEvent): void => {
+    pointers.current.delete(e.pointerId);
+  };
+  const onWheel = (e: React.WheelEvent): void => {
+    const box = host.current!.getBoundingClientRect();
+    const mx = e.clientX - box.left;
+    const my = e.clientY - box.top;
+    setView((v) => {
+      const k = Math.min(3, Math.max(0.2, v.k * Math.exp(-e.deltaY * 0.0016)));
+      const scale = k / v.k;
+      return { k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale };
+    });
+  };
+
+  // Labels and badges keep their SCREEN size — dividing by the zoom is
+  // what makes them readable at any distance — and the labels fade out
+  // as the view pulls back, the graph-view convention: far out you read
+  // the shape, close in you read the names.
+  const inv = 1 / view.k;
+  const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.4) / 0.35));
 
   // The selected node's line back to the root, edges included.
   const lineage = useMemo(() => {
@@ -55,134 +135,155 @@ export function MapCanvas({
   }, [selectedId, resolved]);
 
   return (
-    <svg
-      width={layout.width}
-      height={layout.height}
-      viewBox={`0 0 ${layout.width} ${layout.height}`}
-      className="block"
-      role="tree"
-      aria-label={t('Opening map')}
+    <div
+      ref={host}
+      className="h-full w-full cursor-grab touch-none overflow-hidden active:cursor-grabbing"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      onWheel={onWheel}
     >
-      {layout.edges.map(({ from, to }) => {
-        const a = at.get(from)!;
-        const b = at.get(to)!;
-        const x1 = a.x + NODE_W;
-        const y1 = a.y + NODE_H / 2;
-        const x2 = b.x;
-        const y2 = b.y + NODE_H / 2;
-        const mx = (x1 + x2) / 2;
-        const lit = lineage.has(from) && lineage.has(to);
-        return (
-          <path
-            key={`${from}-${to}`}
-            d={`M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`}
-            fill="none"
-            stroke={lit ? 'var(--color-primary)' : 'var(--color-line)'}
-            strokeWidth={lit ? 2 : 1.5}
-          />
-        );
-      })}
-      {layout.nodes.map(({ id, x, y }) => {
-        const facts = resolved.nodes.get(id)!;
-        const node = facts.mapNode;
-        const isRoot = facts.parentId === null;
-        const selected = id === selectedId;
-        const invalid = !isRoot && facts.fen === null;
-        const cov = coverage?.get(id);
-        // A node no study covers is a plan, and draws as an outline.
-        const planned = !isRoot && !invalid && coverage !== undefined && !cov?.covered;
-        const move = isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
-        const caption = invalid
-          ? t('Not a legal move here')
-          : (node.name ?? labels?.get(id) ?? '');
-        const detail =
-          cov?.covered && cov.preparedPlies > 0
-            ? t('{plies} plies · {lines} lines', {
-                plies: cov.preparedPlies,
-                lines: cov.lineCount,
-              })
-            : '';
-        const noteTags = (node.tags ?? []).some((tag) => tag.kind === 'note');
-        const gapCount = gaps?.get(id)?.gaps.length ?? 0;
-        // Depth progress: the intended depth against what the studies
-        // actually reach, as an underline that fills toward the target.
-        const target = node.depth;
-        const reached =
-          target !== undefined && cov ? reachedMove(facts.ply, cov.preparedPlies) : undefined;
-        const depthShort = target !== undefined && reached !== undefined && reached < target;
-        return (
-          <g key={id} className="cursor-pointer" onClick={() => onSelect(id)}>
-            {/* The finger's target: well past the visible box. */}
-            <rect x={x - 8} y={y - 8} width={NODE_W + 16} height={NODE_H + 16} fill="transparent" />
-            <rect
-              x={x}
-              y={y}
-              width={NODE_W}
-              height={NODE_H}
-              rx={9}
-              fill="var(--color-surface)"
-              stroke={selected ? 'var(--color-primary)' : invalid ? 'var(--color-bad)' : 'var(--color-line)'}
-              strokeWidth={selected ? 2 : 1.5}
-              strokeDasharray={planned || invalid ? '4 3' : undefined}
-            />
-            <text
-              x={x + 10}
-              y={y + (caption || detail ? 17 : 24)}
-              fontSize={12}
-              fontWeight={600}
-              fill={invalid ? 'var(--color-bad)' : planned ? 'var(--color-muted)' : 'var(--color-fg)'}
-            >
-              {clip(move, 18)}
-            </text>
-            {(caption || detail) && (
-              <text x={x + 10} y={y + 31} fontSize={9.5} fill="var(--color-subtle)">
-                {clip(caption || detail, 26)}
-              </text>
-            )}
-            {noteTags && <circle cx={x + NODE_W - 10} cy={y + 10} r={3} fill="var(--color-primary)" />}
-            {target !== undefined && reached !== undefined && (
-              <rect
-                x={x + 6}
-                y={y + NODE_H - 3.5}
-                width={Math.max(3, (NODE_W - 12) * Math.min(1, reached / Math.max(1, target)))}
-                height={2}
-                rx={1}
-                fill={depthShort ? 'var(--color-warn)' : 'var(--color-good)'}
+      <svg width="100%" height="100%" className="block" role="tree" aria-label={t('Opening map')}>
+        <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+          {graph.edges.map(({ from, to }) => {
+            const a = at.get(from)!;
+            const b = at.get(to)!;
+            const lit = lineage.has(from) && lineage.has(to);
+            return (
+              <line
+                key={`${from}-${to}`}
+                x1={a.x}
+                y1={a.y}
+                x2={b.x}
+                y2={b.y}
+                stroke={lit ? 'var(--color-primary)' : 'var(--color-line)'}
+                strokeWidth={(lit ? 2 : 1.2) / view.k}
               />
-            )}
-            {/* Drill health, quietly: amber = fumbled positions beneath,
-                red = the drill found the studies wanting somewhere here. */}
-            {(cov?.reviewCount ?? 0) > 0 && (
-              <circle cx={x + 10} cy={y + NODE_H - 7} r={3} fill="var(--color-warn)" />
-            )}
-            {(cov?.gapCount ?? 0) > 0 && (
-              <circle
-                cx={x + (cov!.reviewCount > 0 ? 19 : 10)}
-                cy={y + NODE_H - 7}
-                r={3}
-                fill="var(--color-bad)"
-              />
-            )}
-            {gapCount > 0 && (
-              <>
-                {/* Popular replies the map has nothing against — the count
-                    sits half off the box, a warning tag rather than décor. */}
-                <circle cx={x + NODE_W} cy={y + NODE_H - 4} r={8} fill="var(--color-warn)" />
+            );
+          })}
+          {graph.nodes.map(({ id, x, y, r }) => {
+            const facts = resolved.nodes.get(id)!;
+            const node = facts.mapNode;
+            const isRoot = facts.parentId === null;
+            const selected = id === selectedId;
+            const invalid = !isRoot && facts.fen === null;
+            const cov = coverage?.get(id);
+            // A node no study covers is a plan, and draws hollow.
+            const planned = !isRoot && !invalid && coverage !== undefined && !cov?.covered;
+            const move = isRoot ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
+            const caption = invalid
+              ? t('Not a legal move here')
+              : (node.name ?? labels?.get(id) ?? '');
+            const gapCount = gaps?.get(id)?.gaps.length ?? 0;
+            const noteTags = (node.tags ?? []).some((tag) => tag.kind === 'note');
+            const target = node.depth;
+            const reach =
+              target !== undefined && cov ? reachedMove(facts.ply, cov.preparedPlies) : undefined;
+            const ring = 2 * Math.PI * (r + 3);
+            return (
+              <g
+                key={id}
+                className="cursor-pointer"
+                onClick={() => {
+                  if (!moved.current) onSelect(id);
+                }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  moved.current = false;
+                }}
+              >
+                <circle cx={x} cy={y} r={r + 10} fill="transparent" />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={r}
+                  fill={
+                    invalid
+                      ? 'var(--color-bad)'
+                      : isRoot
+                        ? 'var(--color-fg)'
+                        : planned
+                          ? 'var(--color-surface-3)'
+                          : 'var(--color-primary)'
+                  }
+                  fillOpacity={planned ? 0.6 : 0.9}
+                  stroke={
+                    selected
+                      ? 'var(--color-fg)'
+                      : planned
+                        ? 'var(--color-muted)'
+                        : 'transparent'
+                  }
+                  strokeWidth={selected ? 2 : 1.2}
+                  strokeDasharray={planned && !selected ? '3 3' : undefined}
+                />
+                {/* Depth progress as an arc around the dot: how far the
+                    preparation runs toward the intended move. */}
+                {target !== undefined && reach !== undefined && (
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={r + 3}
+                    fill="none"
+                    stroke={reach < target ? 'var(--color-warn)' : 'var(--color-good)'}
+                    strokeWidth={1.6}
+                    strokeDasharray={`${ring * Math.min(1, reach / Math.max(1, target))} ${ring}`}
+                    transform={`rotate(-90 ${x} ${y})`}
+                  />
+                )}
+                {(cov?.reviewCount ?? 0) > 0 && (
+                  <circle cx={x - r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-warn)" />
+                )}
+                {(cov?.gapCount ?? 0) > 0 && (
+                  <circle cx={x - r * 0.8} cy={y + r * 0.8} r={3 * inv} fill="var(--color-bad)" />
+                )}
+                {noteTags && (
+                  <circle cx={x + r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-primary)" />
+                )}
+                {gapCount > 0 && (
+                  <>
+                    <circle cx={x + r + 7 * inv} cy={y} r={7.5 * inv} fill="var(--color-warn)" />
+                    <text
+                      x={x + r + 7 * inv}
+                      y={y + 3 * inv}
+                      fontSize={9.5 * inv}
+                      fontWeight={700}
+                      textAnchor="middle"
+                      fill="var(--color-warn-fg)"
+                    >
+                      {gapCount}
+                    </text>
+                  </>
+                )}
                 <text
-                  x={x + NODE_W}
-                  y={y + NODE_H - 1}
-                  fontSize={9.5}
-                  fontWeight={700}
+                  x={x}
+                  y={y + r + 12 * inv}
+                  fontSize={10.5 * inv}
+                  fontWeight={600}
                   textAnchor="middle"
-                  fill="var(--color-warn-fg)"
+                  opacity={labelOpacity}
+                  fill={invalid ? 'var(--color-bad)' : 'var(--color-fg)'}
                 >
-                  {gapCount}
+                  {clip(move, 16)}
                 </text>
-              </>
-            )}
-          </g>
-        );
-      })}
-    </svg>
+                {caption && (
+                  <text
+                    x={x}
+                    y={y + r + 22 * inv}
+                    fontSize={8 * inv}
+                    textAnchor="middle"
+                    opacity={labelOpacity}
+                    fill="var(--color-subtle)"
+                  >
+                    {clip(caption, 26)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+      </svg>
+    </div>
   );
 }
