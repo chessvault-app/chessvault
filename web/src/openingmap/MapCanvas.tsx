@@ -2,6 +2,7 @@
 import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
 import type { NodeCoverage } from './coverage';
+import type { NodeGaps } from './gaps';
 import { layoutMap, NODE_H, NODE_W } from './layout';
 import type { OpeningMap, ResolvedMap } from './model';
 
@@ -21,6 +22,7 @@ export function MapCanvas({
   map,
   resolved,
   coverage,
+  gaps,
   labels,
   selectedId,
   onSelect,
@@ -28,6 +30,8 @@ export function MapCanvas({
   map: OpeningMap;
   resolved: ResolvedMap;
   coverage?: ReadonlyMap<string, NodeCoverage>;
+  /** Field comparison per node id — set only while a source is chosen. */
+  gaps?: ReadonlyMap<string, NodeGaps>;
   /** Opening names per node id, where the position has one of its own. */
   labels?: ReadonlyMap<string, string>;
   selectedId: string | null;
@@ -99,6 +103,7 @@ export function MapCanvas({
               })
             : '';
         const noteTags = (node.tags ?? []).some((tag) => tag.kind === 'note');
+        const gapCount = gaps?.get(id)?.gaps.length ?? 0;
         return (
           <g key={id} className="cursor-pointer" onClick={() => onSelect(id)}>
             {/* The finger's target: well past the visible box. */}
@@ -129,6 +134,23 @@ export function MapCanvas({
               </text>
             )}
             {noteTags && <circle cx={x + NODE_W - 10} cy={y + 10} r={3} fill="var(--color-primary)" />}
+            {gapCount > 0 && (
+              <>
+                {/* Popular replies the map has nothing against — the count
+                    sits half off the box, a warning tag rather than décor. */}
+                <circle cx={x + NODE_W} cy={y + NODE_H - 4} r={8} fill="var(--color-warn)" />
+                <text
+                  x={x + NODE_W}
+                  y={y + NODE_H - 1}
+                  fontSize={9.5}
+                  fontWeight={700}
+                  textAnchor="middle"
+                  fill="var(--color-warn-fg)"
+                >
+                  {gapCount}
+                </text>
+              </>
+            )}
           </g>
         );
       })}

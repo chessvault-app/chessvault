@@ -2,7 +2,11 @@ import { AlertTriangle, Grid3x3, Library, NotebookPen, Plus, Swords, Tag, Trash2
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
+import { ONLINE_SOURCE, RATING_BANDS } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
+import { isDemo } from '@/lib/demo';
+import { bookLabel } from '@/store/explorer';
+import { Select } from '@/ui/Select';
 import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
 import { navigate } from '@/lib/router';
@@ -39,7 +43,30 @@ import {
 } from './model';
 import { useOpeningMap } from './store';
 import { TagPicker } from './TagPicker';
+import type { NodeGaps } from './gaps';
 import { scopedEntries, useCoverage } from './useCoverage';
+import { useGaps } from './useGaps';
+
+/**
+ * Which field the map checks itself against, device-local like the
+ * trainer's last drill: a comparison source is a standing choice, not a
+ * per-visit one. '' is off — the default, because gap checking costs
+ * requests and the map must be useful before any source is configured.
+ */
+const FIELD_KEY = 'vault:openingmap-field';
+
+const readFieldPick = (): { source: string; ratings: string } => {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(FIELD_KEY) ?? '');
+    const p = parsed as { source?: unknown; ratings?: unknown };
+    if (typeof p?.source === 'string' && typeof p?.ratings === 'string') {
+      return { source: p.source, ratings: p.ratings };
+    }
+  } catch {
+    /* an unreadable memo is no memo */
+  }
+  return { source: '', ratings: '1600' };
+};
 
 /**
  * The opening map: the user's prepared openings as a tree, one map per
@@ -59,6 +86,25 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const map = doc?.maps.find((m) => m.color === color) ?? null;
   const resolved = useMemo(() => (map ? resolveMap(map) : null), [map]);
   const { coverage, missing } = useCoverage(map, resolved);
+
+  // The field the map checks itself against — see useGaps.
+  const [field, setField] = useState(readFieldPick);
+  const [databases, setDatabases] = useState<{ name: string }[]>([]);
+  useEffect(() => {
+    void fetch('/api/refgames')
+      .then((r) => (r.ok ? r.json() : { databases: [] }))
+      .then((body: { databases?: { name: string }[] }) => setDatabases(body.databases ?? []))
+      .catch(() => setDatabases([]));
+  }, []);
+  const pickField = (next: { source: string; ratings: string }): void => {
+    setField(next);
+    try {
+      localStorage.setItem(FIELD_KEY, JSON.stringify(next));
+    } catch {
+      /* full or blocked storage loses the memo, nothing else */
+    }
+  };
+  const gaps = useGaps(map, resolved, coverage, field.source, field.ratings);
 
   // One label lookup for the whole canvas: each node's own position, as
   // deep as the catalogue can possibly name.
@@ -112,6 +158,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
         resolved={resolved}
         facts={resolved.nodes.get(selected)!}
         coverage={coverage?.get(selected)}
+        gaps={field.source ? gaps.get(selected) : undefined}
         missing={missing}
         onAddMove={() => setAddTo(selected)}
         onDelete={() => setSelectedId(null)}
@@ -155,6 +202,44 @@ export function OpeningMapView({ params }: { params: string[] }) {
           </div>
         ) : null
       ) : (
+        <>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-muted text-xs font-medium">{t('Check coverage against')}</span>
+          <Select
+            value={field.source || 'off'}
+            onChange={(v) => pickField({ ...field, source: v === 'off' ? '' : v })}
+            ariaLabel={t('Where opponent replies come from')}
+            steady
+            groups={[
+              { options: [{ value: 'off', label: t('Nothing — hide gaps') }] },
+              ...(isDemo()
+                ? []
+                : [
+                    {
+                      label: 'Online (via proxy)',
+                      options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
+                    },
+                  ]),
+              ...(databases.length > 0
+                ? [
+                    {
+                      label: t('Reference databases'),
+                      options: databases.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          {field.source === ONLINE_SOURCE && (
+            <Select
+              value={field.ratings}
+              onChange={(v) => pickField({ ...field, ratings: v })}
+              ariaLabel={t('Opponent strength')}
+              steady
+              groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
+            />
+          )}
+        </div>
         <div className="flex min-h-0 flex-1 gap-4">
           <div className="border-line bg-surface min-w-0 flex-1 overflow-auto rounded-xl border">
             {empty ? (
@@ -173,6 +258,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 map={map}
                 resolved={resolved}
                 coverage={coverage}
+                gaps={field.source ? gaps : undefined}
                 labels={labels}
                 selectedId={selected}
                 onSelect={setSelectedId}
@@ -189,6 +275,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             </aside>
           )}
         </div>
+        </>
       )}
       {phone && panel && (
         <Sheet label={t('Move details')} onClose={() => setSelectedId(null)}>
@@ -219,6 +306,7 @@ function NodePanel({
   resolved,
   facts,
   coverage,
+  gaps,
   missing,
   onAddMove,
   onDelete,
@@ -227,6 +315,7 @@ function NodePanel({
   resolved: ResolvedMap;
   facts: ResolvedNode;
   coverage: NodeCoverage | undefined;
+  gaps: NodeGaps | undefined;
   missing: ReadonlySet<string>;
   onAddMove: () => void;
   onDelete: () => void;
@@ -377,6 +466,46 @@ function NodePanel({
           </Button>
         </div>
       </Field>
+
+      {gaps && gaps.games > 0 && (
+        <Field
+          label="Against the field"
+          hint={
+            <span className="text-subtle text-[0.6875rem]">
+              {t('{pct}% of games met', { pct: Math.round(gaps.metShare * 100) })}
+            </span>
+          }
+        >
+          {gaps.gaps.length === 0 ? (
+            <p className="text-muted text-xs leading-relaxed">
+              {t('Every popular reply here runs into your preparation.')}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-1">
+              {gaps.gaps.map(({ san, share }) => (
+                <div
+                  key={san}
+                  className="border-warn/40 flex items-center gap-2 rounded-lg border px-2 py-1.5"
+                >
+                  <AlertTriangle className="text-warn size-3.5 shrink-0" />
+                  <span className="text-fg flex-1 text-xs font-medium">{san}</span>
+                  <span className="text-muted text-xs">
+                    {t('{pct}% of games', { pct: Math.round(share * 100) })}
+                  </span>
+                  <button
+                    type="button"
+                    title={t('Chart it on the map')}
+                    onClick={() => apply((d) => addChild(d, map.id, node.id, san))}
+                    className="text-subtle hover:text-fg shrink-0"
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Field>
+      )}
 
       {chartable.length > 0 && (
         <Field

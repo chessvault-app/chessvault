@@ -531,6 +531,15 @@ export const ko: Record<string, string> = {
   'Tag a study first — a drill needs prepared moves':
     '먼저 스터디를 태그하세요 — 드릴에는 준비된 수가 필요합니다',
   'Save failed': '저장 실패',
+  'Check coverage against': '커버리지 비교 대상',
+  'Nothing — hide gaps': '없음 — 갭 숨기기',
+  'Where opponent replies come from': '상대 응수의 출처',
+  'Against the field': '필드와 비교',
+  '{pct}% of games met': '게임의 {pct}% 대응됨',
+  '{pct}% of games': '게임의 {pct}%',
+  'Every popular reply here runs into your preparation.':
+    '여기서 자주 나오는 응수는 모두 준비에 걸립니다.',
+  'Chart it on the map': '맵에 추가',
 
   // --- repertoire ----------------------------------------------------------
   'From the opening map': '오프닝 맵에서',
