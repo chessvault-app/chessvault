@@ -24,6 +24,13 @@ const CONCURRENCY = 4;
     session — only remembered here long enough not to hammer. */
 const failedAt = new Map<string, number>();
 const RETRY_MS = 30_000;
+/**
+ * Requests already out, so one position is never asked twice at once.
+ * It matters because progress is published while the queue is still
+ * draining: each publish re-runs the effect over what is left, and
+ * without this every position still in flight would be asked again.
+ */
+const inflight = new Map<string, Promise<FieldMove[]>>();
 
 /**
  * One position's field, through the same session cache the gap check
@@ -42,15 +49,23 @@ export async function fieldMovesFor(
   const hit = cache.get(key);
   if (hit) return hit;
   if (Date.now() - (failedAt.get(key) ?? 0) < RETRY_MS) return [];
-  try {
-    const moves = await fetchField(source, ratings, fen, side);
-    cache.set(key, moves);
-    failedAt.delete(key);
-    return moves;
-  } catch {
-    failedAt.set(key, Date.now());
-    return [];
-  }
+  const running = inflight.get(key);
+  if (running) return running;
+  const answer = (async (): Promise<FieldMove[]> => {
+    try {
+      const moves = await fetchField(source, ratings, fen, side);
+      cache.set(key, moves);
+      failedAt.delete(key);
+      return moves;
+    } catch {
+      failedAt.set(key, Date.now());
+      return [];
+    } finally {
+      inflight.delete(key);
+    }
+  })();
+  inflight.set(key, answer);
+  return answer;
 }
 
 export function useGaps(
@@ -100,6 +115,25 @@ export function useGaps(
     if (missing.length === 0) return;
     let live = true;
     const queue = [...missing];
+    /**
+     * Publish as answers land, not only when the last one does.
+     *
+     * Answers go into a module cache and the render reads them from
+     * there, so the only thing that makes them APPEAR is this bump. It
+     * used to fire once, after every position in the map had been
+     * answered: quick enough to pass unnoticed on a 95-node map, and on
+     * a 398-node one it leaves every dot uncoloured until the whole
+     * queue drains. The idle animation was hiding it by re-rendering the
+     * scene sixty times a second, which read the cache afresh each time;
+     * stopping that on big maps took the cover off the bug.
+     */
+    let done = 0;
+    let published = Date.now();
+    const publish = (): void => {
+      done = 0;
+      published = Date.now();
+      bump((n) => n + 1);
+    };
     const worker = async (): Promise<void> => {
       for (;;) {
         const next = queue.shift();
@@ -107,6 +141,8 @@ export function useGaps(
         // fieldMovesFor caches, and answers empty on an unreachable
         // field — a shrug, not an error banner.
         await fieldMovesFor(source, ratings, next.fen, side);
+        done += 1;
+        if (live && (done >= 12 || Date.now() - published > 500)) publish();
       }
     };
     // The Lichess proxy rate-limits; two lanes make a burst of thirty
