@@ -8,6 +8,7 @@ import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
 import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
+import { ONLINE_SOURCE, RATING_BANDS, type FieldMove } from './field';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -75,48 +76,7 @@ const TEMPLATES: Template[] = [
   { eco: 'A04', name: 'Réti Opening', sans: ['Nf3'] },
 ];
 
-/**
- * The rating groups the Lichess explorer actually has, one per option.
- *
- * These are not ours to choose or to refine. Measured against the live
- * API: asking for 1600 and 1800 together returns EXACTLY the sum of
- * asking for each alone, so the database is aggregated per group rather
- * than filtered per game, and a boundary at 1500 cannot be computed from
- * it. Asking for 1500 anyway does not fail — it silently answers with
- * the 1400 group — which is why the server keeps an allowlist and why
- * this list is the whole of what can be offered.
- *
- * Each label is the span the group covers, not its floor: shown bare, a
- * "1600" reads as exactly 1600 when it means 1600 to 1800.
- *
- * This replaced four bands that spanned two groups each, so the middle
- * of the range could only be had 400 points at a time.
- */
-const RATING_BANDS: { label: string; ratings: string }[] = [
-  { label: '400–1000', ratings: '400' },
-  { label: '1000–1200', ratings: '1000' },
-  { label: '1200–1400', ratings: '1200' },
-  { label: '1400–1600', ratings: '1400' },
-  { label: '1600–1800', ratings: '1600' },
-  { label: '1800–2000', ratings: '1800' },
-  { label: '2000–2200', ratings: '2000' },
-  { label: '2200–2500', ratings: '2200' },
-  { label: '2500+', ratings: '2500' },
-  { label: 'All ratings', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
-];
-
-/**
- * The online source's value in the picker. A book name must match
- * `^[A-Za-z0-9][A-Za-z0-9_.-]*$` (server/books.ts), so a value with a colon
- * can never collide with one — the same trick the explorer's switcher uses.
- */
-const ONLINE_SOURCE = 'lichess:lichess';
-
-interface ExplorerMove {
-  uci: string;
-  san: string;
-  total: number;
-}
+type ExplorerMove = FieldMove;
 
 /**
  * The last drilled study and chapter, device-local like the puzzle
