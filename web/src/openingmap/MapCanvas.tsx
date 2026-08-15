@@ -30,6 +30,7 @@ export function MapCanvas({
   resolved,
   coverage,
   gaps,
+  shares,
   labels,
   selectedId,
   onSelect,
@@ -39,6 +40,8 @@ export function MapCanvas({
   coverage?: ReadonlyMap<string, NodeCoverage>;
   /** Field comparison per node id — set only while a source is chosen. */
   gaps?: ReadonlyMap<string, NodeGaps>;
+  /** How often each node's move gets played at its parent, 0..1. */
+  shares?: ReadonlyMap<string, number>;
   /** Opening names per node id, where the position has one of its own. */
   labels?: ReadonlyMap<string, string>;
   selectedId: string | null;
@@ -164,7 +167,16 @@ export function MapCanvas({
               />
             );
           })}
-          {graph.nodes.map(({ id, x, y, r }) => {
+          {graph.nodes.map(({ id, x, y, r: structural }) => {
+            // Frequency scales the DRAWN dot, never the layout: a move
+            // played in most games grows, a rarity shrinks, and sizes
+            // breathe as field data lands without the physics
+            // reshuffling the picture.
+            const share = shares?.get(id);
+            const r =
+              share === undefined
+                ? structural
+                : Math.max(4, structural * (0.72 + 0.9 * Math.sqrt(share)));
             const facts = resolved.nodes.get(id)!;
             const node = facts.mapNode;
             const isRoot = facts.parentId === null;

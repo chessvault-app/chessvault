@@ -108,7 +108,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       /* full or blocked storage loses the memo, nothing else */
     }
   };
-  const gaps = useGaps(map, resolved, coverage, field.source, field.ratings);
+  const { gaps, shares } = useGaps(map, resolved, coverage, field.source, field.ratings);
 
   // One label lookup for the whole canvas: each node's own position, as
   // deep as the catalogue can possibly name.
@@ -287,6 +287,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 resolved={resolved}
                 coverage={coverage}
                 gaps={field.source ? gaps : undefined}
+                shares={field.source ? shares : undefined}
                 labels={labels}
                 selectedId={selected}
                 onSelect={setSelectedId}
