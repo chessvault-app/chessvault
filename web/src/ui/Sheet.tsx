@@ -1,11 +1,13 @@
-import { useContext, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
+import { Button } from './Button';
 import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
-import { CoverParent } from './Modal';
+import { useSheetCover } from './sheetCover';
 import { t } from '@/lib/i18n';
 
 /**
@@ -43,7 +45,8 @@ export function Sheet({
   const focusRef = useDialogFocus();
 
   /**
-   * Never taller than the window this sheet was asked over.
+   * Never taller than the window this sheet was asked over — and if it
+   * ends up exactly as tall, a way back out of it.
    *
    * A window pinned at 88% of the screen would open a Select's options —
    * its own sheet, capped only by the safe area — and the child rose 80px
@@ -52,18 +55,13 @@ export function Sheet({
    * the upper one belonging to the smaller thing, reads as the window
    * having been replaced rather than asked a question.
    *
-   * The same primitive the second-page floor uses — Modal's CoverParent,
-   * `height` half only. A Sheet is a LAYER, never a page: it does not
-   * cover, so the window stays visible behind it, exactly as before.
-   *
-   * Measured at the FIRST RENDER, not in an effect: the parent is on
-   * screen at its real height already, and an effect would land after
-   * this sheet had painted once at full height — a visible snap on a
-   * phone. Once, deliberately; a ceiling that re-measured mid-drag would
-   * resize the sheet under the finger pushing it.
+   * It reads the same primitive the second-page floor uses — Modal's
+   * CoverParent, the `height` half only. A Sheet is a LAYER, never a
+   * page: it does not cover, so the window is still mounted and still
+   * behind it. See sheetCover for the rest, and for why a sheet that
+   * hides its window completely has to offer the chevron.
    */
-  const parent = useContext(CoverParent);
-  const [cap] = useState(() => parent?.height() ?? 0);
+  const { cap, covered, ref: coverRef } = useSheetCover(phone);
 
   // Escape, and Android's Back gesture with it — see useCloseRequest.
   useCloseRequest(onClose);
@@ -90,6 +88,7 @@ export function Sheet({
         aria-label={t(label)}
         ref={(node) => {
           focusRef(node);
+          coverRef(node);
           if (phone) drag.ref(node);
         }}
         style={
@@ -133,7 +132,28 @@ export function Sheet({
           {...(phone ? drag.handlers : {})}
         >
           <div className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
-          <p className="text-subtle text-xs">{t(label)}</p>
+          {/* The chevron only when this sheet has hidden the window it was
+              opened from — see sheetCover. Standing over a window you can
+              still see, the scrim, the drag and Back all say how to leave
+              and a button would be a fourth answer to a question nobody
+              had; with the window gone from view, none of them LOOK like
+              a way back to it. It is the same control, in the same
+              corner, as a Modal's second page. */}
+          <div className="flex items-center gap-2">
+            {covered && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Back')}
+                aria-label={t('Back')}
+                className="-my-1 -ml-1 shrink-0"
+                onClick={onClose}
+              >
+                <ChevronLeft className="size-3.5" />
+              </Button>
+            )}
+            <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(label)}</p>
+          </div>
         </div>
         {children}
       </div>
