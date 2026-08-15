@@ -950,6 +950,14 @@ export function MapCanvas({
                     badge, which is a number, and a number is something
                     you can only read close up anyway. Far out you read
                     the shape; close in you read the marks. */}
+                {/* Not rendered at all when they would be invisible.
+                    Fully faded marks and labels still cost React a node
+                    each to reconcile, and there are five or six of them
+                    per dot — on a 398-node map that is well over a
+                    thousand elements doing nothing, on exactly the
+                    pulled-back view where the whole map is on screen and
+                    every answer that lands re-renders it. */}
+                {labelOpacity > 0 && (
                 <g opacity={labelOpacity}>
                   {(cov?.reviewCount ?? 0) > 0 && (
                     <circle cx={x - r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-warn)" />
@@ -983,6 +991,8 @@ export function MapCanvas({
                     </>
                   )}
                 </g>
+                )}
+                {(labelOpacity > 0 || matches?.has(id)) && (
                 <text
                   x={x}
                   y={y + r + 12 * inv}
@@ -997,7 +1007,8 @@ export function MapCanvas({
                 >
                   {clip(move, 16)}
                 </text>
-                {caption && (
+                )}
+                {caption && (labelOpacity > 0 || matches?.has(id)) && (
                   <text
                     x={x}
                     y={y + r + 22 * inv}

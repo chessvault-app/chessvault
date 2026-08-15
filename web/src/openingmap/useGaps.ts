@@ -143,9 +143,13 @@ export function useGaps(
         // its backoff instead of spinning the effect in a retry loop.
         return !cache.has(key) && Date.now() - (failedAt.get(key) ?? 0) >= RETRY_MS;
       }),
-    // `version` re-checks after a batch lands.
+    // Deliberately NOT keyed on `version`. Publishing progress used to
+    // recompute this, which re-ran the effect, which cancelled the sweep
+    // and started a fresh one over what was left — so a 398-position map
+    // took 13 batches to do 7 batches' work. The RETURN memo below still
+    // watches `version`, which is what actually has to see new answers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [wanted, source, ratings, side, version],
+    [wanted, source, ratings, side],
   );
 
   useEffect(() => {
@@ -185,7 +189,11 @@ export function useGaps(
      * while the rest is still in the air, on the same publish cadence.
      */
     const sweep = async (): Promise<void> => {
-      const BATCH = 64;
+      // 128, because the server answers 64 positions in 9-13ms and the
+      // round trip costs more than the query does. Four requests for a
+      // 398-node map.
+      const BATCH = 128;
+      let first = true;
       while (live && queue.length > 0) {
         const chunk = queue.splice(0, BATCH);
         let answers: Map<string, FieldMove[]> | null = null;
@@ -204,7 +212,17 @@ export function useGaps(
           return;
         }
         for (const { fen } of chunk) cacheField(source, ratings, fen, side, answers.get(fen) ?? []);
-        if (live) publish();
+        // Every publish re-renders the whole scene, and on a 398-node
+        // map that is three thousand SVG elements — measured from the
+        // server's own log, the batches were arriving about one per
+        // SECOND while each took 13ms to answer, which is the render
+        // between them and nothing else. So: once immediately, because
+        // the first chunk is the shallowest and most visible positions
+        // and the map should colour at once, then sparingly.
+        if (live && (first || Date.now() - published > 1000)) {
+          first = false;
+          publish();
+        }
       }
     };
 
