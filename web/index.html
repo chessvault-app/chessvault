@@ -117,15 +117,13 @@
       @media (prefers-color-scheme: dark) {
         html { background-color: #090c12; }
       }
-      /* No knight anywhere on the launch path, deliberately — neither
-         here nor in the startup images (see scripts/render-icons.mjs).
-         iOS cross-dissolves its startup image into the page's first
-         paint, and every knight tried on either side of that dissolve
-         produced an artefact on camera: page-drawn ones move with the
-         still-settling launch viewport, image ones fade out over the
-         page's ground. Plain colour into plain colour is the only
-         handover with nothing to see; the app icon the OS zooms in from
-         carries the branding. */
+      /* No knight drawn by the PAGE, ever. The startup images carry one
+         (scripts/render-icons.mjs) and it fades out as iOS dissolves the
+         image into this plain ground — accepted as benign. A page-drawn
+         knight to receive that dissolve is NOT benign: it moves with the
+         still-settling launch viewport, twice built and twice measured
+         doing so on lanph3re's recordings. Brand on the image, never on
+         the page. */
     </style>
     <script>
       // Set the theme class before first paint so dark-theme users never see a
