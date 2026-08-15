@@ -146,9 +146,12 @@ export function MapCanvas({
       for (const ch of node.id) h = (h ^ ch.charCodeAt(0)) * 16777619;
       h = Math.abs(h);
       out.set(node.id, {
-        a: 2 + (h % 5) * 0.7,
-        w1: 0.25 + ((h >> 3) % 7) * 0.06,
-        w2: 0.4 + ((h >> 6) % 5) * 0.09,
+        // Visible at a glance: a handful of world units on a 4–8 second
+        // stroll. The first cut of this was 1–2 screen pixels over
+        // 9–25 s — measurably moving, perceptibly frozen.
+        a: 5 + (h % 5) * 1.1,
+        w1: 0.8 + ((h >> 3) % 7) * 0.09,
+        w2: 1.1 + ((h >> 6) % 5) * 0.12,
         p1: (h % 628) / 100,
         p2: ((h >> 4) % 628) / 100,
       });
@@ -254,6 +257,26 @@ export function MapCanvas({
     });
   };
 
+  // Frequency scales the DRAWN dot, never the layout: a move played in
+  // most games grows, a rarity shrinks, and sizes breathe as field data
+  // lands without the physics reshuffling the picture. The start node
+  // stands apart: it is the primary star, and whatever the field
+  // inflates, the sun outshines it.
+  const drawnR = useMemo(() => {
+    const out = new Map<string, number>();
+    for (const node of graph.nodes) {
+      const share = shares?.get(node.id);
+      out.set(
+        node.id,
+        share === undefined ? node.r : Math.max(4, node.r * (0.72 + 0.9 * Math.sqrt(share))),
+      );
+    }
+    let biggest = 0;
+    for (const [id, r] of out) if (id !== map.root.id) biggest = Math.max(biggest, r);
+    out.set(map.root.id, Math.max(out.get(map.root.id) ?? 0, biggest * 1.25));
+    return out;
+  }, [graph, shares, map.root.id]);
+
   // Labels and badges keep their SCREEN size — dividing by the zoom is
   // what makes them readable at any distance — and the labels fade out
   // as the view pulls back, the graph-view convention: far out you read
@@ -331,17 +354,9 @@ export function MapCanvas({
               />
             );
           })}
-          {graph.nodes.map(({ id, r: structural }) => {
+          {graph.nodes.map(({ id }) => {
             const { x, y } = posOf(id);
-            // Frequency scales the DRAWN dot, never the layout: a move
-            // played in most games grows, a rarity shrinks, and sizes
-            // breathe as field data lands without the physics
-            // reshuffling the picture.
-            const share = shares?.get(id);
-            const r =
-              share === undefined
-                ? structural
-                : Math.max(4, structural * (0.72 + 0.9 * Math.sqrt(share)));
+            const r = drawnR.get(id)!;
             const facts = resolved.nodes.get(id)!;
             const node = facts.mapNode;
             const isRoot = facts.parentId === null;
