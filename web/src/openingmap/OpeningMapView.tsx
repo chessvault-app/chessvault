@@ -2,7 +2,7 @@ import { AlertTriangle, BookOpen, Grid3x3, Library, NotebookPen, Plus, Swords, T
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
-import { ONLINE_SOURCE, RATING_BANDS } from '@/repertoire/field';
+import { MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
@@ -229,6 +229,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
             steady
             groups={[
               { options: [{ value: 'off', label: t('Nothing — hide gaps') }] },
+              // Your own games: the field you have actually been facing.
+              { options: [{ value: MY_GAMES_SOURCE, label: t('My games') }] },
               ...(isDemo()
                 ? []
                 : [
@@ -305,6 +307,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           coverage={coverage?.get(addTo)}
           source={field.source}
           ratings={field.ratings}
+          side={map.color}
           onAdd={(san) => apply((d) => addChild(d, map.id, addTo, san))}
           onSelectChild={setSelectedId}
           onType={() => {

@@ -21,6 +21,9 @@ export interface FieldMove {
  */
 export const ONLINE_SOURCE = 'lichess:lichess';
 
+/** The vault's own games as a field — see server/myGames.ts. */
+export const MY_GAMES_SOURCE = 'mine:mygames';
+
 /**
  * The rating groups the Lichess explorer actually has, one per option.
  *
@@ -52,16 +55,21 @@ export const RATING_BANDS: { label: string; ratings: string }[] = [
 ];
 
 /** Every reply real games made in the position, with counts. Failures
-    throw; the caller decides whether that is an error or a shrug. */
+    throw; the caller decides whether that is an error or a shrug.
+    `side` applies to the own-games source only: which side the vault's
+    owner played in the games that count. */
 export async function fetchField(
   source: string,
   ratings: string,
   fen: string,
+  side?: 'white' | 'black',
 ): Promise<FieldMove[]> {
   const url =
     source === ONLINE_SOURCE
       ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
-      : `/api/refgames/explore?db=${encodeURIComponent(source)}&fen=${encodeURIComponent(fen)}`;
+      : source === MY_GAMES_SOURCE
+        ? `/api/mygames?fen=${encodeURIComponent(fen)}${side ? `&side=${side}` : ''}`
+        : `/api/refgames/explore?db=${encodeURIComponent(source)}&fen=${encodeURIComponent(fen)}`;
   const res = await fetch(url);
   const body = (await res.json().catch(() => null)) as { moves?: FieldMove[] } | null;
   if (!res.ok || !body?.moves) throw new Error('field unavailable');

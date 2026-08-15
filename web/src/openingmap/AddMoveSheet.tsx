@@ -32,6 +32,7 @@ export function AddMoveSheet({
   coverage,
   source,
   ratings,
+  side,
   onAdd,
   onSelectChild,
   onType,
@@ -41,6 +42,8 @@ export function AddMoveSheet({
   coverage: NodeCoverage | undefined;
   source: string;
   ratings: string;
+  /** The map's colour — whose games count when the field is your own. */
+  side: 'white' | 'black';
   onAdd: (san: string) => void;
   onSelectChild: (id: string) => void;
   onType: () => void;
@@ -54,13 +57,13 @@ export function AddMoveSheet({
       return;
     }
     let live = true;
-    void fieldMovesFor(source, ratings, facts.fen).then((moves) => {
+    void fieldMovesFor(source, ratings, facts.fen, side).then((moves) => {
       if (live) setField(moves);
     });
     return () => {
       live = false;
     };
-  }, [source, ratings, facts.fen]);
+  }, [source, ratings, side, facts.fen]);
 
   const rows = useMemo<Row[]>(() => {
     const children = new Map<string, string>();

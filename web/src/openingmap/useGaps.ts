@@ -23,17 +23,20 @@ const CONCURRENCY = 4;
  * One position's field, through the same session cache the gap check
  * fills — selecting a node the gap check already asked about costs
  * nothing. Failures answer empty: the list simply shows no statistics.
+ * `side` matters to the own-games source alone (whose games count) and
+ * is part of the key, so a white map and a black map never share rows.
  */
 export async function fieldMovesFor(
   source: string,
   ratings: string,
   fen: string,
+  side?: 'white' | 'black',
 ): Promise<FieldMove[]> {
-  const key = `${source}\n${ratings}\n${fenKey(fen)}`;
+  const key = `${source}\n${ratings}\n${side ?? ''}\n${fenKey(fen)}`;
   const hit = cache.get(key);
   if (hit) return hit;
   try {
-    const moves = await fetchField(source, ratings, fen);
+    const moves = await fetchField(source, ratings, fen, side);
     cache.set(key, moves);
     return moves;
   } catch {
@@ -49,6 +52,10 @@ export function useGaps(
   ratings: string,
 ): ReadonlyMap<string, NodeGaps> {
   const [version, bump] = useState(0);
+  // Own-games rows depend on whose games count; every other source
+  // ignores it, and a constant key part is harmless there.
+  const side = map?.color;
+  const keyOf = (fen: string): string => `${source}\n${ratings}\n${side ?? ''}\n${fenKey(fen)}`;
 
   // Positions where the opponent is to move — the only ones the gap
   // question applies to.
@@ -64,10 +71,10 @@ export function useGaps(
   }, [map, resolved, source]);
 
   const missing = useMemo(
-    () => wanted.filter(({ fen }) => !cache.has(`${source}\n${ratings}\n${fenKey(fen)}`)),
+    () => wanted.filter(({ fen }) => !cache.has(keyOf(fen))),
     // `version` re-checks after a batch lands.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [wanted, source, ratings, version],
+    [wanted, source, ratings, side, version],
   );
 
   useEffect(() => {
@@ -78,15 +85,9 @@ export function useGaps(
       for (;;) {
         const next = queue.shift();
         if (!next || !live) return;
-        const key = `${source}\n${ratings}\n${fenKey(next.fen)}`;
-        if (cache.has(key)) continue;
-        try {
-          cache.set(key, await fetchField(source, ratings, next.fen));
-        } catch {
-          // An unreachable field is a shrug, not an error banner: the
-          // node simply shows no gap information this session.
-          cache.set(key, []);
-        }
+        // fieldMovesFor caches, and answers empty on an unreachable
+        // field — a shrug, not an error banner.
+        await fieldMovesFor(source, ratings, next.fen, side);
       }
     };
     void Promise.all(Array.from({ length: CONCURRENCY }, worker)).then(() => {
@@ -95,13 +96,14 @@ export function useGaps(
     return () => {
       live = false;
     };
-  }, [missing, source, ratings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missing, source, ratings, side]);
 
   return useMemo(() => {
     const out = new Map<string, NodeGaps>();
     if (!map || !resolved || !source) return out;
     for (const { id, fen } of wanted) {
-      const moves = cache.get(`${source}\n${ratings}\n${fenKey(fen)}`);
+      const moves = cache.get(keyOf(fen));
       if (!moves) continue;
       const node = resolved.nodes.get(id)!.mapNode;
       const met = new Set<string>();
