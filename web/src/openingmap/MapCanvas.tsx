@@ -267,29 +267,42 @@ export function MapCanvas({
   // stays untouched on top. Hue is hashed from the family name: stable
   // across sessions, no palette to maintain.
   const familyHue = useMemo(() => {
-    const out = new Map<string, number>();
-    const familyOf = new Map<string, string | null>();
-    const nameOf = (id: string): string | null => {
-      const label = labels?.get(id);
-      if (!label) return null;
-      // Labels arrive as "B90 Sicilian Defense: …" — the code is not a
-      // family and the variation is not either.
-      return openingFamily(label.replace(/^[A-E]\d{2}\s+/, ''));
+    const hash = (text: string): number => {
+      let h = 2166136261;
+      for (const ch of text) h = (h ^ ch.charCodeAt(0)) * 16777619;
+      return Math.abs(h);
     };
-    const resolve = (id: string): string | null => {
-      if (familyOf.has(id)) return familyOf.get(id)!;
+    // The catalogue's names carry the hierarchy the colours need:
+    // "Family: Second Tier, sideline detail". The family sets the hue,
+    // the second tier shifts it within a band — every Sicilian stays
+    // visibly kin while the Najdorf, the Sveshnikov and the Kan become
+    // sub-nebulae of their own — and the comma-tail is detail, so a
+    // sideline keeps its second tier's exact shade.
+    const out = new Map<string, number>();
+    const tierOf = new Map<string, { family: string; second: string } | null>();
+    const nameOf = (id: string): { family: string; second: string } | null => {
+      const raw = labels?.get(id);
+      if (!raw) return null;
+      const label = raw.replace(/^[A-E]\d{2}\s+/, '');
+      const family = openingFamily(label);
+      if (!family) return null;
+      const second = (label.split(':')[1] ?? '').split(',')[0]!.trim();
+      return { family, second };
+    };
+    const resolve = (id: string): { family: string; second: string } | null => {
+      if (tierOf.has(id)) return tierOf.get(id)!;
       const own = nameOf(id);
       const facts = resolved.nodes.get(id);
-      const family = own ?? (facts?.parentId ? resolve(facts.parentId) : null);
-      familyOf.set(id, family);
-      return family;
+      const tier = own ?? (facts?.parentId ? resolve(facts.parentId) : null);
+      tierOf.set(id, tier);
+      return tier;
     };
     for (const id of resolved.nodes.keys()) {
-      const family = resolve(id);
-      if (!family) continue;
-      let h = 2166136261;
-      for (const ch of family) h = (h ^ ch.charCodeAt(0)) * 16777619;
-      out.set(id, Math.abs(h) % 360);
+      const tier = resolve(id);
+      if (!tier) continue;
+      const base = hash(tier.family) % 360;
+      const shift = tier.second ? (hash(tier.second) % 73) - 36 : 0;
+      out.set(id, (base + shift + 360) % 360);
     }
     return out;
   }, [resolved, labels]);

@@ -141,9 +141,13 @@ Covered nodes are filled, plans are hollow and dashed, and the badges
 all, each node wears a faint halo tinted by its opening family — the
 family of its nearest catalogue-named ancestor, so the catalogue, not
 configuration, says where the Ruy ends and the Italian begins. The
+colour is hierarchical the way the names are: the family sets the hue,
+the second tier shifts it within a band — every Sicilian stays visibly
+kin while the Najdorf, the Sveshnikov and the Kan glow as sub-nebulae
+of their own, sidelines keeping their second tier's exact shade. The
 layout keeps subtrees together, so same-family halos merge into soft
-regions; the hue is hashed from the family name and stable forever,
-and because the halos live behind everything, none of the marks above
+regions; hues are hashed from the names and stable forever, and
+because the halos live behind everything, none of the marks above
 give up their meaning.
 
 ## What is stored
