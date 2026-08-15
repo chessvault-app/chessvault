@@ -1,12 +1,12 @@
-import { AlertTriangle, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
 import { MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
+import { cn } from '@/lib/cn';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
-import { Select } from '@/ui/Select';
 import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
@@ -471,47 +471,104 @@ export function OpeningMapView({ params }: { params: string[] }) {
           <p className="text-muted text-xs leading-relaxed">
             {t('The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.')}
           </p>
-          <Select
-            value={field.source || 'off'}
-            onChange={(v) => pickField({ ...field, source: v === 'off' ? '' : v })}
-            ariaLabel={t('Where opponent replies come from')}
-            steady
-            groups={[
-              { options: [{ value: 'off', label: t('Nothing — hide gaps') }] },
-              // Your own games: the field you have actually been facing.
-              { options: [{ value: MY_GAMES_SOURCE, label: t('My games') }] },
-              ...(isDemo()
-                ? []
-                : [
-                    {
-                      label: 'Online (via proxy)',
-                      options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
-                    },
-                  ]),
-              ...(databases.length > 0
-                ? [
-                    {
-                      label: t('Reference databases'),
-                      options: databases.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
-                    },
-                  ]
-                : []),
-            ]}
-          />
+          {/* Laid out, not folded into a dropdown. There are rarely more
+              than a handful of these, and the question — what am I
+              checking my preparation against — is one you answer by
+              seeing what is on offer. A Select hides every option but
+              the one already chosen, which is the wrong shape for a
+              choice made once and reconsidered later. Touching a row
+              applies it, so there is nothing to confirm: the same shape
+              the engine and puzzle settings lists use. */}
+          {[
+            { label: null, options: [{ value: '', label: t('Nothing — hide gaps') }] },
+            // Your own games: the field you have actually been facing.
+            { label: null, options: [{ value: MY_GAMES_SOURCE, label: t('My games') }] },
+            ...(isDemo()
+              ? []
+              : [
+                  {
+                    label: 'Online (via proxy)',
+                    options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
+                  },
+                ]),
+            ...(databases.length > 0
+              ? [
+                  {
+                    label: t('Reference databases'),
+                    options: databases.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
+                  },
+                ]
+              : []),
+          ].map((group, at) => (
+            <div key={group.label ?? `group-${at}`} className="flex flex-col gap-1">
+              {group.label && (
+                <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                  {group.label}
+                </p>
+              )}
+              {group.options.map((option) => (
+                <PickRow
+                  key={option.value || 'off'}
+                  label={option.label}
+                  picked={field.source === option.value}
+                  onPick={() => pickField({ ...field, source: option.value })}
+                />
+              ))}
+            </div>
+          ))}
+
           {field.source === ONLINE_SOURCE && (
-            <Select
-              value={field.ratings}
-              onChange={(v) => pickField({ ...field, ratings: v })}
-              ariaLabel={t('Opponent strength')}
-              steady
-              groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
-            />
+            <div className="flex flex-col gap-1">
+              <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                {t('Opponent strength')}
+              </p>
+              {RATING_BANDS.map((band) => (
+                <PickRow
+                  key={band.ratings}
+                  label={t(band.label)}
+                  picked={field.ratings === band.ratings}
+                  onPick={() => pickField({ ...field, ratings: band.ratings })}
+                />
+              ))}
+            </div>
           )}
         </Sheet>
       )}
 
       {!panelShown && opened}
     </CanvasShell>
+  );
+}
+
+/**
+ * One choice in a laid-out list: every option visible, the picked one
+ * marked. Applies on touch, so there is nothing to confirm — the shape
+ * the engine and puzzle settings lists already use.
+ */
+function PickRow({
+  label,
+  picked,
+  onPick,
+}: {
+  label: string;
+  picked: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-pressed={picked}
+      className={cn(
+        'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors duration-100',
+        picked
+          ? 'border-primary/40 bg-primary-soft text-primary font-medium'
+          : 'border-line text-fg hover:bg-surface-2',
+      )}
+    >
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {picked && <Check className="size-4 shrink-0" />}
+    </button>
   );
 }
 
