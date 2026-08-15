@@ -117,39 +117,15 @@
       @media (prefers-color-scheme: dark) {
         html { background-color: #090c12; }
       }
-      /* The knight in #root below: the page's own first paint, until
-         React's first commit replaces it. Measured on lanph3re's phone:
-         iOS CROSS-DISSOLVES its startup image into the page's first
-         paint over ~100 ms, and with a blank first paint the knight
-         visibly faded out, sat on nothing for a few frames, then the app
-         cut in. With the same knight at the same point (lv units — the
-         settled geometry from the first frame, small-viewport fallback
-         for engines without them), the dissolve is between identical
-         frames and the app's arrival is the only visible change. This is
-         CONTENT, not a launch screen: no teardown code, no timing, no
-         layers — React swaps it out with the page in one commit, the way
-         any loading state leaves. */
-      #root > svg {
-        position: fixed;
-        left: 50vw;
-        top: 50vh;
-        transform: translate(-50%, -50%);
-        width: 22vmin;
-        height: 22vmin;
-        fill: #0083c1;
-      }
-      @supports (top: 50lvh) {
-        #root > svg {
-          left: 50lvw;
-          top: 50lvh;
-          width: 22lvmin;
-          height: 22lvmin;
-        }
-      }
-      @media (prefers-color-scheme: dark) {
-        #root > svg { fill: #49b2f3; }
-      }
-      html.dark #root > svg { fill: #49b2f3; }
+      /* No knight anywhere on the launch path, deliberately — neither
+         here nor in the startup images (see scripts/render-icons.mjs).
+         iOS cross-dissolves its startup image into the page's first
+         paint, and every knight tried on either side of that dissolve
+         produced an artefact on camera: page-drawn ones move with the
+         still-settling launch viewport, image ones fade out over the
+         page's ground. Plain colour into plain colour is the only
+         handover with nothing to see; the app icon the OS zooms in from
+         carries the branding. */
     </style>
     <script>
       // Set the theme class before first paint so dark-theme users never see a
@@ -173,13 +149,7 @@
     </script>
   </head>
   <body>
-    <div id="root">
-      <svg viewBox="4.5 5 36 36" aria-hidden="true">
-        <path
-          d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 Z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 Z"
-        />
-      </svg>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
