@@ -217,11 +217,29 @@ function readPreview(head: string): DocPreview {
 }
 
 /**
+ * What else follows a rename. Bookmarks are this API's own concern
+ * (remark, below); anything OUTSIDE it that stores document ids — the
+ * opening map's tags — registers here and is told after the rename has
+ * happened on disk. Deletes are deliberately not reported: a bookmark to
+ * a deleted study is noise, but an outside reference to one is
+ * information, and each store decides that for itself.
+ */
+export interface StudiesHooks {
+  onMoved?: (from: string, to: string) => void;
+  onFolderMoved?: (from: string, to: string) => void;
+}
+
+/**
  * Plain-file document CRUD over a directory. Mounted three times: `studies`
  * (vault/studies, .pgn), `games/docs` (the games collection, .pgn — an
  * annotated game is a one-chapter study), and `notes` (vault/notes, .md).
  */
-export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = '.pgn'): Hono {
+export function studiesApi(
+  dir: string = VAULT_STUDIES,
+  base = 'studies',
+  ext = '.pgn',
+  hooks: StudiesHooks = {},
+): Hono {
   mkdirSync(dir, { recursive: true });
   const api = new Hono();
   const pathOf = (id: string): string => resolve(dir, `${id}${ext}`);
@@ -401,6 +419,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     mkdirSync(resolve(pathOf(to), '..'), { recursive: true });
     renameSync(pathOf(from), pathOf(to));
     remark(from, to);
+    hooks.onMoved?.(from, to);
     return c.json({ moved: to });
   });
 
@@ -423,6 +442,7 @@ export function studiesApi(dir: string = VAULT_STUDIES, base = 'studies', ext = 
     const ids = readMarks();
     const moved = ids.map((id) => (id.startsWith(`${from}/`) ? `${to}${id.slice(from.length)}` : id));
     if (moved.some((id, at) => id !== ids[at])) writeMarks(moved);
+    hooks.onFolderMoved?.(from, to);
     return c.json({ moved: to });
   });
 

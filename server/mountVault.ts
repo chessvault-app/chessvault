@@ -6,7 +6,7 @@ import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
 import { refGamesApi } from './refgames.ts';
-import { openingMapApi } from './openingMap.ts';
+import { openingMapApi, remapMapTags } from './openingMap.ts';
 import { repertoireApi } from './repertoire.ts';
 import { studiesApi } from './studies.ts';
 import { DATA_PUZZLES, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
@@ -52,18 +52,28 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   const studies = paths.studies ?? VAULT_STUDIES;
   const notes = paths.notes ?? VAULT_NOTES;
   const games = paths.games ?? VAULT_GAMES;
+  const repertoire = paths.repertoireState ?? resolve(VAULT, 'repertoire');
+
+  // The opening map stores document ids in its tags, so each document API
+  // reports its renames and the map's tags follow — the same reason the
+  // bookmarks follow inside studiesApi itself.
+  const follow = (kind: 'study' | 'note' | 'game') => ({
+    onMoved: (from: string, to: string) => remapMapTags(repertoire, kind, { from, to }),
+    onFolderMoved: (from: string, to: string) =>
+      remapMapTags(repertoire, kind, { from, to, folder: true }),
+  });
 
   // Given the caller's paths, not the module defaults: the demo mounts a
   // vault at /vault, and a no-argument mount looked at the real one
   // instead — so its own uploads were invisible.
   app.route('/api', sourcesApi(paths.sources ?? VAULT_SOURCES));
   app.route('/api', openingsApi());
-  app.route('/api', studiesApi(studies));
+  app.route('/api', studiesApi(studies, 'studies', '.pgn', follow('study')));
   // The games collection speaks the same document API as studies: an
   // annotated game is a one-chapter study living in games/collection/.
-  app.route('/api', studiesApi(resolve(games, 'collection'), 'games/docs'));
+  app.route('/api', studiesApi(resolve(games, 'collection'), 'games/docs', '.pgn', follow('game')));
   // Notes: the same document API over markdown files.
-  app.route('/api', studiesApi(notes, 'notes', '.md'));
+  app.route('/api', studiesApi(notes, 'notes', '.md', follow('note')));
   // The vault's own config.json sits beside its games dir — collecting
   // reads the profile from THIS vault, not the module-default one.
   app.route('/api', gamesApi(games, resolve(games, '..', 'config.json')));
@@ -78,7 +88,7 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   );
   app.route('/api', paths.refgamesDb ? refGamesApi(paths.refgamesDb) : refGamesApi());
   // The repertoire drill's record: which prepared positions were recalled.
-  app.route('/api', paths.repertoireState ? repertoireApi(paths.repertoireState) : repertoireApi());
+  app.route('/api', repertoireApi(repertoire));
   // The opening map: the hand-placed tree the studies hang from.
-  app.route('/api', paths.repertoireState ? openingMapApi(paths.repertoireState) : openingMapApi());
+  app.route('/api', openingMapApi(repertoire));
 }

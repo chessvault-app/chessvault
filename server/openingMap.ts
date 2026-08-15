@@ -112,6 +112,49 @@ const validDoc = (doc: unknown): doc is MapDoc => {
   return nodes <= MAX_NODES;
 };
 
+/**
+ * Follow a document rename through the map's tags.
+ *
+ * Tag ids are vault paths, and paths change; the bookmarks' remark()
+ * already follows renames for the same reason. Deletions are NOT
+ * followed: a tag whose study vanished is information — "this line lost
+ * its prep" — and the panel shows it as a broken reference instead. A
+ * missing or unreadable map is a no-op; this runs as a side effect of a
+ * rename that already succeeded and must never fail it.
+ */
+export function remapMapTags(
+  stateDir: string,
+  kind: TagKind,
+  change: { from: string; to: string; folder?: boolean },
+): void {
+  const mapPath = resolve(stateDir, 'map.json');
+  let doc: MapDoc;
+  try {
+    doc = JSON.parse(readFileSync(mapPath, 'utf-8')) as MapDoc;
+  } catch {
+    return;
+  }
+  if (!Array.isArray(doc?.maps)) return;
+  let changed = false;
+  const renamed = (id: string): string => {
+    if (!change.folder) return id === change.from ? change.to : id;
+    return id.startsWith(`${change.from}/`) ? `${change.to}${id.slice(change.from.length)}` : id;
+  };
+  const walk = (node: MapNode): void => {
+    for (const tag of node.tags ?? []) {
+      if (tag.kind !== kind) continue;
+      const to = renamed(tag.id);
+      if (to !== tag.id) {
+        tag.id = to;
+        changed = true;
+      }
+    }
+    for (const child of node.children ?? []) walk(child);
+  };
+  for (const map of doc.maps) if (map?.root) walk(map.root);
+  if (changed) writeAtomic(mapPath, `${JSON.stringify(doc, null, 2)}\n`);
+}
+
 export function openingMapApi(stateDir: string = resolve(VAULT, 'repertoire')): Hono {
   const mapPath = resolve(stateDir, 'map.json');
 
