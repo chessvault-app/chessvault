@@ -72,7 +72,7 @@ export function MapCanvas({
       const radius = spread * Math.sqrt(Math.random());
       return { id: n.id, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
     });
-    const TOTAL = 38;
+    const TOTAL = 21;
     let t = 0;
     let frame = 0;
     const tick = (): void => {
@@ -101,7 +101,7 @@ export function MapCanvas({
           }
         }
       }
-      const pull = 0.05 + 0.4 * ease * ease;
+      const pull = 0.09 + 0.5 * ease * ease;
       for (const body of bodies) {
         const home = at.get(body.id)!;
         body.x += (home.x - body.x) * pull;
