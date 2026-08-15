@@ -7,6 +7,7 @@ import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
 import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
+import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -625,7 +626,10 @@ function FinalAssessment({
 }
 
 export function RepertoireView() {
-  const [userColor, setUserColor] = useState<'white' | 'black'>('white');
+  // A drill the opening map sent over, consumed once on mount. While it is
+  // set, drill mode holds the map's whole repertoire instead of one study.
+  const [mapDrill, setMapDrill] = useState<MapDrillTarget | null>(() => consumeMapDrill());
+  const [userColor, setUserColor] = useState<'white' | 'black'>(mapDrill?.color ?? 'white');
   // 1600–1800: the group the database as a whole averages into.
   const [band, setBand] = useState(RATING_BANDS[4]!.ratings);
   const [template, setTemplate] = useState<Template>(TEMPLATES[0]!);
@@ -655,7 +659,7 @@ export function RepertoireView() {
   const [phase, setPhase] = useState<Phase>('idle');
 
   // Drill mode: which study is being drilled and where the drill stands.
-  const [mode, setMode] = useState<Mode>('spar');
+  const [mode, setMode] = useState<Mode>(mapDrill ? 'drill' : 'spar');
   const [studyList, setStudyList] = useState<string[] | null>(null);
   const [drillStudy, setDrillStudy] = useState('');
   const [drillChapters, setDrillChapters] = useState<Chapter[] | null>(null);
@@ -681,6 +685,10 @@ export function RepertoireView() {
     posIndex: Map<string, DrillCand[]>;
     cands: DrillCand[];
     study: string;
+    /** Per-chapter study ids, when the scope pools several studies (a
+        map-wide drill) — records file under the real study, not a
+        synthetic one. Index-parallel with `chapters`. */
+    studies?: string[];
     /** For the practice memo: the chapter's name, or "Whole study". */
     label: string;
     /** Where the shared lead-in ends — gap relevance turns on it. */
@@ -699,7 +707,7 @@ export function RepertoireView() {
 
   // The studies list, first needed when drilling is chosen.
   useEffect(() => {
-    if (mode !== 'drill' || studyList !== null) return;
+    if (mode !== 'drill' || mapDrill !== null || studyList !== null) return;
     void fetch('/api/studies')
       .then((r) => r.json())
       .then((body: { studies?: { id: string }[] }) => {
@@ -715,7 +723,7 @@ export function RepertoireView() {
 
   // The chosen study's chapters, through the same codec the editor uses.
   useEffect(() => {
-    if (mode !== 'drill' || !drillStudy) return;
+    if (mode !== 'drill' || mapDrill !== null || !drillStudy) return;
     let cancelled = false;
     setDrillChapters(null);
     setChapterPick('0');
@@ -800,13 +808,16 @@ export function RepertoireView() {
   }): void => {
     const d = drillRef.current;
     if (!d) return;
-    // Attributed to the first candidate's chapter, so a whole-study
-    // drill still files its record under a real chapter name.
-    const chapter = d.chapters[d.cands[0]?.ci ?? 0]?.name ?? '';
+    // Attributed to the first candidate's chapter — and, when the scope
+    // pools several studies, to that chapter's own study — so a whole-map
+    // drill still files its record under real names.
+    const ci = d.cands[0]?.ci ?? 0;
+    const chapter = d.chapters[ci]?.name ?? '';
+    const study = d.studies?.[ci] ?? d.study;
     void fetch('/api/repertoire/attempt', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ study: d.study, chapter, ...entry }),
+      body: JSON.stringify({ study, chapter, ...entry }),
     }).catch(() => {});
   };
   const [flipped, setFlipped] = useState(false);
@@ -841,6 +852,21 @@ export function RepertoireView() {
   useEffect(() => {
     if (phase !== 'idle') return;
     if (mode === 'drill') {
+      if (mapDrill) {
+        // Preview the node the map-wide drill will start from.
+        let t = createTree();
+        let id = t.rootId;
+        for (const san of mapDrill.path) {
+          const added = addSan(t, id, san);
+          if (!added) break;
+          t = added.tree;
+          id = added.nodeId;
+        }
+        setTree(t);
+        setTipId(id);
+        setCursorId(id);
+        return;
+      }
       const chapter = drillChapters?.[chapterIdx];
       const t = chapter ? createTree(getNode(chapter.tree, chapter.tree.rootId).fen) : createTree();
       setTree(t);
@@ -853,7 +879,7 @@ export function RepertoireView() {
     setTipId(id);
     setCursorId(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [template, phase, mode, drillChapters, chapterIdx]);
+  }, [template, phase, mode, drillChapters, chapterIdx, mapDrill]);
 
   const node = getNode(tree, cursorId);
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
@@ -867,10 +893,12 @@ export function RepertoireView() {
   const canMove = phase === 'playing' && atTip && pos.turn === userColor;
   // A chapter (or study) with no moves has nothing to drill.
   const drillChapter = drillChapters?.[chapterIdx] ?? null;
-  const drillReady = wholeStudy
-    ? (drillChapters ?? []).some((c) => getNode(c.tree, c.tree.rootId).children.length > 0)
-    : drillChapter !== null &&
-      getNode(drillChapter.tree, drillChapter.tree.rootId).children.length > 0;
+  const drillReady = mapDrill
+    ? mapDrill.entries.length > 0
+    : wholeStudy
+      ? (drillChapters ?? []).some((c) => getNode(c.tree, c.tree.rootId).children.length > 0)
+      : drillChapter !== null &&
+        getNode(drillChapter.tree, drillChapter.tree.rootId).children.length > 0;
   const dests = useMemo(() => (canMove ? legalDests(tree, cursorId) : new Map()), [canMove, tree, cursorId]);
 
   // Fetch the field's reply and play it. The runId guard drops replies that
@@ -1118,6 +1146,47 @@ export function RepertoireView() {
     setGapNote(null);
     setGapMsg('');
     setEndKind('book');
+    if (mode === 'drill' && mapDrill) {
+      // The map's whole repertoire: every scoped chapter of every tagged
+      // study is one drill scope, starting from the chosen node. The
+      // start is replayed from the standard start position, the same way
+      // startFromMiss rebuilds a recorded path.
+      const scoped = mapDrill.entries.map((e) => e.chapter);
+      if (scoped.length === 0) return;
+      const posIndex = buildPosIndex(scoped);
+      let fresh = createTree();
+      let tip = fresh.rootId;
+      for (const san of mapDrill.path) {
+        const added = addSan(fresh, tip, san);
+        if (!added) break;
+        fresh = added.tree;
+        tip = added.nodeId;
+      }
+      const startFen = getNode(fresh, tip).fen;
+      const cands = posIndex.get(fenKey(startFen)) ?? [];
+      if (cands.length === 0) return;
+      const rootFen = getNode(fresh, fresh.rootId).fen;
+      const trunk = trunkOf(scoped, posIndex, posIndex.get(fenKey(rootFen)) ?? [], rootFen);
+      drillRef.current = {
+        chapters: scoped,
+        posIndex,
+        cands,
+        study: mapDrill.entries[0]!.study,
+        studies: mapDrill.entries.map((e) => e.study),
+        label: mapDrill.label,
+        trunkPly: trunk.ply,
+        trunkFen: trunk.fen,
+        families: new Map(),
+        missed: new Set(),
+        gapNoted: new Set(),
+      };
+      setTree(fresh);
+      setTipId(tip);
+      setCursorId(tip);
+      if (positionAt(fresh, tip).turn === userColor) setPhase('playing');
+      else void reply(fresh, tip, source, band);
+      return;
+    }
     if (mode === 'drill') {
       const scoped = wholeStudy ? (drillChapters ?? []) : drillChapter ? [drillChapter] : [];
       const startChapter = scoped[0];
@@ -1467,7 +1536,25 @@ export function RepertoireView() {
                   />
                 </label>
               )}
-              {mode === 'drill' ? (
+              {mode === 'drill' && mapDrill ? (
+                // Sent over by the opening map: the whole repertoire as one
+                // scope. Letting it go returns the ordinary study picker.
+                <div className="border-line flex flex-col gap-1 rounded-lg border p-2">
+                  <span className="text-muted text-xs font-medium">{t('From the opening map')}</span>
+                  <p className="text-fg text-xs">{mapDrill.label}</p>
+                  <p className="text-subtle text-xs">
+                    {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="self-start"
+                    onClick={() => setMapDrill(null)}
+                  >
+                    {t('Drill a study instead')}
+                  </Button>
+                </div>
+              ) : mode === 'drill' ? (
                 studyList !== null && studyList.length === 0 ? (
                   <p className="text-muted text-xs leading-relaxed">
                     {t('No studies yet — create one in Studies, or save a sparred line first.')}

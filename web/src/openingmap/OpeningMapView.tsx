@@ -1,7 +1,8 @@
-import { AlertTriangle, Grid3x3, Library, NotebookPen, Plus, Tag, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Grid3x3, Library, NotebookPen, Plus, Swords, Tag, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
+import { setMapDrill } from '@/repertoire/mapDrill';
 import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
 import { navigate } from '@/lib/router';
@@ -21,7 +22,7 @@ import { PromptSheet } from '@/ui/PromptSheet';
 import { Segmented } from '@/ui/Segmented';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
-import type { NodeCoverage } from './coverage';
+import { collectStudyTags, type NodeCoverage } from './coverage';
 import {
   addChild,
   addTag,
@@ -38,7 +39,7 @@ import {
 } from './model';
 import { useOpeningMap } from './store';
 import { TagPicker } from './TagPicker';
-import { useCoverage } from './useCoverage';
+import { scopedEntries, useCoverage } from './useCoverage';
 
 /**
  * The opening map: the user's prepared openings as a tree, one map per
@@ -399,6 +400,26 @@ function NodePanel({
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
           <Plus className="size-3.5" /> {t('Add a move')}
+        </Button>
+        <Button
+          size="sm"
+          disabled={!coverage?.covered}
+          title={coverage?.covered ? undefined : t('Tag a study first — a drill needs prepared moves')}
+          onClick={() => {
+            // The trainer takes the map's whole repertoire — every scoped
+            // chapter of every tagged study — starting from this node.
+            const entries = scopedEntries(collectStudyTags(map));
+            if (entries.length === 0) return;
+            setMapDrill({
+              label: isRoot ? t('Whole map') : title,
+              color: map.color,
+              entries,
+              path: facts.path,
+            });
+            navigate('repertoire');
+          }}
+        >
+          <Swords className="size-3.5" /> {t('Drill')}
         </Button>
         <Button
           size="sm"
