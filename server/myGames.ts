@@ -363,6 +363,108 @@ class MyGamesIndex {
   }
 
   /**
+   * Where each recent game left a prepared set of positions.
+   *
+   * The set arrives from the client because only the client can build it:
+   * the map's union of prepared positions comes from parsing studies,
+   * which the server deliberately never does. Keys are the book scheme's
+   * Zobrist hashes, so this walk speaks the same identity as the rest of
+   * the index. A game "leaves the book" at the first position that is in
+   * the set while the position after its move is not; a game whose whole
+   * indexed prefix stays inside never appears.
+   */
+  deviations(
+    keys: ReadonlySet<bigint>,
+    side: 'white' | 'black',
+    limit: number,
+  ): {
+    file: string;
+    idx: number;
+    white: string;
+    black: string;
+    result: number;
+    date: string | null;
+    site: string | null;
+    ply: number;
+    sans: string[];
+    key: string;
+    userDeviated: boolean;
+  }[] {
+    const db = this.open();
+    if (!db) return [];
+    const games = db
+      .prepare(`
+        SELECT id, file, idx, white, black, result, date, site
+        FROM games g
+        WHERE g.user_side = ?
+        ORDER BY g.date DESC, g.id DESC
+        LIMIT ?
+      `)
+      .all(side, limit) as {
+      id: number;
+      file: string;
+      idx: number;
+      white: string;
+      black: string;
+      result: number;
+      date: string | null;
+      site: string | null;
+    }[];
+    // safeIntegers: `pos` is a 64-bit key and a plain JS number would
+    // silently mangle it past 2^53.
+    const pliesOf = db
+      .prepare('SELECT pos, uci FROM plies WHERE game_id = ? ORDER BY ply')
+      .safeIntegers(true);
+
+    const out: ReturnType<MyGamesIndex['deviations']> = [];
+    for (const game of games) {
+      const plies = pliesOf.all(game.id) as { pos: bigint; uci: string }[];
+      if (plies.length === 0 || !keys.has(plies[0]!.pos)) continue;
+      let at = -1;
+      for (let k = 0; k < plies.length; k += 1) {
+        if (!keys.has(plies[k]!.pos)) break;
+        if (k + 1 >= plies.length || !keys.has(plies[k + 1]!.pos)) {
+          at = k;
+          break;
+        }
+      }
+      // The indexed prefix never left the set — nothing to report. A game
+      // that merely ran out of indexed plies inside the book is the same.
+      if (at < 0 || at + 1 >= plies.length) continue;
+      // SANs up to and including the deviating move, replayed from the
+      // start; an index row that fails to replay proves a hash collision
+      // and drops the game rather than reporting nonsense.
+      const pos = Chess.default();
+      const sans: string[] = [];
+      let ok = true;
+      for (let k = 0; k <= at; k += 1) {
+        const move = parseUci(plies[k]!.uci);
+        if (!move || !pos.isLegal(move)) {
+          ok = false;
+          break;
+        }
+        sans.push(makeSan(pos, move));
+        pos.play(move);
+      }
+      if (!ok) continue;
+      out.push({
+        file: game.file,
+        idx: game.idx,
+        white: game.white,
+        black: game.black,
+        result: game.result,
+        date: game.date,
+        site: game.site,
+        ply: at,
+        sans,
+        key: BigInt.asUintN(64, plies[at]!.pos).toString(16),
+        userDeviated: (at % 2 === 0) === (side === 'white'),
+      });
+    }
+    return out;
+  }
+
+  /**
    * Row counts, for the pane's "indexed N games" line.
    *
    * `matching` answers the filter window's question — how many games the
@@ -453,6 +555,34 @@ export function myGamesApi(
         file: g.file,
         index: g.idx,
       })),
+    });
+  });
+
+  /** Where recent games left a prepared position set — see deviations(). */
+  api.post('/mygames/deviations', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as {
+      keys?: unknown;
+      side?: unknown;
+      limit?: unknown;
+    } | null;
+    const side = body?.side;
+    const rawKeys = body?.keys;
+    if (
+      (side !== 'white' && side !== 'black') ||
+      !Array.isArray(rawKeys) ||
+      rawKeys.length === 0 ||
+      rawKeys.length > 50_000 ||
+      !rawKeys.every((k) => typeof k === 'string' && /^[0-9a-f]{1,16}$/.test(k))
+    ) {
+      return c.json({ error: 'expected { keys: hex[], side }' }, 400);
+    }
+    const limit = Math.min(500, Math.max(1, Number(body?.limit) || 200));
+    const keys = new Set<bigint>(rawKeys.map((k) => toDbKey(BigInt(`0x${k}`))));
+    index.sync();
+    return c.json({
+      deviations: index
+        .deviations(keys, side, limit)
+        .map((d) => ({ ...d, result: RESULT_TEXT[d.result] ?? '*' })),
     });
   });
 

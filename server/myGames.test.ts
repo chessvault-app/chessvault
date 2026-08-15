@@ -4,6 +4,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { INITIAL_FEN } from 'chessops/fen';
+import { Chess } from 'chessops/chess';
+import { parseSan } from 'chessops/san';
+import { hashSetup } from '../shared/zobrist.ts';
 import { myGamesApi } from './myGames.ts';
 
 /**
@@ -180,6 +183,47 @@ describe('my games index', () => {
     const { games: n, positions } = (await res.json()) as { games: number; positions: number };
     expect(n).toBe(4);
     expect(positions).toBeGreaterThan(0);
+  });
+
+  it('finds where each game left a prepared set, and who left it', async () => {
+    // Prepared as White: the 1.e4 e5 complex — start, after e4, after e5.
+    const keys: string[] = [];
+    const pos = Chess.default();
+    keys.push(hashSetup(pos.toSetup()).toString(16));
+    for (const san of ['e4', 'e5']) {
+      pos.play(parseSan(pos, san)!);
+      keys.push(hashSetup(pos.toSetup()).toString(16));
+    }
+    const res = await app.request('/api/mygames/deviations', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ keys, side: 'white' }),
+    });
+    expect(res.status).toBe(200);
+    const { deviations } = (await res.json()) as {
+      deviations: { sans: string[]; ply: number; userDeviated: boolean; result: string }[];
+    };
+    // Newest first: the 1.d4 game (I left my own book with the first
+    // move), then the 1.e4 c5 game (the opponent left it). The 1.e4 e5
+    // game stayed inside for its whole indexed prefix and is not news;
+    // the game I played as Black is out of scope.
+    expect(deviations.map((d) => d.sans)).toEqual([['d4'], ['e4', 'c5']]);
+    expect(deviations.map((d) => d.userDeviated)).toEqual([true, false]);
+    expect(deviations.map((d) => d.ply)).toEqual([0, 1]);
+    expect(deviations[0]!.result).toBe('1/2-1/2');
+  });
+
+  it('rejects a shapeless deviations request', async () => {
+    const post = (body: unknown) =>
+      app.request('/api/mygames/deviations', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    expect((await post({ side: 'white' })).status).toBe(400);
+    expect((await post({ keys: [], side: 'white' })).status).toBe(400);
+    expect((await post({ keys: ['zz'], side: 'white' })).status).toBe(400);
+    expect((await post({ keys: ['ab12'], side: 'purple' })).status).toBe(400);
   });
 
   it('refuses a request with no position', async () => {
