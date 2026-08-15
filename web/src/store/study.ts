@@ -38,6 +38,16 @@ interface StudyState {
   chapterIndex: number;
   saveState: SaveState;
   /**
+   * The document exactly as the vault last had it, as PGN.
+   *
+   * Kept so "discard" is a re-parse of known-good text rather than a
+   * refetch: the codec is proved lossless AND idempotent
+   * (shared/pgn.test.ts), and this string is itself chaptersToPgn output,
+   * so restoring runs the direction that is proved. A refetch would be a
+   * round trip that can fail, for no extra fidelity.
+   */
+  savedPgn: string;
+  /**
    * Reading, or annotating.
    *
    * In the STORE rather than in StudyView, because the autosave lives
@@ -155,6 +165,7 @@ export const useStudy = create<StudyState>()((set, get) => {
     chapters: [],
     chapterIndex: 0,
     saveState: 'saved',
+    savedPgn: '',
     editing: false,
     setEditing: (editing) => set({ editing }),
     error: null,
@@ -269,7 +280,20 @@ export const useStudy = create<StudyState>()((set, get) => {
             headers: { Event: `${id}: Chapter 1`, ChapterName: 'Chapter 1', Result: '*' },
           });
         }
-        set({ openId: id, openBase: base, chapters, chapterIndex: 0, saveState: 'saved', error: null, editing: false });
+        // Re-serialised rather than kept as the fetched body: a file whose
+        // chapters did not parse gets the fallback chapter above, and the
+        // baseline has to be what is actually in memory or discarding
+        // would restore a document the reader never saw.
+        set({
+          openId: id,
+          openBase: base,
+          chapters,
+          chapterIndex: 0,
+          saveState: 'saved',
+          savedPgn: chaptersToPgn(chapters),
+          error: null,
+          editing: false,
+        });
         loadIntoAnalysis(chapters[0]!);
         return true;
       } catch {
@@ -285,7 +309,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       if (!get().openId) return;
       if (saveTimer) clearTimeout(saveTimer);
       if (get().saveState !== 'saved') await get().save();
-      set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved', editing: false });
+      set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved', savedPgn: '', editing: false });
       useAnalysis.getState().reset();
     },
 
@@ -386,12 +410,13 @@ export const useStudy = create<StudyState>()((set, get) => {
     const { openId, openBase } = get();
     if (!openId) return;
     const chapters = stashCurrent();
+    const pgn = chaptersToPgn(chapters);
     set({ chapters, saveState: 'saving' });
     try {
       const res = await fetch(`/api/${openBase}/${encodeURIComponent(openId)}`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pgn: chaptersToPgn(chapters) }),
+        body: JSON.stringify({ pgn }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -402,8 +427,14 @@ export const useStudy = create<StudyState>()((set, get) => {
       // (its comments, its glyphs, its variations), so the cached
       // collection list is stale the moment the save lands.
       if (openBase === 'games/docs') forgetCollection();
-      // Edits made while the request was in flight stay dirty.
-      set((s) => ({ saveState: s.saveState === 'saving' ? 'saved' : s.saveState, error: null }));
+      // Edits made while the request was in flight stay dirty. The
+      // baseline is what LANDED, not what is on screen — discarding after
+      // one of those in-flight edits must go back to the written file.
+      set((s) => ({
+        saveState: s.saveState === 'saving' ? 'saved' : s.saveState,
+        savedPgn: pgn,
+        error: null,
+      }));
     } catch {
       set({ saveState: 'error', error: 'vault server unreachable — changes not saved' });
     }
