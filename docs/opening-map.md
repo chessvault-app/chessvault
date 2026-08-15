@@ -132,7 +132,7 @@ go" is one query rather than five. A colour belongs to a LINE, not to a
 hit: searching "Ruy" over six Ruy variations matches 18 nodes, because
 the catalogue says "Ruy Lopez" on nearly every square of that subtree,
 and all but eight of those stand on another hit's line and draw nothing
-of their own. Past eight lines the wheel stops telling colours apart
+of their own. Past twelve lines the wheel stops telling colours apart
 and they all fall back to the accent; the fading is doing the work by
 then. Focus on nothing and the map
 is calm — no selection, no search, no accent, just the neutral

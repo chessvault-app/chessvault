@@ -22,11 +22,20 @@ const clip = (text: string, max: number): string =>
 
 /** One focused line wears the app's accent, as any other emphasis does. */
 const ACCENT = 'var(--color-primary)';
-/** Above this many highlighted LINES, separate hues stop separating
-    anything and every line goes back to the accent. Counted in lines
-    drawn, not search hits: a family search matches most of a subtree,
-    and nearly all of those hits stand on one another's lines. */
-const HUES = 8;
+/**
+ * Above this many highlighted LINES, separate hues stop separating
+ * anything and every line goes back to the accent. Counted in lines
+ * drawn, not search hits: a family search matches most of a subtree, and
+ * nearly all of those hits stand on one another's lines.
+ *
+ * Twelve, which is 30 degrees apart. It was eight, and searching "Ruy"
+ * over six variations produced exactly eight lines — right on the edge,
+ * where one more variation in a real repertoire would have tipped the
+ * whole search back to a single accent and looked like the bug that
+ * started this. A family is the unit people search by, so the ceiling
+ * has to sit above the biggest family rather than at it.
+ */
+const HUES = 12;
 
 interface View {
   x: number;
