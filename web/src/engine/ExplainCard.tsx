@@ -3,7 +3,15 @@ import { getNode } from '@shared/tree';
 import { t } from '@/lib/i18n';
 import { useAnalysis } from '@/store/analysis';
 import { useExplain, type WhyNotData } from '@/store/explain';
-import { formatPv } from './pv.ts';
+import { formatPv, type PvPly } from './pv.ts';
+import { PvMoves } from './PvMoves.tsx';
+
+/** What the card needs to make its one engine line act like the pane's. */
+interface LineProps {
+  onPlayLine: (ucis: string[]) => boolean;
+  onPeek?: (ply: PvPly, anchor: HTMLElement) => void;
+  onPeekEnd?: () => void;
+}
 
 /**
  * The Why card: on-demand probe results for the position on screen.
@@ -21,10 +29,9 @@ import { formatPv } from './pv.ts';
  * free and lives in the pane itself; only the rows that cost a search
  * live here, behind the click.
  */
-export function ExplainCard() {
+export function ExplainCard({ onPlayLine, onPeek, onPeekEnd }: LineProps) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
-  const playSan = useAnalysis((s) => s.playSan);
 
   const cardOpen = useExplain((s) => s.cardOpen);
   const card = useExplain((s) => s.card);
@@ -60,7 +67,15 @@ export function ExplainCard() {
         <span className="text-subtle">{t('Thinking…')}</span>
       </Row>
     ) : card.whyNot ? (
-      <WhyNotRow san={node.san} fen={node.fen} parentFen={parentFen!} data={card.whyNot} onPlay={playSan} />
+      <WhyNotRow
+        san={node.san}
+        fen={node.fen}
+        parentFen={parentFen!}
+        data={card.whyNot}
+        onPlayLine={onPlayLine}
+        onPeek={onPeek}
+        onPeekEnd={onPeekEnd}
+      />
     ) : null;
 
   return (
@@ -88,14 +103,15 @@ function WhyNotRow({
   fen,
   parentFen,
   data,
-  onPlay,
+  onPlayLine,
+  onPeek,
+  onPeekEnd,
 }: {
   san: string;
   fen: string;
   parentFen: string;
   data: WhyNotData;
-  onPlay: (san: string) => boolean;
-}) {
+} & LineProps) {
   const bestSan = formatPv(parentFen, [data.bestUci]).firstSan ?? data.bestUci;
   const tooltip = t('{a}% → {b}% winning chances', { a: data.bestPercent, b: data.playedPercent });
 
@@ -116,18 +132,17 @@ function WhyNotRow({
 
   const reply = formatPv(fen, data.replyMoves);
   const line =
-    reply.firstSan !== undefined ? (
+    reply.plies.length > 0 ? (
       // The refutation continues from the position on screen, so it can
-      // be stepped into, exactly like an engine line.
-      <button
-        type="button"
-        className="text-muted hover:text-fg text-left transition-colors duration-100"
-        onClick={() => {
-          if (reply.firstSan) onPlay(reply.firstSan);
-        }}
-      >
-        {reply.text}
-      </button>
+      // be stepped into, exactly like an engine line — and is, ply by ply.
+      <PvMoves
+        plies={reply.plies}
+        text={reply.text}
+        onPlayLine={onPlayLine}
+        onPeek={onPeek}
+        onPeekEnd={onPeekEnd}
+        className="text-xs"
+      />
     ) : null;
 
   if (data.refutation.kind === 'mate') {

@@ -11,9 +11,12 @@ import { Modal } from '@/ui/Modal';
 import { SideDot } from '@/ui/SideDot';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
+import { useMediaQuery } from '@/lib/media';
 import { ExplainCard } from './ExplainCard.tsx';
 import { motifChips, planText } from './explainText.ts';
-import { formatPv } from './pv.ts';
+import { formatPv, type PvPly } from './pv.ts';
+import { PvMoves } from './PvMoves.tsx';
+import { PvPeek, usePvPeek } from './PvPeek.tsx';
 import { moverChances } from './review.ts';
 import { lookupTablebase, tablebaseEligible, tbVerdict, type TbResult } from './tablebase.ts';
 import { formatScore, formatWdl, toWhitePov, wdlToWhitePov, type PvLine } from './uci.ts';
@@ -29,7 +32,8 @@ import { t } from '@/lib/i18n';
 export function EngineBlock({ className }: { className?: string }) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
-  const playSan = useAnalysis((s) => s.playSan);
+  const playLine = useAnalysis((s) => s.playLine);
+  const orientation = useAnalysis((s) => s.orientation);
 
   const enabled = useEngine((s) => s.enabled);
   const toggle = useEngine((s) => s.toggle);
@@ -76,6 +80,15 @@ export function EngineBlock({ className }: { className?: string }) {
   // with no UI attached. Stop the search; the worker stays warm and the
   // analyse effect above resumes it on remount.
   useEffect(() => () => useEngine.getState().stop(), []);
+
+  // Hover previews of the lines. Desktop only: with a thumb there is no
+  // hovering to preview with, so nothing is even wired up — the plies stay
+  // clickable, which is the half of this that works on any device.
+  const finePointer = useMediaQuery('(pointer: fine)');
+  const { peek, show, hide, close } = usePvPeek(finePointer);
+  // A new position replaces every line wholesale, so the ply the card was
+  // anchored to no longer exists. No grace period for that one.
+  useEffect(() => close(), [node.fen, close]);
 
   // Only trust results that belong to the position on screen.
   const fresh = resultFen === node.fen;
@@ -272,7 +285,9 @@ export function EngineBlock({ className }: { className?: string }) {
                   line={line}
                   turn={turn}
                   fen={node.fen}
-                  onPlay={playSan}
+                  onPlayLine={playLine}
+                  onPeek={finePointer ? show : undefined}
+                  onPeekEnd={finePointer ? hide : undefined}
                 />
               ))
             )}
@@ -290,28 +305,37 @@ export function EngineBlock({ className }: { className?: string }) {
               <span className="min-w-0">{planLine}</span>
             </p>
           )}
-          <ExplainCard />
+          <ExplainCard
+            onPlayLine={playLine}
+            onPeek={finePointer ? show : undefined}
+            onPeekEnd={finePointer ? hide : undefined}
+          />
         </>
       )}
       {/* Closes the expanded engine body so the Moves header below reads
           as its own section; when the engine is off the header's own
           bottom border already does the job. */}
       {enabled && <div className="border-line border-b" />}
+      <PvPeek peek={peek} orientation={orientation} />
     </div>
   );
 }
 
-/** A single principal variation, rendered in SAN and clickable. */
+/** A single principal variation, rendered in SAN, clickable move by move. */
 function PvRow({
   line,
   turn,
   fen,
-  onPlay,
+  onPlayLine,
+  onPeek,
+  onPeekEnd,
 }: {
   line: PvLine;
   turn: 'white' | 'black';
   fen: string;
-  onPlay: (san: string) => boolean;
+  onPlayLine: (ucis: string[]) => boolean;
+  onPeek?: (ply: PvPly, anchor: HTMLElement) => void;
+  onPeekEnd?: () => void;
 }) {
   const score = toWhitePov({ cp: line.cp, mate: line.mate }, turn);
 
@@ -332,17 +356,17 @@ function PvRow({
 
   return (
     <li>
-      <button
-        type="button"
-        disabled={!pv.firstSan}
-        onClick={() => {
-          if (pv.firstSan) onPlay(pv.firstSan);
-        }}
-        // Full line in the tooltip, since the row itself truncates.
-        title={pv.text}
+      {/* A div, not a button: the plies inside are the buttons now, and
+          nesting them in one would be invalid. The hover tint stays HERE
+          rather than moving up to the li, because the zebra stripe is set
+          on the li by a parent selector that would outrank it. */}
+      {/* No `title` any more. It existed because the row truncated and hid
+          the rest of the line — which hovering now shows in full, and the
+          global title tooltip would have opened over the preview board. */}
+      <div
         className={cn(
-          'hover:bg-surface-2 flex w-full items-baseline gap-2 px-3 py-1 text-left',
-          'transition-colors duration-100 disabled:pointer-events-none',
+          'group hover:bg-surface-2 flex w-full items-baseline gap-2 px-3 py-1 text-left',
+          'transition-colors duration-100',
         )}
       >
         <span
@@ -369,8 +393,22 @@ function PvRow({
             {chip}
           </span>
         ))}
-        <span className="text-muted min-w-0 flex-1 truncate text-xs">{pv.text}</span>
-      </button>
+        {/* One line at rest so three lines cost three rows; the row being
+            read opens up to put every ply within reach. Hover-expansion is
+            fine-pointer only — a tapped :hover sticks, and a row that
+            grew under the thumb would shove the next one away. */}
+        <PvMoves
+          plies={pv.plies}
+          text={pv.text}
+          onPlayLine={onPlayLine}
+          onPeek={onPeek}
+          onPeekEnd={onPeekEnd}
+          className={cn(
+            'min-w-0 flex-1 truncate',
+            'group-focus-within:whitespace-normal pointer-fine:group-hover:whitespace-normal',
+          )}
+        />
+      </div>
     </li>
   );
 }
