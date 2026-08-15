@@ -102,10 +102,14 @@ export function CreateControl({ actions, label = 'Create' }: { actions: FabActio
 export function Fab({
   actions,
   label = 'Create',
+  icon: Icon = Plus,
   className,
 }: {
   actions: FabAction[];
   label?: string;
+  /** The closed disc's glyph. Plus reads "create"; a page whose FAB is
+      its menu (the opening map) passes its own. */
+  icon?: LucideIcon;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -187,7 +191,7 @@ export function Fab({
           'shadow-[var(--shadow-pop)] transition-transform duration-100 active:scale-95',
         )}
       >
-        {open ? <X className="size-6" /> : <Plus className="size-6" strokeWidth={2.5} />}
+        {open ? <X className="size-6" /> : <Icon className="size-6" strokeWidth={2.5} />}
       </button>
     </div>
   );

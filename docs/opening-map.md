@@ -71,12 +71,13 @@ continuation with its share of games and the W/D/L split as a bar,
 charted rows jumping to their node, unmet ones charting in a tap,
 popular unmet ones framed in warning — and reports how much of the
 field the node meets ("62% of games met"). The check is off until a
-source is chosen and the choice is device-local; answers are cached
-per session.
+source is chosen — in the map's floating menu, which also switches the
+colour and opens My games — and the choice is device-local; answers
+are cached per session.
 
 ## Games that left the book
 
-The **My games** button asks the games index where each of your recent
+**My games**, in the map's floating menu, asks the games index where each of your recent
 games of the map's colour first stepped off prepared ground — the
 charted nodes plus everything the linked studies hold. Results are
 grouped by the position it happened in, because that is the actionable

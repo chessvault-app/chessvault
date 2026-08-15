@@ -1,4 +1,4 @@
-import { AlertTriangle, BookOpen, Grid3x3, Library, NotebookPen, Plus, Sparkles, Swords, Tag, Trash2, X } from 'lucide-react';
+import { AlertTriangle, BookOpen, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -20,10 +20,8 @@ import { CollectionArt } from '@/ui/EmptyArt';
 import { Field } from '@/ui/Field';
 import { Input, TextArea } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
+import { Fab } from '@/ui/Fab';
 import { PromptSheet } from '@/ui/PromptSheet';
-import { Segmented } from '@/ui/Segmented';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
 import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
@@ -143,6 +141,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [typeFor, setTypeFor] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
   const [gamesOpen, setGamesOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const [growFrom, setGrowFrom] = useState<string | null>(null);
 
   const submitMove = (input: string): void => {
@@ -180,56 +179,105 @@ export function OpeningMapView({ params }: { params: string[] }) {
     ) : null;
 
   return (
-    <PageShell width="wide" scroll={false} className="h-full">
-      <PageHeader
-        title={t('Opening map')}
-        actions={
-          <>
-            <span className="text-subtle text-xs">
-              {saveState === 'saving'
-                ? t('Saving…')
-                : saveState === 'dirty'
-                  ? t('Unsaved')
-                  : saveState === 'error'
-                    ? (saveError ?? t('Save failed'))
-                    : null}
-            </span>
-            <Button size="sm" onClick={() => setGamesOpen(true)} disabled={!map}>
-              <BookOpen className="size-3.5" /> {t('My games')}
-            </Button>
-            <Segmented
-              value={color}
-              onChange={(c) =>
-                c === 'black' ? navigate('openingmap', 'black') : navigate('openingmap')
-              }
-              segments={[
-                { value: 'white', label: t('White') },
-                { value: 'black', label: t('Black') },
-              ]}
-              ariaLabel="Map colour"
-            />
-          </>
-        }
-      />
-      {gamesOpen && map && resolved && (
-        <DeviationsSheet
+    <div className="relative h-full w-full overflow-hidden">
+      {/* The universe itself — no box, no border, edge to edge. */}
+      {loaded && map && resolved && !empty && (
+        <MapCanvas
           map={map}
           resolved={resolved}
-          onShowNode={setSelectedId}
-          onClose={() => setGamesOpen(false)}
+          coverage={coverage}
+          gaps={field.source ? gaps : undefined}
+          shares={field.source ? shares : undefined}
+          labels={labels}
+          selectedId={selected}
+          onSelect={setSelectedId}
         />
       )}
-      {!loaded || !map || !resolved ? (
-        loadError ? (
-          <div className="border-line bg-surface rounded-xl border p-6">
+
+      {/* A quiet name in the corner, the save state beside it. */}
+      <div className="pointer-events-none absolute left-4 top-3 z-10 flex items-baseline gap-2">
+        <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Opening map')}</h1>
+        <span className="text-muted text-xs">{color === 'white' ? t('White') : t('Black')}</span>
+        <span className="text-subtle text-xs">
+          {saveState === 'saving'
+            ? t('Saving…')
+            : saveState === 'dirty'
+              ? t('Unsaved')
+              : saveState === 'error'
+                ? (saveError ?? t('Save failed'))
+                : null}
+        </span>
+      </div>
+
+      {loadError && (
+        <div className="absolute inset-0 z-10 grid place-items-center p-6">
+          <div className="border-line bg-surface max-w-md rounded-xl border p-6">
             <p className="text-bad text-sm font-medium">{t('The opening map could not be read')}</p>
             <p className="text-muted mt-1 text-xs leading-relaxed">{loadError}</p>
           </div>
-        ) : null
-      ) : (
-        <>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-muted text-xs font-medium">{t('Check coverage against')}</span>
+        </div>
+      )}
+
+      {loaded && map && empty && (
+        <div className="absolute inset-0 grid place-items-center">
+          <EmptyState
+            art={<CollectionArt />}
+            title="No moves yet"
+            body="Start with your first move for this colour — the rest of the tree grows from it."
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <Button variant="primary" size="sm" onClick={() => setAddTo(map.root.id)}>
+                  <Plus className="size-3.5" /> {t('Add a move')}
+                </Button>
+                <Button size="sm" onClick={() => setGrowFrom(map.root.id)}>
+                  <Sparkles className="size-3.5" /> {t('Grow from my games')}
+                </Button>
+              </div>
+            }
+          />
+        </div>
+      )}
+
+      {/* The selection floats over the universe rather than framing it. */}
+      {!phone && panel && (
+        <aside className="border-line bg-surface/90 absolute bottom-24 right-4 top-4 z-10 w-72 overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md">
+          {panel}
+        </aside>
+      )}
+      {!phone && !empty && !panel && loaded && map && (
+        <p className="text-subtle pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs text-xs leading-relaxed">
+          {t('Select a move to see its details, link studies to it, or grow the line.')}
+        </p>
+      )}
+
+      {/* Every page-level control lives behind the one floating button. */}
+      {loaded && map && (
+        <Fab
+          label={t('Map menu')}
+          icon={Compass}
+          className="md:bottom-6"
+          actions={[
+            {
+              label: color === 'white' ? 'Switch to the black map' : 'Switch to the white map',
+              icon: Repeat,
+              onSelect: () =>
+                color === 'white' ? navigate('openingmap', 'black') : navigate('openingmap'),
+            },
+            { label: 'My games', icon: BookOpen, onSelect: () => setGamesOpen(true) },
+            {
+              label: 'Check coverage against…',
+              icon: Target,
+              onSelect: () => setOptionsOpen(true),
+            },
+          ]}
+        />
+      )}
+
+      {optionsOpen && (
+        <Sheet label={t('Check coverage against')} onClose={() => setOptionsOpen(false)}>
+          <p className="text-muted text-xs leading-relaxed">
+            {t('The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.')}
+          </p>
           <Select
             value={field.source || 'off'}
             onChange={(v) => pickField({ ...field, source: v === 'off' ? '' : v })}
@@ -266,49 +314,16 @@ export function OpeningMapView({ params }: { params: string[] }) {
               groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
             />
           )}
-        </div>
-        <div className="flex min-h-0 flex-1 gap-4">
-          <div className="border-line bg-surface min-w-0 flex-1 overflow-hidden rounded-xl border">
-            {empty ? (
-              <EmptyState
-                art={<CollectionArt />}
-                title="No moves yet"
-                body="Start with your first move for this colour — the rest of the tree grows from it."
-                action={
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button variant="primary" size="sm" onClick={() => setAddTo(map.root.id)}>
-                      <Plus className="size-3.5" /> {t('Add a move')}
-                    </Button>
-                    <Button size="sm" onClick={() => setGrowFrom(map.root.id)}>
-                      <Sparkles className="size-3.5" /> {t('Grow from my games')}
-                    </Button>
-                  </div>
-                }
-              />
-            ) : (
-              <MapCanvas
-                map={map}
-                resolved={resolved}
-                coverage={coverage}
-                gaps={field.source ? gaps : undefined}
-                shares={field.source ? shares : undefined}
-                labels={labels}
-                selectedId={selected}
-                onSelect={setSelectedId}
-              />
-            )}
-          </div>
-          {!phone && !empty && (
-            <aside className="border-line bg-surface w-72 shrink-0 overflow-y-auto rounded-xl border p-4">
-              {panel ?? (
-                <p className="text-muted text-xs leading-relaxed">
-                  {t('Select a move to see its details, link studies to it, or grow the line.')}
-                </p>
-              )}
-            </aside>
-          )}
-        </div>
-        </>
+        </Sheet>
+      )}
+
+      {gamesOpen && map && resolved && (
+        <DeviationsSheet
+          map={map}
+          resolved={resolved}
+          onShowNode={setSelectedId}
+          onClose={() => setGamesOpen(false)}
+        />
       )}
       {phone && panel && (
         <Sheet label={t('Move details')} onClose={() => setSelectedId(null)}>
@@ -355,7 +370,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           }}
         />
       )}
-    </PageShell>
+    </div>
   );
 }
 

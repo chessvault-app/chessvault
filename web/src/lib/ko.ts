@@ -531,6 +531,12 @@ export const ko: Record<string, string> = {
   'Link a study first — a drill needs prepared moves':
     '먼저 스터디를 연결하세요 — 드릴에는 준비된 수가 필요합니다',
   'Save failed': '저장 실패',
+  'Map menu': '맵 메뉴',
+  'Switch to the black map': '흑 맵으로 전환',
+  'Switch to the white map': '백 맵으로 전환',
+  'Check coverage against…': '커버리지 비교 대상…',
+  'The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.':
+    '맵이 자신을 비교하는 필드입니다: 갭 배지, 점 크기, 통계표가 모두 여기서 읽습니다.',
   'Check coverage against': '커버리지 비교 대상',
   'Nothing — hide gaps': '없음 — 갭 숨기기',
   'Where opponent replies come from': '상대 응수의 출처',
