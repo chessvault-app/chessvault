@@ -377,15 +377,32 @@ export const ko: Record<string, string> = {
   'Choose file': '파일 선택',
   'Import from Lichess': 'Lichess에서 가져오기',
   'No studies found.': '스터디가 없습니다.',
-  'Unsaved changes — click to save now': '저장하지 않은 변경 — 클릭하면 바로 저장합니다',
+  // --- saving ---------------------------------------------------------------
+  // Manual save: the badge, the two buttons that resolve it, and the
+  // question asked on the way out of a document with changes in it.
+  'Not saved': '저장 실패',
+  'Save changes': '변경 사항 저장',
+  'Discard changes': '변경 사항 버리기',
+  'Discard changes and go back to the saved version': '변경 사항을 버리고 저장된 버전으로 돌아갑니다',
+  'Unsaved changes discarded': '저장하지 않은 변경 사항을 버렸습니다',
+  'Unsaved changes': '저장하지 않은 변경 사항',
+  '“{name}” has changes you have not saved.': '“{name}”에 저장하지 않은 변경 사항이 있습니다.',
+  'Could not save — your changes are still here.': '저장하지 못했습니다 — 변경 사항은 그대로 있습니다.',
+  'Stay here': '여기 머무르기',
+  'Save the open document': '열려 있는 문서 저장',
+  'Hide the editing tools': '편집 도구 숨기기',
+  'Show NAGs, comments and move tools': '기호, 주석, 수순 도구 보기',
+  // Settings > Documents.
+  Documents: '문서',
+  'Auto-save': '자동 저장',
+  'Write changes to the vault as you make them. Off, they wait for you to save.':
+    '변경하는 즉시 볼트에 씁니다. 끄면 저장할 때까지 기다립니다.',
   'Add a chapter': '챕터 추가',
   'Click to accept ANY move here (the book’s K~)': '여기서는 아무 수나 받도록 클릭 (책의 K~)',
   'Hide glyphs': '기호 숨기기',
   'Show glyphs': '기호 보기',
   'All games': '모든 게임',
   'All studies': '모든 스터디',
-  'All games (saves first)': '모든 게임 (먼저 저장합니다)',
-  'All studies (saves first)': '모든 스터디 (먼저 저장합니다)',
   'Notes on this game…': '이 게임에 대한 메모…',
   'Chapter introduction…': '챕터 소개…',
   'Save failed — click to retry': '저장 실패 — 다시 시도하려면 클릭',
@@ -1315,7 +1332,6 @@ export const ko: Record<string, string> = {
   "Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.": "내 게임을 살펴봅니다. 위에 {site} 사용자 이름을 입력하고 월을 고른 다음, 남길 만한 게임을 모음에 추가하세요.",
   "Paste a PGN — or just moves: 1. e4 e5 2. Nf3 …": "PGN을 붙여넣으세요 — 또는 수순만: 1. e4 e5 2. Nf3 …",
   "needs internet": "인터넷 필요",
-  "Edit moves, NAGs and comments": "수순, 기호, 주석 편집",
   "Browse {site}": "{site} 둘러보기",
   "Your collection is empty. It's meant to hold the games worth keeping — each one annotatable like a study. Browse your chess.com history below and add the ones you want to study.": "모음이 비어 있습니다. 남길 만한 게임을 담는 곳으로, 각 게임은 스터디처럼 주석을 달 수 있습니다. 아래에서 chess.com 기록을 둘러보고 공부할 게임을 추가하세요.",
 

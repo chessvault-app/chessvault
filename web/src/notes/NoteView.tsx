@@ -235,7 +235,7 @@ function NoteEditor({
     if (!editor || editor.isDestroyed) return;
     const pending = docToMarkdown(editor.state.doc, front.current);
     undoable.remove(
-      t('your unsaved changes'),
+      t('Unsaved changes discarded'),
       () => {},
       () => {
         editor.commands.setContent(markdownToDoc(pending).toJSON() as object, { emitUpdate: false });
@@ -311,6 +311,7 @@ function NoteEditor({
       {undoable.pending && (
         <UndoBar
           label={undoable.pending.label}
+          message={undoable.pending.label}
           leaving={undoable.pending.leaving}
           onUndo={undoable.undo}
           onHold={undoable.hold}

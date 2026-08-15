@@ -180,7 +180,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     const { chapters, chapterIndex, savedPgn } = useStudy.getState();
     const { tree, cursorId, orientation } = useAnalysis.getState();
     undoable.remove(
-      t('your unsaved changes'),
+      t('Unsaved changes discarded'),
       () => {},
       () => {
         useStudy.setState({ chapters, chapterIndex, savedPgn, saveState: 'dirty' });
@@ -340,6 +340,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       {undoable.pending && (
         <UndoBar
           label={undoable.pending.label}
+          message={undoable.pending.label}
           leaving={undoable.pending.leaving}
           onUndo={undoable.undo}
           onHold={undoable.hold}

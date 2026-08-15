@@ -17,12 +17,21 @@ import { t } from '@/lib/i18n';
  */
 export function UndoBar({
   label,
+  message,
   leaving = false,
   onUndo,
   onHold,
   onRelease,
 }: {
   label: string;
+  /**
+   * The whole sentence, for an act that is not a removal.
+   *
+   * Discarding pending changes takes this bar for the grace period it
+   * needs, but "Removed “your unsaved changes”" is not a sentence anyone
+   * would write. Given here, `label` is unused.
+   */
+  message?: string;
   /** Its time is up: fade out, and stop taking the press. */
   leaving?: boolean;
   onUndo: () => void;
@@ -69,7 +78,7 @@ export function UndoBar({
         )}
       >
         <span className="min-w-0 flex-1 truncate text-sm">
-          {t('Removed “{name}”', { name: label })}
+          {message ?? t('Removed “{name}”', { name: label })}
         </span>
         {/* The ghost button's own colours are page colours — muted grey on
             a hover of surface-2 — which are invisible here. It borrows the
