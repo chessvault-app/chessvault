@@ -874,7 +874,11 @@ function NodePanel({
             icon={Trash2}
             label={t('Delete')}
             triggerTitle={t('Delete this move')}
-            triggerTone="quiet"
+            // The only destructive thing in this row, which is exactly
+            // what ConfirmSheet says `danger` is for: a tinted red card
+            // that matches the other buttons instead of a bare glyph
+            // sitting apart from them.
+            triggerTone="danger"
             question={t('Delete this move and everything after it? Linked studies are untouched.')}
             confirmLabel={t('Delete')}
             onConfirm={() => {
