@@ -410,15 +410,24 @@ class MyGamesIndex {
       date: string | null;
       site: string | null;
     }[];
-    // safeIntegers: `pos` is a 64-bit key and a plain JS number would
-    // silently mangle it past 2^53.
-    const pliesOf = db
-      .prepare('SELECT pos, uci FROM plies WHERE game_id = ? ORDER BY ply')
-      .safeIntegers(true);
+    // `pos` is a 64-bit key and a plain JS number would silently mangle it
+    // past 2^53. better-sqlite3 answers that with safeIntegers, which hands
+    // back a BigInt — but this same code runs in the static demo over
+    // sql.js, which has no BigInt in its API at all: it threw on the
+    // method, and stubbing the method would not have helped, because the
+    // value has already been through a double by the time JS sees it.
+    // CAST to text is exact in both, and the read is the only place this
+    // column is taken out of the database rather than bound into a query.
+    const pliesOf = db.prepare(
+      'SELECT CAST(pos AS TEXT) AS pos, uci FROM plies WHERE game_id = ? ORDER BY ply',
+    );
 
     const out: ReturnType<MyGamesIndex['deviations']> = [];
     for (const game of games) {
-      const plies = pliesOf.all(game.id) as { pos: bigint; uci: string }[];
+      const plies = (pliesOf.all(game.id) as { pos: string; uci: string }[]).map((row) => ({
+        pos: BigInt(row.pos),
+        uci: row.uci,
+      }));
       if (plies.length === 0 || !keys.has(plies[0]!.pos)) continue;
       let at = -1;
       for (let k = 0; k < plies.length; k += 1) {
