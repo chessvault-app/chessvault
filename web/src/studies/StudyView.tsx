@@ -40,6 +40,7 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl } from '@/ui/SaveControl';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -81,6 +82,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const editing = useStudy((s) => s.editing);
   const setEditing = useStudy((s) => s.setEditing);
   const undoable = useUndoable();
+  const recovery = useStudy((s) => s.recovery);
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
@@ -336,6 +338,15 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           )}
         />
       </div>
+
+      {recovery && (
+        <RecoverySheet
+          name={id.split('/').at(-1)!}
+          at={recovery.at}
+          onRecover={() => useStudy.getState().recover()}
+          onDismiss={() => void useStudy.getState().dismissRecovery()}
+        />
+      )}
 
       {undoable.pending && (
         <UndoBar

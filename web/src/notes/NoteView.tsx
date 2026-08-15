@@ -7,6 +7,7 @@ import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { usePrefs } from '@/store/prefs';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
+import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { UndoBar } from '@/ui/UndoBar';
@@ -17,6 +18,9 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { isUntitled, t } from '@/lib/i18n';
 
 const AUTOSAVE_MS = 1500;
+/** How long after the last edit the pending copy is parked. See the study
+    store: a crash net, not a save, so it is deliberately less eager. */
+const PARK_MS = 4000;
 
 /** One open note: a Tiptap editor over markdown, boards included. */
 export function NoteView({ id }: { id: string }) {
@@ -35,20 +39,31 @@ export function NoteView({ id }: { id: string }) {
   const [frontMatter, setFrontMatter] = useState('');
   /** The file as loaded, so a save can tell an edit from a settling node. */
   const [loaded, setLoaded] = useState('');
+  /**
+   * A copy the vault was still holding — a session that ended without
+   * saving. Offered, never applied: see RecoverySheet.
+   */
+  const [recovery, setRecovery] = useState<{ pgn: string; at: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setInitialDoc(null);
     setFailed(null);
     setFrontMatter('');
+    setRecovery(null);
     void fetch(`/api/notes/${encodeURIComponent(id)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`could not open “${id}”`);
-        const { pgn } = (await res.json()) as { pgn: string };
+        const { pgn, draft, draftAt } = (await res.json()) as {
+          pgn: string;
+          draft?: string;
+          draftAt?: string;
+        };
         if (cancelled) return;
         setFrontMatter(splitFrontMatter(pgn).front);
         setLoaded(pgn);
         setInitialDoc(markdownToDoc(pgn).toJSON() as object);
+        if (draft && draftAt) setRecovery({ pgn: draft, at: draftAt });
       })
       .catch((error: Error) => {
         if (!cancelled) setFailed(error.message);
@@ -88,6 +103,8 @@ export function NoteView({ id }: { id: string }) {
       saveState={saveState}
       setSaveState={setSaveState}
       saveTimer={saveTimer}
+      recovery={recovery}
+      onRecoveryAnswered={() => setRecovery(null)}
     />
   );
 }
@@ -100,6 +117,8 @@ function NoteEditor({
   saveState,
   setSaveState,
   saveTimer,
+  recovery,
+  onRecoveryAnswered,
 }: {
   id: string;
   initialDoc: object;
@@ -110,6 +129,9 @@ function NoteEditor({
   saveState: SaveState;
   setSaveState: (s: SaveState) => void;
   saveTimer: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
+  /** A copy the vault kept from a session that ended without saving. */
+  recovery: { pgn: string; at: string } | null;
+  onRecoveryAnswered: () => void;
 }) {
   // Notes open read-only (wiki-links follow on plain click); the header's
   // Edit button switches the TipTap editor live.
@@ -140,6 +162,37 @@ function NoteEditor({
   const front = useRef(frontMatter);
   front.current = frontMatter;
   const undoable = useUndoable();
+
+  /**
+   * The crash net — see the study store, which does the same thing for
+   * the same reason. Longer than the autosave debounce on purpose: nobody
+   * is waiting for it, and it is thrown away the moment Save is pressed.
+   */
+  const parkTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPark = (): void => {
+    if (parkTimer.current) {
+      clearTimeout(parkTimer.current);
+      parkTimer.current = null;
+    }
+  };
+  const dropPark = (): void => {
+    cancelPark();
+    void fetch(`/api/notes/${encodeURIComponent(id)}?draft=1`, { method: 'DELETE' }).catch(() => {});
+  };
+  const schedulePark = (markdown: string): void => {
+    cancelPark();
+    parkTimer.current = setTimeout(() => {
+      parkTimer.current = null;
+      void fetch(`/api/notes/${encodeURIComponent(id)}?draft=1`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pgn: markdown }),
+        // A crash net that cannot reach the server is simply not there;
+        // the badge already says the work is unsaved.
+      }).catch(() => {});
+    }, PARK_MS);
+  };
+
   const editor = useEditor({
     extensions: noteExtensions,
     content: initialDoc,
@@ -164,6 +217,9 @@ function NoteEditor({
       // asked this device to write as they type.
       if (!usePrefs.getState().autosave) {
         saveTimer.current = null;
+        // Nothing is going to be written, so the copy parked in the vault
+        // is the only record of this outside the tab.
+        schedulePark(docToMarkdown(editor.state.doc, front.current));
         return;
       }
       saveTimer.current = setTimeout(() => {
@@ -179,6 +235,9 @@ function NoteEditor({
 
   const save = async (markdown: string): Promise<boolean> => {
     setSaveState('saving');
+    // The server drops the swap when this PUT lands; cancel the timer so a
+    // park cannot fire afterwards and re-park what is now on disk.
+    cancelPark();
     try {
       const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
         method: 'PUT',
@@ -205,6 +264,7 @@ function NoteEditor({
       clearTimeout(saveTimer.current);
       saveTimer.current = null;
     }
+    dropPark();
     if (!editor || editor.isDestroyed) return;
     const markdown = lastSaved.current;
     // emitUpdate false, or the restore itself reads as an edit and dirties
@@ -219,6 +279,9 @@ function NoteEditor({
   // already asked what to do with the changes and been answered.
   useEffect(() => {
     return () => {
+      // A park still on the clock would fire at a note nobody has open.
+      // Whatever is already parked stays: that is the whole point of it.
+      cancelPark();
       if (saveTimer.current) {
         clearTimeout(saveTimer.current);
         saveTimer.current = null;
@@ -308,6 +371,29 @@ function NoteEditor({
       </div>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+
+      {recovery && editor && (
+        <RecoverySheet
+          name={id.split('/').at(-1)!}
+          at={recovery.at}
+          onRecover={() => {
+            // Pending, not saved: it never reached the file, and pressing
+            // Save is still what puts it there. lastSaved stays where it
+            // is, so discarding still goes back to the vault's copy.
+            editor.commands.setContent(markdownToDoc(recovery.pgn).toJSON() as object, {
+              emitUpdate: false,
+            });
+            front.current = splitFrontMatter(recovery.pgn).front;
+            setSaveState('dirty');
+            onRecoveryAnswered();
+          }}
+          onDismiss={() => {
+            dropPark();
+            onRecoveryAnswered();
+          }}
+        />
+      )}
+
       {undoable.pending && (
         <UndoBar
           label={undoable.pending.label}

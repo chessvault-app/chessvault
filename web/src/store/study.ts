@@ -49,6 +49,23 @@ interface StudyState {
    */
   savedPgn: string;
   /**
+   * A pending copy found in the vault when this document was opened.
+   *
+   * Set only when the vault held a swap file that differs from the saved
+   * document — work from a session that ended without saving. It is a
+   * QUESTION, not a state: the view offers it, and answering either way
+   * clears it. Null the rest of the time, which is almost always.
+   */
+  recovery: { pgn: string; at: string } | null;
+  /** Take the parked copy: it becomes the pending buffer. */
+  recover: () => void;
+  /** Leave it: the swap is deleted and the saved document stands. */
+  dismissRecovery: () => Promise<void>;
+  /** Park the pending copy in the vault, against a crash. */
+  park: () => Promise<void>;
+  /** Drop whatever is parked — the pending copy is resolved. */
+  dropPark: () => void;
+  /**
    * Reading, or annotating.
    *
    * A TOOLS toggle, and nothing more: it shows and hides the NAG palette,
@@ -136,8 +153,39 @@ function scheduleAutosave(): void {
     clearTimeout(saveTimer);
     saveTimer = null;
   }
-  if (!usePrefs.getState().autosave) return;
+  if (!usePrefs.getState().autosave) {
+    // Nothing is going to be written, so the pending copy is the only
+    // record of this work outside the tab. Park it.
+    schedulePark();
+    return;
+  }
   saveTimer = setTimeout(() => void useStudy.getState().save(), AUTOSAVE_MS);
+}
+
+/**
+ * How long after the last edit the pending copy is parked in the vault.
+ *
+ * Longer than the autosave debounce on purpose. This is a crash net, not
+ * a save: nobody is waiting for it, and a full document body per 1.5s of
+ * typing is a lot of writing for something that is thrown away the moment
+ * Save is pressed.
+ */
+const PARK_MS = 4000;
+let parkTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelPark(): void {
+  if (parkTimer) {
+    clearTimeout(parkTimer);
+    parkTimer = null;
+  }
+}
+
+function schedulePark(): void {
+  cancelPark();
+  parkTimer = setTimeout(() => {
+    parkTimer = null;
+    void useStudy.getState().park();
+  }, PARK_MS);
 }
 
 const asSide = (value: string | undefined): 'white' | 'black' | null =>
@@ -193,6 +241,7 @@ export const useStudy = create<StudyState>()((set, get) => {
     chapterIndex: 0,
     saveState: 'saved',
     savedPgn: '',
+    recovery: null,
     editing: false,
     setEditing: (editing) => set({ editing }),
     error: null,
@@ -310,7 +359,7 @@ export const useStudy = create<StudyState>()((set, get) => {
           set({ error: `could not open “${id}”` });
           return false;
         }
-        const body = (await res.json()) as { pgn: string };
+        const body = (await res.json()) as { pgn: string; draft?: string; draftAt?: string };
         const chapters = pgnToChapters(body.pgn);
         if (chapters.length === 0) {
           chapters.push({
@@ -320,6 +369,14 @@ export const useStudy = create<StudyState>()((set, get) => {
             headers: { Event: `${id}: Chapter 1`, ChapterName: 'Chapter 1', Result: '*' },
           });
         }
+        // A swap file the vault was still holding: work from a session
+        // that ended without saving. The document opens SAVED and shows
+        // what is on disk — the recovery is offered, never applied behind
+        // the reader's back, because taking it silently would be the same
+        // unasked-for write this whole change is about.
+        const recovery =
+          body.draft && body.draftAt ? { pgn: body.draft, at: body.draftAt } : null;
+        cancelPark();
         // Re-serialised rather than kept as the fetched body: a file whose
         // chapters did not parse gets the fallback chapter above, and the
         // baseline has to be what is actually in memory or discarding
@@ -331,6 +388,7 @@ export const useStudy = create<StudyState>()((set, get) => {
           chapterIndex: 0,
           saveState: 'saved',
           savedPgn: chaptersToPgn(chapters),
+          recovery,
           error: null,
           editing: false,
         });
@@ -358,7 +416,19 @@ export const useStudy = create<StudyState>()((set, get) => {
         clearTimeout(saveTimer);
         saveTimer = null;
       }
-      set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved', savedPgn: '', editing: false });
+      // A park still on the clock would fire at a document nobody has
+      // open and leave a swap nobody asked for. The leave guard has
+      // already resolved the buffer either way.
+      cancelPark();
+      set({
+        openId: null,
+        chapters: [],
+        chapterIndex: 0,
+        saveState: 'saved',
+        savedPgn: '',
+        recovery: null,
+        editing: false,
+      });
       useAnalysis.getState().reset();
     },
 
@@ -445,6 +515,67 @@ export const useStudy = create<StudyState>()((set, get) => {
       scheduleAutosave();
     },
 
+    park: async () => {
+      const { openId, openBase, saveState } = get();
+      // Only pending work is worth parking, and only while it is still
+      // pending — a save that landed between the timer and here has
+      // already dropped the swap server-side.
+      if (!openId || saveState === 'saved') return;
+      const pgn = chaptersToPgn(stashCurrent());
+      try {
+        await fetch(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ pgn }),
+        });
+      } catch {
+        // A crash net that cannot reach the server is simply not there.
+        // The badge already says the work is unsaved; saying it twice in
+        // a different colour would not help anyone.
+      }
+    },
+
+    /** Drop whatever is parked. Fire-and-forget: a swap left behind is a
+        stale question, not lost data — and the next open discards one that
+        matches its file anyway. */
+    dropPark: () => {
+      const { openId, openBase } = get();
+      cancelPark();
+      if (!openId) return;
+      void fetch(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, {
+        method: 'DELETE',
+      }).catch(() => {});
+    },
+
+    recover: () => {
+      const { recovery, chapterIndex } = get();
+      if (!recovery) return;
+      const chapters = pgnToChapters(recovery.pgn);
+      if (chapters.length === 0) {
+        set({ recovery: null });
+        return;
+      }
+      const index = Math.min(chapterIndex, chapters.length - 1);
+      // Recovered work arrives PENDING, not saved: it never reached the
+      // document, and pressing Save is still what puts it there. savedPgn
+      // is untouched, so discarding still goes back to the vault's copy.
+      set({ chapters, chapterIndex: index, saveState: 'dirty', recovery: null });
+      loadIntoAnalysis(chapters[index]!);
+    },
+
+    dismissRecovery: async () => {
+      const { openId, openBase } = get();
+      set({ recovery: null });
+      if (!openId) return;
+      // Deleted rather than left to rot: an unanswered question that keeps
+      // being asked is worse than no question.
+      try {
+        await fetch(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, { method: 'DELETE' });
+      } catch {
+        /* it will be offered again, or dropped on the next save */
+      }
+    },
+
     discard: () => {
       const { openId, savedPgn, chapterIndex } = get();
       if (!openId) return;
@@ -452,6 +583,7 @@ export const useStudy = create<StudyState>()((set, get) => {
         clearTimeout(saveTimer);
         saveTimer = null;
       }
+      get().dropPark();
       const chapters = pgnToChapters(savedPgn);
       if (chapters.length === 0) return;
       // Chapter ids are re-minted by the parse, so the analysis cursor
@@ -478,6 +610,9 @@ export const useStudy = create<StudyState>()((set, get) => {
     if (!openId) return;
     const chapters = stashCurrent();
     const pgn = chaptersToPgn(chapters);
+    // The server drops the swap when this PUT lands; cancel the timer so a
+    // park cannot fire afterwards and re-park work that is now on disk.
+    cancelPark();
     set({ chapters, saveState: 'saving' });
     try {
       const res = await fetch(`/api/${openBase}/${encodeURIComponent(openId)}`, {

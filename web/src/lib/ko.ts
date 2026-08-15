@@ -389,6 +389,17 @@ export const ko: Record<string, string> = {
   '“{name}” has changes you have not saved.': '“{name}”에 저장하지 않은 변경 사항이 있습니다.',
   'Could not save — your changes are still here.': '저장하지 못했습니다 — 변경 사항은 그대로 있습니다.',
   'Stay here': '여기 머무르기',
+  // Recovery: a swap file the vault was still holding after a session
+  // that ended without saving.
+  'Unsaved changes were found': '저장하지 않은 변경 사항을 찾았습니다',
+  '“{name}” has changes from {when} that were never saved.':
+    '“{name}”에 {when}에 저장하지 않은 변경 사항이 있습니다.',
+  '“{name}” has changes that were never saved.':
+    '“{name}”에 저장하지 않은 변경 사항이 있습니다.',
+  'Restoring brings them back unsaved, so you can look before you keep them.':
+    '복구하면 저장하지 않은 상태로 돌아오므로, 확인한 뒤에 보관할 수 있습니다.',
+  'Restore them': '복구하기',
+  'Throw them away': '버리기',
   'Save the open document': '열려 있는 문서 저장',
   'Hide the editing tools': '편집 도구 숨기기',
   'Show NAGs, comments and move tools': '기호, 주석, 수순 도구 보기',
