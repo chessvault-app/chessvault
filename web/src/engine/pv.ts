@@ -9,12 +9,35 @@ export interface PvPly {
   san: string;
   /** As the engine spelled it. What gets replayed into the tree. */
   uci: string;
-  /** The position this ply leads to — what a preview of it draws. */
-  fen: string;
   /** `12.` or `12...`, only on the plies that print one. */
   number?: string;
   /** From/to squares, for the preview's last-move highlight. */
   squares?: [string, string];
+}
+
+/**
+ * The position a prefix of a line leads to — what a preview of that ply
+ * draws.
+ *
+ * Deliberately not a field on PvPly. Serialising one FEN per ply inside
+ * formatPv put 24 board writes in a render path that runs per engine
+ * update, three lines at a time — about 72 a second, to show at most one
+ * of them, and only when a desktop pointer happens to rest on a move. It
+ * measured 0.044 -> 0.096 ms per call. Replaying once on hover costs
+ * ~0.05 ms and happens only when there is something to show.
+ */
+export function fenAfter(fen: string, uciMoves: string[]): string | undefined {
+  const setup = parseFen(fen);
+  if (setup.isErr) return undefined;
+  const position = Chess.fromSetup(setup.unwrap());
+  if (position.isErr) return undefined;
+  const pos = position.unwrap();
+  for (const uci of uciMoves) {
+    const move = parseUci(uci);
+    if (!move || !pos.isLegal(move)) return undefined;
+    pos.play(move);
+  }
+  return makeFen(pos.toSetup());
 }
 
 export interface FormattedPv {
@@ -73,7 +96,6 @@ export function formatPv(fen: string, uciMoves: string[]): FormattedPv {
     plies.push({
       san,
       uci,
-      fen: makeFen(pos.toSetup()),
       ...(number ? { number } : {}),
       ...(squares ? { squares } : {}),
     });

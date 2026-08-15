@@ -9,7 +9,7 @@ import { PvMoves } from './PvMoves.tsx';
 /** What the card needs to make its one engine line act like the pane's. */
 interface LineProps {
   onPlayLine: (ucis: string[]) => boolean;
-  onPeek?: (ply: PvPly, anchor: HTMLElement) => void;
+  onPeek?: (ply: PvPly, fen: string, anchor: HTMLElement) => void;
   onPeekEnd?: () => void;
 }
 
@@ -138,6 +138,7 @@ function WhyNotRow({
       <PvMoves
         plies={reply.plies}
         text={reply.text}
+        fen={fen}
         onPlayLine={onPlayLine}
         onPeek={onPeek}
         onPeekEnd={onPeekEnd}

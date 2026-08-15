@@ -27,6 +27,9 @@ const CLOSE_DELAY_MS = 80;
 
 export interface PvPeekState {
   ply: PvPly;
+  /** The position that ply leads to, worked out by the caller at hover
+      time rather than carried on every ply of every line. */
+  fen: string;
   /** The hovered ply, for centring the card on the move it belongs to. */
   rect: DOMRect;
   /** The row's edges. The card clears the whole row rather than the one
@@ -36,7 +39,7 @@ export interface PvPeekState {
 
 export interface PvPeekControls {
   peek: PvPeekState | null;
-  show: (ply: PvPly, anchor: HTMLElement) => void;
+  show: (ply: PvPly, fen: string, anchor: HTMLElement) => void;
   hide: () => void;
   /** Shut it now, no grace period — for when the anchor is about to go. */
   close: () => void;
@@ -59,7 +62,7 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
   }, [cancel]);
 
   const show = useCallback(
-    (ply: PvPly, anchor: HTMLElement) => {
+    (ply: PvPly, fen: string, anchor: HTMLElement) => {
       if (!enabled) return;
       cancel();
       // The li in a PV list, the text row in the Why card — either way the
@@ -67,6 +70,7 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
       const row = (anchor.closest('li') ?? anchor.parentElement ?? anchor).getBoundingClientRect();
       const next = {
         ply,
+        fen,
         rect: anchor.getBoundingClientRect(),
         row: { left: row.left, right: row.right },
       };
@@ -140,7 +144,7 @@ export function PvPeek({
       className="border-line bg-surface pointer-events-none fixed z-50 rounded-lg border p-1 shadow-[var(--shadow-pop)]"
     >
       <Board
-        fen={peek.ply.fen}
+        fen={peek.fen}
         orientation={orientation}
         viewOnly
         coordinates={false}

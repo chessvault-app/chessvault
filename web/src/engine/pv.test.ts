@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { INITIAL_FEN } from '@shared/tree';
-import { formatPv } from './pv.ts';
+import { fenAfter, formatPv } from './pv.ts';
 
 /**
  * The pane renders engine lines from this and nothing else, and the plies
@@ -26,17 +26,11 @@ describe('formatPv', () => {
     expect(pv.plies.map((p) => p.number)).toEqual(['1...', '2.']);
   });
 
-  it('gives every ply the position it leads to', () => {
-    const pv = formatPv(INITIAL_FEN, ['e2e4', 'e7e5']);
-
-    expect(pv.plies[0]!.fen).toBe(
-      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
-    );
-    expect(pv.plies[1]!.fen).toBe(
-      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
-    );
-    // The uci is kept as the engine spelled it — that is what gets replayed.
-    expect(pv.plies.map((p) => p.uci)).toEqual(['e2e4', 'e7e5']);
+  it('keeps the uci as the engine spelled it — that is what gets replayed', () => {
+    expect(formatPv(INITIAL_FEN, ['e2e4', 'e7e5']).plies.map((p) => p.uci)).toEqual([
+      'e2e4',
+      'e7e5',
+    ]);
   });
 
   it('highlights the square the king lands on when castling', () => {
@@ -69,5 +63,42 @@ describe('formatPv', () => {
 
   it('is empty for an empty line', () => {
     expect(formatPv(INITIAL_FEN, [])).toEqual({ text: '', plies: [] });
+  });
+});
+
+/**
+ * The preview's position, worked out on hover instead of on every ply of
+ * every line — so it has to agree with what replaying the line gives.
+ */
+describe('fenAfter', () => {
+  it('gives the position a prefix of the line leads to', () => {
+    expect(fenAfter(INITIAL_FEN, ['e2e4'])).toBe(
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    );
+    expect(fenAfter(INITIAL_FEN, ['e2e4', 'e7e5'])).toBe(
+      'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2',
+    );
+  });
+
+  it('walks each prefix of a line to a different position', () => {
+    const line = ['e2e4', 'e7e5', 'g1f3', 'b8c6'];
+    const seen = line.map((_, i) => fenAfter(INITIAL_FEN, line.slice(0, i + 1)));
+    expect(seen.every((f) => typeof f === 'string')).toBe(true);
+    expect(new Set(seen).size).toBe(line.length);
+  });
+
+  it('handles castling, which the engine may spell either way', () => {
+    const fen = 'rnbqk2r/pppp1ppp/5n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+    expect(fenAfter(fen, ['e1g1'])).toBe(fenAfter(fen, ['e1h1']));
+    expect(fenAfter(fen, ['e1g1'])).toContain('RNBQ1RK1');
+  });
+
+  it('gives nothing rather than a wrong board when the line will not play', () => {
+    expect(fenAfter(INITIAL_FEN, ['e2e4', 'e2e4'])).toBeUndefined();
+    expect(fenAfter('not a fen', ['e2e4'])).toBeUndefined();
+  });
+
+  it('is the starting position for no moves at all', () => {
+    expect(fenAfter(INITIAL_FEN, [])).toBe(INITIAL_FEN);
   });
 });

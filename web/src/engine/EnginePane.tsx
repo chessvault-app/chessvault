@@ -334,7 +334,7 @@ function PvRow({
   turn: 'white' | 'black';
   fen: string;
   onPlayLine: (ucis: string[]) => boolean;
-  onPeek?: (ply: PvPly, anchor: HTMLElement) => void;
+  onPeek?: (ply: PvPly, fen: string, anchor: HTMLElement) => void;
   onPeekEnd?: () => void;
 }) {
   const score = toWhitePov({ cp: line.cp, mate: line.mate }, turn);
@@ -400,6 +400,7 @@ function PvRow({
         <PvMoves
           plies={pv.plies}
           text={pv.text}
+          fen={fen}
           onPlayLine={onPlayLine}
           onPeek={onPeek}
           onPeekEnd={onPeekEnd}

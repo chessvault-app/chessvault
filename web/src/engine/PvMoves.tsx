@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { figurine } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
-import type { PvPly } from './pv.ts';
+import { fenAfter, type PvPly } from './pv.ts';
 
 /**
  * An engine line, one click target per ply.
@@ -21,6 +21,7 @@ import type { PvPly } from './pv.ts';
 export function PvMoves({
   plies,
   text,
+  fen,
   onPlayLine,
   onPeek,
   onPeekEnd,
@@ -29,10 +30,12 @@ export function PvMoves({
   plies: PvPly[];
   /** Shown instead when the line could not be replayed; then it is raw UCI. */
   text: string;
+  /** The position the line starts from — replayed to build a preview. */
+  fen: string;
   onPlayLine: (ucis: string[]) => void;
   /** Hover/focus preview. Omit to attach no listeners at all — which is
       what a coarse pointer gets, since there is no hovering to preview. */
-  onPeek?: (ply: PvPly, anchor: HTMLElement) => void;
+  onPeek?: (ply: PvPly, fen: string, anchor: HTMLElement) => void;
   onPeekEnd?: () => void;
   className?: string;
 }) {
@@ -57,8 +60,16 @@ export function PvMoves({
     if (!onPeek) return;
     const el = e.target instanceof Element ? e.target.closest('[data-ply]') : null;
     if (!(el instanceof HTMLElement)) return;
-    const ply = plies[Number(el.dataset.ply)];
-    if (ply) onPeek(ply, el);
+    const at = Number(el.dataset.ply);
+    const ply = plies[at];
+    if (!ply) return;
+    // Worked out here, once, for the one ply under the pointer — see
+    // fenAfter on why this is not a field on every ply of every line.
+    const position = fenAfter(
+      fen,
+      plies.slice(0, at + 1).map((p) => p.uci),
+    );
+    if (position) onPeek(ply, position, el);
   };
 
   return (
