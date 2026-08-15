@@ -460,6 +460,8 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
   databases: built once, copied to the server, rarely touched again.
 - [The repertoire trainer](docs/repertoire.md) — sparring and drilling,
   and exactly how the drill decides hit, miss and gap.
+- [The opening map](docs/opening-map.md) — your repertoire as a tree:
+  hand-placed moves, tagged studies, coverage derived live.
 - [Explaining the engine](docs/explaining.md) — threats, refutations,
   plans, motifs, piece values: engine output read back in human terms,
   deterministically.
