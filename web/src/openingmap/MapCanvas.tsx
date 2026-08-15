@@ -20,6 +20,11 @@ import type { OpeningMap, ResolvedMap } from './model';
 const clip = (text: string, max: number): string =>
   text.length > max ? `${text.slice(0, max - 1)}…` : text;
 
+/** One focused line wears the app's accent, as any other emphasis does. */
+const ACCENT = 'var(--color-primary)';
+/** Above this many search hits, separate hues stop separating anything. */
+const HUES = 8;
+
 interface View {
   x: number;
   y: number;
@@ -446,10 +451,18 @@ export function MapCanvas({
    *
    * Needs field data either way; with no source there is no "most played"
    * to claim and the map stays neutral, which is the honest picture.
+   *
+   * Several hits get several colours, one per hit, so two lines running
+   * through the same region can be told apart — the question a multi-hit
+   * search asks is usually "where do these go" in the plural, and one
+   * accent for all of them answers it as a single tangle. A lone focus
+   * keeps the accent itself, so selecting a node means what it always
+   * meant. Past `HUES` hits the wheel stops separating anything and they
+   * all go back to the accent; the dimming is doing the work by then.
    */
   const mainline = useMemo(() => {
-    const edges = new Set<string>();
-    const nodes = new Set<string>();
+    const edges = new Map<string, string>();
+    const nodes = new Map<string, string>();
     if (!shares) return { edges, nodes };
 
     const favourite = (id: string): string | null => {
@@ -469,16 +482,22 @@ export function MapCanvas({
     // speaks for itself. A search with no hits highlights nothing, which
     // is the right answer to a question with no answer.
     const from = matches ? [...matches] : selectedId ? [selectedId] : [];
-    for (const start of from) {
+    const many = from.length > 1 && from.length <= HUES;
+    for (const [at, start] of from.entries()) {
+      // Spaced around the wheel from the accent's own quarter, so two
+      // hits are as far apart as the count allows.
+      const paint = many ? `hsl(${Math.round((210 + (at * 360) / from.length) % 360)} 70% 58%)` : ACCENT;
       let cursor: string | null = start;
-      // Two hits on one line walk into each other's tails, and a cycle
-      // cannot happen in a tree — but the guard costs nothing and this
-      // loop must never be the thing that hangs the page.
+      // Two hits on one line walk into each other's tails: the first one
+      // there keeps it, and `matches` is built in the tree's own order,
+      // so that is the shallower of the two — the line that contains the
+      // other. A cycle cannot happen in a tree, but the guard costs
+      // nothing and this loop must never be what hangs the page.
       while (cursor && !nodes.has(cursor)) {
-        nodes.add(cursor);
+        nodes.set(cursor, paint);
         const next: string | null = favourite(cursor);
         if (!next) break;
-        edges.add(`${cursor}-${next}`);
+        edges.set(`${cursor}-${next}`, paint);
         cursor = next;
       }
     }
@@ -547,7 +566,7 @@ export function MapCanvas({
             const b = posOf(to);
             const lit = lineage.has(from) && lineage.has(to);
             const key = `${from}-${to}`;
-            const main = mainline.edges.has(key);
+            const main = mainline.edges.get(key);
             return (
               <line
                 key={key}
@@ -558,11 +577,9 @@ export function MapCanvas({
                 // Colour AND weight, which is the house rule: a signal
                 // carried by hue alone is a signal somebody cannot see.
                 // Where you came FROM answers in bright foreground, where
-                // the field goes NEXT in the accent, and everything else
-                // is a hairline in the border tone.
-                stroke={
-                  lit ? 'var(--color-fg)' : main ? 'var(--color-primary)' : 'var(--color-line)'
-                }
+                // the field goes NEXT in its line's own colour, and
+                // everything else is a hairline in the border tone.
+                stroke={lit ? 'var(--color-fg)' : (main ?? 'var(--color-line)')}
                 strokeOpacity={lit || main ? 1 : 0.85}
                 strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.1) / view.k}
                 strokeLinecap="round"
@@ -576,7 +593,7 @@ export function MapCanvas({
             const facts = resolved.nodes.get(id)!;
             const node = facts.mapNode;
             const isRoot = facts.parentId === null;
-            const onMain = mainline.nodes.has(id);
+            const onMain = mainline.nodes.get(id);
             const selected = id === selectedId;
             const invalid = !isRoot && facts.fen === null;
             const cov = coverage?.get(id);
@@ -662,8 +679,9 @@ export function MapCanvas({
                   r={r}
                   // The field is neutral so the mainline can be seen. A
                   // covered dot off the mainline is the border tone —
-                  // present, legible, and not competing; only the dots
-                  // the mainline runs through wear the accent.
+                  // present, legible, and not competing; only the dots a
+                  // highlighted line runs through are coloured, in that
+                  // line's own colour.
                   fill={
                     invalid
                       ? 'var(--color-bad)'
@@ -671,9 +689,7 @@ export function MapCanvas({
                         ? 'var(--color-fg)'
                         : planned
                           ? 'var(--color-surface-3)'
-                          : onMain
-                            ? 'var(--color-primary)'
-                            : 'var(--color-line-strong)'
+                          : (onMain ?? 'var(--color-line-strong)')
                   }
                   fillOpacity={planned ? 0.6 : onMain ? 1 : 0.92}
                   stroke={

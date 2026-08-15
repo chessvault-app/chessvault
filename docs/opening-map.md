@@ -126,8 +126,11 @@ a dot and the line the field walks on from there — its most-played
 continuation, all the way down — lights up in the accent, thicker as
 well as brighter, while its own lineage back to the root answers in
 bright foreground: where you came from, and where the crowd goes next.
-Search, and every hit gets that same treatment at once, so "where do my
-Najdorf lines actually go" is one query. Focus on nothing and the map
+Search, and every hit gets that same treatment at once, each line in its
+own colour, so "which defences do I actually face and where do they
+go" is one query rather than five. Past eight hits the wheel stops
+telling colours apart and they all fall back to the accent; the fading
+is doing the work by then. Focus on nothing and the map
 is calm — no selection, no search, no accent, just the neutral
 constellation. (Highlighting every node's most-played child sounds like
 the same idea and is not: an only child is trivially the most played,
