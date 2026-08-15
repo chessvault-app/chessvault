@@ -1,0 +1,159 @@
+import { getNode } from '@shared/tree';
+import type { Chapter } from '@shared/types';
+import {
+  advanceCands,
+  buildPosIndex,
+  expectedSans,
+  fenKey,
+  type DrillCand,
+} from '@/repertoire/drill';
+import type { MapTag, OpeningMap, ResolvedMap } from './model';
+
+/**
+ * What the tagged studies actually prepare beneath each map node.
+ *
+ * All of a map's study tags are pooled into one position index: matching
+ * is by position, so a study can never claim a branch its tree does not
+ * contain, several studies tagged on one node merge into a union, and a
+ * line reached by transposition counts once. Note tags are references for
+ * the reader, never input here — only studies say what is prepared.
+ */
+
+export interface NodeCoverage {
+  /** True when any tagged study holds this node's position. */
+  covered: boolean;
+  /** Union of continuations the studies prepare here, first-seen order. */
+  preparedMoves: string[];
+  /** Deepest prepared continuation beyond this node, in plies. */
+  preparedPlies: number;
+  /** Prepared end-of-line positions beneath this node. */
+  lineCount: number;
+}
+
+const NONE: NodeCoverage = { covered: false, preparedMoves: [], preparedPlies: 0, lineCount: 0 };
+
+/** Every study tag on the map, deduplicated by document and chapter scope. */
+export function collectStudyTags(map: OpeningMap): MapTag[] {
+  const seen = new Set<string>();
+  const out: MapTag[] = [];
+  const stack = [map.root];
+  while (stack.length > 0) {
+    const node = stack.pop()!;
+    for (const tag of node.tags ?? []) {
+      if (tag.kind !== 'study') continue;
+      const key = `${tag.id}\n${tag.chapter ?? ''}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push(tag);
+      }
+    }
+    stack.push(...node.children);
+  }
+  return out;
+}
+
+/** A chapter tag covers the chapter itself and its sub-chapters. */
+const inScope = (chapterName: string, tagChapter: string | undefined): boolean =>
+  tagChapter === undefined ||
+  chapterName === tagChapter ||
+  chapterName.startsWith(`${tagChapter}/`);
+
+/**
+ * The chapters the map's tags put in scope, each at most once even when
+ * overlapping tags (whole study + one chapter) both reach it.
+ */
+export function scopedChapters(
+  tags: MapTag[],
+  studies: ReadonlyMap<string, Chapter[]>,
+): Chapter[] {
+  const seen = new Set<Chapter>();
+  const out: Chapter[] = [];
+  for (const tag of tags) {
+    for (const chapter of studies.get(tag.id) ?? []) {
+      if (inScope(chapter.name, tag.chapter) && !seen.has(chapter)) {
+        seen.add(chapter);
+        out.push(chapter);
+      }
+    }
+  }
+  return out;
+}
+
+/** Past this, a "prepared line" is an imported game, not preparation. */
+const MAX_WALK_PLIES = 60;
+
+/**
+ * Coverage per map node, keyed by node id. Each node's stats walk the
+ * union subtree from its own position, so a parent's numbers include
+ * everything beneath its children — that is the point of an overview.
+ */
+export function computeCoverage(
+  resolved: ResolvedMap,
+  chapters: Chapter[],
+): Map<string, NodeCoverage> {
+  const out = new Map<string, NodeCoverage>();
+  if (chapters.length === 0) {
+    for (const id of resolved.nodes.keys()) out.set(id, NONE);
+    return out;
+  }
+  const posIndex = buildPosIndex(chapters);
+
+  const fenOfChild = (cands: DrillCand[], san: string): string | null => {
+    for (const cand of cands) {
+      const tree = chapters[cand.ci]!.tree;
+      for (const childId of getNode(tree, cand.nodeId).children) {
+        const child = getNode(tree, childId);
+        if (child.san === san) return child.fen;
+      }
+    }
+    return null;
+  };
+
+  for (const [id, node] of resolved.nodes) {
+    if (node.fen === null) {
+      out.set(id, NONE);
+      continue;
+    }
+    const startKey = fenKey(node.fen);
+    const startCands = posIndex.get(startKey) ?? [];
+    if (startCands.length === 0) {
+      out.set(id, NONE);
+      continue;
+    }
+
+    const visited = new Set([startKey]);
+    let frontier: { cands: DrillCand[]; ply: number }[] = [{ cands: startCands, ply: 0 }];
+    let preparedPlies = 0;
+    let lineCount = 0;
+    while (frontier.length > 0) {
+      const next: typeof frontier = [];
+      for (const { cands, ply } of frontier) {
+        const moves = expectedSans(chapters, cands);
+        if (moves.length === 0 || ply >= MAX_WALK_PLIES) {
+          lineCount += 1;
+          continue;
+        }
+        for (const san of moves) {
+          const fen = fenOfChild(cands, san);
+          if (!fen) continue;
+          const key = fenKey(fen);
+          // A transposition back into a walked position ends the line
+          // here instead of looping; its continuations were counted when
+          // the position was first reached.
+          if (visited.has(key)) continue;
+          visited.add(key);
+          preparedPlies = Math.max(preparedPlies, ply + 1);
+          next.push({ cands: advanceCands(chapters, posIndex, cands, san, key), ply: ply + 1 });
+        }
+      }
+      frontier = next;
+    }
+    out.set(id, {
+      covered: true,
+      preparedMoves: expectedSans(chapters, startCands),
+      preparedPlies,
+      lineCount,
+    });
+  }
+  return out;
+}
