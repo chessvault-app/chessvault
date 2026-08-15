@@ -69,12 +69,9 @@ export function CanvasShell({
   const phone = useMediaQuery('(max-width: 47.9375rem)');
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
-      {/* The surface itself — no box, no border, edge to edge. */}
-      {children}
-
-      {/* The page's heading, painted after the surface AND after anything
-          the page overlays on it.
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      {/* The page's heading, in the flow above the surface rather than
+          floating over it.
 
           It is `PageHeader` on `PageShell`'s own gutters, not a smaller
           thing of its own. A canvas page briefly had a `text-sm` title in
@@ -82,59 +79,60 @@ export function CanvasShell({
           canvas is a heading in the way; what it actually did was make
           this page's name a different size and a different distance from
           the edge than every other page in the app, which reads as a
-          mistake rather than as restraint. The floating is what makes it
-          a canvas page; the typography is what makes it this app.
+          mistake rather than as restraint.
 
-          The row itself takes no clicks — a drag that starts in the empty
-          middle of the header still pans the canvas — while everything
-          inside it does. Painting after the overlays is the other half:
-          an overlay is `absolute inset-0`, so it covers the header too,
-          and a `z-10` sibling painted later wins the hit test. Painted
-          first, the header kept its pixels and lost its clicks, which
-          left the back chevron dead for exactly as long as the map was
-          failing to load — the one moment leaving is all there is to do. */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-x-0 top-0 z-10 px-4 pt-4 md:px-6 md:pt-6',
-          '[&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto',
-        )}
-      >
+          It floated for a while too, and that was the same error one
+          level up: a surface drawn underneath its own title puts dots and
+          labels behind the words, and pans them through the heading as
+          you drag. The canvas gets the room below instead, which also
+          means it can no longer swallow a press meant for the header —
+          the pointer-events dance that used to arrange that is gone. */}
+      <div className="shrink-0 px-4 pb-3 pt-4 md:px-6 md:pt-6">
         <PageHeader title={title} back={back} meta={meta} />
         {search && <div className="mt-2 flex">{search}</div>}
       </div>
 
-      {/* The surface's own controls, floating on it. Kept out of the
-          header block so the search row can have the left edge to
-          itself, and drawn bare — a canvas is not a toolbar. */}
-      {actions && (
-        <div className="absolute right-4 top-4 z-10 flex items-center gap-1 md:right-6 md:top-6">
-          {actions}
-        </div>
-      )}
+      {/* The surface, and everything that belongs ON it. Positioned, so
+          the overlays and the panel measure themselves against the canvas
+          rather than against the page. */}
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden">
+        {children}
 
-      {panel &&
-        (phone ? (
-          <Sheet label={panel.label} onClose={panel.onClose}>
-            {panel.content}
-          </Sheet>
-        ) : (
-          <aside
-            // The Sheet half of this pair announces itself by its label;
-            // the floating half is a complementary landmark, and one with
-            // no name is a landmark nobody can choose from a list.
-            aria-label={panel.label}
-            // Clears the header row rather than sitting beside it, and
-            // keeps the shell's own gutter on the other three sides — the
-            // Fab it used to leave 6rem for is gone at this size. Wide
-            // enough that its fields, its statistics rows and its button
-            // row stop wrapping: at 18rem nearly every line in it broke,
-            // which is a panel that is technically showing you something
-            // and practically hiding it.
-            className="border-line bg-surface/90 absolute bottom-6 right-6 top-[4.75rem] z-10 w-[22rem] overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
-          >
-            {panel.content}
-          </aside>
-        ))}
+        {/* The surface's own controls, floating on it — kept out of the
+            header block so the search row has the left edge to itself,
+            and drawn bare, because a canvas is not a toolbar. */}
+        {actions && (
+          <div className="absolute right-4 top-3 z-10 flex items-center gap-1 md:right-6">
+            {actions}
+          </div>
+        )}
+
+        {panel &&
+          (phone ? (
+            <Sheet label={panel.label} onClose={panel.onClose}>
+              {panel.content}
+            </Sheet>
+          ) : (
+            <aside
+              // The Sheet half of this pair announces itself by its label;
+              // the floating half is a complementary landmark, and one
+              // with no name is a landmark nobody can choose from a list.
+              aria-label={panel.label}
+              // Inset from the canvas now that the canvas is its own box.
+              // The top still clears the action icons, which share this
+              // corner and stay reachable while the panel is open — but
+              // it is clearing a row inside the canvas rather than a
+              // whole floating header. Wide enough
+              // that its fields, its statistics rows and its button row
+              // stop wrapping: at 18rem nearly every line in it broke,
+              // which is a panel technically showing you something and
+              // practically hiding it.
+              className="border-line bg-surface/90 absolute bottom-6 right-6 top-14 z-10 w-[22rem] overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
+            >
+              {panel.content}
+            </aside>
+          ))}
+      </div>
     </div>
   );
 }

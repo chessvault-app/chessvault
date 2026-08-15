@@ -56,33 +56,33 @@ digit is also bold, tier marks also differ by icon shape.
   repertoire, editor) fit the viewport instead of scrolling, capped at
   76rem by the shared constants in `ui/layout.ts` — one place, not
   eight copies.
-- Canvas pages (the opening map) sit in `ui/CanvasShell`: one surface
-  edge to edge, with the chrome floating on it — the ordinary
-  `PageHeader` on `PageShell`'s own gutters, a detail panel that floats
-  on a pointer device and becomes a Sheet on a phone, and
-  `CanvasOverlay` for the centred empty and error states. The header row
-  takes no pointer events, so a drag beginning in its empty middle still
-  pans the canvas; its children take them back.
-  A canvas page's Fab is phone-only, and its actions are one array the
-  corner draws as icons and the Fab fans out as pills — the same
+- Canvas pages (the opening map) sit in `ui/CanvasShell`: the ordinary
+  `PageHeader` on `PageShell`'s own gutters, an optional search row
+  under it, and then one surface filling everything below, edge to
+  edge. Inside that surface — not over the page — float the page's own
+  controls, a detail panel that becomes a Sheet on a phone, and
+  `CanvasOverlay` for the centred empty and error states. A canvas
+  page's Fab is phone-only, and its actions are one array the corner
+  draws as icons and the Fab fans out as pills, the same
   two-presentations-one-list shape `CreateControl` uses.
-  The surface *is* the page, so chrome floats ON it — a header row or a
-  side column taking space in the flow would be carving it out of the
-  only thing worth showing. This is
-  also why a canvas cannot be a fourth width: a width answers how long
-  a line of text should be, and a canvas wants the whole viewport at
-  every size.
+  The header is IN THE FLOW, above the surface. It floated briefly, and
+  that put dots and labels behind the page's own title and panned them
+  through it on every drag; it also meant the surface could swallow a
+  press meant for the header, which took a pointer-events dance to
+  arrange around. Chrome that belongs to the SURFACE floats; chrome that
+  names the PAGE does not. A canvas still cannot be a fourth width: a
+  width answers how long a line of text should be, and a canvas wants
+  every pixel it is given at any size.
 - **One page title**: `PageHeader` — `text-lg font-semibold
   tracking-tight`, actions pushed right, the phone-only back chevron
   where a page is reached through More. `ShelfToolbar` is built on it.
   (Four title sizes had accumulated; a page's name is one voice.)
-  A canvas page uses it too, floating rather than in flow. It briefly
-  had a `text-sm` title of its own, on the theory that a heading
-  competing with the canvas is a heading in the way; what that actually
-  produced was one page whose name was a different size at a different
-  distance from the edge than every other page, which reads as a mistake
-  rather than as restraint. Floating is what makes it a canvas page. The
-  typography is what makes it this app.
+  A canvas page uses it too, on the same gutters, with its surface
+  starting below. It briefly had a `text-sm` title of its own, on the
+  theory that a heading competing with the canvas is a heading in the
+  way; what that actually produced was one page whose name was a
+  different size at a different distance from the edge than every other
+  page, which reads as a mistake rather than as restraint.
 - A page that scrolls scrolls its **outer** wrapper — the scrollbar
   belongs at the viewport edge, and it is shown: hiding it is a
   mobile idiom, and panels' internal bars were already visible.
