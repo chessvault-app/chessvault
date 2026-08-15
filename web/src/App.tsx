@@ -18,7 +18,7 @@ import {
   SwatchBook,
   Wrench,
 } from 'lucide-react';
-import { Suspense, useEffect, useState } from 'react';
+import { Fragment, Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
@@ -347,8 +347,8 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         {NAV.map(({ section, label, icon: Icon }) => {
           const isActive = section === active;
           return (
+            <Fragment key={section}>
             <button
-              key={section}
               type="button"
               onClick={() => navigate(section)}
               // aria-label, not title: the label is written beside the icon
@@ -375,17 +375,25 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               <Icon className="size-[1.15rem] shrink-0" strokeWidth={isActive ? 2.4 : 2} />
               <span className="hidden lg:block">{t(label)}</span>
             </button>
+            {/* A section's children are drawn by the section, not after the
+                whole list. They used to be appended below the NAV loop,
+                which only looked right for as long as Puzzles happened to
+                be the last entry — adding one after it left Dashboard,
+                Books and Themes indented under the newcomer, reading as
+                its children. Order in NAV is now free. */}
+            {section === 'puzzles' &&
+              PUZZLE_SUBNAV.map(({ param, label: sub, icon: SubIcon }) => (
+                <SubNavItem
+                  key={param}
+                  label={sub}
+                  icon={SubIcon}
+                  active={active === 'puzzles' && params[0] === param}
+                  onClick={() => navigate('puzzles', param)}
+                />
+              ))}
+            </Fragment>
           );
         })}
-        {PUZZLE_SUBNAV.map(({ param, label, icon: Icon }) => (
-          <SubNavItem
-            key={param}
-            label={label}
-            icon={Icon}
-            active={active === 'puzzles' && params[0] === param}
-            onClick={() => navigate('puzzles', param)}
-          />
-        ))}
 
         {/* Tools: a top-level group whose row points at its first entry. */}
         <button
