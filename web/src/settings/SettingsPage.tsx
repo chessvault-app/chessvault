@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
@@ -97,6 +97,7 @@ export function SettingsPage() {
           <>
             <AppearanceCard />
             <SoundCard />
+            <DocumentsCard />
             <Card icon={Info} title={t('This is a demo')}>
               <p className="text-subtle text-xs leading-relaxed">
                 {t(
@@ -112,6 +113,7 @@ export function SettingsPage() {
             <DesktopCard />
             <AppearanceCard />
             <SoundCard />
+            <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
             <BrowsedGamesCard />
@@ -503,6 +505,43 @@ function AppearanceCard() {
         />
       </div>
 
+    </Card>
+  );
+}
+
+// --- Documents -----------------------------------------------------------
+
+/**
+ * Whether your games, studies and notes write themselves.
+ *
+ * Its own card rather than a switch under Appearance: this one is not
+ * about how the app looks, it is about who decides when the vault
+ * changes. Off by default — a document is yours until you save it — and
+ * on for anyone who would rather never think about it.
+ *
+ * Shown in the demo too. The demo runs the real server in the browser, so
+ * saving genuinely works there; it is the only card besides Appearance
+ * and Sound that means something without a vault of your own.
+ */
+function DocumentsCard() {
+  const autosave = usePrefs((p) => p.autosave);
+  const setAutosave = usePrefs((p) => p.setAutosave);
+
+  return (
+    <Card icon={Save} title={t('Documents')}>
+      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+        <div className="min-w-0">
+          <div className="text-sm font-medium">{t('Auto-save')}</div>
+          <div className="text-subtle text-xs">
+            {t('Write changes to the vault as you make them. Off, they wait for you to save.')}
+          </div>
+        </div>
+        <Switch
+          checked={autosave}
+          onToggle={() => setAutosave(!autosave)}
+          label={t('Auto-save')}
+        />
+      </div>
     </Card>
   );
 }

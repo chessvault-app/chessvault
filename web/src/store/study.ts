@@ -3,6 +3,7 @@ import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { useAnalysis } from './analysis';
+import { usePrefs } from './prefs';
 import { forgetCollection } from '@/games/collection';
 // Type-only, so nothing of the component reaches this module at runtime —
 // the union simply lives beside the badge that renders it.
@@ -50,13 +51,20 @@ interface StudyState {
   /**
    * Reading, or annotating.
    *
-   * In the STORE rather than in StudyView, because the autosave lives
-   * here and has to know: reading a study must not rewrite it. The board
-   * is already locked while reading, but the engine's lines and the
-   * explorer's moves are played through the analysis store, which the
-   * autosave watched without ever asking whether the reader had asked to
-   * edit anything. Following an engine line to see where it went wrote
-   * that line into the file.
+   * A TOOLS toggle, and nothing more: it shows and hides the NAG palette,
+   * the comment boxes and the move surgery. It is not a write guard, and
+   * the save no longer consults it.
+   *
+   * It used to be both, and the second job is what made it awkward. The
+   * autosave lived here and had to know, because reading a study must not
+   * rewrite it — so reading also locked the board, and pushing a piece
+   * around a position meant first declaring you meant to edit it. Nothing
+   * writes unasked now, so the guard has nothing left to guard and the
+   * board is live either way.
+   *
+   * Still in the store rather than in StudyView because the panes that
+   * read it are scattered, and because a document that opens is a
+   * document that opens reading (see `open`).
    */
   editing: boolean;
   setEditing: (editing: boolean) => void;
@@ -68,9 +76,10 @@ interface StudyState {
   /** Rename and move are one operation — the id is the path. */
   move: (from: string, to: string) => Promise<string | null>;
   /**
-   * Rename the OPEN document (study or collection game) in place, keeping its
-   * collection. Saves first, so the move never races the autosave. Returns
-   * the new id on success (caller updates the URL), or an error message.
+   * Rename the OPEN document (study or collection game) in place, keeping
+   * its collection. Waits for any save already in flight, so the move never
+   * races it, but does not force one — pending changes belong to the reader.
+   * Returns the new id on success (caller updates the URL), or an error.
    */
   renameOpen: (newName: string) => Promise<{ id?: string; error?: string }>;
   moveFolder: (from: string, to: string) => Promise<string | null>;
@@ -93,7 +102,8 @@ interface StudyState {
  * store — the board, move tree, engine and explorer all already speak that
  * store, so a study chapter gets the whole editing UX for free. This module
  * watches the analysis tree and mirrors it back into `chapters[chapterIndex]`,
- * with a debounced autosave to the vault.
+ * marking the document pending — and writing it to the vault only when
+ * asked, or on a debounce for anyone who has turned autosave on.
  *
  * The engine never writes into the tree (nothing calls `setEval` from search
  * results), which is exactly the study requirement: analysis must not modify
@@ -111,6 +121,24 @@ const AUTOSAVE_MS = 1500;
  * landed last — silently reverting the newest edits on disk.
  */
 let saveChain: Promise<void> = Promise.resolve();
+
+/**
+ * Arm the autosave, if this device asked for one.
+ *
+ * Callers mark the document dirty either way — the badge and the leave
+ * question are about the buffer, not about whether a timer is running.
+ * Without the preference, dirty is where it stays until someone presses
+ * Save. Module-level because the tree subscriber at the bottom of the
+ * file needs it too, and it lives outside the store's closure.
+ */
+function scheduleAutosave(): void {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  if (!usePrefs.getState().autosave) return;
+  saveTimer = setTimeout(() => void useStudy.getState().save(), AUTOSAVE_MS);
+}
 
 const asSide = (value: string | undefined): 'white' | 'black' | null =>
   value === 'white' || value === 'black' ? value : null;
@@ -153,10 +181,7 @@ export const useStudy = create<StudyState>()((set, get) => {
     });
   };
 
-  const scheduleSave = (): void => {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => void get().save(), AUTOSAVE_MS);
-  };
+
 
   return {
     studies: [],
@@ -213,8 +238,16 @@ export const useStudy = create<StudyState>()((set, get) => {
       const to = folder ? `${folder}/${trimmed}` : trimmed;
       if (to === openId) return { id: openId };
 
-      if (saveTimer) clearTimeout(saveTimer);
-      await get().save();
+      // Wait for any PUT already out to land on the OLD path, rather than
+      // forcing a save of our own: renaming moves the FILE, and the buffer
+      // is untouched by it. Saving first would write pending changes the
+      // reader has not committed, on the way to doing something else
+      // entirely.
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      await saveChain;
       const res = await fetch(`/api/${openBase}/move`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -222,7 +255,12 @@ export const useStudy = create<StudyState>()((set, get) => {
       });
       const body = (await res.json().catch(() => null)) as { error?: string } | null;
       if (!res.ok) return { error: body?.error ?? 'could not rename' };
+      // The buffer follows the file: doSave builds its URL from openId
+      // alone, so the pending changes now belong to the new name.
       set({ openId: to });
+      // Re-arm what was disarmed above, or a rename would quietly turn
+      // autosave off for the rest of the visit.
+      if (get().saveState !== 'saved') scheduleAutosave();
       return { id: to };
     },
 
@@ -309,8 +347,17 @@ export const useStudy = create<StudyState>()((set, get) => {
       // study was already detached (e.g. the explorer handed a game to the
       // analysis tab) — a second run must not wipe the handed-off tree.
       if (!get().openId) return;
-      if (saveTimer) clearTimeout(saveTimer);
-      if (get().saveState !== 'saved') await get().save();
+      // No save here any more. Closing is the tail of a departure the leave
+      // guard has already put a question to, so by the time this runs the
+      // answer is in and the document is clean — saved, or discarded on
+      // purpose. Writing again would be writing changes the reader has
+      // just declined, which is exactly what this change is about.
+      // The timer still has to go, or an armed autosave fires at a
+      // document that is no longer open.
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
       set({ openId: null, chapters: [], chapterIndex: 0, saveState: 'saved', savedPgn: '', editing: false });
       useAnalysis.getState().reset();
     },
@@ -345,7 +392,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       };
       set({ chapters: [...chapters, fresh], chapterIndex: chapters.length, saveState: 'dirty' });
       loadIntoAnalysis(fresh);
-      scheduleSave();
+      scheduleAutosave();
     },
 
     renameChapter: (index, name) => {
@@ -370,7 +417,7 @@ export const useStudy = create<StudyState>()((set, get) => {
         return c;
       });
       set({ chapters, saveState: 'dirty' });
-      scheduleSave();
+      scheduleAutosave();
     },
 
     deleteChapter: (index) => {
@@ -395,7 +442,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       const nextIndex = Math.min(chapterIndex > index ? chapterIndex - 1 : chapterIndex, next.length - 1);
       set({ chapters: next, chapterIndex: nextIndex, saveState: 'dirty' });
       loadIntoAnalysis(next[nextIndex]!);
-      scheduleSave();
+      scheduleAutosave();
     },
 
     discard: () => {
@@ -461,31 +508,34 @@ export const useStudy = create<StudyState>()((set, get) => {
   }
 });
 
-// Any tree change — or a board flip, which is saved as part of the chapter —
-// while a study is open marks it dirty and schedules an autosave. Chapter
-// loads set `loadingChapter` so swapping chapters never counts as an edit.
+/**
+ * Any change to the tree while a document is open makes it pending.
+ *
+ * There is no longer a reading exception. There used to be one, and it
+ * had to exist: the save wrote itself, so following an engine line while
+ * reading would have written that line into the file. It was paid for by
+ * a locked board — you could not push a piece around a position without
+ * first declaring you meant to edit it — and by the changes it discarded
+ * in silence. Nothing writes without being asked now, so a move made
+ * while reading is simply a change you have not saved, exactly like a
+ * move made while editing. One buffer, one badge, one question on the
+ * way out.
+ *
+ * The FLIP is deliberately not in here any more. Orientation is still
+ * part of the chapter and still rides along with the next save (see
+ * stashCurrent), but turning the board round to read from the other side
+ * must not raise "Unsaved" and must not summon a question on the way out.
+ * That was free when the save was silent; under a manual save it is a
+ * modal for a gesture people make constantly while reading, and a prompt
+ * that cries wolf is a prompt that gets dismissed unread. The cost, said
+ * plainly: a visit whose only change was a flip leaves without offering
+ * to keep it.
+ *
+ * Chapter loads set `loadingChapter`, so swapping chapters is never an edit.
+ */
 useAnalysis.subscribe((state, prev) => {
-  const treeChanged = state.tree !== prev.tree;
-  const flipped = state.orientation !== prev.orientation;
-  if ((!treeChanged && !flipped) || loadingChapter) return;
-  const study = useStudy.getState();
-  if (!study.openId) return;
-  /**
-   * Reading must not rewrite what is being read.
-   *
-   * The board refuses moves while reading, so this only ever fires for
-   * the two controls that reach the tree another way — an engine line
-   * and an explorer move. Following one is a useful thing to do while
-   * reading; it just belongs in memory, not in the vault. The change
-   * stays on screen and is gone on the next open, which is what "not
-   * saved" should look like.
-   *
-   * The flip is not gated with it: which way the board faces is saved
-   * with the chapter, and turning it round to read from the other side
-   * is a reading act that should stick.
-   */
-  if (treeChanged && !study.editing) return;
+  if (state.tree === prev.tree || loadingChapter) return;
+  if (!useStudy.getState().openId) return;
   useStudy.setState({ saveState: 'dirty' });
-  if (saveTimer) clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => void useStudy.getState().save(), AUTOSAVE_MS);
+  scheduleAutosave();
 });

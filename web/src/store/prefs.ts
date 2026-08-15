@@ -180,6 +180,25 @@ interface PrefsState {
   /** One short vibration when a piece lands. Android only — iOS Safari
       exposes no haptics to web pages, so there the setting is inert. */
   haptics: boolean;
+  /**
+   * Write games, studies and notes to the vault as they are edited.
+   *
+   * Off by default, which is the change this setting exists to make
+   * optional: a document is yours until you save it. On restores the old
+   * behaviour — a 1.5s debounce after the last edit.
+   *
+   * Here rather than in the vault config for three reasons. The demo
+   * serves /api/settings as a fixed object with no PUT, so a vault
+   * setting would be dead in the app most people meet first. The
+   * consumers are module-level subscribers outside React, where
+   * getState() is a synchronous always-current read and a fetched
+   * setting would need caching and invalidation for one boolean. And it
+   * is genuinely per-device: writing as you type is a thing to want on a
+   * desktop and not on a train. The cost is that a new device does not
+   * inherit the choice — and since the default is the safe value, it
+   * fails the right way.
+   */
+  autosave: boolean;
   /** Which preset is selected. */
   schemeId: string;
   scheme: Scheme;
@@ -193,6 +212,7 @@ interface PrefsState {
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
   setHaptics: (on: boolean) => void;
+  setAutosave: (on: boolean) => void;
 }
 
 const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
@@ -235,6 +255,7 @@ export const usePrefs = create<PrefsState>()(
       castleStyle: 'king',
       coordinates: true,
       haptics: true,
+      autosave: false,
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
       setBoardTheme: (boardTheme) => {
@@ -252,6 +273,7 @@ export const usePrefs = create<PrefsState>()(
       setCastleStyle: (castleStyle) => set({ castleStyle }),
       setCoordinates: (coordinates) => set({ coordinates }),
       setHaptics: (haptics) => set({ haptics }),
+      setAutosave: (autosave) => set({ autosave }),
       setSchemeId: (schemeId) => {
         const preset = SCHEME_PRESETS.find((p) => p.id === schemeId);
         const scheme = preset ? preset.scheme : get().scheme;

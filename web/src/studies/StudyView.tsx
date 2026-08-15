@@ -29,6 +29,7 @@ import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
+import { usePrefs } from '@/store/prefs';
 import { useStudy } from '@/store/study';
 import { fenKey } from '@/repertoire/drill';
 import { consumeJumpTarget } from './jumpTarget';
@@ -138,8 +139,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         return useStudy.getState().saveState !== 'error';
       },
       discard: () => useStudy.getState().discard(),
-      // Flipped to the preference in the commit that makes saving manual.
-      autoSaves: () => true,
+      autoSaves: () => usePrefs.getState().autosave,
     }),
   [id]);
 
@@ -198,9 +198,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   return (
     <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ${BOARD_WIDE_SHELL}`}>
       {titleRow('wide:hidden')}
-      {/* Reading locks the pieces: studies and games open as documents to
-          step through; the pencil switches to annotating/recording. */}
-      <AnalysisBoard locked={!editing} />
+      {/* The pieces move in both modes. A study opens as a document to step
+          through, but trying a move in a position you are reading is a
+          normal thing to want and it costs nothing now — the change is
+          pending until you save it, and the badge above says so. What the
+          pencil still switches is the TOOLS: drawn arrows, NAGs, comments,
+          move surgery. */}
+      <AnalysisBoard drawShapes={editing} />
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}

@@ -36,12 +36,20 @@ import { t } from '@/lib/i18n';
  */
 export function AnalysisBoard({
   editablePlayers = false,
-  locked = false,
+  drawShapes = true,
 }: {
   editablePlayers?: boolean;
-  /** Reading mode: navigation still works, but pieces can't be moved and
-   *  drawn shapes aren't persisted — the document is not being edited. */
-  locked?: boolean;
+  /**
+   * Whether arrows and circles drawn on the board are kept.
+   *
+   * This was `locked`, and it did two jobs: no legal moves, and no
+   * shapes. The first is gone — a document is only pending until it is
+   * saved, so pushing a piece around while reading costs nothing and a
+   * board that refuses is a board that lies about what it will accept.
+   * Drawing stays a tool, offered while annotating, because an arrow is
+   * something you leave for a reader rather than something you try out.
+   */
+  drawShapes?: boolean;
 } = {}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -55,13 +63,12 @@ export function AnalysisBoard({
 
   const node = getNode(tree, cursorId);
   // Position replay is the expensive part of a render — memoized so engine
-  // ticks and hover state don't replay the game, and skipped entirely when
-  // the board is locked (reading mode never needs legal moves).
+  // ticks and hover state don't replay the game. It no longer has a
+  // reading mode to skip: every board here accepts moves, so the legal
+  // ones are always needed. Same memo keys, so the work per cursor move
+  // is unchanged; there is simply no longer a case that skips it.
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
-  const dests = useMemo(
-    () => (locked ? new Map<string, string[]>() : legalDests(tree, cursorId)),
-    [locked, tree, cursorId],
-  );
+  const dests = useMemo(() => legalDests(tree, cursorId), [tree, cursorId]);
   const isCheck = pos.isCheck();
   const hasGame = useAnalysis((s) => s.gameHeaders) !== null;
 
@@ -173,7 +180,7 @@ export function AnalysisBoard({
               shapes={shapes}
               autoShapes={engineArrow}
               onMove={playMove}
-              onShapesChange={locked ? undefined : (next) => setShapes(cursorId, fromDrawShapes(next))}
+              onShapesChange={drawShapes ? (next) => setShapes(cursorId, fromDrawShapes(next)) : undefined}
             />
             {pendingPromotion && (
               <PromotionPicker

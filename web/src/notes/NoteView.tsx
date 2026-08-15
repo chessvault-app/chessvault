@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
+import { usePrefs } from '@/store/prefs';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
@@ -156,6 +157,12 @@ function NoteEditor({
       if (docToMarkdown(editor.state.doc, front.current) === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
+      // Pending is pending either way; the timer is only for anyone who
+      // asked this device to write as they type.
+      if (!usePrefs.getState().autosave) {
+        saveTimer.current = null;
+        return;
+      }
       saveTimer.current = setTimeout(() => {
         // Cleared as it fires: a timer id left behind reads as "a save is
         // still pending" forever, so leaving the note re-PUT the document
@@ -204,7 +211,9 @@ function NoteEditor({
     setSaveState('saved');
   };
 
-  // Leaving the note flushes any pending edit.
+  // Leaving flushes an autosave that was armed but had not fired. Only
+  // that: with autosave off there is no timer, and the leave guard has
+  // already asked what to do with the changes and been answered.
   useEffect(() => {
     return () => {
       if (saveTimer.current) {
@@ -226,8 +235,7 @@ function NoteEditor({
       isDirty: () => docToMarkdown(editor.state.doc, front.current) !== lastSaved.current,
       save: () => save(docToMarkdown(editor.state.doc, front.current)),
       discard,
-      // Flipped to the preference in the commit that makes saving manual.
-      autoSaves: () => true,
+      autoSaves: () => usePrefs.getState().autosave,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, id]);

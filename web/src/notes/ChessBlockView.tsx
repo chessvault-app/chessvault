@@ -66,8 +66,17 @@ function cleanBlockPgn(pgn: string): string {
  */
 export function ChessBlockView({ node, updateAttributes, deleteNode, selected, editor }: NodeViewProps) {
   const initial = useMemo(() => parseBlock(String(node.attrs.pgn ?? '*')), []);
-  // Reading mode follows the note's Edit toggle: replay stays live, but the
-  // position can't be changed and the board can't be deleted or reloaded.
+  /**
+   * Whether the note's own TOOLS are offered on this board — pasting a
+   * new position into it, removing it from the note.
+   *
+   * The pieces move either way. A note stays non-editable while reading
+   * so a plain click follows a wiki-link, but that is about the prose;
+   * trying a move on a board you are reading is the same pending change
+   * as any other, held until the note is saved. `updateAttributes`
+   * dispatches a transaction whether or not the editor is editable, and
+   * `update` fires on any doc change, so the note notices.
+   */
   const [editable, setEditable] = useState(editor.isEditable);
   useEffect(() => {
     const sync = (): void => setEditable(editor.isEditable);
@@ -196,7 +205,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           viewOnly={!awake}
           fen={current.fen}
           orientation={orientation}
-          dests={editable ? dests : new Map()}
+          dests={dests}
           lastMove={lastMove}
           check={pos.isCheck()}
           coordinates={false}
