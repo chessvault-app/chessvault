@@ -93,7 +93,13 @@ export function CanvasShell({
             {panel.content}
           </Sheet>
         ) : (
-          <aside className="border-line bg-surface/90 absolute bottom-24 right-4 top-4 z-10 w-72 overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md">
+          <aside
+            // The Sheet half of this pair announces itself by its label;
+            // the floating half is a complementary landmark, and one with
+            // no name is a landmark nobody can choose from a list.
+            aria-label={panel.label}
+            className="border-line bg-surface/90 absolute bottom-24 right-4 top-4 z-10 w-72 overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md"
+          >
             {panel.content}
           </aside>
         ))}
