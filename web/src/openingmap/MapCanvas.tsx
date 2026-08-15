@@ -128,6 +128,28 @@ export function MapCanvas({
   // (k ≈ 0.35 on a mid-size map); gone only when truly far out.
   const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.15) / 0.2));
 
+  // The mainlines: at every node, the edge to its most-played child.
+  // Following them from the root traces THE mainline; every sideline
+  // carries its own local one deeper in. Data-driven only — with no
+  // field source there is no "most played" to claim.
+  const mainline = useMemo(() => {
+    const out = new Set<string>();
+    if (!shares) return out;
+    for (const [id, facts] of resolved.nodes) {
+      let best: string | null = null;
+      let bestShare = 0;
+      for (const child of facts.mapNode.children) {
+        const share = shares.get(child.id) ?? 0;
+        if (share > bestShare) {
+          bestShare = share;
+          best = child.id;
+        }
+      }
+      if (best) out.add(`${id}-${best}`);
+    }
+    return out;
+  }, [resolved, shares]);
+
   // The selected node's line back to the root, edges included.
   const lineage = useMemo(() => {
     const ids = new Set<string>();
@@ -155,6 +177,7 @@ export function MapCanvas({
             const a = at.get(from)!;
             const b = at.get(to)!;
             const lit = lineage.has(from) && lineage.has(to);
+            const main = mainline.has(`${from}-${to}`);
             return (
               <line
                 key={`${from}-${to}`}
@@ -162,8 +185,10 @@ export function MapCanvas({
                 y1={a.y}
                 x2={b.x}
                 y2={b.y}
-                stroke={lit ? 'var(--color-primary)' : 'var(--color-line)'}
-                strokeWidth={(lit ? 2 : 1.2) / view.k}
+                stroke={
+                  lit ? 'var(--color-primary)' : main ? 'var(--color-line-strong)' : 'var(--color-line)'
+                }
+                strokeWidth={(lit ? 2 : main ? 2.4 : 1.2) / view.k}
               />
             );
           })}
