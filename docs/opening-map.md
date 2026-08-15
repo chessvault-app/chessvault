@@ -121,16 +121,18 @@ ancestry promises. Circles are sized by what hangs beneath them — and,
 while a field source is on, by how often the move actually gets played
 at its parent, so the fat dots are the crowd and the small ones the
 sidelines. The accent colour is spent on the mainline and
-nothing else: the ordinary dots are neutral so that the line the field
-actually walks — from the root, always taking the most-played
-continuation — reads as a lit spine you can follow at a glance, thicker
-as well as brighter. Where a node genuinely branches, its pick among
-the options is marked too, more quietly. A chain with no choice in it
-gets no mark, because there was no choice to report. (Marking every
-node's most-played child sounds like the same rule and is not: an only
-child is trivially the most played, so on a 63-node map it lit 54 of 63
-edges and the emphasis read as noise.) The selected node's own lineage
-answers over all of it in bright foreground. The
+nothing else, and the mainline answers what you are looking at. Select
+a dot and the line the field walks on from there — its most-played
+continuation, all the way down — lights up in the accent, thicker as
+well as brighter, while its own lineage back to the root answers in
+bright foreground: where you came from, and where the crowd goes next.
+Search, and every hit gets that same treatment at once, so "where do my
+Najdorf lines actually go" is one query. Focus on nothing and the map
+is calm — no selection, no search, no accent, just the neutral
+constellation. (Highlighting every node's most-played child sounds like
+the same idea and is not: an only child is trivially the most played,
+so on a 63-node map that rule lit 54 of 63 edges and the emphasis read
+as noise.) The
 layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots

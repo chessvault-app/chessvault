@@ -427,33 +427,30 @@ export function MapCanvas({
   const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.3) / 0.24));
 
   /**
-   * The mainlines — and the reason this is more than a colour swap.
+   * The mainline — an answer to something you asked, not a permanent
+   * feature of the picture.
    *
-   * "The edge to the most-played child, at every node" sounds like it
-   * marks the main path. In a repertoire it marks nearly everything: most
-   * nodes have exactly ONE child, and an only child is trivially the
-   * most-played one, so the rule fires on every link in every chain.
-   * Measured on a 63-node map: 54 of 63 edges came back as mainline. That
-   * is the actual reason the emphasis read as noise, and no palette
-   * change would have fixed it — the set being highlighted was the whole
-   * graph wearing a different colour.
+   * It began as "the edge to the most-played child, at every node", which
+   * sounds like it marks the main path and in a repertoire marks nearly
+   * everything: most nodes have exactly ONE child, an only child is
+   * trivially the most-played one, and the rule fires on every link in
+   * every chain. Measured on a 63-node map: 54 of 63 edges. Drawing a
+   * single spine from the root fixed the flooding but still answered a
+   * question nobody had asked, and only ever the same one.
    *
-   * Two sets instead, both sparse:
+   * So the accent follows the FOCUS. Select a node and you get the line
+   * the field walks on from there — its most-played continuation, all the
+   * way down. Search, and every hit gets the same treatment at once, so
+   * "where do my Najdorf lines actually go" is one query. Focus on
+   * nothing and the map is calm: no selection, no search, no accent.
    *
-   * - `principal` — THE mainline, the single path from the root that
-   *   always takes the most-played continuation. One unbroken spine.
-   * - `local` — at a node that genuinely BRANCHES, the pick among its
-   *   options. A chain with no choice in it gets no mark, because there
-   *   was no choice to report.
-   *
-   * Both need field data; with no source there is no "most played" to
-   * claim and the whole map stays neutral, which is the honest picture.
+   * Needs field data either way; with no source there is no "most played"
+   * to claim and the map stays neutral, which is the honest picture.
    */
   const mainline = useMemo(() => {
-    const principal = new Set<string>();
-    const spine = new Set<string>();
-    const local = new Set<string>();
-    if (!shares) return { principal, spine, local };
+    const edges = new Set<string>();
+    const nodes = new Set<string>();
+    if (!shares) return { edges, nodes };
 
     const favourite = (id: string): string | null => {
       let best: string | null = null;
@@ -468,28 +465,38 @@ export function MapCanvas({
       return best;
     };
 
-    let cursor: string | null = map.root.id;
-    while (cursor) {
-      spine.add(cursor);
-      const next: string | null = favourite(cursor);
-      if (!next) break;
-      principal.add(`${cursor}-${next}`);
-      cursor = next;
+    // A search speaks for the whole set of hits; otherwise the selection
+    // speaks for itself. A search with no hits highlights nothing, which
+    // is the right answer to a question with no answer.
+    const from = matches ? [...matches] : selectedId ? [selectedId] : [];
+    for (const start of from) {
+      let cursor: string | null = start;
+      // Two hits on one line walk into each other's tails, and a cycle
+      // cannot happen in a tree — but the guard costs nothing and this
+      // loop must never be the thing that hangs the page.
+      while (cursor && !nodes.has(cursor)) {
+        nodes.add(cursor);
+        const next: string | null = favourite(cursor);
+        if (!next) break;
+        edges.add(`${cursor}-${next}`);
+        cursor = next;
+      }
     }
+    return { edges, nodes };
+  }, [resolved, shares, matches, selectedId]);
 
-    for (const [id, facts] of resolved.nodes) {
-      if (facts.mapNode.children.length < 2) continue;
-      const next = favourite(id);
-      if (next && !principal.has(`${id}-${next}`)) local.add(`${id}-${next}`);
-    }
-    return { principal, spine, local };
-  }, [resolved, shares, map.root.id]);
-
-  // How present a dot is while a search is running. Faded rather than
-  // hidden: the misses are the constellation the hits have to be located
-  // WITHIN, so removing them would answer the question by destroying its
-  // context. Deep enough a fade that the hits pop at a glance.
-  const dimOf = (id: string): number => (!matches ? 1 : matches.has(id) ? 1 : 0.12);
+  /**
+   * How present a dot is while a search is running. Faded rather than
+   * hidden: the misses are the constellation the hits have to be located
+   * WITHIN, so removing them would answer the question by destroying its
+   * context. Deep enough a fade that the hits pop at a glance.
+   *
+   * A hit's mainline stays lit with it. It is drawn BECAUSE of the hits,
+   * so dimming it as a non-match would have faded out the very thing the
+   * search just asked to be shown.
+   */
+  const dimOf = (id: string): number =>
+    !matches ? 1 : matches.has(id) || mainline.nodes.has(id) ? 1 : 0.12;
 
   // The selected node's line back to the root, edges included.
   const lineage = useMemo(() => {
@@ -540,8 +547,7 @@ export function MapCanvas({
             const b = posOf(to);
             const lit = lineage.has(from) && lineage.has(to);
             const key = `${from}-${to}`;
-            const main = mainline.principal.has(key);
-            const branch = mainline.local.has(key);
+            const main = mainline.edges.has(key);
             return (
               <line
                 key={key}
@@ -551,18 +557,14 @@ export function MapCanvas({
                 y2={b.y}
                 // Colour AND weight, which is the house rule: a signal
                 // carried by hue alone is a signal somebody cannot see.
-                // Three tiers — the spine, the pick at a branch, and the
-                // rest as hairlines — with the selected lineage answering
-                // over all of them in bright foreground.
+                // Where you came FROM answers in bright foreground, where
+                // the field goes NEXT in the accent, and everything else
+                // is a hairline in the border tone.
                 stroke={
-                  lit
-                    ? 'var(--color-fg)'
-                    : main || branch
-                      ? 'var(--color-primary)'
-                      : 'var(--color-line)'
+                  lit ? 'var(--color-fg)' : main ? 'var(--color-primary)' : 'var(--color-line)'
                 }
-                strokeOpacity={lit || main ? 1 : branch ? 0.62 : 0.85}
-                strokeWidth={(lit ? 2.4 : main ? 2.6 : branch ? 1.9 : 1.1) / view.k}
+                strokeOpacity={lit || main ? 1 : 0.85}
+                strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.1) / view.k}
                 strokeLinecap="round"
                 opacity={Math.min(dimOf(from), dimOf(to))}
               />
@@ -574,7 +576,7 @@ export function MapCanvas({
             const facts = resolved.nodes.get(id)!;
             const node = facts.mapNode;
             const isRoot = facts.parentId === null;
-            const onMain = mainline.spine.has(id);
+            const onMain = mainline.nodes.has(id);
             const selected = id === selectedId;
             const invalid = !isRoot && facts.fen === null;
             const cov = coverage?.get(id);
