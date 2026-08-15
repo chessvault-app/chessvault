@@ -491,15 +491,6 @@
     color: var(--text);
   }
 
-  /* Scrolls without showing a bar — for panel columns whose panels make
-     their own scroll affordances (lanph3re: hide it, don't disable it). */
-  .scrollbar-hidden {
-    scrollbar-width: none;
-  }
-  .scrollbar-hidden::-webkit-scrollbar {
-    display: none;
-  }
-
   /* Slim, theme-aware scrollbars: a 6px thumb inside a 12px gutter, so it
      is easy to grab without crowding the content it scrolls. The colours
      are tokens rather than fixed greys — the same rule has to look right
@@ -532,6 +523,24 @@
       animation-duration: 0.01ms !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/* Scrolls without showing a bar — for panel columns whose panels make
+   their own scroll affordances (lanph3re: hide it, don't disable it).
+
+   `@utility`, not a plain class in `@layer base`, and it has to be both.
+   As a bare rule Tailwind knew nothing about it, so it could not build
+   `wide:`/`lg:`/`max-lg:` versions — and those are how every board page
+   asks for it. Nothing was emitted for them at all, the `*` rule above
+   kept its thin scrollbar, and the side columns lost 10 px of panel
+   width the moment their content overflowed. Registered as a utility,
+   the variants exist and land in the utilities layer, which outranks
+   base whatever the selectors weigh. */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }
 
