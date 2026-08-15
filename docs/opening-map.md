@@ -128,9 +128,13 @@ well as brighter, while its own lineage back to the root answers in
 bright foreground: where you came from, and where the crowd goes next.
 Search, and every hit gets that same treatment at once, each line in its
 own colour, so "which defences do I actually face and where do they
-go" is one query rather than five. Past eight hits the wheel stops
-telling colours apart and they all fall back to the accent; the fading
-is doing the work by then. Focus on nothing and the map
+go" is one query rather than five. A colour belongs to a LINE, not to a
+hit: searching "Ruy" over six Ruy variations matches 18 nodes, because
+the catalogue says "Ruy Lopez" on nearly every square of that subtree,
+and all but eight of those stand on another hit's line and draw nothing
+of their own. Past eight lines the wheel stops telling colours apart
+and they all fall back to the accent; the fading is doing the work by
+then. Focus on nothing and the map
 is calm — no selection, no search, no accent, just the neutral
 constellation. (Highlighting every node's most-played child sounds like
 the same idea and is not: an only child is trivially the most played,

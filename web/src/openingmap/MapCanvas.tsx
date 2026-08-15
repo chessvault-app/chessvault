@@ -22,7 +22,10 @@ const clip = (text: string, max: number): string =>
 
 /** One focused line wears the app's accent, as any other emphasis does. */
 const ACCENT = 'var(--color-primary)';
-/** Above this many search hits, separate hues stop separating anything. */
+/** Above this many highlighted LINES, separate hues stop separating
+    anything and every line goes back to the accent. Counted in lines
+    drawn, not search hits: a family search matches most of a subtree,
+    and nearly all of those hits stand on one another's lines. */
 const HUES = 8;
 
 interface View {
@@ -491,13 +494,21 @@ export function MapCanvas({
    * Needs field data either way; with no source there is no "most played"
    * to claim and the map stays neutral, which is the honest picture.
    *
-   * Several hits get several colours, one per hit, so two lines running
-   * through the same region can be told apart — the question a multi-hit
-   * search asks is usually "where do these go" in the plural, and one
-   * accent for all of them answers it as a single tangle. A lone focus
-   * keeps the accent itself, so selecting a node means what it always
-   * meant. Past `HUES` hits the wheel stops separating anything and they
-   * all go back to the accent; the dimming is doing the work by then.
+   * Several lines get several colours, so two of them running through the
+   * same region can be told apart — the question a multi-hit search asks
+   * is usually "where do these go" in the plural, and one accent for all
+   * of them answers it as a single tangle. A lone line keeps the accent
+   * itself, so selecting a node means what it always meant.
+   *
+   * One colour per LINE, decided after the walking, not one per hit
+   * decided before it. Those two counts are nothing like each other on a
+   * real repertoire: searching "Ruy" on a map with six Ruy variations
+   * matches 18 nodes, because the catalogue says "Ruy Lopez" on nearly
+   * every square of that subtree — but most of those hits sit ON another
+   * hit's line and draw nothing of their own. Colouring per hit meant 18
+   * went over `HUES`, so everything fell back to the accent and the
+   * Berlin came out the same colour as the mainline. It also left gaps in
+   * the wheel, since every hit that drew nothing still ate an index.
    */
   const mainline = useMemo(() => {
     const edges = new Map<string, string>();
@@ -521,25 +532,44 @@ export function MapCanvas({
     // speaks for itself. A search with no hits highlights nothing, which
     // is the right answer to a question with no answer.
     const from = matches ? [...matches] : selectedId ? [selectedId] : [];
-    const many = from.length > 1 && from.length <= HUES;
-    for (const [at, start] of from.entries()) {
-      // Spaced around the wheel from the accent's own quarter, so two
-      // hits are as far apart as the count allows.
-      const paint = many ? `hsl(${Math.round((210 + (at * 360) / from.length) % 360)} 70% 58%)` : ACCENT;
+
+    // Walk first. A hit already standing on an earlier hit's line is not
+    // a line of its own — it is a place on one — so it starts nothing and
+    // costs nothing. `matches` arrives in the tree's own pre-order, so
+    // the earlier hit is always the ancestor: the line that contains the
+    // other, which is the one that should own the shared stretch.
+    const claimed = new Set<string>();
+    const lines: { nodes: string[]; edges: string[] }[] = [];
+    for (const start of from) {
+      if (claimed.has(start)) continue;
+      const line = { nodes: [] as string[], edges: [] as string[] };
       let cursor: string | null = start;
-      // Two hits on one line walk into each other's tails: the first one
-      // there keeps it, and `matches` is built in the tree's own order,
-      // so that is the shallower of the two — the line that contains the
-      // other. A cycle cannot happen in a tree, but the guard costs
-      // nothing and this loop must never be what hangs the page.
-      while (cursor && !nodes.has(cursor)) {
-        nodes.set(cursor, paint);
+      // A cycle cannot happen in a tree, but the guard costs nothing and
+      // this loop must never be what hangs the page.
+      while (cursor && !claimed.has(cursor)) {
+        claimed.add(cursor);
+        line.nodes.push(cursor);
         const next: string | null = favourite(cursor);
         if (!next) break;
-        edges.set(`${cursor}-${next}`, paint);
+        // Kept even when `next` is already taken: the edge is where this
+        // line runs into the other, and drawing it is what shows them
+        // meeting rather than stopping short of each other.
+        line.edges.push(`${cursor}-${next}`);
         cursor = next;
       }
+      lines.push(line);
     }
+
+    // Then colour, spaced around the wheel from the accent's own quarter
+    // so any two lines are as far apart as the count allows.
+    const many = lines.length > 1 && lines.length <= HUES;
+    lines.forEach((line, at) => {
+      const paint = many
+        ? `hsl(${Math.round((210 + (at * 360) / lines.length) % 360)} 70% 58%)`
+        : ACCENT;
+      for (const id of line.nodes) nodes.set(id, paint);
+      for (const key of line.edges) edges.set(key, paint);
+    });
     return { edges, nodes };
   }, [resolved, shares, matches, selectedId]);
 
