@@ -27,6 +27,7 @@ import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ShortcutsHelp } from '@/ui/ShortcutsHelp';
+import { LeaveSheet } from '@/ui/LeaveSheet';
 import { ThemeToggle } from '@/ui/ThemeToggle';
 import { t, useLang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -216,6 +217,10 @@ function Shell() {
 
       <MobileBottom active={section} />
       <ShortcutsHelp />
+      {/* Global for the same reason: the question is asked by the router,
+          which does not know which view is up, and a sheet owned by the
+          view being left would have to outlive it. */}
+      <LeaveSheet />
       </div>
     </div>
   );

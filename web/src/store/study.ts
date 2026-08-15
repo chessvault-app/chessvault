@@ -84,6 +84,8 @@ interface StudyState {
   renameChapter: (index: number, name: string) => void;
   deleteChapter: (index: number) => void;
   save: () => Promise<void>;
+  /** Throw the pending changes away and go back to what the vault has. */
+  discard: () => void;
 }
 
 /**
@@ -394,6 +396,24 @@ export const useStudy = create<StudyState>()((set, get) => {
       set({ chapters: next, chapterIndex: nextIndex, saveState: 'dirty' });
       loadIntoAnalysis(next[nextIndex]!);
       scheduleSave();
+    },
+
+    discard: () => {
+      const { openId, savedPgn, chapterIndex } = get();
+      if (!openId) return;
+      if (saveTimer) {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+      }
+      const chapters = pgnToChapters(savedPgn);
+      if (chapters.length === 0) return;
+      // Chapter ids are re-minted by the parse, so the analysis cursor
+      // cannot survive: a discard lands at the chapter's start, which is
+      // honest — the moves it was pointing at are the ones just thrown
+      // away. Selecting a chapter already behaves this way.
+      const index = Math.min(chapterIndex, chapters.length - 1);
+      set({ chapters, chapterIndex: index, saveState: 'saved', error: null });
+      loadIntoAnalysis(chapters[index]!);
     },
 
     save: async () => {

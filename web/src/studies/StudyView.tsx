@@ -23,6 +23,7 @@ import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/cn';
 import { navigate, navigateNow } from '@/lib/router';
+import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
 import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { useEngine } from '@/store/engine';
@@ -125,14 +126,22 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     };
   }, [kind, id]);
 
-  // A study with unsaved edits must survive an accidental tab close.
-  useEffect(() => {
-    const guard = (e: BeforeUnloadEvent): void => {
-      if (useStudy.getState().saveState !== 'saved') e.preventDefault();
-    };
-    window.addEventListener('beforeunload', guard);
-    return () => window.removeEventListener('beforeunload', guard);
-  }, []);
+  // A study with unsaved edits must survive being navigated away from —
+  // including the browser's own Back, and the tab being closed. The whole
+  // question lives in leaveGuard; this only says what is at stake.
+  useEffect(() =>
+    registerLeaveGuard({
+      name: id.split('/').at(-1)!,
+      isDirty: () => useStudy.getState().saveState !== 'saved',
+      save: async () => {
+        await useStudy.getState().save();
+        return useStudy.getState().saveState !== 'error';
+      },
+      discard: () => useStudy.getState().discard(),
+      // Flipped to the preference in the commit that makes saving manual.
+      autoSaves: () => true,
+    }),
+  [id]);
 
   if (failed) {
     return (

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 
 export const SECTIONS = ['home', 'analysis', 'editor', 'studies', 'notes', 'games', 'puzzles', 'repertoire', 'openingmap', 'books', 'settings', 'more'] as const;
 export type Section = (typeof SECTIONS)[number];
@@ -40,12 +41,30 @@ export function useRoute(): Route {
   useEffect(() => {
     const onChange = (): void => {
       const next = window.location.hash;
-      // Already where we think we are: nothing to do. Today this can only
-      // be a hash set to what it already was, which fires no event anyway;
-      // it earns its keep once a leave question can restore the bar.
+      // Already where we think we are: the restore below put the bar back
+      // and this is the app agreeing with it.
       if (next === current) return;
-      current = next;
-      setRoute(parse(next));
+      if (!leaveIsBlocked()) {
+        current = next;
+        setRoute(parse(next));
+        return;
+      }
+      /**
+       * Back, with something to lose.
+       *
+       * There is no preventDefault for a hashchange — by the time we hear
+       * about it the address bar has already moved — so put it back and
+       * then ask. replaceState is deliberate over pushState: it rewrites
+       * the entry that was just landed on instead of growing the stack,
+       * which keeps `up`'s historyFloor arithmetic honest. It also fires
+       * no hashchange, so there is nothing to suppress.
+       */
+      window.history.replaceState(window.history.state, '', current || '#/');
+      void confirmLeave().then((ok) => {
+        // Saved or discarded, so the second time round leaveIsBlocked() is
+        // false and this same handler lets it through.
+        if (ok) window.location.hash = next;
+      });
     };
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
@@ -64,8 +83,22 @@ export function navigateNow(section: Section, ...params: string[]): void {
   window.location.hash = `/${[section, ...params].join('/')}`;
 }
 
+/**
+ * Go, once the open document has had its say.
+ *
+ * Deliberately still void-returning. There are 130 calls to this and `up`
+ * across 26 files; making them await a decision would have been a bigger
+ * change than the feature, and none of them has anything to do after
+ * navigating anyway.
+ */
 export function navigate(section: Section, ...params: string[]): void {
-  navigateNow(section, ...params);
+  if (!leaveIsBlocked()) {
+    navigateNow(section, ...params);
+    return;
+  }
+  void confirmLeave().then((ok) => {
+    if (ok) navigateNow(section, ...params);
+  });
 }
 
 /** How deep the history was when the app loaded — see `up`. Read lazily:
@@ -82,6 +115,15 @@ if (typeof window !== 'undefined') historyFloor = window.history.length;
  * otherwise go where the chevron points.
  */
 export function up(fallback: Section, ...params: string[]): void {
-  if (historyFloor !== null && window.history.length > historyFloor) window.history.back();
-  else navigate(fallback, ...params);
+  const go = (): void => {
+    if (historyFloor !== null && window.history.length > historyFloor) window.history.back();
+    else navigateNow(fallback, ...params);
+  };
+  if (!leaveIsBlocked()) {
+    go();
+    return;
+  }
+  void confirmLeave().then((ok) => {
+    if (ok) go();
+  });
 }

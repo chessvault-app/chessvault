@@ -3,6 +3,7 @@ import { ChevronLeft, Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { navigate, navigateNow } from '@/lib/router';
+import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
@@ -53,14 +54,6 @@ export function NoteView({ id }: { id: string }) {
       cancelled = true;
     };
   }, [id]);
-
-  useEffect(() => {
-    const guard = (e: BeforeUnloadEvent): void => {
-      if (saveState !== 'saved') e.preventDefault();
-    };
-    window.addEventListener('beforeunload', guard);
-    return () => window.removeEventListener('beforeunload', guard);
-  }, [saveState]);
 
   if (failed) {
     return (
@@ -174,19 +167,41 @@ function NoteEditor({
     },
   });
 
-  const save = async (markdown: string): Promise<void> => {
+  const save = async (markdown: string): Promise<boolean> => {
     setSaveState('saving');
-    lastSaved.current = markdown;
     try {
       const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ pgn: markdown }),
       });
+      // The baseline moves only when the write LANDED. It used to be set
+      // before the request went out, so a failed save left the note
+      // claiming the unwritten text was what the vault had — harmless
+      // while nothing read the baseline, wrong the moment discard does.
+      if (res.ok) lastSaved.current = markdown;
       setSaveState(res.ok ? 'saved' : 'error');
+      return res.ok;
     } catch {
       setSaveState('error');
+      return false;
     }
+  };
+
+  /** Back to the vault's copy. `lastSaved` already holds it, front matter
+      and all, so this is a re-parse rather than a refetch. */
+  const discard = (): void => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    if (!editor || editor.isDestroyed) return;
+    const markdown = lastSaved.current;
+    // emitUpdate false, or the restore itself reads as an edit and dirties
+    // the note it has just cleaned.
+    editor.commands.setContent(markdownToDoc(markdown).toJSON() as object, { emitUpdate: false });
+    front.current = splitFrontMatter(markdown).front;
+    setSaveState('saved');
   };
 
   // Leaving the note flushes any pending edit.
@@ -202,6 +217,20 @@ function NoteEditor({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
+
+  // See StudyView: the same claim on the way out, for the same reasons.
+  useEffect(() => {
+    if (!editor) return;
+    return registerLeaveGuard({
+      name: id.split('/').at(-1)!,
+      isDirty: () => docToMarkdown(editor.state.doc, front.current) !== lastSaved.current,
+      save: () => save(docToMarkdown(editor.state.doc, front.current)),
+      discard,
+      // Flipped to the preference in the commit that makes saving manual.
+      autoSaves: () => true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, id]);
 
   useEffect(() => {
     editor?.setEditable(editable);

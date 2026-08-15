@@ -1,7 +1,8 @@
 import { Database, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
-import { navigate } from '@/lib/router';
+import { navigate, navigateNow } from '@/lib/router';
+import { confirmLeave } from '@/lib/leaveGuard';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
@@ -760,15 +761,23 @@ function TopGamesList({
    */
   /**
    * The explorer also lives inside study and game views, which keep their
-   * document in the SAME analysis store with dirty-tracking autosave.
-   * Detach (saving real edits) BEFORE loading another game, or the autosave
-   * would write it over the open document.
+   * document in the SAME analysis store. Detach BEFORE loading another
+   * game, or the load would land on top of the open document.
+   *
+   * The question has to be asked HERE rather than left to `navigate`,
+   * because `close()` throws the buffer away and would have already run
+   * by the time the router got a say. Once it is answered the document is
+   * clean, so `navigateNow` is right: asking twice about the same changes
+   * is asking about nothing.
    */
   const loadPgn = async (pgn: string): Promise<boolean> => {
-    if (useStudy.getState().openId) await useStudy.getState().close();
+    if (useStudy.getState().openId) {
+      if (!(await confirmLeave())) return false;
+      await useStudy.getState().close();
+    }
     if (!useAnalysis.getState().loadPgn(pgn)) return false;
     useAnalysis.setState({ handoff: true });
-    navigate('analysis');
+    navigateNow('analysis');
     return true;
   };
 
