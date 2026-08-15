@@ -1,10 +1,11 @@
-import { type ReactNode } from 'react';
+import { useContext, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
+import { CoverParent } from './Modal';
 import { t } from '@/lib/i18n';
 
 /**
@@ -41,6 +42,29 @@ export function Sheet({
   const drag = useSheetDrag(onClose);
   const focusRef = useDialogFocus();
 
+  /**
+   * Never taller than the window this sheet was asked over.
+   *
+   * A window pinned at 88% of the screen would open a Select's options —
+   * its own sheet, capped only by the safe area — and the child rose 80px
+   * ABOVE the window it belonged to (measured in the archive browser:
+   * parent 669px from y=93, child 751px from y=12). Two bottom edges,
+   * the upper one belonging to the smaller thing, reads as the window
+   * having been replaced rather than asked a question.
+   *
+   * The same primitive the second-page floor uses — Modal's CoverParent,
+   * `height` half only. A Sheet is a LAYER, never a page: it does not
+   * cover, so the window stays visible behind it, exactly as before.
+   *
+   * Measured at the FIRST RENDER, not in an effect: the parent is on
+   * screen at its real height already, and an effect would land after
+   * this sheet had painted once at full height — a visible snap on a
+   * phone. Once, deliberately; a ceiling that re-measured mid-drag would
+   * resize the sheet under the finger pushing it.
+   */
+  const parent = useContext(CoverParent);
+  const [cap] = useState(() => parent?.height() ?? 0);
+
   // Escape, and Android's Back gesture with it — see useCloseRequest.
   useCloseRequest(onClose);
 
@@ -68,7 +92,9 @@ export function Sheet({
           focusRef(node);
           if (phone) drag.ref(node);
         }}
-        style={phone ? drag.style : undefined}
+        style={
+          phone ? { ...drag.style, ...(cap ? { maxHeight: cap } : undefined) } : undefined
+        }
         className={cn(
           // overscroll-contain for the same reason Modal has it: a scroll
           // this card cannot use must not be handed to the page under it.

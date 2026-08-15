@@ -50,14 +50,19 @@ import { useSheetDrag } from './sheetDrag';
  * was not. A Select's option sheet or a ConfirmSheet over a window is a
  * different thing: a question asked and answered in one tap, whose
  * whole point is that the window stays visibly behind it. Those are
- * Sheets, and Sheets do not join this.
+ * Sheets, and Sheets do not join this — they never cover, and the
+ * parent is never parked for them.
+ *
+ * They do read `height`, though, and for the same reason the page floor
+ * exists: a sheet asked over a window belongs INSIDE that window's
+ * bounds. Exported for them; a Sheet takes it as a ceiling (see Sheet).
  *
  * The context flows through the REACT tree, not the DOM — portals do
  * not break it — so it reaches exactly the windows written inside the
  * window that showed them. A sibling window (the editor's photo page)
  * still wires `hidden` by hand, and the two sources merge.
  */
-const CoverParent = createContext<{
+export const CoverParent = createContext<{
   /** Park the parent; returns the release. */
   cover: () => () => void;
   /** The parent card's current height, read BEFORE it is parked. */
