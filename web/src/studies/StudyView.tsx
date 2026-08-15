@@ -237,12 +237,17 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
                     triggerClassName="max-md:hidden"
                   />
                 )}
-                {editing && <MoveActions allowReset={false} />}
-                {/* No Clear here: in a study the board IS the document. This
-                    is also the only way to copy a chapter's FEN or PGN on a
+                {editing && <MoveActions allowReset={false} allowClear />}
+                {/* No Clear the board here: in a study the board IS the
+                    document, and resetting it would take the chapter's own
+                    starting position, its introduction and its headers with
+                    the moves. Clearing the MOVES is a real editing act
+                    though — offered while editing, and undoable. This is
+                    also the only way to copy a chapter's FEN or PGN on a
                     phone — the Board's status bar has never existed here. */}
                 <MovesOverflow
                   allowReset={false}
+                  allowClear={editing}
                   onLoadPosition={editing ? () => setLoadOpen(true) : undefined}
                 />
               </>

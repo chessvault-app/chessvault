@@ -82,6 +82,7 @@ interface AnalysisState {
 
   // -- io --
   reset: (fen?: string) => void;
+  clearMoves: () => void;
   loadFen: (fen: string) => boolean;
   loadPgn: (pgn: string) => boolean;
   exportPgn: () => string;
@@ -217,6 +218,25 @@ export const useAnalysis = create<AnalysisState>()((set, get) => {
         gameHeaders: null,
         orientation: 'white',
       });
+    },
+
+    /**
+     * Every move gone, everything around them kept.
+     *
+     * `reset` throws the whole board away — back to the standard starting
+     * position, game headers, board side and all. That is right for the
+     * Board and wrong for a study, where the chapter's own starting
+     * position, its introduction and its headers ARE the document and
+     * only the moves are being taken back. So this deletes the root's
+     * subtrees and touches nothing else.
+     */
+    clearMoves: () => {
+      const { tree } = get();
+      const root = getNode(tree, tree.rootId);
+      if (root.children.length === 0) return;
+      let next = tree;
+      for (const child of root.children) next = deleteSubtree(next, child);
+      set({ tree: next, cursorId: next.rootId, pendingPromotion: null });
     },
 
     loadFen: (fen) => {

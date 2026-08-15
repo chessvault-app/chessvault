@@ -1,6 +1,6 @@
-import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { getNode, pathTo } from '@shared/tree';
+import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
@@ -147,8 +147,8 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
                   onOpenChange={setLoadOpen}
                   triggerClassName="max-md:hidden"
                 />
-                <MoveActions />
-                <MovesOverflow onLoadPosition={() => setLoadOpen(true)} />
+                <MoveActions allowClear />
+                <MovesOverflow allowClear onLoadPosition={() => setLoadOpen(true)} />
               </>
             }
           />
@@ -287,11 +287,44 @@ function useTreeUndo(): {
   return { undoable, capture };
 }
 
-export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
+/**
+ * Whether "Clear all moves" is on offer here, and the act itself.
+ *
+ * Not the same verb as "Clear the board": that one goes back to the
+ * standard starting position and drops the loaded game with it. This takes
+ * the moves off and keeps the position they were played from, along with
+ * everything else the document carries — which is the only clear a study
+ * can have, since there the chapter's starting position, its introduction
+ * and its headers ARE the document.
+ *
+ * Where a reset is on offer too, this one waits until the board holds a
+ * position of its own: on the standard start with nothing loaded the two
+ * verbs are the same act, and a menu must not say it twice.
+ */
+function useClearMoves(allowed: boolean, alsoReset: boolean): { offered: boolean; clear: () => void } {
+  const clear = useAnalysis((s) => s.clearMoves);
+  const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
+  const ownPosition = useAnalysis((s) => getNode(s.tree, s.tree.rootId).fen !== INITIAL_FEN);
+  return { offered: allowed && hasMoves && (!alsoReset || ownPosition), clear };
+}
+
+export function MoveActions({
+  allowReset = true,
+  allowClear = false,
+}: {
+  allowReset?: boolean;
+  /**
+   * Offer "Clear all moves" — see useClearMoves. Opt-in: a panel over a
+   * line that is not the reader's to change (a puzzle's solution) says so
+   * by leaving it off.
+   */
+  allowClear?: boolean;
+}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const deleteNode = useAnalysis((s) => s.deleteNode);
   const reset = useAnalysis((s) => s.reset);
+  const clearMoves = useClearMoves(allowClear, allowReset);
   const { undoable, capture } = useTreeUndo();
 
   const node = getNode(tree, cursorId);
@@ -313,6 +346,21 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
       >
         <Trash2 className="size-3.5" />
       </Button>
+      {clearMoves.offered && (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          // Under ⋯ on a phone, like every other whole-document verb.
+          className="max-md:hidden"
+          onClick={() => {
+            capture(t('all moves'));
+            clearMoves.clear();
+          }}
+          title={t('Clear all moves')}
+        >
+          <Eraser className="size-3.5" />
+        </Button>
+      )}
       {allowReset && (
         <Button
           variant="ghost"
@@ -359,9 +407,16 @@ export function MoveActions({ allowReset = true }: { allowReset?: boolean }) {
  */
 export function MovesOverflow({
   allowReset = true,
+  allowClear = false,
   onLoadPosition,
 }: {
   allowReset?: boolean;
+  /**
+   * Offer "Clear all moves" — see useClearMoves. Opt-in: a panel over a
+   * line that is not the reader's to change (a puzzle's solution) says so
+   * by leaving it off.
+   */
+  allowClear?: boolean;
   /** Opens the caller's Load position dialog; omitted where there is none. */
   onLoadPosition?: () => void;
 }) {
@@ -370,6 +425,7 @@ export function MovesOverflow({
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const reset = useAnalysis((s) => s.reset);
+  const clearMoves = useClearMoves(allowClear, allowReset);
   const { undoable, capture } = useTreeUndo();
   const exportPgn = useAnalysis((s) => s.exportPgn);
   const runReview = useReview((s) => s.run);
@@ -392,6 +448,22 @@ export function MovesOverflow({
       onSelect: () => void copyText(getNode(tree, cursorId).fen),
     },
     { label: 'Copy PGN', icon: Copy, onSelect: () => void copyText(exportPgn()) },
+    // Takes the moves off and leaves the position they were played from
+    // — the only clear a study can have, and on the Board the one that
+    // spares a loaded position. Undoable, like every other clear here.
+    ...(clearMoves.offered
+      ? [
+          {
+            label: 'Clear all moves',
+            icon: Eraser,
+            danger: true,
+            onSelect: () => {
+              capture(t('all moves'));
+              clearMoves.clear();
+            },
+          } as SheetAction,
+        ]
+      : []),
     // Last and tinted: it throws the board away. Never offered in a
     // study or a game, where the board IS the document — the same reason
     // MoveActions takes allowReset.
