@@ -1,4 +1,4 @@
-import { AlertTriangle, Grid3x3, Library, NotebookPen, Plus, Swords, Tag, Trash2, X } from 'lucide-react';
+import { AlertTriangle, BookOpen, Grid3x3, Library, NotebookPen, Plus, Swords, Tag, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -42,6 +42,7 @@ import {
   type ResolvedNode,
 } from './model';
 import { useOpeningMap } from './store';
+import { DeviationsSheet } from './DeviationsSheet';
 import { TagPicker } from './TagPicker';
 import type { NodeGaps } from './gaps';
 import { scopedEntries, useCoverage } from './useCoverage';
@@ -134,6 +135,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
   const [addTo, setAddTo] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [gamesOpen, setGamesOpen] = useState(false);
 
   const submitMove = (input: string): void => {
     if (!map || !resolved || !addTo) return;
@@ -180,6 +182,9 @@ export function OpeningMapView({ params }: { params: string[] }) {
                     ? (saveError ?? t('Save failed'))
                     : null}
             </span>
+            <Button size="sm" onClick={() => setGamesOpen(true)} disabled={!map}>
+              <BookOpen className="size-3.5" /> {t('My games')}
+            </Button>
             <Segmented
               value={color}
               onChange={(c) =>
@@ -194,6 +199,14 @@ export function OpeningMapView({ params }: { params: string[] }) {
           </>
         }
       />
+      {gamesOpen && map && resolved && (
+        <DeviationsSheet
+          map={map}
+          resolved={resolved}
+          onShowNode={setSelectedId}
+          onClose={() => setGamesOpen(false)}
+        />
+      )}
       {!loaded || !map || !resolved ? (
         loadError ? (
           <div className="border-line bg-surface rounded-xl border p-6">

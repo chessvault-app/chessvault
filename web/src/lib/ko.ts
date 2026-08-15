@@ -541,6 +541,16 @@ export const ko: Record<string, string> = {
     '여기서 자주 나오는 응수는 모두 준비에 걸립니다.',
   'Chart it on the map': '맵에 추가',
   'Prepared to move {reached} — target {target}': '{reached}수까지 준비됨 — 목표 {target}수',
+  'Games that left the book': '북을 벗어난 게임',
+  'The games index is not answering.': '게임 색인이 응답하지 않습니다.',
+  'None of your recent games left the prepared ground — or none reached it.':
+    '최근 게임 중 준비 범위를 벗어난 것이 없습니다 — 또는 도달한 것이 없습니다.',
+  '{n} recent games left the book, at {m} positions.':
+    '최근 게임 {n}개가 {m}개 포지션에서 북을 벗어났습니다.',
+  'Show on the map': '맵에서 보기',
+  '{n} by you': '{n}개는 내가',
+  'Analyse to the deviation': '벗어난 지점까지 분석',
+  'and {n} more': '외 {n}개',
   '{n} fumbled in drills — drill from here': '드릴에서 {n}개 틀림 — 여기서 드릴하세요',
   '{n} drill gaps — the studies lack an answer': '드릴 갭 {n}개 — 스터디에 답이 없습니다',
 

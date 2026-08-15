@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
-import { collectStudyTags, computeCoverage, reachedMove, scopedChapters } from './coverage';
+import {
+  collectPreparedFens,
+  collectStudyTags,
+  computeCoverage,
+  reachedMove,
+  scopedChapters,
+} from './coverage';
 import { resolveMap, type OpeningMap } from './model';
 
 /** A chapter holding the given lines, shared prefixes merged. */
@@ -76,6 +82,20 @@ describe('scopedChapters', () => {
     expect(both.map((c) => c.name)).toEqual(['Main', 'Main/Deep', 'Anti']);
     // a vanished study contributes nothing
     expect(scopedChapters([{ kind: 'study', id: 'gone' }], studies)).toEqual([]);
+  });
+});
+
+describe('collectPreparedFens', () => {
+  it('is the charted nodes plus every study position, deduped by position', () => {
+    const map = mapWith([
+      { id: 'e4', san: 'e4', tags: [{ kind: 'study', id: 'A' }], children: [] },
+      { id: 'd4', san: 'd4', children: [] }, // charted, unprepared
+    ]);
+    const chapters = [chapterOf('A', [['e4', 'c5', 'Nf3']])];
+    const fens = collectPreparedFens(resolveMap(map), chapters);
+    // start, e4, d4 from the map; c5 and Nf3 positions from the study —
+    // the study's own start and e4 positions dedupe against the map's.
+    expect(fens.size).toBe(5);
   });
 });
 

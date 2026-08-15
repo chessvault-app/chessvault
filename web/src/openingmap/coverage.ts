@@ -108,6 +108,36 @@ export const reachedMove = (ply: number, preparedPlies: number): number =>
 const MAX_WALK_PLIES = 60;
 
 /**
+ * Every position the map stands on: the charted nodes plus the whole
+ * union subtree the tagged studies prepare, as full FENs. This is the
+ * set a game is checked against to find where it left the book — a game
+ * inside it is on prepared ground, the first move out is the deviation.
+ */
+export function collectPreparedFens(resolved: ResolvedMap, chapters: Chapter[]): Set<string> {
+  const out = new Set<string>();
+  const seen = new Set<string>();
+  for (const facts of resolved.nodes.values()) {
+    if (facts.fen && !seen.has(fenKey(facts.fen))) {
+      seen.add(fenKey(facts.fen));
+      out.add(facts.fen);
+    }
+  }
+  for (const chapter of chapters) {
+    const stack = [chapter.tree.rootId];
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      const node = getNode(chapter.tree, id);
+      if (!seen.has(fenKey(node.fen))) {
+        seen.add(fenKey(node.fen));
+        out.add(node.fen);
+      }
+      stack.push(...node.children);
+    }
+  }
+  return out;
+}
+
+/**
  * Coverage per map node, keyed by node id. Each node's stats walk the
  * union subtree from its own position, so a parent's numbers include
  * everything beneath its children — that is the point of an overview.
