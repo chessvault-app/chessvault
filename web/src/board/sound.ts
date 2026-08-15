@@ -54,7 +54,11 @@ function output(ac: AudioContext): GainNode {
 function load(ac: AudioContext, file: string): Promise<void> {
   let pending = loading.get(file);
   if (!pending) {
-    pending = fetch(`/sound/${file}`)
+    // BASE_URL, not a bare leading slash: the demo is published under
+    // /app/, so a root-absolute path looked for /sound/… on the domain
+    // root and 404'd every take. Silently — the catch below only clears
+    // the entry for a retry — so the demo simply had no sound at all.
+    pending = fetch(`${import.meta.env.BASE_URL}sound/${file}`)
       .then((res) => res.arrayBuffer())
       .then((data) => ac.decodeAudioData(data))
       .then((buffer) => {
