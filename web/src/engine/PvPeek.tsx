@@ -151,9 +151,11 @@ export function PvPeek({
         lastMove={peek.ply.squares}
         className="rounded"
       />
+      {/* The label, always — including on Black's moves, where the line
+          itself prints none. On the board there is no line to read the
+          number off, so "exd4" alone would not say which move this is. */}
       <p className="text-subtle pt-1 text-center font-mono text-[10px]">
-        {peek.ply.number !== undefined ? `${peek.ply.number} ` : ''}
-        {peek.ply.san}
+        {peek.ply.label} {peek.ply.san}
       </p>
     </div>,
     document.body,

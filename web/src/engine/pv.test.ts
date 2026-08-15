@@ -14,8 +14,10 @@ describe('formatPv', () => {
     expect(pv.text).toBe('1. e4 e5 2. Nf3 Nc6');
     expect(pv.firstSan).toBe('e4');
     expect(pv.plies.map((p) => p.san)).toEqual(['e4', 'e5', 'Nf3', 'Nc6']);
-    // A number before each of White's moves, and nowhere else.
-    expect(pv.plies.map((p) => p.number)).toEqual(['1.', undefined, '2.', undefined]);
+    // The line prints a number before each of White's moves, and nowhere else.
+    expect(pv.plies.map((p) => p.numbered)).toEqual([true, false, true, false]);
+    // But every ply knows its own name, because a preview shows one alone.
+    expect(pv.plies.map((p) => p.label)).toEqual(['1.', '1...', '2.', '2...']);
   });
 
   it('marks a line that starts on Black’s move, once', () => {
@@ -23,7 +25,20 @@ describe('formatPv', () => {
     const pv = formatPv(fen, ['e7e5', 'g1f3']);
 
     expect(pv.text).toBe('1... e5 2. Nf3');
-    expect(pv.plies.map((p) => p.number)).toEqual(['1...', '2.']);
+    expect(pv.plies.map((p) => p.numbered)).toEqual([true, true]);
+    expect(pv.plies.map((p) => p.label)).toEqual(['1...', '2.']);
+  });
+
+  it('names a mid-line Black move even though the line does not print it', () => {
+    // The preview caption reads off `label`, and "exd4" on its own says
+    // nothing about which move it is.
+    const pv = formatPv(INITIAL_FEN, ['e2e4', 'e7e5', 'd2d4', 'e5d4']);
+
+    expect(pv.text).toBe('1. e4 e5 2. d4 exd4');
+    const last = pv.plies[3]!;
+    expect(last.san).toBe('exd4');
+    expect(last.numbered).toBe(false);
+    expect(last.label).toBe('2...');
   });
 
   it('keeps the uci as the engine spelled it — that is what gets replayed', () => {

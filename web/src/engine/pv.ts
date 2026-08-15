@@ -9,8 +9,19 @@ export interface PvPly {
   san: string;
   /** As the engine spelled it. What gets replayed into the tree. */
   uci: string;
-  /** `12.` or `12...`, only on the plies that print one. */
-  number?: string;
+  /**
+   * `12.` or `12...` — what this move is called on its own.
+   *
+   * Always set, because a preview shows one ply with no line around it and
+   * "exd4" by itself does not say which move it is.
+   */
+  label: string;
+  /**
+   * Whether the LINE prints that label inline: before every White move,
+   * and before a leading Black one so the line says where it starts. A
+   * number before every ply would read as a different game.
+   */
+  numbered: boolean;
   /** From/to squares, for the preview's last-move highlight. */
   squares?: [string, string];
 }
@@ -82,13 +93,10 @@ export function formatPv(fen: string, uciMoves: string[]): FormattedPv {
     // makeSanAndPlay advances `pos`, so read the number before calling it.
     const san = makeSanAndPlay(pos, move);
 
+    const label = `${moveNumber}${whiteToMove ? '.' : '...'}`;
     // A number before every White move, and before a leading Black one so
     // the line says where it starts; nowhere else.
-    const number = whiteToMove
-      ? `${moveNumber}.`
-      : plies.length === 0
-        ? `${moveNumber}...`
-        : undefined;
+    const numbered = whiteToMove || plies.length === 0;
     // Not uci.slice(0, 4): castling is spelled king-takes-rook in places,
     // and the square a reader follows the king to is the one to light up.
     const squares = moveSquares({ uci, san });
@@ -96,7 +104,8 @@ export function formatPv(fen: string, uciMoves: string[]): FormattedPv {
     plies.push({
       san,
       uci,
-      ...(number ? { number } : {}),
+      label,
+      numbered,
       ...(squares ? { squares } : {}),
     });
   }
@@ -104,6 +113,6 @@ export function formatPv(fen: string, uciMoves: string[]): FormattedPv {
   if (plies.length === 0) return fallback;
   // Built from the plies rather than alongside them, so the string and the
   // list a reader clicks can never drift apart.
-  const text = plies.flatMap((ply) => (ply.number ? [ply.number, ply.san] : [ply.san])).join(' ');
+  const text = plies.flatMap((ply) => (ply.numbered ? [ply.label, ply.san] : [ply.san])).join(' ');
   return { text, firstSan: plies[0]!.san, plies };
 }

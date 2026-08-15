@@ -85,9 +85,9 @@ export function PvMoves({
       {plies.map((ply, i) => (
         <Fragment key={i}>
           {i > 0 && ' '}
-          {ply.number !== undefined && (
+          {ply.numbered && (
             <>
-              <span className="text-subtle font-mono">{ply.number}</span>{' '}
+              <span className="text-subtle font-mono">{ply.label}</span>{' '}
             </>
           )}
           <button
