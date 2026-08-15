@@ -127,8 +127,10 @@ settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots
 scatter at random and tumble into place, chaos first, order last. The
 journey is different on every load; the destination never is, because
-the map's shape is a thing people remember. (Skipped when the OS asks
-for reduced motion.) Wheel zooms to the
+the map's shape is a thing people remember. And once settled, the dots
+keep breathing — a slow, few-pixel wander around their homes, threads
+following — so the constellation floats instead of freezing. (All of
+it skipped when the OS asks for reduced motion.) Wheel zooms to the
 cursor, dragging the ground pans, two fingers pinch, and dragging a
 dot moves the dot — mouse or touch — pinning it there for the session
 while the stored layout stays deterministic. Labels keep their screen

@@ -122,13 +122,61 @@ export function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.root]);
 
+  // The settled map still breathes: every dot wanders a few units
+  // around its home on slow layered sines, phases hashed from the id so
+  // nothing moves in sync. Edges and labels read the same positions, so
+  // the whole constellation floats rather than the dots slipping off
+  // their threads. Off for reduced motion; paused by the browser with
+  // the tab.
+  const [breath, setBreath] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let frame = 0;
+    const loop = (now: number): void => {
+      setBreath(now / 1000);
+      frame = requestAnimationFrame(loop);
+    };
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  const phases = useMemo(() => {
+    const out = new Map<string, { a: number; w1: number; w2: number; p1: number; p2: number }>();
+    for (const node of graph.nodes) {
+      let h = 2166136261;
+      for (const ch of node.id) h = (h ^ ch.charCodeAt(0)) * 16777619;
+      h = Math.abs(h);
+      out.set(node.id, {
+        a: 2 + (h % 5) * 0.7,
+        w1: 0.25 + ((h >> 3) % 7) * 0.06,
+        w2: 0.4 + ((h >> 6) % 5) * 0.09,
+        p1: (h % 628) / 100,
+        p2: ((h >> 4) % 628) / 100,
+      });
+    }
+    return out;
+  }, [graph]);
+  const driftOf = (id: string): { dx: number; dy: number } => {
+    const p = phases.get(id);
+    if (!p || breath === 0) return { dx: 0, dy: 0 };
+    return {
+      dx: p.a * Math.sin(breath * p.w1 + p.p1) + p.a * 0.5 * Math.sin(breath * p.w2 + p.p2),
+      dy: p.a * Math.cos(breath * p.w2 + p.p1) + p.a * 0.5 * Math.sin(breath * p.w1 + p.p2),
+    };
+  };
+
   // Where a node was dragged to, screen-session only: the map's stored
   // shape stays the deterministic layout, a drag is the reader arranging
   // their desk. Pinned wins over both the animation and the layout.
   const [pins, setPins] = useState<ReadonlyMap<string, { x: number; y: number }>>(new Map());
   useEffect(() => setPins(new Map()), [map.id]);
-  const posOf = (id: string): { x: number; y: number } =>
-    pins.get(id) ?? anim?.get(id) ?? at.get(id)!;
+  const posOf = (id: string): { x: number; y: number } => {
+    const base = pins.get(id) ?? anim?.get(id) ?? at.get(id)!;
+    // No drift mid-overture (two motions fight) or under the pointer
+    // (a dot must not wobble in a holding hand).
+    if (anim || (nodeDrag.current?.id === id && nodeDrag.current.moved)) return base;
+    const { dx, dy } = driftOf(id);
+    return { x: base.x + dx, y: base.y + dy };
+  };
 
   const nodeDrag = useRef<{
     id: string;
