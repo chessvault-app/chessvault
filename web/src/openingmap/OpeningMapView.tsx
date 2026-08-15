@@ -26,7 +26,7 @@ import { PromptSheet } from '@/ui/PromptSheet';
 import { Segmented } from '@/ui/Segmented';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
-import { collectStudyTags, type NodeCoverage } from './coverage';
+import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
 import {
   addChild,
   addTag,
@@ -371,6 +371,20 @@ function NodePanel({
               {t('Prepared {plies} plies deep, {lines} lines', {
                 plies: coverage.preparedPlies,
                 lines: coverage.lineCount,
+              })}
+            </p>
+          )}
+          {node.depth !== undefined && coverage && (
+            <p
+              className={
+                reachedMove(facts.ply, coverage.preparedPlies) < node.depth
+                  ? 'text-warn text-xs'
+                  : 'text-muted text-xs'
+              }
+            >
+              {t('Prepared to move {reached} — target {target}', {
+                reached: reachedMove(facts.ply, coverage.preparedPlies),
+                target: node.depth,
               })}
             </p>
           )}

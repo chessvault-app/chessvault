@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
-import { collectStudyTags, computeCoverage, scopedChapters } from './coverage';
+import { collectStudyTags, computeCoverage, reachedMove, scopedChapters } from './coverage';
 import { resolveMap, type OpeningMap } from './model';
 
 /** A chapter holding the given lines, shared prefixes merged. */
@@ -76,6 +76,17 @@ describe('scopedChapters', () => {
     expect(both.map((c) => c.name)).toEqual(['Main', 'Main/Deep', 'Anti']);
     // a vanished study contributes nothing
     expect(scopedChapters([{ kind: 'study', id: 'gone' }], studies)).toEqual([]);
+  });
+});
+
+describe('reachedMove', () => {
+  it('turns plies into the full move the preparation reaches', () => {
+    // 1...c5 (ply 2) with 12 prepared plies runs to ply 14 = move 7.
+    expect(reachedMove(2, 12)).toBe(7);
+    // A node after White's move: 1.e4 (ply 1) + 1 ply reaches move 1.
+    expect(reachedMove(1, 1)).toBe(1);
+    expect(reachedMove(1, 2)).toBe(2);
+    expect(reachedMove(0, 0)).toBe(0);
   });
 });
 

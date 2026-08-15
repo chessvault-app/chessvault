@@ -1,7 +1,7 @@
 ﻿import { useMemo } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
-import type { NodeCoverage } from './coverage';
+import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { layoutMap, NODE_H, NODE_W } from './layout';
 import type { OpeningMap, ResolvedMap } from './model';
@@ -104,6 +104,12 @@ export function MapCanvas({
             : '';
         const noteTags = (node.tags ?? []).some((tag) => tag.kind === 'note');
         const gapCount = gaps?.get(id)?.gaps.length ?? 0;
+        // Depth progress: the intended depth against what the studies
+        // actually reach, as an underline that fills toward the target.
+        const target = node.depth;
+        const reached =
+          target !== undefined && cov ? reachedMove(facts.ply, cov.preparedPlies) : undefined;
+        const depthShort = target !== undefined && reached !== undefined && reached < target;
         return (
           <g key={id} className="cursor-pointer" onClick={() => onSelect(id)}>
             {/* The finger's target: well past the visible box. */}
@@ -134,6 +140,16 @@ export function MapCanvas({
               </text>
             )}
             {noteTags && <circle cx={x + NODE_W - 10} cy={y + 10} r={3} fill="var(--color-primary)" />}
+            {target !== undefined && reached !== undefined && (
+              <rect
+                x={x + 6}
+                y={y + NODE_H - 3.5}
+                width={Math.max(3, (NODE_W - 12) * Math.min(1, reached / Math.max(1, target)))}
+                height={2}
+                rx={1}
+                fill={depthShort ? 'var(--color-warn)' : 'var(--color-good)'}
+              />
+            )}
             {/* Drill health, quietly: amber = fumbled positions beneath,
                 red = the drill found the studies wanting somewhere here. */}
             {(cov?.reviewCount ?? 0) > 0 && (

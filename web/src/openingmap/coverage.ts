@@ -96,6 +96,14 @@ export function scopedChapters(
   return out;
 }
 
+/**
+ * The full-move number the union preparation reaches from a node — what
+ * a user-set intended depth (also in full moves) is compared against.
+ * A position after ply k belongs to move ceil(k/2).
+ */
+export const reachedMove = (ply: number, preparedPlies: number): number =>
+  Math.ceil((ply + preparedPlies) / 2);
+
 /** Past this, a "prepared line" is an imported game, not preparation. */
 const MAX_WALK_PLIES = 60;
 
