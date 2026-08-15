@@ -1,6 +1,9 @@
-import { AlertTriangle, Library, NotebookPen, Plus, Tag, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Grid3x3, Library, NotebookPen, Plus, Tag, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
+import { fenKey } from '@/repertoire/drill';
+import { setJumpTarget } from '@/studies/jumpTarget';
+import { useAnalysis } from '@/store/analysis';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
@@ -343,9 +346,15 @@ function NodePanel({
                   type="button"
                   className="text-fg hover:text-primary min-w-0 flex-1 truncate text-left text-xs"
                   title={tag.id}
-                  onClick={() =>
-                    navigate(tag.kind === 'note' ? 'notes' : 'studies', encodeURIComponent(tag.id))
-                  }
+                  onClick={() => {
+                    // A study opens ON this node's position, not at its
+                    // first chapter's first move — that is what following
+                    // a tag from a position means.
+                    if (tag.kind === 'study' && facts.fen) {
+                      setJumpTarget({ fenKey: fenKey(facts.fen), chapter: tag.chapter });
+                    }
+                    navigate(tag.kind === 'note' ? 'notes' : 'studies', encodeURIComponent(tag.id));
+                  }}
                 >
                   {tag.id.split('/').pop()}
                   {tag.chapter ? ` · ${tag.chapter}` : ''}
@@ -390,6 +399,24 @@ function NodePanel({
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
           <Plus className="size-3.5" /> {t('Add a move')}
+        </Button>
+        <Button
+          size="sm"
+          disabled={facts.treeId === null}
+          onClick={() => {
+            // The map's own scratch tree, the drill's handoff pattern: the
+            // board opens on this node, facing the map's colour.
+            useAnalysis.setState({
+              tree: resolved.tree,
+              cursorId: facts.treeId ?? resolved.tree.rootId,
+              orientation: map.color,
+              gameHeaders: null,
+              handoff: true,
+            });
+            navigate('analysis');
+          }}
+        >
+          <Grid3x3 className="size-3.5" /> {t('Analyse')}
         </Button>
         {!isRoot && (
           <ConfirmSheet

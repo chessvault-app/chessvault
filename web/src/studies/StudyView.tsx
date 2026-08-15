@@ -32,6 +32,8 @@ import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { useStudy } from '@/store/study';
+import { fenKey } from '@/repertoire/drill';
+import { consumeJumpTarget } from './jumpTarget';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
@@ -84,6 +86,25 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     useReview.getState().clear();
     void open(id, base).then((ok) => {
       if (!cancelled) setFailed(!ok);
+      // The opening map (or any other sender) may have asked to land on a
+      // position. Consumed exactly once; a plain open sees nothing, and a
+      // target the study does not contain falls through silently.
+      const target = ok && !cancelled ? consumeJumpTarget() : null;
+      if (target) {
+        const { chapters, selectChapter } = useStudy.getState();
+        const scoped = (name: string): boolean =>
+          !target.chapter || name === target.chapter || name.startsWith(`${target.chapter}/`);
+        outer: for (let ci = 0; ci < chapters.length; ci += 1) {
+          if (!scoped(chapters[ci]!.name)) continue;
+          for (const node of Object.values(chapters[ci]!.tree.nodes)) {
+            if (fenKey(node.fen) === target.fenKey) {
+              selectChapter(ci);
+              useAnalysis.setState({ cursorId: node.id });
+              break outer;
+            }
+          }
+        }
+      }
     });
     return () => {
       cancelled = true;
