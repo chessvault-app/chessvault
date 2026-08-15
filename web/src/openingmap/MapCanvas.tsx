@@ -332,9 +332,9 @@ export function MapCanvas({
   // as the view pulls back, the graph-view convention: far out you read
   // the shape, close in you read the names.
   const inv = 1 / view.k;
-  // Fully readable by the time the whole map fits a laptop panel
-  // (k ≈ 0.35 on a mid-size map); gone only when truly far out.
-  const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.15) / 0.2));
+  // Soft at the fitted overview of a BIG map (k ≈ 0.4, where 70 labels
+  // collide), fully readable one wheel-notch in, gone only far out.
+  const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.3) / 0.24));
 
   // The mainlines: at every node, the edge to its most-played child.
   // Following them from the root traces THE mainline; every sideline

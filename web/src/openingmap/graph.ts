@@ -93,12 +93,18 @@ export function createLayout(root: MapNode): LayoutSim {
   // right every time — fine; the fan is for breadth, not for style.
   seed(root, 0, -Math.PI / 2, (3 * Math.PI) / 2, null);
 
-  // Relax. Repulsion between every pair, springs along the edges, and a
-  // whisper of gravity so a lone branch cannot drift away forever.
+  // Relax. Repulsion between NEARBY pairs, springs along the edges, and
+  // a whisper of gravity so a lone branch cannot drift away forever.
+  // The cutoff is what keeps a big map legible: global repulsion scales
+  // with n and lets far branches shove each other across the picture
+  // until the radial seed's order is gone — measured as a 71-node
+  // hairball. Local repulsion resolves spacing where dots actually
+  // crowd and leaves the seed's geography standing.
   const k = 90;
+  const CUTOFF2 = (3 * k) * (3 * k);
   let at0 = 0;
   const relax = (): void => {
-    const heat = (1 - at0 / ITERATIONS) * 18 + 2;
+    const heat = (1 - at0 / ITERATIONS) * 10 + 2;
     const fx = new Array<number>(bodies.length).fill(0);
     const fy = new Array<number>(bodies.length).fill(0);
     for (let a = 0; a < bodies.length; a += 1) {
@@ -106,6 +112,7 @@ export function createLayout(root: MapNode): LayoutSim {
         let dx = bodies[a]!.x - bodies[b]!.x;
         let dy = bodies[a]!.y - bodies[b]!.y;
         let d2 = dx * dx + dy * dy;
+        if (d2 > CUTOFF2) continue;
         if (d2 < 0.01) {
           // Coincident points push apart along a deterministic direction.
           dx = 0.1 * (a - b);
@@ -125,8 +132,8 @@ export function createLayout(root: MapNode): LayoutSim {
       const dx = bodies[at]!.x - bodies[parent]!.x;
       const dy = bodies[at]!.y - bodies[parent]!.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 0.1;
-      const rest = bodies[at]!.r + bodies[parent]!.r + 45;
-      const pull = (dist - rest) / dist;
+      const rest = bodies[at]!.r + bodies[parent]!.r + 58;
+      const pull = (1.6 * (dist - rest)) / dist;
       fx[at]! -= dx * pull;
       fy[at]! -= dy * pull;
       fx[parent]! += dx * pull;
