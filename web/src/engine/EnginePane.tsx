@@ -8,6 +8,7 @@ import { useExplain } from '@/store/explain';
 import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
+import { SideDot } from '@/ui/SideDot';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { ExplainCard } from './ExplainCard.tsx';
@@ -110,10 +111,15 @@ export function EngineBlock({ className }: { className?: string }) {
    * info line.
    */
   const topPvKey = top && top.depth >= 12 ? top.moves.join(' ') : '';
-  const planLine = useMemo(
-    () => (topPvKey ? planText(summarisePlan(node.fen, topPvKey.split(' '))) : null),
+  const plan = useMemo(
+    () => (topPvKey ? summarisePlan(node.fen, topPvKey.split(' ')) : null),
     [node.fen, topPvKey],
   );
+  const planLine = plan ? planText(plan) : null;
+  // "Neither side can make progress" belongs to nobody; every other plan
+  // is the side to move's and must say so (lanph3re's report: whose plan
+  // this was wasn't readable off the line).
+  const planQuiet = plan?.gestures[0]?.type === 'quiet';
 
   return (
     // The identical header the standalone Engine panel had — the merge
@@ -271,9 +277,17 @@ export function EngineBlock({ className }: { className?: string }) {
               ))
             )}
           </ul>
-          {planLine && (
-            <p className="text-subtle px-3 pt-0.5 pb-1.5 text-xs">
-              <span className="text-muted font-medium">{t('Plan:')}</span> {planLine}
+          {planLine && plan && (
+            <p className="text-subtle flex items-baseline gap-1.5 px-3 pt-0.5 pb-1.5 text-xs">
+              {!planQuiet && <SideDot side={plan.side} className="size-1.5 self-center" />}
+              <span className="text-muted shrink-0 font-medium">
+                {planQuiet
+                  ? t('Plan:')
+                  : plan.side === 'white'
+                    ? t('White’s plan:')
+                    : t('Black’s plan:')}
+              </span>
+              <span className="min-w-0">{planLine}</span>
             </p>
           )}
           <ExplainCard />
@@ -342,8 +356,16 @@ function PvRow({
         {chips.map((chip) => (
           <span
             key={chip}
-            className="bg-primary-soft text-primary shrink-0 rounded px-1 py-px text-[9px] font-semibold"
+            // A motif always belongs to the side to move in the line; the
+            // swatch says whose it is without spending a word on it.
+            title={
+              turn === 'white'
+                ? t('A tactic for White in this line')
+                : t('A tactic for Black in this line')
+            }
+            className="bg-primary-soft text-primary inline-flex shrink-0 items-center gap-1 rounded px-1 py-px text-[9px] font-semibold"
           >
+            <SideDot side={turn} className="size-1.5 rounded-[2px]" />
             {chip}
           </span>
         ))}

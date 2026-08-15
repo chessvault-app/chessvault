@@ -39,8 +39,8 @@ the board:
 | Header chip | `Critical` / `Only move` when the position is sharp |
 | Header buttons | `?` opens the Why card; the thermometer toggles the piece-value overlay |
 | Above the lines | The tablebase verdict, in small endgames |
-| On each line | A motif chip when the line contains a tactic |
-| Under the lines | `Plan:` — what the top line is trying to do |
+| On each line | A motif chip when the line contains a tactic, with the side's colour swatch |
+| Under the lines | `White's plan:` / `Black's plan:` — what the top line is trying to do |
 | The Why card | The threat, and the verdict on the last move |
 | The board | Piece values, when the overlay is on |
 
@@ -102,8 +102,11 @@ castling, king walks, and "trade down to convert" when already ahead.
 
 Each gesture type has a weight, decayed toward the tail of the PV — the
 head of a line is the verified part, the tail barely is. The top three
-by weight are told in **line order**, because plans read as sequences:
-`Plan: play the f5 break, plant the knight on d5`.
+by weight are told in **line order**, because plans read as sequences,
+and the label names whose plan it is (a plan always belongs to the side
+to move): `White's plan: play the f5 break, plant the knight on d5`.
+The one exception is the nobody's-plan reading — "neither side can make
+progress" — which stays unattributed because that is the point of it.
 
 Two deliberate refusals. A line that wins heavy material or mates
 returns no plan at all — that is a combination, and the motif chip's
@@ -123,6 +126,9 @@ plus a sacrifice tag with the one distinction humans need: **temporary**
 versus **real** (it never comes back; the compensation is positional and
 you should not expect the material returned). Detection is board
 geometry over the replayed line, mover's moves only, first twelve plies.
+Every chip carries the side's colour swatch — a motif always belongs to
+the side to move in that line, and the swatch says so without spending
+a word on it.
 
 The detectors are deliberately strict, and four of their rules exist
 because the first live run got them wrong (each is now a regression
