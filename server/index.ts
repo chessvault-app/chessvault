@@ -13,6 +13,7 @@ import { crossSiteGuard } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
+import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { tablebaseApi } from './tablebase.ts';
@@ -49,10 +50,11 @@ for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) 
 // over it.
 migrateLegacyRefgames();
 // A build the app was quit in the middle of left a `.building` file no
-// listing shows and no page can delete — hundreds of megabytes of it.
-// Nothing can be building now, so what is there is either finished and
-// owed its rename, or rubble.
+// listing shows and no page can delete — hundreds of megabytes of it, and
+// gigabytes for the puzzle database. Nothing can be building now, so what
+// is there is either finished and owed its rename, or rubble.
 sweepUnfinishedBuilds();
+sweepUnfinishedPuzzleBuild();
 seedBundledRefgames();
 // A fresh vault opens with a welcome study and note — onboarding as
 // content, seeded once and never resurrected (see welcome.ts).

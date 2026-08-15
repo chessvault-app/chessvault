@@ -1,10 +1,18 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { puzzlesApi } from './puzzles.ts';
+import { puzzlesApi, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
   let dir: string;
@@ -368,5 +376,102 @@ describe('adaptive difficulty', () => {
     expect(state.skillAttempts).toBe(10);
     seeded.closeDb();
     rmSync(dir2, { recursive: true, force: true });
+  });
+});
+
+/**
+ * A build the app was quit in the middle of leaves 2.6 GB nothing lists
+ * and no page can delete. Startup is the only moment when it is known to
+ * be dead.
+ */
+describe('sweepUnfinishedPuzzleBuild', () => {
+  let data: string;
+  let dbPath: string;
+
+  beforeEach(() => {
+    data = mkdtempSync(join(tmpdir(), 'puzzles-sweep-'));
+    dbPath = join(data, 'puzzles.sqlite');
+  });
+
+  afterEach(() => {
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  /** The builder's temp file, at the point the child would have been
+      killed: `finished` false is one that never wrote its closing rows. */
+  const building = (finished: boolean, id = 'aaa'): string => {
+    const path = `${dbPath}.building`;
+    const db = new Database(path);
+    db.exec(`
+      CREATE TABLE puzzles (
+        id TEXT PRIMARY KEY, fen TEXT NOT NULL, moves TEXT NOT NULL,
+        rating INTEGER NOT NULL, rd INTEGER NOT NULL, popularity INTEGER NOT NULL,
+        plays INTEGER NOT NULL, themes TEXT NOT NULL, game_url TEXT, opening_tags TEXT
+      );
+      CREATE TABLE themes (theme TEXT NOT NULL, rating INTEGER NOT NULL, id TEXT NOT NULL);
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO puzzles VALUES
+        ('${id}', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1500, 80, 90, 10, 'short', NULL, NULL);
+      INSERT INTO themes VALUES ('short', 1500, '${id}');
+    `);
+    if (finished) {
+      db.exec(`
+        CREATE TABLE theme_counts AS SELECT theme, COUNT(*) AS count FROM themes GROUP BY theme;
+        INSERT INTO meta VALUES
+          ('schema_version', '1'), ('puzzles', '1'),
+          ('built_at', '2026-08-16T00:00:00.000Z'), ('source', 'lichess_db_puzzle.csv.zst');
+      `);
+    }
+    db.close();
+    return path;
+  };
+
+  const idIn = (path: string): string => {
+    const db = new Database(path, { readonly: true, fileMustExist: true });
+    const row = db.prepare('SELECT id FROM puzzles LIMIT 1').get() as { id: string };
+    db.close();
+    return row.id;
+  };
+
+  it('renames in a build that finished and only missed its rename', () => {
+    const path = building(true, 'done');
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(path)).toBe(false);
+    expect(idIn(dbPath)).toBe('done');
+  });
+
+  it('discards one killed before it wrote its closing rows', () => {
+    const path = building(false);
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(path)).toBe(false);
+    expect(existsSync(dbPath)).toBe(false);
+  });
+
+  it('discards rubble that is not a database at all', () => {
+    const path = `${dbPath}.building`;
+    writeFileSync(path, 'half a gigabyte of nothing');
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(path)).toBe(false);
+  });
+
+  it('leaves the database in place when the part-built one is discarded', () => {
+    writeFileSync(dbPath, 'the database this test never reads');
+    building(false);
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(readFileSync(dbPath, 'utf-8')).toBe('the database this test never reads');
+  });
+
+  it('drops a half-finished download but keeps the dump itself', () => {
+    const dump = join(data, 'lichess_db_puzzle.csv.zst');
+    writeFileSync(`${dump}.part`, 'interrupted');
+    writeFileSync(dump, 'the user put this here');
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(`${dump}.part`)).toBe(false);
+    expect(existsSync(dump)).toBe(true);
+  });
+
+  it('is a no-op with nothing to sweep', () => {
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(dbPath)).toBe(false);
   });
 });

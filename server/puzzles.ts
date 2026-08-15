@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
 
@@ -16,6 +16,82 @@ import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
  *  - fresh training never re-serves an attempted puzzle (6.1 M is plenty);
  *  - puzzles whose latest attempt failed form the review pool.
  */
+
+/**
+ * Did this `.building` file get to the end of a build?
+ *
+ * `source` is the last of the four meta rows the builder writes, so its
+ * presence means every row before it landed; the two probe reads catch a
+ * file whose tables are gross rubble. What none of this can see is a build
+ * killed inside the closing VACUUM — the builder runs with the journal off,
+ * so there is no rollback and no marker either. That rewrite is short
+ * beside the two minutes in front of it and usually leaves a file SQLite
+ * refuses to open at all, which lands here as unfinished; the residual risk
+ * of adopting a torn one is the price of not deleting the 2.6 GB a
+ * perfectly good build left behind.
+ */
+function isFinishedPuzzleBuild(path: string): boolean {
+  try {
+    const db = new Database(path, { readonly: true, fileMustExist: true });
+    try {
+      const meta = db.prepare("SELECT value FROM meta WHERE key = 'source'").get();
+      const puzzles = (
+        db.prepare("SELECT value FROM meta WHERE key = 'puzzles'").get() as
+          | { value: string }
+          | undefined
+      )?.value;
+      if (!meta || !(Number(puzzles) > 0)) return false;
+      db.prepare('SELECT COUNT(*) AS n FROM theme_counts').get();
+      db.prepare('SELECT id FROM puzzles LIMIT 1').get();
+      return true;
+    } finally {
+      db.close();
+    }
+  } catch {
+    return false; // truncated, headerless, or missing the tables it needs
+  }
+}
+
+/**
+ * Deal with what a killed puzzle build leaves in the data directory.
+ *
+ * The build writes `puzzles.sqlite.building` and renames it into place at
+ * the end (here rather than in the child on Windows, where the server's own
+ * read handle blocks the rename-over), and downloads the dump to a `.part`
+ * file first. Quitting the desktop app kills the server, and the server is
+ * the only supervisor the builder has — so an interrupted build leaves
+ * either of those sitting there for ever. Nothing lists them and no page
+ * can delete them: 2.6 GB and 304 MB respectively, invisible.
+ *
+ * Startup is the one moment when they are known to be dead, since no build
+ * can be running yet. The `.part` always goes — a download is never resumed,
+ * the builder re-fetches from zero. The `.building` file goes unless it is
+ * a build that finished in the instant before the server died, which is a
+ * whole database that only missed its rename and is renamed in instead.
+ *
+ * The dump ITSELF (`lichess_db_puzzle.csv.zst`) is deliberately left alone:
+ * a build deletes only a dump it downloaded, because one the user put there
+ * is theirs, and this cannot tell the two apart. It also saves the next
+ * build the download.
+ */
+export function sweepUnfinishedPuzzleBuild(dbPath: string = DATA_PUZZLES): void {
+  rmSync(resolve(dirname(dbPath), 'lichess_db_puzzle.csv.zst.part'), { force: true });
+
+  const building = `${dbPath}.building`;
+  if (!existsSync(building)) return;
+  if (isFinishedPuzzleBuild(building)) {
+    try {
+      renameSync(building, dbPath);
+      console.log('puzzles: swapped in the database an interrupted build had finished');
+    } catch (error) {
+      // Leave it: it is a whole database, and the next start tries again.
+      console.warn(`puzzles: could not swap in the built database (${(error as Error).message})`);
+    }
+    return;
+  }
+  rmSync(building, { force: true });
+  console.log('puzzles: discarded a part-built database — the build that wrote it never finished');
+}
 
 /** One history.jsonl line; attempts carry more fields than the two rules read. */
 type Attempt = { id: string; win: boolean; counted?: boolean } & Record<string, unknown>;
