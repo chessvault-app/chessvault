@@ -59,11 +59,19 @@ const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
 // chess.com/Lichess keep the analysis board out of primary nav.
+// The top-level destinations. This list drives the sidebar directly and
+// the phone's bottom bar through a filter: an entry that ALSO appears in
+// More is a sidebar row and not a tab. The opening map is the case that
+// filter exists for — it earns a top-level row beside the collections,
+// but the bar already carries Home + four + More, and a seventh tab on a
+// 360px phone gives every tab about 50px to hold the longest label in
+// the app. So the phone keeps reaching it through More.
 const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'games', label: 'Games', icon: BookOpen },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
   { section: 'puzzles', label: 'Puzzles', icon: Puzzle },
+  { section: 'openingmap', label: 'Opening map', icon: Network },
 ];
 
 // The Tools group: interactive boards that aren't a "collection". Explorer
@@ -80,14 +88,13 @@ const TOOLS_SUBNAV: {
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
   { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
   { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
-  { key: 'openingmap', label: 'Opening map', icon: Network, nav: ['openingmap'], active: (s) => s === 'openingmap' },
 ];
 // Databases (#/books, the key the URL has always had) is deliberately NOT
 // in Tools: the entries there are boards you play on, and it is where
 // their data is looked after — so it stands on its own row below the
 // group, beside nothing.
 const inTools = (s: Section): boolean =>
-  s === 'analysis' || s === 'editor' || s === 'repertoire' || s === 'openingmap';
+  s === 'analysis' || s === 'editor' || s === 'repertoire';
 
 export function App() {
   return (
