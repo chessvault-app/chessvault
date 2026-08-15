@@ -78,6 +78,85 @@ export function migrateLegacyRefgames(dataDir: string = DATA): void {
 }
 
 /**
+ * Was this `.building` file a build that ran all the way to the end?
+ *
+ * `built_at` is written after the last game is inserted and `plies` after
+ * the position index finishes, so both present means the child got past
+ * its final write and only ever missed the rename. A WAL sidecar means the
+ * opposite: the index pass folds the journal back to DELETE when it is
+ * done, so one still lying there is an indexer that was killed mid-pass.
+ */
+function isFinishedBuild(path: string): boolean {
+  if (existsSync(`${path}-wal`)) return false;
+  try {
+    const db = new Database(path, { readonly: true, fileMustExist: true });
+    try {
+      const rows = db
+        .prepare("SELECT key FROM meta WHERE key IN ('built_at', 'plies')")
+        .all() as { key: string }[];
+      return rows.length === 2;
+    } finally {
+      db.close();
+    }
+  } catch {
+    return false; // truncated, headerless, or no meta table — half a build
+  }
+}
+
+/**
+ * Deal with the `.building` files a killed build leaves behind.
+ *
+ * A build writes `<name>.sqlite.building` and renames it into place at the
+ * end (here rather than in the child on Windows, where the server's own
+ * read handle blocks the rename-over). Quitting the desktop app kills the
+ * server, and the server is the only supervisor the indexer has — so a
+ * build interrupted that way leaves its part-written file sitting in the
+ * directory for ever. Nothing ever lists it, only `*.sqlite` being a
+ * database, so it is invisible: an Elite month is ~200 MB of dead weight
+ * nobody can see to delete, and the app offers no way to.
+ *
+ * Startup is the one moment when this is decidable — no build can be
+ * running yet, so every `.building` file present belongs to a dead one.
+ * Nearly all are half-written and go. The exception is a build that
+ * finished in the instant before the server died: that file is a complete
+ * database that only missed its rename, so it is renamed in rather than
+ * thrown away. Deleting a finished build would be a worse bug than the
+ * leak this fixes.
+ *
+ * Called from server/index.ts at startup, after migrateLegacyRefgames and
+ * before seedBundledRefgames, so an adopted database is in place before
+ * the seed decides whether the name is taken.
+ */
+export function sweepUnfinishedBuilds(dataDir: string = DATA): void {
+  const dir = resolve(dataDir, 'refgames');
+  let files: string[];
+  try {
+    files = readdirSync(dir).filter((f) => f.endsWith('.sqlite.building'));
+  } catch {
+    return; // no directory yet
+  }
+  for (const file of files) {
+    const path = resolve(dir, file);
+    const target = resolve(dir, file.slice(0, -'.building'.length));
+    if (isFinishedBuild(path)) {
+      try {
+        renameSync(path, target);
+        console.log(`refgames: swapped in ${basename(target)}, built by an interrupted run`);
+      } catch (error) {
+        // Leave it: it is a whole database, and the next start tries again.
+        console.warn(`refgames: could not swap in ${file} (${(error as Error).message})`);
+      }
+      continue;
+    }
+    rmSync(path, { force: true });
+    for (const sidecar of ['-wal', '-shm', '-journal']) {
+      rmSync(`${path}${sidecar}`, { force: true });
+    }
+    console.log(`refgames: discarded ${file} — the build that wrote it never finished`);
+  }
+}
+
+/**
  * The starter set of reference games that comes with the app — a curated
  * slice of a CC0 Lichess Elite month (the strongest games of every ECO
  * code, ~39 k games / ~25 MB), built at release time by

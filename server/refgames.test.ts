@@ -4,7 +4,12 @@ import { Hono } from 'hono';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { migrateLegacyRefgames, refGamesApi, seedBundledRefgames } from './refgames.ts';
+import {
+  migrateLegacyRefgames,
+  refGamesApi,
+  seedBundledRefgames,
+  sweepUnfinishedBuilds,
+} from './refgames.ts';
 import { indexPositions } from './refgamesIndex.ts';
 import { tune } from '../scripts/lib/db-tuning.ts';
 
@@ -237,6 +242,104 @@ describe('migrateLegacyRefgames', () => {
   it('is a no-op without a legacy file', () => {
     migrateLegacyRefgames(data);
     expect(existsSync(join(data, 'refgames'))).toBe(false);
+  });
+});
+
+/**
+ * A build the app was quit in the middle of leaves a `.building` file
+ * nothing lists and nothing can delete. Startup is the only moment when
+ * every one of them is known to be dead.
+ */
+describe('sweepUnfinishedBuilds', () => {
+  let data: string;
+  let dir: string;
+
+  beforeEach(() => {
+    data = mkdtempSync(join(tmpdir(), 'refgames-sweep-'));
+    dir = join(data, 'refgames');
+    mkdirSync(dir, { recursive: true });
+  });
+
+  afterEach(() => {
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  /** A build's temp file, at the point the indexer would have been killed:
+      `indexed` false is a child that never reached the position pass. */
+  const building = (name: string, white: string, indexed: boolean): string => {
+    const path = join(dir, `${name}.sqlite.building`);
+    const db = new Database(path);
+    db.exec(`
+      CREATE TABLE games (
+        id INTEGER PRIMARY KEY,
+        white TEXT NOT NULL COLLATE NOCASE, black TEXT NOT NULL COLLATE NOCASE,
+        white_elo INTEGER NOT NULL, black_elo INTEGER NOT NULL,
+        result TEXT NOT NULL, date TEXT, event TEXT, eco TEXT, opening TEXT,
+        moves TEXT NOT NULL
+      );
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('games', '1'), ('built_at', '2026-08-16T00:00:00.000Z');
+    `);
+    db.prepare(
+      'INSERT INTO games (white, black, white_elo, black_elo, result, date, event, eco, opening, moves) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(white, 'Opponent', 2600, 2600, '1-0', '2026.08.16', null, null, null, 'e4 e5 Nf3');
+    db.close();
+    if (indexed) indexPositions(path);
+    return path;
+  };
+
+  const whiteIn = (path: string): string => {
+    const db = new Database(path, { readonly: true, fileMustExist: true });
+    const row = db.prepare('SELECT white FROM games LIMIT 1').get() as { white: string };
+    db.close();
+    return row.white;
+  };
+
+  it('renames in a build that finished and only missed its rename', () => {
+    const path = building('elite', 'Finished', true);
+    sweepUnfinishedBuilds(data);
+    expect(existsSync(path)).toBe(false);
+    expect(whiteIn(join(dir, 'elite.sqlite'))).toBe('Finished');
+  });
+
+  it('lets a finished rebuild replace the database it was rebuilding', () => {
+    building('elite', 'Old', true);
+    sweepUnfinishedBuilds(data);
+    building('elite', 'New', true);
+    sweepUnfinishedBuilds(data);
+    expect(whiteIn(join(dir, 'elite.sqlite'))).toBe('New');
+  });
+
+  it('discards one the indexer never got to the end of', () => {
+    const path = building('elite', 'Half', false);
+    sweepUnfinishedBuilds(data);
+    expect(existsSync(path)).toBe(false);
+    expect(existsSync(join(dir, 'elite.sqlite'))).toBe(false);
+  });
+
+  it('discards rubble with its journal sidecars', () => {
+    const path = join(dir, 'elite.sqlite.building');
+    writeFileSync(path, 'not a database at all');
+    writeFileSync(`${path}-wal`, '');
+    writeFileSync(`${path}-shm`, '');
+    sweepUnfinishedBuilds(data);
+    expect(existsSync(path)).toBe(false);
+    expect(existsSync(`${path}-wal`)).toBe(false);
+    expect(existsSync(`${path}-shm`)).toBe(false);
+  });
+
+  it('leaves the databases themselves alone', () => {
+    const kept = join(dir, 'elite.sqlite');
+    writeFileSync(kept, 'a database this test never reads');
+    building('other', 'Half', false);
+    sweepUnfinishedBuilds(data);
+    expect(readFileSync(kept, 'utf8')).toBe('a database this test never reads');
+  });
+
+  it('is a no-op without a refgames directory', () => {
+    rmSync(dir, { recursive: true, force: true });
+    sweepUnfinishedBuilds(data);
+    expect(existsSync(dir)).toBe(false);
   });
 });
 
