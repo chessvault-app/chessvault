@@ -3,7 +3,7 @@ import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
-import { createLayout, layoutGraph } from './graph';
+import { layoutGraph } from './graph';
 import type { OpeningMap, ResolvedMap } from './model';
 
 /**
@@ -53,26 +53,65 @@ export function MapCanvas({
   const host = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
 
-  // The load animation IS the layout: the same simulation, played a few
-  // iterations per frame, so the constellation blooms out of its radial
-  // seed and settles into exactly the layoutGraph result. Skipped when
-  // the user asked the OS for reduced motion.
+  // The load overture: dots scatter at RANDOM and fall into place — real
+  // repulsion keeps the tumble organic while a strengthening anchor pull
+  // lands every dot exactly on the deterministic layout. The journey is
+  // different on every load; the destination never is, because the map's
+  // shape is a thing people remember. Skipped for reduced motion.
   const [anim, setAnim] = useState<ReadonlyMap<string, { x: number; y: number }> | null>(null);
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || graph.nodes.length < 2) {
       setAnim(null);
       return;
     }
-    const sim = createLayout(map.root);
+    const spread = Math.max(graph.maxX - graph.minX, graph.maxY - graph.minY) * 0.6;
+    const cx = (graph.minX + graph.maxX) / 2;
+    const cy = (graph.minY + graph.maxY) / 2;
+    const bodies = graph.nodes.map((n) => {
+      const angle = Math.random() * 2 * Math.PI;
+      const radius = spread * Math.sqrt(Math.random());
+      return { id: n.id, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+    });
+    const TOTAL = 38;
+    let t = 0;
     let frame = 0;
     const tick = (): void => {
-      sim.step(8);
-      const shot = sim.snapshot();
-      setAnim(new Map(shot.nodes.map((n) => [n.id, { x: n.x, y: n.y }])));
-      if (sim.done()) {
+      t += 1;
+      const progress = Math.min(1, t / TOTAL);
+      const ease = progress * progress * (3 - 2 * progress);
+      // Repulsion fades as the anchors take over — chaos first, order last.
+      const k = 70 * (1 - ease);
+      if (k > 1) {
+        for (let a = 0; a < bodies.length; a += 1) {
+          for (let b = a + 1; b < bodies.length; b += 1) {
+            let dx = bodies[a]!.x - bodies[b]!.x;
+            let dy = bodies[a]!.y - bodies[b]!.y;
+            let d2 = dx * dx + dy * dy;
+            if (d2 < 1) {
+              dx = 1;
+              dy = 0.5;
+              d2 = 1.25;
+            }
+            const push = Math.min(12, (k * k) / d2);
+            const d = Math.sqrt(d2);
+            bodies[a]!.x += (dx / d) * push;
+            bodies[a]!.y += (dy / d) * push;
+            bodies[b]!.x -= (dx / d) * push;
+            bodies[b]!.y -= (dy / d) * push;
+          }
+        }
+      }
+      const pull = 0.05 + 0.4 * ease * ease;
+      for (const body of bodies) {
+        const home = at.get(body.id)!;
+        body.x += (home.x - body.x) * pull;
+        body.y += (home.y - body.y) * pull;
+      }
+      if (t >= TOTAL) {
         setAnim(null);
         return;
       }
+      setAnim(new Map(bodies.map((b) => [b.id, { x: b.x, y: b.y }])));
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);

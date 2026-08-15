@@ -123,9 +123,11 @@ mainlines read as a spine — follow the thick edges from the root and
 you are walking the line the field walks. The
 layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
-reshuffling it — and the page load *plays* that relaxation: the
-constellation blooms out of its seed and settles before your eyes
-(skipped when the OS asks for reduced motion). Wheel zooms to the
+reshuffling it — and the page load opens with an overture: the dots
+scatter at random and tumble into place, chaos first, order last. The
+journey is different on every load; the destination never is, because
+the map's shape is a thing people remember. (Skipped when the OS asks
+for reduced motion.) Wheel zooms to the
 cursor, dragging the ground pans, two fingers pinch, and dragging a
 dot moves the dot — mouse or touch — pinning it there for the session
 while the stored layout stays deterministic. Labels keep their screen
