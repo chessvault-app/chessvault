@@ -123,8 +123,13 @@ mainlines read as a spine — follow the thick edges from the root and
 you are walking the line the field walks. The
 layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
-reshuffling it. Wheel zooms to the cursor, dragging pans, two fingers
-pinch; labels keep their screen size and fade out as the view pulls
+reshuffling it — and the page load *plays* that relaxation: the
+constellation blooms out of its seed and settles before your eyes
+(skipped when the OS asks for reduced motion). Wheel zooms to the
+cursor, dragging the ground pans, two fingers pinch, and dragging a
+dot moves the dot — mouse or touch — pinning it there for the session
+while the stored layout stays deterministic. Labels keep their screen
+size and fade out as the view pulls
 back — far out you read the shape, close in you read the names.
 Covered nodes are filled, plans are hollow and dashed, and the badges
 (field gaps, drill health, the depth arc) ride on the dots.

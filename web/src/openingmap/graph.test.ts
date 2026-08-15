@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layoutGraph } from './graph';
+import { createLayout, layoutGraph } from './graph';
 import type { MapNode } from './model';
 
 const leaf = (id: string): MapNode => ({ id, san: 'x', children: [] });
@@ -58,6 +58,12 @@ describe('layoutGraph', () => {
     const at = new Map(graph.nodes.map((n) => [n.id, n]));
     expect(at.get('root')!.r).toBeGreaterThan(at.get('c5')!.r);
     expect(at.get('e4')!.r).toBeGreaterThan(at.get('e5')!.r);
+  });
+
+  it('stepping in chunks lands exactly where one big step lands', () => {
+    const sim = createLayout(sample());
+    while (!sim.done()) sim.step(7);
+    expect(sim.snapshot()).toEqual(layoutGraph(sample()));
   });
 
   it('lays out a single-node map without dividing by zero', () => {

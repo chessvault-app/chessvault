@@ -34,7 +34,21 @@ export interface MapGraph {
 const RING = 120;
 const ITERATIONS = 220;
 
-export function layoutGraph(root: MapNode): MapGraph {
+/**
+ * The simulation behind layoutGraph, exposed a step at a time so the
+ * canvas can PLAY the settling as its load animation — the constellation
+ * blooming out of the radial seed is the layout being computed, not a
+ * transition drawn over it. Stepping in chunks reaches exactly the state
+ * one big step reaches (there is no randomness to diverge).
+ */
+export interface LayoutSim {
+  /** Advance up to `iterations`; no-ops once settled. */
+  step: (iterations: number) => void;
+  done: () => boolean;
+  snapshot: () => MapGraph;
+}
+
+export function createLayout(root: MapNode): LayoutSim {
   interface Body {
     id: string;
     x: number;
@@ -82,8 +96,9 @@ export function layoutGraph(root: MapNode): MapGraph {
   // Relax. Repulsion between every pair, springs along the edges, and a
   // whisper of gravity so a lone branch cannot drift away forever.
   const k = 90;
-  for (let step = 0; step < ITERATIONS; step += 1) {
-    const heat = (1 - step / ITERATIONS) * 18 + 2;
+  let at0 = 0;
+  const relax = (): void => {
+    const heat = (1 - at0 / ITERATIONS) * 18 + 2;
     const fx = new Array<number>(bodies.length).fill(0);
     const fy = new Array<number>(bodies.length).fill(0);
     for (let a = 0; a < bodies.length; a += 1) {
@@ -125,19 +140,35 @@ export function layoutGraph(root: MapNode): MapGraph {
       bodies[at]!.x += (fx[at]! / size) * stepSize;
       bodies[at]!.y += (fy[at]! / size) * stepSize;
     }
-  }
+  };
 
   const edges: MapGraph['edges'] = [];
   for (const body of bodies) {
     if (body.parent !== null) edges.push({ from: bodies[body.parent]!.id, to: body.id });
   }
   const PAD = 40;
+
   return {
-    nodes: bodies.map(({ id, x, y, r }) => ({ id, x, y, r })),
-    edges,
-    minX: Math.min(...bodies.map((b) => b.x - b.r)) - PAD,
-    minY: Math.min(...bodies.map((b) => b.y - b.r)) - PAD,
-    maxX: Math.max(...bodies.map((b) => b.x + b.r)) + PAD,
-    maxY: Math.max(...bodies.map((b) => b.y + b.r)) + PAD,
+    step: (iterations: number) => {
+      for (let n = 0; n < iterations && at0 < ITERATIONS; n += 1) {
+        relax();
+        at0 += 1;
+      }
+    },
+    done: () => at0 >= ITERATIONS,
+    snapshot: () => ({
+      nodes: bodies.map(({ id, x, y, r }) => ({ id, x, y, r })),
+      edges: [...edges],
+      minX: Math.min(...bodies.map((b) => b.x - b.r)) - PAD,
+      minY: Math.min(...bodies.map((b) => b.y - b.r)) - PAD,
+      maxX: Math.max(...bodies.map((b) => b.x + b.r)) + PAD,
+      maxY: Math.max(...bodies.map((b) => b.y + b.r)) + PAD,
+    }),
   };
+}
+
+export function layoutGraph(root: MapNode): MapGraph {
+  const sim = createLayout(root);
+  sim.step(ITERATIONS);
+  return sim.snapshot();
 }

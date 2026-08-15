@@ -3,7 +3,7 @@ import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
-import { layoutGraph } from './graph';
+import { createLayout, layoutGraph } from './graph';
 import type { OpeningMap, ResolvedMap } from './model';
 
 /**
@@ -52,6 +52,54 @@ export function MapCanvas({
 
   const host = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
+
+  // The load animation IS the layout: the same simulation, played a few
+  // iterations per frame, so the constellation blooms out of its radial
+  // seed and settles into exactly the layoutGraph result. Skipped when
+  // the user asked the OS for reduced motion.
+  const [anim, setAnim] = useState<ReadonlyMap<string, { x: number; y: number }> | null>(null);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || graph.nodes.length < 2) {
+      setAnim(null);
+      return;
+    }
+    const sim = createLayout(map.root);
+    let frame = 0;
+    const tick = (): void => {
+      sim.step(8);
+      const shot = sim.snapshot();
+      setAnim(new Map(shot.nodes.map((n) => [n.id, { x: n.x, y: n.y }])));
+      if (sim.done()) {
+        setAnim(null);
+        return;
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(frame);
+      setAnim(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map.root]);
+
+  // Where a node was dragged to, screen-session only: the map's stored
+  // shape stays the deterministic layout, a drag is the reader arranging
+  // their desk. Pinned wins over both the animation and the layout.
+  const [pins, setPins] = useState<ReadonlyMap<string, { x: number; y: number }>>(new Map());
+  useEffect(() => setPins(new Map()), [map.id]);
+  const posOf = (id: string): { x: number; y: number } =>
+    pins.get(id) ?? anim?.get(id) ?? at.get(id)!;
+
+  const nodeDrag = useRef<{
+    id: string;
+    pointerId: number;
+    fromX: number;
+    fromY: number;
+    origX: number;
+    origY: number;
+    moved: boolean;
+  } | null>(null);
 
   // Fit the constellation on first light and when the map's node count
   // changes shape enough to matter (a new node nudges, so refit only on
@@ -174,8 +222,8 @@ export function MapCanvas({
       <svg width="100%" height="100%" className="block" role="tree" aria-label={t('Opening map')}>
         <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
           {graph.edges.map(({ from, to }) => {
-            const a = at.get(from)!;
-            const b = at.get(to)!;
+            const a = posOf(from);
+            const b = posOf(to);
             const lit = lineage.has(from) && lineage.has(to);
             const main = mainline.has(`${from}-${to}`);
             return (
@@ -192,7 +240,8 @@ export function MapCanvas({
               />
             );
           })}
-          {graph.nodes.map(({ id, x, y, r: structural }) => {
+          {graph.nodes.map(({ id, r: structural }) => {
+            const { x, y } = posOf(id);
             // Frequency scales the DRAWN dot, never the layout: a move
             // played in most games grows, a rarity shrinks, and sizes
             // breathe as field data lands without the physics
@@ -225,11 +274,52 @@ export function MapCanvas({
                 key={id}
                 className="cursor-pointer"
                 onClick={() => {
-                  if (!moved.current) onSelect(id);
+                  if (!moved.current && !nodeDrag.current?.moved) onSelect(id);
+                  nodeDrag.current = null;
                 }}
                 onPointerDown={(e) => {
+                  // A node grab is a drag, not a pan: capture the pointer
+                  // here and the ground never hears about it.
                   e.stopPropagation();
                   moved.current = false;
+                  try {
+                    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+                  } catch {
+                    // A capture that fails only costs pointerup routing.
+                  }
+                  const from = posOf(id);
+                  nodeDrag.current = {
+                    id,
+                    pointerId: e.pointerId,
+                    fromX: e.clientX,
+                    fromY: e.clientY,
+                    origX: from.x,
+                    origY: from.y,
+                    moved: false,
+                  };
+                }}
+                onPointerMove={(e) => {
+                  const drag = nodeDrag.current;
+                  if (!drag || drag.id !== id || drag.pointerId !== e.pointerId) return;
+                  const dx = e.clientX - drag.fromX;
+                  const dy = e.clientY - drag.fromY;
+                  if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+                  drag.moved = true;
+                  setPins((prev) => {
+                    const next = new Map(prev);
+                    next.set(id, { x: drag.origX + dx / view.k, y: drag.origY + dy / view.k });
+                    return next;
+                  });
+                }}
+                onPointerUp={(e) => {
+                  try {
+                    (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+                  } catch {
+                    // Never captured — nothing to release.
+                  }
+                }}
+                onPointerCancel={() => {
+                  nodeDrag.current = null;
                 }}
               >
                 <circle cx={x} cy={y} r={r + 10} fill="transparent" />
