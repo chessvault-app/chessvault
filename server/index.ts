@@ -120,9 +120,9 @@ app.use('/api/*', compress());
  * launch, over whatever connection a phone happens to have.
  *
  * The stylesheet is the one that hurts. It is render-blocking, so nothing
- * paints until all of it has arrived — including the launch screen, whose
- * own styles are inline and ready from the first byte. That is the gap
- * between the OS splash going away and anything of ours appearing.
+ * paints until all of it has arrived — and on an installed app iOS holds
+ * its startup image up exactly that long, so stylesheet bytes are launch
+ * time.
  *
  * By extension, not by path: a woff2, a jpeg and the engine's wasm are
  * already compressed and gzipping them again spends CPU to add bytes, so

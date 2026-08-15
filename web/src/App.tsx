@@ -20,7 +20,6 @@ import {
 import { Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { lazyRoute } from '@/lib/lazyRoute';
-import { firstPaintDone } from '@/lib/firstPaint';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
@@ -79,33 +78,6 @@ const TOOLS_SUBNAV: {
 // group, beside nothing.
 const inTools = (s: Section): boolean =>
   s === 'analysis' || s === 'editor' || s === 'repertoire';
-
-/**
- * Tells the launch screen the app is really on screen.
- *
- * Two frames, not one: the first is React's commit, the second is the
- * browser having painted it. Announcing on the commit alone hands over
- * to a page that has not been drawn yet, which is the flash this exists
- * to remove.
- */
-function FirstPaint() {
-  useEffect(() => {
-    // Two frames, not one: the first is React's commit, the second is the
-    // browser having painted it.
-    const frame = requestAnimationFrame(() => requestAnimationFrame(firstPaintDone));
-    // And a timer beside it, because a page that is not visible gets no
-    // frames at all — rAF is suspended outright in a hidden tab. Without
-    // this the launch screen would sit on top of an app that had been
-    // ready for seconds, waiting for a paint that is not coming until
-    // somebody looks at it.
-    const timer = setTimeout(firstPaintDone, 100);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(timer);
-    };
-  }, []);
-  return null;
-}
 
 export function App() {
   return (
@@ -196,9 +168,6 @@ function Shell() {
           skeleton here would flash on every single navigation.
         */}
         <Suspense fallback={<div className="h-full" />}>
-        {/* Inside the boundary on purpose: this commits with the route,
-            which is what the launch screen is waiting for. */}
-        <FirstPaint />
         {section === 'home' ? (
           <HomePage />
         ) : section === 'analysis' ? (

@@ -94,138 +94,28 @@
     <link rel="apple-touch-startup-image" media="screen and (device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape) and (prefers-color-scheme: dark)" href="/splash/1024x768@2x-dark.png" />
     <!-- splash:end -->
     <style>
-      /* Inline, because a stylesheet that has not arrived cannot draw the
-         thing that covers the wait for it. */
-      /* The page's own ground, before any stylesheet. The app's stylesheet
-         is loaded without blocking paint (vite.launchScreen.ts), so every
-         path that shows the document before it lands — the launch screen's
-         4s backstop on a slow network, a first install fetching chunks, a
-         browser tab — was showing an UNSTYLED page, and an unstyled page
-         is white whatever the theme. This is the white screen lanph3re
-         sometimes saw on launch. The media query follows the OS for the
-         no-JS case; the theme script below then pins the STORED preference
-         inline, which wins, so an app set to light on a dark phone gets
-         light, not the OS's guess. */
+      /* The page's own ground, inline because it must exist before any
+         stylesheet. Whatever shows between the OS startup image going and
+         the app's first styled frame — module chunks still loading, a
+         first install on a cold cache — is this colour, so no path to
+         the app is ever white. The media query follows the OS for the
+         no-JS case; the theme script below then pins the STORED
+         preference inline, which wins, so an app set to light on a dark
+         phone gets light, not the OS's guess.
+
+         This is ALL that bridges launch now. There used to be an in-page
+         launch screen here — a knight over this same ground, taken down
+         by main.tsx once the app had painted — and it spent a year
+         producing one compositing bug after another: cross-fade
+         double-exposure, a nav bar over the knight, a knight that slid
+         with the settling viewport, layers escaping visibility:hidden.
+         Each fix moved the flicker; none removed it, because a second
+         splash after the OS's own is a second handover, and every
+         handover is a seam. The OS startup image (head links above) and
+         a quiet app-coloured ground have no seam to show. */
       html { background-color: #f9fafc; }
       @media (prefers-color-scheme: dark) {
         html { background-color: #090c12; }
-      }
-      /* The same screen the OS drew a moment ago — and it follows the OS,
-         NOT the app.
-
-         The two can disagree: a phone in dark mode running an app set to
-         light. iOS picks its startup image by the SYSTEM's
-         prefers-color-scheme, which is the only thing it can know, so it
-         drew the dark one; this screen then read the app's stored
-         preference and repainted itself light, and the same knight on
-         the same background changed colour under the reader. That is a
-         glitch, not a launch.
-
-         So the only rule here is the one iOS used. The app arriving in
-         its own theme is a change of the whole screen, which is what a
-         change is supposed to look like, and #boot fades rather than
-         cuts, so the two schemes cross-fade instead of snapping. */
-      #boot {
-        position: fixed;
-        inset: 0;
-        z-index: 100;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        background: #f9fafc;
-      }
-      #boot svg { width: 22vmin; height: 22vmin; fill: #0083c1; }
-      @media (prefers-color-scheme: dark) {
-        #boot { background: #090c12; }
-        #boot svg { fill: #49b2f3; }
-      }
-      /* The knight sits on a POINT in large-viewport units, not centred
-         in the box. A home-screen launch's layout viewport settles over
-         the first frames (the height is under-reported until then — see
-         index.css), and anything centred in it slides as it settles;
-         lanph3re's recording measured the knight drifting several CSS px
-         right after the OS handed over to the page. 50lvh is the same
-         length on the first frame as on the last, so the knight starts
-         where it will end — which is also where the startup image drew
-         it. The box itself still covers via inset: 0 above; only the
-         knight is placed. Browsers without lv units (iOS < 16.4) keep
-         the flex centring, which is the pre-settle behaviour, not a
-         regression. */
-      @supports (top: 50lvh) {
-        #boot svg {
-          position: absolute;
-          left: 50lvw;
-          top: 50lvh;
-          transform: translate(-50%, -50%);
-          width: 22lvmin;
-          height: 22lvmin;
-        }
-      }
-      /*
-       * There is no fade, and that is the point.
-       *
-       * This used to go out over 260ms, which sounds gentler and is not:
-       * a fade to transparent is a CROSS-fade, so for a quarter of a
-       * second the knight and the running app are both on screen, drawn
-       * over each other. lanph3re saw it on an iPhone as the nav bar
-       * showing through the launch screen, and on an iPad — which has no
-       * bottom bar — as a flicker with nothing identifiable in it. Same
-       * event, different thing to notice in it.
-       *
-       * A cut has no such moment. The screen is up, then the app is,
-       * which is what every native launch does and what the screen was
-       * for in the first place.
-       */
-      /**
-       * While the launch screen is up, the app is laid out but not DRAWN.
-       *
-       * Paint order could not be relied on. WebKit composites some
-       * elements outside it, so the bottom nav bar drew on top of this
-       * screen — a fixed, fully opaque box at z-index 100 — for exactly
-       * one frame, at the moment the shell first rendered. Caught in
-       * lanph3re's screen recording at 2.71s: the knight still on screen,
-       * the tab bar over it, gone again by 2.72s, and the app itself not
-       * arriving until 3.52s. That single frame is the flicker, and it is
-       * why every fix aimed at the HANDOVER missed it — it happens most
-       * of a second before the handover.
-       *
-       * Suppressing backdrop-filter was the first attempt at this and was
-       * not enough: it removed one reason WebKit promotes a layer, not the
-       * escape itself. `visibility: hidden` removes the question. There is
-       * nothing to paint, so there is nothing that can be painted in the
-       * wrong order.
-       *
-       * It hides rather than skips rendering, because the point of the
-       * screen is to COVER useful work: the app still mounts, fetches,
-       * measures and lays out underneath — visibility does not stop layout
-       * — so nothing is serialised behind the launch and the app is ready
-       * the moment the screen goes.
-       */
-      html.booting #root {
-        visibility: hidden !important;
-      }
-      /* And nothing under it may OWN a compositor layer meanwhile.
-         History: suppressing backdrop-filter alone was not enough (one
-         promotion reason removed, not the escape), so visibility:hidden
-         replaced it — and lanph3re's 2026-08 recording shows the escape
-         back anyway: the bottom bars' backdrop-blur promotes them to
-         their own layers, and WebKit composited one over the launch
-         screen for three frames, visibility notwithstanding. Hidden AND
-         unpromoted together leave it nothing to composite: no layer, no
-         paint, no order to get wrong. Boot is the one moment nothing may
-         blur, so the loss is invisible. */
-      html.booting #root * {
-        -webkit-backdrop-filter: none !important;
-        backdrop-filter: none !important;
-      }
-      /* Body-level portals (sheets, modals, pickers) render OUTSIDE
-         #root and would escape both rules above. Nothing portalled can
-         mean anything while the launch screen is up, so they are simply
-         not rendered — display, not visibility, because a display: none
-         subtree cannot create a compositor layer at all. */
-      html.booting body > :not(#root):not(#boot) {
-        display: none !important;
       }
     </style>
     <script>
@@ -251,68 +141,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!--
-      The gap between the OS splash and React.
-
-      The startup images above cover the launch itself, but they go the
-      moment the document paints, and the app is not on screen until its
-      chunks have downloaded and mounted — an app-coloured nothing, for as
-      long as that takes.
-
-      Beside #root rather than inside it, and taken down by main.tsx. It
-      used to live inside the container, which React empties on its first
-      render — correct, and far too quick to see: the screen vanished on
-      the same frame the app appeared, so a cold load flashed it. Out here
-      it can outlast the mount by a moment and fade, which is what makes
-      it read as a launch rather than as a flicker.
-
-      INSTALLED APPS ONLY — see the script under it.
-    -->
-    <div id="boot">
-      <svg viewBox="4.5 5 36 36" aria-hidden="true">
-        <path
-          d="M 22,10 C 32.5,11 38.5,18 38,39 L 15,39 C 15,30 25,32.5 23,18 Z M 24,18 C 24.38,20.91 18.45,25.37 16,27 C 13,29 13.18,31.34 11,31 C 9.958,30.06 12.41,27.96 11,28 C 10,28 11.19,29.23 10,30 C 9,30 5.997,31 6,26 C 6,24 12,14 12,14 C 12,14 13.89,12.1 14,10.5 C 13.27,9.506 13.5,8.5 13.5,7.5 C 14.5,6.5 16.5,10 16.5,10 L 18.5,10 C 18.5,10 19.28,8.008 21,7 C 22,7 22,10 22,10 Z"
-        />
-      </svg>
-    </div>
-    <script>
-      // An INSTALLED app only, and not the desktop one. This screen exists
-      // to cover the handover from the OS splash to React — and a browser
-      // tab has no OS splash: the page simply appears, as every other page
-      // does, and a full-screen brand card in front of it is a splash
-      // screen for its own sake. The desktop shell has none either, and is
-      // not getting one; `vaultShell` is the preload's own bridge, so it
-      // says that outright rather than leaving it to depend on what
-      // Chromium reports display-mode as for an Electron window.
-      // Removed here rather than never rendered, so the markup stays one
-      // thing that main.tsx knows how to take down.
-      (function () {
-        var boot = document.getElementById('boot');
-        var app =
-          matchMedia('(display-mode: standalone)').matches ||
-          matchMedia('(display-mode: fullscreen)').matches ||
-          matchMedia('(display-mode: minimal-ui)').matches ||
-          navigator.standalone === true;
-        if (!app || window.vaultShell) {
-          boot.remove();
-          return;
-        }
-        // The screen is staying, so nothing may composite its way in front
-        // of it — see the html.booting rule. main.tsx clears this when it
-        // takes the screen away.
-        //
-        // The knight's placement is pure CSS now — the lv-unit rule in the
-        // <style> above. This script used to measure `screen` and pin the
-        // knight in pixels, but pixels measured ONCE against a viewport
-        // that is still settling are pinned to the wrong frame: the
-        // recording showed the knight starting offset and sliding to its
-        // place as the viewport finished. Large-viewport units are the
-        // settled geometry from the first frame, need no JS, no
-        // orientation heuristics, and centre correctly in a desktop-sized
-        // standalone window too — every case the old measurement had to
-        // special-case, gone with it.
-      })();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

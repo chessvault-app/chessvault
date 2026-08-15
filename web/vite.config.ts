@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import { licenses } from './vite.licenses.ts';
-import { launchScreen } from './vite.launchScreen.ts';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -21,7 +20,12 @@ const crossOriginIsolation = {
 export default defineConfig({
   root,
   publicDir: `${root}public`,
-  plugins: [react(), tailwindcss(), licenses(), launchScreen()],
+  // The stylesheet blocks first paint again, on purpose: with no in-page
+  // launch screen, iOS holds its startup image until the first paint, so
+  // a blocking stylesheet means the first thing painted is a styled page
+  // rather than an unstyled flash. (vite.launchScreen.ts, which deferred
+  // it, went with the launch screen it existed for.)
+  plugins: [react(), tailwindcss(), licenses()],
   // Stated false so it FOLDS. `isDemo()` guards on
   // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
   // absent but cannot be evaluated at build time — so the demo's dynamic
