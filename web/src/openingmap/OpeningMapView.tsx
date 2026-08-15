@@ -45,6 +45,7 @@ import {
 import { useOpeningMap } from './store';
 import { AddMoveSheet } from './AddMoveSheet';
 import { DeviationsSheet } from './DeviationsSheet';
+import { FieldStats } from './FieldStats';
 import { GrowSheet } from './GrowSheet';
 import { TagPicker } from './TagPicker';
 import type { NodeGaps } from './gaps';
@@ -168,9 +169,12 @@ export function OpeningMapView({ params }: { params: string[] }) {
         facts={resolved.nodes.get(selected)!}
         coverage={coverage?.get(selected)}
         gaps={field.source ? gaps.get(selected) : undefined}
+        source={field.source}
+        ratings={field.ratings}
         missing={missing}
         onAddMove={() => setAddTo(selected)}
         onGrow={() => setGrowFrom(selected)}
+        onSelectChild={setSelectedId}
         onDelete={() => setSelectedId(null)}
       />
     ) : null;
@@ -362,9 +366,12 @@ function NodePanel({
   facts,
   coverage,
   gaps,
+  source,
+  ratings,
   missing,
   onAddMove,
   onGrow,
+  onSelectChild,
   onDelete,
 }: {
   map: OpeningMap;
@@ -372,9 +379,12 @@ function NodePanel({
   facts: ResolvedNode;
   coverage: NodeCoverage | undefined;
   gaps: NodeGaps | undefined;
+  source: string;
+  ratings: string;
   missing: ReadonlySet<string>;
   onAddMove: () => void;
   onGrow: () => void;
+  onSelectChild: (id: string) => void;
   onDelete: () => void;
 }) {
   const { apply } = useOpeningMap();
@@ -548,45 +558,17 @@ function NodePanel({
         </div>
       </Field>
 
-      {gaps && gaps.games > 0 && (
-        <Field
-          label="Against the field"
-          hint={
-            <span className="text-subtle text-[0.6875rem]">
-              {t('{pct}% of games met', { pct: Math.round(gaps.metShare * 100) })}
-            </span>
-          }
-        >
-          {gaps.gaps.length === 0 ? (
-            <p className="text-muted text-xs leading-relaxed">
-              {t('Every popular reply here runs into your preparation.')}
-            </p>
-          ) : (
-            <div className="flex flex-col gap-1">
-              {gaps.gaps.map(({ san, share }) => (
-                <div
-                  key={san}
-                  className="border-warn/40 flex items-center gap-2 rounded-lg border px-2 py-1.5"
-                >
-                  <AlertTriangle className="text-warn size-3.5 shrink-0" />
-                  <span className="text-fg flex-1 text-xs font-medium">{san}</span>
-                  <span className="text-muted text-xs">
-                    {t('{pct}% of games', { pct: Math.round(share * 100) })}
-                  </span>
-                  <button
-                    type="button"
-                    title={t('Chart it on the map')}
-                    onClick={() => apply((d) => addChild(d, map.id, node.id, san))}
-                    className="text-subtle hover:text-fg shrink-0"
-                  >
-                    <Plus className="size-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Field>
-      )}
+      <FieldStats
+        facts={facts}
+        node={node}
+        coverage={coverage}
+        gaps={gaps}
+        source={source}
+        ratings={ratings}
+        side={map.color}
+        onAdd={(san) => apply((d) => addChild(d, map.id, node.id, san))}
+        onSelectChild={onSelectChild}
+      />
 
       {chartable.length > 0 && (
         <Field

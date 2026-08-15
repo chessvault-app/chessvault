@@ -66,10 +66,13 @@ position where the opponent
 moves, the map fetches what real games played there and flags popular
 replies (5% of games or more, the drill's own threshold) that neither
 the map charts nor any tagged study prepares. The node wears the count
-as a badge; the panel names each gap with its share of games and
-charts it in one tap, and reports how much of the field the node
-meets ("62% of games met"). The check is off until a source is chosen
-and the choice is device-local; answers are cached per session.
+as a badge; the panel shows the full statistics table — every
+continuation with its share of games and the W/D/L split as a bar,
+charted rows jumping to their node, unmet ones charting in a tap,
+popular unmet ones framed in warning — and reports how much of the
+field the node meets ("62% of games met"). The check is off until a
+source is chosen and the choice is device-local; answers are cached
+per session.
 
 ## Games that left the book
 

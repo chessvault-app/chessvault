@@ -539,6 +539,9 @@ export const ko: Record<string, string> = {
   '{pct}% of games': '게임의 {pct}%',
   'Every popular reply here runs into your preparation.':
     '여기서 자주 나오는 응수는 모두 준비에 걸립니다.',
+  'Every reply over {pct}% runs into your preparation.':
+    '{pct}% 이상 나오는 응수는 모두 준비에 걸립니다.',
+  'and {n} rarer moves': '외 드문 수 {n}개',
   'Chart it on the map': '맵에 추가',
   'Prepared to move {reached} — target {target}': '{reached}수까지 준비됨 — 목표 {target}수',
   'Games that left the book': '북을 벗어난 게임',

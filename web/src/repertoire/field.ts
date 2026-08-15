@@ -12,6 +12,10 @@ export interface FieldMove {
   uci: string;
   san: string;
   total: number;
+  /** White wins / draws / Black wins — every source sends them. */
+  w?: number;
+  d?: number;
+  b?: number;
 }
 
 /**
