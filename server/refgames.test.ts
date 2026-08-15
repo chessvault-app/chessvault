@@ -486,6 +486,41 @@ describe('position index and explore', () => {
     expect(body.topGames[2]).toMatchObject({ white: 'Ding', black: 'Firouzja' });
   });
 
+  it('answers many positions in one request, the way the map asks', async () => {
+    const res = await app.request('/api/refgames/explore-batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fens: [START, AFTER_E4, 'not a fen'] }),
+    });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      indexed: boolean;
+      positions: { fen: string; moves: { san: string; total: number }[] }[];
+    };
+    expect(body.indexed).toBe(true);
+    // One entry per position asked for, in the order asked, so the
+    // caller can pair them up without matching on anything.
+    expect(body.positions.map((p) => p.fen)).toEqual([START, AFTER_E4, 'not a fen']);
+    // And each is the same answer the single-position route gives.
+    const single = await explore(`fen=${encodeURIComponent(START)}`);
+    expect(body.positions[0]!.moves.map((m) => [m.san, m.total])).toEqual(
+      single.moves.map((m) => [m.san, m.total]),
+    );
+    expect(body.positions[1]!.moves.map((m) => m.san).sort()).toEqual(['c5', 'e5']);
+    // A position it cannot read is an empty answer, not a failed batch:
+    // one bad fen must not cost the other sixty-three.
+    expect(body.positions[2]!.moves).toEqual([]);
+  });
+
+  it('refuses a batch big enough to be a denial of service', async () => {
+    const res = await app.request('/api/refgames/explore-batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fens: Array.from({ length: 257 }, () => START) }),
+    });
+    expect(res.status).toBe(400);
+  });
+
   it('follows the line', async () => {
     const body = await explore(`fen=${encodeURIComponent(AFTER_E4)}`);
     expect(body.moves.map((m) => m.san).sort()).toEqual(['c5', 'e5']);

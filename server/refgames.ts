@@ -788,6 +788,75 @@ export function refGamesApi(
     });
   });
 
+  /**
+   * The same answer as /refgames/explore, for many positions at once and
+   * without the parts only a single position needs.
+   *
+   * The opening map asks about EVERY charted position, which on a real
+   * repertoire is hundreds. One request each was costing seconds, and
+   * measuring said none of it was the database: 280k games and 8.3M
+   * plies answer a position in well under a millisecond. It was the
+   * round trips — and a browser will not run more than about six of
+   * them at once to one origin, so no amount of client concurrency was
+   * going to help. Hundreds of round trips become a handful.
+   *
+   * Only `moves` comes back. `topGames` is eight more rows per position
+   * for a list the map never draws, and `opening` is a name the client
+   * already has from its own catalogue.
+   */
+  api.post('/refgames/explore-batch', async (c) => {
+    const found = fromQuery(c);
+    if (!found) return c.json({ error: 'no reference games database' }, 503);
+    const { db } = found;
+    const body = (await c.req.json().catch(() => null)) as { fens?: unknown } | null;
+    const fens = Array.isArray(body?.fens) ? body.fens.filter((f): f is string => typeof f === 'string') : null;
+    if (!fens) return c.json({ error: 'expected fens' }, 400);
+    // A ceiling so one request cannot ask for the whole database's worth
+    // of work; the client chunks to well under it.
+    if (fens.length > 256) return c.json({ error: 'too many positions' }, 400);
+
+    if (!positionIndexInfo(db).indexed) {
+      return c.json({ indexed: false, positions: [] });
+    }
+
+    const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.');
+    const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
+    const stmt = db.prepare(
+      `SELECT p.uci AS uci,
+              SUM(g.result = '1-0') AS w,
+              SUM(g.result = '1/2-1/2') AS d,
+              SUM(g.result = '0-1') AS b
+       FROM plies p JOIN games g ON g.id = p.game_id
+       WHERE p.pos = ?${sql}
+       GROUP BY p.uci
+       ORDER BY w + d + b DESC, p.uci`,
+    );
+
+    const positions = fens.map((fen) => {
+      const setup = parseFen(fen.trim());
+      if (setup.isErr) return { fen, moves: [] };
+      const position = Chess.fromSetup(setup.unwrap());
+      if (position.isErr) return { fen, moves: [] };
+      const pos = position.unwrap();
+      const rows = stmt.all(toDbKey(hashSetup(pos.toSetup())), ...binds) as {
+        uci: string;
+        w: number;
+        d: number;
+        b: number;
+      }[];
+      const moves = rows.flatMap((row) => {
+        const move = parseUci(row.uci);
+        if (!move || !pos.isLegal(move)) return [];
+        return [
+          { uci: row.uci, san: makeSan(pos, move), w: row.w, d: row.d, b: row.b, total: row.w + row.d + row.b },
+        ];
+      });
+      return { fen, moves };
+    });
+
+    return c.json({ indexed: true, positions });
+  });
+
   // Match a book's top-game reference (metadata only) to a full game in
   // ANY database, so the explorer can open it on the board — a book does
   // not know which database holds its games.

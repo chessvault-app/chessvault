@@ -58,6 +58,38 @@ export const RATING_BANDS: { label: string; ratings: string }[] = [
   { label: 'All ratings', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
 ];
 
+/**
+ * The same question for MANY positions in one request, where the source
+ * can answer it that way.
+ *
+ * Only the local reference databases can: the Lichess proxy has no batch
+ * endpoint, and own-games answers a different shape per side. Returns
+ * null when the source cannot batch, so the caller falls back to asking
+ * one at a time rather than guessing.
+ *
+ * This exists because the opening map asks about every charted position
+ * at once. Measured on a real 280k-game database, a lookup takes well
+ * under a millisecond — the seconds were all round trips, and a browser
+ * runs about six of those at a time to one origin however many the
+ * caller starts.
+ */
+export async function fetchFieldBatch(
+  source: string,
+  fens: string[],
+): Promise<Map<string, FieldMove[]> | null> {
+  if (source === ONLINE_SOURCE || source === MY_GAMES_SOURCE || !source) return null;
+  const res = await fetch(`/api/refgames/explore-batch?db=${encodeURIComponent(source)}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ fens }),
+  });
+  const body = (await res.json().catch(() => null)) as {
+    positions?: { fen: string; moves: FieldMove[] }[];
+  } | null;
+  if (!res.ok || !body?.positions) throw new Error('field unavailable');
+  return new Map(body.positions.map((p) => [p.fen, p.moves]));
+}
+
 /** Every reply real games made in the position, with counts. Failures
     throw; the caller decides whether that is an error or a shrug.
     `side` applies to the own-games source only: which side the vault's

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fenKey } from '@/repertoire/drill';
-import { fetchField, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
+import { fetchField, fetchFieldBatch, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import type { NodeCoverage } from './coverage';
 import { computeGaps, type NodeGaps } from './gaps';
 import type { OpeningMap, ResolvedMap } from './model';
@@ -38,6 +38,17 @@ const RETRY_MS = 30_000;
  */
 const inflight = new Map<string, Promise<FieldMove[]>>();
 
+/** The cache key: source, band, which side's games, and the position. */
+const keyFor = (
+  source: string,
+  ratings: string,
+  fen: string,
+  side: 'white' | 'black' | undefined,
+): string => `${source}
+${ratings}
+${side ?? ''}
+${fenKey(fen)}`;
+
 /**
  * One position's field, through the same session cache the gap check
  * fills — selecting a node the gap check already asked about costs
@@ -45,6 +56,19 @@ const inflight = new Map<string, Promise<FieldMove[]>>();
  * `side` matters to the own-games source alone (whose games count) and
  * is part of the key, so a white map and a black map never share rows.
  */
+/** Put a batched answer into the cache the single-position path reads,
+    so a panel opening on a position the sweep already covered costs
+    nothing and asks nobody. */
+export function cacheField(
+  source: string,
+  ratings: string,
+  fen: string,
+  side: 'white' | 'black' | undefined,
+  moves: FieldMove[],
+): void {
+  cache.set(keyFor(source, ratings, fen, side), moves);
+}
+
 export async function fieldMovesFor(
   source: string,
   ratings: string,
@@ -147,6 +171,43 @@ export function useGaps(
       published = Date.now();
       bump((n) => n + 1);
     };
+    /**
+     * Where the source can answer many positions at once, take that.
+     *
+     * The queue is hundreds long on a real map, and a browser runs about
+     * six requests at a time to one origin however many the caller
+     * starts — so the one-at-a-time loop below was spending seconds on
+     * round trips for a database that answers each position in well
+     * under a millisecond. Measured on the real one: 280k games, 8.3M
+     * plies, 0.0 ms a lookup.
+     *
+     * In chunks rather than one giant request, so the first colours land
+     * while the rest is still in the air, on the same publish cadence.
+     */
+    const sweep = async (): Promise<void> => {
+      const BATCH = 64;
+      while (live && queue.length > 0) {
+        const chunk = queue.splice(0, BATCH);
+        let answers: Map<string, FieldMove[]> | null = null;
+        try {
+          answers = await fetchFieldBatch(
+            source,
+            chunk.map((n) => n.fen),
+          );
+        } catch {
+          // A batch that fails hands its chunk to the single-position
+          // path, which has its own caching and its own backoff.
+          answers = null;
+        }
+        if (!answers) {
+          queue.unshift(...chunk);
+          return;
+        }
+        for (const { fen } of chunk) cacheField(source, ratings, fen, side, answers.get(fen) ?? []);
+        if (live) publish();
+      }
+    };
+
     const worker = async (): Promise<void> => {
       for (;;) {
         const next = queue.shift();
@@ -161,9 +222,11 @@ export function useGaps(
     // The Lichess proxy rate-limits; two lanes make a burst of thirty
     // positions a polite queue instead of a 429 shower.
     const lanes = source === ONLINE_SOURCE ? 2 : CONCURRENCY;
-    void Promise.all(Array.from({ length: lanes }, worker)).then(() => {
-      if (live) bump((n) => n + 1);
-    });
+    void sweep()
+      .then(() => Promise.all(Array.from({ length: lanes }, worker)))
+      .then(() => {
+        if (live) bump((n) => n + 1);
+      });
     return () => {
       live = false;
     };
