@@ -103,6 +103,7 @@ export function Fab({
   actions,
   label = 'Create',
   icon: Icon = Plus,
+  dragKey,
   className,
 }: {
   actions: FabAction[];
@@ -110,11 +111,36 @@ export function Fab({
   /** The closed disc's glyph. Plus reads "create"; a page whose FAB is
       its menu (the opening map) passes its own. */
   icon?: LucideIcon;
+  /** Set to let the user drag the disc somewhere better; the offset is
+      remembered on this device under the key. */
+  dragKey?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const host = useRef<HTMLDivElement>(null);
   const single = actions.length === 1 ? actions[0] : null;
+
+  // Where the user parked it, relative to the default corner. Clamped
+  // on use rather than on save, so a stored offset from a bigger window
+  // cannot strand the disc off-screen.
+  const [offset, setOffset] = useState<{ x: number; y: number }>(() => {
+    if (!dragKey) return { x: 0, y: 0 };
+    try {
+      const parsed = JSON.parse(localStorage.getItem(`vault:fab-pos:${dragKey}`) ?? '') as {
+        x?: number;
+        y?: number;
+      };
+      if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') return { x: parsed.x, y: parsed.y };
+    } catch {
+      /* an unreadable memo is no memo */
+    }
+    return { x: 0, y: 0 };
+  });
+  const drag = useRef<{ px: number; py: number; ox: number; oy: number; moved: boolean } | null>(null);
+  const clamped = {
+    x: Math.max(-(window.innerWidth - 88), Math.min(0, offset.x)),
+    y: Math.max(-(window.innerHeight - 160), Math.min(0, offset.y)),
+  };
 
   // No scrim, so dismissal is a press anywhere else. Both mousedown and
   // touchstart: a phone fires touchstart first and would otherwise leave
@@ -146,6 +172,7 @@ export function Fab({
         'flex flex-col items-end gap-2',
         className,
       )}
+      style={dragKey ? { transform: `translate(${clamped.x}px, ${clamped.y}px)` } : undefined}
     >
       {open &&
         actions.map(({ label: itemLabel, icon: Icon, onSelect }) => (
@@ -177,7 +204,45 @@ export function Fab({
         title={single ? t(single.label) : t(label)}
         aria-label={single ? t(single.label) : t(label)}
         aria-expanded={single ? undefined : open}
-        onClick={() => (single ? single.onSelect() : setOpen((v) => !v))}
+        onPointerDown={(e) => {
+          if (!dragKey) return;
+          try {
+            (e.currentTarget as Element).setPointerCapture(e.pointerId);
+          } catch {
+            /* capture is a nicety */
+          }
+          drag.current = { px: e.clientX, py: e.clientY, ox: offset.x, oy: offset.y, moved: false };
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d) return;
+          const dx = e.clientX - d.px;
+          const dy = e.clientY - d.py;
+          if (!d.moved && Math.hypot(dx, dy) < 5) return;
+          d.moved = true;
+          setOffset({ x: d.ox + dx, y: d.oy + dy });
+        }}
+        onPointerUp={(e) => {
+          const d = drag.current;
+          if (d?.moved && dragKey) {
+            const parked = { x: d.ox + e.clientX - d.px, y: d.oy + e.clientY - d.py };
+            setOffset(parked);
+            try {
+              localStorage.setItem(`vault:fab-pos:${dragKey}`, JSON.stringify(parked));
+            } catch {
+              /* full or blocked storage loses the memo, nothing else */
+            }
+          }
+        }}
+        onClick={() => {
+          // A drag that moved is not a press.
+          if (drag.current?.moved) {
+            drag.current = null;
+            return;
+          }
+          drag.current = null;
+          return single ? single.onSelect() : setOpen((v) => !v);
+        }}
         // The hairline every other floating thing in the app has. A disc
         // of flat colour with only a shadow under it has no edge of its
         // own: over a pale panel it ended where the eye guessed, and the

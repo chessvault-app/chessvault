@@ -501,8 +501,6 @@ export const ko: Record<string, string> = {
   'Start with your first move for this colour — the rest of the tree grows from it.':
     '이 색의 첫 수부터 시작하세요 — 나머지 트리는 거기서 자랍니다.',
   'Add a move': '수 추가',
-  'Select a move to see its details, link studies to it, or grow the line.':
-    '수를 선택하면 상세 정보를 보고, 스터디를 연결하고, 라인을 늘릴 수 있습니다.',
   'Move details': '수 상세',
   'Not a legal move in this position': '이 포지션에서 둘 수 없는 수입니다',
   'Not a legal move here': '여기서 둘 수 없는 수',
@@ -550,7 +548,9 @@ export const ko: Record<string, string> = {
   'and {n} rarer moves': '외 드문 수 {n}개',
   'Chart it on the map': '맵에 추가',
   'Prepared to move {reached} — target {target}': '{reached}수까지 준비됨 — 목표 {target}수',
-  'Games that left the book': '북을 벗어난 게임',
+  'Games that left here': '여기서 북을 벗어난 게임',
+  'You left the book with this move': '이 수로 내가 북을 벗어났습니다',
+  'They left the book with this move': '이 수로 상대가 북을 벗어났습니다',
   'Every reply the field plays here — tap one to chart it.':
     '필드가 여기서 두는 모든 응수 — 눌러서 맵에 추가하세요.',
   'What the studies prepare here — pick a field source to see statistics.':
@@ -569,13 +569,7 @@ export const ko: Record<string, string> = {
     '이 포지션에 도달한 게임이 충분하지 않습니다 — 기준을 낮추거나 더 두세요.',
   '{n} moves to chart, ending in {k} lines': '추가할 수 {n}개, 라인 {k}개',
   'Chart them': '맵에 추가',
-  'The games index is not answering.': '게임 색인이 응답하지 않습니다.',
-  'None of your recent games left the prepared ground — or none reached it.':
-    '최근 게임 중 준비 범위를 벗어난 것이 없습니다 — 또는 도달한 것이 없습니다.',
-  '{n} recent games left the book, at {m} positions.':
-    '최근 게임 {n}개가 {m}개 포지션에서 북을 벗어났습니다.',
   'Show on the map': '맵에서 보기',
-  '{n} by you': '{n}개는 내가',
   'Analyse to the deviation': '벗어난 지점까지 분석',
   'and {n} more': '외 {n}개',
   '{n} fumbled in drills — drill from here': '드릴에서 {n}개 틀림 — 여기서 드릴하세요',

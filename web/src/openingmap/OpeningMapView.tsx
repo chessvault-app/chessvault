@@ -1,6 +1,6 @@
-import { AlertTriangle, BookOpen, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { moveNumberLabel } from '@shared/tree';
+import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
 import { MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
@@ -9,7 +9,7 @@ import { bookLabel } from '@/store/explorer';
 import { Select } from '@/ui/Select';
 import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
-import { navigate } from '@/lib/router';
+import { navigate, up } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
@@ -42,12 +42,12 @@ import {
 } from './model';
 import { useOpeningMap } from './store';
 import { AddMoveSheet } from './AddMoveSheet';
-import { DeviationsSheet } from './DeviationsSheet';
 import { FieldStats } from './FieldStats';
 import { GrowSheet } from './GrowSheet';
 import { TagPicker } from './TagPicker';
 import type { NodeGaps } from './gaps';
 import { scopedEntries, useCoverage } from './useCoverage';
+import { useDeviations, type Deviation } from './useDeviations';
 import { useGaps } from './useGaps';
 
 /**
@@ -89,6 +89,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const map = doc?.maps.find((m) => m.color === color) ?? null;
   const resolved = useMemo(() => (map ? resolveMap(map) : null), [map]);
   const { coverage, missing } = useCoverage(map, resolved);
+  const deviations = useDeviations(map, resolved);
 
   // The field the map checks itself against — see useGaps.
   const [field, setField] = useState(readFieldPick);
@@ -140,7 +141,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [addTo, setAddTo] = useState<string | null>(null);
   const [typeFor, setTypeFor] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
-  const [gamesOpen, setGamesOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [growFrom, setGrowFrom] = useState<string | null>(null);
 
@@ -168,6 +168,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
         facts={resolved.nodes.get(selected)!}
         coverage={coverage?.get(selected)}
         gaps={field.source ? gaps.get(selected) : undefined}
+        deviations={deviations.get(selected) ?? []}
         source={field.source}
         ratings={field.ratings}
         missing={missing}
@@ -194,8 +195,18 @@ export function OpeningMapView({ params }: { params: string[] }) {
         />
       )}
 
-      {/* A quiet name in the corner, the save state beside it. */}
+      {/* A quiet name in the corner, the save state beside it — and on a
+          phone, the way back to More, which this page arrived from. */}
       <div className="pointer-events-none absolute left-4 top-3 z-10 flex items-baseline gap-2">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('Back')}
+          className="pointer-events-auto -my-1 -ml-2 self-center md:hidden"
+          onClick={() => up('more')}
+        >
+          <ChevronLeft className="size-3.5" />
+        </Button>
         <h1 className="text-fg text-sm font-semibold tracking-tight">{t('Opening map')}</h1>
         <span className="text-muted text-xs">{color === 'white' ? t('White') : t('Black')}</span>
         <span className="text-subtle text-xs">
@@ -244,17 +255,14 @@ export function OpeningMapView({ params }: { params: string[] }) {
           {panel}
         </aside>
       )}
-      {!phone && !empty && !panel && loaded && map && (
-        <p className="text-subtle pointer-events-none absolute bottom-6 left-4 z-10 max-w-xs text-xs leading-relaxed">
-          {t('Select a move to see its details, link studies to it, or grow the line.')}
-        </p>
-      )}
 
-      {/* Every page-level control lives behind the one floating button. */}
+      {/* Every page-level control lives behind the one floating button,
+          and the button itself can be parked wherever the hand likes. */}
       {loaded && map && (
         <Fab
           label={t('Map menu')}
           icon={Compass}
+          dragKey="openingmap"
           className="md:bottom-6"
           actions={[
             {
@@ -263,7 +271,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
               onSelect: () =>
                 color === 'white' ? navigate('openingmap', 'black') : navigate('openingmap'),
             },
-            { label: 'My games', icon: BookOpen, onSelect: () => setGamesOpen(true) },
             {
               label: 'Check coverage against…',
               icon: Target,
@@ -317,14 +324,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
         </Sheet>
       )}
 
-      {gamesOpen && map && resolved && (
-        <DeviationsSheet
-          map={map}
-          resolved={resolved}
-          onShowNode={setSelectedId}
-          onClose={() => setGamesOpen(false)}
-        />
-      )}
       {phone && panel && (
         <Sheet label={t('Move details')} onClose={() => setSelectedId(null)}>
           {panel}
@@ -381,6 +380,7 @@ function NodePanel({
   facts,
   coverage,
   gaps,
+  deviations,
   source,
   ratings,
   missing,
@@ -394,6 +394,8 @@ function NodePanel({
   facts: ResolvedNode;
   coverage: NodeCoverage | undefined;
   gaps: NodeGaps | undefined;
+  /** Your games whose first step off prepared ground happened HERE. */
+  deviations: Deviation[];
   source: string;
   ratings: string;
   missing: ReadonlySet<string>;
@@ -519,6 +521,7 @@ function NodePanel({
       <Field label="Note">
         <TextArea
           rows={3}
+          className="resize-none"
           defaultValue={node.note ?? ''}
           onBlur={(e) => {
             const note = e.target.value.trim();
@@ -584,6 +587,76 @@ function NodePanel({
         onAdd={(san) => apply((d) => addChild(d, map.id, node.id, san))}
         onSelectChild={onSelectChild}
       />
+
+      {deviations.length > 0 && (
+        <Field
+          label="Games that left here"
+          hint={
+            <span className="text-subtle text-[0.6875rem]">
+              {t('{n} games', { n: deviations.length })}
+            </span>
+          }
+        >
+          <div className="flex flex-col gap-1">
+            {deviations.slice(0, 4).map((d) => {
+              const san = d.sans[d.ply]!;
+              const charted = node.children.some((c) => c.san === san);
+              return (
+                <div key={`${d.file}#${d.idx}`} className="flex items-center gap-2 px-1">
+                  <span className="text-fg min-w-0 flex-1 truncate text-xs">
+                    {d.white} – {d.black}
+                  </span>
+                  <span className="text-subtle shrink-0 text-xs">{d.result}</span>
+                  <span
+                    className={d.userDeviated ? 'text-warn shrink-0 text-xs font-medium' : 'text-muted shrink-0 text-xs font-medium'}
+                    title={d.userDeviated ? t('You left the book with this move') : t('They left the book with this move')}
+                  >
+                    {san}
+                  </span>
+                  {!charted && (
+                    <button
+                      type="button"
+                      title={t('Chart it on the map')}
+                      onClick={() => apply((doc) => addChild(doc, map.id, node.id, san))}
+                      className="text-subtle hover:text-fg shrink-0"
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t('Analyse to the deviation')}
+                    onClick={() => {
+                      let gameTree = createTree();
+                      let tip = gameTree.rootId;
+                      for (const step of d.sans) {
+                        const added = addSan(gameTree, tip, step);
+                        if (!added) break;
+                        gameTree = added.tree;
+                        tip = added.nodeId;
+                      }
+                      useAnalysis.setState({
+                        tree: gameTree,
+                        cursorId: tip,
+                        orientation: map.color,
+                        gameHeaders: null,
+                        handoff: true,
+                      });
+                      navigate('analysis');
+                    }}
+                  >
+                    <Grid3x3 className="size-3.5" />
+                  </Button>
+                </div>
+              );
+            })}
+            {deviations.length > 4 && (
+              <p className="text-subtle px-1 text-xs">{t('and {n} more', { n: deviations.length - 4 })}</p>
+            )}
+          </div>
+        </Field>
+      )}
 
       {chartable.length > 0 && (
         <Field

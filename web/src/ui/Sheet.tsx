@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -153,6 +153,19 @@ export function Sheet({
               </Button>
             )}
             <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(label)}</p>
+            {/* The desktop's way out, named: the scrim and Escape both
+                close, but neither LOOKS like a control. Phones keep the
+                grabber and swipe instead of a third glyph in the strip. */}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Close')}
+              aria-label={t('Close')}
+              className="-my-1 -mr-1 hidden shrink-0 sm:grid"
+              onClick={onClose}
+            >
+              <X className="size-3.5" />
+            </Button>
           </div>
         </div>
         {children}

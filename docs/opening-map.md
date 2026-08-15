@@ -72,21 +72,21 @@ charted rows jumping to their node, unmet ones charting in a tap,
 popular unmet ones framed in warning — and reports how much of the
 field the node meets ("62% of games met"). The check is off until a
 source is chosen — in the map's floating menu, which also switches the
-colour and opens My games — and the choice is device-local; answers
-are cached per session.
+colour — and the choice is device-local; answers are cached per
+session, and a source that fails (a rate limit, a network blip) is
+retried after a pause rather than remembered as empty.
 
 ## Games that left the book
 
-**My games**, in the map's floating menu, asks the games index where each of your recent
-games of the map's colour first stepped off prepared ground — the
-charted nodes plus everything the linked studies hold. Results are
-grouped by the position it happened in, because that is the actionable
-unit: five games leaving at one node is one hole, not five incidents.
-Each group names the moves that left and who played them — a reply
+The map asks the games index where each of your recent games of its
+colour first stepped off prepared ground — the charted nodes plus
+everything the linked studies hold — and delivers the answer to the
+node it happened at: the selected node's panel lists the games that
+left *here*, each with the move that did it and who played it. A reply
 *they* keep playing is a gap to prepare; a move *you* played past your
-own book is a line to extend — and offers a jump to the map node when
-one stands there, plus each game opened on the analysis board at the
-exact deviation.
+own book is a line to extend — and either way the move charts in one
+tap, right where the evidence for it stands, with each game openable
+on the analysis board at the exact deviation.
 
 ## Drill health
 

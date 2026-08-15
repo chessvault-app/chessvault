@@ -46,7 +46,8 @@ export function MapCanvas({
   /** Opening names per node id, where the position has one of its own. */
   labels?: ReadonlyMap<string, string>;
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  /** A node id, or null for the ground — a press on dead space clears. */
+  onSelect: (id: string | null) => void;
 }) {
   const graph = useMemo(() => layoutGraph(map.root), [map.root]);
   const at = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
@@ -59,21 +60,41 @@ export function MapCanvas({
   // lands every dot exactly on the deterministic layout. The journey is
   // different on every load; the destination never is, because the map's
   // shape is a thing people remember. Skipped for reduced motion.
+  //
+  // The overture belongs to ARRIVING (a fresh mount, a colour switch);
+  // an edit only nudges the layout, so charting a move glides the dots
+  // from where they were to where they go — replaying the scatter on
+  // every added node yanked the picture out from under the person
+  // building it. New nodes grow out of their parent's old place.
   const [anim, setAnim] = useState<ReadonlyMap<string, { x: number; y: number }> | null>(null);
+  const settledRef = useRef<{ mapId: string; pos: Map<string, { x: number; y: number }> } | null>(
+    null,
+  );
   useEffect(() => {
+    const before = settledRef.current;
+    const finals = new Map(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
+    settledRef.current = { mapId: map.id, pos: finals };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || graph.nodes.length < 2) {
       setAnim(null);
       return;
     }
+    const arriving = !before || before.mapId !== map.id;
     const spread = Math.max(graph.maxX - graph.minX, graph.maxY - graph.minY) * 0.45;
     const cx = (graph.minX + graph.maxX) / 2;
     const cy = (graph.minY + graph.maxY) / 2;
     const bodies = graph.nodes.map((n) => {
+      if (!arriving) {
+        // Glide: start where the node last stood, or where its parent
+        // stood for a node that did not exist a moment ago.
+        const prev =
+          before!.pos.get(n.id) ?? before!.pos.get(resolved.nodes.get(n.id)?.parentId ?? '');
+        return { id: n.id, x: prev?.x ?? n.x, y: prev?.y ?? n.y };
+      }
       const angle = Math.random() * 2 * Math.PI;
       const radius = spread * Math.sqrt(Math.random());
       return { id: n.id, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
     });
-    const TOTAL = 13;
+    const TOTAL = arriving ? 13 : 9;
     let t = 0;
     let frame = 0;
     const tick = (): void => {
@@ -175,9 +196,10 @@ export function MapCanvas({
   useEffect(() => setPins(new Map()), [map.id]);
   const posOf = (id: string): { x: number; y: number } => {
     const base = pins.get(id) ?? anim?.get(id) ?? at.get(id)!;
-    // No drift mid-overture (two motions fight) or under the pointer
-    // (a dot must not wobble in a holding hand).
-    if (anim || (nodeDrag.current?.id === id && nodeDrag.current.moved)) return base;
+    // No drift mid-overture (two motions fight), and none at all while a
+    // node is held: dragging must move the dragged dot and nothing else,
+    // so the whole constellation holds its breath.
+    if (anim || nodeDrag.current) return base;
     const { dx, dy } = driftOf(id);
     return { x: base.x + dx, y: base.y + dy };
   };
@@ -191,6 +213,8 @@ export function MapCanvas({
     origY: number;
     moved: boolean;
   } | null>(null);
+  /** A drag that moved must not select on the trailing click. */
+  const suppressClick = useRef(false);
 
   // Fit the constellation on first light and when the map's node count
   // changes shape enough to matter (a new node nudges, so refit only on
@@ -378,6 +402,11 @@ export function MapCanvas({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onWheel={onWheel}
+      onClick={() => {
+        // The ground was pressed and never dragged: clear the selection.
+        // Node presses stop propagation, so they never land here.
+        if (!moved.current) onSelect(null);
+      }}
     >
       <svg width="100%" height="100%" className="block" role="tree" aria-label={t('Opening map')}>
         <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
@@ -445,9 +474,13 @@ export function MapCanvas({
               <g
                 key={id}
                 className="cursor-pointer"
-                onClick={() => {
-                  if (!moved.current && !nodeDrag.current?.moved) onSelect(id);
-                  nodeDrag.current = null;
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (suppressClick.current) {
+                    suppressClick.current = false;
+                    return;
+                  }
+                  onSelect(id);
                 }}
                 onPointerDown={(e) => {
                   // A node grab is a drag, not a pan: capture the pointer
@@ -489,6 +522,10 @@ export function MapCanvas({
                   } catch {
                     // Never captured — nothing to release.
                   }
+                  // Release the hold so the drift resumes, remembering
+                  // whether the trailing click should be swallowed.
+                  suppressClick.current = nodeDrag.current?.moved ?? false;
+                  nodeDrag.current = null;
                 }}
                 onPointerCancel={() => {
                   nodeDrag.current = null;

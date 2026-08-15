@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fenKey } from '@/repertoire/drill';
-import { fetchField, type FieldMove } from '@/repertoire/field';
+import { fetchField, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import type { NodeCoverage } from './coverage';
 import { computeGaps, type NodeGaps } from './gaps';
 import type { OpeningMap, ResolvedMap } from './model';
@@ -18,11 +18,17 @@ import type { OpeningMap, ResolvedMap } from './model';
 
 const cache = new Map<string, FieldMove[]>();
 const CONCURRENCY = 4;
+/** When a fetch failed, so a band that hit a rate limit RECOVERS: the
+    failure is never written into the answer cache — an empty answer
+    cached on a 429 blanked that band's statistics for the whole
+    session — only remembered here long enough not to hammer. */
+const failedAt = new Map<string, number>();
+const RETRY_MS = 30_000;
 
 /**
  * One position's field, through the same session cache the gap check
  * fills — selecting a node the gap check already asked about costs
- * nothing. Failures answer empty: the list simply shows no statistics.
+ * nothing. Failures answer empty for THIS call but are not cached.
  * `side` matters to the own-games source alone (whose games count) and
  * is part of the key, so a white map and a black map never share rows.
  */
@@ -35,11 +41,14 @@ export async function fieldMovesFor(
   const key = `${source}\n${ratings}\n${side ?? ''}\n${fenKey(fen)}`;
   const hit = cache.get(key);
   if (hit) return hit;
+  if (Date.now() - (failedAt.get(key) ?? 0) < RETRY_MS) return [];
   try {
     const moves = await fetchField(source, ratings, fen, side);
     cache.set(key, moves);
+    failedAt.delete(key);
     return moves;
   } catch {
+    failedAt.set(key, Date.now());
     return [];
   }
 }
@@ -75,7 +84,13 @@ export function useGaps(
   }, [map, resolved, source]);
 
   const missing = useMemo(
-    () => wanted.filter(({ fen }) => !cache.has(keyOf(fen))),
+    () =>
+      wanted.filter(({ fen }) => {
+        const key = keyOf(fen);
+        // Neither answered nor recently refused — a failed key waits out
+        // its backoff instead of spinning the effect in a retry loop.
+        return !cache.has(key) && Date.now() - (failedAt.get(key) ?? 0) >= RETRY_MS;
+      }),
     // `version` re-checks after a batch lands.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [wanted, source, ratings, side, version],
@@ -94,7 +109,10 @@ export function useGaps(
         await fieldMovesFor(source, ratings, next.fen, side);
       }
     };
-    void Promise.all(Array.from({ length: CONCURRENCY }, worker)).then(() => {
+    // The Lichess proxy rate-limits; two lanes make a burst of thirty
+    // positions a polite queue instead of a 429 shower.
+    const lanes = source === ONLINE_SOURCE ? 2 : CONCURRENCY;
+    void Promise.all(Array.from({ length: lanes }, worker)).then(() => {
       if (live) bump((n) => n + 1);
     });
     return () => {
