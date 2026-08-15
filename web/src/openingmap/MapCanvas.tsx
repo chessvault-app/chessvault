@@ -121,7 +121,9 @@ export function MapCanvas({
   // as the view pulls back, the graph-view convention: far out you read
   // the shape, close in you read the names.
   const inv = 1 / view.k;
-  const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.4) / 0.35));
+  // Fully readable by the time the whole map fits a laptop panel
+  // (k ≈ 0.35 on a mid-size map); gone only when truly far out.
+  const labelOpacity = Math.max(0, Math.min(1, (view.k - 0.15) / 0.2));
 
   // The selected node's line back to the root, edges included.
   const lineage = useMemo(() => {
