@@ -235,35 +235,37 @@ export function OpeningMapView({ params }: { params: string[] }) {
           </span>
         </>
       }
-      actions={
+      search={
         loaded && map ? (
-          <>
-            <SearchInput
-              inputSize="sm"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('Search the map')}
-              aria-label={t('Search moves and opening names')}
-              className="bg-surface/90 w-36 backdrop-blur-md md:w-56"
-            />
-            {/* The same actions the Fab carries, as icons — a mouse
-                expects a page's controls in its corner, and a disc
-                floating over the desktop map was covering it. */}
-            {mapActions.map(({ label, icon: Icon, onSelect }) => (
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('Search the map')}
+            aria-label={t('Search moves and opening names')}
+            className="bg-surface/90 w-44 backdrop-blur-md sm:w-64"
+          />
+        ) : null
+      }
+      actions={
+        loaded && map
+          ? // The same actions the Fab carries, drawn straight onto the
+            // map — no card behind them, and big enough to read as marks
+            // on the surface rather than as a toolbar sitting on it.
+            mapActions.map(({ label, icon: Icon, onSelect }) => (
               <Button
                 key={label}
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 title={t(label)}
                 aria-label={t(label)}
                 onClick={onSelect}
-                className="border-line bg-surface/90 hidden border backdrop-blur-md md:inline-flex"
+                className="text-muted hover:text-fg hidden hover:bg-transparent md:inline-flex"
               >
-                <Icon className="size-3.5" />
+                <Icon className="size-5" />
               </Button>
-            ))}
-          </>
-        ) : null
+            ))
+          : null
       }
       panel={panel && { label: t('Move details'), content: panel, onClose: () => setSelectedId(null) }}
     >
@@ -315,18 +317,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
         </CanvasOverlay>
       )}
 
-      {/* Phones only. A thumb wants these at the bottom of the screen and
-          parked wherever it likes; a mouse wants them in the page's own
-          corner, which is where the desktop copy of this list lives. One
-          array feeds both, so they cannot drift apart. */}
+      {/* Phones only. A thumb wants these at the bottom of the screen; a
+          mouse wants them in the page's own corner, which is where the
+          desktop copy of this list lives. One array feeds both, so they
+          cannot drift apart.
+
+          Not draggable. A disc that can be parked anywhere is a disc
+          that is somewhere different every time you reach for it, and on
+          this page it is also one more thing on the canvas that swallows
+          a touch meant for the map. */}
       {loaded && map && (
-        <Fab
-          label={t('Map menu')}
-          icon={Compass}
-          dragKey="openingmap"
-          className="md:hidden"
-          actions={mapActions}
-        />
+        <Fab label={t('Map menu')} icon={Compass} className="md:hidden" actions={mapActions} />
       )}
 
       {optionsOpen && (

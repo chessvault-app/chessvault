@@ -32,6 +32,7 @@ export function CanvasShell({
   back,
   meta,
   actions,
+  search,
   panel,
   children,
 }: {
@@ -41,11 +42,19 @@ export function CanvasShell({
   /** Quiet trailing text beside the title — state, scope, save status. */
   meta?: ReactNode;
   /**
-   * The page's own controls, in the opposite corner from the title: a
-   * search field, icon buttons, whatever the page runs on. Inset by the
-   * same gutter the title uses, so the two corners answer each other.
+   * The page's own controls, floating bare on the surface in the far
+   * corner — no card, no button squares, because chrome drawn ON a
+   * canvas should look like it belongs to the canvas rather than like a
+   * toolbar parked over it.
    */
   actions?: ReactNode;
+  /**
+   * A filter or search for the surface, on a row of its own under the
+   * title. It shared the title's row while there were two of them; a
+   * field is a different kind of thing from a name and from a pair of
+   * buttons, and three kinds in one row is a row that has to be read.
+   */
+  search?: ReactNode;
   /**
    * The selection's detail column. It floats over the canvas on a pointer
    * device and becomes a Sheet on a phone, where an inset column would
@@ -90,8 +99,18 @@ export function CanvasShell({
           '[&_a]:pointer-events-auto [&_button]:pointer-events-auto [&_input]:pointer-events-auto',
         )}
       >
-        <PageHeader title={title} back={back} meta={meta} actions={actions} />
+        <PageHeader title={title} back={back} meta={meta} />
+        {search && <div className="mt-2 flex">{search}</div>}
       </div>
+
+      {/* The surface's own controls, floating on it. Kept out of the
+          header block so the search row can have the left edge to
+          itself, and drawn bare — a canvas is not a toolbar. */}
+      {actions && (
+        <div className="absolute right-4 top-4 z-10 flex items-center gap-1 md:right-6 md:top-6">
+          {actions}
+        </div>
+      )}
 
       {panel &&
         (phone ? (
