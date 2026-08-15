@@ -244,6 +244,54 @@ export function studiesApi(
   const api = new Hono();
   const pathOf = (id: string): string => resolve(dir, `${id}${ext}`);
 
+  /**
+   * Where a document's unsaved copy waits out a crash.
+   *
+   * Saving is manual, so a browser that dies with an hour of annotation
+   * in it takes the hour with it — the buffer only ever existed in a tab.
+   * This is the vault's answer: while a document is pending, the client
+   * parks the pending text here, and clears it the moment the document is
+   * saved or the changes are discarded. A swap left behind is therefore
+   * exactly the thing that should not exist, and finding one on open is
+   * how the app knows to offer it back.
+   *
+   * Beside the document rather than in a drafts directory, so it travels
+   * with a move and dies with a delete. Dot-prefixed and `.swp`-suffixed:
+   * the listing only takes files ending in the document extension, so a
+   * swap is already invisible to it, and `validId` refuses any segment
+   * starting with a dot — so no request can ever address a swap as a
+   * document.
+   *
+   * In the vault rather than in the browser (lanph3re's call): a phone
+   * that dies mid-annotation is then recoverable at the desk, which is
+   * what a vault of plain files is for.
+   */
+  const swapOf = (id: string): string => {
+    const at = id.lastIndexOf('/');
+    const folder = at < 0 ? '' : id.slice(0, at);
+    const name = at < 0 ? id : id.slice(at + 1);
+    return resolve(dir, folder, `.${name}${ext}.swp`);
+  };
+
+  /** The pending copy and when it was parked, or nothing. */
+  const readSwap = (id: string): { draft: string; draftAt: string } | null => {
+    const path = swapOf(id);
+    try {
+      const stat = statSync(path);
+      return { draft: readFileSync(path, 'utf-8'), draftAt: stat.mtime.toISOString() };
+    } catch {
+      return null;
+    }
+  };
+
+  const dropSwap = (id: string): void => {
+    try {
+      rmSync(swapOf(id));
+    } catch {
+      /* nothing parked — the common case */
+    }
+  };
+
   // Chapter counts and names parsed per file and cached by mtime, the same
   // pattern as the games list cache — a listing must not re-read every
   // study body.
@@ -418,6 +466,15 @@ export function studiesApi(
     if (existsSync(pathOf(to))) return c.json({ error: 'a study with that name exists' }, 409);
     mkdirSync(resolve(pathOf(to), '..'), { recursive: true });
     renameSync(pathOf(from), pathOf(to));
+    // The parked copy follows the document. Renaming while changes are
+    // pending is ordinary — the title is the first thing people fix — and
+    // a swap left at the old name would be orphaned there, unreachable and
+    // unrecoverable.
+    try {
+      renameSync(swapOf(from), swapOf(to));
+    } catch {
+      /* nothing parked — the common case */
+    }
     remark(from, to);
     hooks.onMoved?.(from, to);
     return c.json({ moved: to });
@@ -454,9 +511,15 @@ export function studiesApi(
       return c.json({ error: 'no such collection' }, 404);
     }
     // Never delete studies by side effect: a folder must be emptied first.
-    if (readdirSync(path).length > 0) {
+    // Parked copies do not count towards "not empty" — they belong to
+    // documents, and a folder holding nothing but the swap of a document
+    // that was deleted mid-crash looks empty and must behave that way, or
+    // it can never be removed from inside the app.
+    const left = readdirSync(path);
+    if (left.some((f) => !f.endsWith('.swp'))) {
       return c.json({ error: 'collection is not empty — move or delete its studies first' }, 409);
     }
+    for (const orphan of left) rmSync(resolve(path, orphan));
     rmdirSync(path);
     return c.json({ deleted: name });
   });
@@ -467,7 +530,16 @@ export function studiesApi(
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
     const path = pathOf(id);
     if (!existsSync(path)) return c.json({ error: 'no such study' }, 404);
-    return c.json({ id, pgn: readFileSync(path, 'utf-8') });
+    const pgn = readFileSync(path, 'utf-8');
+    const swap = readSwap(id);
+    // A swap identical to the file is one whose delete did not land —
+    // there is nothing to recover from it, and offering it would be
+    // asking a question with one answer. Drop it and say nothing.
+    if (swap && swap.draft === pgn) {
+      dropSwap(id);
+      return c.json({ id, pgn });
+    }
+    return c.json({ id, pgn, ...(swap ?? {}) });
   });
 
   api.post(`/${base}`, async (c) => {
@@ -500,6 +572,17 @@ export function studiesApi(
     return c.json({ id: name });
   });
 
+  /**
+   * `?draft=1` parks the body beside the document instead of saving it.
+   *
+   * A query parameter rather than its own route, because `:id{.+}` is
+   * greedy: `/studies/foo/draft` would match it with the id `foo/draft`,
+   * and a sibling route would have to win a fight with the document a
+   * user could legitimately have called that.
+   */
+  const isDraft = (c: { req: { query: (k: string) => string | undefined } }): boolean =>
+    c.req.query('draft') === '1';
+
   api.put(`/${base}/:id{.+}`, async (c) => {
     const id = c.req.param('id');
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
@@ -508,16 +591,29 @@ export function studiesApi(
     if (Buffer.byteLength(body.pgn) > MAX_PGN_BYTES) return c.json({ error: "study too large" }, 413);
     if (!existsSync(pathOf(id))) return c.json({ error: 'no such study' }, 404);
 
+    if (isDraft(c)) {
+      writeAtomic(swapOf(id), body.pgn);
+      return c.json({ parked: id, bytes: body.pgn.length });
+    }
     writeAtomic(pathOf(id), body.pgn);
+    // The save IS the answer to whatever was parked; a swap that outlived
+    // it would offer to restore an older version of what was just written.
+    dropSwap(id);
     return c.json({ saved: id, bytes: body.pgn.length });
   });
 
   api.delete(`/${base}/:id{.+}`, (c) => {
     const id = c.req.param('id');
     if (!validId(id)) return c.json({ error: 'invalid study id' }, 400);
+    // Discarding: the document stays, only the parked copy goes.
+    if (isDraft(c)) {
+      dropSwap(id);
+      return c.json({ discarded: id });
+    }
     const path = pathOf(id);
     if (!existsSync(path)) return c.json({ error: 'no such study' }, 404);
     rmSync(path);
+    dropSwap(id);
     remark(id, null);
     return c.json({ deleted: id });
   });

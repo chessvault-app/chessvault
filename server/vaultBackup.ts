@@ -79,14 +79,17 @@ export async function startVaultBackup(
   // given exclude existed is repaired on the next boot. Repo-side excludes
   // (never a file in the vault): the history repo must not swallow its own
   // git-dir (`.history.git` is not a magic name like `.git`, so `add -A`
-  // would track it), the giant source PGN dumps are rebuild inputs, and —
-  // critically — config.json holds the app password, TOTP secret and
-  // Lichess token, which must never enter a repo that scripts/backup-vault.sh
-  // pulls off-box (git would retain every past value).
+  // would track it), the giant source PGN dumps are rebuild inputs, the
+  // unsaved-changes swap files are a live buffer rather than a version of
+  // anything (a history of every keystroke somebody had not committed is
+  // exactly what this repo is not for), and — critically — config.json
+  // holds the app password, TOTP secret and Lichess token, which must
+  // never enter a repo that scripts/backup-vault.sh pulls off-box (git
+  // would retain every past value).
   if (existsSync(gitDir)) {
     writeFileSync(
       resolve(gitDir, 'info', 'exclude'),
-      `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\n`,
+      `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\n*.swp\n`,
     );
     // Untrack config.json if an earlier version committed it; --ignore-unmatch
     // makes this a no-op once clean. Leaves the working file intact.

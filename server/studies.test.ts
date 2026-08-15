@@ -396,3 +396,149 @@ describe('notes list excerpts', () => {
     rmSync(pgnDir, { recursive: true, force: true });
   });
 });
+
+/**
+ * The swap file: what survives a browser that dies with unsaved work in it.
+ *
+ * Saving is manual, so the pending copy of a document exists only in a tab
+ * until somebody presses Save. Parking it beside the document means a
+ * phone that dies mid-annotation is recoverable at the desk.
+ */
+describe('unsaved-changes swap file', () => {
+  let dir: string;
+  let app: Hono;
+
+  const create = (name: string): Promise<Response> =>
+    app.request('/api/studies', {
+      method: 'POST',
+      body: JSON.stringify({ name }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+  const park = (id: string, pgn: string): Promise<Response> =>
+    app.request(`/api/studies/${encodeURIComponent(id)}?draft=1`, {
+      method: 'PUT',
+      body: JSON.stringify({ pgn }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+  const save = (id: string, pgn: string): Promise<Response> =>
+    app.request(`/api/studies/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ pgn }),
+      headers: { 'content-type': 'application/json' },
+    });
+
+  const open = async (id: string): Promise<{ pgn: string; draft?: string; draftAt?: string }> =>
+    (await app.request(`/api/studies/${encodeURIComponent(id)}`)).json();
+
+  const swapPath = (id: string): string => {
+    const at = id.lastIndexOf('/');
+    return at < 0
+      ? join(dir, `.${id}.pgn.swp`)
+      : join(dir, id.slice(0, at), `.${id.slice(at + 1)}.pgn.swp`);
+  };
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), 'studies-swap-'));
+    app = new Hono().route('/api', studiesApi(dir));
+  });
+
+  afterAll(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('parks a pending copy without touching the document', async () => {
+    await create('Pending');
+    const original = (await open('Pending')).pgn;
+
+    const res = await park('Pending', '[Event "x"]\n\n1. e4 *\n');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ parked: 'Pending' });
+    // The document itself is untouched — that is the whole point.
+    expect(readFileSync(join(dir, 'Pending.pgn'), 'utf-8')).toBe(original);
+  });
+
+  it('hands the parked copy back when the document is opened', async () => {
+    const body = await open('Pending');
+    expect(body.draft).toBe('[Event "x"]\n\n1. e4 *\n');
+    expect(body.draftAt).toEqual(expect.any(String));
+    // The saved document comes back too: recovery is a choice between two
+    // versions, so the client needs both.
+    expect(body.pgn).toContain('Chapter 1');
+  });
+
+  it('is invisible to the listing', async () => {
+    const { studies } = (await (await app.request('/api/studies')).json()) as {
+      studies: { id: string }[];
+    };
+    expect(studies.map((s) => s.id)).toEqual(['Pending']);
+  });
+
+  it('cannot be reached as a document', async () => {
+    // validId refuses a dot-leading segment, so the swap has no id.
+    const res = await app.request('/api/studies/.Pending.pgn.swp');
+    expect(res.status).toBe(400);
+  });
+
+  it('is cleared by saving — the save IS the answer to it', async () => {
+    await save('Pending', '[Event "x"]\n\n1. d4 *\n');
+    expect(existsSync(swapPath('Pending'))).toBe(false);
+    expect((await open('Pending')).draft).toBeUndefined();
+  });
+
+  it('is cleared by discarding, leaving the document alone', async () => {
+    await park('Pending', '[Event "x"]\n\n1. c4 *\n');
+    const res = await app.request('/api/studies/Pending?draft=1', { method: 'DELETE' });
+    expect(res.status).toBe(200);
+    expect(existsSync(swapPath('Pending'))).toBe(false);
+    // The saved document survived the discard.
+    expect((await open('Pending')).pgn).toBe('[Event "x"]\n\n1. d4 *\n');
+  });
+
+  it('says nothing about a swap that matches the file', async () => {
+    // A delete that did not land. There is nothing to recover, so offering
+    // it would be a question with one answer.
+    await park('Pending', (await open('Pending')).pgn);
+    expect((await open('Pending')).draft).toBeUndefined();
+    expect(existsSync(swapPath('Pending'))).toBe(false);
+  });
+
+  it('follows the document through a rename', async () => {
+    await park('Pending', '[Event "x"]\n\n1. f4 *\n');
+    await app.request('/api/studies/move', {
+      method: 'POST',
+      body: JSON.stringify({ from: 'Pending', to: 'Renamed' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(existsSync(swapPath('Pending'))).toBe(false);
+    expect((await open('Renamed')).draft).toBe('[Event "x"]\n\n1. f4 *\n');
+  });
+
+  it('dies with the document', async () => {
+    await app.request('/api/studies/Renamed', { method: 'DELETE' });
+    expect(existsSync(swapPath('Renamed'))).toBe(false);
+  });
+
+  it('lives beside its document inside a collection', async () => {
+    await app.request('/api/studies/folders', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Openings' }),
+      headers: { 'content-type': 'application/json' },
+    });
+    await create('Openings/Sicilian');
+    await park('Openings/Sicilian', '[Event "x"]\n\n1. e4 c5 *\n');
+    expect(existsSync(join(dir, 'Openings', '.Sicilian.pgn.swp'))).toBe(true);
+    expect((await open('Openings/Sicilian')).draft).toContain('c5');
+  });
+
+  it('does not keep an emptied collection alive', async () => {
+    // A crash between deleting a document and dropping its swap used to
+    // leave a folder that looked empty and refused to be deleted.
+    writeFileSync(join(dir, 'Openings', '.Ghost.pgn.swp'), 'orphan', 'utf-8');
+    await app.request('/api/studies/Openings/Sicilian', { method: 'DELETE' });
+    const res = await app.request('/api/studies/folders/Openings', { method: 'DELETE' });
+    expect(res.status).toBe(200);
+    expect(existsSync(join(dir, 'Openings'))).toBe(false);
+  });
+});
