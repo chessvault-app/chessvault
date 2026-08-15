@@ -21,7 +21,7 @@ Anything here travels with the app to whoever installs or visits it.
 | sql.js (static demo only) | `web/public/sqljs/` | MIT |
 | fzstd (reads the zstd puzzle dump) | npm, bundled into the puzzle builder | MIT |
 | lucide icons | npm, bundled | ISC |
-| Inter, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
+| Pretendard, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | CC0-1.0 |
 | Bundled starter reference games (the strongest games of each opening, one Lichess Elite month) | `assets/refgames-*.sqlite`, copied into `data/refgames/` on first run | CC0-1.0, derived from the Lichess database |
 | Lichess puzzles | `data/puzzles.sqlite`, demo subset | CC0-1.0 |
@@ -50,7 +50,10 @@ installed app.
 | move / capture sounds | ours | GPL-3.0-only |
 
 The piece sets are vendored from lila as base64, one lazily-loaded file
-per set under `web/src/pieces/`. Sets under CC BY-NC-SA (the sadsnake1
+per set under `web/src/pieces/`. That re-encoding is the only change made
+to any of them — no artwork is redrawn — and it is stated because CC BY
+4.0 asks a modification to be indicated, which covers kiwen-suwi.
+Sets under CC BY-NC-SA (the sadsnake1
 family, california, caliente, xkcd…) are deliberately not taken: the
 NC clause fails this repository's redistribution bar, and the
 "freeware" sets (alpha, leipzig, chess7…) carry no licence at all.
