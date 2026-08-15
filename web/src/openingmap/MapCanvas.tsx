@@ -64,7 +64,7 @@ export function MapCanvas({
       setAnim(null);
       return;
     }
-    const spread = Math.max(graph.maxX - graph.minX, graph.maxY - graph.minY) * 0.6;
+    const spread = Math.max(graph.maxX - graph.minX, graph.maxY - graph.minY) * 0.45;
     const cx = (graph.minX + graph.maxX) / 2;
     const cy = (graph.minY + graph.maxY) / 2;
     const bodies = graph.nodes.map((n) => {
@@ -72,7 +72,7 @@ export function MapCanvas({
       const radius = spread * Math.sqrt(Math.random());
       return { id: n.id, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
     });
-    const TOTAL = 21;
+    const TOTAL = 13;
     let t = 0;
     let frame = 0;
     const tick = (): void => {
@@ -101,7 +101,7 @@ export function MapCanvas({
           }
         }
       }
-      const pull = 0.09 + 0.5 * ease * ease;
+      const pull = 0.16 + 0.55 * ease * ease;
       for (const body of bodies) {
         const home = at.get(body.id)!;
         body.x += (home.x - body.x) * pull;
