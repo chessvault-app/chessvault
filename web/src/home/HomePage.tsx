@@ -69,6 +69,8 @@ interface HomeData {
 }
 
 const CHECKLIST_KEY = 'vault:home-checklist-dismissed';
+/** Last launch's Continue-row count — the layout reservation, see below. */
+const CONTINUE_ROWS_KEY = 'vault:home-continue-rows';
 
 /** The stored difficulty, as the word the trainer will use. */
 function bandWord(): string {
@@ -92,6 +94,16 @@ export function HomePage() {
   const [checklistHidden, setChecklistHidden] = useState(
     () => localStorage.getItem(CHECKLIST_KEY) === '1',
   );
+  // How many Continue rows LAST launch ended up with, so this launch can
+  // reserve the card's space before the data returns. Without it the card
+  // popped in a beat after first paint and pushed the whole page down —
+  // the most visible jolt of a launch now that nothing covers loading.
+  // Wrong by at most one launch, and a fresh vault stores 0: no card, no
+  // reservation, no jolt.
+  const [expectedRows] = useState(() => {
+    const n = Number(localStorage.getItem(CONTINUE_ROWS_KEY));
+    return Number.isInteger(n) && n > 0 && n <= 3 ? n : 0;
+  });
 
   useEffect(() => {
     const grab = async (url: string): Promise<unknown> => {
@@ -180,6 +192,13 @@ export function HomePage() {
             : []),
         ];
 
+  // Remembered for the NEXT launch's reservation, above.
+  useEffect(() => {
+    if (data !== null) localStorage.setItem(CONTINUE_ROWS_KEY, String(continueRows.length));
+    // continueRows is derived from data; keying on data is keying on it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   // First-run steps, each ending in a feature lighting up. The list only
   // exists while something is unlit, and can be dismissed for good.
   const checklist: { label: string; done: boolean; go: () => void }[] =
@@ -219,7 +238,25 @@ export function HomePage() {
         </div>
 
         {/* Continue — the best retention surface on the page. A returning
-            user lands one tap from where they left off. */}
+            user lands one tap from where they left off. Before the data
+            arrives, the card is reserved at last launch's size with
+            skeleton rows, so the page does not jump when it fills in. */}
+        {data === null && expectedRows > 0 && (
+          <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
+            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+              {t('Continue')}
+            </p>
+            {Array.from({ length: expectedRows }, (_, i) => (
+              <div
+                key={i}
+                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
+              >
+                <Skeleton className="size-3.5 shrink-0 rounded" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+            ))}
+          </div>
+        )}
         {continueRows.length > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
             <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">

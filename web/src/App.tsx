@@ -20,6 +20,7 @@ import {
 import { Suspense, useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { lazyRoute } from '@/lib/lazyRoute';
+import { HomePage } from '@/home/HomePage';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
@@ -41,7 +42,12 @@ const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ 
 const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
 const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
 const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
-const HomePage = lazyRoute(() => import('@/home/HomePage').then((m) => ({ default: m.HomePage })));
+// HomePage is EAGER (imported above), alone among the routes. With no
+// launch screen, iOS drops its startup image at the app's first paint —
+// and when home was a lazy chunk, that first paint was the shell around
+// an empty box, with the page popping in a beat later (caught on
+// lanph3re's recording). Home is six tiles and some fetches; the engine,
+// the board and the parsers stay behind the lazy routes here.
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
