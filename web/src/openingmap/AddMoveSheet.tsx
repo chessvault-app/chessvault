@@ -101,7 +101,11 @@ export function AddMoveSheet({
   const label = moveNumberLabel(facts.ply + 1);
 
   return (
-    <Sheet label={t('Add a move')} onClose={onClose}>
+    // `fill`: this is a PAGE of the details sheet it opens over — browse
+    // what the field plays and pick one — so it takes that sheet's
+    // height rather than shrinking to its own list and reading as a
+    // second, smaller window stacked on the first.
+    <Sheet label={t('Add a move')} onClose={onClose} fill>
       <div className="flex items-center gap-3">
         {facts.fen && (
           <MiniBoard

@@ -35,11 +35,29 @@ export function Sheet({
   children,
   onClose,
   className,
+  fill = false,
 }: {
   label: string;
   children: ReactNode;
   onClose: () => void;
   className?: string;
+  /**
+   * Open as tall as the sheet this one was opened over, instead of as
+   * tall as its own content.
+   *
+   * For the sheets that are a PAGE of the one behind them — browse the
+   * field and pick a move, pick a study to link — where snapping from a
+   * two-thirds-height window to a shorter one reads as two windows
+   * rather than one window turning its page. Modal has had this for its
+   * second pages since the elite window; `useSheetCover` was already
+   * supplying the measurement, as a ceiling, and this is the same number
+   * used as a floor.
+   *
+   * NOT for the questions. A confirm is a sentence and two buttons, and
+   * stretching it over a whole screen to match its parent would be
+   * filling a window with nothing to say.
+   */
+  fill?: boolean;
 }) {
   const phone = useMediaQuery('(max-width: 39.9375rem)');
   const drag = useSheetDrag(onClose);
@@ -124,7 +142,12 @@ export function Sheet({
           if (phone) drag.ref(node);
         }}
         style={
-          phone ? { ...drag.style, ...(cap ? { maxHeight: cap } : undefined) } : undefined
+          phone
+            ? {
+                ...drag.style,
+                ...(cap ? { maxHeight: cap, ...(fill ? { minHeight: cap } : null) } : undefined),
+              }
+            : undefined
         }
         className={cn(
           // overscroll-contain for the same reason Modal has it: a scroll
