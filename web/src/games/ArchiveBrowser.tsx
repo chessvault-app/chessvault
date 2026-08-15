@@ -607,7 +607,7 @@ export function ArchiveBrowser({
   }, []);
 
 
-  const body = (
+  const head = (
     <>
       {/* pt-3, not flush under the header's rule: the tab bar is a raised
           control and sitting it straight against the line made the two
@@ -736,7 +736,15 @@ export function ArchiveBrowser({
           </div>
         )}
       </div>
+    </>
+  );
 
+  /**
+   * Everything under the search field. These rows separate themselves with
+   * RULES, not with space — the shape a Panel gives them.
+   */
+  const rows = (
+    <>
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (
         <div ref={archiveTop}>
@@ -1048,6 +1056,21 @@ export function ArchiveBrowser({
           </p>
         </div>
       )}
+    </>
+  );
+
+  const body = (
+    <>
+      {head}
+      {/* A window is a flex column with a 12px gap and 12px of padding, and
+          it applied both to every one of these rows: each rule floated a
+          gap below the row it was meant to divide, and was inset from
+          both edges besides — three seams down a list that shows none in
+          a panel. So in a window they go in ONE child, bled back out to
+          the card's edges; the rows' own px-3 puts their content exactly
+          where the card's padding had it, and the rules meet the sides.
+          A panel already stacks them flush and takes them as they are. */}
+      {place === 'window' ? <div className="-mx-3 flex flex-col">{rows}</div> : rows}
     </>
   );
 
