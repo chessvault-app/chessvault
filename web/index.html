@@ -205,6 +205,28 @@
       html.booting #root {
         visibility: hidden !important;
       }
+      /* And nothing under it may OWN a compositor layer meanwhile.
+         History: suppressing backdrop-filter alone was not enough (one
+         promotion reason removed, not the escape), so visibility:hidden
+         replaced it — and lanph3re's 2026-08 recording shows the escape
+         back anyway: the bottom bars' backdrop-blur promotes them to
+         their own layers, and WebKit composited one over the launch
+         screen for three frames, visibility notwithstanding. Hidden AND
+         unpromoted together leave it nothing to composite: no layer, no
+         paint, no order to get wrong. Boot is the one moment nothing may
+         blur, so the loss is invisible. */
+      html.booting #root * {
+        -webkit-backdrop-filter: none !important;
+        backdrop-filter: none !important;
+      }
+      /* Body-level portals (sheets, modals, pickers) render OUTSIDE
+         #root and would escape both rules above. Nothing portalled can
+         mean anything while the launch screen is up, so they are simply
+         not rendered — display, not visibility, because a display: none
+         subtree cannot create a compositor layer at all. */
+      html.booting body > :not(#root):not(#boot) {
+        display: none !important;
+      }
     </style>
     <script>
       // Set the theme class before first paint so dark-theme users never see a
