@@ -11,6 +11,8 @@ import { setJumpTarget } from '@/studies/jumpTarget';
 import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
 import { t } from '@/lib/i18n';
+import { useMediaQuery } from '@/lib/media';
+import { MobileActionBar } from '@/ui/MobileActionBar';
 import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
 import { Button } from '@/ui/Button';
 import { CanvasOverlay, CanvasShell } from '@/ui/CanvasShell';
@@ -195,6 +197,20 @@ export function OpeningMapView({ params }: { params: string[] }) {
     },
   ];
 
+  /**
+   * On a phone, selecting a dot used to be the same gesture as burying
+   * the map: the details arrived as a Sheet over the thing you had just
+   * asked a question about, so the lit mainline you selected FOR was
+   * behind it. Selection and inspection are two acts now. A tap lights
+   * the line and claims the bottom bar with the move's name; the details
+   * open from there, on purpose, and closing them leaves the dot still
+   * selected. A pointer device keeps both at once — the floating panel
+   * has never been in the map's way.
+   */
+  const phone = useMediaQuery('(max-width: 47.9375rem)');
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  useEffect(() => setDetailsOpen(false), [selectedId]);
+
   const empty = map !== null && map.root.children.length === 0;
   const panel =
     map && resolved && selected ? (
@@ -243,7 +259,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('Search the map')}
             aria-label={t('Search moves and opening names')}
-            className="bg-surface/90 w-44 backdrop-blur-md sm:w-64"
+            className="bg-surface/90 w-full backdrop-blur-md"
           />
         ) : null
       }
@@ -267,7 +283,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
             ))
           : null
       }
-      panel={panel && { label: t('Move details'), content: panel, onClose: () => setSelectedId(null) }}
+      // A phone gets the panel only once it has been asked for; a pointer
+      // device gets it with the selection, since it costs the map nothing.
+      panel={
+        panel && (!phone || detailsOpen)
+          ? {
+              label: t('Move details'),
+              content: panel,
+              onClose: () => (phone ? setDetailsOpen(false) : setSelectedId(null)),
+            }
+          : null
+      }
     >
       {/* The universe itself — no box, no border, edge to edge. */}
       {loaded && map && resolved && !empty && (
@@ -315,6 +341,44 @@ export function OpeningMapView({ params }: { params: string[] }) {
             }
           />
         </CanvasOverlay>
+      )}
+
+      {/* What a phone gets instead of an immediate Sheet: the selection
+          named in the bottom bar, the map still whole above it. The bar
+          is the app's own idiom for this — a leaf page claims the row
+          the global tabs were using — so leaving is the back chevron,
+          exactly as it is on the board and in a study. */}
+      {phone && selected && resolved && (
+        <MobileActionBar>
+          <div className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2">
+            <button
+              type="button"
+              className="min-w-0 flex-1 text-left"
+              onClick={() => setDetailsOpen(true)}
+            >
+              <span className="text-fg block truncate text-sm font-medium">
+                {resolved.nodes.get(selected)!.parentId === null
+                  ? t('Start position')
+                  : `${moveNumberLabel(resolved.nodes.get(selected)!.ply)} ${resolved.nodes.get(selected)!.mapNode.san ?? ''}`}
+              </span>
+              <span className="text-subtle block truncate text-xs">
+                {labels.get(selected) ?? t('Tap for details')}
+              </span>
+            </button>
+            <Button size="sm" onClick={() => setDetailsOpen(true)}>
+              {t('Details')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Clear selection')}
+              aria-label={t('Clear selection')}
+              onClick={() => setSelectedId(null)}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </MobileActionBar>
       )}
 
       {/* Phones only. A thumb wants these at the bottom of the screen; a
