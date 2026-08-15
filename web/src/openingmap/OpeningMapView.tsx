@@ -18,9 +18,9 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { CollectionArt } from '@/ui/EmptyArt';
 import { Field } from '@/ui/Field';
-import { Input, TextArea } from '@/ui/Input';
+import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
-import { Fab } from '@/ui/Fab';
+import { Fab, type FabAction } from '@/ui/Fab';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
@@ -130,6 +130,28 @@ export function OpeningMapView({ params }: { params: string[] }) {
     return out;
   }, [resolved, names]);
 
+  /**
+   * The search. It matches a node's move, the name you gave it and the
+   * name the catalogue gives its position, so "naj", "Bg5" and "6." all
+   * find something — and it answers by fading the rest of the
+   * constellation rather than by taking you somewhere. Where the hits sit
+   * relative to everything else IS the answer on a map; a result list
+   * that flies you to one dot throws that away.
+   */
+  const [query, setQuery] = useState('');
+  const matches = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle || !resolved) return null;
+    const out = new Set<string>();
+    for (const [id, facts] of resolved.nodes) {
+      const node = facts.mapNode;
+      const move = facts.parentId === null ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
+      const haystack = `${move} ${node.name ?? ''} ${labels.get(id) ?? ''}`.toLowerCase();
+      if (haystack.includes(needle)) out.add(id);
+    }
+    return out;
+  }, [query, resolved, labels]);
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A selection survives edits but not a map switch or its node's deletion.
   const selected = selectedId && resolved?.nodes.get(selectedId) ? selectedId : null;
@@ -156,6 +178,22 @@ export function OpeningMapView({ params }: { params: string[] }) {
     setAddError(null);
     setTypeFor(null);
   };
+
+  // The page's own controls, written once. The Fab fans them out as
+  // labelled pills on a phone; the top-right corner draws them as icons
+  // on anything with a pointer.
+  const mapActions: FabAction[] = [
+    {
+      label: color === 'white' ? 'Switch to the black map' : 'Switch to the white map',
+      icon: Repeat,
+      onSelect: () => (color === 'white' ? navigate('openingmap', 'black') : navigate('openingmap')),
+    },
+    {
+      label: 'Check coverage against…',
+      icon: Target,
+      onSelect: () => setOptionsOpen(true),
+    },
+  ];
 
   const empty = map !== null && map.root.children.length === 0;
   const panel =
@@ -197,6 +235,36 @@ export function OpeningMapView({ params }: { params: string[] }) {
           </span>
         </>
       }
+      actions={
+        loaded && map ? (
+          <>
+            <SearchInput
+              inputSize="sm"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('Search the map')}
+              aria-label={t('Search moves and opening names')}
+              className="bg-surface/90 w-36 backdrop-blur-md md:w-56"
+            />
+            {/* The same actions the Fab carries, as icons — a mouse
+                expects a page's controls in its corner, and a disc
+                floating over the desktop map was covering it. */}
+            {mapActions.map(({ label, icon: Icon, onSelect }) => (
+              <Button
+                key={label}
+                variant="ghost"
+                size="icon-sm"
+                title={t(label)}
+                aria-label={t(label)}
+                onClick={onSelect}
+                className="border-line bg-surface/90 hidden border backdrop-blur-md md:inline-flex"
+              >
+                <Icon className="size-3.5" />
+              </Button>
+            ))}
+          </>
+        ) : null
+      }
       panel={panel && { label: t('Move details'), content: panel, onClose: () => setSelectedId(null) }}
     >
       {/* The universe itself — no box, no border, edge to edge. */}
@@ -208,6 +276,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           gaps={field.source ? gaps : undefined}
           shares={field.source ? shares : undefined}
           labels={labels}
+          matches={matches}
           selectedId={selected}
           onSelect={setSelectedId}
         />
@@ -242,27 +311,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
         </CanvasOverlay>
       )}
 
-      {/* Every page-level control lives behind the one floating button,
-          and the button itself can be parked wherever the hand likes. */}
+      {/* Phones only. A thumb wants these at the bottom of the screen and
+          parked wherever it likes; a mouse wants them in the page's own
+          corner, which is where the desktop copy of this list lives. One
+          array feeds both, so they cannot drift apart. */}
       {loaded && map && (
         <Fab
           label={t('Map menu')}
           icon={Compass}
           dragKey="openingmap"
-          className="md:bottom-6"
-          actions={[
-            {
-              label: color === 'white' ? 'Switch to the black map' : 'Switch to the white map',
-              icon: Repeat,
-              onSelect: () =>
-                color === 'white' ? navigate('openingmap', 'black') : navigate('openingmap'),
-            },
-            {
-              label: 'Check coverage against…',
-              icon: Target,
-              onSelect: () => setOptionsOpen(true),
-            },
-          ]}
+          className="md:hidden"
+          actions={mapActions}
         />
       )}
 

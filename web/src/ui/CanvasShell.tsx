@@ -33,6 +33,7 @@ export function CanvasShell({
   title,
   back,
   meta,
+  actions,
   panel,
   children,
 }: {
@@ -41,6 +42,12 @@ export function CanvasShell({
   back?: () => void;
   /** Quiet trailing text beside the title — state, scope, save status. */
   meta?: ReactNode;
+  /**
+   * The page's own controls, in the opposite corner from the title: a
+   * search field, icon buttons, whatever the page runs on. Inset by the
+   * same gutter the title uses, so the two corners answer each other.
+   */
+  actions?: ReactNode;
   /**
    * The selection's detail column. It floats over the canvas on a pointer
    * device and becomes a Sheet on a phone, where an inset column would
@@ -71,7 +78,7 @@ export function CanvasShell({
           clicks, which left the back chevron dead on a phone for exactly
           as long as the map was failing to load. That is the one moment
           leaving the page is the only thing left to do. */}
-      <div className="pointer-events-none absolute left-4 top-3 z-10 flex items-baseline gap-2">
+      <div className="pointer-events-none absolute left-4 top-3 z-10 flex max-w-[55%] items-baseline gap-2">
         {back && (
           <Button
             variant="ghost"
@@ -83,9 +90,18 @@ export function CanvasShell({
             <ChevronLeft className="size-3.5" />
           </Button>
         )}
-        <h1 className="text-fg text-sm font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-fg shrink-0 text-sm font-semibold tracking-tight">{title}</h1>
         {meta}
       </div>
+
+      {/* The far corner, the same 1rem in from the edge. Its own children
+          decide what they are at each size — the map shows icon buttons
+          here on a pointer device and hands the same actions to its Fab
+          on a phone, where a row of small targets in the top corner is
+          the worst place on the screen to put them. */}
+      {actions && (
+        <div className="absolute right-4 top-3 z-10 flex items-center gap-1.5">{actions}</div>
+      )}
 
       {panel &&
         (phone ? (
@@ -98,7 +114,13 @@ export function CanvasShell({
             // the floating half is a complementary landmark, and one with
             // no name is a landmark nobody can choose from a list.
             aria-label={panel.label}
-            className="border-line bg-surface/90 absolute bottom-24 right-4 top-4 z-10 w-72 overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md"
+            // Starts below the action row rather than beside it, and ends
+            // a gutter off the bottom — the Fab it used to clear is gone
+            // at this size. Wide enough that its fields, its statistics
+            // rows and its button row stop wrapping: at 18rem nearly
+            // every line in it broke, which is a panel that is technically
+            // showing you something and practically hiding it.
+            className="border-line bg-surface/90 absolute bottom-6 right-4 top-14 z-10 w-[22rem] overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
           >
             {panel.content}
           </aside>
