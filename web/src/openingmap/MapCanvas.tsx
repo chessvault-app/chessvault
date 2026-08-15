@@ -20,6 +20,18 @@ import type { OpeningMap, ResolvedMap } from './model';
 const clip = (text: string, max: number): string =>
   text.length > max ? `${text.slice(0, max - 1)}…` : text;
 
+/**
+ * Above this many dots the map stops breathing and stops playing its
+ * arrival overture. Both animate by re-rendering the whole scene every
+ * frame, and the scene grows with the map — see the note on `breath`.
+ */
+const CALM_ABOVE = 160;
+
+/** How long a finger must rest on a dot before it moves the dot rather
+    than the map. Long enough not to fire while panning, short enough to
+    feel deliberate rather than broken. */
+const HOLD_MS = 350;
+
 /** One focused line wears the app's accent, as any other emphasis does. */
 const ACCENT = 'var(--color-primary)';
 /**
@@ -99,7 +111,11 @@ export function MapCanvas({
     const before = settledRef.current;
     const finals = new Map(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
     settledRef.current = { mapId: map.id, pos: finals };
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || graph.nodes.length < 2) {
+    if (
+      graph.nodes.length > CALM_ABOVE ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      graph.nodes.length < 2
+    ) {
       setAnim(null);
       return;
     }
@@ -169,15 +185,32 @@ export function MapCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.root]);
 
-  // The settled map still breathes: every dot wanders a few units
-  // around its home on slow layered sines, phases hashed from the id so
-  // nothing moves in sync. Edges and labels read the same positions, so
-  // the whole constellation floats rather than the dots slipping off
-  // their threads. Off for reduced motion; paused by the browser with
-  // the tab.
+  /**
+   * The settled map still breathes: every dot wanders a few units around
+   * its home on slow layered sines, phases hashed from the id so nothing
+   * moves in sync. Edges and labels read the same positions, so the whole
+   * constellation floats rather than the dots slipping off their threads.
+   * Off for reduced motion; paused by the browser with the tab.
+   *
+   * And off above `CALM_ABOVE` nodes. Every frame of this re-renders the
+   * whole scene through React, and the scene is roughly eight SVG
+   * elements per dot: a 63-node map is ~500 elements and floats, a
+   * 398-node map is 3,239 and was reported as laggy on the machine it
+   * was opened on. The layout is not the culprit — building it for those
+   * 398 nodes measures 38 ms, once — so what is left is asking React to
+   * reconcile three thousand elements sixty times a second, forever,
+   * for an idle flourish.
+   *
+   * A map big enough to be worth exploring is exactly the one that
+   * cannot afford to be animated the whole time it is open. (The frame
+   * rate itself is not measured here: this runs in a background tab
+   * under automation, where rAF is throttled and any number would be a
+   * lie about the foreground.)
+   */
   const [breath, setBreath] = useState(0);
+  const calmMap = graph.nodes.length > CALM_ABOVE;
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (calmMap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let frame = 0;
     const loop = (now: number): void => {
       setBreath(now / 1000);
@@ -185,7 +218,7 @@ export function MapCanvas({
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [calmMap]);
   const phases = useMemo(() => {
     const out = new Map<string, { a: number; w1: number; w2: number; p1: number; p2: number }>();
     for (const node of graph.nodes) {
@@ -336,7 +369,17 @@ export function MapCanvas({
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const moved = useRef(false);
 
+  /** A finger resting on a dot, not yet long enough to have claimed it. */
+  const holdTimer = useRef(0);
+  const cancelHold = (): void => {
+    if (!holdTimer.current) return;
+    clearTimeout(holdTimer.current);
+    holdTimer.current = 0;
+  };
+  useEffect(() => cancelHold, []);
+
   const dropNode = (): void => {
+    cancelHold();
     const drag = nodeDrag.current;
     if (!drag) return;
     letGo(drag.id);
@@ -713,18 +756,39 @@ export function MapCanvas({
                     // A capture that fails only costs pointerup routing.
                   }
                   const from = posOf(id);
-                  nodeDrag.current = {
-                    id,
-                    pointerId: e.pointerId,
-                    fromX: e.clientX,
-                    fromY: e.clientY,
-                    origX: from.x,
-                    origY: from.y,
-                    moved: false,
+                  const pointerId = e.pointerId;
+                  const fromX = e.clientX;
+                  const fromY = e.clientY;
+                  const begin = (): void => {
+                    nodeDrag.current = {
+                      id,
+                      pointerId,
+                      fromX,
+                      fromY,
+                      origX: from.x,
+                      origY: from.y,
+                      moved: false,
+                    };
                   };
+                  // A mouse claims the dot at once; a finger has to mean
+                  // it. On a map worth exploring there is barely any bare
+                  // canvas, so a finger that grabbed whatever it landed on
+                  // meant the map could not be moved at all — every drag
+                  // rearranged a dot instead of panning. Hold to move a
+                  // dot, otherwise the surface takes the gesture. This is
+                  // what every map app does with its pins, for this
+                  // reason.
+                  if (e.pointerType === 'touch') {
+                    holdTimer.current = window.setTimeout(begin, HOLD_MS);
+                  } else {
+                    begin();
+                  }
                 }}
                 onPointerMove={(e) => {
                   const drag = nodeDrag.current;
+                  // Moving before the hold has landed is a pan, so let go
+                  // of the dot and let the surface have it.
+                  if (!drag && holdTimer.current) cancelHold();
                   if (!drag || drag.id !== id || drag.pointerId !== e.pointerId) return;
                   const dx = e.clientX - drag.fromX;
                   const dy = e.clientY - drag.fromY;
@@ -743,11 +807,13 @@ export function MapCanvas({
                   }
                   // Let go of the dot but leave the loop running: what is
                   // still swinging coasts to a stop on its own.
+                  cancelHold();
                   letGo(id);
                   suppressClick.current = nodeDrag.current?.moved ?? false;
                   nodeDrag.current = null;
                 }}
                 onPointerCancel={() => {
+                  cancelHold();
                   letGo(id);
                   nodeDrag.current = null;
                 }}
