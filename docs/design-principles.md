@@ -58,8 +58,12 @@ digit is also bold, tier marks also differ by icon shape.
   eight copies.
 - Canvas pages (the opening map) sit in `ui/CanvasShell`: one surface
   edge to edge, with the chrome floating on it — a small corner title,
-  a detail panel that floats on a pointer device and becomes a Sheet on
-  a phone, and `CanvasOverlay` for the centred empty and error states.
+  the page's own controls in the opposite corner on the same gutter, a
+  detail panel that floats on a pointer device and becomes a Sheet on a
+  phone, and `CanvasOverlay` for the centred empty and error states.
+  A canvas page's Fab is phone-only, and its actions are one array the
+  corner draws as icons and the Fab fans out as pills — the same
+  two-presentations-one-list shape `CreateControl` uses.
   The surface *is* the page, so a header row or an inset side column
   would be carving space out of the only thing worth showing. This is
   also why a canvas cannot be a fourth width: a width answers how long

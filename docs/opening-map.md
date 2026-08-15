@@ -2,7 +2,8 @@
 
 *English · [한국어](opening-map.ko.md)*
 
-The Opening map (under Tools) shows your opening preparation as a tree:
+The Opening map (a top-level entry in the sidebar; on a phone it is
+under More) shows your opening preparation as a tree:
 one map for White, one for Black. You place the moves that define your
 repertoire — the root's children are your first moves, each node's
 children the replies you intend to meet — and link your studies and
@@ -71,8 +72,9 @@ continuation with its share of games and the W/D/L split as a bar,
 charted rows jumping to their node, unmet ones charting in a tap,
 popular unmet ones framed in warning — and reports how much of the
 field the node meets ("62% of games met"). The check is off until a
-source is chosen — in the map's floating menu, which also switches the
-colour — and the choice is device-local; answers are cached per
+source is chosen — from the map's own controls, which also switch the
+colour: icon buttons in the page's top-right corner on a pointer
+device, the floating button on a phone — and the choice is device-local; answers are cached per
 session, and a source that fails (a rate limit, a network blip) is
 retried after a pause rather than remembered as empty.
 
@@ -118,10 +120,17 @@ The map draws as a graph view — the constellation the vault's Obsidian
 ancestry promises. Circles are sized by what hangs beneath them — and,
 while a field source is on, by how often the move actually gets played
 at its parent, so the fat dots are the crowd and the small ones the
-sidelines. Edges to each node's most-played child draw in the accent
-colour, so the mainlines read as a lit spine — follow the coloured
-edges from the root and you are walking the line the field walks; the
-selected node's own lineage answers in bright foreground. The
+sidelines. The accent colour is spent on the mainline and
+nothing else: the ordinary dots are neutral so that the line the field
+actually walks — from the root, always taking the most-played
+continuation — reads as a lit spine you can follow at a glance, thicker
+as well as brighter. Where a node genuinely branches, its pick among
+the options is marked too, more quietly. A chain with no choice in it
+gets no mark, because there was no choice to report. (Marking every
+node's most-played child sounds like the same rule and is not: an only
+child is trivially the most played, so on a 63-node map it lit 54 of 63
+edges and the emphasis read as noise.) The selected node's own lineage
+answers over all of it in bright foreground. The
 layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots
@@ -132,10 +141,19 @@ keep breathing — a slow, few-pixel wander around their homes, threads
 following — so the constellation floats instead of freezing. (All of
 it skipped when the OS asks for reduced motion.) Wheel zooms to the
 cursor, dragging the ground pans, two fingers pinch, and dragging a
-dot moves the dot — mouse or touch — pinning it there for the session
-while the stored layout stays deterministic. Labels keep their screen
+dot pulls the web — mouse or touch. The held dot follows the finger,
+its neighbours follow their springs, crowding pushes back, and the
+whole thing coasts to a stop after the release instead of freezing
+mid-swing. Where you leave things is where they stay, for the session;
+the stored layout stays deterministic either way. (Reduced motion gets
+the plain version: the held dot moves and nothing else.) Labels keep their screen
 size and fade out as the view pulls
-back — far out you read the shape, close in you read the names.
+back — far out you read the shape, close in you read the names. The
+search field in the top-right corner fades the map back to just its
+hits — matching a move, a name you gave a node, or the catalogue's name
+for its position — and a hit keeps its label whatever the zoom, so the
+answer is *where these sit in the constellation* rather than a list
+that takes you to one and loses the map.
 Covered nodes are filled, plans are hollow and dashed, and the badges
 (field gaps, drill health, the depth arc) ride on the dots. Beneath it
 all, each node wears a faint halo tinted by its opening family — the
