@@ -43,12 +43,15 @@ is one connected body of work, and the links are what make it that.
 - **Editor** — set up any position; drag pieces from the palette, or
   import from an image.
 - **Studies** — PGN chapter studies with variations, per-move comments,
-  NAGs and drawn arrows; a reading/annotating toggle keeps the board
-  uncluttered when you're just stepping through. Import a PGN file, paste
-  one, or pull studies straight from a Lichess account. Autosave with
-  atomic writes; saving is a codec round-trip, and `shared/pgn.test.ts`
-  asserts it is lossless *and* idempotent — a lossy codec would quietly
-  erode a vault.
+  NAGs and drawn arrows; the pieces move whether you're reading or
+  annotating, and the annotating toggle keeps the board uncluttered when
+  you're just stepping through. Import a PGN file, paste one, or pull
+  studies straight from a Lichess account. You save when you choose to
+  (auto-save is a setting, off by default), with an unsaved badge, a
+  question on the way out, and a copy parked in the vault so a browser
+  that dies doesn't take the work with it. Writes are atomic, and saving
+  is a codec round-trip that `shared/pgn.test.ts` asserts is lossless
+  *and* idempotent — a lossy codec would quietly erode a vault.
 - **Notes** — markdown notes with embedded interactive boards
   (```` ```chess ```` fences) and Obsidian-style `[[wiki-links]]`
   across notes, studies and games. Files stay Obsidian-readable.

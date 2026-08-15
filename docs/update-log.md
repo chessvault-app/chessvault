@@ -7,6 +7,32 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **You save when you choose to, and the pieces move while you read.**
+  Games, studies and notes used to write themselves every 1.5 seconds,
+  and edit mode existed to stop a reader overwriting what they were
+  reading — which is why the board refused a move until you pressed the
+  pencil. Nothing is written unasked now, so the guard has nothing to
+  guard: the board is live in both modes, and the pencil is what it
+  always looked like, a toggle for the NAG palette, comment boxes and
+  move surgery. A change made either way is one pending change, with an
+  unsaved badge, a Save and a discard beside it, `Ctrl/⌘ S`, and a
+  Save / Discard / Stay here question on the way out — including the
+  browser's own Back button. Auto-save is a setting under Settings ›
+  Documents, off by default; turning it on restores the old behaviour
+  exactly. Three things that used to be thrown away silently — following
+  an engine line, playing an explorer move, promoting a variation — are
+  now ordinary pending changes you can keep. Turning the board round
+  still doesn't count as an edit.
+- **A document keeps its unsaved copy in the vault.** Manual save has a
+  hole in it: the pending buffer only ever exists in a tab, so a browser
+  that dies takes it. A copy is now parked beside the document a few
+  seconds after the last edit, and finding one on open offers it back —
+  restore it, or throw it away. It comes back unsaved, so you can look
+  before you keep it, and nothing is applied behind your back. Because
+  the copy is in the vault rather than the browser, a phone that dies
+  mid-annotation is recoverable at the desk. The parked copy travels with
+  a rename, dies with a delete, is dropped the moment you save or
+  discard, and never enters the vault's history repo.
 - **The app opens with a launch screen, on phones only.** An installed
   app gets an OS splash and then an app-coloured nothing for as long as
   the chunks take; this covers that gap with the same knight on the same
