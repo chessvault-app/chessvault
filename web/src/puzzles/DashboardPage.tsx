@@ -1,11 +1,9 @@
 import { BookMarked, Check, ChevronRight, Eraser, Eye, RotateCcw, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
-import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
@@ -15,7 +13,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { BANDS, bandOf } from './bands';
-import { suppressNextClick } from '@/lib/suppressNextClick';
+import { usePuzzlePreview } from './PuzzlePreview';
 import { t } from '@/lib/i18n';
 
 /**
@@ -90,54 +88,10 @@ export function DashboardPage() {
   const [resultFilter, setResultFilter] = useState<ResultFilter>('all');
   const [bandFilter, setBandFilter] = useState<BandFilter>('any');
 
-  // Hovering a row's eye pops the puzzle's starting position (after the
-  // setup move, from the solver's side). Fetched lazily, cached by id.
-  const [preview, setPreview] = useState<{
-    fen: string;
-    orientation: 'white' | 'black';
-    top: number;
-    left: number;
-  } | null>(null);
-  const puzzleCache = useRef<Map<string, ApiPuzzle>>(new Map());
-  const previewSeq = useRef(0);
-  const showPreview = async (id: string, anchor: Element): Promise<void> => {
-    const seq = ++previewSeq.current;
-    let cached = puzzleCache.current.get(id);
-    if (!cached) {
-      const res = await fetch(`/api/puzzles/by-id/${encodeURIComponent(id)}`);
-      if (!res.ok) return;
-      cached = ((await res.json()) as { puzzle: ApiPuzzle }).puzzle;
-      puzzleCache.current.set(id, cached);
-    }
-    if (seq !== previewSeq.current) return; // pointer moved on
-    // Unmounted while the fetch was out (removal fires no mouseleave):
-    // a dead node measures 0,0 and the preview would draw in the corner.
-    if (!anchor.isConnected) return;
-    const rect = anchor.getBoundingClientRect();
-    setPreview({
-      fen: positionAt(cached, 1).fen,
-      orientation: solverColor(cached),
-      top: Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200),
-      left: Math.max(rect.left - 192, 8),
-    });
-  };
-  const hidePreview = (): void => {
-    previewSeq.current += 1;
-    previewFor.current = null;
-    setPreview(null);
-  };
-  // Coarse pointers can't hover: the eye TAPS the preview open and a
-  // second tap (or another row's) dismisses it.
-  const previewFor = useRef<string | null>(null);
-  const [coarse] = useState(() => window.matchMedia('(pointer: coarse)').matches);
-  const togglePreview = (id: string, anchor: Element): void => {
-    if (previewFor.current === id) {
-      hidePreview();
-    } else {
-      previewFor.current = id;
-      void showPreview(id, anchor);
-    }
-  };
+  // The eye on each row, and the board it pops. Shared with the hub's
+  // recent rows — see PuzzlePreview.
+  const preview = usePuzzlePreview();
+
   const latestById = new Map<string, HistoryEntry>();
   const trained = new Set<string>();
   for (const h of history ?? []) {
@@ -358,22 +312,11 @@ export function DashboardPage() {
                     )}
                     <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
                     <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-                    <Eye
-                      className="text-subtle hover:text-fg ml-auto size-3.5 shrink-0"
-                      aria-label={t('Preview the position')}
-                      onMouseEnter={(e) => {
-                        if (!window.matchMedia('(pointer: coarse)').matches)
-                          void showPreview(h.id, e.currentTarget);
-                      }}
-                      onMouseLeave={() => {
-                        if (!window.matchMedia('(pointer: coarse)').matches) hidePreview();
-                      }}
-                      onClick={(e) => {
-                        if (!window.matchMedia('(pointer: coarse)').matches) return;
-                        e.stopPropagation();
-                        togglePreview(h.id, e.currentTarget);
-                      }}
-                    />
+                    {(() => {
+                      const eye = preview.eyeProps(h.id);
+                      // ml-auto is this list's own layout, not the eye's.
+                      return <Eye {...eye} className={cn(eye.className, 'ml-auto')} />;
+                    })()}
                     <span
                       className="text-subtle w-16 shrink-0 text-right tabular-nums"
                       title={formatWhen(h.at)}
@@ -387,39 +330,7 @@ export function DashboardPage() {
           )}
         </Panel>
 
-      {preview && (
-        <>
-        {/* Touch has no hover to leave, so a tapped-open preview stayed
-            until you tapped its own eye again — anywhere else did nothing.
-            A transparent sheet catches that tap and dismisses. Coarse
-            pointers only: on a mouse this would sit between the cursor and
-            every other row, and hovering is how it opens. */}
-        {coarse && (
-          <div
-            className="fixed inset-0 z-40"
-            onPointerDown={() => {
-              hidePreview();
-              suppressNextClick();
-            }}
-          />
-        )}
-        <div
-          style={{ top: preview.top, left: preview.left }}
-          className={cn(
-            'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
-            'shadow-[var(--shadow-pop)]',
-          )}
-        >
-          <Board
-            fen={preview.fen}
-            orientation={preview.orientation}
-            viewOnly
-            coordinates={false}
-            className="rounded"
-          />
-        </div>
-        </>
-      )}
+      {preview.layer}
     </PageShell>
   );
 }

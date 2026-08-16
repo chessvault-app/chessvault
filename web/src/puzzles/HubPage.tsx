@@ -23,6 +23,7 @@ import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/ui/KingIcon';
 import { bandOf, difficultyQuery, difficultyWord, storedDifficulty } from './bands';
 import { setPendingPuzzle, type HandoffMode } from './handoff';
+import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { fetchSolvedToday } from './today';
 
@@ -178,7 +179,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
     <div className="bg-surface border-line overflow-hidden rounded-xl border">
       <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-        {t('Continue')}
+        {t('Recently read')}
       </p>
       {books.map((b) => (
         <button
@@ -225,10 +226,13 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
  * Difficulty is a word (`bandOf`), never the rating behind it.
  */
 function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
+  // The same eye the dashboard's log has: an id and a difficulty word do
+  // not identify a position you spent two minutes on, but the board does.
+  const preview = usePuzzlePreview();
   return (
     <div className="bg-surface border-line overflow-hidden rounded-xl border">
       <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-        {t('Recent')}
+        {t('Puzzle history')}
       </p>
       {attempts.map((h) => (
         <button
@@ -245,11 +249,13 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
           )}
           <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
           <span className="text-subtle min-w-0 flex-1 truncate">{t(bandOf(h.puzzleRating))}</span>
+          <PreviewEye {...preview.eyeProps(h.id)} />
           <span className="text-subtle shrink-0 tabular-nums" title={formatWhen(h.at)}>
             {formatAgo(h.at)}
           </span>
         </button>
       ))}
+      {preview.layer}
     </div>
   );
 }
@@ -353,19 +359,19 @@ function Hub() {
     // page that moves. `pb-4` replaces the shell's usual 2rem + safe
     // area: the tab bar below carries the inset itself, and dead space
     // under the buttons is the opposite of what this page is for.
-    <PageShell width="medium" className="min-h-full pb-3">
+    <PageShell width="medium" className="min-h-full gap-2 pb-3">
       <PageHeader title={t('Puzzles')} />
 
-      {/* Top of the page, not in the bottom cluster: this is the one
-          block you READ rather than press blind, and it is also the one
-          that grows. Keeping it under the header leaves the slack between
-          it and the launcher instead of between the title and everything
-          — a page whose heading floats alone above 300px of nothing reads
-          as broken rather than as roomy. */}
-      {books.length > 0 && <BookShelfPanel books={books} />}
-      {history.length > 0 && <HistoryPanel attempts={history} />}
-
+      {/* Everything in ONE bottom-anchored block, panels included.
+          They sat above it for a while, which put the page's slack
+          between the history and the first board — the widest gap on the
+          page, in the middle of the reading, growing every time anything
+          above it got shorter. `mt-auto` has to dump the slack somewhere;
+          under the header is the one place where a gap reads as air
+          rather than as a seam. */}
       <div className="mt-auto flex flex-col gap-2">
+        {books.length > 0 && <BookShelfPanel books={books} />}
+        {history.length > 0 && <HistoryPanel attempts={history} />}
         {solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
