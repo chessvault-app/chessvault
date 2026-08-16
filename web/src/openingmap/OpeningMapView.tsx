@@ -1,4 +1,5 @@
 import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -636,6 +637,52 @@ export function OpeningMapView({ params }: { params: string[] }) {
 }
 
 /**
+ * One column of the node panel's footer toolbar.
+ *
+ * Shared with the delete action, which is a ConfirmSheet rather than a
+ * Button and takes this as its trigger's class list — so the five
+ * columns keep one geometry instead of two that drift.
+ *
+ * `shrink flex-1` undoes Button's own `shrink-0`: every column is a
+ * fifth of the panel, whatever its word is. `h-auto` and the padding
+ * undo the `sm` size's fixed height, since these are two lines tall.
+ * `[&_svg]:size-4` reaches ConfirmSheet's icon, which sets its own.
+ */
+const PANEL_ACTION =
+  'h-auto min-w-0 shrink flex-1 flex-col gap-1 rounded-lg px-1 py-1.5 text-[0.6875rem] [&_svg]:size-4';
+
+function PanelAction({
+  icon: Icon,
+  label,
+  title,
+  disabled,
+  onSelect,
+}: {
+  icon: LucideIcon;
+  /** The verb under the icon — one word, in a 4rem column. */
+  label: string;
+  /** What the column means, in full, on hover and to a screen reader. */
+  title: string;
+  disabled?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      title={t(title)}
+      aria-label={t(title)}
+      disabled={disabled}
+      onClick={onSelect}
+      className={PANEL_ACTION}
+    >
+      <Icon />
+      <span className="min-w-0 max-w-full truncate">{t(label)}</span>
+    </Button>
+  );
+}
+
+/**
  * One choice in a laid-out list: every option visible, the picked one
  * marked. Applies on touch, so there is nothing to confirm — the shape
  * the engine and puzzle settings lists already use.
@@ -1008,24 +1055,41 @@ function NodePanel({
 
           Phone-shaped sheets keep it in the flow: a sheet is as tall as
           its content, ends where the thumb is, and has nothing to pin
-          against. */}
-      <div className="md:border-line md:bg-surface flex flex-wrap items-center gap-2 md:sticky md:bottom-[-1rem] md:z-10 md:-mx-4 md:-mb-4 md:mt-auto md:border-t md:px-4 md:py-3">
-        <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
-          <Plus className="size-3.5" /> {t('Add a move')}
-        </Button>
-        <Button
-          size="sm"
-          onClick={onGrow}
+          against.
+
+          Five columns, icon over caption, rather than five buttons in a
+          row: five labelled buttons cannot fit across 22rem and never
+          could, so they wrapped — four and then one, which reads as a
+          row that ran out of room rather than as a set of five things
+          you can do. The shape is the app's own; the phone's tab bar is
+          exactly this. The captions are the verb alone, with the full
+          sentence on the tooltip, because a column is 4rem wide and
+          "Add a move" under a plus says nothing the plus did not. */}
+      <div className="md:border-line md:bg-surface flex items-stretch gap-1 md:sticky md:bottom-[-1rem] md:z-10 md:-mx-4 md:-mb-4 md:mt-auto md:border-t md:px-2 md:py-2">
+        <PanelAction
+          icon={Plus}
+          label="Add"
+          title="Add a move"
           disabled={facts.fen === null}
-          title={t('Chart what your games already play from here')}
-        >
-          <Sparkles className="size-3.5" /> {t('Grow')}
-        </Button>
-        <Button
-          size="sm"
+          onSelect={onAddMove}
+        />
+        <PanelAction
+          icon={Sparkles}
+          label="Grow"
+          title="Chart what your games already play from here"
+          disabled={facts.fen === null}
+          onSelect={onGrow}
+        />
+        <PanelAction
+          icon={Swords}
+          label="Drill"
+          title={
+            coverage?.covered
+              ? 'Drill from here'
+              : 'Link a study first — a drill needs prepared moves'
+          }
           disabled={!coverage?.covered}
-          title={coverage?.covered ? undefined : t('Link a study first — a drill needs prepared moves')}
-          onClick={() => {
+          onSelect={() => {
             // The trainer takes the map's whole repertoire — every scoped
             // chapter of every tagged study — starting from this node.
             const entries = scopedEntries(collectStudyTags(map));
@@ -1038,13 +1102,13 @@ function NodePanel({
             });
             navigate('repertoire');
           }}
-        >
-          <Swords className="size-3.5" /> {t('Drill')}
-        </Button>
-        <Button
-          size="sm"
+        />
+        <PanelAction
+          icon={Grid3x3}
+          label="Analyse"
+          title="Analyse"
           disabled={facts.treeId === null}
-          onClick={() => {
+          onSelect={() => {
             // The map's own scratch tree, the drill's handoff pattern: the
             // board opens on this node, facing the map's colour.
             useAnalysis.setState({
@@ -1056,19 +1120,17 @@ function NodePanel({
             });
             navigate('analysis');
           }}
-        >
-          <Grid3x3 className="size-3.5" /> {t('Analyse')}
-        </Button>
+        />
         {!isRoot && (
           <ConfirmSheet
             icon={Trash2}
-            label={t('Delete')}
+            label="Delete"
             triggerTitle={t('Delete this move')}
-            // The only destructive thing in this row, which is exactly
-            // what ConfirmSheet says `danger` is for: a tinted red card
-            // that matches the other buttons instead of a bare glyph
-            // sitting apart from them.
-            triggerTone="danger"
+            // A column like the other four, in the destructive colour —
+            // not `danger`, whose tinted card was right for a row of
+            // bordered buttons and would be a red block in a toolbar of
+            // bare ones. See PanelAction for the shared geometry.
+            triggerClassName={cn(PANEL_ACTION, 'text-bad hover:bg-bad/12 hover:text-bad')}
             question={t('Delete this move and everything after it? Linked studies are untouched.')}
             confirmLabel={t('Delete')}
             onConfirm={() => {

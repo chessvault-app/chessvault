@@ -556,6 +556,7 @@ export const ko: Record<string, string> = {
   'Delete this move and everything after it? Linked studies are untouched.':
     '이 수와 그 이후를 모두 삭제할까요? 연결된 스터디는 그대로 남습니다.',
   Drill: '드릴',
+  'Drill from here': '여기서 드릴하기',
   'Whole map': '맵 전체',
   'Link a study first — a drill needs prepared moves':
     '먼저 스터디를 연결하세요 — 드릴에는 준비된 수가 필요합니다',
