@@ -16,7 +16,7 @@ import { DATA, REPO_ROOT, VAULT_SOURCES } from './paths.ts';
  * Reference games — whole games with movetext, browsable and searchable
  * from the Games tab, built from PGN collections in vault/sources.
  *
- * Plural, like opening books: `data/refgames/<name>.sqlite`, each an
+ * Plural: `data/refgames/<name>.sqlite`, each an
  * independent database (an Elite month, an OTB collection, a club's
  * games), listed and chosen in the elite browser. Replacing one is
  * therefore not a special case any more — build a new name beside it and
