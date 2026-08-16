@@ -299,7 +299,7 @@ export function EngineBlock({ className }: { className?: string }) {
             )}
           </ul>
           {planLine && plan && (
-            <p className="text-subtle flex items-baseline gap-1.5 px-3 pt-0.5 pb-1.5 text-xs">
+            <p className="group text-subtle flex items-baseline gap-1.5 px-3 pt-0.5 pb-1.5 text-xs">
               {!planQuiet && <SideDot side={plan.side} className="size-1.5 self-center" />}
               <span className="text-muted shrink-0 font-medium">
                 {planQuiet
@@ -308,7 +308,20 @@ export function EngineBlock({ className }: { className?: string }) {
                     ? t('White’s plan:')
                     : t('Black’s plan:')}
               </span>
-              <span className="min-w-0">{planLine}</span>
+              {/* One line at rest, like the lines above it. A three-gesture
+                  plan wrapped to a second line and a two-gesture one did
+                  not, so the pane changed height as the search deepened and
+                  shoved the moves list under the reader's pointer. Hovering
+                  opens it in full; a coarse pointer, which has no hover to
+                  open it with, keeps the wrap and pays the row instead. */}
+              <span
+                className={cn(
+                  'min-w-0 truncate',
+                  'pointer-coarse:whitespace-normal pointer-fine:group-hover:whitespace-normal',
+                )}
+              >
+                {planLine}
+              </span>
             </p>
           )}
           <ExplainCard
