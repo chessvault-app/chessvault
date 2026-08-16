@@ -82,7 +82,13 @@ export function Segmented<T extends string>({
             onClick={() => onChange(id)}
             style={on && accent ? { color: accent } : undefined}
             className={cn(
-              'flex min-w-0 flex-1 items-center justify-center gap-1.5',
+              // whitespace-nowrap: a segment is one or two words by
+              // definition, and `min-w-0` lets a crowded row squeeze it
+              // narrower than they are. Beside a filter field in Korean
+              // that broke "스터디" across two lines inside a 28px-tall
+              // pill — a control taller than its track. It shrinks the
+              // row's flexible neighbour instead now.
+              'flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap',
               'font-medium transition-colors duration-100',
               seg,
               on
