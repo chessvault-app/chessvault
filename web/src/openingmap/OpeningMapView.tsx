@@ -3,7 +3,8 @@ import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { treeToPgn } from '@shared/pgn';
-import { api, apiErrorMessage } from '@/lib/api';
+import { sanitizeSegment } from '@shared/vaultNames';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { fenKey } from '@/repertoire/drill';
 import { fieldDatabases, MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
@@ -782,13 +783,33 @@ function NodePanel({
         tree = added.tree;
         tip = added.nodeId;
       }
-      const { id } = await api<{ id: string }>('/api/studies', {
-        method: 'POST',
-        json: {
-          name: node.name ?? lineName ?? title,
-          pgn: treeToPgn(tree, { Event: t('Opening map') }),
-        },
-      });
+      const pgn = treeToPgn(tree, { Event: t('Opening map') });
+      /**
+       * The name is one this vault can hold, not one the catalogue
+       * happens to use. "C60 Ruy Lopez: Morphy Defence" has a colon in
+       * it, which a filename may not, and the route answered with the
+       * rule rather than the study — a button that fails on most of the
+       * openings there are. `sanitizeSegment` is the same pass every
+       * imported Lichess title goes through.
+       *
+       * And a name already taken gets a number rather than an error: a
+       * whole family of nodes shares one catalogue name, so the second
+       * study from the Sicilian is the common case, not the odd one.
+       */
+      const wanted = sanitizeSegment(node.name ?? lineName ?? title, t('Untitled study'));
+      let id: string | null = null;
+      for (let n = 1; n <= 20 && id === null; n += 1) {
+        try {
+          const made = await api<{ id: string }>('/api/studies', {
+            method: 'POST',
+            json: { name: n === 1 ? wanted : `${wanted} ${n}`, pgn },
+          });
+          id = made.id;
+        } catch (error) {
+          if (!(error instanceof ApiError) || error.status !== 409) throw error;
+        }
+      }
+      if (id === null) throw new ApiError(409, t('a study with that name exists'));
       apply((d) => addTag(d, map.id, node.id, { kind: 'study', id }));
     } catch (error) {
       setMakeError(apiErrorMessage(error));
