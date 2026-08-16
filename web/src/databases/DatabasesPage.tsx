@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
-import { RefDbManager, type RefDb } from '@/games/EliteGames';
+import { RefDbManager, type RefDb } from './RefDbManager';
 import { t } from '@/lib/i18n';
 
 /**
