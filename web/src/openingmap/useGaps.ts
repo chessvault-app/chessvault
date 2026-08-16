@@ -194,6 +194,12 @@ export function useGaps(
       // 398-node map.
       const BATCH = 128;
       let first = true;
+      // What a batch left unanswered. The online source's batch route
+      // answers only from its disk cache, so a miss is unanswered, not
+      // empty — caching it as empty would blank that dot's statistics
+      // for the whole session. These go to the single-position lanes,
+      // which are what fill the cache the next sweep answers from.
+      const unanswered: typeof queue = [];
       while (live && queue.length > 0) {
         const chunk = queue.splice(0, BATCH);
         let answers: Map<string, FieldMove[]> | null = null;
@@ -201,6 +207,8 @@ export function useGaps(
           answers = await fetchFieldBatch(
             source,
             chunk.map((n) => n.fen),
+            ratings,
+            side,
           );
         } catch {
           // A batch that fails hands its chunk to the single-position
@@ -211,19 +219,25 @@ export function useGaps(
           queue.unshift(...chunk);
           return;
         }
-        for (const { fen } of chunk) cacheField(source, ratings, fen, side, answers.get(fen) ?? []);
+        for (const item of chunk) {
+          const moves = answers.get(item.fen);
+          if (moves) cacheField(source, ratings, item.fen, side, moves);
+          else unanswered.push(item);
+        }
         // Every publish re-renders the whole scene, and on a 398-node
         // map that is three thousand SVG elements — measured from the
         // server's own log, the batches were arriving about one per
         // SECOND while each took 13ms to answer, which is the render
         // between them and nothing else. So: once immediately, because
         // the first chunk is the shallowest and most visible positions
-        // and the map should colour at once, then sparingly.
-        if (live && (first || Date.now() - published > 1000)) {
+        // and the map should colour at once, then sparingly — and never
+        // for a chunk that answered nothing at all.
+        if (live && answers.size > 0 && (first || Date.now() - published > 1000)) {
           first = false;
           publish();
         }
       }
+      queue.push(...unanswered);
     };
 
     const worker = async (): Promise<void> => {

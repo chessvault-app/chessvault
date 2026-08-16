@@ -59,26 +59,40 @@ export const RATING_BANDS: { label: string; ratings: string }[] = [
 ];
 
 /**
- * The same question for MANY positions in one request, where the source
- * can answer it that way.
+ * The same question for MANY positions in one request, answered with
+ * whatever the source can say at once.
  *
- * Only the local reference databases can: the Lichess proxy has no batch
- * endpoint, and own-games answers a different shape per side. Returns
- * null when the source cannot batch, so the caller falls back to asking
- * one at a time rather than guessing.
+ * The local sources — reference databases and the vault's own games —
+ * answer every position, each behind its own batch route. The Lichess
+ * proxy answers only what its disk cache holds: the public explorer
+ * takes one position per request, and no proxy can change that. So the
+ * map is PARTIAL: a position missing from it is unanswered, not empty,
+ * and the caller asks for it one at a time. Returns null only when there
+ * is no source.
  *
  * This exists because the opening map asks about every charted position
  * at once. Measured on a real 280k-game database, a lookup takes well
  * under a millisecond — the seconds were all round trips, and a browser
  * runs about six of those at a time to one origin however many the
  * caller starts.
+ *
+ * `ratings` matters to the online source alone; `side` to the own-games
+ * source alone (whose games count).
  */
 export async function fetchFieldBatch(
   source: string,
   fens: string[],
+  ratings: string,
+  side?: 'white' | 'black',
 ): Promise<Map<string, FieldMove[]> | null> {
-  if (source === ONLINE_SOURCE || source === MY_GAMES_SOURCE || !source) return null;
-  const res = await fetch(`/api/refgames/explore-batch?db=${encodeURIComponent(source)}`, {
+  if (!source) return null;
+  const url =
+    source === ONLINE_SOURCE
+      ? `/api/explorer/lichess/batch?ratings=${ratings}`
+      : source === MY_GAMES_SOURCE
+        ? `/api/mygames/explore-batch${side ? `?side=${side}` : ''}`
+        : `/api/refgames/explore-batch?db=${encodeURIComponent(source)}`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ fens }),
