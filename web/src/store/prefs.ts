@@ -188,8 +188,9 @@ interface PrefsState {
    * behaviour — a 1.5s debounce after the last edit.
    *
    * Here rather than in the vault config for three reasons. The demo
-   * serves /api/settings as a fixed object with no PUT, so a vault
-   * setting would be dead in the app most people meet first. The
+   * writes /api/settings out by hand (the real module wants node:crypto),
+   * so a vault setting is dead in the app most people meet first unless
+   * the demo is taught that one route too — as home's layout was. The
    * consumers are module-level subscribers outside React, where
    * getState() is a synchronous always-current read and a fetched
    * setting would need caching and invalidation for one boolean. And it

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { installBuffer } from './nodeShim/buffer.ts';
 import { seedFile } from './nodeShim/fs.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
+import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { mountVault } from '../../../server/mountVault.ts';
 import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
@@ -57,17 +58,41 @@ function buildApp(): Hono {
   });
 
   app.get('/api/health', (c) => c.json({ ok: true, crossOriginIsolated: false, demo: true }));
+  /**
+   * Settings is the one API written out here rather than mounted: the real
+   * module reaches for node:child_process and node:crypto, which the demo
+   * config does not shim.
+   *
+   * Home's arrangement is the exception it has to answer for real, or the
+   * customise sheet would be a control that does nothing in the app most
+   * people meet first. It lives in a variable for the life of the tab —
+   * the same promise the demo banner already makes about every edit made
+   * here — and is validated by the shared normaliser, so the demo cannot
+   * accept a layout the real route would refuse.
+   */
+  let home: HomeLayout | null = null;
   app.get('/api/settings', (c) =>
     c.json({
       profile: {},
       gate: false,
       totp: false,
       lichess: { configured: false, last4: null },
+      home,
       vaultPath: 'demo',
       version: 'demo',
       demo: true,
     }),
   );
+  app.put('/api/settings/home', async (c) => {
+    const next = normaliseHomeLayout(await c.req.json().catch(() => null));
+    if (!next) return c.json({ error: 'invalid home layout' }, 400);
+    home = next;
+    return c.json({ ok: true });
+  });
+  app.delete('/api/settings/home', (c) => {
+    home = null;
+    return c.json({ ok: true });
+  });
   /**
    * The opening explorer, served from the demo's own reference games.
    *

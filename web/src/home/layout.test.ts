@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { normaliseHomeLayout } from '@shared/homeLayout';
-import { chartedMoves, DEFAULT_TILES, HOME_ENTRY_IDS, resolveHomeLayout } from './layout.ts';
+import {
+  chartedMoves,
+  DEFAULT_TILES,
+  HOME_ENTRY_IDS,
+  launcherColumns,
+  resolveHomeLayout,
+} from './layout.ts';
 
 /** A stand-in catalogue: the resolver only needs ids, and a fixture keeps
     this file clear of the icons the real catalogue carries. */
@@ -85,6 +91,28 @@ describe('chartedMoves', () => {
     for (const junk of [null, undefined, 42, {}, { maps: 'white' }, { maps: [null] }, { maps: [{}] }]) {
       expect(chartedMoves(junk)).toBe(0);
     }
+  });
+});
+
+describe('launcherColumns', () => {
+  it('gives a short row one line', () => {
+    for (let n = 1; n <= 5; n++) expect(launcherColumns(n)).toBe(n);
+  });
+
+  it('never leaves a single button alone on the last line', () => {
+    // The whole point: 5+1 was the shape this row was built to avoid.
+    // Every count the catalogue can produce is checked, plus room to grow.
+    for (let n = 6; n <= 20; n++) {
+      const last = n % launcherColumns(n);
+      expect(last === 0 || last >= 2).toBe(true);
+    }
+  });
+
+  it('prefers five, and drops to four only when five would strand one', () => {
+    expect(launcherColumns(6)).toBe(4);
+    expect(launcherColumns(7)).toBe(5);
+    expect(launcherColumns(11)).toBe(4);
+    expect(launcherColumns(12)).toBe(5);
   });
 });
 

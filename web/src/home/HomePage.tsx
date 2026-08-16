@@ -1,14 +1,24 @@
-import { BookOpen, Check, ChevronRight, Grid3x3, Library, Puzzle, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { BookOpen, Check, ChevronRight, Grid3x3, Library, Puzzle, SlidersHorizontal, X } from 'lucide-react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
+import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { BANDS } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
-import { chartedMoves, resolveHomeLayout } from './layout';
+import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
+
+// Lazy, alone among this page's imports, and for the same reason the page
+// itself is eager: Sheet brings a portal, the drag, the cover measurement
+// and the focus trap, and most launches never open it. The landing chunk
+// pays for what every launch draws and nothing else.
+const CustomiseSheet = lazy(() =>
+  import('./CustomiseSheet').then((m) => ({ default: m.CustomiseSheet })),
+);
 
 /**
  * The landing page. It used to be six static tiles — four duplicating the
@@ -41,9 +51,41 @@ interface HomeData {
   hasPuzzleBook: boolean;
 }
 
+/**
+ * Where the checklist's dismissal used to live, before it could be
+ * switched back on.
+ *
+ * Read once per device and then deleted: a dismissal made under the old
+ * behaviour is honoured by writing it into the vault, so nobody's X is
+ * undone — but there is exactly one source of truth afterwards. Deletable
+ * a release or two from now, along with the branch that reads it.
+ */
 const CHECKLIST_KEY = 'vault:home-checklist-dismissed';
 /** Last launch's Continue-row count — the layout reservation, see below. */
 const CONTINUE_ROWS_KEY = 'vault:home-continue-rows';
+/**
+ * The last layout this device saw, kept only so the first paint draws the
+ * page you actually have rather than the default one.
+ *
+ * A paint hint and never the authority — the same bargain, and the same
+ * honesty, as CONTINUE_ROWS_KEY: the vault decides, this is overwritten by
+ * whatever it says, and a device that has never opened this vault shows
+ * the defaults until the answer arrives.
+ */
+const LAYOUT_KEY = 'vault:home-layout';
+
+const readEcho = (): HomeLayout | null => {
+  try {
+    return normaliseHomeLayout(JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? 'null'));
+  } catch {
+    return null;
+  }
+};
+
+const writeEcho = (layout: HomeLayout | null): void => {
+  if (layout === null) localStorage.removeItem(LAYOUT_KEY);
+  else localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+};
 
 /** The stored difficulty, as the word the trainer will use. */
 function bandWord(): string {
@@ -64,9 +106,15 @@ const baseName = (id: string): string => id.split('/').at(-1) ?? id;
 
 export function HomePage() {
   const [data, setData] = useState<HomeData | null>(null);
-  const [checklistHidden, setChecklistHidden] = useState(
-    () => localStorage.getItem(CHECKLIST_KEY) === '1',
-  );
+  // What the vault says the page looks like; null until it has ever been
+  // said. Seeded from the echo so the first paint is not a rearrangement.
+  const [layout, setLayout] = useState<HomeLayout | null>(readEcho);
+  const [editing, setEditing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  /** The last arrangement the server confirmed — where a failed save goes back to. */
+  const confirmed = useRef<HomeLayout | null>(null);
+  /** Which save is the current one, so a slow failure cannot undo a newer press. */
+  const attempt = useRef(0);
   // How many Continue rows LAST launch ended up with, so this launch can
   // reserve the card's space before the data returns. Without it the card
   // popped in a beat after first paint and pushed the whole page down —
@@ -108,6 +156,37 @@ export function HomePage() {
           : undefined;
       const meta = puzzles as { ready?: boolean; user?: { attempts?: number; wins?: number } } | null;
       const profile = (settings as { profile?: { chesscom?: string; lichess?: string } })?.profile;
+
+      // The arrangement, from the same answer the profile came in. The
+      // echo is corrected to whatever the vault says, including to nothing
+      // when the vault says it was never customised.
+      const stored = normaliseHomeLayout((settings as { home?: unknown } | null)?.home);
+      confirmed.current = stored;
+      setLayout(stored);
+      writeEcho(stored);
+      if (stored !== null) {
+        // The vault has an opinion, so the old per-device flag is stale by
+        // definition: applying it could undo a checklist switched back on
+        // somewhere else.
+        localStorage.removeItem(CHECKLIST_KEY);
+      } else if (localStorage.getItem(CHECKLIST_KEY) === '1' && settings !== null) {
+        // Dismissed before there was any way to bring it back. Move that
+        // into the vault once — and only drop the flag when the write
+        // lands, so a failed migration simply happens next launch.
+        const migrated: HomeLayout = {
+          tiles: resolveHomeLayout(null, HOME_DESTINATIONS).tiles.map((entry) => entry.id),
+          continueCard: true,
+          checklist: false,
+        };
+        setLayout(migrated);
+        writeEcho(migrated);
+        void api('/api/settings/home', { method: 'PUT', json: migrated })
+          .then(() => {
+            confirmed.current = migrated;
+            localStorage.removeItem(CHECKLIST_KEY);
+          })
+          .catch(() => {});
+      }
       const counts: Partial<Record<HomeCount, number>> = {
         studies: docs(studies),
         notes: docs(notes),
@@ -136,11 +215,47 @@ export function HomePage() {
     })();
   }, []);
 
+  /**
+   * Apply now, store next — and put it back if the vault disagrees.
+   *
+   * The press has to land immediately or reordering is unusable, but the
+   * vault is what the page IS: a change that failed to save and stayed on
+   * screen would be a lie until the next reload. So a failure reverts to
+   * the last arrangement the server confirmed and says why. `attempt`
+   * keeps a slow failure from undoing a press made after it.
+   */
+  const save = (next: HomeLayout | null): void => {
+    const mine = ++attempt.current;
+    setLayout(next);
+    writeEcho(next);
+    setSaveError(null);
+    void (async () => {
+      try {
+        // Reset DELETEs rather than storing today's defaults, so a vault
+        // put back to default is a vault that never chose.
+        await api('/api/settings/home', next === null ? { method: 'DELETE' } : { method: 'PUT', json: next });
+        if (mine === attempt.current) confirmed.current = next;
+      } catch (e) {
+        if (mine !== attempt.current) return;
+        setLayout(confirmed.current);
+        writeEcho(confirmed.current);
+        setSaveError(apiErrorMessage(e));
+      }
+    })();
+  };
+
   const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
   // The grid and the row underneath it. Everything in the catalogue is in
   // exactly one of them, so no destination can be lost.
-  const { tiles, launchers } = resolveHomeLayout(null, HOME_DESTINATIONS);
+  const { tiles, launchers } = resolveHomeLayout(layout, HOME_DESTINATIONS);
+  // The arrangement as an edit would have to state it: a vault that has
+  // never been customised is its defaults, written down.
+  const effective: HomeLayout = {
+    tiles: tiles.map((entry) => entry.id),
+    continueCard: layout?.continueCard !== false,
+    checklist: layout?.checklist !== false,
+  };
 
   const continueRows: { icon: typeof Grid3x3; label: string; detail: string; go: () => void }[] =
     data === null
@@ -208,7 +323,7 @@ export function HomePage() {
           },
         ];
   const showChecklist =
-    !checklistHidden && data !== null && checklist.some((step) => !step.done);
+    effective.checklist && data !== null && checklist.some((step) => !step.done);
 
   return (
     // grid-cols-[minmax(0,1fr)] is load-bearing, not tidiness: a grid's
@@ -236,7 +351,7 @@ export function HomePage() {
             user lands one tap from where they left off. Before the data
             arrives, the card is reserved at last launch's size with
             skeleton rows, so the page does not jump when it fills in. */}
-        {data === null && expectedRows > 0 && (
+        {effective.continueCard && data === null && expectedRows > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
             <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
               {t('Continue')}
@@ -261,7 +376,7 @@ export function HomePage() {
             ))}
           </div>
         )}
-        {continueRows.length > 0 && (
+        {effective.continueCard && continueRows.length > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
             <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
               {t('Continue')}
@@ -293,10 +408,10 @@ export function HomePage() {
                 size="icon-sm"
                 className="-my-1 -mr-1.5"
                 title={t('Hide this checklist')}
-                onClick={() => {
-                  localStorage.setItem(CHECKLIST_KEY, '1');
-                  setChecklistHidden(true);
-                }}
+                // Hidden in the vault now, not on this device — and the
+                // customise sheet can bring it back, which is what the old
+                // localStorage flag made impossible.
+                onClick={() => save({ ...effective, checklist: false })}
               >
                 <X className="size-3" />
               </Button>
@@ -326,6 +441,24 @@ export function HomePage() {
             ))}
           </div>
         )}
+
+        {/* The caption idiom the cards above use, carrying the way in to
+            the sheet. Outside the grid deliberately: with every tile
+            switched off there would otherwise be nothing left to press. */}
+        <div className="mb-2 flex items-center px-1">
+          <p className="text-subtle flex-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+            {t('Shortcuts')}
+          </p>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="-my-1 -mr-1.5"
+            title={t('Customise home')}
+            onClick={() => setEditing(true)}
+          >
+            <SlidersHorizontal className="size-3.5" />
+          </Button>
+        </div>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {tiles.map(({ id, label, blurb, icon: Icon, nav, count }) => (
@@ -359,14 +492,24 @@ export function HomePage() {
           ))}
         </div>
 
-        {/* Everything else, reachable: these destinations had no way in
-            from this page at all. */}
-        {/* One row on every width. Five labelled buttons never fit side by
-            side on a phone, and any wrap — 4+1, or the 3+2 clusters that
-            replaced it — still reads as an accident. So below sm they
-            become a launcher row: five equal columns, icon over label,
-            with labels free to break ("Puzzle books") inside their cell. */}
-        <div className="mt-4 grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5">
+        {/* Everything not on the grid, reachable. Below sm this is a
+            launcher row: equal columns, icon over label, with labels free
+            to break ("Puzzle books") inside their cell.
+
+            The column count is inline because it is data now. It was
+            `grid-cols-5`, written when this row was exactly five buttons;
+            with the row's length up to the user, five columns would strand
+            two demoted entries at a fifth of the width each. Tailwind
+            cannot see an interpolated class name, and a static map of
+            twelve would be a table to keep in step with a catalogue — so
+            the one number that varies is set as a style. Up to five share
+            the row; beyond that they wrap in fours or fives, never leaving
+            a single orphan on the last line. */}
+        {launchers.length > 0 && (
+        <div
+          className="mt-4 grid gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5"
+          style={{ gridTemplateColumns: `repeat(${launcherColumns(launchers.length)}, minmax(0, 1fr))` }}
+        >
           {launchers.map(({ id, label, icon: Icon, nav }) => (
             <Button
               key={id}
@@ -387,7 +530,28 @@ export function HomePage() {
             </Button>
           ))}
         </div>
+        )}
+
+        {/* The sheet is a layer over this page, so the arrangement being
+            edited is the one on screen behind it — on a desktop, at least;
+            a phone's sheet covers it, which is why the sheet itself shows
+            both groups rather than describing them. */}
+        {editing && (
+          <Suspense fallback={null}>
+            <CustomiseSheet
+              layout={effective}
+              onChange={save}
+              onReset={() => save(null)}
+              onClose={() => {
+                setEditing(false);
+                setSaveError(null);
+              }}
+              error={saveError}
+            />
+          </Suspense>
+        )}
       </div>
     </div>
   );
 }
+

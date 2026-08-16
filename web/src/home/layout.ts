@@ -92,6 +92,22 @@ export function resolveHomeLayout<T extends { id: string }>(
 }
 
 /**
+ * How many columns the launcher row gets on a phone.
+ *
+ * Five was the number when that row was exactly five buttons, and five is
+ * still the most that fit a 360px screen with a label under each. The one
+ * shape to avoid is a last line holding a single button: 5+1 reads as an
+ * accident, which was the original objection to letting the row wrap at
+ * all. So a count that would leave one over drops to four — six becomes
+ * 4+2 rather than 5+1, eleven becomes 4+4+3 rather than 5+5+1. Five or
+ * fewer just share the width between them.
+ */
+export function launcherColumns(n: number): number {
+  if (n <= 5) return n;
+  return n % 5 === 1 ? 4 : 5;
+}
+
+/**
  * How many moves an opening map document has charted.
  *
  * Structural rather than typed against the map's own model: that module

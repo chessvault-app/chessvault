@@ -917,13 +917,18 @@ export const ko: Record<string, string> = {
   'The demo database holds a curated slice of games.': '데모 데이터베이스에는 엄선한 일부 게임만 담겨 있습니다.',
   'no position index': '포지션 색인 없음',
   'Reference games': '참고 게임',
-  'Delete this database — deleting is final': '이 데이터베이스 삭제 — 지우면 그것으로 끝입니다',
+  'Delete this database': '이 데이터베이스 삭제',
+  // Not 'Delete this collection' — that one is a folder of your own games.
+  'Delete this PGN collection': '이 PGN 모음 삭제',
+  'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
   'PGN collections': 'PGN 모음',
   'Upload PGN collections': 'PGN 모음 올리기',
   'Name — the file’s name if blank': '이름 — 비우면 파일 이름',
   'The build failed.': '만들기에 실패했습니다.',
   'could not start the build': '만들기를 시작하지 못했습니다',
   'could not delete the database': '데이터베이스를 지우지 못했습니다',
+  'could not delete the collection': '모음을 지우지 못했습니다',
+  'a build is reading the collections right now': '지금 만들기가 이 모음들을 읽고 있습니다',
   'Building keeps going if you leave the page. A build under an existing name replaces that database.':
     '만들기는 페이지를 떠나도 계속됩니다. 이미 있는 이름으로 만들면 그 데이터베이스를 대체합니다.',
   'Reference database': '참고 데이터베이스',
@@ -972,6 +977,27 @@ export const ko: Record<string, string> = {
     '퍼즐 데이터베이스를 받으세요 — 트레이너가 오프라인으로 동작합니다',
   'Import a scanned tactics book — its diagrams become solvable puzzles':
     '스캔한 전술 책을 가져오세요 — 다이어그램이 풀 수 있는 퍼즐이 됩니다',
+
+  // --- customising home ----------------------------------------------------
+  Shortcuts: '바로가기',
+  'Customise home': '홈 화면 구성',
+  'Anything you switch off keeps a button in the row under the grid — nothing here goes away.':
+    '끈 항목도 타일 아래 줄에 버튼으로 남습니다 — 사라지는 것은 없습니다.',
+  'Where you left off, above everything else.': '마지막으로 보던 곳을 맨 위에 보여줍니다.',
+  'The first steps for a new vault. It leaves once they are all done.':
+    '새 보관함의 첫 단계입니다. 모두 마치면 사라집니다.',
+  'On the grid': '타일',
+  'In the row below': '아래 줄',
+  'Nothing — every destination is a button below.': '없음 — 모든 항목이 아래 줄에 있습니다.',
+  'Nothing — every destination is a tile.': '없음 — 모든 항목이 타일입니다.',
+  'Move up': '위로',
+  'Move down': '아래로',
+  'Move {name} up': '{name} 위로',
+  'Move {name} down': '{name} 아래로',
+  '{name} is now {n} of {total}': '{name} — {total}개 중 {n}번째',
+  'Reset to default': '기본값으로 되돌리기',
+  'Puzzles read from the books you import': '가져온 책에서 읽어온 퍼즐',
+
   Unlock: '잠금 해제',
   'Wrong password.': '비밀번호가 틀렸습니다.',
   'Wrong authenticator code.': '인증 코드가 틀렸습니다.',
