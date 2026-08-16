@@ -225,7 +225,16 @@ export function HomePage() {
     !checklistHidden && data !== null && checklist.some((step) => !step.done);
 
   return (
-    <div className="grid h-full min-h-0 place-items-center overflow-y-auto p-6">
+    // grid-cols-[minmax(0,1fr)] is load-bearing, not tidiness: a grid's
+    // single automatic column is sized to its content's MAX-content width,
+    // and a Continue row's label is `nowrap` — so `truncate` decided where
+    // to put the ellipsis while the column had already grown to the whole
+    // untruncated study name. A long name widened the card to its 32rem cap
+    // on a 390px phone and put a lateral scrollbar across the page
+    // (measured: scrollWidth 560 against a 390 client). Capping the column
+    // at the space available makes `w-full` mean the page again, and the
+    // ellipsis do what it was there for.
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto p-6">
       <div className="w-full max-w-lg">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="bg-primary text-primary-fg grid size-14 place-items-center rounded-2xl">
