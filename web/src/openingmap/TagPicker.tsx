@@ -100,7 +100,14 @@ export function TagPicker({
             />
             <SearchInput
               className="flex-1"
-              placeholder={t('Filter…')}
+              // "Search studies", not "Filter": it wears a magnifier, it
+              // sits where every other search field in the app sits, and
+              // it does what they do — a field that looks like one thing
+              // and is labelled another makes the reader decide which to
+              // believe. Naming what it searches is the shelves' own
+              // wording, and it follows the segmented control, which is
+              // the only thing that says which list is under it.
+              placeholder={kind === 'study' ? t('Search studies…') : t('Search notes…')}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -119,7 +126,11 @@ export function TagPicker({
                 const wholeTag: MapTag = { kind, id: row.id };
                 const Icon = kind === 'study' ? Library : NotebookPen;
                 return (
-                  <div key={row.id} className="flex items-center gap-1">
+                  // One height for every row, whether or not it carries
+                  // a Chapter button: a study row stood a touch target
+                  // taller than a note row, so switching the segmented
+                  // control above shuffled the whole list's rhythm.
+                  <div key={row.id} className="flex min-h-9 items-center gap-1">
                     <button
                       type="button"
                       disabled={tagged(wholeTag)}
