@@ -444,12 +444,14 @@ function DbList({
   return (
     <ul className="divide-line divide-y">
       {databases.map((d) => (
-        // An indent of its own rather than the pl-3 the rows started
-        // with. It was pl-8 briefly, to land the name exactly where the
-        // collections tab puts its own past the tick; that read as too
-        // deep for a list with nothing in the gutter, so it sits short of
-        // that mark and the two tabs differ by a few pixels.
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-6 pr-1.5 text-xs">
+        // pl-3, the same inset the search row above uses, so the names
+        // start exactly on the field's left border. Tried deeper first
+        // (pl-8, to sit where the collections tab puts its name past the
+        // tick, then pl-6); both left the column floating in from the one
+        // vertical edge the panel actually draws. What the two tabs align
+        // is their LEFTMOST thing — a name here, a tick there — and both
+        // land on that border.
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-xs">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
