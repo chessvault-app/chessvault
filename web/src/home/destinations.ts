@@ -5,6 +5,7 @@ import {
   Database,
   Grid3x3,
   Library,
+  Network,
   NotebookPen,
   Puzzle,
   Settings,
@@ -33,7 +34,7 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
 
 /** Which personal count a tile shows. Absent means a tool: no number, and
     no skeleton reserving room for one. */
-export type HomeCount = 'studies' | 'notes' | 'games' | 'puzzles';
+export type HomeCount = 'studies' | 'notes' | 'games' | 'puzzles' | 'openingmap';
 
 export interface Destination {
   id: HomeEntryId;
@@ -94,6 +95,15 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     icon: Puzzle,
     nav: ['puzzles'],
     count: 'puzzles',
+  },
+  openingmap: {
+    id: 'openingmap',
+    label: 'Opening map',
+    blurb: 'See your opening preparation as a tree',
+    icon: Network,
+    nav: ['openingmap'],
+    // Moves charted, not nodes: the two colour roots are not moves.
+    count: 'openingmap',
   },
   repertoire: {
     id: 'repertoire',

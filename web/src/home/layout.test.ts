@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normaliseHomeLayout } from '@shared/homeLayout';
-import { DEFAULT_TILES, HOME_ENTRY_IDS, resolveHomeLayout } from './layout.ts';
+import { chartedMoves, DEFAULT_TILES, HOME_ENTRY_IDS, resolveHomeLayout } from './layout.ts';
 
 /** A stand-in catalogue: the resolver only needs ids, and a fixture keeps
     this file clear of the icons the real catalogue carries. */
@@ -61,6 +61,30 @@ describe('resolveHomeLayout', () => {
     const { tiles, launchers } = resolveHomeLayout(layout(['b', 'b', 'd']), CATALOGUE);
     expect(ids(tiles)).toEqual(['b', 'd']);
     expect(ids(launchers)).toEqual(['a', 'c']);
+  });
+});
+
+describe('chartedMoves', () => {
+  const map = (color: string, root: unknown): unknown => ({ id: color, color, root });
+
+  it('counts the moves under both roots, and neither root', () => {
+    // A map you have merely opened has its two roots and nothing else —
+    // that is not one move charted, it is none.
+    expect(chartedMoves({ maps: [map('white', { children: [] }), map('black', { children: [] })] })).toBe(0);
+    expect(
+      chartedMoves({
+        maps: [
+          map('white', { children: [{ san: 'e4', children: [{ san: 'c5', children: [] }] }] }),
+          map('black', { children: [{ san: 'd4', children: [] }] }),
+        ],
+      }),
+    ).toBe(3);
+  });
+
+  it('reads a document it cannot make sense of as nothing charted', () => {
+    for (const junk of [null, undefined, 42, {}, { maps: 'white' }, { maps: [null] }, { maps: [{}] }]) {
+      expect(chartedMoves(junk)).toBe(0);
+    }
   });
 });
 

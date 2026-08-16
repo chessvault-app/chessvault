@@ -8,7 +8,7 @@ import { KnightIcon } from '@/ui/KnightIcon';
 import { BANDS } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
-import { resolveHomeLayout } from './layout';
+import { chartedMoves, resolveHomeLayout } from './layout';
 
 /**
  * The landing page. It used to be six static tiles — four duplicating the
@@ -90,13 +90,17 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they
       // answer with a `studies` list.
-      const [studies, notes, games, puzzles, settings, books] = await Promise.all([
+      const [studies, notes, games, puzzles, settings, books, map] = await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
         grab('/api/games/docs'),
         grab('/api/puzzles/meta'),
         grab('/api/settings'),
         grab('/api/puzzlebooks'),
+        // The whole map document, which is affordable here: it is a
+        // skeleton of SAN and links, capped at 5000 nodes and 1 MB, with
+        // no positions in it.
+        grab('/api/openingmap'),
       ]);
       const docs = (v: unknown): number | undefined =>
         Array.isArray((v as { studies?: unknown[] })?.studies)
@@ -113,6 +117,11 @@ export function HomePage() {
       // size of the Lichess pool.
       const wins = meta?.user?.wins;
       if (typeof wins === 'number' && wins > 0) counts.puzzles = wins;
+      // Both maps exist the moment the page is first opened, so the number
+      // that means anything is the moves under them, and none of them is
+      // no number rather than a nought.
+      const charted = chartedMoves(map);
+      if (charted > 0) counts.openingmap = charted;
       setData({
         counts,
         lastStudy: latest(studies),

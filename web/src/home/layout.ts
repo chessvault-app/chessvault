@@ -20,9 +20,7 @@ import type { HomeLayout } from '@shared/homeLayout';
  * had, and this is a new format with no reason to inherit an old name.
  *
  * The order is the CATALOGUE order: it is what the launcher row is drawn
- * in, and the order the customise sheet lists everything in. The first six
- * are today's tiles and the rest today's launcher row, so a vault that has
- * never been customised gets exactly the page it had.
+ * in, and the order the customise sheet lists everything in.
  */
 export const HOME_ENTRY_IDS = [
   'board',
@@ -31,6 +29,7 @@ export const HOME_ENTRY_IDS = [
   'notes',
   'games',
   'puzzles',
+  'openingmap',
   'repertoire',
   'explorer',
   'databases',
@@ -48,6 +47,7 @@ export const DEFAULT_TILES: readonly HomeEntryId[] = [
   'notes',
   'games',
   'puzzles',
+  'openingmap',
 ];
 
 export interface ResolvedHome<T extends { id: string }> {
@@ -89,4 +89,30 @@ export function resolveHomeLayout<T extends { id: string }>(
     tiles.push(entry);
   }
   return { tiles, launchers: catalogue.filter((entry) => !placed.has(entry.id)) };
+}
+
+/**
+ * How many moves an opening map document has charted.
+ *
+ * Structural rather than typed against the map's own model: that module
+ * replays SAN through chessops, and home is the one route bundled eagerly
+ * — importing it would put a chess parser in the chunk that has to load
+ * before anything at all paints.
+ *
+ * The two standing roots (one per colour) are placed by simply opening
+ * the map and are not moves, so they are not counted. A vault that has
+ * looked at the map and charted nothing reads 0, and 0 shows no number.
+ */
+export function chartedMoves(doc: unknown): number {
+  const maps = (doc as { maps?: unknown } | null)?.maps;
+  if (!Array.isArray(maps)) return 0;
+  let moves = 0;
+  const walk = (node: unknown): void => {
+    const children = (node as { children?: unknown } | null)?.children;
+    if (!Array.isArray(children)) return;
+    moves += children.length;
+    for (const child of children) walk(child);
+  };
+  for (const map of maps) walk((map as { root?: unknown } | null)?.root);
+  return moves;
 }
