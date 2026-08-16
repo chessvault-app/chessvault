@@ -255,6 +255,16 @@ interface RefGameRow {
  * seekable here, but neither is the search's leading-wildcard LIKE, and
  * both routes already scan their candidate rows.
  */
+/** Whether the file carries the precomputed per-move sums — an older
+    database answers the unfiltered question live until its next tune. */
+function hasMoveCounts(db: InstanceType<typeof Database>): boolean {
+  return (
+    db
+      .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'move_counts'")
+      .get() !== undefined
+  );
+}
+
 function gamesWhere(
   get: (key: string) => string | undefined,
   alias = '',
@@ -735,9 +745,16 @@ export function refGamesApi(
     const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.');
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
 
-    const rows = db
-      .prepare(
-        `SELECT p.uci AS uci,
+    const rows = (
+      clauses.length === 0 && hasMoveCounts(db)
+        ? db
+            .prepare(
+              'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
+            )
+            .all(key)
+        : db
+            .prepare(
+              `SELECT p.uci AS uci,
                 SUM(g.result = '1-0') AS w,
                 SUM(g.result = '1/2-1/2') AS d,
                 SUM(g.result = '0-1') AS b
@@ -745,8 +762,9 @@ export function refGamesApi(
          WHERE p.pos = ?${sql}
          GROUP BY p.uci
          ORDER BY w + d + b DESC, p.uci`,
-      )
-      .all(key, ...binds) as { uci: string; w: number; d: number; b: number }[];
+            )
+            .all(key, ...binds)
+    ) as { uci: string; w: number; d: number; b: number }[];
 
     const moves = rows.flatMap((row) => {
       const move = parseUci(row.uci);
@@ -821,8 +839,15 @@ export function refGamesApi(
 
     const { clauses, binds } = gamesWhere((k) => c.req.query(k), 'g.');
     const sql = clauses.length ? ` AND ${clauses.join(' AND ')}` : '';
-    const stmt = db.prepare(
-      `SELECT p.uci AS uci,
+    // The map's sweep never filters, and the live aggregation is what made
+    // its first batch cost seconds — see REFGAMES_MOVE_COUNTS.
+    const stmt =
+      clauses.length === 0 && hasMoveCounts(db)
+        ? db.prepare(
+            'SELECT uci, w, d, b FROM move_counts WHERE pos = ? ORDER BY w + d + b DESC, uci',
+          )
+        : db.prepare(
+            `SELECT p.uci AS uci,
               SUM(g.result = '1-0') AS w,
               SUM(g.result = '1/2-1/2') AS d,
               SUM(g.result = '0-1') AS b
@@ -830,7 +855,7 @@ export function refGamesApi(
        WHERE p.pos = ?${sql}
        GROUP BY p.uci
        ORDER BY w + d + b DESC, p.uci`,
-    );
+          );
 
     const positions = fens.map((fen) => {
       const setup = parseFen(fen.trim());

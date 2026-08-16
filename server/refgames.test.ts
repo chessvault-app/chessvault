@@ -512,6 +512,28 @@ describe('position index and explore', () => {
     expect(body.positions[2]!.moves).toEqual([]);
   });
 
+  it('precomputes the unfiltered sums, and answers the same without them', async () => {
+    // indexPositions built move_counts: one row per (position, move), so
+    // the two start-position e4 games collapse into one of the 8 rows.
+    const before = await explore(`fen=${encodeURIComponent(START)}`);
+    const db = new Database(dbPath);
+    expect((db.prepare('SELECT COUNT(*) AS n FROM move_counts').get() as { n: number }).n).toBe(8);
+    // An older file has no sums until its next tune — the live aggregation
+    // must answer identically in the meantime.
+    db.exec('DROP INDEX idx_move_counts_pos; DROP TABLE move_counts;');
+    db.close();
+    refgames.closeDb();
+    const without = await explore(`fen=${encodeURIComponent(START)}`);
+    expect(without).toEqual(before);
+    // And the deploy-time tune is what puts them back.
+    const restore = new Database(dbPath);
+    expect(tune(restore)).toContain('move_counts');
+    restore.close();
+    refgames.closeDb();
+    const restored = await explore(`fen=${encodeURIComponent(START)}`);
+    expect(restored).toEqual(before);
+  });
+
   it('refuses a batch big enough to be a denial of service', async () => {
     const res = await app.request('/api/refgames/explore-batch', {
       method: 'POST',

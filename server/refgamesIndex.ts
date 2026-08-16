@@ -44,6 +44,35 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);
 `;
 
+/**
+ * Per-(position, move) result sums, precomputed from the index above.
+ *
+ * The explorer's UNFILTERED question — what was played here, over the
+ * whole corpus — is also the opening map's, asked about every charted
+ * position at once. Answering it live aggregates the join per request,
+ * and near the root that is a sum over most of the database: measured on
+ * the deployed server's own log, the map's first 128-position batch (the
+ * shallowest positions, so the biggest row sets) spent 4–5 seconds in
+ * these sums on every visit. Reading a handful of precomputed rows takes
+ * microseconds, and the corpus a reference database holds never changes
+ * between index builds. Filtered questions still aggregate live — that
+ * they can is the whole point of keeping the game dimension.
+ *
+ * Derived purely from plies + games, so it belongs to this index: built
+ * here after the plies pass, dropped here when plies is rebuilt, and
+ * added to older files by scripts/tune-dbs.ts through the same SQL.
+ */
+export const REFGAMES_MOVE_COUNTS = `
+  CREATE TABLE IF NOT EXISTS move_counts AS
+    SELECT p.pos AS pos, p.uci AS uci,
+           SUM(g.result = '1-0') AS w,
+           SUM(g.result = '1/2-1/2') AS d,
+           SUM(g.result = '0-1') AS b
+    FROM plies p JOIN games g ON g.id = p.game_id
+    GROUP BY p.pos, p.uci;
+  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
+`;
+
 /** Whether a database already carries the index (and how many rows). */
 export function positionIndexInfo(db: InstanceType<typeof Database>): { indexed: boolean; plies: number } {
   const has = db
@@ -84,7 +113,12 @@ export function indexPositions(
     db.pragma('busy_timeout = 30000');
     db.pragma('journal_mode = WAL');
     db.pragma('synchronous = NORMAL');
-    db.exec('DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies;');
+    // move_counts is derived from plies, so it falls with it — a rebuilt
+    // index summed against a stale table would answer with the old corpus.
+    db.exec(
+      'DROP INDEX IF EXISTS idx_plies_pos; DROP TABLE IF EXISTS plies; ' +
+        'DROP INDEX IF EXISTS idx_move_counts_pos; DROP TABLE IF EXISTS move_counts;',
+    );
     db.exec(SCHEMA.replace('CREATE INDEX IF NOT EXISTS idx_plies_pos ON plies (pos);', ''));
 
     const insert = db.prepare('INSERT INTO plies (pos, uci, game_id, ply) VALUES (?, ?, ?, ?)');
@@ -125,6 +159,8 @@ export function indexPositions(
 
     log('  positions: indexing…');
     db.exec(SCHEMA); // now the index, over the finished table
+    log('  positions: summing per move…');
+    db.exec(REFGAMES_MOVE_COUNTS);
 
     const setMeta = db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)');
     setMeta.run('plies', String(plies));

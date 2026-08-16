@@ -6,6 +6,7 @@
  * to repeat and reversible with a DROP.
  */
 import type Database from 'better-sqlite3';
+import { REFGAMES_MOVE_COUNTS } from '../../server/refgamesIndex.ts';
 
 type Db = InstanceType<typeof Database>;
 
@@ -53,6 +54,14 @@ export function tune(db: Db): string[] {
   if (has(db, 'games')) {
     db.exec(REFGAMES_INDEXES);
     applied.push('idx_games_players');
+  }
+  // The per-move sums the unfiltered explore answers from — derived from
+  // the position index, so only a database that carries one can have them.
+  // The SQL lives with that index (server/refgamesIndex.ts), which also
+  // builds this on a fresh pass and drops it on a rebuild.
+  if (has(db, 'games') && has(db, 'plies') && !has(db, 'move_counts')) {
+    db.exec(REFGAMES_MOVE_COUNTS);
+    applied.push('move_counts');
   }
   return applied;
 }
