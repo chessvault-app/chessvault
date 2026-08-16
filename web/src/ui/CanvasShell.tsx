@@ -121,23 +121,30 @@ export function CanvasShell({
               // the floating half is a complementary landmark, and one
               // with no name is a landmark nobody can choose from a list.
               aria-label={panel.label}
-              // The canvas's full height, docked to its right edge.
+              // The canvas's height, less a hairline of it: a card that
+              // floats ON the surface, edge to edge but not welded to it.
               //
-              // It floated inset from all four sides, and the top inset
-              // was there to clear the action icons in that corner. What
-              // that bought was two rows of canvas above and below a
-              // panel whose content — a board, four fields, a statistics
-              // table and a button row — is taller than the screen and
-              // scrolls: it was giving up room the panel needed to keep
-              // reachable two icons that a closed panel shows anyway. So
-              // the icons go under it while it is open, and the X in its
-              // header is how you get back to them.
+              // It was inset a whole 1.5rem with 3.5 at the top, to clear
+              // the action icons in that corner. What that bought was two
+              // rows of canvas above and below a panel whose content — a
+              // board, four fields, a statistics table and a button row —
+              // is taller than the screen and scrolls: room the panel
+              // needed, spent keeping reachable two icons that a closed
+              // panel shows anyway. So the icons go under it while it is
+              // open, and the X in its header is how you get back to
+              // them. 0.75rem is what is left, and it is not spacing —
+              // it is what makes the corners, the border and the shadow
+              // visible all the way round, so the panel reads as one
+              // object over the map rather than as a slab bolted to the
+              // window. `overflow-hidden` because a sticky footer inside
+              // it bleeds to these edges and would otherwise paint square
+              // corners over the round ones.
               //
               // Wide enough that its fields, its statistics rows and its
               // button row stop wrapping: at 18rem nearly every line in
               // it broke, which is a panel technically showing you
               // something and practically hiding it.
-              className="border-line bg-surface/90 absolute inset-y-0 right-0 z-10 flex w-[22rem] flex-col border-l shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
+              className="border-line bg-surface/90 absolute inset-y-3 right-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a
