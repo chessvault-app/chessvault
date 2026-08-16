@@ -58,6 +58,18 @@ const triggerSizes = {
   md: 'h-8 px-2.5 text-xs pointer-coarse:h-9',
 } as const;
 
+/**
+ * Enough room under a trigger for a list to be worth opening downwards:
+ * the popover's own floor (140px) plus the 4px offset and the 16px it
+ * keeps off the window edge. Below that, and only then, it flips up.
+ */
+const NEEDS_BELOW = 160;
+
+const prefersUp = (r: DOMRect): boolean => {
+  const below = window.innerHeight - r.bottom;
+  return below < NEEDS_BELOW && r.top > below;
+};
+
 export function Select({
   value,
   onChange,
@@ -129,8 +141,21 @@ export function Select({
   // Where the current touch started, to tell a tap from a list scroll.
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
-  // Open upward when the trigger sits below mid-screen, so a long list has
-  // room instead of being crushed into the gap under a low field.
+  /**
+   * Which way the list opens: down unless down has no room.
+   *
+   * It used to flip up whenever the trigger sat below mid-screen, which
+   * is a guess about room rather than a measurement of it. A Select
+   * inside a centred window is past that line the moment it is the
+   * second field — so the map's "check coverage against" opened its
+   * database list UPWARDS, over the very rows it belongs under, with
+   * half the window free underneath. A list that covers the thing it
+   * came from reads as a replacement, not as an answer.
+   *
+   * So: room is measured on both sides and down wins ties, because down
+   * is where a dropdown is expected to go. Up is for the trigger that
+   * genuinely has nothing below it — a toolbar at the foot of a page.
+   */
   const [dropUp, setDropUp] = useState(false);
   // The Sheet/Modal breakpoint: below it the open list is a bottom sheet,
   // not a popover, so everything anchored — the rect, the dismiss-on-tap
@@ -155,7 +180,7 @@ export function Select({
     }
     const r = trigger.current?.getBoundingClientRect() ?? null;
     setRect(r);
-    setDropUp(r ? r.bottom > window.innerHeight * 0.55 : false);
+    setDropUp(r ? prefersUp(r) : false);
     setActive(Math.max(0, flat.findIndex((o) => o.value === value)));
     setOpen(true);
   };
@@ -202,7 +227,7 @@ export function Select({
         return;
       }
       setRect(r);
-      setDropUp(r.bottom > window.innerHeight * 0.55);
+      setDropUp(prefersUp(r));
     };
     document.addEventListener('mousedown', onDown);
     document.addEventListener('touchstart', onDown);
