@@ -56,6 +56,11 @@
          a class beats an element selector — so `section { padding: … }` was
          overwritten wholesale and the sections had no vertical padding at
          all. Longhands on different axes cannot fight. */
+      /* ONE width for the whole page, feature rows included. They were 70rem
+         for a while, to put each half of a 50/50 row inside the 500–600px
+         a figure was being drawn for; 456px is the honest half of 62rem and
+         every section now starts and ends on the same two vertical lines,
+         which is worth more than the missing 64px. */
       .wrap { max-width: 62rem; margin: 0 auto; padding-inline: var(--s4); }
 
       header { padding-block: var(--s4); }
@@ -101,23 +106,51 @@
       .card h3 { margin: 0 0 var(--s2); font-size: 1rem; }
       .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 
-      /* A figure BESIDE the paragraph, at 320px.
-         Nothing but a phone layout can be read at that width, so these two
-         are captured at 390px CSS rather than as desktop windows — and each
-         has to be about what it sits next to, which the previous pair were
-         not: a note carrying markdown, a live board and wiki-links for the
-         file formats, and the collection on a phone for reaching it from
-         anywhere. Sides alternate so the page does not march. */
-      .split { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
-      @media (min-width: 48rem) {
-        .split { grid-template-columns: 1fr 20rem; }
-        .split.flip { grid-template-columns: 20rem 1fr; }
+      /* The feature rows: one figure, one headline, one paragraph, the
+         sides swapping every row so the page does not march down one edge.
+
+         Stacked below 48rem with the FIGURE FIRST — the markup is written
+         figure-first for exactly that, and the flipped rows reorder in the
+         desktop media query rather than in the document, so the phone
+         always gets picture-then-words whichever way the row reads wide.
+
+         NOTHING IS CROPPED AND NOTHING IS CAPPED. These are screenshots of
+         a working interface: `cover` would fill a frame by cutting the
+         interface away, and a max-height does not cut but shrinks — which
+         on a tall panel is the same loss by a slower route, its text
+         reduced to texture. So the image keeps its own aspect at its own
+         height, and the only limit is width.
+
+         The card is what makes that safe to do. An image that no longer
+         has to fill a box leaves space around itself — a narrow panel in a
+         wide column, a wide map in a short one — and the space now belongs
+         to a surface with a border, a radius and a shadow, so it reads as
+         a frame rather than as a hole in the page.
+
+         `width: auto` and not `100%`: these are raster screenshots, and
+         stretching one past its own pixels only blurs it. A figure smaller
+         than the card sits at its own size, centred, and the card carries
+         the rest. `max-width` still names the 600px ceiling a figure was
+         drawn for, even though half of 62rem reaches it first. */
+      .row { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
+      .row h2 { margin: 0 0 var(--s3); }
+      .row p { color: var(--muted); margin: 0; }
+      .row figure {
+        margin: 0; justify-self: center;
+        display: flex; align-items: center; justify-content: center;
+        width: 100%; max-width: 37.5rem; padding: var(--s3);
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: 1rem; box-shadow: 0 0.75rem 2rem oklch(0% 0 0 / 0.35);
       }
-      .split p { color: var(--muted); margin: 0; }
-      .split figure { margin: 0; justify-self: center; }
-      .split figure img {
-        display: block; width: 100%; max-width: 20rem;
-        border-radius: 1.1rem; border: 1px solid var(--line);
+      .row figure img {
+        display: block; width: auto; height: auto;
+        max-width: 100%; object-fit: contain;
+        border-radius: 0.65rem;
+      }
+      @media (min-width: 48rem) {
+        /* Half and half, and the figure fills its half up to 600px. */
+        .row { grid-template-columns: 1fr 1fr; gap: var(--s7); align-items: center; }
+        .row.flip figure { order: 2; }
       }
 
       .downloads { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
@@ -268,8 +301,56 @@
         </div>
       </section>
 
+      <!-- The feature rows. Figure first in every one; the flipped rows put
+           it on the right at 48rem and up, so a phone reads picture, then
+           words, all the way down. -->
       <section class="wrap">
-        <div class="split">
+        <div class="row">
+          <figure>
+            <img
+              src="shots/opening-map.png"
+              alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
+            />
+          </figure>
+          <div>
+            <h2 data-ko="오프닝 맵">The opening map</h2>
+            <p data-ko="레퍼토리를 목록이 아니라 형태로 봅니다. 직접 고른 수를 색마다 하나의 맵에 배치하면, 각 점은 실제 채택 빈도만큼 커지고 아직 답이 없는 곳에는 배지가 붙습니다. 스터디를 연결하면 그 아래는 전부 스터디에서 유도되므로, 맵이 준비되었다고 말하는 것은 실제로 준비된 것입니다.">
+              Your repertoire as a shape rather than a list: the moves you chose, one map per
+              colour, each dot sized by how often the field plays it and badged where you have no
+              answer yet. Link a study and everything below is derived from it, so what the map
+              claims you have prepared is what you have.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap">
+        <div class="row flip">
+          <figure>
+            <img
+              src="shots/opening-map-node.png"
+              alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
+            />
+          </figure>
+          <div>
+            <h2 data-ko="수 하나하나가 무엇에 덮이는지 압니다">Every move knows what covers it</h2>
+            <p data-ko="점 하나를 고르면 오프닝 카탈로그가 이름을 붙이고, 연결된 스터디가 실제로 얼마나 깊이 —몇 개의 라인으로— 준비하는지를 패널이 세어 줍니다. 노트는 읽는 사람을 위한 참고일 뿐, 무엇이 준비되었는지 말할 수 있는 것은 스터디뿐입니다.">
+              Select a dot and the opening catalogue names it, while the panel counts how deep your
+              linked studies actually prepare it and how many lines they end in. Notes come along
+              for the reader; only the studies are allowed to say what is prepared.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap">
+        <div class="row">
+          <figure>
+            <img
+              src="shots/note-phone.png"
+              alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
+            />
+          </figure>
           <div>
             <h2 data-ko="파일이 곧 형식입니다">The files are the format</h2>
             <p data-ko="스터디는 PGN이고, 노트는 마크다운이며, 진행 상황은 JSON입니다. 데이터베이스가 진실의 원천이 되는 일도, 독자 규격도 없습니다. 백업은 폴더 하나를 복사하는 일이고, 이 앱이 사라져도 당신의 체스는 다른 도구로 열립니다.">
@@ -278,17 +359,11 @@
               goes away, your chess opens in something else.
             </p>
           </div>
-          <figure>
-            <img
-              src="shots/note-phone.png"
-              alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
-            />
-          </figure>
         </div>
       </section>
 
       <section class="wrap">
-        <div class="split flip">
+        <div class="row flip">
           <figure>
             <img
               src="shots/games-phone.png"
@@ -297,12 +372,11 @@
           </figure>
           <div>
             <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
-            <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 원격 서버에 올릴 수도 있습니다. 작은 리눅스 서버 하나가 보관함을 소유하면 나머지는 전부 클라이언트가 됩니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서 씁니다. 어느 기기에서 열어도 같은 기보와 같은 진행 상황입니다. 비밀번호와 2단계 인증은 선택 사항입니다.">
-              Keeping the vault on this machine is the default, but you can put it on a remote
-              server instead. Then one small Linux box owns the vault and everything else is a
-              client: add it to a phone's home screen as a PWA, or point the same desktop app at it.
-              Same games, same progress, whichever device you opened. A password and two-factor
-              authentication are optional.
+            <p data-ko="보관함을 이 기기에 두는 것이 기본이지만, 작은 리눅스 서버 하나가 보관함을 소유하고 나머지는 전부 클라이언트가 될 수도 있습니다 — 휴대폰에서는 홈 화면에 추가해 PWA로, 데스크톱에서는 같은 앱을 그 서버에 연결해서. 어느 기기에서 열어도 같은 기보, 같은 진행 상황입니다.">
+              Keeping the vault on this machine is the default, but one small Linux box can own it
+              instead and everything else becomes a client — a phone's home screen as a PWA, or the
+              same desktop app pointed at it. Same games, same progress, whichever device you
+              opened.
             </p>
           </div>
         </div>
