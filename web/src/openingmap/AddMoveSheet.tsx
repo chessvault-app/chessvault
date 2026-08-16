@@ -233,6 +233,11 @@ export function AddMoveSheet({
           value={typed}
           placeholder={t('Type a move…')}
           aria-label={t('Type a move…')}
+          // The list is what this sheet is for; this box is what it
+          // falls back to. Without the marker it is the window's only
+          // input, and a phone opened the sheet with the keyboard
+          // already over the rows — see dialogFocus.
+          data-fallback-field
           onChange={(e) => {
             setTyped(e.target.value);
             setError(null);

@@ -107,6 +107,23 @@ function soleTextField(node: HTMLElement): HTMLElement | null {
   if (fields.length !== 1) return null;
   const only = fields[0]!;
   if (only.hasAttribute('data-search-field')) return null;
+  /**
+   * The second exception, and the narrower one: a field that is the
+   * window's fallback rather than its purpose.
+   *
+   * The add-a-move sheet is a list of every reply the field plays, with
+   * a box underneath for the move nobody has played yet. Almost every
+   * visit ends in a tap on a row — but the box is the only INPUT in the
+   * window, so the sole-field rule claimed it and a phone opened the
+   * sheet with half its list under a keyboard nobody asked for.
+   *
+   * Only where a keyboard costs something. On a desktop the caret in
+   * the box takes nothing away from the list beside it, and typing
+   * straight into a window you opened is the whole point of the rule.
+   */
+  if (only.hasAttribute('data-fallback-field') && window.matchMedia('(pointer: coarse)').matches) {
+    return null;
+  }
   if (only instanceof HTMLTextAreaElement) return only;
   if (only instanceof HTMLInputElement && TEXT_TYPES.has(only.type)) return only;
   return null;
