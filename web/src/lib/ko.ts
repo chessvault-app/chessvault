@@ -524,6 +524,9 @@ export const ko: Record<string, string> = {
   'Opening map': '오프닝 맵',
   'See your opening preparation as a tree': '오프닝 준비를 트리로 한눈에',
   'Map colour': '맵 색',
+  'Search the map': '맵 검색',
+  'Search moves and opening names': '수와 오프닝 이름 검색',
+  'Preparing the map…': '맵을 준비하는 중…',
   'The opening map could not be read': '오프닝 맵을 읽을 수 없습니다',
   'No moves yet': '아직 수가 없습니다',
   'Start with your first move for this colour — the rest of the tree grows from it.':
@@ -897,6 +900,8 @@ export const ko: Record<string, string> = {
   'Upload PGN collections and index them into searchable databases of whole games.':
     'PGN 모음을 올리고, 게임 전체를 검색할 수 있는 데이터베이스로 색인하세요.',
   'This server has no reference games database.': '이 서버에는 참고 게임 데이터베이스가 없습니다.',
+  'This database is read-only. Uploading collections and building databases need the installed app.':
+    '이 데이터베이스는 읽기 전용입니다. 모음을 올리고 데이터베이스를 만들려면 설치형 앱이 필요합니다.',
   Databases: '데이터베이스',
   'Reference game databases, built from uploaded PGNs': '올린 PGN으로 만드는 참고 게임 데이터베이스',
   'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.':
