@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
-import { RefDbManager, type RefDb } from './RefDbManager';
+import { RefDbManager, RefDbManagerSkeleton, type RefDb } from './RefDbManager';
+import { useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 
 /**
@@ -44,6 +45,12 @@ export function DatabasesPage() {
     loadMeta();
   }, [loadMeta]);
 
+  // The panel used to pop in: nothing was drawn until /api/refgames
+  // answered. It has the panel's own shape now, and only once the wait is
+  // long enough to be worth admitting to — a skeleton that flashes past
+  // reads as a fault, and against a local server this one never appears.
+  const slow = useSlowLoad(meta === null);
+
   return (
     <PageShell width="medium" scroll={false} className="h-full min-h-0 pb-4 md:pb-6">
       {/* Phones reach this from More; a desktop has it in the sidebar,
@@ -57,7 +64,9 @@ export function DatabasesPage() {
         )}
       />
 
-      {meta === null ? null : meta.databases ? (
+      {meta === null ? (
+        slow && <RefDbManagerSkeleton />
+      ) : meta.databases ? (
         <RefDbManager databases={meta.databases} onChanged={loadMeta} />
       ) : (
         // What is mounted, and why there is nothing to press. Only the

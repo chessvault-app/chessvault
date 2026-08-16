@@ -10,6 +10,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Input, SearchInput } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { Skeleton } from '@/ui/Skeleton';
 import { Segmented } from '@/ui/Segmented';
 
 /**
@@ -296,7 +297,12 @@ export function RefDbManager({
             from flex-1 each segment wraps its own label and both wear
             the same px-2.5. Done here rather than in Segmented: equal
             widths are right for the archive's two providers and the
-            shelf's grid/list switch, whose labels are the same length. */}
+            shelf's grid/list switch, whose labels are the same length.
+            `p-0.5` halves the track's own padding, which is what stood
+            above and below the pills — but on a MOUSE only. A coarse
+            pointer gets its 36px box back (`pointer-coarse:p-1`), because
+            that size is a target, not a look, and the phone was right as
+            it was. */}
         <PanelHeader
           className="h-auto py-2"
           title={
@@ -304,7 +310,7 @@ export function RefDbManager({
               value={tab}
               onChange={setTab}
               ariaLabel="What to manage"
-              className="w-fit [&>button]:flex-none"
+              className="w-fit p-0.5 pointer-coarse:p-1 [&>button]:flex-none"
               segments={[
                 {
                   value: 'databases',
@@ -432,6 +438,52 @@ export function RefDbManager({
   );
 }
 
+/**
+ * The panel's own shape, for the moment before /api/refgames answers.
+ *
+ * The page drew nothing until it did, so the whole panel popped in. Same
+ * three bands in the same order and at the same heights — switch, search
+ * row, divided list — so nothing moves when the real one lands. Governed
+ * by useSlowLoad at the call site: on a local server this never appears,
+ * which is the point.
+ */
+export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <Panel flush className="min-h-0">
+      {/* Announced once, like every other skeleton here; ui/Skeleton's own
+          wrapper is private to it. */}
+      <div
+        className="flex min-h-0 flex-1 flex-col"
+        role="status"
+        aria-label={t('Loading')}
+        aria-live="polite"
+      >
+        {/* The switch: one box the size the segmented control settles at. */}
+        <div className="border-line flex shrink-0 items-center border-b px-3 py-2">
+          <Skeleton className="h-[1.9rem] w-52 rounded-xl" />
+        </div>
+        {/* The search row, and the upload icon beside it. */}
+        <div className="border-line flex shrink-0 items-center gap-2 border-b px-3 py-2">
+          <Skeleton className="h-7 min-w-0 flex-1" />
+          <Skeleton className="size-7 shrink-0" />
+        </div>
+        <ul className="divide-line min-h-0 flex-1 divide-y overflow-hidden">
+          {Array.from({ length: rows }, (_, i) => (
+            <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5">
+              <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+              <Skeleton className="ml-auto h-2.5 w-24 shrink-0" />
+              <Skeleton className="size-7 shrink-0" />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Panel>
+  );
+}
+
+/** Ragged widths, so the placeholder list does not read as a barcode. */
+const NAME_WIDTHS = ['w-40', 'w-32', 'w-44', 'w-36', 'w-28', 'w-40'];
+
 /** The built databases, one row each — name, size, and whether the
     position index is in place. */
 function DbList({
@@ -444,14 +496,14 @@ function DbList({
   return (
     <ul className="divide-line divide-y">
       {databases.map((d) => (
-        // pl-3, the same inset the search row above uses, so the names
-        // start exactly on the field's left border. Tried deeper first
-        // (pl-8, to sit where the collections tab puts its name past the
-        // tick, then pl-6); both left the column floating in from the one
-        // vertical edge the panel actually draws. What the two tabs align
-        // is their LEFTMOST thing — a name here, a tick there — and both
-        // land on that border.
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-xs">
+        // 17px: five past the search field's left border, which pl-3 sat
+        // exactly on. An off-scale literal because it is answering the
+        // eye rather than a measurement — nothing in the row above is at
+        // 17 (the magnifier starts at 21, its placeholder at 41). The
+        // scale's neighbours are 16 and 20, and lanph3re asked for this
+        // one, so it is written as itself rather than rounded to look
+        // principled.
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5 text-xs">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
