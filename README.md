@@ -90,6 +90,8 @@ is one connected body of work, and the links are what make it that.
   each move by how often it is actually played, badges the replies you
   have no answer for, and lights the line the field walks from whatever
   you select or search for ([how it works](docs/opening-map.md)).
+
+  ![Opening map](docs/screenshots/opening-map.png)
 - **Your own games, in the explorer.** Alongside the reference databases and the
   Lichess databases, the explorer has a **My games** source: every game
   in the vault, answering *what have I played here, and how did it go* —
