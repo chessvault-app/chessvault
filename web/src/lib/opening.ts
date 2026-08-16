@@ -28,37 +28,75 @@ interface KnownOpening {
 const known = new Map<string, KnownOpening>();
 const inFlight = new Map<string, Promise<void>>();
 
-function lookup(fen: string): Promise<void> {
-  if (known.has(fen)) return Promise.resolve();
-  // One request per position even when callers race — and every caller's
-  // await resolves only once the answer is actually in `known`, which the
-  // review's sequential book walk depends on.
-  const pending = inFlight.get(fen);
-  if (pending) return pending;
-  const request = (async () => {
-    try {
-      const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
-      const body = (await res.json()) as {
-        opening?: { eco: string; name: string } | null;
-        book?: boolean;
-      };
-      // The ECO code rides with the name — "B90 Sicilian, Najdorf" says more
-      // than either half, and it is what every book and database prints.
-      const name = body.opening
-        ? [body.opening.eco, body.opening.name].filter(Boolean).join(' ')
-        : null;
-      // A server from before membership existed sends no `book`; a name is
-      // then the best available proxy.
-      known.set(fen, { name, book: body.book ?? name !== null });
-    } catch {
-      // A name is decoration; a failed lookup must not break the panel.
-      known.set(fen, { name: null, book: false });
-    } finally {
-      inFlight.delete(fen);
+/**
+ * Everything not yet known, asked for in one request.
+ *
+ * Each answer is a hash-map lookup on the server, but the opening map
+ * labels hundreds of nodes at once and used to ask one round trip per
+ * position — measured from the server's own log, thousands of /api/opening
+ * requests crowding the same six connections the map's coverage and field
+ * answers were waiting on. One position is never asked twice even when
+ * callers race: a position already in flight is awaited, not re-sent, and
+ * every caller's await resolves only once the answer is actually in
+ * `known`, which the review's sequential book walk depends on.
+ */
+function lookupMany(fens: string[]): Promise<void> {
+  const waits: Promise<void>[] = [];
+  const fresh: string[] = [];
+  const queued = new Set<string>();
+  for (const fen of fens) {
+    if (known.has(fen) || queued.has(fen)) continue;
+    const pending = inFlight.get(fen);
+    if (pending) {
+      waits.push(pending);
+      continue;
     }
-  })();
-  inFlight.set(fen, request);
-  return request;
+    queued.add(fen);
+    fresh.push(fen);
+  }
+  // Chunked well under the server's ceiling, so one degenerate caller
+  // cannot build a request the server refuses whole.
+  for (let at = 0; at < fresh.length; at += 500) {
+    const chunk = fresh.slice(at, at + 500);
+    const request = (async () => {
+      try {
+        const res = await fetch('/api/opening/batch', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ fens: chunk }),
+        });
+        const body = (await res.json()) as {
+          positions?: { fen: string; opening?: { eco: string; name: string } | null; book?: boolean }[];
+        };
+        if (!res.ok || !body?.positions) throw new Error('opening lookup failed');
+        const answered = new Map(body.positions.map((p) => [p.fen, p]));
+        for (const fen of chunk) {
+          const hit = answered.get(fen);
+          // The ECO code rides with the name — "B90 Sicilian, Najdorf" says
+          // more than either half, and it is what every book and database
+          // prints.
+          const name = hit?.opening
+            ? [hit.opening.eco, hit.opening.name].filter(Boolean).join(' ')
+            : null;
+          // A server from before membership existed sends no `book`; a name
+          // is then the best available proxy.
+          known.set(fen, { name, book: hit?.book ?? name !== null });
+        }
+      } catch {
+        // A name is decoration; a failed lookup must not break the panel.
+        for (const fen of chunk) known.set(fen, { name: null, book: false });
+      } finally {
+        for (const fen of chunk) inFlight.delete(fen);
+      }
+    })();
+    for (const fen of chunk) inFlight.set(fen, request);
+    waits.push(request);
+  }
+  return Promise.all(waits).then(() => undefined);
+}
+
+function lookup(fen: string): Promise<void> {
+  return lookupMany([fen]);
 }
 
 /**
@@ -137,7 +175,7 @@ export function useBookTags(tree: MoveTree, enabled = true): Set<NodeId> {
   useEffect(() => {
     if (unresolved.length === 0) return;
     let live = true;
-    void Promise.all(unresolved.map(lookup)).then(() => {
+    void lookupMany(unresolved).then(() => {
       if (live) setVersion((v) => v + 1);
     });
     return () => {
@@ -173,7 +211,7 @@ export function useOpeningName(fens: string[]): string | null {
     // to be cached.
     const wanted = fens.slice(0, NAMED_PLIES + 1).filter((fen) => !known.has(fen));
     if (wanted.length === 0) return;
-    void Promise.all(wanted.map(lookup)).then(() => {
+    void lookupMany(wanted).then(() => {
       if (live) bump((n) => n + 1);
     });
     return () => {
@@ -206,7 +244,7 @@ export function useOpeningLabels(fens: string[]): ReadonlyMap<string, string | n
     const wanted = fens.filter((fen) => !known.has(fen));
     if (wanted.length === 0) return;
     let live = true;
-    void Promise.all(wanted.map(lookup)).then(() => {
+    void lookupMany(wanted).then(() => {
       if (live) bump((n) => n + 1);
     });
     return () => {

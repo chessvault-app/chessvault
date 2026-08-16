@@ -226,5 +226,29 @@ export function openingsApi(): Hono {
       return c.json({ error: 'invalid FEN' }, 400);
     }
   });
+
+  // The same answer for many positions in one request. Each is a map
+  // lookup, but the opening map asks about every node it labels — from a
+  // phone that was hundreds of round trips crowding the same six
+  // connections the coverage and field answers needed. An unreadable FEN
+  // answers null/false in place rather than failing the batch.
+  api.post('/opening/batch', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as { fens?: unknown } | null;
+    const fens = Array.isArray(body?.fens)
+      ? body.fens.filter((f): f is string => typeof f === 'string')
+      : null;
+    if (!fens) return c.json({ error: 'expected fens' }, 400);
+    if (fens.length > 1024) return c.json({ error: 'too many positions' }, 400);
+    const positions = fens.map((fen) => {
+      try {
+        const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+        const key = hashSetup(pos.toSetup()).toString(16);
+        return { fen, opening: openingForKey(key), book: isBookKey(key) };
+      } catch {
+        return { fen, opening: null, book: false };
+      }
+    });
+    return c.json({ positions });
+  });
   return api;
 }
