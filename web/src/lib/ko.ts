@@ -572,6 +572,10 @@ export const ko: Record<string, string> = {
   'Where opponent replies come from': '상대 응수의 출처',
   'Against the field': '필드와 비교',
   '{pct}% of games met': '게임의 {pct}% 대응됨',
+  '{pct}% met': '{pct}% 대응됨',
+  'Games whose reply your map charts or a linked study prepares.':
+    '맵에 있거나 연결된 스터디가 준비한 수로 이어진 게임의 비율입니다.',
+  '{n} games in the field here': '이 위치의 필드 게임 {n}판',
   '{pct}% of games': '게임의 {pct}%',
   'Every popular reply here runs into your preparation.':
     '여기서 자주 나오는 응수는 모두 준비에 걸립니다.',

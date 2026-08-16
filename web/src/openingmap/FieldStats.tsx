@@ -6,7 +6,7 @@ import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import type { NodeCoverage } from './coverage';
-import { MoveCell, ResultBar, RowTail } from './FieldRow';
+import { MoveCell, MoveResult, RowTail } from './FieldRow';
 import { GAP_SHARE, type NodeGaps } from './gaps';
 import type { MapNode, ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
@@ -21,6 +21,11 @@ import { fieldMovesFor } from './useGaps';
  */
 
 const SHOWN = 8;
+
+/** The explorer's own number formatting, so a count reads the same in
+    both panels: compact on the line, exact on the tooltip. */
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const exact = new Intl.NumberFormat('en');
 
 export function FieldStats({
   facts,
@@ -102,20 +107,41 @@ export function FieldStats({
   return (
     <Field
       label="Against the field"
+      /**
+       * How big the field is, and — where the question applies — how
+       * much of it you have an answer to.
+       *
+       * These used to be alternatives, and the two panels read as two
+       * different tables: a node showed either a game count or a
+       * percentage, with nothing saying why. The count is the one fact
+       * every position has, so it is always there; the percentage joins
+       * it only where it means something, which is a position where the
+       * OPPONENT moves. At your own move there is nothing to meet — you
+       * pick the move — so there is no share to quote.
+       *
+       * The count is compact (`1.2M`, the explorer's own formatting):
+       * nine digits of exact games is a number nobody reads and a line
+       * nothing else fits beside.
+       */
       hint={
-        gaps ? (
-          <span className="text-subtle text-[0.6875rem]">
-            {t('{pct}% of games met', { pct: Math.round(gaps.metShare * 100) })}
-          </span>
-        ) : (
-          <span className="text-subtle text-[0.6875rem]">
-            {t('{n} games', { n: games })}
-          </span>
-        )
+        <span
+          className="text-subtle text-[0.6875rem]"
+          title={
+            gaps
+              ? t('Games whose reply your map charts or a linked study prepares.')
+              : t('{n} games in the field here', { n: exact.format(games) })
+          }
+        >
+          {t('{n} games', { n: compact.format(games) })}
+          {gaps ? ` · ${t('{pct}% met', { pct: Math.round(gaps.metShare * 100) })}` : ''}
+        </span>
       }
     >
-      <div className="flex flex-col gap-1">
-        {rows.slice(0, SHOWN).map((move) => {
+      {/* No gap between the rows, because they are striped: a stripe
+          with air around it is a row of pills, and what makes a zebra
+          readable is that the bands meet. */}
+      <div className="flex flex-col">
+        {rows.slice(0, SHOWN).map((move, at) => {
           const childId = charted.get(move.san);
           const share = move.total / games;
           const isGap = flagged.has(move.san);
@@ -125,9 +151,15 @@ export function FieldStats({
               // The border is on every row, and invisible on most: drawn
               // only where there is a gap, its 1px moved that row's
               // contents in by one against its neighbours.
+              //
+              // Every other row is tinted. Eight rows of eight numbers
+              // in a 22rem column is exactly the shape an eye loses its
+              // place in, and the stripes are what carry it across from
+              // the move to the share it belongs to.
               className={cn(
                 'flex items-center gap-2 rounded-lg border px-2 py-1',
                 isGap ? 'border-warn/40' : 'border-transparent',
+                at % 2 === 1 && 'bg-surface-2/50',
               )}
             >
               {/* A link where the move is on the map — in the link
@@ -157,7 +189,7 @@ export function FieldStats({
                   linked={!!childId}
                 />
               </button>
-              <ResultBar move={move} />
+              <MoveResult move={move} />
               <RowTail share={share}>
                 {childId ? (
                   <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
