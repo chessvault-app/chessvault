@@ -45,7 +45,7 @@ deliberate limit.
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.
 
-**More reference games.** They are plural, like books:
+**More reference games.** They are plural:
 `data/refgames/<name>.sqlite`, each an independent database, listed and
 switched in the elite browser. Its manager uploads PGN collections (the
 same `vault/sources/` uploads), indexes any
