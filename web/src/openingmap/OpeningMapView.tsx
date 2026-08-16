@@ -1057,6 +1057,13 @@ function NodePanel({
         className={cn(
           'border-line bg-surface sticky z-10 mt-auto flex items-stretch gap-1 border-t',
           '-mx-3 px-3 pt-2',
+          // Gone while the keyboard is up, the same as the phone's own
+          // bottom bar. Pinned to the foot of a sheet that has just given
+          // way to the keyboard, this row rides up and sits over the
+          // fields — five verbs between the thing being typed and the
+          // keys typing it. The name and note fields are why: they are
+          // in the sheet this row belongs to.
+          'keyboard:hidden',
           'max-sm:bottom-[calc(-1.25rem-var(--safe-b))] max-sm:-mb-[calc(1.25rem+var(--safe-b))]',
           'max-sm:pb-[calc(0.5rem+var(--safe-b))]',
           'sm:bottom-[-0.75rem] sm:-mb-3 sm:pb-2',
