@@ -929,6 +929,7 @@ export const ko: Record<string, string> = {
     '데이터베이스와 모음 삭제는 데이터베이스 페이지에서',
   'PGN collections': 'PGN 모음',
   'Upload PGN collections': 'PGN 모음 올리기',
+  'Or drop .pgn files anywhere in this box': '이 상자 안 아무 곳에나 .pgn 파일을 놓아도 됩니다',
   'Name — the file’s name if blank': '이름 — 비우면 파일 이름',
   'The build failed.': '만들기에 실패했습니다.',
   'could not start the build': '만들기를 시작하지 못했습니다',

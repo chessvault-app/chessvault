@@ -296,14 +296,20 @@ export function RefDbManager({
           ))}
         </ul>
       )}
+        {/* A drop target has to look like somewhere a file can land. This
+            was a 32px strip — the height of a button, which is what it
+            read as, and a target that small is a poor one to let go of a
+            300 MB file over. It is a box now, on both surfaces, with the
+            drop said out loud under the press it also is. */}
         <label
           {...pgnDrop.handlers}
           className={cn(
-            'text-muted flex h-8 cursor-pointer items-center',
-            'justify-center gap-1.5 rounded-md border border-dashed transition-colors duration-100',
+            'text-muted flex min-h-24 cursor-pointer flex-col items-center justify-center',
+            'gap-1.5 rounded-lg border border-dashed px-3 py-5 text-center',
+            'transition-colors duration-100',
             pgnDrop.dragging
-              ? 'border-primary bg-primary-soft'
-              : 'border-line hover:border-primary/40',
+              ? 'border-primary bg-primary-soft text-primary'
+              : 'border-line hover:border-primary/40 hover:bg-surface-2',
           )}
         >
           <input
@@ -319,13 +325,18 @@ export function RefDbManager({
           />
           {uploading ? (
             <>
-              <Loader2 className="size-3.5 animate-spin" />
-              {t('Uploading {name}…', { name: uploading })}
+              <Loader2 className="size-5 animate-spin" />
+              <span className="min-w-0 max-w-full truncate">
+                {t('Uploading {name}…', { name: uploading })}
+              </span>
             </>
           ) : (
             <>
-              <Upload className="size-3.5" />
-              {t('Upload PGN collections')}
+              <Upload className="size-5" />
+              <span className="text-fg font-medium">{t('Upload PGN collections')}</span>
+              <span className="text-subtle leading-relaxed">
+                {t('Or drop .pgn files anywhere in this box')}
+              </span>
             </>
           )}
         </label>
