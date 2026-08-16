@@ -254,10 +254,18 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
           ) : (
             <X className="text-bad size-3.5 shrink-0" aria-label={t('failed')} />
           )}
+          {/* The dashboard's columns exactly — same widths, same ml-auto,
+              same right-aligned time. Two lists of the same rows that
+              place their eye differently read as two different tables,
+              and a time column left to size itself moves the eye between
+              rows as "just now" gives way to "5 days ago". */}
           <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
-          <span className="text-subtle min-w-0 flex-1 truncate">{t(bandOf(h.puzzleRating))}</span>
-          <PreviewEye {...preview.eyeProps(h.id)} />
-          <span className="text-subtle shrink-0 tabular-nums" title={formatWhen(h.at)}>
+          <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
+          <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
+          <span
+            className="text-subtle w-16 shrink-0 text-right tabular-nums"
+            title={formatWhen(h.at)}
+          >
             {formatAgo(h.at)}
           </span>
         </button>

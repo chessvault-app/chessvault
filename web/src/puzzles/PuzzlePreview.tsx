@@ -132,7 +132,14 @@ export function usePuzzlePreview(): {
   return { eyeProps, layer };
 }
 
-/** The eye itself, so callers do not each import the icon. */
-export function PreviewEye(props: ReturnType<ReturnType<typeof usePuzzlePreview>['eyeProps']>) {
-  return <Eye {...props} />;
+type EyeProps = ReturnType<ReturnType<typeof usePuzzlePreview>['eyeProps']>;
+
+/**
+ * The eye itself, so callers do not each import the icon — and so the
+ * two lists that have one cannot drift apart on how it is placed.
+ * `className` is the LIST's own layout (where in the row it sits), which
+ * is the only part either caller should be deciding.
+ */
+export function PreviewEye({ eye, className }: { eye: EyeProps; className?: string }) {
+  return <Eye {...eye} className={cn(eye.className, className)} />;
 }

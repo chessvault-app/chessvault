@@ -1,9 +1,8 @@
-import { BookMarked, Check, ChevronRight, Eraser, Eye, RotateCcw, X } from 'lucide-react';
+import { BookMarked, Check, ChevronRight, Eraser, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
@@ -13,7 +12,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { BANDS, bandOf } from './bands';
-import { usePuzzlePreview } from './PuzzlePreview';
+import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { t } from '@/lib/i18n';
 
 /**
@@ -312,11 +311,8 @@ export function DashboardPage() {
                     )}
                     <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
                     <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
-                    {(() => {
-                      const eye = preview.eyeProps(h.id);
-                      // ml-auto is this list's own layout, not the eye's.
-                      return <Eye {...eye} className={cn(eye.className, 'ml-auto')} />;
-                    })()}
+                    {/* ml-auto is this list's own layout, not the eye's. */}
+                    <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
                     <span
                       className="text-subtle w-16 shrink-0 text-right tabular-nums"
                       title={formatWhen(h.at)}
