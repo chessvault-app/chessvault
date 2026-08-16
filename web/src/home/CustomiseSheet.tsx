@@ -83,7 +83,10 @@ export function CustomiseSheet({
         onToggle={() => onChange({ ...layout, checklist: !layout.checklist })}
       />
 
-      <div className="flex max-h-72 flex-col gap-1 overflow-y-auto">
+      {/* overflow-x-hidden for the same reason home's page box has it: a
+          box that scrolls in one axis scrolls in both unless it says
+          otherwise, and this list has nothing to the side of it. */}
+      <div className="flex max-h-72 flex-col gap-1 overflow-y-auto overflow-x-hidden">
         <Group label={t('On the grid')} empty={t('Nothing — every destination is a button below.')} count={tiles.length}>
           {tiles.map((entry, i) => (
             // Keyed by id, not position: React then MOVES the row that
@@ -195,7 +198,15 @@ function Row({
 }) {
   const { icon: Icon, label } = entry;
   return (
-    <div className="border-line bg-surface-inset flex items-center gap-2 rounded-md border px-2 py-1.5">
+    // px-3, not px-2, and the 3 is a measurement rather than a taste: on a
+    // coarse pointer `Switch` grows its touch target with an absolutely
+    // positioned ::before inset by -12px, which is invisible but still
+    // counts towards scrollable overflow. Against 8px of padding it stood
+    // 4px outside the row, which made the list — a scroll container in
+    // both axes, as `overflow-y-auto` always is — pannable sideways by 3px
+    // on a phone, with no scrollbar to say why. 12px of padding contains
+    // it exactly, so the whole touch target survives.
+    <div className="border-line bg-surface-inset flex items-center gap-2 rounded-md border px-3 py-1.5">
       <Icon className="text-muted size-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate text-sm">{t(label)}</span>
       {children}
