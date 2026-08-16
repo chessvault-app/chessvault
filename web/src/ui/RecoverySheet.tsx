@@ -1,4 +1,4 @@
-import { LifeBuoy, Trash2 } from 'lucide-react';
+import { History, Trash2 } from 'lucide-react';
 import { Button } from './Button';
 import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
@@ -54,14 +54,20 @@ export function RecoverySheet({
         {t('Restoring brings them back unsaved, so you can look before you keep them.')}
       </p>
 
+      {/* "Changes", not "them", on both — this sheet and the leave question
+          are the same question about the same thing, and answering one
+          should not need a different vocabulary from answering the other.
+          A clock rewinding rather than a life ring: the fact that decides
+          the answer is WHEN the copy was parked, which the sentence above
+          leads with, and nothing here is a rescue from a disaster. */}
       <div className="mt-1 flex flex-col gap-2">
         <Button variant="primary" size="md" className="w-full justify-center" onClick={onRecover}>
-          <LifeBuoy className="size-3.5" />
-          {t('Restore them')}
+          <History className="size-3.5" />
+          {t('Restore changes')}
         </Button>
         <Button variant="danger" size="md" className="w-full justify-center" onClick={onDismiss}>
           <Trash2 className="size-3.5" />
-          {t('Throw them away')}
+          {t('Discard changes')}
         </Button>
       </div>
     </Sheet>

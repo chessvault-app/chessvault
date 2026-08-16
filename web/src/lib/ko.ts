@@ -395,8 +395,9 @@ export const ko: Record<string, string> = {
     '“{name}”에 저장하지 않은 변경 사항이 있습니다.',
   'Restoring brings them back unsaved, so you can look before you keep them.':
     '복구하면 저장하지 않은 상태로 돌아오므로, 확인한 뒤에 보관할 수 있습니다.',
-  'Restore them': '복구하기',
-  'Throw them away': '버리기',
+  // 'Discard changes' is the leave sheet's, shared on purpose: same
+  // question, same answer, same words.
+  'Restore changes': '변경 사항 복구하기',
   'Save the open document': '열려 있는 문서 저장',
   'Hide the editing tools': '편집 도구 숨기기',
   'Show NAGs, comments and move tools': '기호, 주석, 수순 도구 보기',
