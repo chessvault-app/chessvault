@@ -29,16 +29,25 @@ export type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
  * exists, on the way out (see LeaveSheet), where it is asked rather than
  * clicked by accident.
  *
- * `Saved` and `Saving…` stay text: there is nothing to press.
+ * `Saved` and `Saving…` stay text: there is nothing to press. With
+ * autosave on there is never anything to press while a document is
+ * pending either, so the button does not appear at all — only a failure
+ * still asks for a hand.
  */
 export function SaveControl({
   state,
   error,
+  autoSaves = false,
   onSave,
 }: {
   state: SaveState;
   /** Shown as the retry tooltip; the button itself never spells out a failure. */
   error?: string | null;
+  /**
+   * Is this device writing as you type? Nothing here changes what happens
+   * — the store owns that — only what is worth offering. See below.
+   */
+  autoSaves?: boolean;
   onSave: () => void;
 }) {
   if (state === 'saved') {
@@ -48,7 +57,15 @@ export function SaveControl({
       </span>
     );
   }
-  if (state === 'saving') {
+  // Pending under autosave is the spinner too, not a button.
+  //
+  // The write is already coming — the store arms it 1.5 s after the last
+  // edit — so a Save button there offers to do something that needs no
+  // asking, and offers it for exactly as long as it takes to read, then
+  // swaps itself for a spinner. Typing produced a button flickering in
+  // and out of the header. One steady spinner covers the whole debounce
+  // and the PUT behind it: work in hand, nothing to decide.
+  if (state === 'saving' || (state === 'dirty' && autoSaves)) {
     return (
       <span className="text-subtle flex shrink-0 items-center gap-1 text-xs">
         <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}

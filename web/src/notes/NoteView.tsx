@@ -162,6 +162,9 @@ function NoteEditor({
   const front = useRef(frontMatter);
   front.current = frontMatter;
   const undoable = useUndoable();
+  // Subscribed, not read: turning autosave on in Settings has to reach the
+  // header of a note that is already open.
+  const autosave = usePrefs((p) => p.autosave);
 
   /**
    * The crash net — see the study store, which does the same thing for
@@ -347,6 +350,7 @@ function NoteEditor({
         </Button>
         <SaveControl
           state={saveState}
+          autoSaves={autosave}
           onSave={() => editor && void save(docToMarkdown(editor.state.doc, front.current))}
         />
       </header>

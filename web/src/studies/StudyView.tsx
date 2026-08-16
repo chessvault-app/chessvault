@@ -83,6 +83,9 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const setEditing = useStudy((s) => s.setEditing);
   const undoable = useUndoable();
   const recovery = useStudy((s) => s.recovery);
+  // Subscribed, not read: turning autosave on in Settings has to reach the
+  // header of a study that is already open.
+  const autosave = usePrefs((p) => p.autosave);
 
   const base = kind === 'game' ? ('games/docs' as const) : ('studies' as const);
   const backSection = kind === 'game' ? ('games' as const) : ('studies' as const);
@@ -196,7 +199,12 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
-      <SaveControl state={saveState} error={error} onSave={() => void save()} />
+      <SaveControl
+        state={saveState}
+        error={error}
+        autoSaves={autosave}
+        onSave={() => void save()}
+      />
     </div>
   );
 
