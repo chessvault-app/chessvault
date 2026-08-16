@@ -126,33 +126,37 @@ The map draws as a graph view — the constellation the vault's Obsidian
 ancestry promises. Circles are sized by what hangs beneath them — and,
 while a field source is on, by how often the move actually gets played
 at its parent, so the fat dots are the crowd and the small ones the
-sidelines. The accent colour is spent on the mainline and
-nothing else, and the mainline answers what you are looking at. Select
-a dot and the line the field walks on from there — its most-played
-continuation, all the way down — lights up in the accent, thicker as
-well as brighter, while its own lineage back to the root answers in
-bright foreground: where you came from, and where the crowd goes next.
-Search, and every hit gets that same treatment at once, each line in its
-own colour, so "which defences do I actually face and where do they
-go" is one query rather than five. A colour belongs to a LINE, not to a
-hit: searching "Ruy" over six Ruy variations matches 18 nodes, because
-the catalogue says "Ruy Lopez" on nearly every square of that subtree,
-and all but eight of those stand on another hit's line and draw nothing
-of their own. Past twelve lines the wheel stops telling colours apart
-and they all fall back to the accent; the fading is doing the work by
-then. Focus on nothing and the map
-is calm — no selection, no search, no accent, just the neutral
-constellation. (Highlighting every node's most-played child sounds like
-the same idea and is not: an only child is trivially the most played,
-so on a 63-node map that rule lit 54 of 63 edges and the emphasis read
-as noise.) The page
-holds the canvas behind a brief spinner until its colours are known —
-coverage, names and the field all answered — then shows the finished
-picture at once, so the overture plays in colour rather than the map
-colouring in patches as answers land; a source too slow to wait for
-(the online database warming its cache, a dead link) falls back to
-colouring in place after a moment. The
-layout is a deterministic force relaxation, so the same map always
+sidelines.
+
+The accent colour is spent on the mainline and nothing else, and the
+mainline answers what you are looking at. Select a dot and the line the
+field walks on from there — its most-played continuation, all the way
+down — lights up in the accent, thicker as well as brighter, while its
+own lineage back to the root answers in bright foreground: where you
+came from, and where the crowd goes next. (Highlighting every node's
+most-played child sounds like the same idea and is not: an only child
+is trivially the most played, so on a 63-node map that rule lit 54 of
+63 edges and the emphasis read as noise.)
+
+Search, and every hit gets that same treatment at once, each line in
+its own colour, so "which defences do I actually face and where do they
+go" is one query rather than five. A colour belongs to a *line*, not to
+a hit: searching "Ruy" over six Ruy variations matches 18 nodes,
+because the catalogue says "Ruy Lopez" on nearly every square of that
+subtree, and all but eight of those stand on another hit's line and
+draw nothing of their own. Past twelve lines the wheel stops telling
+colours apart and they all fall back to the accent; the fading is doing
+the work by then. Focus on nothing and the map is calm — no selection,
+no search, no accent, just the neutral constellation.
+
+The page holds the canvas behind a brief spinner until its colours are
+known — coverage, names and the field all answered — then shows the
+finished picture at once, so the overture plays in colour rather than
+the map colouring in patches as answers land; a source too slow to wait
+for (the online database warming its cache, a dead link) falls back to
+colouring in place after a moment.
+
+The layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots
 scatter at random and tumble into place, chaos first, order last. The
@@ -160,25 +164,28 @@ journey is different on every load; the destination never is, because
 the map's shape is a thing people remember. And once settled, the dots
 keep breathing — a slow, few-pixel wander around their homes, threads
 following — so the constellation floats instead of freezing. (All of
-it skipped when the OS asks for reduced motion.) Wheel zooms to the
-cursor, dragging the ground pans, two fingers pinch — from anywhere,
-including from two dots, because on a dense map there is barely any
-bare canvas to find and "don't touch the dots" is not an instruction
-anybody can follow — pressing a dot
-selects it and pressing it again lets it go, and dragging a
-dot pulls the web — mouse or touch. The held dot follows the finger,
-its neighbours follow their springs, crowding pushes back, and the
-whole thing coasts to a stop after the release instead of freezing
-mid-swing. Where you leave things is where they stay, for the session;
-the stored layout stays deterministic either way. (Reduced motion gets
-the plain version: the held dot moves and nothing else.) Labels keep their screen
-size and fade out as the view pulls
-back — far out you read the shape, close in you read the names. The
-search field in the top-right corner fades the map back to just its
-hits — matching a move, a name you gave a node, or the catalogue's name
-for its position — and a hit keeps its label whatever the zoom, so the
-answer is *where these sit in the constellation* rather than a list
-that takes you to one and loses the map.
+it skipped when the OS asks for reduced motion.)
+
+Wheel zooms to the cursor, dragging the ground pans, two fingers pinch
+— from anywhere, including from two dots, because on a dense map there
+is barely any bare canvas to find and "don't touch the dots" is not an
+instruction anybody can follow. Pressing a dot selects it and pressing
+it again lets it go, and dragging a dot pulls the web — mouse or touch.
+The held dot follows the finger, its neighbours follow their springs,
+crowding pushes back, and the whole thing coasts to a stop after the
+release instead of freezing mid-swing. Where you leave things is where
+they stay, for the session; the stored layout stays deterministic
+either way. (Reduced motion gets the plain version: the held dot moves
+and nothing else.)
+
+Labels keep their screen size and fade out as the view pulls back — far
+out you read the shape, close in you read the names. The search field
+in the top-right corner fades the map back to just its hits — matching
+a move, a name you gave a node, or the catalogue's name for its
+position — and a hit keeps its label whatever the zoom, so the answer
+is *where these sit in the constellation* rather than a list that takes
+you to one and loses the map.
+
 Covered nodes are filled, plans are hollow and dashed, and the badges
 (field gaps, drill health, the depth arc) ride on the dots. Beneath it
 all, each node wears a faint halo tinted by its opening family — the
