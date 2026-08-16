@@ -156,7 +156,11 @@ export function Sheet({
           // and two buttons, and a flex column would rather squash them
           // than let itself overflow.
           'bg-surface border-line flex max-h-full w-full flex-col gap-2 overflow-y-auto overscroll-contain',
-          'border p-3 shadow-[var(--shadow-pop)] [&>*]:shrink-0',
+          // pt-0, because the title strip below is sticky and carries the
+          // top padding itself. Padding on the CARD stays behind a sticky
+          // child — the strip would pin 12px down, with the rows sliding
+          // through the gap above it.
+          'border px-3 pb-3 pt-0 shadow-[var(--shadow-pop)] [&>*]:shrink-0',
           // A tall sheet — the opening catalogue is a thousand rows — grows
           // until it runs out of screen, and on a phone the top of the
           // screen is under the notch. So its ceiling is the safe area
@@ -181,9 +185,17 @@ export function Sheet({
             kinds of sheet on one phone read as two different windows. On a
             phone the grabber sits above the title, and the whole strip is
             the mouse's drag handle — see sheetDrag for why a finger needs
-            neither. */}
+            neither.
+
+            Pinned to the top of the card, which scrolls. A ten-row list
+            is taller than the sheet holding it, and the strip scrolling
+            away with the rows took the label and the back chevron with
+            it — on a sheet standing over a hidden parent, the chevron is
+            the way back, and a way back you have to scroll up to find is
+            not one. Its own opaque fill because rows now pass beneath
+            it. */}
         <div
-          className="border-line -mx-3 -mt-1 px-3 pb-2 pt-1 max-sm:touch-none max-sm:select-none sm:border-b"
+          className="border-line bg-surface sticky top-0 z-10 -mx-3 px-3 pb-2 pt-3 max-sm:touch-none max-sm:select-none sm:border-b"
           {...(phone ? drag.handlers : {})}
         >
           <div className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
