@@ -410,11 +410,17 @@ export function MapCanvas({
   const moved = useRef(false);
 
   /**
-   * Which dot is currently held, as STATE rather than a ref, because the
-   * whole point is to draw it. A hold that arms silently is a hold you
-   * cannot learn: the finger has to be told the map let go of the dot
-   * and handed it over, and on a mouse it confirms the press landed on
-   * the dot you meant rather than the one beside it.
+   * Which dot is currently held BY A FINGER, as STATE rather than a ref,
+   * because the whole point is to draw it. A hold that arms silently is a
+   * hold you cannot learn: the finger has to be told the map let go of
+   * the dot and handed it over.
+   *
+   * A mouse is never told, because a mouse never had to ask. The ring is
+   * as wide as it is to clear a fingertip (see HELD_RING), and drawn
+   * around a dot nothing is covering it is a halo the size of a coin
+   * following the cursor — an answer to a question a pointer device does
+   * not have. On a mouse the dot moving IS the feedback: it goes where
+   * the pointer goes, from the first pixel, with nothing on top of it.
    */
   const [held, setHeld] = useState<string | null>(null);
 
@@ -847,13 +853,16 @@ export function MapCanvas({
                       origY: from.y,
                       moved: false,
                     };
-                    setHeld(id);
-                    // The other half of the answer, where the hardware
-                    // offers one: a hold that arrives with a tick under
-                    // the finger needs no explaining. Android honours
-                    // this; iOS Safari does not, which is why the ring
-                    // is the part that has to carry it.
-                    if (touch) navigator.vibrate?.(12);
+                    // The ring, and the tick where the hardware offers
+                    // one: a hold that arrives under the finger needs no
+                    // explaining. Android honours the vibration; iOS
+                    // Safari does not, which is why the ring is the part
+                    // that has to carry it. Both are the finger's — see
+                    // `held` for why a mouse gets neither.
+                    if (touch) {
+                      setHeld(id);
+                      navigator.vibrate?.(12);
+                    }
                   };
                   // A mouse claims the dot at once; a finger has to mean
                   // it. On a map worth exploring there is barely any bare
@@ -943,11 +952,12 @@ export function MapCanvas({
                   strokeWidth={selected ? 2 : 1.2}
                   strokeDasharray={planned && !selected ? '3 3' : undefined}
                 />
-                {/* Held: the dot has been picked up and moves with the
-                    pointer now. A ring outside everything else the dot
+                {/* Held: a finger has picked the dot up and it moves with
+                    the finger now. A ring outside everything else the dot
                     wears, in the foreground colour so it reads on any
                     fill, and outside the depth arc so it never looks
-                    like progress. */}
+                    like progress. Touch only — `held` is never set for a
+                    mouse, which needs no telling. */}
                 {held === id && (
                   <>
                     <circle
