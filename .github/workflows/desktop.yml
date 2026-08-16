@@ -36,21 +36,20 @@ permissions:
   contents: write
 
 jobs:
-  # The opening book and the starter reference games that ship inside the
-  # installer, built here rather than committed. Both are derived data — the
-  # repo's rule is that derived data is rebuildable and not tracked — and
-  # building them per release also keeps them from ageing into a snapshot of
-  # whichever month they were first made from. Both come from the same
-  # downloaded month, so one download feeds two artefacts.
+  # The starter reference games that ship inside the installer, built here
+  # rather than committed. They are derived data — the repo's rule is that
+  # derived data is rebuildable and not tracked — and building them per
+  # release also keeps them from ageing into a snapshot of whichever month
+  # they were first made from.
   #
   # Built ONCE and passed to the three package jobs as an artefact: the work
   # is minutes of CPU, and doing it per platform would triple that for three
   # identical file sets.
   #
-  # A server deploy and a source checkout get neither from this, by design —
-  # they ship the commit, not the release artefacts. Both can build their own
-  # (npm run build:book / build:refgames, or the book manager in the app).
-  book:
+  # A server deploy and a source checkout get none of this, by design — they
+  # ship the commit, not the release artefacts. Both can build their own
+  # (npm run build:refgames, or the Databases page in the app).
+  starter-db:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -85,29 +84,17 @@ jobs:
         id: cache
         with:
           path: assets
-          key: bundled-dbs-${{ steps.month.outputs.month }}-v1
+          key: bundled-dbs-${{ steps.month.outputs.month }}-v2
 
-      - name: Build the book and the starter reference games
+      - name: Build the starter reference games
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
           curl -sSL -o elite.zip "${{ steps.month.outputs.url }}"
           unzip -o -q elite.zip -d elite
           pgn=$(find elite -name '*.pgn' | head -1)
-          npx tsx scripts/build-book.ts "$pgn" --name elite
-          games=$(npx tsx -e "
-            import Database from 'better-sqlite3';
-            import { DATA_BOOKS } from './server/paths.ts';
-            import { resolve } from 'node:path';
-            const db = new Database(resolve(DATA_BOOKS, 'elite.sqlite'), { readonly: true });
-            process.stdout.write(db.prepare(\"SELECT value FROM meta WHERE key = 'games'\").get().value);
-          ")
-          npx tsx scripts/build-demo-book.ts --depth 24 --width 8 --min 10 \
-            --games "$games" \
-            --out "assets/lichess-elite-${{ steps.month.outputs.month }}.sqlite"
-          # The same month again, as full games this time: index every game,
-          # then keep the strongest of each ECO code. The refgames- prefix is
-          # what first-run seeding uses to tell this file from the book.
+          # Index every game, then keep the strongest of each ECO code. The
+          # refgames- prefix is what first-run seeding looks for.
           npx tsx scripts/build-refgames.ts "$pgn"
           npx tsx scripts/build-bundled-refgames.ts --games 50000 \
             --out "assets/refgames-lichess-elite-${{ steps.month.outputs.month }}.sqlite"
@@ -120,7 +107,7 @@ jobs:
           if-no-files-found: error
 
   package:
-    needs: book
+    needs: starter-db
     strategy:
       # Don't cancel the other platform when one fails: knowing Windows is
       # fine while macOS is broken is more useful than one red X.
@@ -168,7 +155,7 @@ jobs:
       # this needs no network beyond the install above.
       - run: npm run setup:engine
 
-      # The book and starter reference games built by the `book` job.
+      # The starter reference games built by the `starter-db` job.
       # package.json ships assets/ as an extraResource, so they have to be
       # here before electron-builder runs.
       - uses: actions/download-artifact@v7
