@@ -276,14 +276,25 @@ export function RefDbManager({
   return (
     <>
       <Panel flush className="min-h-0">
+        {/* The switch gets the header to itself. Sharing it with the
+            search meant the two segments were squeezed to whatever the
+            field left over, and Segmented gives its segments equal
+            widths — so the longer label wore its padding while the
+            shorter one sat in slack.
+            `w-fit` because PanelHeader's title slot is flex-1: left to
+            the slot the control spanned the whole panel, which is the
+            same complaint the other way up. fit-content over flex-1
+            children resolves to twice the wider label, which is exactly
+            a segmented control's natural size. */}
         <PanelHeader
+          className="h-auto py-2"
           title={
             <Segmented
               value={tab}
               onChange={setTab}
               ariaLabel="What to manage"
               size="sm"
-              className="w-full max-w-[17rem]"
+              className="w-fit"
               segments={[
                 {
                   value: 'databases',
@@ -291,7 +302,6 @@ export function RefDbManager({
                     <>
                       <Database className="size-3.5 shrink-0" />
                       {t('Databases')}
-                      <span className="text-subtle tabular-nums">{databases.length}</span>
                     </>
                   ),
                 },
@@ -301,43 +311,39 @@ export function RefDbManager({
                     <>
                       <FileText className="size-3.5 shrink-0" />
                       {t('PGN collections')}
-                      <span className="text-subtle tabular-nums">{sources?.length ?? 0}</span>
                     </>
                   ),
                 },
               ]}
             />
           }
-          // The header owns the whole width: the segmented control is the
-          // title here, and it needs room to be one rather than a label.
-          className="h-auto flex-wrap gap-y-2 py-2"
-          actionsClassName="min-w-0 flex-1 justify-end"
-          actions={
-            <>
-              <SearchInput
-                inputSize="sm"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('Search')}
-                spellCheck={false}
-                className="min-w-0 max-w-[14rem] flex-1"
-              />
-              {/* Uploading is a moment, not furniture. It was a permanent
-                  96px box under a list that can run to 24 rows; behind an
-                  icon it costs nothing until it is wanted. */}
-              <Button
-                variant="secondary"
-                size="icon-sm"
-                className="shrink-0"
-                title={t('Upload PGN collections')}
-                aria-haspopup="dialog"
-                onClick={() => setShowUpload(true)}
-              >
-                <Upload className="size-3.5" />
-              </Button>
-            </>
-          }
         />
+
+        {/* Its own row, under the switch: the field wants the width, and
+            on a phone there was never room for both on one line. */}
+        <div className="border-line flex shrink-0 items-center gap-2 border-b px-3 py-2">
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('Search')}
+            spellCheck={false}
+            className="min-w-0 flex-1"
+          />
+          {/* Uploading is a moment, not furniture. It was a permanent
+              96px box under a list that can run to 24 rows; behind an
+              icon it costs nothing until it is wanted. */}
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            className="shrink-0"
+            title={t('Upload PGN collections')}
+            aria-haspopup="dialog"
+            onClick={() => setShowUpload(true)}
+          >
+            <Upload className="size-3.5" />
+          </Button>
+        </div>
 
         {/* The build's own line, where the list would be — it is the one
             thing here that takes minutes, so it says so from the top
@@ -379,7 +385,7 @@ export function RefDbManager({
               className="shrink-0"
               onClick={() => setPicked(new Set())}
             >
-              {t('Clear')}
+              {t('Cancel')}
             </Button>
             <Button
               variant="primary"
@@ -428,7 +434,12 @@ function DbList({
   return (
     <ul className="divide-line divide-y">
       {databases.map((d) => (
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-xs">
+        // pl-8, not pl-3: it lands the name where the collections tab
+        // puts its own — past the tick — so switching tabs does not slide
+        // the column of names sideways. Measured at 33px against that
+        // tab's 34, the last pixel being the checkbox's own rendered
+        // width, which is the browser's to decide.
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-8 pr-1.5 text-xs">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
