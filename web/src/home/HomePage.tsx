@@ -335,7 +335,18 @@ export function HomePage() {
     // (measured: scrollWidth 560 against a 390 client). Capping the column
     // at the space available makes `w-full` mean the page again, and the
     // ellipsis do what it was there for.
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto p-6">
+    //
+    // overflow-x-hidden says the rest out loud. Nothing on this page is
+    // ever meant to be reached by moving sideways — it is a launcher one
+    // column wide — and `overflow-y-auto` alone does not mean that: with
+    // the other axis left visible, CSS computes it to `auto` too, so any
+    // future px of overflow silently becomes a page that slides under a
+    // thumb with no scrollbar to explain it. Hidden makes the axis a
+    // statement rather than an accident. Nothing is clipped by it: at
+    // 320–430px, with every destination in the launcher row and an
+    // unbreakable study name in Continue, the content is exactly as wide
+    // as the box.
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6">
       <div className="w-full max-w-lg">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="bg-primary text-primary-fg grid size-14 place-items-center rounded-2xl">
@@ -452,7 +463,10 @@ export function HomePage() {
           <Button
             variant="ghost"
             size="icon-sm"
-            className="-my-1 -mr-1.5"
+            // -mr-1 against the row's px-1, so the button ends level with
+            // the tiles below it. -mr-1.5 (what the checklist's X uses,
+            // inside a card padded px-3) hung 2px past the card's edge.
+            className="-my-1 -mr-1"
             title={t('Customise home')}
             onClick={() => setEditing(true)}
           >
