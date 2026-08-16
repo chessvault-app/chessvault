@@ -210,13 +210,17 @@ export function FieldStats({
             </div>
           );
         })}
+        {/* col-span-3, like the rows: a sentence dropped into the grid
+            is a cell of the MOVE column, and this one is six words wide
+            — it was setting that column's width for the whole table and
+            pushing every bar an inch to the right. */}
         {rows.length > SHOWN && (
-          <p className="text-subtle px-2 text-xs">
+          <p className="text-subtle col-span-3 px-2 pt-1 text-xs">
             {t('and {n} rarer moves', { n: rows.length - SHOWN })}
           </p>
         )}
         {gaps && gaps.gaps.length === 0 && (
-          <p className="text-muted px-2 text-xs leading-relaxed">
+          <p className="text-muted col-span-3 px-2 pt-1 text-xs leading-relaxed">
             {t('Every reply over {pct}% runs into your preparation.', {
               pct: Math.round(GAP_SHARE * 100),
             })}

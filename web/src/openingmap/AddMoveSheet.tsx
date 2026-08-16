@@ -154,7 +154,7 @@ export function AddMoveSheet({
           middle of a screen rather than a page filling one. */}
       <div className={cn(LIST, 'min-h-0 grow content-start gap-y-0.5 overflow-y-auto sm:max-h-72')}>
         {field === null ? null : rows.length === 0 ? (
-          <p className="text-muted px-1 py-3 text-center text-xs">
+          <p className="text-muted col-span-3 px-1 py-3 text-center text-xs">
             {t('Nothing to offer — type the move instead.')}
           </p>
         ) : (
