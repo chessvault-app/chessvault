@@ -984,7 +984,23 @@ function NodePanel({
         </Field>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* What you can DO here, pinned to the foot of the panel from the
+          width the panel is a full-height column (md, where CanvasShell
+          stops using a Sheet).
+
+          The panel's content is taller than any window — a board, four
+          fields, a statistics table and this row — so scrolled to the
+          bottom these buttons ended up sliced in half by the window's
+          own edge. They are the answer to "and now what", and an answer
+          cut through the middle by the screen edge reads as a broken
+          panel rather than as a list that continues. Bled out over the
+          scroller's padding so it spans the panel, and opaque, because
+          the rows now pass underneath it.
+
+          Phone-shaped sheets keep it in the flow: a sheet is as tall as
+          its content, ends where the thumb is, and has nothing to pin
+          against. */}
+      <div className="md:border-line md:bg-surface flex flex-wrap items-center gap-2 md:sticky md:bottom-0 md:z-10 md:-mx-4 md:-mb-4 md:border-t md:px-4 md:py-3">
         <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
           <Plus className="size-3.5" /> {t('Add a move')}
         </Button>
