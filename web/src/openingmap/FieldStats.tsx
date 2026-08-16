@@ -6,7 +6,7 @@ import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import type { NodeCoverage } from './coverage';
-import { MoveLabel, MoveMarks, ResultBar, RowTail } from './FieldRow';
+import { MoveCell, ResultBar, RowTail } from './FieldRow';
 import { GAP_SHARE, type NodeGaps } from './gaps';
 import type { MapNode, ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
@@ -130,15 +130,25 @@ export function FieldStats({
                 isGap ? 'border-warn/40' : 'border-transparent',
               )}
             >
+              {/* A link where the move is on the map — in the link
+                  colour, underlining under the pointer — and plain text
+                  where it is not. Both used to look identical, so the
+                  one row in the table that goes somewhere announced
+                  itself by tooltip alone. */}
               <button
                 type="button"
-                className={childId ? 'hover:text-primary text-left' : 'cursor-default text-left'}
+                className={childId ? 'text-left hover:underline' : 'cursor-default text-left'}
                 onClick={() => childId && onSelectChild(childId)}
                 title={childId ? t('Show on the map') : undefined}
               >
-                <MoveLabel ply={facts.ply + 1} san={move.san} />
+                <MoveCell
+                  ply={facts.ply + 1}
+                  san={move.san}
+                  gap={isGap}
+                  prepared={prepared.has(move.san)}
+                  linked={!!childId}
+                />
               </button>
-              <MoveMarks gap={isGap} prepared={prepared.has(move.san)} />
               <ResultBar move={move} />
               <RowTail share={share}>
                 {childId ? (

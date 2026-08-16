@@ -8,7 +8,7 @@ import { Input } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Sheet } from '@/ui/Sheet';
 import type { NodeCoverage } from './coverage';
-import { MoveLabel, MoveMarks, ResultBar, RowTail } from './FieldRow';
+import { MoveCell, ResultBar, RowTail } from './FieldRow';
 import { normalizeSan, type MapNode, type ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
 
@@ -169,9 +169,15 @@ export function AddMoveSheet({
               }}
               className="hover:bg-surface-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
             >
-              {/* The panel's own row, part for part — see FieldRow. */}
-              <MoveLabel ply={facts.ply + 1} san={row.san} />
-              <MoveMarks prepared={row.prepared} />
+              {/* The panel's own row, part for part — see FieldRow. A
+                  charted move is a link here too: pressing it goes to
+                  that node instead of charting anything. */}
+              <MoveCell
+                ply={facts.ply + 1}
+                san={row.san}
+                prepared={row.prepared}
+                linked={row.childId !== null}
+              />
               <ResultBar move={row.split} />
               <RowTail share={row.share}>
                 {/* A tick where the move is already on the map, and
