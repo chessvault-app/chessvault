@@ -105,9 +105,22 @@ digit is also bold, tier marks also differ by icon shape.
   pages, but a **leaf page claims it** — board, study, puzzle and
   repertoire replace the global tabs with their own controls (move
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
-  back chevron, chess.com/Lichess-style. The puzzle dashboard is the hub
-  (Puzzles tab lands there). Desktop navigates by sidebar, no back arrows
-  on top-level pages.
+  back chevron, chess.com/Lichess-style. Desktop navigates by sidebar, no
+  back arrows on top-level pages.
+- **A phone's hub is a launcher, not a dashboard.** The Puzzles tab lands
+  on `#/puzzles/hub` (`puzzles/HubPage.tsx`), which is its destinations
+  and nothing else. It landed on the dashboard until that page — stats
+  and a 200-row attempt log — had to carry a row of shortcuts at its top
+  to get anyone anywhere, which is the corner of a phone a thumb cannot
+  reach. Two rules came out of building it, and they generalise:
+  a launcher's targets sit at the BOTTOM of the viewport (`min-h-full`
+  on `PageShell` and `mt-auto` on the block, so it still scrolls rather
+  than hiding a target if the screen is tiny); and anything that arrives
+  from the network goes ABOVE the primary button, so a late answer grows
+  the block upward instead of shoving a target out from under a thumb
+  already moving towards it. Above `md` the route renders the dashboard
+  instead — the sidebar lists those destinations already — rendered, not
+  redirected, because a redirect leaves a history entry Back bounces off.
 - Board and piece appearance are user-chosen (Settings → Appearance):
   board-colour presets ride the same OKLCH tokens, and piece sets are
   vendored from lila. This is orthogonal to the semantic colour grammar

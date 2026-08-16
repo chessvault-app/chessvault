@@ -7,6 +7,20 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## 0.3.0
 
+- **The Puzzles tab lands somewhere you can reach.** On a phone it
+  opened the dashboard — counters, a difficulty breakdown and a
+  200-row attempt log — which is a page to consult now and then, not
+  the one to meet every time you reach for training. And the three
+  shortcuts that made it usable as a hub were pinned to the top of it,
+  the one corner a thumb cannot get to one-handed. The tab now opens a
+  launcher: Train, and tiles for themes, books and the dashboard, all
+  sitting on the bottom edge above the tab bar. The review queue
+  appears there with its count when you have one. Nothing on it waits
+  for the network to be usable, and the two things that do arrive late
+  are placed so that no button moves once you have started reaching
+  for it. Everything it opens comes back to it. Desktop is unchanged —
+  the sidebar has listed all four destinations all along.
+
 - **The opening map colours at once.** Checking a map against a field
   used to cost one request per charted position — hundreds of round
   trips from a phone to a small server — and the reference databases
