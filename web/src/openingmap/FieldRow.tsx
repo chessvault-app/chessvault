@@ -50,6 +50,12 @@ export function MoveCell({
   return (
     <span className={cn('flex shrink-0 items-center gap-1', CELL_W)}>
       <span
+        // The tip belongs to the WORDS, not to the button around them.
+        // On the button it was an ancestor title, and an ancestor title
+        // is what the browser falls back to while our own tooltip shows
+        // for the mark inside it: two tips at once, one native and one
+        // themed, overlapping.
+        title={linked ? t('Show on the map') : undefined}
         className={cn(
           // inline-block/truncate, or the width is a suggestion: in the
           // panel this sits inside the button that jumps to the node,

@@ -131,15 +131,23 @@ export function FieldStats({
               )}
             >
               {/* A link where the move is on the map — in the link
-                  colour, underlining under the pointer — and plain text
+                  colour, and lit under the pointer — and plain text
                   where it is not. Both used to look identical, so the
                   one row in the table that goes somewhere announced
-                  itself by tooltip alone. */}
+                  itself by tooltip alone.
+                  Lit, not underlined: an underline under six characters
+                  of 12px text is a hairline that reads as a rendering
+                  artefact. The soft accent fill is what the app uses
+                  everywhere else to say "this one, now", and it covers
+                  the move and its mark together. The tooltip lives on
+                  the words inside — see FieldRow. */}
               <button
                 type="button"
-                className={childId ? 'text-left hover:underline' : 'cursor-default text-left'}
+                className={cn(
+                  'rounded-md text-left transition-colors duration-100',
+                  childId ? 'hover:bg-primary-soft' : 'cursor-default',
+                )}
                 onClick={() => childId && onSelectChild(childId)}
-                title={childId ? t('Show on the map') : undefined}
               >
                 <MoveCell
                   ply={facts.ply + 1}
