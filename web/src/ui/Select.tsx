@@ -69,6 +69,7 @@ export function Select({
   mono = false,
   steady = false,
   prefix,
+  fill = false,
   className,
 }: {
   value: string;
@@ -103,6 +104,22 @@ export function Select({
    * can identify without pressing it.
    */
   prefix?: string;
+  /**
+   * Phone only: open the list as tall as the sheet it was opened from,
+   * instead of as tall as its own options — Sheet's `fill`.
+   *
+   * For a Select that IS a section of the window it sits in: the map's
+   * "check coverage against" offers ten rating bands behind one trigger,
+   * and a list that rises to a third of the height of the window it came
+   * out of reads as that window having been replaced by a smaller one.
+   * At its parent's height it reads as the same window, turned to the
+   * page that answers this question — and Sheet gives it the chevron
+   * back, since a sheet that covers its parent owes one.
+   *
+   * Off by default: a Select in a toolbar or a settings row has no sheet
+   * behind it to match, and `fill` measures nothing there anyway.
+   */
+  fill?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -430,7 +447,7 @@ export function Select({
           the scrolling, so the anchored machinery above — rect, backdrop,
           dismiss-on-scroll — has no phone duties at all. */}
       {open && phone && (
-        <Sheet label={prefix ?? ariaLabel} onClose={() => setOpen(false)}>
+        <Sheet label={prefix ?? ariaLabel} fill={fill} onClose={() => setOpen(false)}>
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.label && (

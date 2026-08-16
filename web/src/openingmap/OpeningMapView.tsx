@@ -24,6 +24,7 @@ import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Fab, type FabAction } from '@/ui/Fab';
 import { PromptSheet } from '@/ui/PromptSheet';
+import { Select } from '@/ui/Select';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
 import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
@@ -103,6 +104,15 @@ export function OpeningMapView({ params }: { params: string[] }) {
       .then((body) => setDatabases(fieldDatabases(body)))
       .catch(() => setDatabases([]));
   }, []);
+  /**
+   * Which reference database IS the field, if any.
+   *
+   * Its picker is a dropdown, and a dropdown's trigger states the
+   * current answer: left at the last database anyone browsed to, it
+   * would state one while "my games" sat ticked above it. Empty is the
+   * honest reading of "the field is not a database".
+   */
+  const pickedDatabase = databases.some((b) => b.name === field.source) ? field.source : '';
   const pickField = (next: { source: string; ratings: string }): void => {
     setField(next);
     try {
@@ -513,14 +523,20 @@ export function OpeningMapView({ params }: { params: string[] }) {
           <p className="text-muted text-xs leading-relaxed">
             {t('The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.')}
           </p>
-          {/* Laid out, not folded into a dropdown. There are rarely more
-              than a handful of these, and the question — what am I
-              checking my preparation against — is one you answer by
-              seeing what is on offer. A Select hides every option but
-              the one already chosen, which is the wrong shape for a
-              choice made once and reconsidered later. Touching a row
+          {/* The kinds of field, laid out: there are two or three of
+              them, they never grow, and each is a different KIND of
+              answer — nothing, my own games, the world's. Touching a row
               applies it, so there is nothing to confirm: the same shape
-              the engine and puzzle settings lists use. */}
+              the engine and puzzle settings lists use.
+
+              What is folded away below is the two lists that have no
+              ceiling. Ten rating bands and a shelf of databases laid out
+              as rows made a window taller than the phone it opened on,
+              where the question at the top had scrolled away by the time
+              you reached the answers — and every row but one of each
+              list is a choice you are not making today. A list whose
+              length is the user's own is a dropdown; a fixed set of
+              kinds is not. */}
           {[
             { label: null, options: [{ value: '', label: t('Nothing — hide gaps') }] },
             // Your own games: the field you have actually been facing.
@@ -533,14 +549,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
                     options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
                   },
                 ]),
-            ...(databases.length > 0
-              ? [
-                  {
-                    label: t('Reference databases'),
-                    options: databases.map((b) => ({ value: b.name, label: b.label ?? bookLabel(b.name) })),
-                  },
-                ]
-              : []),
           ].map((group, at) => (
             <div key={group.label ?? `group-${at}`} className="flex flex-col gap-1">
               {group.label && (
@@ -559,19 +567,50 @@ export function OpeningMapView({ params }: { params: string[] }) {
             </div>
           ))}
 
+          {databases.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                {t('Reference databases')}
+              </p>
+              <Select
+                // Empty unless one of them IS the field: a trigger
+                // naming a database while "my games" is ticked above
+                // would be showing a choice nobody has made.
+                value={pickedDatabase}
+                onChange={(name) => pickField({ ...field, source: name })}
+                ariaLabel={t('Reference database')}
+                className="w-full"
+                fill
+                groups={[
+                  {
+                    options: databases.map((b) => ({
+                      value: b.name,
+                      label: b.label ?? bookLabel(b.name),
+                    })),
+                  },
+                ]}
+              />
+            </div>
+          )}
+
+          {/* A rating band is the online database's own dimension. A
+              reference database has none: its population was fixed when
+              it was built, so the choice of database IS the field. */}
           {field.source === ONLINE_SOURCE && (
             <div className="flex flex-col gap-1">
               <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
                 {t('Opponent strength')}
               </p>
-              {RATING_BANDS.map((band) => (
-                <PickRow
-                  key={band.ratings}
-                  label={t(band.label)}
-                  picked={field.ratings === band.ratings}
-                  onPick={() => pickField({ ...field, ratings: band.ratings })}
-                />
-              ))}
+              <Select
+                value={field.ratings}
+                onChange={(ratings) => pickField({ ...field, ratings })}
+                ariaLabel={t('Opponent strength')}
+                className="w-full"
+                fill
+                groups={[
+                  { options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) },
+                ]}
+              />
             </div>
           )}
         </Sheet>
