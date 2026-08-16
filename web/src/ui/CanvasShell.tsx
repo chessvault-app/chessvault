@@ -1,6 +1,9 @@
+import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { Button } from './Button';
 import { PageHeader } from './PageHeader';
 import { Sheet } from './Sheet';
 
@@ -118,18 +121,44 @@ export function CanvasShell({
               // the floating half is a complementary landmark, and one
               // with no name is a landmark nobody can choose from a list.
               aria-label={panel.label}
-              // Inset from the canvas now that the canvas is its own box.
-              // The top still clears the action icons, which share this
-              // corner and stay reachable while the panel is open — but
-              // it is clearing a row inside the canvas rather than a
-              // whole floating header. Wide enough
-              // that its fields, its statistics rows and its button row
-              // stop wrapping: at 18rem nearly every line in it broke,
-              // which is a panel technically showing you something and
-              // practically hiding it.
-              className="border-line bg-surface/90 absolute bottom-6 right-6 top-14 z-10 w-[22rem] overflow-y-auto rounded-xl border p-4 shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
+              // The canvas's full height, docked to its right edge.
+              //
+              // It floated inset from all four sides, and the top inset
+              // was there to clear the action icons in that corner. What
+              // that bought was two rows of canvas above and below a
+              // panel whose content — a board, four fields, a statistics
+              // table and a button row — is taller than the screen and
+              // scrolls: it was giving up room the panel needed to keep
+              // reachable two icons that a closed panel shows anyway. So
+              // the icons go under it while it is open, and the X in its
+              // header is how you get back to them.
+              //
+              // Wide enough that its fields, its statistics rows and its
+              // button row stop wrapping: at 18rem nearly every line in
+              // it broke, which is a panel technically showing you
+              // something and practically hiding it.
+              className="border-line bg-surface/90 absolute inset-y-0 right-0 z-10 flex w-[22rem] flex-col border-l shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
             >
-              {panel.content}
+              {/* The same strip the Sheet wears, for the same reason: the
+                  scrim and Escape close a sheet and neither LOOKS like a
+                  control, and this panel has not even got a scrim — it
+                  stands over the canvas with no visible way out at all.
+                  Named as well as marked, because a panel filling the
+                  height no longer sits obviously beside its selection. */}
+              <div className="border-line flex shrink-0 items-center gap-2 border-b px-4 py-2">
+                <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(panel.label)}</p>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Close')}
+                  aria-label={t('Close')}
+                  className="-my-1 -mr-1 shrink-0"
+                  onClick={panel.onClose}
+                >
+                  <X className="size-3.5" />
+                </Button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto p-4">{panel.content}</div>
             </aside>
           ))}
       </div>
