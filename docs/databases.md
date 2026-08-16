@@ -8,7 +8,7 @@ than growing with your vault the way everything else does:
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
-| `data/refgames/*.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | the app, in the elite browser's manager (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
+| `data/refgames/*.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | the app, on the Databases page (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
 inside the app, and `data/mygames.sqlite` is not even that: the explorer's
@@ -47,10 +47,10 @@ survives a rebuild.
 
 **More reference games.** They are plural:
 `data/refgames/<name>.sqlite`, each an independent database, listed and
-switched in the elite browser. Its manager uploads PGN collections (the
-same `vault/sources/` uploads) and indexes any selection of them under a
-name; the Databases page also deletes either kind — the built database or
-the upload it was built from. So unlike puzzles there is no
+switched in the elite browser. The Databases page uploads PGN collections
+(the same `vault/sources/` uploads), indexes any selection of them under a
+name, and deletes either kind — the built database or the upload it was
+built from. So unlike puzzles there is no
 replace-wrinkle here: build the same name again to replace it, or a new
 name beside it. The same indexer runs from a terminal:
 
@@ -93,17 +93,43 @@ on, one name among however many are built beside it, and deleting it
 works like deleting any other. A server install gets no seed; it takes
 the commit, not the release artefacts.
 
+## The manager
+
+Managing lives on the **Databases page** and nowhere else. The elite
+browser and the explorer each have a database icon; both navigate here.
+They used to open the manager in a window of their own, which put uploads
+and deletes one press from a search or a position you were in the middle
+of — managing is a place you go, not a layer over what you were doing.
+
+The page does not scroll. One panel takes the height that is left, and
+inside it:
+
+- a **segmented control** between Databases and PGN collections, with the
+  count on each. They are the same shelf at two stages, and showing both
+  at once meant two columns growing independently: at 18 databases beside
+  24 collections the page ran to 1202px with Build 1074px down it. One
+  list at a time is as tall as one list, and it scrolls itself.
+- a **search** that narrows whichever list is showing.
+- an **upload** icon, opening a window that is one large drop target.
+- a **Build bar** that appears with the first ticked collection, naming
+  its own count, pinned to the panel's bottom edge so it stays in view
+  however long the list is. It opens a window that takes the new
+  database's name.
+
+Uploading and naming were permanent furniture below the list they applied
+to, which is what pushed everything else down. Both are momentary — a
+file chooser and a text field — so both are windows now.
+
+Ticks are counted over every collection, not the filtered view: a search
+that hides three of five ticked files must not make Build say two.
+Starting a build clears the search and switches to Databases, or the
+thing just built would be hidden behind the query used to pick its
+sources.
+
 ## Deleting
 
-Deleting — a built database or an uploaded collection — belongs to the
-**Databases page** and nowhere else. The same manager opens as a window
-over the elite browser, and that window has no trash in it: it is opened
-to pick or add something, generally mid-search, and the one irreversible
-control in this feature does not belong on a surface visited that often.
-The window says where deleting is instead, and links there.
-
-Where it is offered, it asks first through `ConfirmSheet` — a centred
-window on a desktop, a bottom sheet on a phone. Nothing keeps a copy:
+Both deletes ask first through `ConfirmSheet` — a centred window on a
+desktop, a bottom sheet on a phone. Nothing keeps a copy:
 there is no trash directory behind either route, so the question is the
 only thing in the way. Each question says what is *not* affected, because
 that is the part that gets guessed at — deleting a database keeps the

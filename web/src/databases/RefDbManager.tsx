@@ -1,23 +1,36 @@
-import { Loader2, Trash2, Upload } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Database, FileText, Loader2, Trash2, Upload } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/lib/cn';
-import { navigate } from '@/lib/router';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 
 import { Button } from '@/ui/Button';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { Input } from '@/ui/Input';
+import { Input, SearchInput } from '@/ui/Input';
+import { Modal } from '@/ui/Modal';
+import { Panel, PanelHeader } from '@/ui/Panel';
+import { Segmented } from '@/ui/Segmented';
 
 /**
  * The reference databases and the PGN collections they are built from.
  *
- * Lived inside games/EliteGames.tsx, because the elite browser was the
- * only thing that showed it. It has three consumers now — the Databases
- * page, the browser's own window, and the explorer's — and a static
- * import of the browser was pulling its 30 kB into whatever asked. Moving
- * the manager out is the whole of that fix: nothing here changed.
+ * One panel, two lists behind a segmented control — they are the same
+ * shelf at two stages (an upload, and what was indexed out of it), and
+ * showing both at once meant two columns that grew independently: at 18
+ * databases beside 24 collections the page ran to 1202px with the Build
+ * control 1074px down it, under whichever list happened to be longer.
+ * One list at a time is as tall as one list.
+ *
+ * The two things that are not a list live in windows off the panel's
+ * header: uploading, and naming a build. Both are momentary — a file
+ * chooser and a text field — and both were permanent furniture below the
+ * list they applied to, which is what pushed everything else down.
+ *
+ * This is the Databases PAGE's, and nowhere else's. The elite browser and
+ * the explorer used to open it in a window of their own; both now send
+ * you here, because managing is a place you go, not a layer over what you
+ * were doing (lanph3re's call).
  */
 export interface RefDb {
   name: string;
@@ -29,48 +42,31 @@ export interface RefDb {
   positions?: number;
 }
 
-/**
- * Manage the reference databases: upload PGN collections and build a named
- * database from a selection of them. Every part of it works from a phone
- * against a remote server: uploads stream, and the build is a server child
- * process that keeps going if the page is left.
- *
- * Rendered two ways: inline as the browser's empty state (where building
- * the first database IS the page's purpose), and inside a window from the
- * ready browser. Databases are plural like books, so replacing one is not
- * a mode — build a new name beside it and delete the old.
- *
- * DELETING is the Databases page's alone (`grid`), for either kind. The
- * window over the browser is opened to pick or add something, generally
- * mid-search, and putting the one irreversible control in the app on that
- * surface makes every visit to it a chance to lose an upload. Deleting is
- * a trip to the page that is about the data, and the window says where
- * that is.
- *
- * Where it is offered, it asks first through ConfirmSheet — a centred
- * window on a desktop, a bottom sheet on a phone. Nothing here keeps a
- * copy, so the question is the only thing in the way.
- */
+interface Source {
+  name: string;
+  bytes: number;
+}
+
+type Tab = 'databases' | 'sources';
+
+const mb = (bytes: number): string => `${(bytes / 1e6).toFixed(1)} MB`;
+
 export function RefDbManager({
   databases,
   onChanged,
-  layout = 'stack',
 }: {
   databases: RefDb[];
   onChanged: () => void;
-  /** `stack` fits the browser's window; `grid` composes the Databases
-      page — what exists beside how more is made, not one tall pile. */
-  layout?: 'stack' | 'grid';
 }) {
-  // `grid` is the Databases page and nothing else, and deleting lives
-  // there. Kept as one named thing so both lists read from one decision.
-  const canDelete = layout === 'grid';
-  const [sources, setSources] = useState<{ name: string; bytes: number }[] | null>(null);
+  const [tab, setTab] = useState<Tab>('databases');
+  const [query, setQuery] = useState('');
+  const [sources, setSources] = useState<Source[] | null>(null);
   // null until the first listing arrives, so "tick everything" happens
   // once and a user's unticking is never overwritten by a refresh.
   const [picked, setPicked] = useState<Set<string> | null>(null);
-  const [name, setName] = useState('');
   const [uploading, setUploading] = useState<string | null>(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [showBuild, setShowBuild] = useState(false);
   const [status, setStatus] = useState<{
     running: boolean;
     exitCode?: number | null;
@@ -82,7 +78,7 @@ export function RefDbManager({
   const refreshSources = useCallback(async (): Promise<void> => {
     try {
       const res = await fetch('/api/sources');
-      const body = (await res.json()) as { sources: { name: string; bytes: number }[] };
+      const body = (await res.json()) as { sources: Source[] };
       setSources(body.sources);
       setPicked((p) => p ?? new Set(body.sources.map((s) => s.name)));
     } catch {
@@ -94,7 +90,7 @@ export function RefDbManager({
     void refreshSources();
   }, [refreshSources]);
 
-  // Poll the build while one runs; refresh the browser when it finishes.
+  // Poll the build while one runs; refresh the lists when it finishes.
   useEffect(() => {
     const tick = async (): Promise<void> => {
       try {
@@ -119,9 +115,12 @@ export function RefDbManager({
     return () => clearInterval(interval);
   }, [onChanged]);
 
+  const running = status?.running === true;
+  const failed = !running && status?.exitCode != null && status.exitCode !== 0;
+
   // One at a time as a raw body, which streams — these files run to
   // hundreds of megabytes, and FormData would buffer the whole thing in
-  // the page before a byte left. Same route the book manager uses.
+  // the page before a byte left.
   const upload = async (files: FileList | File[] | null): Promise<void> => {
     if (!files?.length) return;
     setError(null);
@@ -148,9 +147,12 @@ export function RefDbManager({
     }
     setUploading(null);
     await refreshSources();
+    // Land on what was just uploaded rather than on whatever tab the
+    // window was opened from: the file is the thing that changed.
+    setTab('sources');
   };
 
-  const build = async (): Promise<void> => {
+  const build = async (name: string): Promise<void> => {
     setError(null);
     const res = await fetch('/api/refgames/build', {
       method: 'POST',
@@ -162,9 +164,14 @@ export function RefDbManager({
       setError(t(body?.error ?? 'could not start the build'));
       return;
     }
-    setName('');
     setStatus({ running: true, log: [] });
     wasRunning.current = true;
+    setShowBuild(false);
+    // The build makes a database, so show the shelf it will appear on —
+    // and unfiltered, or a search left over from picking the collections
+    // hides the very thing that was just built.
+    setQuery('');
+    setTab('databases');
   };
 
   const del = async (dbName: string): Promise<void> => {
@@ -213,234 +220,220 @@ export function RefDbManager({
     await refreshSources();
   };
 
-  const running = status?.running === true;
-  const failed = !running && status?.exitCode != null && status.exitCode !== 0;
-
-  const pgnDrop = useFileDrop({
-    accept: byExtension('.pgn'),
-    onFiles: (files) => void upload(files),
-    onReject: () => setError(t('Only .pgn files can be uploaded here')),
-    disabled: uploading !== null,
-  });
-
-  const dbListBlock = (
-    <div className="flex flex-col gap-1">
-      <p className="text-muted font-medium">{t('Databases')}</p>
-      {databases.length === 0 ? (
-        <p className="text-subtle leading-relaxed">
-          {t('No databases yet — build one from an uploaded collection.')}
-        </p>
-      ) : (
-        <RefDbList databases={databases} onDelete={canDelete ? (n) => void del(n) : undefined} />
-      )}
-    </div>
+  // The search narrows the list that is showing. Substring, case-folded:
+  // these are file names, and the useful query is "elite" or "2026".
+  const needle = query.trim().toLowerCase();
+  const shownDbs = useMemo(
+    () => (needle ? databases.filter((d) => d.name.toLowerCase().includes(needle)) : databases),
+    [databases, needle],
+  );
+  const shownSources = useMemo(
+    () =>
+      needle ? (sources ?? []).filter((s) => s.name.toLowerCase().includes(needle)) : (sources ?? []),
+    [sources, needle],
   );
 
-  const collectionsBlock = (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-muted font-medium">{t('PGN collections')}</p>
-      {sources !== null && sources.length === 0 && (
-        <p className="text-subtle leading-relaxed">
-          {t(
-            'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.',
-          )}
-        </p>
-      )}
-      {sources !== null && sources.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {sources.map((s) => (
-            <li key={s.name} className="flex items-center gap-1">
-              {/* The label covers the tick, the name and the size, and
-                  nothing else: a button inside it would toggle the tick on
-                  its way to being pressed. */}
-              <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="accent-primary"
-                  checked={picked?.has(s.name) ?? false}
-                  onChange={(e) =>
-                    setPicked((p) => {
-                      const next = new Set(p ?? []);
-                      if (e.target.checked) next.add(s.name);
-                      else next.delete(s.name);
-                      return next;
-                    })
-                  }
-                />
-                <span className="text-fg min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="text-subtle shrink-0">{(s.bytes / 1e6).toFixed(1)} MB</span>
-              </label>
-              {/* Uploading is how a phone gets a file onto the server, so
-                  deleting one has to be possible there too — the app was
-                  the only way in and the shell was the only way out. On
-                  the Databases page only, and disabled while a build runs:
-                  it is reading these files, and the server refuses it for
-                  the same reason. */}
-              {canDelete && (
-                <ConfirmSheet
-                  icon={Trash2}
-                  triggerClassName="shrink-0"
-                  disabled={running}
-                  triggerTitle={
-                    running ? 'Wait for the build to finish' : 'Delete this PGN collection'
-                  }
-                  question={t(
-                    'Delete “{name}”? Databases already built from it are not affected.',
-                    { name: s.name },
-                  )}
-                  confirmLabel="Delete"
-                  onConfirm={() => void delSource(s.name)}
-                />
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-        {/* A drop target has to look like somewhere a file can land. This
-            was a 32px strip — the height of a button, which is what it
-            read as, and a target that small is a poor one to let go of a
-            300 MB file over. It is a box now, on both surfaces, with the
-            drop said out loud under the press it also is. */}
-        <label
-          {...pgnDrop.handlers}
-          className={cn(
-            'text-muted flex min-h-24 cursor-pointer flex-col items-center justify-center',
-            'gap-1.5 rounded-lg border border-dashed px-3 py-5 text-center',
-            'transition-colors duration-100',
-            pgnDrop.dragging
-              ? 'border-primary bg-primary-soft text-primary'
-              : 'border-line hover:border-primary/40 hover:bg-surface-2',
-          )}
-        >
-          <input
-            type="file"
-            accept=".pgn"
-            multiple
-            className="hidden"
-            disabled={uploading !== null}
-            onChange={(e) => {
-              void upload(e.target.files);
-              e.target.value = '';
-            }}
-          />
-          {uploading ? (
-            <>
-              <Loader2 className="size-5 animate-spin" />
-              <span className="min-w-0 max-w-full truncate">
-                {t('Uploading {name}…', { name: uploading })}
-              </span>
-            </>
-          ) : (
-            <>
-              <Upload className="size-5" />
-              <span className="text-fg font-medium">{t('Upload PGN collections')}</span>
-              <span className="text-subtle leading-relaxed">
-                {t('Or drop .pgn files anywhere in this box')}
-              </span>
-            </>
-          )}
-        </label>
-    </div>
-  );
+  // Counted over EVERY collection, not the filtered view: a search that
+  // hides three of five ticked files must not make the Build button say
+  // two, or build two.
+  const pickedCount = picked?.size ?? 0;
 
-  const buildBlock = (
+  const list =
+    tab === 'databases' ? (
+      <DbList databases={shownDbs} onDelete={(n) => void del(n)} />
+    ) : (
+      <SourceList
+        sources={shownSources}
+        picked={picked}
+        onToggle={(name, on) =>
+          setPicked((p) => {
+            const next = new Set(p ?? []);
+            if (on) next.add(name);
+            else next.delete(name);
+            return next;
+          })
+        }
+        onDelete={(n) => void delSource(n)}
+        deleteDisabled={running}
+      />
+    );
+
+  const empty =
+    tab === 'databases'
+      ? databases.length === 0
+        ? t('No databases yet — upload a PGN collection and build one.')
+        : t('No database matches that.')
+      : sources === null
+        ? null
+        : sources.length === 0
+          ? t(
+              'Nothing uploaded yet. A collection is any .pgn of games — a Lichess Elite month, a Lumbra export.',
+            )
+          : t('No collection matches that.');
+
+  const shownCount = tab === 'databases' ? shownDbs.length : shownSources.length;
+
+  return (
     <>
-      {running ? (
-        <p className="text-subtle flex items-center gap-2 font-mono text-[0.6875rem]">
-          <Loader2 className="size-3.5 shrink-0 animate-spin" />
-          <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
-        </p>
-      ) : (
-        (sources?.length ?? 0) > 0 && (
-          <div className="flex items-center gap-2">
-            <Input
-              inputSize="sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('Name — the file’s name if blank')}
-              className="min-w-0 flex-1"
+      <Panel flush className="min-h-0">
+        <PanelHeader
+          title={
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              ariaLabel="What to manage"
+              size="sm"
+              className="w-full max-w-[17rem]"
+              segments={[
+                {
+                  value: 'databases',
+                  label: (
+                    <>
+                      <Database className="size-3.5 shrink-0" />
+                      {t('Databases')}
+                      <span className="text-subtle tabular-nums">{databases.length}</span>
+                    </>
+                  ),
+                },
+                {
+                  value: 'sources',
+                  label: (
+                    <>
+                      <FileText className="size-3.5 shrink-0" />
+                      {t('PGN collections')}
+                      <span className="text-subtle tabular-nums">{sources?.length ?? 0}</span>
+                    </>
+                  ),
+                },
+              ]}
             />
+          }
+          // The header owns the whole width: the segmented control is the
+          // title here, and it needs room to be one rather than a label.
+          className="h-auto flex-wrap gap-y-2 py-2"
+          actionsClassName="min-w-0 flex-1 justify-end"
+          actions={
+            <>
+              <SearchInput
+                inputSize="sm"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('Search')}
+                spellCheck={false}
+                className="min-w-0 max-w-[14rem] flex-1"
+              />
+              {/* Uploading is a moment, not furniture. It was a permanent
+                  96px box under a list that can run to 24 rows; behind an
+                  icon it costs nothing until it is wanted. */}
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                className="shrink-0"
+                title={t('Upload PGN collections')}
+                aria-haspopup="dialog"
+                onClick={() => setShowUpload(true)}
+              >
+                <Upload className="size-3.5" />
+              </Button>
+            </>
+          }
+        />
+
+        {/* The build's own line, where the list would be — it is the one
+            thing here that takes minutes, so it says so from the top
+            rather than from under whichever tab started it. */}
+        {running && (
+          <p className="border-line text-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-[0.6875rem]">
+            <Loader2 className="size-3.5 shrink-0 animate-spin" />
+            <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
+          </p>
+        )}
+        {failed && (
+          <p className="border-line text-bad shrink-0 border-b px-3 py-2 font-mono text-[0.6875rem]">
+            {status?.log?.at(-1) ?? t('The build failed.')}
+          </p>
+        )}
+        {error && <p className="border-line text-bad shrink-0 border-b px-3 py-2 text-xs">{error}</p>}
+
+        {/* The list scrolls, the panel does not grow: one list at a time,
+            capped, is what keeps the Build bar below in view. */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {shownCount === 0 ? (
+            empty && <p className="text-subtle px-3 py-6 text-center text-xs leading-relaxed">{empty}</p>
+          ) : (
+            list
+          )}
+        </div>
+
+        {/* Appears with the first tick and names its own count, so the
+            press that starts minutes of indexing says what it is about
+            to index. */}
+        {tab === 'sources' && pickedCount > 0 && (
+          <div className="border-line flex shrink-0 items-center gap-2 border-t px-3 py-2">
+            <span className="text-subtle min-w-0 flex-1 truncate text-xs">
+              {t('{n} selected', { n: pickedCount })}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setPicked(new Set())}
+            >
+              {t('Clear')}
+            </Button>
             <Button
               variant="primary"
               size="sm"
-              disabled={(picked?.size ?? 0) === 0}
-              onClick={() => void build()}
+              className="shrink-0"
+              disabled={running}
+              aria-haspopup="dialog"
+              onClick={() => setShowBuild(true)}
             >
               {t('Build')}
             </Button>
           </div>
-        )
-      )}
-      {failed && (
-        <p className="text-bad font-mono text-[0.6875rem]">
-          {status?.log?.at(-1) ?? t('The build failed.')}
-        </p>
-      )}
-      {error && <p className="text-bad">{error}</p>}
-      <p className="text-subtle leading-relaxed">
-        {t('Building keeps going if you leave the page. A build under an existing name replaces that database.')}
-      </p>
-    </>
-  );
+        )}
+      </Panel>
 
-  if (layout === 'grid') {
-    return (
-      <div className="grid items-start gap-x-8 gap-y-3 text-xs md:grid-cols-2">
-        {dbListBlock}
-        <div className="flex flex-col gap-3">
-          {collectionsBlock}
-          {buildBlock}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-3 text-xs">
-      {databases.length > 0 && dbListBlock}
-      {collectionsBlock}
-      {buildBlock}
-      {/* Deleting is not here, so this window has to say where it is —
-          an action with no way to reach it is the bug the rule is about.
-          Only once anything exists to delete. */}
-      {(databases.length > 0 || (sources?.length ?? 0) > 0) && (
-        <button
-          type="button"
-          className="text-subtle hover:text-fg self-start underline underline-offset-2 transition-colors duration-100"
-          onClick={() => navigate('databases')}
-        >
-          {t('Delete databases and collections on the Databases page')}
-        </button>
+      {showUpload && (
+        <UploadWindow
+          uploading={uploading}
+          onFiles={(files) => void upload(files)}
+          onReject={() => setError(t('Only .pgn files can be uploaded here'))}
+          onClose={() => setShowUpload(false)}
+        />
       )}
-    </div>
+
+      {showBuild && (
+        <BuildWindow
+          count={pickedCount}
+          only={pickedCount === 1 ? [...(picked ?? [])][0] : undefined}
+          onBuild={(name) => void build(name)}
+          onClose={() => setShowBuild(false)}
+        />
+      )}
+    </>
   );
 }
 
 /** The built databases, one row each — name, size, and whether the
     position index is in place. */
-function RefDbList({
+function DbList({
   databases,
   onDelete,
 }: {
   databases: RefDb[];
-  /** Omitted where deleting is not on offer — see RefDbManager: it is the
-      Databases page's, not the window the browser opens. */
-  onDelete?: (name: string) => void;
+  onDelete: (name: string) => void;
 }) {
   return (
-    <ul className="divide-line border-line divide-y rounded-md border">
+    <ul className="divide-line divide-y">
       {databases.map((d) => (
-        // pr-1 leaves room for the trash's own padding. Without the
-        // trash the row keeps the inset it has on every other side, and
-        // the height the button was holding open.
-        <li
-          key={d.name}
-          className={cn('flex items-center gap-2 pl-2.5', onDelete ? 'py-1 pr-1' : 'py-1.5 pr-2.5')}
-        >
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-xs">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
           <span className="text-subtle shrink-0">
-            {t('{n} games', { n: d.games.toLocaleString() })} · {(d.bytes / 1e6).toFixed(1)} MB
+            {t('{n} games', { n: d.games.toLocaleString() })} · {mb(d.bytes)}
           </span>
           {/* Built before the position index existed: the explorer
               offers to add it when this database is its source. */}
@@ -448,19 +441,207 @@ function RefDbList({
           {/* Asked in a window rather than warned about in a tooltip: a
               title nobody reads was all that stood between a press and
               however many minutes of indexing. */}
-          {onDelete && (
-            <ConfirmSheet
-              icon={Trash2}
-              triggerTitle="Delete this database"
-              question={t('Delete “{name}”? The collections it was built from are kept.', {
-                name: d.name,
-              })}
-              confirmLabel="Delete"
-              onConfirm={() => onDelete(d.name)}
-            />
-          )}
+          <ConfirmSheet
+            icon={Trash2}
+            triggerClassName="shrink-0"
+            triggerTitle="Delete this database"
+            question={t('Delete “{name}”? The collections it was built from are kept.', {
+              name: d.name,
+            })}
+            confirmLabel="Delete"
+            onConfirm={() => onDelete(d.name)}
+          />
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The uploads, each with the tick that puts it in the next build. */
+function SourceList({
+  sources,
+  picked,
+  onToggle,
+  onDelete,
+  deleteDisabled,
+}: {
+  sources: Source[];
+  picked: Set<string> | null;
+  onToggle: (name: string, on: boolean) => void;
+  onDelete: (name: string) => void;
+  deleteDisabled: boolean;
+}) {
+  return (
+    <ul className="divide-line divide-y">
+      {sources.map((s) => (
+        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-xs">
+          {/* The label covers the tick, the name and the size, and
+              nothing else: a button inside it would toggle the tick on
+              its way to being pressed. */}
+          <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              className="accent-primary shrink-0"
+              checked={picked?.has(s.name) ?? false}
+              onChange={(e) => onToggle(s.name, e.target.checked)}
+            />
+            <span className="text-fg min-w-0 flex-1 truncate">{s.name}</span>
+            <span className="text-subtle shrink-0">{mb(s.bytes)}</span>
+          </label>
+          {/* Uploading is how a phone gets a file onto the server, so
+              deleting one has to be possible there too — the app was the
+              only way in and the shell was the only way out. Disabled
+              while a build runs: it is reading these files, and the
+              server refuses it for the same reason. */}
+          <ConfirmSheet
+            icon={Trash2}
+            triggerClassName="shrink-0"
+            disabled={deleteDisabled}
+            triggerTitle={
+              deleteDisabled ? 'Wait for the build to finish' : 'Delete this PGN collection'
+            }
+            question={t('Delete “{name}”? Databases already built from it are not affected.', {
+              name: s.name,
+            })}
+            confirmLabel="Delete"
+            onConfirm={() => onDelete(s.name)}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The drop target, in a window of its own.
+ *
+ * It is the whole window rather than a box inside one: a target you have
+ * to aim at inside a layer you have already opened is a target twice, and
+ * a 300 MB file deserves the biggest one the screen can give it.
+ */
+function UploadWindow({
+  uploading,
+  onFiles,
+  onReject,
+  onClose,
+}: {
+  uploading: string | null;
+  onFiles: (files: FileList | File[]) => void;
+  onReject: () => void;
+  onClose: () => void;
+}) {
+  const drop = useFileDrop({
+    accept: byExtension('.pgn'),
+    onFiles,
+    onReject,
+    disabled: uploading !== null,
+  });
+
+  return (
+    <Modal title="Upload PGN collections" icon={Upload} onClose={onClose}>
+      <label
+        {...drop.handlers}
+        className={cn(
+          'text-muted flex min-h-40 cursor-pointer flex-col items-center justify-center',
+          'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-xs',
+          'transition-colors duration-100',
+          drop.dragging
+            ? 'border-primary bg-primary-soft text-primary'
+            : 'border-line hover:border-primary/40 hover:bg-surface-2',
+        )}
+      >
+        <input
+          type="file"
+          accept=".pgn"
+          multiple
+          className="hidden"
+          disabled={uploading !== null}
+          onChange={(e) => {
+            onFiles(e.target.files ?? []);
+            e.target.value = '';
+          }}
+        />
+        {uploading ? (
+          <>
+            <Loader2 className="size-6 animate-spin" />
+            <span className="min-w-0 max-w-full truncate">
+              {t('Uploading {name}…', { name: uploading })}
+            </span>
+          </>
+        ) : (
+          <>
+            <Upload className="size-6" />
+            <span className="text-fg text-sm font-medium">{t('Choose .pgn files')}</span>
+            <span className="text-subtle leading-relaxed">
+              {t('Or drop them anywhere in this box')}
+            </span>
+          </>
+        )}
+      </label>
+      <p className="text-subtle text-xs leading-relaxed">
+        {t(
+          'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.',
+        )}
+      </p>
+    </Modal>
+  );
+}
+
+/**
+ * Naming the build, in a window of its own.
+ *
+ * The name field was a permanent row under the collections list, which
+ * made it look like a filter on the list above it. Asked at the moment of
+ * building, it reads as what it is — and there is room to say what
+ * happens if the name is one that already exists.
+ */
+function BuildWindow({
+  count,
+  only,
+  onBuild,
+  onClose,
+}: {
+  count: number;
+  /** The single picked file, whose name the build takes when left blank. */
+  only?: string;
+  onBuild: (name: string) => void;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState('');
+  const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
+
+  return (
+    <Modal title="Build a database" icon={Database} onClose={onClose}>
+      <p className="text-muted text-xs leading-relaxed">
+        {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
+      </p>
+      <Input
+        inputSize="sm"
+        value={name}
+        autoFocus
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && onBuild(name)}
+        placeholder={t('Name — “{name}” if blank', { name: derived })}
+      />
+      <p className="text-subtle text-xs leading-relaxed">
+        {t(
+          'Building keeps going if you leave the page. A build under an existing name replaces that database.',
+        )}
+      </p>
+      <div className="mt-1 flex flex-col gap-2">
+        <Button
+          variant="primary"
+          size="md"
+          className="w-full justify-center"
+          onClick={() => onBuild(name)}
+        >
+          <Database className="size-3.5" />
+          {t('Build')}
+        </Button>
+        <Button variant="secondary" size="md" className="w-full justify-center" onClick={onClose}>
+          {t('Cancel')}
+        </Button>
+      </div>
+    </Modal>
   );
 }

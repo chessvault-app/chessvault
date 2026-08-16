@@ -1,5 +1,4 @@
-import { Database } from 'lucide-react';
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
@@ -10,12 +9,20 @@ import { t } from '@/lib/i18n';
  * One page for everything built from uploaded PGN collections.
  *
  * Opening books had a page; reference game databases could only be
- * managed from a sheet inside the Elite games browser — a management
- * job hidden behind the thing it manages (lanph3re's report). The two
- * are the same shape over the same uploads (an opening book indexes
- * positions, a reference database indexes whole games), so they share
- * one page. It also moves out of Tools: the entries there are boards
- * you play on, and this is where their data is looked after.
+ * managed from a sheet inside the Elite games browser — a management job
+ * hidden behind the thing it manages (lanph3re's report). The two are the
+ * same shape over the same uploads (an opening book indexes positions, a
+ * reference database indexes whole games), so they share one page. It
+ * also moves out of Tools: the entries there are boards you play on, and
+ * this is where their data is looked after.
+ *
+ * It is now the ONLY place either is managed. The browser and the
+ * explorer each used to open the manager in a window; both send you here
+ * instead, so there is one answer to "where do my databases live".
+ *
+ * The page does not scroll: its panel takes the height that is left and
+ * scrolls its own list. A page that grew with the list put the Build
+ * control a thousand pixels down at 24 collections.
  */
 export function DatabasesPage() {
   // `databases` present = the server's directory mount; absent = a
@@ -38,25 +45,27 @@ export function DatabasesPage() {
   }, [loadMeta]);
 
   return (
-    <PageShell width="medium">
-        {/* Phones reach this from More; a desktop has it in the sidebar,
-            and top-level pages carry no back arrow there. */}
-        <PageHeader
-          title={t('Databases')}
-          back={() => navigate('more')}
-          description={t(
-            'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.',
-          )}
-        />
+    <PageShell width="medium" scroll={false} className="h-full min-h-0 pb-4 md:pb-6">
+      {/* Phones reach this from More; a desktop has it in the sidebar,
+          and top-level pages carry no back arrow there. */}
+      <PageHeader
+        className="shrink-0"
+        title={t('Databases')}
+        back={() => navigate('more')}
+        description={t(
+          'A reference database is built from uploaded PGN collections and answers everything at once: whole games for the Elite games browser, and a position index the explorer and the repertoire trainer draw from — with filters.',
+        )}
+      />
 
-        <Section icon={<Database className="size-3.5" />} title={t('Reference games')}>
-          {meta === null ? null : meta.databases ? (
-            <RefDbManager databases={meta.databases} onChanged={loadMeta} layout="grid" />
-          ) : meta.ready ? (
-            // What is mounted, and why there is nothing to press. Only the
-            // count: this mount has no name to show, and its size cannot be
-            // measured through the demo's in-memory filesystem.
-            <div className="flex flex-col gap-1 text-xs">
+      {meta === null ? null : meta.databases ? (
+        <RefDbManager databases={meta.databases} onChanged={loadMeta} />
+      ) : (
+        // What is mounted, and why there is nothing to press. Only the
+        // count: this mount has no name to show, and its size cannot be
+        // measured through the demo's in-memory filesystem.
+        <div className="border-line bg-surface flex shrink-0 flex-col gap-1 rounded-xl border p-4 text-xs">
+          {meta.ready ? (
+            <>
               <p className="text-fg font-medium">
                 {t('{n} games', { n: (meta.games ?? 0).toLocaleString() })}
               </p>
@@ -65,25 +74,14 @@ export function DatabasesPage() {
                   'This database is read-only. Uploading collections and building databases need the installed app.',
                 )}
               </p>
-            </div>
+            </>
           ) : (
-            <p className="text-muted text-xs leading-relaxed">
+            <p className="text-muted leading-relaxed">
               {t('This server has no reference games database.')}
             </p>
           )}
-        </Section>
+        </div>
+      )}
     </PageShell>
-  );
-}
-
-function Section({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
-  return (
-    <section className="bg-surface border-line flex flex-col gap-3 rounded-xl border p-4">
-      <h2 className="text-subtle flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-        {icon}
-        {title}
-      </h2>
-      {children}
-    </section>
   );
 }

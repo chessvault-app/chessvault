@@ -29,8 +29,7 @@ import { SideDot } from '@/ui/SideDot';
 import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
-import { Modal } from '@/ui/Modal';
-import { RefDbManager, type RefDb } from '@/databases/RefDbManager';
+import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
 import { GamePreview, OpeningTag, ResultScore, isCoarsePointer, type Preview } from './shared';
 
@@ -79,7 +78,6 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     databases?: RefDb[];
   } | null>(null);
   const [curDb, setCurDb] = useState<string | null>(null);
-  const [manage, setManage] = useState(false);
   const [query, setQuery] = useState('');
   const [rows, setRows] = useState<RefGame[]>([]);
   const [total, setTotal] = useState(0);
@@ -315,9 +313,10 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   const coarse = isCoarsePointer;
 
   if (meta && !meta.ready) {
-    // The empty state IS the manager: building the first database is this
-    // page's whole purpose until one exists. A single-database mount (the
-    // demo) has no manager to offer, so it just says what is missing.
+    // The empty state used to BE the manager, inline. Managing lives on
+    // the Databases page now and only there, so this says what is missing
+    // and points at the one place that fixes it. A single-database mount
+    // (the demo) has no page to offer, so it only says what is missing.
     return (
       <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
         <div className="w-full max-w-md">
@@ -329,7 +328,12 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
               <p className="text-muted mb-3 text-center text-xs leading-relaxed">
                 {t('Upload PGN collections and index them into searchable databases of whole games.')}
               </p>
-              <RefDbManager databases={meta.databases} onChanged={loadMeta} />
+              <div className="flex justify-center">
+                <Button variant="primary" size="sm" onClick={() => navigate('databases')}>
+                  <Database className="size-3.5" />
+                  {t('Go to Databases')}
+                </Button>
+              </div>
             </>
           ) : (
             <p className="text-muted text-center text-xs leading-relaxed">
@@ -363,11 +367,14 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           groups={[{ options: dbs.map((d) => ({ value: d.name, label: d.name })) }]}
         />
       )}
+      {/* Goes to the Databases page rather than opening the manager over
+          this one. A window here meant uploads and deletes sat one press
+          from a search you were in the middle of; managing is a place. */}
       <Button
         variant="ghost"
         size="icon-sm"
         title={t('Manage reference databases')}
-        onClick={() => setManage(true)}
+        onClick={() => navigate('databases')}
       >
         <Database className="size-3.5" />
       </Button>
@@ -427,18 +434,6 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         />
       )}
     </FilterRow>
-  );
-
-  // A Modal, not a Sheet: managing databases is a task with an upload
-  // and a delete in it, not a one-question layer — and written inside
-  // the elite WINDOW it is that window's second page (see ui/Modal),
-  // where the Sheet used to stack a second scrim on top of it. In the
-  // column and page variants there is no window above it, so it opens
-  // as an ordinary window of its own.
-  const manageSheet = manage && dbs && (
-    <Modal title="Reference databases" icon={Database} onClose={() => setManage(false)}>
-      <RefDbManager databases={dbs} onChanged={loadMeta} />
-    </Modal>
   );
 
   const list = (
@@ -575,7 +570,6 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         </div>
         {list}
         <GamePreview preview={preview} onClose={hidePreview} />
-        {manageSheet}
       </>
     );
   }
@@ -602,7 +596,6 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         {list}
       </Panel>
       <GamePreview preview={preview} onClose={hidePreview} />
-      {manageSheet}
     </>
   );
 

@@ -1,7 +1,7 @@
 import { Database, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
-import { navigateNow } from '@/lib/router';
+import { navigate, navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
@@ -33,7 +33,6 @@ import { DateInput } from '@/ui/Input';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
-import { RefDbManager, type RefDb } from '@/databases/RefDbManager';
 import { SideDot } from '@/ui/SideDot';
 import { Switch } from '@/ui/Switch';
 import { t } from '@/lib/i18n';
@@ -106,30 +105,6 @@ export function ExplorerPane({
     }
     setShowFilters(false);
   };
-  /**
-   * The database manager, opened here rather than navigated to.
-   *
-   * The icon used to navigate to the Databases page, which leaves the
-   * board — and the position you were exploring — to go and build the
-   * thing you wanted to explore it with. The elite browser has opened the same
-   * manager in a window since it had one, and this pane wants exactly
-   * that: build or upload, come back to the board still on your move.
-   *
-   * The list is fetched here rather than read from the store: the store
-   * keeps only what the source picker needs (name, games, indexed), and
-   * the manager shows sources and bytes as well. On a change, both are
-   * refreshed — this window's copy, and the picker's.
-   */
-  const [manage, setManage] = useState(false);
-  const [manageDbs, setManageDbs] = useState<RefDb[] | null>(null);
-  const loadManageDbs = useCallback(() => {
-    void fetch('/api/refgames')
-      .then((r) => r.json())
-      .then((d: { databases?: RefDb[] }) => setManageDbs(d.databases ?? []))
-      .catch(() => setManageDbs([]));
-    void refreshDbs();
-  }, [refreshDbs]);
-
   // Rare continuations are noise most of the time — show the top handful
   // and keep the pane's room for the reference games below.
   const [allMoves, setAllMoves] = useState(false);
@@ -237,14 +212,13 @@ export function ExplorerPane({
               </Button>
             )}
             {enabled && (
+              // Goes to the Databases page. It opened the manager in a
+              // window over the pane for a while; a window that uploads
+              // and deletes does not belong one press from the board.
               <Button
                 variant="ghost"
                 size="icon-sm"
-                onClick={() => {
-                  setManageDbs(null);
-                  loadManageDbs();
-                  setManage(true);
-                }}
+                onClick={() => navigate('databases')}
                 title={t('Manage reference databases')}
               >
                 <Database className="size-3.5" />
@@ -259,17 +233,6 @@ export function ExplorerPane({
           </>
         }
       />
-
-      {/* Same window the elite browser opens, from the same manager. Its
-          own list is null until the first answer, which is what keeps an
-          empty shelf from flashing "no databases yet" on the way in. */}
-      {manage && (
-        <Modal title="Reference databases" icon={Database} onClose={() => setManage(false)}>
-          {manageDbs === null ? null : (
-            <RefDbManager databases={manageDbs} onChanged={loadManageDbs} />
-          )}
-        </Modal>
-      )}
 
       {showFilters && (
         <Modal title="Filters" icon={SlidersHorizontal} onClose={() => closeFilters(true)}>

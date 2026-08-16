@@ -925,12 +925,23 @@ export const ko: Record<string, string> = {
   'Delete “{name}”? Databases already built from it are not affected.':
     '“{name}”을(를) 지울까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
-  'Delete databases and collections on the Databases page':
-    '데이터베이스와 모음 삭제는 데이터베이스 페이지에서',
   'PGN collections': 'PGN 모음',
   'Upload PGN collections': 'PGN 모음 올리기',
-  'Or drop .pgn files anywhere in this box': '이 상자 안 아무 곳에나 .pgn 파일을 놓아도 됩니다',
-  'Name — the file’s name if blank': '이름 — 비우면 파일 이름',
+  'What to manage': '무엇을 관리할지',
+  Search: '검색',
+  'No database matches that.': '그 조건에 맞는 데이터베이스가 없습니다.',
+  'No collection matches that.': '그 조건에 맞는 모음이 없습니다.',
+  'No databases yet — upload a PGN collection and build one.':
+    '아직 데이터베이스가 없습니다. PGN 모음을 올려 하나 만들어 보세요.',
+  'Go to Databases': '데이터베이스로 가기',
+  'Choose .pgn files': '.pgn 파일 고르기',
+  'Or drop them anywhere in this box': '이 상자 안 아무 곳에나 놓아도 됩니다',
+  'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.':
+    '모음은 게임이 담긴 아무 .pgn이면 됩니다 — Lichess Elite 월간, Lumbra 내보내기. 업로드는 스트리밍이라 큰 파일도 보고 있는 동안 계속 올라갑니다.',
+  'Build a database': '데이터베이스 만들기',
+  'Indexing {n} collections into one searchable database of whole games.':
+    '모음 {n}개를 전체 기보를 검색할 수 있는 데이터베이스 하나로 색인합니다.',
+  'Name — “{name}” if blank': '이름 — 비우면 “{name}”',
   'The build failed.': '만들기에 실패했습니다.',
   'could not start the build': '만들기를 시작하지 못했습니다',
   'could not delete the database': '데이터베이스를 지우지 못했습니다',
