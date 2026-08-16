@@ -285,7 +285,18 @@ export function RefDbManager({
             the slot the control spanned the whole panel, which is the
             same complaint the other way up. fit-content over flex-1
             children resolves to twice the wider label, which is exactly
-            a segmented control's natural size. */}
+            a segmented control's natural size.
+            `md` rather than `sm` for the padding: sm's px-1.5 left the
+            Databases pill hugging its own text.
+            `[&>button]:flex-none` because that alone did not settle it.
+            Segmented's segments are flex-1, so both take the same width
+            and the WIDER label fills its half exactly while the shorter
+            is centred in slack — measured at 6px of breathing room
+            against 14px, from one rule rather than a mistake. Released
+            from flex-1 each segment wraps its own label and both wear
+            the same px-2.5. Done here rather than in Segmented: equal
+            widths are right for the archive's two providers and the
+            shelf's grid/list switch, whose labels are the same length. */}
         <PanelHeader
           className="h-auto py-2"
           title={
@@ -293,8 +304,7 @@ export function RefDbManager({
               value={tab}
               onChange={setTab}
               ariaLabel="What to manage"
-              size="sm"
-              className="w-fit"
+              className="w-fit [&>button]:flex-none"
               segments={[
                 {
                   value: 'databases',
@@ -434,12 +444,12 @@ function DbList({
   return (
     <ul className="divide-line divide-y">
       {databases.map((d) => (
-        // pl-8, not pl-3: it lands the name where the collections tab
-        // puts its own — past the tick — so switching tabs does not slide
-        // the column of names sideways. Measured at 33px against that
-        // tab's 34, the last pixel being the checkbox's own rendered
-        // width, which is the browser's to decide.
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-8 pr-1.5 text-xs">
+        // An indent of its own rather than the pl-3 the rows started
+        // with. It was pl-8 briefly, to land the name exactly where the
+        // collections tab puts its own past the tick; that read as too
+        // deep for a list with nothing in the gutter, so it sits short of
+        // that mark and the two tabs differ by a few pixels.
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-6 pr-1.5 text-xs">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
