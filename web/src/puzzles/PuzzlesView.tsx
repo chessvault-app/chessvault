@@ -43,7 +43,14 @@ import { HubPage } from './HubPage';
 import { PuzzleDbSetup } from './PuzzleDbSetup';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
-import { DIFFICULTY_KEY, bandOf } from './bands';
+import {
+  DIFFICULTIES,
+  DIFFICULTY_KEY,
+  bandOf,
+  difficultyQuery,
+  storedDifficulty,
+  type DifficultyId,
+} from './bands';
 import { consumePendingPuzzle } from './handoff';
 import { fetchSolvedToday } from './today';
 import { t } from '@/lib/i18n';
@@ -70,23 +77,6 @@ interface Meta {
   user: UserState;
 }
 
-/**
- * No rating system — the app is single-user (lanph3re's call). Difficulty is
- * an explicit puzzle-rating range instead, remembered across sessions.
- */
-const DIFFICULTIES = [
-  { id: 'any', label: 'Any', query: {} },
-  // The one band the trainer works out instead of being told: a hidden
-  // skill estimate, kept and updated server-side, picks puzzles just
-  // above your level. Still no rating shown anywhere — the estimate
-  // chooses, it is never a verdict (see server/puzzles.ts).
-  { id: 'adaptive', label: 'Adaptive', query: { adaptive: true }, hint: 'follows your solving' },
-  { id: 'easy', label: 'Easy', query: { max: 1400 }, hint: 'up to 1400' },
-  { id: 'medium', label: 'Medium', query: { min: 1400, max: 1800 }, hint: '1400–1800' },
-  { id: 'hard', label: 'Hard', query: { min: 1800, max: 2200 }, hint: '1800–2200' },
-  { id: 'expert', label: 'Expert', query: { min: 2200 }, hint: '2200+' },
-] as const;
-type DifficultyId = (typeof DIFFICULTIES)[number]['id'];
 
 /**
  * What is actually being withheld while you solve.
@@ -165,10 +155,7 @@ function Trainer({
   const [revealed, setRevealed] = useState(false);
   const [hint, setHint] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [difficulty, setDifficulty] = useState<DifficultyId>(() => {
-    const stored = localStorage.getItem(DIFFICULTY_KEY);
-    return DIFFICULTIES.some((d) => d.id === stored) ? (stored as DifficultyId) : 'any';
-  });
+  const [difficulty, setDifficulty] = useState<DifficultyId>(storedDifficulty);
   // Stacked: the difficulty row hides behind the Puzzle panel's gear.
   const [showDifficulty, setShowDifficulty] = useState(false);
   const [pendingPromotion, setPendingPromotion] = useState<{
@@ -304,22 +291,12 @@ function Trainer({
         }
       }
 
-      let url: string;
-      if (mode === 'single') {
-        url = `/api/puzzles/by-id/${encodeURIComponent(puzzleId ?? '')}`;
-      } else {
-        const query = new URLSearchParams();
-        if (mode === 'failed') query.set('mode', 'failed');
-        else {
-          if (selectedTheme) query.set('theme', selectedTheme);
-          const range = DIFFICULTIES.find((d) => d.id === selectedDifficulty)?.query ?? {};
-          if ('adaptive' in range) query.set('adaptive', '1');
-          if ('min' in range) query.set('min', String(range.min));
-          if ('max' in range) query.set('max', String(range.max));
-        }
-        const qs = query.toString();
-        url = `/api/puzzles/next${qs ? `?${qs}` : ''}`;
-      }
+      const url =
+        mode === 'single'
+          ? `/api/puzzles/by-id/${encodeURIComponent(puzzleId ?? '')}`
+          : mode === 'failed'
+            ? '/api/puzzles/next?mode=failed'
+            : `/api/puzzles/next${difficultyQuery(selectedDifficulty, selectedTheme)}`;
       // A fetch that THROWS — server down, network gone — used to fall
       // straight through this function, leaving the phase on 'loading'
       // and the board on a spinner that nothing would ever stop. An error

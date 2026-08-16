@@ -1,14 +1,17 @@
 import {
   BarChart3,
   BookMarked,
+  Check,
   ChevronRight,
   Database,
   LayoutGrid,
   Puzzle,
   RotateCcw,
+  X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
+import { formatAgo, formatWhen } from '@/lib/dates';
 import { useMediaQuery } from '@/lib/media';
 import { Board } from '@/board/Board';
 import { Button } from '@/ui/Button';
@@ -17,7 +20,8 @@ import { PageShell } from '@/ui/PageShell';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { t } from '@/lib/i18n';
 import { DashboardPage } from './DashboardPage';
-import { difficultyWord } from './bands';
+import { KingIcon } from '@/ui/KingIcon';
+import { bandOf, difficultyQuery, difficultyWord, storedDifficulty } from './bands';
 import { setPendingPuzzle, type HandoffMode } from './handoff';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { fetchSolvedToday } from './today';
@@ -62,6 +66,14 @@ interface Meta {
   failed?: number;
 }
 
+interface HistoryEntry {
+  id: string;
+  win: boolean;
+  /** Curation data — read only to pick the WORD for it, never shown. */
+  puzzleRating: number;
+  at: string;
+}
+
 interface BookSummary {
   slug: string;
   title: string;
@@ -73,10 +85,14 @@ interface BookSummary {
   lastAt?: string | null;
 }
 
-/** How many books the panel shows before it stops being a launcher and
-    starts being the shelf. The shelf is one tap away and carries search,
-    sorting and bookmarks; this is only the top of it. */
-const SHELF_ROWS = 3;
+/** Just the one you were last in. A launcher answers "carry on with
+    what?", and the answer to that is singular — the shelf is one tap
+    away and is where a list of books belongs. */
+const SHELF_ROWS = 1;
+
+/** Recent attempts to show. Enough to be a history, few enough that the
+    page still ends above the fold on a 390x844 phone. */
+const HISTORY_ROWS = 4;
 
 /**
  * A puzzle offered as itself: the position on the left, what it is and
@@ -115,7 +131,11 @@ function PuzzleCard({
         setPendingPuzzle(mode, puzzle);
         go();
       }}
-      className="bg-surface border-line hover:bg-surface-2 flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-colors duration-100"
+      // Tighter top and bottom than the sides: the board is square and
+      // sets this row's height on its own, so vertical padding here is
+      // slack around a shape that already has its own margins, while the
+      // horizontal padding is still holding the text off the edge.
+      className="bg-surface border-line hover:bg-surface-2 flex w-full items-center gap-3 rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100"
     >
       <Board
         fen={at.fen}
@@ -128,8 +148,14 @@ function PuzzleCard({
         <span className="text-fg text-sm font-medium">{title}</span>
         {detail && <span className="text-subtle text-xs leading-snug">{detail}</span>}
         {/* Whose move — the one thing you cannot read off a thumbnail
-            fast, and the thing lichess puts under every one of these. */}
+            fast, and the thing lichess puts under every one of these.
+            Deliberately NOT a flex row: `items-center` would centre the
+            king's box on the line box, and a line box includes the
+            descender space that the letters beside it do not use, so a
+            box-centred glyph sits visibly low. Left as ordinary inline
+            text, the king takes the baseline like a letter does. */}
         <span className="text-muted text-xs">
+          <KingIcon side={side} className="mr-1.5" />
           {side === 'white' ? t('White to play') : t('Black to play')}
         </span>
       </span>
@@ -188,10 +214,60 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
   );
 }
 
-/** One puzzle drawn ahead of time, for the board that offers it. */
+/**
+ * What you last attempted, newest first.
+ *
+ * Deliberately the log and not the statistics: counts, win rate and the
+ * by-difficulty breakdown are the dashboard's job and are exactly what
+ * this page exists to stop opening. A row here is a puzzle you can go
+ * back into, which is a launcher's business.
+ *
+ * Difficulty is a word (`bandOf`), never the rating behind it.
+ */
+function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
+  return (
+    <div className="bg-surface border-line overflow-hidden rounded-xl border">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        {t('Recent')}
+      </p>
+      {attempts.map((h) => (
+        <button
+          key={h.id + h.at}
+          type="button"
+          onClick={() => navigate('puzzles', 'id', h.id)}
+          title={t('Replay puzzle #{id}', { id: h.id })}
+          className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-1.5 text-left text-xs transition-colors duration-100 last:border-b-0"
+        >
+          {h.win ? (
+            <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
+          ) : (
+            <X className="text-bad size-3.5 shrink-0" aria-label={t('failed')} />
+          )}
+          <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
+          <span className="text-subtle min-w-0 flex-1 truncate">{t(bandOf(h.puzzleRating))}</span>
+          <span className="text-subtle shrink-0 tabular-nums" title={formatWhen(h.at)}>
+            {formatAgo(h.at)}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * One puzzle drawn ahead of time, for the board that offers it.
+ *
+ * The fresh draw asks the SAME question the trainer would (see
+ * `difficultyQuery`). It must: this puzzle is handed to the trainer
+ * rather than re-drawn there, so a hub that ignored the stored
+ * difficulty would not merely mis-advertise — it would override a
+ * setting the user chose, every time, with no way to tell.
+ */
 async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
   try {
-    const res = await fetch(`/api/puzzles/next${mode === 'failed' ? '?mode=failed' : ''}`);
+    const res = await fetch(
+      `/api/puzzles/next${mode === 'failed' ? '?mode=failed' : difficultyQuery(storedDifficulty())}`,
+    );
     if (!res.ok) return null; // 404 empty pool, 503 no database — no card
     return ((await res.json()) as { puzzle: ApiPuzzle }).puzzle;
   } catch {
@@ -205,6 +281,7 @@ function Hub() {
   const [next, setNext] = useState<ApiPuzzle | null>(null);
   const [review, setReview] = useState<ApiPuzzle | null>(null);
   const [books, setBooks] = useState<BookSummary[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -219,6 +296,17 @@ function Hub() {
     void fetchSolvedToday().then((n) => {
       if (n !== null) setSolvedToday(n);
     });
+    void (async () => {
+      try {
+        const res = await fetch(`/api/puzzles/history?limit=${HISTORY_ROWS}`);
+        if (!res.ok) return;
+        // Already newest-first, and the server caps what it reads — the
+        // limit is the row count, so nothing is fetched to be thrown away.
+        setHistory((await res.json() as { attempts: HistoryEntry[] }).attempts);
+      } catch {
+        // No panel; the dashboard tile still reaches the full log.
+      }
+    })();
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
     void draw('fresh').then(setNext);
@@ -265,7 +353,7 @@ function Hub() {
     // page that moves. `pb-4` replaces the shell's usual 2rem + safe
     // area: the tab bar below carries the inset itself, and dead space
     // under the buttons is the opposite of what this page is for.
-    <PageShell width="medium" className="min-h-full pb-4">
+    <PageShell width="medium" className="min-h-full pb-3">
       <PageHeader title={t('Puzzles')} />
 
       {/* Top of the page, not in the bottom cluster: this is the one
@@ -275,6 +363,7 @@ function Hub() {
           — a page whose heading floats alone above 300px of nothing reads
           as broken rather than as roomy. */}
       {books.length > 0 && <BookShelfPanel books={books} />}
+      {history.length > 0 && <HistoryPanel attempts={history} />}
 
       <div className="mt-auto flex flex-col gap-2">
         {solvedToday !== null && solvedToday > 0 && (
@@ -292,7 +381,7 @@ function Hub() {
           <PuzzleCard
             puzzle={next}
             mode="fresh"
-            title={t('Go solve it')}
+            title={t('Next puzzle')}
             go={() => navigate('puzzles')}
           />
         )}
@@ -305,7 +394,7 @@ function Hub() {
           <PuzzleCard
             puzzle={review}
             mode="failed"
-            title={t('Put this one right')}
+            title={t('Missed puzzle')}
             detail={t('{n} waiting to be reviewed', { n: failed })}
             go={() => navigate('puzzles', 'failed')}
           />
@@ -321,6 +410,26 @@ function Hub() {
             </Button>
           )
         )}
+
+        <div className="grid grid-cols-3 gap-2">
+          {(
+            [
+              ['Themes', LayoutGrid, () => navigate('puzzles', 'themes')],
+              ['Books', BookMarked, () => navigate('puzzles', 'books')],
+              ['Dashboard', BarChart3, () => navigate('puzzles', 'dashboard')],
+            ] as const
+          ).map(([label, Icon, go]) => (
+            <button
+              key={label}
+              type="button"
+              onClick={go}
+              className="bg-surface border-line hover:bg-surface-2 flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors"
+            >
+              <Icon className="text-primary size-5" />
+              {t(label)}
+            </button>
+          ))}
+        </div>
 
         <Button
           variant="primary"
@@ -354,26 +463,6 @@ function Hub() {
             </>
           )}
         </Button>
-
-        <div className="grid grid-cols-3 gap-2">
-          {(
-            [
-              ['Themes', LayoutGrid, () => navigate('puzzles', 'themes')],
-              ['Books', BookMarked, () => navigate('puzzles', 'books')],
-              ['Dashboard', BarChart3, () => navigate('puzzles', 'dashboard')],
-            ] as const
-          ).map(([label, Icon, go]) => (
-            <button
-              key={label}
-              type="button"
-              onClick={go}
-              className="bg-surface border-line hover:bg-surface-2 flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors"
-            >
-              <Icon className="text-primary size-5" />
-              {t(label)}
-            </button>
-          ))}
-        </div>
       </div>
     </PageShell>
   );
