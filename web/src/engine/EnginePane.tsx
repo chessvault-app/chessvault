@@ -1,6 +1,5 @@
-import { AlertTriangle, Database, HelpCircle, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, Database, Settings2, Thermometer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { summarisePlan, tagLine } from '@shared/explain';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -8,18 +7,14 @@ import { useExplain } from '@/store/explain';
 import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
-import { SideDot } from '@/ui/SideDot';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
-import { ExplainCard } from './ExplainCard.tsx';
-import { motifChips, planText } from './explainText.ts';
 import { formatPv, type PvPly } from './pv.ts';
 import { PvMoves } from './PvMoves.tsx';
 import { PvPeek, usePvPeek } from './PvPeek.tsx';
-import { moverChances } from './review.ts';
 import { lookupTablebase, tablebaseEligible, tbVerdict, type TbResult } from './tablebase.ts';
-import { formatScore, formatWdl, toWhitePov, wdlToWhitePov, type PvLine } from './uci.ts';
+import { formatScore, toWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
 
 /**
@@ -47,8 +42,6 @@ export function EngineBlock({ className }: { className?: string }) {
   const heatOn = useExplain((s) => s.heatOn);
   const heatUnsupported = useExplain((s) => s.heatUnsupported);
   const toggleHeat = useExplain((s) => s.toggleHeat);
-  const cardOpen = useExplain((s) => s.cardOpen);
-  const toggleCard = useExplain((s) => s.toggleCard);
 
   const node = getNode(tree, cursorId);
   const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
@@ -96,44 +89,6 @@ export function EngineBlock({ className }: { className?: string }) {
   const top = visibleLines[0];
   const score = top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
 
-  /**
-   * Sharpness: the winning-chances gap between the best and second-best
-   * move. Free exactly when two lines are already being searched — it is
-   * never worth silently raising MultiPV for, so with one line it simply
-   * doesn't exist. Depth-gated to keep the chip from flickering on the
-   * shallow first iterations.
-   */
-  const sharpness = useMemo(() => {
-    if (visibleLines.length < 2) return null;
-    const [a, b] = visibleLines as [PvLine, PvLine];
-    if (a.depth < 10 || b.depth < 10) return null;
-    const best = moverChances(toWhitePov({ cp: a.cp, mate: a.mate }, turn), turn);
-    const second = moverChances(toWhitePov({ cp: b.cp, mate: b.mate }, turn), turn);
-    // A lost position has no critical move — every road goes downhill.
-    if (best < 0.15) return null;
-    const gap = best - second;
-    if (gap < 0.15) return null;
-    return { onlyMove: gap >= 0.3, best: Math.round(best * 100), second: Math.round(second * 100) };
-  }, [visibleLines, turn]);
-
-  /**
-   * The top line's plan, one phrase list under the lines. Depth-gated
-   * like the sharpness chip: a plan read off a depth-6 iteration would
-   * change three times a second. Keyed on the PV STRING for the same
-   * reason PvRow's memo is — parseInfo allocates a fresh moves array per
-   * info line.
-   */
-  const topPvKey = top && top.depth >= 12 ? top.moves.join(' ') : '';
-  const plan = useMemo(
-    () => (topPvKey ? summarisePlan(node.fen, topPvKey.split(' ')) : null),
-    [node.fen, topPvKey],
-  );
-  const planLine = plan ? planText(plan) : null;
-  // "Neither side can make progress" belongs to nobody; every other plan
-  // is the side to move's and must say so (lanph3re's report: whose plan
-  // this was wasn't readable off the line).
-  const planQuiet = plan?.gestures[0]?.type === 'quiet';
-
   return (
     // The identical header the standalone Engine panel had — the merge
     // must not change how the headers look (lanph3re's call), only remove the
@@ -163,47 +118,12 @@ export function EngineBlock({ className }: { className?: string }) {
                   {top.selDepth ? `/${top.selDepth}` : ''}
                   {finished ? '' : '…'}
                 </span>
-                {/* The practical reading of the number: how the engine's own
-                    model says this converts to results at its full strength.
-                    White POV like the score, so the two never disagree in
-                    sign. */}
-                {top.wdl && (
-                  <span
-                    className="text-subtle font-mono text-[10px] normal-case tabular-nums tracking-normal"
-                    title={t('White wins · draw · Black wins, in per cent — the engine’s own estimate at full strength.')}
-                  >
-                    {formatWdl(wdlToWhitePov(top.wdl, turn))}
-                  </span>
-                )}
-                {/* Appears only at genuine forks in the road, so it can
-                    afford to be loud when it does. */}
-                {sharpness && (
-                  <span
-                    className="bg-nag-mistake/15 text-nag-mistake rounded px-1.5 py-px text-[10px] font-semibold normal-case tracking-normal"
-                    title={t(
-                      'The best move keeps {best}% winning chances for the side to move; the second best only {second}%.',
-                      { best: sharpness.best, second: sharpness.second },
-                    )}
-                  >
-                    {sharpness.onlyMove ? t('Only move') : t('Critical')}
-                  </span>
-                )}
               </>
             )}
           </span>
         }
         actions={
           <>
-            {/* The Why card: threat + last-move probes, on demand. */}
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              active={cardOpen}
-              onClick={toggleCard}
-              title={t('Explain this position')}
-            >
-              <HelpCircle className="size-3.5" />
-            </Button>
             {/* Board overlay of NNUE piece values. Hidden outright once an
                 engine build proves it cannot answer — a control that can
                 never do anything is worse than none. */}
@@ -298,37 +218,6 @@ export function EngineBlock({ className }: { className?: string }) {
               ))
             )}
           </ul>
-          {planLine && plan && (
-            <p className="group text-subtle flex items-baseline gap-1.5 px-3 pt-0.5 pb-1.5 text-xs">
-              {!planQuiet && <SideDot side={plan.side} className="size-1.5 self-center" />}
-              <span className="text-muted shrink-0 font-medium">
-                {planQuiet
-                  ? t('Plan:')
-                  : plan.side === 'white'
-                    ? t('White’s plan:')
-                    : t('Black’s plan:')}
-              </span>
-              {/* One line at rest, like the lines above it. A three-gesture
-                  plan wrapped to a second line and a two-gesture one did
-                  not, so the pane changed height as the search deepened and
-                  shoved the moves list under the reader's pointer. Hovering
-                  opens it in full; a coarse pointer, which has no hover to
-                  open it with, keeps the wrap and pays the row instead. */}
-              <span
-                className={cn(
-                  'min-w-0 truncate',
-                  'pointer-coarse:whitespace-normal pointer-fine:group-hover:whitespace-normal',
-                )}
-              >
-                {planLine}
-              </span>
-            </p>
-          )}
-          <ExplainCard
-            onPlayLine={playLine}
-            onPeek={finePointer ? show : undefined}
-            onPeekEnd={finePointer ? hide : undefined}
-          />
         </>
       )}
       {/* Closes the expanded engine body so the Moves header below reads
@@ -366,28 +255,6 @@ function PvRow({
   const pv = useMemo(() => formatPv(fen, pvKey ? pvKey.split(' ') : []), [fen, pvKey]);
   const advantage = score.mate ?? score.cp ?? 0;
 
-  // What the tactic IS, when there is one: a chip per line, silent for
-  // the overwhelming majority of quiet lines. Depth-gated for stability.
-  const chips = useMemo(
-    () => (line.depth >= 10 && pvKey ? motifChips(tagLine(fen, pvKey.split(' '))) : []),
-    [fen, pvKey, line.depth],
-  );
-
-  // Which ply each chip is about, so the move itself can wear the chip's
-  // colour. Dropped for plies the replay never reached — formatPv stops at
-  // the first illegal move, and a mark past its end would point at nothing.
-  const marks = useMemo(() => {
-    const byPly = new Map<number, string>();
-    for (const chip of chips) {
-      if (chip.ply >= pv.plies.length) continue;
-      // A sacrifice and the motif it sets up land on the same move often
-      // enough that the mark has to be able to name both.
-      const already = byPly.get(chip.ply);
-      byPly.set(chip.ply, already ? `${already} · ${chip.label}` : chip.label);
-    }
-    return byPly;
-  }, [chips, pv.plies.length]);
-
   return (
     <li>
       {/* A div, not a button: the plies inside are the buttons now, and
@@ -411,22 +278,6 @@ function PvRow({
         >
           {formatScore(score)}
         </span>
-        {chips.map((chip) => (
-          <span
-            key={chip.label}
-            // A motif always belongs to the side to move in the line; the
-            // swatch says whose it is without spending a word on it.
-            title={
-              turn === 'white'
-                ? t('A tactic for White in this line')
-                : t('A tactic for Black in this line')
-            }
-            className="bg-primary-soft text-primary inline-flex shrink-0 items-center gap-1 rounded px-1 py-px text-[9px] font-semibold"
-          >
-            <SideDot side={turn} className="size-1.5 rounded-[2px]" />
-            {chip.label}
-          </span>
-        ))}
         {/* One line at rest so three lines cost three rows; the row being
             read opens up to put every ply within reach. Hover-expansion is
             fine-pointer only — a tapped :hover sticks, and a row that
@@ -438,7 +289,6 @@ function PvRow({
           onPlayLine={onPlayLine}
           onPeek={onPeek}
           onPeekEnd={onPeekEnd}
-          marks={marks}
           className={cn(
             'min-w-0 flex-1 truncate',
             'group-focus-within:whitespace-normal pointer-fine:group-hover:whitespace-normal',

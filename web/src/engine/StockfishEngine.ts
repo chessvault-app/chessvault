@@ -72,7 +72,7 @@ export class StockfishEngine {
   private currentFen: string | null = null;
   /** Set while waiting for `bestmove` after a `stop`, so we don't overlap searches. */
   private pendingStop = false;
-  private queued: { fen: string; depth: number; searchMoves?: string[] } | null = null;
+  private queued: { fen: string; depth: number } | null = null;
 
   /**
    * While set, every engine line is diverted here instead of the UCI
@@ -154,7 +154,7 @@ export class StockfishEngine {
       this.pendingStop = false;
       const next = this.queued;
       this.queued = null;
-      if (next) void this.analyse(next.fen, next.depth, next.searchMoves);
+      if (next) void this.analyse(next.fen, next.depth);
       return;
     }
   }
@@ -230,10 +230,6 @@ export class StockfishEngine {
     this.send(`setoption name Threads value ${threads}`);
     this.send(`setoption name Hash value ${this.options.hashMb}`);
     this.send(`setoption name MultiPV value ${this.options.multiPv}`);
-    // Free extra output: the engine's own model of how this eval converts
-    // to win/draw/loss at its strength. An engine without the option just
-    // logs a complaint that handleLine ignores.
-    this.send('setoption name UCI_ShowWDL value true');
   }
 
   private isMultiThreaded(): boolean {
@@ -251,16 +247,13 @@ export class StockfishEngine {
    * If a search is already running it is stopped first, and the new position is
    * queued until `bestmove` arrives. Issuing `go` while a search is live is the
    * classic way to desynchronise a UCI engine, so it is avoided.
-   *
-   * `searchMoves` restricts the root to those moves (UCI `searchmoves`) —
-   * how a probe asks "and if I play THIS?" and gets the honest reply line.
    */
-  async analyse(fen: string, depth = 22, searchMoves?: string[]): Promise<void> {
+  async analyse(fen: string, depth = 22): Promise<void> {
     if (!this.worker) await this.start();
     if (!this.worker) return;
 
     if (this.searching || this.pendingStop) {
-      this.queued = { fen, depth, ...(searchMoves ? { searchMoves } : {}) };
+      this.queued = { fen, depth };
       if (!this.pendingStop) {
         this.pendingStop = true;
         this.send('stop');
@@ -278,7 +271,7 @@ export class StockfishEngine {
     this.currentFen = fen;
     this.searching = true;
     this.send(`position fen ${fen}`);
-    this.send(`go depth ${depth}${searchMoves?.length ? ` searchmoves ${searchMoves.join(' ')}` : ''}`);
+    this.send(`go depth ${depth}`);
   }
 
   /**

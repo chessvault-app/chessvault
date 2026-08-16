@@ -465,9 +465,9 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
   and exactly how the drill decides hit, miss and gap.
 - [The opening map](docs/opening-map.md) — your repertoire as a tree:
   hand-placed moves, tagged studies, coverage derived live.
-- [Explaining the engine](docs/explaining.md) — threats, refutations,
-  plans, motifs, piece values: engine output read back in human terms,
-  deterministically.
+- [Explaining the engine](docs/explaining.md) — tablebase verdicts and
+  per-piece values: the two engine answers that are proofs, not
+  readings.
 - [ML history](docs/ml-history.md) — how the book reader got good.
 - [Update log](docs/update-log.md) — what changed, newest first.
 
