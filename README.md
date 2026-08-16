@@ -37,7 +37,7 @@ is one connected body of work, and the links are what make it that.
 - **Board** — free analysis with Stockfish 18 (WASM, multi-threaded),
   full move trees with variations, comments, NAGs (`!`, `?!` and the
   rest of the annotation glyphs) and arrows, an
-  opening explorer (local book + Lichess), game review with accuracy
+  opening explorer (local databases + Lichess), game review with accuracy
   and honest brilliancy detection, and position loading from FEN, PGN,
   or a *photo/screenshot* of any board.
 - **Editor** — set up any position; drag pieces from the palette, or
@@ -260,7 +260,7 @@ against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 
 ## Optional data
 
-The app runs with an empty `data/`. These four datasets light up specific
+The app runs with an empty `data/`. These three datasets light up specific
 features; everything under `data/` is derived, gitignored and rebuildable,
 so it never ships in the repo. Build what you want, per machine — and
 **all of it from inside the app**. The `npm run` commands below are the
@@ -295,7 +295,7 @@ both questions now, and answers them filtered.)
 
 It is built when a release is cut, not kept in the repo, so each
 release carries data from a month that was current then. **A server
-install and a source checkout have neither** — they take the commit, not
+install and a source checkout have none of it** — they take the commit, not
 the release artefacts — and start with an empty explorer and an empty
 game browser. **When you outgrow the starter, build your own** — that
 is the ordinary way round anyway: upload your PGN collections on the
@@ -326,17 +326,6 @@ unzip lichess_elite_2025-11.zip -d vault/sources/
 npm run build:refgames -- lichess_elite_2025-11.pgn
 ```
 
-A book also keeps the games themselves, so the explorer can list who played
-a position and open any of them on the board. Every game is kept where a
-position is quiet enough for a full list to mean something, and only the
-strongest few where it is not — the cutoff is read off each book's own
-distribution rather than fixed, because a month of elite games and your own
-thirty want opposite answers. On that month it settles at 116 games, which
-leaves 99% of positions with a complete list.
-
-**A book is for a large reference database, not for your own games.** Your
-games are answered live instead — see below.
-
 ### The two big ones
 
 **The puzzle trainer builds itself, in the app.** Open Puzzles with no
@@ -346,8 +335,8 @@ of building here, after the download. Nothing to install, nothing to type,
 and it keeps going if you leave the page. `npm run build:puzzles` does the
 same thing from a terminal if you prefer one.
 
-**Reference games build in the app too, and they are plural like
-books.** The desktop starts seeded — the installer's starter set is one
+**Reference games build in the app too, and they are plural.** The
+desktop starts seeded — the installer's starter set is one
 database, in place before the app first opens — and the elite browser's
 manager uploads PGN collections and indexes any selection of them into a
 named database beside the others: an Elite month, an OTB collection,
