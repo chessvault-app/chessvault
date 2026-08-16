@@ -1,27 +1,14 @@
-import {
-  BookMarked,
-  BookOpen,
-  Check,
-  ChevronRight,
-  Compass,
-  Database,
-  SquarePen,
-  Library,
-  NotebookPen,
-  Puzzle,
-  Grid3x3,
-  Settings,
-  SwatchBook,
-  X,
-} from 'lucide-react';
+import { BookOpen, Check, ChevronRight, Grid3x3, Library, Puzzle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { navigate, type Section } from '@/lib/router';
+import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { BANDS } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
+import { HOME_DESTINATIONS, type HomeCount } from './destinations';
+import { resolveHomeLayout } from './layout';
 
 /**
  * The landing page. It used to be six static tiles — four duplicating the
@@ -32,25 +19,11 @@ import { t } from '@/lib/i18n';
  * everything, and the counts it shows are all yours — the puzzle tile
  * used to show the 6.1M Lichess pool in the slot every other tile used
  * for personal counts, which read as a lie until decoded.
+ *
+ * The two rows of destinations are no longer written here: they come from
+ * the catalogue in `destinations.ts`, arranged by `layout.ts`. Which of
+ * them are tiles is a property of the vault, not of this file.
  */
-
-const SECTIONS: { section: Section; label: string; blurb: string; icon: typeof Grid3x3 }[] = [
-  { section: 'analysis', label: 'Board', blurb: 'Free board with engine and explorer', icon: Grid3x3 },
-  { section: 'editor', label: 'Editor', blurb: 'Set up any position', icon: SquarePen },
-  { section: 'studies', label: 'Studies', blurb: 'Openings and ideas, in chapters', icon: Library },
-  { section: 'notes', label: 'Notes', blurb: 'Markdown with live boards', icon: NotebookPen },
-  { section: 'games', label: 'Games', blurb: 'Your collection, annotated', icon: BookOpen },
-  { section: 'puzzles', label: 'Puzzles', blurb: 'Train tactics offline', icon: Puzzle },
-];
-
-/** The destinations the tiles never reached — small, but reachable. */
-const MORE: { label: string; icon: typeof Grid3x3; go: () => void }[] = [
-  { label: 'Repertoire', icon: SwatchBook, go: () => navigate('repertoire') },
-  { label: 'Explorer', icon: Compass, go: () => navigate('analysis', 'explorer') },
-  { label: 'Databases', icon: Database, go: () => navigate('books') },
-  { label: 'Puzzle books', icon: BookMarked, go: () => navigate('puzzles', 'books') },
-  { label: 'Settings', icon: Settings, go: () => navigate('settings') },
-];
 
 interface DocMeta {
   id: string;
@@ -58,7 +31,7 @@ interface DocMeta {
 }
 
 interface HomeData {
-  counts: Partial<Record<Section, number>>;
+  counts: Partial<Record<HomeCount, number>>;
   lastStudy: DocMeta | null;
   lastGame: DocMeta | null;
   /** Counted training attempts — 0 means the trainer is untouched. */
@@ -131,7 +104,7 @@ export function HomePage() {
           : undefined;
       const meta = puzzles as { ready?: boolean; user?: { attempts?: number; wins?: number } } | null;
       const profile = (settings as { profile?: { chesscom?: string; lichess?: string } })?.profile;
-      const counts: Partial<Record<Section, number>> = {
+      const counts: Partial<Record<HomeCount, number>> = {
         studies: docs(studies),
         notes: docs(notes),
         games: docs(games),
@@ -155,6 +128,10 @@ export function HomePage() {
   }, []);
 
   const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+
+  // The grid and the row underneath it. Everything in the catalogue is in
+  // exactly one of them, so no destination can be lost.
+  const { tiles, launchers } = resolveHomeLayout(null, HOME_DESTINATIONS);
 
   const continueRows: { icon: typeof Grid3x3; label: string; detail: string; go: () => void }[] =
     data === null
@@ -342,28 +319,27 @@ export function HomePage() {
         )}
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {SECTIONS.map(({ section, label, blurb, icon: Icon }) => (
+          {tiles.map(({ id, label, blurb, icon: Icon, nav, count }) => (
             <button
-              key={section}
+              key={id}
               type="button"
-              onClick={() => navigate(section)}
+              onClick={() => navigate(...nav)}
               className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex flex-col items-start gap-2 rounded-xl border p-3.5 text-left transition-colors duration-100"
             >
               <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
               <span>
                 <span className="text-fg block text-sm font-medium">
                   {t(label)}
-                  {data?.counts[section] !== undefined ? (
+                  {count !== undefined && data?.counts[count] !== undefined ? (
                     <span className="text-subtle font-mono text-xs font-normal">
                       {' '}
-                      · {compact.format(data.counts[section]!)}
+                      · {compact.format(data.counts[count]!)}
                     </span>
                   ) : (
                     // Only the tiles that will get a number keep space for
                     // one: Board and Editor are tools and never carry one.
                     data === null &&
-                    section !== 'analysis' &&
-                    section !== 'editor' && (
+                    count !== undefined && (
                       <Skeleton className="ml-1.5 inline-block h-2 w-5 align-middle" />
                     )
                   )}
@@ -374,20 +350,20 @@ export function HomePage() {
           ))}
         </div>
 
-        {/* Everything else, reachable: these five destinations had no way
-            in from this page at all. */}
+        {/* Everything else, reachable: these destinations had no way in
+            from this page at all. */}
         {/* One row on every width. Five labelled buttons never fit side by
             side on a phone, and any wrap — 4+1, or the 3+2 clusters that
             replaced it — still reads as an accident. So below sm they
             become a launcher row: five equal columns, icon over label,
             with labels free to break ("Puzzle books") inside their cell. */}
         <div className="mt-4 grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5">
-          {MORE.map(({ label, icon: Icon, go }) => (
+          {launchers.map(({ id, label, icon: Icon, nav }) => (
             <Button
-              key={label}
+              key={id}
               variant="ghost"
               size="sm"
-              onClick={go}
+              onClick={() => navigate(...nav)}
               className={cn(
                 'max-sm:h-auto max-sm:flex-col max-sm:gap-1.5 max-sm:whitespace-normal',
                 'max-sm:rounded-lg max-sm:px-1 max-sm:py-2',
