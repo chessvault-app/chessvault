@@ -19,12 +19,18 @@ import { t } from '@/lib/i18n';
  */
 export function DatabasesPage() {
   // `databases` present = the server's directory mount; absent = a
-  // single-database mount (the static demo), which has no manager.
-  const [meta, setMeta] = useState<{ ready: boolean; databases?: RefDb[] } | null>(null);
+  // single-database mount (the static demo), which has no manager. Absent
+  // is not the same as empty: the demo mounts a real database it simply
+  // cannot rebuild, so `ready` decides what is said about it.
+  const [meta, setMeta] = useState<{
+    ready: boolean;
+    games?: number;
+    databases?: RefDb[];
+  } | null>(null);
   const loadMeta = useCallback(() => {
     void fetch('/api/refgames')
       .then((r) => r.json())
-      .then((d: { ready: boolean; databases?: RefDb[] }) => setMeta(d))
+      .then((d: { ready: boolean; games?: number; databases?: RefDb[] }) => setMeta(d))
       .catch(() => setMeta(null));
   }, []);
   useEffect(() => {
@@ -46,6 +52,20 @@ export function DatabasesPage() {
         <Section icon={<Database className="size-3.5" />} title={t('Reference games')}>
           {meta === null ? null : meta.databases ? (
             <RefDbManager databases={meta.databases} onChanged={loadMeta} layout="grid" />
+          ) : meta.ready ? (
+            // What is mounted, and why there is nothing to press. Only the
+            // count: this mount has no name to show, and its size cannot be
+            // measured through the demo's in-memory filesystem.
+            <div className="flex flex-col gap-1 text-xs">
+              <p className="text-fg font-medium">
+                {t('{n} games', { n: (meta.games ?? 0).toLocaleString() })}
+              </p>
+              <p className="text-muted leading-relaxed">
+                {t(
+                  'This database is read-only. Uploading collections and building databases need the installed app.',
+                )}
+              </p>
+            </div>
           ) : (
             <p className="text-muted text-xs leading-relaxed">
               {t('This server has no reference games database.')}
