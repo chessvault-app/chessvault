@@ -111,8 +111,15 @@ export function useSheetDrag(onClose: () => void): {
       // type in. This is the one that bit — tapping the PGN box dismissed
       // the whole window, because focusing it opened the keyboard, which
       // shifted the page, which arrived here as a long downward drag.
+      // A canvas is the same bargain: it draws its own handles and reads
+      // its own pointers, and the picture window's four corner handles are
+      // dragged DOWNWARDS as often as any other way — every one of those
+      // would otherwise be a dismiss, throwing the alignment away.
       const target = e.target as Element | null;
-      if (e.touches.length !== 1 || target?.closest('input, textarea, [contenteditable="true"]')) {
+      if (
+        e.touches.length !== 1 ||
+        target?.closest('input, textarea, canvas, [contenteditable="true"]')
+      ) {
         from.current = null;
         mine = false;
         return;

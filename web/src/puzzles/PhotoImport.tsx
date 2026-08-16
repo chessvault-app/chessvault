@@ -2,7 +2,7 @@ import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
-import { useDialogFocus } from '@/ui/dialogFocus';
+import { Modal } from '@/ui/Modal';
 import {
   boardFeatures,
   grayscaleFrom,
@@ -57,17 +57,6 @@ export function PhotoImport({
   const [dragOver, setDragOver] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef<number | null>(null);
-
-  // The same focus and Escape duty every shared window has — this was
-  // the one overlay without either.
-  const focusRef = useDialogFocus();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   const pick = useCallback((file: Blob): void => {
     const url = URL.createObjectURL(file);
@@ -239,62 +228,126 @@ export function PhotoImport({
     setReading({ fen, features, uncertain });
   };
 
-  // Drag-and-drop, the third way in: handlers live on the whole overlay so
-  // a file can land anywhere on the dialog, in either state.
-  const onDragOver = (e: React.DragEvent): void => {
-    if (e.dataTransfer.types.includes('Files')) {
+  /**
+   * Drag-and-drop, the third way in.
+   *
+   * On the WINDOW, not on a layer of our own: the window is a shared
+   * sheet now and its scrim belongs to Modal, so there is no element here
+   * that covers the screen to hang these on. Window listeners keep the
+   * old reach — a file can land anywhere, in either state — and they are
+   * also what stops a near miss from being handed to the browser, which
+   * answers a dropped file by NAVIGATING to it, taking the app with it.
+   */
+  useEffect(() => {
+    const onDragOver = (e: DragEvent): void => {
+      if (!e.dataTransfer?.types.includes('Files')) return;
       e.preventDefault();
       setDragOver(true);
-    }
-  };
-  const onDragLeave = (e: React.DragEvent): void => {
-    // dragleave fires on every child hop; only leaving the overlay counts.
-    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragOver(false);
-  };
-  const onDrop = (e: React.DragEvent): void => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = [...e.dataTransfer.files].find((f) => f.type.startsWith('image/'));
-    if (file) pick(file);
-    else setPasteHint(t('That drop had no image file.'));
-  };
+    };
+    // Every hop between elements fires dragleave; only leaving the window
+    // itself counts, and that is the one with no element to arrive at.
+    const onDragLeave = (e: DragEvent): void => {
+      if (e.relatedTarget === null) setDragOver(false);
+    };
+    const onDrop = (e: DragEvent): void => {
+      e.preventDefault();
+      setDragOver(false);
+      const file = [...(e.dataTransfer?.files ?? [])].find((f) => f.type.startsWith('image/'));
+      if (file) pick(file);
+      else setPasteHint(t('That drop had no image file.'));
+    };
+    window.addEventListener('dragover', onDragOver);
+    window.addEventListener('dragleave', onDragLeave);
+    window.addEventListener('drop', onDrop);
+    return () => {
+      window.removeEventListener('dragover', onDragOver);
+      window.removeEventListener('dragleave', onDragLeave);
+      window.removeEventListener('drop', onDrop);
+    };
+  }, [pick]);
 
   return (
-    <div
-      // The scrim token, not a raw black — this was the one window with
-      // its own hand-rolled layer. A scrim CLICK deliberately does not
-      // close it: half-adjusted corner handles are work, and Escape (and
-      // Cancel) are the deliberate ways out.
-      className="bg-scrim fixed inset-0 z-50 grid place-items-center p-4"
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+    // The app's window, like every other one: a bottom sheet on a phone,
+    // a centred card on a desktop. This was a hand-rolled scrim and box —
+    // the last overlay that was not one — so it had no grab handle, no
+    // drag, no keyboard band, no title row of the shared shape, and its
+    // own Escape listener instead of the platform's close request. It is
+    // dismissible the way the rest are now, scrim and drag included, which
+    // the hand-rolled version deliberately was not.
+    <Modal
+      title="Position from an image"
+      icon={ImageUp}
+      onClose={onClose}
+      className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t('Position from an image')}
-        ref={focusRef}
-        className={cn(
-          'bg-surface border-line relative flex max-h-full w-full max-w-[38rem] flex-col gap-3 overflow-y-auto rounded-xl border p-4',
-          dragOver && 'border-primary',
-        )}
-      >
-        {dragOver && (
-          <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-xl">
-            <p className="text-primary text-sm font-semibold">{t('Drop the image')}</p>
-          </div>
-        )}
-        <div className="border-line -mx-4 flex items-center gap-2 border-b px-4 pb-3">
-          <ImageUp className="text-subtle size-3.5 shrink-0" />
-          <p className="text-subtle min-w-0 flex-1 truncate text-xs">
-            {t('Position from an image')}
-          </p>
+      {dragOver && (
+        <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
+          <p className="text-primary text-sm font-semibold">{t('Drop the image')}</p>
         </div>
+      )}
 
-        {!img ? (
-          <>
-            <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+      {!img ? (
+        <>
+          <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) pick(file);
+              }}
+            />
+            <span className="text-muted text-sm">
+              Choose an image of the diagram
+              <span className="text-subtle block text-xs">{t('a screenshot or scan works best')}</span>
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
+              <ClipboardPaste className="size-3.5" />
+              {t('Paste image')}
+            </Button>
+            <span className="text-subtle text-xs">{t('or press Ctrl+V — dropping a file here works too')}</span>
+          </div>
+          {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
+        </>
+      ) : (
+        <>
+          <p className="text-subtle text-xs">
+            {t('Drag the four handles onto the corners of the diagram.')}
+          </p>
+          <canvas
+            ref={canvasRef}
+            className="mx-auto max-w-full touch-none rounded-md"
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={() => (dragging.current = null)}
+          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="primary" size="sm" onClick={() => void read()}>
+              <ScanSearch className="size-3.5" />
+              {t('Read position')}
+            </Button>
+            <label className="text-muted flex items-center gap-1.5 text-xs">
+              <input
+                type="checkbox"
+                checked={blackAtBottom}
+                onChange={(e) => {
+                  setBlackAtBottom(e.target.checked);
+                  setReading(null);
+                }}
+              />
+              {t('Black at the bottom')}
+            </label>
+            <button
+              type="button"
+              onClick={() => void pasteFromClipboard()}
+              className="text-subtle ml-auto cursor-pointer text-xs underline-offset-2 hover:underline"
+            >
+              {t('paste image')}
+            </button>
+            <label className="text-subtle cursor-pointer text-xs underline-offset-2 hover:underline">
               <input
                 type="file"
                 accept="image/*"
@@ -304,117 +357,57 @@ export function PhotoImport({
                   if (file) pick(file);
                 }}
               />
-              <span className="text-muted text-sm">
-                Choose an image of the diagram
-                <span className="text-subtle block text-xs">{t('a screenshot or scan works best')}</span>
-              </span>
+              {t('different image')}
             </label>
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
-                <ClipboardPaste className="size-3.5" />
-                {t('Paste image')}
-              </Button>
-              <span className="text-subtle text-xs">{t('or press Ctrl+V — dropping a file here works too')}</span>
-            </div>
-            {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
-          </>
-        ) : (
-          <>
-            <p className="text-subtle text-xs">
-              {t('Drag the four handles onto the corners of the diagram.')}
-            </p>
-            <canvas
-              ref={canvasRef}
-              className="mx-auto max-w-full touch-none rounded-md"
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={() => (dragging.current = null)}
-            />
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="primary" size="sm" onClick={() => void read()}>
-                <ScanSearch className="size-3.5" />
-                {t('Read position')}
-              </Button>
-              <label className="text-muted flex items-center gap-1.5 text-xs">
-                <input
-                  type="checkbox"
-                  checked={blackAtBottom}
-                  onChange={(e) => {
-                    setBlackAtBottom(e.target.checked);
-                    setReading(null);
-                  }}
-                />
-                {t('Black at the bottom')}
-              </label>
-              <button
-                type="button"
-                onClick={() => void pasteFromClipboard()}
-                className="text-subtle ml-auto cursor-pointer text-xs underline-offset-2 hover:underline"
-              >
-                {t('paste image')}
-              </button>
-              <label className="text-subtle cursor-pointer text-xs underline-offset-2 hover:underline">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) pick(file);
-                  }}
-                />
-                {t('different image')}
-              </label>
-            </div>
-            {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
-          </>
-        )}
-
-        {reading && (
-          <div
-            className={cn(
-              'rounded-lg border p-3 text-xs leading-relaxed',
-              reading.fen ? 'border-line bg-surface-inset/50' : 'border-info/40 bg-info/10',
-            )}
-          >
-            {reading.fen === null ? (
-              <p className="text-muted">
-                First diagram of this book — nothing to match against yet. Set
-                the position up by hand; confirming it teaches the app this
-                book&rsquo;s piece font, and the next images will read themselves.
-              </p>
-            ) : (
-              <>
-                <p className="text-fg font-mono text-[0.6875rem]">{reading.fen.split(' ')[0]}</p>
-                {reading.uncertain.length > 0 && (
-                  <p className="text-nag-dubious mt-1">
-                    Check by eye: {reading.uncertain.join(', ')}
-                  </p>
-                )}
-              </>
-            )}
-            <div className="mt-2 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                {t('Cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() =>
-                  onApply({
-                    fen: reading.fen,
-                    features: reading.features,
-                    blackAtBottom,
-                  })
-                }
-              >
-                {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
-              </Button>
-            </div>
           </div>
-        )}
-      </div>
-    </div>
+          {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
+        </>
+      )}
+
+      {reading && (
+        <div
+          className={cn(
+            'rounded-lg border p-3 text-xs leading-relaxed',
+            reading.fen ? 'border-line bg-surface-inset/50' : 'border-info/40 bg-info/10',
+          )}
+        >
+          {reading.fen === null ? (
+            <p className="text-muted">
+              First diagram of this book — nothing to match against yet. Set
+              the position up by hand; confirming it teaches the app this
+              book&rsquo;s piece font, and the next images will read themselves.
+            </p>
+          ) : (
+            <>
+              <p className="text-fg font-mono text-[0.6875rem]">{reading.fen.split(' ')[0]}</p>
+              {reading.uncertain.length > 0 && (
+                <p className="text-nag-dubious mt-1">
+                  Check by eye: {reading.uncertain.join(', ')}
+                </p>
+              )}
+            </>
+          )}
+          <div className="mt-2 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                onApply({
+                  fen: reading.fen,
+                  features: reading.features,
+                  blackAtBottom,
+                })
+              }
+            >
+              {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
