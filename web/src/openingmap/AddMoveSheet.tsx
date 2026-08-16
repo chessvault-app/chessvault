@@ -167,7 +167,10 @@ export function AddMoveSheet({
                 else onAdd(row.san);
                 onClose();
               }}
-              className="hover:bg-surface-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
+              // `group` for the same reason the panel's move button has
+              // one: a charted move lights as a link from anywhere on
+              // the row.
+              className="hover:bg-surface-2 group flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
             >
               {/* The panel's own row, part for part — see FieldRow. A
                   charted move is a link here too: pressing it goes to

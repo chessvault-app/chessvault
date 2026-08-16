@@ -67,6 +67,14 @@ export function MoveCell({
           // in a tooltip and nowhere else, which is a thing you find by
           // accident or never.
           linked ? 'text-primary' : 'text-fg',
+          // The fill lights the MOVE, not the cell: on the button it
+          // reached across the mark beside it, and the mark is a fact
+          // about the move rather than part of the link. `group-hover`
+          // so pointing anywhere on the control still lights it, and
+          // negative margins so the padding it needs to look like a pill
+          // costs the row no width.
+          linked &&
+            'group-hover:bg-primary-soft -mx-1 rounded px-1 transition-colors duration-100',
         )}
       >
         {moveNumberLabel(ply)} {san}

@@ -138,15 +138,15 @@ export function FieldStats({
                   Lit, not underlined: an underline under six characters
                   of 12px text is a hairline that reads as a rendering
                   artefact. The soft accent fill is what the app uses
-                  everywhere else to say "this one, now", and it covers
-                  the move and its mark together. The tooltip lives on
-                  the words inside — see FieldRow. */}
+                  everywhere else to say "this one, now". The fill and
+                  the tooltip both live on the words inside, since the
+                  mark beside them is a fact about the move rather than
+                  part of the link — see FieldRow. */}
               <button
                 type="button"
-                className={cn(
-                  'rounded-md text-left transition-colors duration-100',
-                  childId ? 'hover:bg-primary-soft' : 'cursor-default',
-                )}
+                // `group` so the fill inside lights from anywhere on the
+                // control, not only from the six characters it covers.
+                className={cn('group text-left', !childId && 'cursor-default')}
                 onClick={() => childId && onSelectChild(childId)}
               >
                 <MoveCell
