@@ -252,7 +252,13 @@ export function EngineBlock({ className }: { className?: string }) {
         </Modal>
       )}
 
-      {enabled && error && (
+      {/* NOT gated on `enabled`, which is the whole point: a start that
+          fails reports the failure and then turns the engine off, so a
+          message that only shows while it is on is a message nobody can
+          ever read. What it looked like instead was a switch that flicked
+          on and back off by itself. The error is cleared by the next
+          successful start, so it cannot outlive the thing it describes. */}
+      {error && (
         <p className="text-bad flex items-start gap-1.5 px-3 py-2 text-xs">
           <AlertTriangle className="mt-px size-3.5 shrink-0" />
           {error}
