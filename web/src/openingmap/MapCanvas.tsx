@@ -20,13 +20,6 @@ import type { OpeningMap, ResolvedMap } from './model';
 const clip = (text: string, max: number): string =>
   text.length > max ? `${text.slice(0, max - 1)}…` : text;
 
-/**
- * Above this many dots the map stops breathing and stops playing its
- * arrival overture. Both animate by re-rendering the whole scene every
- * frame, and the scene grows with the map — see the note on `breath`.
- */
-const CALM_ABOVE = 160;
-
 /** How long a finger must rest on a dot before it moves the dot rather
     than the map. Long enough not to fire while panning, short enough to
     feel deliberate rather than broken. */
@@ -106,6 +99,16 @@ export function MapCanvas({
   const host = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
 
+  // The moving parts, addressed directly: the animation loop below writes
+  // positions straight onto these elements, so a frame of motion costs
+  // attribute writes rather than a React render of the whole scene.
+  const nodeEls = useRef(new Map<string, SVGGElement>());
+  const haloEls = useRef(new Map<string, SVGCircleElement>());
+  const edgeEls = useRef(new Map<string, { el: SVGLineElement; from: string; to: string }>());
+  /** Where every dot is DRAWN right now, animation included — what a
+      gesture must read, or a picked-up dot would jump to its home. */
+  const currentPos = useRef(new Map<string, { x: number; y: number }>());
+
   // The load overture: dots scatter at RANDOM and fall into place — real
   // repulsion keeps the tumble organic while a strengthening anchor pull
   // lands every dot exactly on the deterministic layout. The journey is
@@ -117,7 +120,13 @@ export function MapCanvas({
   // from where they were to where they go — replaying the scatter on
   // every added node yanked the picture out from under the person
   // building it. New nodes grow out of their parent's old place.
-  const [anim, setAnim] = useState<ReadonlyMap<string, { x: number; y: number }> | null>(null);
+  //
+  // This effect only STAGES the bodies; the animation loop advances them.
+  const overture = useRef<{
+    bodies: { id: string; x: number; y: number }[];
+    t: number;
+    total: number;
+  } | null>(null);
   const settledRef = useRef<{ mapId: string; pos: Map<string, { x: number; y: number }> } | null>(
     null,
   );
@@ -125,12 +134,8 @@ export function MapCanvas({
     const before = settledRef.current;
     const finals = new Map(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
     settledRef.current = { mapId: map.id, pos: finals };
-    if (
-      graph.nodes.length > CALM_ABOVE ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
-      graph.nodes.length < 2
-    ) {
-      setAnim(null);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || graph.nodes.length < 2) {
+      overture.current = null;
       return;
     }
     const arriving = !before || before.mapId !== map.id;
@@ -149,52 +154,9 @@ export function MapCanvas({
       const radius = spread * Math.sqrt(Math.random());
       return { id: n.id, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
     });
-    const TOTAL = arriving ? 13 : 9;
-    let t = 0;
-    let frame = 0;
-    const tick = (): void => {
-      t += 1;
-      const progress = Math.min(1, t / TOTAL);
-      const ease = progress * progress * (3 - 2 * progress);
-      // Repulsion fades as the anchors take over — chaos first, order last.
-      const k = 70 * (1 - ease);
-      if (k > 1) {
-        for (let a = 0; a < bodies.length; a += 1) {
-          for (let b = a + 1; b < bodies.length; b += 1) {
-            let dx = bodies[a]!.x - bodies[b]!.x;
-            let dy = bodies[a]!.y - bodies[b]!.y;
-            let d2 = dx * dx + dy * dy;
-            if (d2 < 1) {
-              dx = 1;
-              dy = 0.5;
-              d2 = 1.25;
-            }
-            const push = Math.min(12, (k * k) / d2);
-            const d = Math.sqrt(d2);
-            bodies[a]!.x += (dx / d) * push;
-            bodies[a]!.y += (dy / d) * push;
-            bodies[b]!.x -= (dx / d) * push;
-            bodies[b]!.y -= (dy / d) * push;
-          }
-        }
-      }
-      const pull = 0.16 + 0.55 * ease * ease;
-      for (const body of bodies) {
-        const home = at.get(body.id)!;
-        body.x += (home.x - body.x) * pull;
-        body.y += (home.y - body.y) * pull;
-      }
-      if (t >= TOTAL) {
-        setAnim(null);
-        return;
-      }
-      setAnim(new Map(bodies.map((b) => [b.id, { x: b.x, y: b.y }])));
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
+    overture.current = { bodies, t: 0, total: arriving ? 13 : 9 };
     return () => {
-      cancelAnimationFrame(frame);
-      setAnim(null);
+      overture.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.root]);
@@ -205,34 +167,7 @@ export function MapCanvas({
    * moves in sync. Edges and labels read the same positions, so the whole
    * constellation floats rather than the dots slipping off their threads.
    * Off for reduced motion; paused by the browser with the tab.
-   *
-   * And off above `CALM_ABOVE` nodes. Every frame of this re-renders the
-   * whole scene through React, and the scene is roughly eight SVG
-   * elements per dot: a 63-node map is ~500 elements and floats, a
-   * 398-node map is 3,239 and was reported as laggy on the machine it
-   * was opened on. The layout is not the culprit — building it for those
-   * 398 nodes measures 38 ms, once — so what is left is asking React to
-   * reconcile three thousand elements sixty times a second, forever,
-   * for an idle flourish.
-   *
-   * A map big enough to be worth exploring is exactly the one that
-   * cannot afford to be animated the whole time it is open. (The frame
-   * rate itself is not measured here: this runs in a background tab
-   * under automation, where rAF is throttled and any number would be a
-   * lie about the foreground.)
    */
-  const [breath, setBreath] = useState(0);
-  const calmMap = graph.nodes.length > CALM_ABOVE;
-  useEffect(() => {
-    if (calmMap || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    let frame = 0;
-    const loop = (now: number): void => {
-      setBreath(now / 1000);
-      frame = requestAnimationFrame(loop);
-    };
-    frame = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(frame);
-  }, [calmMap]);
   const phases = useMemo(() => {
     const out = new Map<string, { a: number; w1: number; w2: number; p1: number; p2: number }>();
     for (const node of graph.nodes) {
@@ -252,70 +187,161 @@ export function MapCanvas({
     }
     return out;
   }, [graph]);
-  const driftOf = (id: string): { dx: number; dy: number } => {
-    const p = phases.get(id);
-    if (!p || breath === 0) return { dx: 0, dy: 0 };
-    return {
-      dx: p.a * Math.sin(breath * p.w1 + p.p1) + p.a * 0.5 * Math.sin(breath * p.w2 + p.p2),
-      dy: p.a * Math.cos(breath * p.w2 + p.p1) + p.a * 0.5 * Math.sin(breath * p.w1 + p.p2),
-    };
-  };
 
   // Where the constellation currently stands after somebody has pulled on
   // it, screen-session only: the map's STORED shape is always the
   // deterministic layout, and a drag is the reader arranging their desk.
-  // Live positions win over both the overture and the layout.
   const [live, setLive] = useState<ReadonlyMap<string, { x: number; y: number }> | null>(null);
+  /** The loop reads the base through a ref, so it sees what the last
+      render committed without being torn down per render. */
+  const liveRef = useRef(live);
+  liveRef.current = live;
   const sim = useRef<LiveSim | null>(null);
-  const simFrame = useRef(0);
   useEffect(() => {
     setLive(null);
     sim.current = null;
   }, [map.id]);
-  useEffect(() => () => cancelAnimationFrame(simFrame.current), []);
-  const posOf = (id: string): { x: number; y: number } => {
-    const base = live?.get(id) ?? anim?.get(id) ?? at.get(id)!;
-    // No drift mid-overture and none while the web is being pulled: two
-    // motions on one dot fight, and the drift would fuzz the physics the
-    // hand is supposed to be in charge of. It resumes once things settle.
-    if (anim || sim.current) return base;
-    const { dx, dy } = driftOf(id);
-    return { x: base.x + dx, y: base.y + dy };
-  };
+  /** The BASE position — what React renders the scene at. */
+  const posOf = (id: string): { x: number; y: number } => live?.get(id) ?? at.get(id)!;
+  /** The DRAWN position — base plus whatever the loop has done this
+      frame. Gestures start from the picture on screen, not the base. */
+  const posNow = (id: string): { x: number; y: number } => currentPos.current.get(id) ?? posOf(id);
 
   /**
-   * A drag now pulls the web instead of sliding one bead: the held dot
-   * goes where the finger goes, its neighbours follow on their springs,
-   * and crowding pushes back. The loop keeps running after the release so
-   * the constellation coasts to a stop rather than freezing mid-swing,
-   * and it stops on its own once nothing is meaningfully moving.
+   * The one animation loop, and the reason the map can afford to move at
+   * any size now.
+   *
+   * The overture, the idle drift and the drag physics all used to move
+   * dots by setting React state per frame, so every frame reconciled the
+   * whole scene — roughly eight SVG elements per dot, over three thousand
+   * on a big map, sixty times a second. That is why maps above 160 nodes
+   * were frozen solid (the old CALM_ABOVE cap): the cost was React
+   * reconciliation, not the motion itself. React now renders the scene
+   * ONCE at base positions and this loop writes the moving parts straight
+   * onto the DOM — one transform per dot, endpoints per thread — so a
+   * frame is plain attribute writes. A render that lands mid-motion
+   * (an answer arriving, a selection) briefly paints the base and the
+   * next frame writes over it.
+   *
+   * One loop owns all three motions so they cannot fight over a dot:
+   * the overture while it lasts, then the drag simulation while the web
+   * is being pulled, else the idle drift. Off entirely for reduced
+   * motion — the drag's reduced behaviour moves one dot through React
+   * state, which is exactly as much motion as that setting asks for.
+   */
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let frame = 0;
+    const step = (now: number): void => {
+      frame = requestAnimationFrame(step);
+      const time = now / 1000;
+      const pos = currentPos.current;
+      pos.clear();
+      const o = overture.current;
+      if (o) {
+        o.t += 1;
+        const progress = Math.min(1, o.t / o.total);
+        const ease = progress * progress * (3 - 2 * progress);
+        // Repulsion fades as the anchors take over — chaos first, order
+        // last.
+        const k = 70 * (1 - ease);
+        const bodies = o.bodies;
+        if (k > 1) {
+          for (let a = 0; a < bodies.length; a += 1) {
+            for (let b = a + 1; b < bodies.length; b += 1) {
+              let dx = bodies[a]!.x - bodies[b]!.x;
+              let dy = bodies[a]!.y - bodies[b]!.y;
+              let d2 = dx * dx + dy * dy;
+              if (d2 < 1) {
+                dx = 1;
+                dy = 0.5;
+                d2 = 1.25;
+              }
+              const push = Math.min(12, (k * k) / d2);
+              const d = Math.sqrt(d2);
+              bodies[a]!.x += (dx / d) * push;
+              bodies[a]!.y += (dy / d) * push;
+              bodies[b]!.x -= (dx / d) * push;
+              bodies[b]!.y -= (dy / d) * push;
+            }
+          }
+        }
+        const pull = 0.16 + 0.55 * ease * ease;
+        for (const body of bodies) {
+          const home = at.get(body.id)!;
+          body.x += (home.x - body.x) * pull;
+          body.y += (home.y - body.y) * pull;
+          pos.set(body.id, { x: body.x, y: body.y });
+        }
+        if (o.t >= o.total) overture.current = null;
+      } else if (sim.current) {
+        const moving = sim.current.step();
+        for (const [id, p] of sim.current.positions()) pos.set(id, p);
+        if (!moving) {
+          // Coasted to a stop: commit where everything landed as the new
+          // base, once, and hand the dots back to the drift.
+          setLive(sim.current.positions());
+          sim.current = null;
+        }
+      } else {
+        for (const node of graph.nodes) {
+          const base = liveRef.current?.get(node.id) ?? at.get(node.id)!;
+          const p = phases.get(node.id)!;
+          pos.set(node.id, {
+            x: base.x + p.a * Math.sin(time * p.w1 + p.p1) + p.a * 0.5 * Math.sin(time * p.w2 + p.p2),
+            y: base.y + p.a * Math.cos(time * p.w2 + p.p1) + p.a * 0.5 * Math.sin(time * p.w1 + p.p2),
+          });
+        }
+      }
+      for (const [id, el] of nodeEls.current) {
+        const p = pos.get(id);
+        if (p) el.setAttribute('transform', `translate(${p.x} ${p.y})`);
+      }
+      for (const [id, el] of haloEls.current) {
+        const p = pos.get(id);
+        if (p) {
+          el.setAttribute('cx', String(p.x));
+          el.setAttribute('cy', String(p.y));
+        }
+      }
+      for (const { el, from, to } of edgeEls.current.values()) {
+        const a = pos.get(from);
+        const b = pos.get(to);
+        if (!a || !b) continue;
+        el.setAttribute('x1', String(a.x));
+        el.setAttribute('y1', String(a.y));
+        el.setAttribute('x2', String(b.x));
+        el.setAttribute('y2', String(b.y));
+      }
+    };
+    frame = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(frame);
+      currentPos.current.clear();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graph, phases]);
+
+  /**
+   * A drag pulls the web instead of sliding one bead: the held dot goes
+   * where the finger goes, its neighbours follow on their springs, and
+   * crowding pushes back. The loop above keeps stepping it after the
+   * release so the constellation coasts to a stop rather than freezing
+   * mid-swing.
    *
    * Reduced motion gets the old behaviour — the held dot moves and
    * nothing else. A physics simulation is exactly the kind of motion that
    * setting is asking us not to run.
    */
   const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const spin = (): void => {
-    const running = sim.current;
-    if (!running) return;
-    const moving = running.step();
-    setLive(running.positions());
-    if (moving) {
-      simFrame.current = requestAnimationFrame(spin);
-    } else {
-      sim.current = null;
-      simFrame.current = 0;
-    }
-  };
   const grab = (id: string, at0: { x: number; y: number }): void => {
     if (calm()) return;
-    const from = new Map(graph.nodes.map((n) => [n.id, posOf(n.id)]));
+    const from = new Map(graph.nodes.map((n) => [n.id, posNow(n.id)]));
     from.set(id, at0);
     const running = createLiveSim(graph.nodes, graph.edges, from);
     running.pin(id, at0);
+    // The loop picks it up on its next frame.
     sim.current = running;
-    cancelAnimationFrame(simFrame.current);
-    simFrame.current = requestAnimationFrame(spin);
   };
   const haul = (id: string, to: { x: number; y: number }): void => {
     if (sim.current) {
@@ -325,7 +351,7 @@ export function MapCanvas({
     // Reduced motion: move the one dot, leave the rest exactly where
     // they are.
     setLive((prev) => {
-      const next = new Map(prev ?? graph.nodes.map((n) => [n.id, posOf(n.id)]));
+      const next = new Map(prev ?? graph.nodes.map((n) => [n.id, posNow(n.id)]));
       next.set(id, to);
       return next;
     });
@@ -709,6 +735,10 @@ export function MapCanvas({
             return (
               <circle
                 key={`halo-${id}`}
+                ref={(el) => {
+                  if (el) haloEls.current.set(id, el);
+                  else haloEls.current.delete(id);
+                }}
                 cx={x}
                 cy={y}
                 r={r * 2.6}
@@ -726,6 +756,10 @@ export function MapCanvas({
             return (
               <line
                 key={key}
+                ref={(el) => {
+                  if (el) edgeEls.current.set(key, { el, from, to });
+                  else edgeEls.current.delete(key);
+                }}
                 x1={a.x}
                 y1={a.y}
                 x2={b.x}
@@ -768,6 +802,14 @@ export function MapCanvas({
             return (
               <g
                 key={id}
+                ref={(el) => {
+                  if (el) nodeEls.current.set(id, el);
+                  else nodeEls.current.delete(id);
+                }}
+                // Everything the dot wears is drawn around (0,0) and the
+                // group carries the position, so the animation loop moves
+                // the whole dot — marks, arcs, labels — with one write.
+                transform={`translate(${x} ${y})`}
                 className="cursor-pointer"
                 opacity={dimOf(id)}
                 onClick={(e) => {
@@ -790,7 +832,7 @@ export function MapCanvas({
                   } catch {
                     // A capture that fails only costs pointerup routing.
                   }
-                  const from = posOf(id);
+                  const from = posNow(id);
                   const pointerId = e.pointerId;
                   const fromX = e.clientX;
                   const fromY = e.clientY;
@@ -871,10 +913,10 @@ export function MapCanvas({
                   nodeDrag.current = null;
                 }}
               >
-                <circle cx={x} cy={y} r={r + 10} fill="transparent" />
+                <circle cx={0} cy={0} r={r + 10} fill="transparent" />
                 <circle
-                  cx={x}
-                  cy={y}
+                  cx={0}
+                  cy={0}
                   r={r}
                   // The field is neutral so the mainline can be seen. A
                   // covered dot off the mainline is the border tone —
@@ -909,15 +951,15 @@ export function MapCanvas({
                 {held === id && (
                   <>
                     <circle
-                      cx={x}
-                      cy={y}
+                      cx={0}
+                      cy={0}
                       r={r + HELD_RING / view.k}
                       fill="var(--color-fg)"
                       opacity={0.1}
                     />
                     <circle
-                      cx={x}
-                      cy={y}
+                      cx={0}
+                      cy={0}
                       r={r + HELD_RING / view.k}
                       fill="none"
                       stroke="var(--color-fg)"
@@ -932,14 +974,14 @@ export function MapCanvas({
                     preparation runs toward the intended move. */}
                 {target !== undefined && reach !== undefined && (
                   <circle
-                    cx={x}
-                    cy={y}
+                    cx={0}
+                    cy={0}
                     r={r + 3}
                     fill="none"
                     stroke={reach < target ? 'var(--color-warn)' : 'var(--color-good)'}
                     strokeWidth={1.6}
                     strokeDasharray={`${ring * Math.min(1, reach / Math.max(1, target))} ${ring}`}
-                    transform={`rotate(-90 ${x} ${y})`}
+                    transform="rotate(-90)"
                   />
                 )}
                 {/* The per-dot detail marks, and they fade on the same
@@ -960,27 +1002,27 @@ export function MapCanvas({
                 {labelOpacity > 0 && (
                 <g opacity={labelOpacity}>
                   {(cov?.reviewCount ?? 0) > 0 && (
-                    <circle cx={x - r * 0.8} cy={y - r * 0.8} r={3 * inv} fill="var(--color-warn)" />
+                    <circle cx={-r * 0.8} cy={-r * 0.8} r={3 * inv} fill="var(--color-warn)" />
                   )}
                   {(cov?.gapCount ?? 0) > 0 && (
-                    <circle cx={x - r * 0.8} cy={y + r * 0.8} r={3 * inv} fill="var(--color-bad)" />
+                    <circle cx={-r * 0.8} cy={r * 0.8} r={3 * inv} fill="var(--color-bad)" />
                   )}
                   {/* Muted, not primary: a note is a fact about a dot,
                       and the accent now means one thing only. */}
                   {noteTags && (
                     <circle
-                      cx={x + r * 0.8}
-                      cy={y - r * 0.8}
+                      cx={r * 0.8}
+                      cy={-r * 0.8}
                       r={3 * inv}
                       fill="var(--color-muted)"
                     />
                   )}
                   {gapCount > 0 && (
                     <>
-                      <circle cx={x + r + 7 * inv} cy={y} r={7.5 * inv} fill="var(--color-warn)" />
+                      <circle cx={r + 7 * inv} cy={0} r={7.5 * inv} fill="var(--color-warn)" />
                       <text
-                        x={x + r + 7 * inv}
-                        y={y + 3 * inv}
+                        x={r + 7 * inv}
+                        y={3 * inv}
                         fontSize={9.5 * inv}
                         fontWeight={700}
                         textAnchor="middle"
@@ -994,8 +1036,8 @@ export function MapCanvas({
                 )}
                 {(labelOpacity > 0 || matches?.has(id)) && (
                 <text
-                  x={x}
-                  y={y + r + 12 * inv}
+                  x={0}
+                  y={r + 12 * inv}
                   fontSize={10.5 * inv}
                   fontWeight={600}
                   textAnchor="middle"
@@ -1010,8 +1052,8 @@ export function MapCanvas({
                 )}
                 {caption && (labelOpacity > 0 || matches?.has(id)) && (
                   <text
-                    x={x}
-                    y={y + r + 22 * inv}
+                    x={0}
+                    y={r + 22 * inv}
                     fontSize={8 * inv}
                     textAnchor="middle"
                     opacity={matches?.has(id) ? 1 : labelOpacity}
