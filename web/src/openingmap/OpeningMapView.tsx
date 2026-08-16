@@ -610,12 +610,21 @@ export function OpeningMapView({ params }: { params: string[] }) {
  * columns keep one geometry instead of two that drift.
  *
  * `shrink flex-1` undoes Button's own `shrink-0`: every column is a
- * fifth of the panel, whatever its word is. `h-auto` and the padding
- * undo the `sm` size's fixed height, since these are two lines tall.
- * `[&_svg]:size-4` reaches ConfirmSheet's icon, which sets its own.
+ * fifth of the panel, whatever its word is. `h-auto` undoes the `sm`
+ * size's fixed height, since these are two lines tall — and it has to
+ * be said twice, because that size sets a SECOND height for a coarse
+ * pointer and a plain `h-auto` does not touch it. Left standing, the
+ * 2.25rem it clamps a phone's buttons to is less than an icon over a
+ * caption needs, and the column squashed the icon to fit: the clipped
+ * glyphs on lanph3re's phone, on a row that measured perfectly under
+ * every mouse.
+ *
+ * `[&_svg]:size-4` reaches ConfirmSheet's icon, which sets its own, and
+ * `shrink-0` keeps any of them from being squeezed again.
  */
 const PANEL_ACTION =
-  'h-auto min-w-0 shrink flex-1 flex-col gap-1 rounded-lg px-1 py-1.5 text-[0.6875rem] [&_svg]:size-4';
+  'h-auto min-w-0 shrink flex-1 flex-col gap-1 rounded-lg px-1 py-1.5 text-[0.6875rem] ' +
+  'pointer-coarse:h-auto pointer-coarse:px-1 [&_svg]:size-4 [&_svg]:shrink-0';
 
 function PanelAction({
   icon: Icon,
