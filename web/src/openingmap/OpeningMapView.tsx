@@ -2,6 +2,8 @@ import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, 
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
+import { treeToPgn } from '@shared/pgn';
+import { api, apiErrorMessage } from '@/lib/api';
 import { fenKey } from '@/repertoire/drill';
 import { fieldDatabases, MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
@@ -603,6 +605,16 @@ export function OpeningMapView({ params }: { params: string[] }) {
 }
 
 /**
+ * The dashed row that adds one more of whatever the list above holds —
+ * the empty slot at the end of a list, which IS the add button (see the
+ * linked-studies field for why a ghost button was not).
+ */
+const ADD_ROW =
+  'border-line text-muted hover:border-primary/40 hover:text-fg flex items-center gap-2 ' +
+  'rounded-lg border border-dashed px-2 py-1.5 text-left text-xs transition-colors duration-100 ' +
+  'disabled:pointer-events-none disabled:opacity-45';
+
+/**
  * One column of the node panel's footer toolbar.
  *
  * Shared with the delete action, which is a ConfirmSheet rather than a
@@ -722,6 +734,8 @@ function NodePanel({
 }) {
   const { apply } = useOpeningMap();
   const [picking, setPicking] = useState(false);
+  const [making, setMaking] = useState(false);
+  const [makeError, setMakeError] = useState<string | null>(null);
   const node = facts.mapNode;
   const isRoot = facts.parentId === null;
   const title = isRoot ? t('Start position') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
@@ -742,6 +756,46 @@ function NodePanel({
 
   const commit = (patch: Parameters<typeof updateFields>[3]): void =>
     apply((d) => updateFields(d, map.id, node.id, patch));
+
+  /**
+   * A study for this line, made from the panel and linked on the spot.
+   *
+   * It carries the moves that lead here, so it opens where the map is
+   * rather than at the start position — the same handoff the Analyse
+   * button makes, written to the vault instead of to the board. Named
+   * after whatever this node is already called: the name you gave it,
+   * else the catalogue's name for the line, else the move itself.
+   *
+   * Not navigated to. The decision that made you press it was about the
+   * map, and the link is right there when you want the study.
+   */
+  const newStudy = async (): Promise<void> => {
+    if (!facts.fen) return;
+    setMaking(true);
+    setMakeError(null);
+    try {
+      let tree = createTree();
+      let tip = tree.rootId;
+      for (const san of facts.path) {
+        const added = addSan(tree, tip, san);
+        if (!added) break;
+        tree = added.tree;
+        tip = added.nodeId;
+      }
+      const { id } = await api<{ id: string }>('/api/studies', {
+        method: 'POST',
+        json: {
+          name: node.name ?? lineName ?? title,
+          pgn: treeToPgn(tree, { Event: t('Opening map') }),
+        },
+      });
+      apply((d) => addTag(d, map.id, node.id, { kind: 'study', id }));
+    } catch (error) {
+      setMakeError(apiErrorMessage(error));
+    } finally {
+      setMaking(false);
+    }
+  };
 
   // Continuations the studies prepare that the map does not chart yet:
   // promoting one onto the map is the primary flow, so it is one tap.
@@ -913,11 +967,29 @@ function NodePanel({
           <button
             type="button"
             onClick={() => setPicking(true)}
-            className="border-line text-muted hover:border-primary/40 hover:text-fg flex items-center gap-2 rounded-lg border border-dashed px-2 py-1.5 text-left text-xs transition-colors duration-100"
+            className={ADD_ROW}
           >
             <Plus className="size-4 shrink-0" />
             <span className="min-w-0 flex-1 truncate">{t('Link a study or note')}</span>
           </button>
+          {/* And the study that does not exist yet.
+              Linking one meant leaving the map, making it in the shelf,
+              coming back and finding it — for the commonest case of all,
+              which is having just decided that THIS line needs writing
+              down. It is made with the moves that lead here already in
+              it, so it opens where the map is, and it arrives linked. */}
+          <button
+            type="button"
+            disabled={making}
+            onClick={() => void newStudy()}
+            className={ADD_ROW}
+          >
+            <NotebookPen className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">
+              {making ? t('Making the study…') : t('New study from this line')}
+            </span>
+          </button>
+          {makeError && <p className="text-bad px-1 text-xs">{makeError}</p>}
         </div>
       </Field>
 

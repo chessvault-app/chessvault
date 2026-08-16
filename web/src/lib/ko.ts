@@ -602,6 +602,8 @@ export const ko: Record<string, string> = {
   '{n} moves to chart, ending in {k} lines': '추가할 수 {n}개, 라인 {k}개',
   'Chart them': '맵에 추가',
   'Show on the map': '맵에서 보기',
+  'New study from this line': '이 라인으로 새 스터디',
+  'Making the study…': '스터디 만드는 중…',
   'Analyse to the deviation': '벗어난 지점까지 분석',
   'and {n} more': '외 {n}개',
   '{n} fumbled in drills — drill from here': '드릴에서 {n}개 틀림 — 여기서 드릴하세요',
