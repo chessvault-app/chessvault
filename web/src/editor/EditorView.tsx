@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -106,27 +106,18 @@ export function EditorView({
   const [orientation, setOrientation] = useState<Color>('white');
   const [sheetOpen, setSheetOpen] = useState(false);
   /**
-   * Which page the sheet is showing.
+   * Whether the sheet is showing its Load page.
    *
-   * Load position used to open a second sheet on top of this one — two
-   * scrims deep, two dismissals to get out of. It is a page of the SAME
-   * sheet now: the title row grows a back chevron and the body swaps.
+   * A Modal written inside another Modal IS that window's second page —
+   * the parent parks, the child grows the back chevron, and the child
+   * opens as tall as the window it replaced. This used to be a swapped
+   * body with a page floor measured here, which held the BODY and not the
+   * title row: the row gained the back chevron on the load page and the
+   * sheet grew by the difference — 4px under a mouse, 12 on a thumb,
+   * where icon buttons are bigger. Modal's floor is on the card, so it
+   * covers the row too.
    */
-  const [sheetPage, setSheetPage] = useState<'position' | 'load'>('position');
-  /**
-   * The tallest page the sheet has shown, so turning a page cannot make
-   * it shorter.
-   *
-   * The two pages are different heights — the position form is a few rows
-   * taller than the load form — and a sheet that resizes as you move
-   * between its own pages reads as two windows again, which is the thing
-   * the pages were for. Measured rather than guessed: a percentage picked
-   * here would be wrong on the next phone.
-   */
-  const [pageMinH, setPageMinH] = useState(0);
-  const measurePage = useCallback((node: HTMLDivElement | null) => {
-    if (node) setPageMinH((h) => Math.max(h, node.offsetHeight));
-  }, []);
+  const [loadPage, setLoadPage] = useState(false);
   const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
   const [photoFile, setPhotoFile] = useState<Blob | null>(null);
   // Image import runs against the app's built-in piece templates, so a
@@ -383,7 +374,7 @@ export function EditorView({
                 variant="ghost"
                 size="icon-sm"
                 title={t('Load a position — FEN, PGN, or image')}
-                onClick={() => setSheetPage('load')}
+                onClick={() => setLoadPage(true)}
               >
                 <FolderInput className="size-3.5" />
               </Button>
@@ -581,32 +572,28 @@ export function EditorView({
           button that opens it). */}
       {sheetOpen && (
         <Modal
-          title={sheetPage === 'load' ? 'Load position' : 'Position'}
+          title="Position"
           hidden={photoTemplates !== null}
-          onBack={sheetPage === 'load' ? () => setSheetPage('position') : undefined}
           onClose={() => {
             setSheetOpen(false);
-            setSheetPage('position');
-            setPageMinH(0);
+            setLoadPage(false);
           }}
         >
-          {/* Keyed by page so the ref fires again and each page is
-              measured; the min-height is whatever the tallest one needed. */}
-          <div
-            key={sheetPage}
-            ref={measurePage}
-            style={pageMinH ? { minHeight: pageMinH } : undefined}
-            className="flex flex-col gap-3"
-          >
-            {sheetPage === 'position' ? (
-              positionPanels(false, true)
-            ) : (
+          {positionPanels(false, true)}
+          {/* The second page, written inside the first: Modal parks this
+              sheet behind it, wires the back chevron to onClose and holds
+              the height. Nothing here says any of that. */}
+          {loadPage && (
+            <Modal
+              title="Load position"
+              hidden={photoTemplates !== null}
+              onClose={() => setLoadPage(false)}
+            >
               <LoadPositionForm
                 loadText={loadText}
                 onDone={() => {
+                  setLoadPage(false);
                   setSheetOpen(false);
-                  setSheetPage('position');
-                  setPageMinH(0);
                 }}
                 onImage={(file) => {
                   setPhotoFile(file);
@@ -615,8 +602,8 @@ export function EditorView({
                     .catch(() => setPhotoTemplates([]));
                 }}
               />
-            )}
-          </div>
+            </Modal>
+          )}
         </Modal>
       )}
 
@@ -631,11 +618,11 @@ export function EditorView({
               if (reading.fen) applyImageFen(reading.fen);
               setPhotoTemplates(null);
               setSheetOpen(false);
-              setSheetPage('position');
+              setLoadPage(false);
             }}
             onClose={() => {
               setPhotoTemplates(null);
-              setSheetPage('position');
+              setLoadPage(false);
             }}
           />
         </Suspense>
