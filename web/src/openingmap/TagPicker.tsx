@@ -81,7 +81,11 @@ export function TagPicker({
   };
 
   return (
-    <Sheet label={t('Link a study or note')} onClose={onClose}>
+    // `fill`: this is a PAGE of the details sheet it opens over — pick
+    // what this node points at — so it takes that sheet's height rather
+    // than shrinking to its own list and reading as a second, smaller
+    // window stacked on the first. The same call AddMoveSheet makes.
+    <Sheet label={t('Link a study or note')} onClose={onClose} fill>
       {scoping === null ? (
         <>
           <div className="flex items-center gap-2">
@@ -101,7 +105,11 @@ export function TagPicker({
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
-          <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+          {/* Grows into whatever the sheet has, capped only where the
+              sheet is a window rather than a page: on a phone `fill` has
+              made the card as tall as its parent, and a list that stopped
+              at 20rem would leave the bottom third of it empty. */}
+          <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
             {rows[kind] === null ? null : list.length === 0 ? (
               <p className="text-muted px-1 py-4 text-center text-xs">
                 {t('Nothing here matches.')}
@@ -148,7 +156,7 @@ export function TagPicker({
             </Button>
             <p className="text-fg min-w-0 truncate text-sm font-medium">{scoping.id}</p>
           </div>
-          <div className="flex max-h-80 flex-col gap-1 overflow-y-auto">
+          <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
             {scoping.chapters.map((name) => {
               const tag: MapTag = { kind: 'study', id: scoping.id, chapter: name };
               return (
