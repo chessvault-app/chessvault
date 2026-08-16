@@ -326,8 +326,13 @@ export function ExplorerPane({
                 <>
                   <table className="w-full text-xs">
                     <tbody>
-                      {(allMoves ? moves : moves.slice(0, MOVE_LIMIT)).map((m) => (
-                        <MoveRow key={m.uci} move={m} onPlay={() => playUci(m.uci)} />
+                      {(allMoves ? moves : moves.slice(0, MOVE_LIMIT)).map((m, at) => (
+                        <MoveRow
+                          key={m.uci}
+                          move={m}
+                          alt={at % 2 === 1}
+                          onPlay={() => playUci(m.uci)}
+                        />
                       ))}
                     </tbody>
                   </table>
@@ -696,11 +701,29 @@ function FilterGroup({ label, children }: { label: string; children: React.React
   );
 }
 
-function MoveRow({ move, onPlay }: { move: ExplorerMove; onPlay: () => void }) {
+function MoveRow({
+  move,
+  alt,
+  onPlay,
+}: {
+  move: ExplorerMove;
+  /** Every other row, tinted — see the class below. */
+  alt: boolean;
+  onPlay: () => void;
+}) {
   return (
     <tr
       onClick={onPlay}
-      className="hover:bg-surface-2 cursor-pointer transition-colors duration-100"
+      // Striped, like the map's two lists: a move, a count and a bar,
+      // twelve rows deep, is the shape an eye loses its place in, and
+      // the bands are what carry it from the move to its bar. Written
+      // as a plain class rather than an `even:` variant so the hover
+      // wins it outright on specificity — the row under the pointer has
+      // to read as the row under the pointer.
+      className={cn(
+        'hover:bg-surface-2 cursor-pointer transition-colors duration-100',
+        alt && 'bg-surface-2/50',
+      )}
     >
       <td className="text-fg font-moves w-14 py-1 pl-3 pr-1 font-semibold">{move.san}</td>
       <td
