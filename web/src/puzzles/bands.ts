@@ -19,3 +19,27 @@ export type BandId = (typeof BANDS)[number]['id'];
 
 export const bandOf = (rating: number): string =>
   BANDS.find((b) => rating >= b.min && rating <= b.max)?.label ?? '—';
+
+/**
+ * Where the trainer remembers the difficulty it was last set to.
+ *
+ * Here rather than in the trainer because two other pages read it to say
+ * what pressing Train will do, and the eager landing chunk is one of them
+ * — this module is the only part of the puzzle tree small enough for it
+ * to import.
+ */
+export const DIFFICULTY_KEY = 'vault:puzzle-difficulty';
+
+/**
+ * That stored setting as the word to show for it — English, as the key
+ * `t()` looks up.
+ *
+ * `any` and `adaptive` are not bands: they are how the trainer PICKS, not
+ * how hard the result is. They are named here so neither falls through to
+ * a band that was never chosen.
+ */
+export function difficultyWord(): string {
+  const stored = localStorage.getItem(DIFFICULTY_KEY);
+  if (stored === 'adaptive') return 'Adaptive';
+  return BANDS.find((b) => b.id === stored)?.label ?? 'Any';
+}

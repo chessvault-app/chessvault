@@ -42,7 +42,8 @@ import { DashboardPage } from './DashboardPage';
 import { PuzzleDbSetup } from './PuzzleDbSetup';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
-import { bandOf } from './bands';
+import { DIFFICULTY_KEY, bandOf } from './bands';
+import { fetchSolvedToday } from './today';
 import { t } from '@/lib/i18n';
 import {
   judgeMove,
@@ -101,7 +102,6 @@ function hiddenNote(pickedDifficulty: boolean, pickedTheme: boolean): string {
   if (pickedTheme) return 'Find the best move. The difficulty stays hidden until you finish.';
   return 'Find the best move. The difficulty and themes stay hidden until you finish.';
 }
-const DIFFICULTY_KEY = 'vault:puzzle-difficulty';
 
 /** What the solver is doing right now. */
 type Phase =
@@ -195,21 +195,10 @@ function Trainer({
   // solving screen said how training was going.
   const [solvedToday, setSolvedToday] = useState<number | null>(null);
   const refreshToday = useCallback(async () => {
-    try {
-      const res = await fetch('/api/puzzles/history?limit=200');
-      if (!res.ok) return;
-      const { attempts } = (await res.json()) as {
-        attempts: { win: boolean; counted?: boolean; at: string }[];
-      };
-      const today = new Date().toDateString();
-      setSolvedToday(
-        attempts.filter(
-          (h) => h.win && h.counted !== false && new Date(h.at).toDateString() === today,
-        ).length,
-      );
-    } catch {
-      /* the line simply does not appear */
-    }
+    const n = await fetchSolvedToday();
+    // null is "the server did not answer", not "nought solved" — the line
+    // simply stays as it was, which before the first answer is absent.
+    if (n !== null) setSolvedToday(n);
   }, []);
 
   const refreshMeta = useCallback(async () => {
