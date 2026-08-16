@@ -132,19 +132,28 @@ export function CanvasShell({
               // needed, spent keeping reachable two icons that a closed
               // panel shows anyway. So the icons go under it while it is
               // open, and the X in its header is how you get back to
-              // them. 0.75rem is what is left, and it is not spacing —
-              // it is what makes the corners, the border and the shadow
-              // visible all the way round, so the panel reads as one
-              // object over the map rather than as a slab bolted to the
-              // window. `overflow-hidden` because a sticky footer inside
-              // it bleeds to these edges and would otherwise paint square
-              // corners over the round ones.
+              // them. What is left is the page's own gutter, and it is
+              // not spacing — it is what makes the corners, the border
+              // and the shadow visible all the way round, so the panel
+              // reads as one object over the map rather than as a slab
+              // bolted to the window. `overflow-hidden` because a sticky
+              // footer inside it bleeds to these edges and would
+              // otherwise paint square corners over the round ones.
+              //
+              // The GUTTER, not a number picked to look tight: this card
+              // shares a right edge with the search field above it (and
+              // with every page in the app), and at 0.75rem it overhung
+              // that edge by half a gutter — near enough to read as a
+              // mistake rather than as a choice. The top is 0.75rem
+              // because the header block already spends its own 0.75
+              // underneath itself, so the gap you actually see between
+              // the search field and this card is the same 1.5rem.
               //
               // Wide enough that its fields, its statistics rows and its
               // button row stop wrapping: at 18rem nearly every line in
               // it broke, which is a panel technically showing you
               // something and practically hiding it.
-              className="border-line bg-surface/90 absolute inset-y-3 right-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
+              className="border-line bg-surface/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a
