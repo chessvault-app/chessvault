@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { INITIAL_FEN } from 'chessops/fen';
+import { INITIAL_FEN, makeFen } from 'chessops/fen';
 import { Chess } from 'chessops/chess';
 import { parseSan } from 'chessops/san';
 import { hashSetup } from '../shared/zobrist.ts';
@@ -211,6 +211,41 @@ describe('my games index', () => {
     expect(deviations.map((d) => d.userDeviated)).toEqual([true, false]);
     expect(deviations.map((d) => d.ply)).toEqual([0, 1]);
     expect(deviations[0]!.result).toBe('1/2-1/2');
+  });
+
+  it('answers many positions in one request, under the same filters', async () => {
+    const pos = Chess.default();
+    pos.play(parseSan(pos, 'e4')!);
+    const afterE4 = makeFen(pos.toSetup());
+    const res = await app.request('/api/mygames/explore-batch?side=white', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fens: [INITIAL_FEN, afterE4, 'garbage'] }),
+    });
+    expect(res.status).toBe(200);
+    const { positions } = (await res.json()) as {
+      positions: { fen: string; moves: { san: string; total: number }[] }[];
+    };
+    // Every asked position answers, keyed by the fen that asked — a bad
+    // one answers empty rather than failing the batch.
+    expect(positions.map((p) => p.fen)).toEqual([INITIAL_FEN, afterE4, 'garbage']);
+    // As White I opened 1.e4 twice and 1.d4 once; my game as Black is out.
+    expect(positions[0]!.moves.map((m) => [m.san, m.total])).toEqual([['e4', 2], ['d4', 1]]);
+    // The replies I faced after 1.e4: one e5, one c5.
+    expect(positions[1]!.moves.map((m) => m.san).sort()).toEqual(['c5', 'e5']);
+    expect(positions[2]!.moves).toEqual([]);
+  });
+
+  it('rejects a shapeless batch request', async () => {
+    const post = (body: unknown) =>
+      app.request('/api/mygames/explore-batch', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    expect((await post({})).status).toBe(400);
+    expect((await post({ fens: 'one' })).status).toBe(400);
+    expect((await post({ fens: Array.from({ length: 257 }, () => INITIAL_FEN) })).status).toBe(400);
   });
 
   it('rejects a shapeless deviations request', async () => {

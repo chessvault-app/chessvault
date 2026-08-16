@@ -317,13 +317,11 @@ class MyGamesIndex {
    * authoritative, and yours are there because they are yours — the one you
    * played last week is the one you remember.
    */
-  lookup(
-    pos: Chess,
-    filters: MyGamesFilters,
-    limit = 8,
-  ): { moves: (MoveRow & { san: string; total: number })[]; topGames: GameRow[]; games: number } {
+  /** Just the moves at one position — lookup() without the game list,
+      which is all the batch endpoint answers with. */
+  movesAt(pos: Chess, filters: MyGamesFilters): (MoveRow & { san: string; total: number })[] {
     const db = this.open();
-    if (!db) return { moves: [], topGames: [], games: 0 };
+    if (!db) return [];
     const key = toDbKey(hashSetup(pos.toSetup()));
     const { sql, binds } = this.where(filters);
 
@@ -340,13 +338,26 @@ class MyGamesIndex {
       `)
       .all(key, ...binds) as MoveRow[];
 
-    const moves = rows.flatMap((row) => {
+    return rows.flatMap((row) => {
       const move = parseUci(row.uci);
       // Two different positions can share a hash. A move that is not legal
       // here proves this row belongs to the other one.
       if (!move || !pos.isLegal(move)) return [];
       return [{ ...row, san: makeSan(pos, move), total: row.w + row.d + row.b }];
     });
+  }
+
+  lookup(
+    pos: Chess,
+    filters: MyGamesFilters,
+    limit = 8,
+  ): { moves: (MoveRow & { san: string; total: number })[]; topGames: GameRow[]; games: number } {
+    const db = this.open();
+    if (!db) return { moves: [], topGames: [], games: 0 };
+    const key = toDbKey(hashSetup(pos.toSetup()));
+    const { sql, binds } = this.where(filters);
+
+    const moves = this.movesAt(pos, filters);
 
     const topGames = db
       .prepare(`
@@ -565,6 +576,41 @@ export function myGamesApi(
         index: g.idx,
       })),
     });
+  });
+
+  /**
+   * The same answer as /mygames, for many positions at once and without
+   * the parts only a single position needs — the shape the reference
+   * database batch route answers, because the same caller asks both: the
+   * opening map's field sweep, which wants every charted position.
+   *
+   * One request each was fine against localhost and seconds against a
+   * small remote server: a phone runs about six requests at a time to
+   * one origin, so a few-hundred-node map paid hundreds of round trips
+   * for lookups the index answers in well under a millisecond each.
+   */
+  api.post('/mygames/explore-batch', async (c) => {
+    const body = (await c.req.json().catch(() => null)) as { fens?: unknown } | null;
+    const fens = Array.isArray(body?.fens)
+      ? body.fens.filter((f): f is string => typeof f === 'string')
+      : null;
+    if (!fens) return c.json({ error: 'expected fens' }, 400);
+    // The reference batch route's ceiling; the client chunks well under it.
+    if (fens.length > 256) return c.json({ error: 'too many positions' }, 400);
+
+    index.sync();
+    const filters = parseFilters((key) => c.req.query(key));
+    const positions = fens.map((fen) => {
+      let pos: Chess;
+      try {
+        pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
+      } catch {
+        // One bad FEN answers empty rather than failing the whole batch.
+        return { fen, moves: [] };
+      }
+      return { fen, moves: index.movesAt(pos, filters) };
+    });
+    return c.json({ positions });
   });
 
   /** Where recent games left a prepared position set — see deviations(). */

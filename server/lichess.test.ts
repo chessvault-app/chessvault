@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { existsSync } from 'node:fs';
-import { INITIAL_FEN } from 'chessops/fen';
-import { lichessExplorerApi, normalizeLichess, type LichessExplorerResponse } from './lichess.ts';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { Chess } from 'chessops/chess';
+import { INITIAL_FEN, makeFen, parseFen } from 'chessops/fen';
+import { cachePath, lichessExplorerApi, normalizeLichess, type LichessExplorerResponse } from './lichess.ts';
 import { VAULT_CONFIG } from './paths.ts';
 
 const SAMPLE: LichessExplorerResponse = {
@@ -55,11 +58,74 @@ describe('normalizeLichess', () => {
 
 describe('explorer proxy', () => {
   const app = new Hono().route('/api', lichessExplorerApi());
+  const cleanups: string[] = [];
+
+  afterAll(() => {
+    for (const dir of cleanups) {
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // A leftover temp directory is not worth failing a suite over.
+      }
+    }
+  });
 
   it('rejects unknown databases and bad FENs', async () => {
     expect((await app.request('/api/explorer/nope?fen=x')).status).toBe(400);
     expect((await app.request('/api/explorer/masters?fen=garbage')).status).toBe(400);
     expect((await app.request('/api/explorer/masters')).status).toBe(400);
+  });
+
+  it('answers a batch from the disk cache alone, leaving misses out', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'explorer-cache-'));
+    cleanups.push(dir);
+    const cached = new Hono().route('/api', lichessExplorerApi(dir));
+
+    // Seed the cache the way a single-position request would have.
+    const epd = makeFen(Chess.fromSetup(parseFen(INITIAL_FEN).unwrap()).unwrap().toSetup(), {
+      epd: true,
+    });
+    const path = cachePath(dir, 'masters', epd, null);
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(normalizeLichess(SAMPLE, 'masters')));
+
+    const uncached = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1';
+    const res = await cached.request('/api/explorer/masters/batch', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ fens: [INITIAL_FEN, uncached, 'garbage'] }),
+    });
+    expect(res.status).toBe(200);
+    const { positions } = (await res.json()) as {
+      positions: { fen: string; moves: { san: string; total: number }[] }[];
+    };
+    // Only the cached position answers — a miss is unanswered, never
+    // empty, so the caller knows to ask for it one at a time.
+    expect(positions.map((p) => p.fen)).toEqual([INITIAL_FEN]);
+    expect(positions[0]!.moves).toEqual([
+      { uci: 'e2e4', san: 'e4', w: 60, d: 30, b: 40, total: 130 },
+    ]);
+  });
+
+  it('rejects a shapeless batch request', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'explorer-cache-'));
+    cleanups.push(dir);
+    const solo = new Hono().route('/api', lichessExplorerApi(dir));
+    const post = (target: string, body: unknown) =>
+      solo.request(target, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    expect((await post('/api/explorer/nope/batch', { fens: [INITIAL_FEN] })).status).toBe(400);
+    expect((await post('/api/explorer/masters/batch', {})).status).toBe(400);
+    expect(
+      (
+        await post('/api/explorer/masters/batch', {
+          fens: Array.from({ length: 257 }, () => INITIAL_FEN),
+        })
+      ).status,
+    ).toBe(400);
   });
 
   it.skipIf(existsSync(VAULT_CONFIG))(

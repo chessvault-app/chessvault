@@ -108,9 +108,10 @@ function normalizeRatings(raw: string | undefined): string | null {
   return picked.length ? picked.sort((a, b) => Number(a) - Number(b)).join(',') : null;
 }
 
-function cachePath(db: ExplorerDb, epd: string, ratings: string | null): string {
+/** Exported for the tests, which have no network to fill the cache with. */
+export function cachePath(dir: string, db: ExplorerDb, epd: string, ratings: string | null): string {
   const key = createHash('sha256').update(`${db}\n${epd}\n${ratings ?? ''}`).digest('hex').slice(0, 32);
-  return resolve(DATA_EXPLORER_CACHE, db, `${key}.json`);
+  return resolve(dir, db, `${key}.json`);
 }
 
 function readCache(path: string): { body: string; ageMs: number } | null {
@@ -122,7 +123,7 @@ function readCache(path: string): { body: string; ageMs: number } | null {
   }
 }
 
-export function lichessExplorerApi(): Hono {
+export function lichessExplorerApi(cacheDir: string = DATA_EXPLORER_CACHE): Hono {
   const api = new Hono();
 
   api.get('/explorer/:db', async (c) => {
@@ -143,7 +144,7 @@ export function lichessExplorerApi(): Hono {
 
     // Master games have no rating filter; only the lichess db honours it.
     const ratings = db === 'lichess' ? normalizeRatings(c.req.query('ratings')) : null;
-    const path = cachePath(db, epd, ratings);
+    const path = cachePath(cacheDir, db, epd, ratings);
     const cached = readCache(path);
     if (cached && cached.ageMs < TTL_MS[db]) {
       return c.body(cached.body, 200, { 'content-type': 'application/json' });
@@ -163,7 +164,7 @@ export function lichessExplorerApi(): Hono {
           const body = JSON.stringify(
             normalizeLichess((await res.json()) as LichessExplorerResponse, db),
           );
-          mkdirSync(resolve(DATA_EXPLORER_CACHE, db), { recursive: true });
+          mkdirSync(resolve(cacheDir, db), { recursive: true });
           writeFileSync(path, body);
           return c.body(body, 200, { 'content-type': 'application/json' });
         }
@@ -192,6 +193,49 @@ export function lichessExplorerApi(): Hono {
       },
       502,
     );
+  });
+
+  /**
+   * The disk cache's answer for many positions in one request.
+   *
+   * The opening map asks about every charted position, and Lichess itself
+   * answers one per request — that cannot be batched away. But every
+   * answer is cached above, so from the second sweep on the map was
+   * paying hundreds of round trips for files already on disk. This route
+   * answers only what is cached and fresh; the caller sends anything left
+   * out through the single-position route, which is what fills the cache.
+   */
+  api.post('/explorer/:db/batch', async (c) => {
+    const db = c.req.param('db') as ExplorerDb;
+    if (!DBS.includes(db)) return c.json({ error: 'unknown explorer database' }, 400);
+    const body = (await c.req.json().catch(() => null)) as { fens?: unknown } | null;
+    const fens = Array.isArray(body?.fens)
+      ? body.fens.filter((f): f is string => typeof f === 'string')
+      : null;
+    if (!fens) return c.json({ error: 'expected fens' }, 400);
+    // The same ceiling every batch route keeps; the client chunks under it.
+    if (fens.length > 256) return c.json({ error: 'too many positions' }, 400);
+
+    const ratings = db === 'lichess' ? normalizeRatings(c.req.query('ratings')) : null;
+    const positions: { fen: string; moves: unknown[] }[] = [];
+    for (const fen of fens) {
+      let epd: string;
+      try {
+        epd = makeFen(Chess.fromSetup(parseFen(fen).unwrap()).unwrap().toSetup(), { epd: true });
+      } catch {
+        continue; // a bad FEN is left out, exactly like an uncached one
+      }
+      const cached = readCache(cachePath(cacheDir, db, epd, ratings));
+      if (!cached || cached.ageMs >= TTL_MS[db]) continue;
+      try {
+        const parsed = JSON.parse(cached.body) as { moves?: unknown[] };
+        positions.push({ fen, moves: parsed.moves ?? [] });
+      } catch {
+        // An unreadable cache file answers nothing; the single route will
+        // overwrite it.
+      }
+    }
+    return c.json({ positions });
   });
 
   return api;
