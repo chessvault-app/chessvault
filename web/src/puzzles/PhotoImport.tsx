@@ -278,6 +278,7 @@ export function PhotoImport({
       title="Position from an image"
       icon={ImageUp}
       onClose={onClose}
+      fill
       className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
     >
       {dragOver && (
@@ -324,42 +325,20 @@ export function PhotoImport({
             onPointerMove={onPointerMove}
             onPointerUp={() => (dragging.current = null)}
           />
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="primary" size="sm" onClick={() => void read()}>
-              <ScanSearch className="size-3.5" />
-              {t('Read position')}
-            </Button>
-            <label className="text-muted flex items-center gap-1.5 text-xs">
-              <input
-                type="checkbox"
-                checked={blackAtBottom}
-                onChange={(e) => {
-                  setBlackAtBottom(e.target.checked);
-                  setReading(null);
-                }}
-              />
-              {t('Black at the bottom')}
-            </label>
-            <button
-              type="button"
-              onClick={() => void pasteFromClipboard()}
-              className="text-subtle ml-auto cursor-pointer text-xs underline-offset-2 hover:underline"
-            >
-              {t('paste image')}
-            </button>
-            <label className="text-subtle cursor-pointer text-xs underline-offset-2 hover:underline">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) pick(file);
-                }}
-              />
-              {t('different image')}
-            </label>
-          </div>
+          {/* The one thing here that is a setting rather than a verb, so
+              it stays by the board it describes; the verbs are together
+              in the corner. */}
+          <label className="text-muted flex items-center gap-1.5 text-xs">
+            <input
+              type="checkbox"
+              checked={blackAtBottom}
+              onChange={(e) => {
+                setBlackAtBottom(e.target.checked);
+                setReading(null);
+              }}
+            />
+            {t('Black at the bottom')}
+          </label>
           {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
         </>
       )}
@@ -387,10 +366,29 @@ export function PhotoImport({
               )}
             </>
           )}
-          <div className="mt-2 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              {t('Cancel')}
-            </Button>
+        </div>
+      )}
+
+      {/* The verbs, in the corner every window in the app keeps them.
+          They were scattered: Read position led a row of links up beside
+          the checkbox, and Cancel lived INSIDE the result panel, which
+          only exists after a read — so before one there was no stated way
+          out at all, and after one there were two button rows.
+
+          One primary, whose word follows the stage: a reading is about
+          the quad it was read from, so moving a handle or flipping the
+          board drops it and the button offers the read again.
+
+          mt-auto sinks the row to the bottom edge of a sheet that is
+          taller than its content, which a full-height one always is. On a
+          desktop the card is sm:h-auto — no spare room, nothing to sink
+          through — so it simply follows the image. */}
+      {img && (
+        <div className="mt-auto flex justify-end gap-2 pt-1">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          {reading ? (
             <Button
               variant="primary"
               size="sm"
@@ -404,7 +402,12 @@ export function PhotoImport({
             >
               {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
             </Button>
-          </div>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => void read()}>
+              <ScanSearch className="size-3.5" />
+              {t('Read position')}
+            </Button>
+          )}
         </div>
       )}
     </Modal>

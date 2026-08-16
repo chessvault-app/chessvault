@@ -78,6 +78,7 @@ export function Modal({
   className,
   hidden = false,
   full = false,
+  fill = false,
 }: {
   title: string;
   icon?: LucideIcon;
@@ -118,6 +119,22 @@ export function Modal({
    * empty space.
    */
   full?: boolean;
+  /**
+   * A phone sheet that opens at the full height the screen allows.
+   *
+   * `full` is desktop width; this is its opposite number, and it says
+   * nothing on a desktop. For a window whose content is a WORKSPACE
+   * rather than a form — the picture flow, where the thing being worked
+   * on is an image with four handles to place on it — 88% of the screen
+   * spends the last tenth on a strip of dimmed page nobody is looking at,
+   * and the image pays for it.
+   *
+   * The height is `--sheet-band`, the same one Sheet's own `fill` takes:
+   * it is a share of the layer, so it gives way to the keyboard, and it
+   * already subtracts the notch. A sheet reaching the top of an iPhone
+   * would otherwise put its title behind the clock.
+   */
+  fill?: boolean;
 }) {
   // The second-page bookkeeping. `covered` counts child windows currently
   // over this one; `cover` is what those children call, handed down by
@@ -256,7 +273,12 @@ export function Modal({
           // The same 1.25rem floor Sheet keeps under its last row: a tall
           // window barely notices, and a short one stops reading as cut
           // off at the home indicator.
-          'max-sm:max-h-[88%] max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
+          'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
+          // A height rather than a second max-height: two max-h utilities
+          // on one element are settled by which Tailwind emits last, not
+          // by which is written here, and that is not a thing to bet a
+          // layout on.
+          fill ? 'max-sm:h-[var(--sheet-band)]' : 'max-sm:max-h-[88%]',
           // The desktop card, which `full` is entirely about.
           'sm:h-auto sm:max-h-full sm:rounded-xl',
           full ? 'sm:max-w-4xl' : 'sm:max-w-[32rem]',
