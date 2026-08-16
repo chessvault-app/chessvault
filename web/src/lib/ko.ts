@@ -386,9 +386,9 @@ export const ko: Record<string, string> = {
   'Discard changes and go back to the saved version': '변경 사항을 버리고 저장된 버전으로 돌아갑니다',
   'Unsaved changes discarded': '저장하지 않은 변경 사항을 버렸습니다',
   'Unsaved changes': '저장하지 않은 변경 사항',
-  '“{name}” has changes you have not saved.': '“{name}”에 저장하지 않은 변경 사항이 있습니다.',
+  'You have unsaved changes in “{name}”. Would you like to save before leaving?':
+    '“{name}”에 저장하지 않은 변경 사항이 있습니다. 나가기 전에 저장할까요?',
   'Could not save — your changes are still here.': '저장하지 못했습니다 — 변경 사항은 그대로 있습니다.',
-  'Stay here': '여기 머무르기',
   // Recovery: a swap file the vault was still holding after a session
   // that ended without saving.
   'Unsaved changes were found': '저장하지 않은 변경 사항을 찾았습니다',

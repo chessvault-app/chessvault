@@ -26,7 +26,10 @@ import { t } from '@/lib/i18n';
  * apart.
  *
  * Escape, Android Back, the scrim and the drag all mean CANCEL, which is
- * the answer that loses nothing — Sheet gives all four for free.
+ * the answer that loses nothing — Sheet gives all four for free. The
+ * button that means the same thing is labelled "Cancel" to match them;
+ * "Stay here" described the outcome but did not read as the escape hatch
+ * those four gestures already are.
  */
 export function LeaveSheet() {
   const name = useLeaveAsk((s) => s.name);
@@ -77,10 +80,17 @@ export function LeaveSheet() {
   return (
     <Sheet label={t('Unsaved changes')} onClose={cancelLeave} className="gap-3">
       <p className="text-fg text-sm">
-        {t('“{name}” has changes you have not saved.', { name })}
+        {t('You have unsaved changes in “{name}”. Would you like to save before leaving?', {
+          name,
+        })}
       </p>
       {error && <p className="text-bad text-xs">{t(error)}</p>}
 
+      {/* Three answers, three weights, in the order they should be
+          considered: save, back out, throw away. Discard sat in the middle
+          when it was the tinted `danger` variant, which put the one
+          irreversible answer directly under the thumb aiming for Save and
+          gave it more ink than the harmless one. */}
       <div className="mt-1 flex flex-col gap-2">
         <Button
           variant="primary"
@@ -92,19 +102,6 @@ export function LeaveSheet() {
           {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
           {t(busy ? 'Saving…' : 'Save')}
         </Button>
-        {/* Tinted rather than filled: it is the destructive answer, but it
-            is not the one being recommended, and a solid red button under
-            a solid primary reads as two shouts. */}
-        <Button
-          variant="danger"
-          size="md"
-          disabled={busy}
-          className="w-full justify-center"
-          onClick={discardAndLeave}
-        >
-          <Trash2 className="size-3.5" />
-          {t('Discard changes')}
-        </Button>
         <Button
           variant="secondary"
           size="md"
@@ -112,7 +109,21 @@ export function LeaveSheet() {
           className="w-full justify-center"
           onClick={cancelLeave}
         >
-          {t('Stay here')}
+          {t('Cancel')}
+        </Button>
+        {/* Red text on no panel at all — quieter than every `danger`
+            trigger in the app, deliberately. Losing work is the one answer
+            here that cannot be undone, so it should cost a deliberate look
+            to find, not sit level with the other two. */}
+        <Button
+          variant="ghost"
+          size="md"
+          disabled={busy}
+          className="text-bad/80 hover:bg-bad/10 hover:text-bad w-full justify-center"
+          onClick={discardAndLeave}
+        >
+          <Trash2 className="size-3.5" />
+          {t('Discard changes')}
         </Button>
       </div>
     </Sheet>
