@@ -196,6 +196,15 @@ export function LoadPositionForm({
         <TextArea
           ref={textarea}
           autoFocus={autoFocusField()}
+          // The picture is what a PHONE opens this for; the box is what
+          // it falls back to. The file input below is display:none, so
+          // the box is the window's only visible field and the sole-text
+          // -field rule claimed it — the sheet arrived under a keyboard,
+          // with the dropzone it was opened for pushed off the screen.
+          // The marker is coarse-only, which is the same judgment
+          // autoFocus already makes here via autoFocusField: on a desktop
+          // a caret in a paste box costs nothing and saves a click.
+          data-fallback-field
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
