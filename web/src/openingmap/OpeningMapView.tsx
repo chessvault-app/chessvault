@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Compass, Grid3x3, Library, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -89,7 +89,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
   const map = doc?.maps.find((m) => m.color === color) ?? null;
   const resolved = useMemo(() => (map ? resolveMap(map) : null), [map]);
-  const { coverage, missing } = useCoverage(map, resolved);
+  const { coverage, missing, ready: coverageReady } = useCoverage(map, resolved);
   const deviations = useDeviations(map, resolved);
 
   // The field the map checks itself against — see useGaps.
@@ -109,7 +109,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       /* full or blocked storage loses the memo, nothing else */
     }
   };
-  const { gaps, shares } = useGaps(map, resolved, coverage, field.source, field.ratings);
+  const { gaps, shares, ready: fieldReady } = useGaps(map, resolved, coverage, field.source, field.ratings);
 
   // One label lookup for the whole canvas: each node's own position, as
   // deep as the catalogue can possibly name.
@@ -121,7 +121,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
     }
     return fens;
   }, [resolved]);
-  const names = useOpeningLabels(labelFens);
+  const { names, ready: labelsReady } = useOpeningLabels(labelFens);
   const labels = useMemo(() => {
     const out = new Map<string, string>();
     if (!resolved) return out;
@@ -131,6 +131,38 @@ export function OpeningMapView({ params }: { params: string[] }) {
     }
     return out;
   }, [resolved, names]);
+
+  /**
+   * Hold the canvas until its colours are known, then show it once, whole.
+   *
+   * It used to go up neutral and colour in as the answers landed —
+   * coverage first, then names, then the field — which read as flicker
+   * now that the answers arrive in under a second. So the view waits for
+   * all three and paints the finished picture, behind a small spinner.
+   *
+   * With a deadline, because "wait for everything" must not outstay its
+   * welcome: the online field warming a cold cache can take many seconds
+   * (one Lichess request per uncached position), and behind an unreachable
+   * source it would never come. Past the deadline the map goes up as it
+   * is and colours progressively, exactly as it always did.
+   *
+   * Revealing is one-way per map: switching the comparison source while
+   * looking at the map recolours in place rather than pulling the whole
+   * canvas back behind a spinner.
+   */
+  const ready = coverageReady && labelsReady && fieldReady;
+  const [revealed, setRevealed] = useState(false);
+  const mapId = map?.id ?? null;
+  useEffect(() => setRevealed(false), [mapId]);
+  useEffect(() => {
+    if (revealed || !mapId) return;
+    if (ready) {
+      setRevealed(true);
+      return;
+    }
+    const deadline = window.setTimeout(() => setRevealed(true), 2500);
+    return () => clearTimeout(deadline);
+  }, [ready, revealed, mapId]);
 
   /**
    * The search. It matches a node's move, the name you gave it and the
@@ -365,7 +397,15 @@ export function OpeningMapView({ params }: { params: string[] }) {
       }
     >
       {/* The universe itself — no box, no border, edge to edge. */}
-      {loaded && map && resolved && !empty && (
+      {loaded && map && resolved && !empty && !revealed && (
+        <CanvasOverlay>
+          <div className="text-muted flex items-center gap-2 text-sm">
+            <Loader2 className="size-4 animate-spin" />
+            {t('Preparing the map…')}
+          </div>
+        </CanvasOverlay>
+      )}
+      {loaded && map && resolved && !empty && revealed && (
         <MapCanvas
           map={map}
           resolved={resolved}

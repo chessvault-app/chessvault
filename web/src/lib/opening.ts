@@ -235,8 +235,16 @@ export function useOpeningName(fens: string[]): string | null {
  * Unlike useOpeningName this does NOT walk back along a line: each
  * position answers for itself, and one without a catalogue row of its
  * own maps to null. Same shared cache, so nothing is asked twice.
+ *
+ * `ready` says whether every asked position has been ANSWERED, which a
+ * null in the map cannot: null is also what "not looked up yet" reads
+ * as. The map view holds its canvas on it, because the family halos are
+ * painted from these names.
  */
-export function useOpeningLabels(fens: string[]): ReadonlyMap<string, string | null> {
+export function useOpeningLabels(fens: string[]): {
+  names: ReadonlyMap<string, string | null>;
+  ready: boolean;
+} {
   const [version, bump] = useState(0);
   const key = fens.join('\n');
 
@@ -255,7 +263,10 @@ export function useOpeningLabels(fens: string[]): ReadonlyMap<string, string | n
   }, [key]);
 
   return useMemo(
-    () => new Map(fens.map((fen) => [fen, known.get(fen)?.name ?? null])),
+    () => ({
+      names: new Map(fens.map((fen) => [fen, known.get(fen)?.name ?? null])),
+      ready: fens.every((fen) => known.has(fen)),
+    }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [key, version],
   );

@@ -109,6 +109,11 @@ export function useGaps(
   /** Per node: how often its move gets played at the parent, 0..1 —
       what the canvas scales the dots by. */
   shares: ReadonlyMap<string, number>;
+  /** Whether every charted position has been answered (a failure counts —
+      a backed-off key is as answered as it is going to get for a while).
+      True with no source: nothing was asked. The view holds the canvas on
+      this, so the map arrives coloured instead of colouring in place. */
+  ready: boolean;
 } {
   const [version, bump] = useState(0);
   // Own-games rows depend on whose games count; every other source
@@ -268,7 +273,7 @@ export function useGaps(
   return useMemo(() => {
     const gaps = new Map<string, NodeGaps>();
     const shares = new Map<string, number>();
-    if (!map || !resolved || !source) return { gaps, shares };
+    if (!map || !resolved || !source) return { gaps, shares, ready: true };
     for (const { id, fen } of wanted) {
       const moves = cache.get(keyOf(fen));
       if (!moves) continue;
@@ -290,7 +295,14 @@ export function useGaps(
         }
       }
     }
-    return { gaps, shares };
+    // Answered or backed off — recomputed per publish (`version`), and
+    // the sweep's completion bump always fires, so this settles even when
+    // the throttled publishes skipped the last answers.
+    const ready = wanted.every(({ fen }) => {
+      const key = keyOf(fen);
+      return cache.has(key) || Date.now() - (failedAt.get(key) ?? 0) < RETRY_MS;
+    });
+    return { gaps, shares, ready };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, resolved, coverage, wanted, source, ratings, version]);
 }

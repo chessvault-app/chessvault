@@ -54,10 +54,18 @@ export function useCoverage(
   coverage: ReadonlyMap<string, NodeCoverage> | undefined;
   /** Study ids tagged somewhere on the map but unloadable from the vault. */
   missing: ReadonlySet<string>;
+  /** Whether the answer above is the real one: every tagged study either
+      parsed or reported missing. Before that, `coverage` calls everything
+      unprepared — true of the empty cache, not of the vault — and a canvas
+      painted from it recolours moments later. */
+  ready: boolean;
 } {
   const [version, bump] = useState(0);
   const [missing, setMissing] = useState<ReadonlySet<string>>(new Set());
   const [marks, setMarks] = useState<DrillMarks>({ review: new Set(), gaps: new Set() });
+  // Which tag set the studies pass has fully answered for, compared to the
+  // current one — a changed set of tags is a question not yet answered.
+  const [settledFor, setSettledFor] = useState<string | null>(null);
   const tags = useMemo(() => (map ? collectStudyTags(map) : []), [map]);
   const ids = useMemo(() => [...new Set(tags.map((t) => t.id))].sort(), [tags]);
   const idsKey = ids.join('\n');
@@ -125,6 +133,7 @@ export function useCoverage(
       );
       if (live) {
         setMissing(gone);
+        setSettledFor(idsKey);
         bump((n) => n + 1);
       }
     })().catch(() => {});
@@ -143,5 +152,5 @@ export function useCoverage(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, resolved, tags, marks, version]);
 
-  return { coverage, missing };
+  return { coverage, missing, ready: ids.length === 0 || settledFor === idsKey };
 }
