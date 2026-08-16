@@ -979,8 +979,6 @@ export const ko: Record<string, string> = {
   'Show the explorer': '탐색기 보기',
   'Out of book': '정석을 벗어남',
   'Show fewer moves': '수 적게 보기',
-  'Delete this book (the source PGNs stay)': '이 북 삭제 (원본 PGN은 남습니다)',
-  'Delete this opening book?': '이 오프닝 북을 삭제할까요?',
   Delete: '삭제',
 
   // --- games ---------------------------------------------------------------
