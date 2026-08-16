@@ -792,6 +792,31 @@ cg-board square.check {
   will-change: auto;
 }
 
+/* Promote the piece that is MOVING, not all thirty-two of them.
+
+   chessground's own stylesheet puts `will-change: transform` on every
+   piece, which asks the browser to keep a standing compositor layer for
+   each one — 32 of them, permanently, whether anything is moving or not.
+   That is a hint, not a promise: WebKit budgets layers, and a page that
+   asks for far more than it needs gets fewer than it asked for. A piece
+   that loses the argument is repainted on every frame it moves, and it
+   drags the board under it into the repaint — a checkerboard drawn as a
+   conic gradient, at three device pixels per CSS pixel.
+
+   Which is what "the animation runs at a low frame rate" sounds like, and
+   why the phone sees it and a desktop GPU with headroom to spare does
+   not. So the hint goes where it means something: the pieces chessground
+   has marked as animating or being dragged. Unmeasured here for the same
+   reason as the corner clip above — this machine cannot reproduce it. */
+.cg-wrap piece {
+  will-change: auto;
+}
+
+.cg-wrap piece.anim,
+.cg-wrap piece.dragging {
+  will-change: transform;
+}
+
 /* Dragged piece should float above every pane. */
 .cg-wrap piece.dragging {
   z-index: 30;
