@@ -1,13 +1,25 @@
-import { BarChart3, BookMarked, Database, LayoutGrid, Puzzle, RotateCcw } from 'lucide-react';
+import {
+  BarChart3,
+  BookMarked,
+  ChevronRight,
+  Database,
+  LayoutGrid,
+  Puzzle,
+  RotateCcw,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
 import { useMediaQuery } from '@/lib/media';
+import { Board } from '@/board/Board';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
+import { ProgressBar } from '@/ui/ProgressBar';
 import { t } from '@/lib/i18n';
 import { DashboardPage } from './DashboardPage';
 import { difficultyWord } from './bands';
+import { setPendingPuzzle, type HandoffMode } from './handoff';
+import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { fetchSolvedToday } from './today';
 
 /**
@@ -50,9 +62,149 @@ interface Meta {
   failed?: number;
 }
 
+interface BookSummary {
+  slug: string;
+  title: string;
+  puzzles: number;
+  solved: number;
+  failed: number;
+  cover?: boolean;
+  /** When a puzzle in it was last attempted; null if never. */
+  lastAt?: string | null;
+}
+
+/** How many books the panel shows before it stops being a launcher and
+    starts being the shelf. The shelf is one tap away and carries search,
+    sorting and bookmarks; this is only the top of it. */
+const SHELF_ROWS = 3;
+
+/**
+ * A puzzle offered as itself: the position on the left, what it is and
+ * whose move on the right.
+ *
+ * The board thumbnail beside the words, rather than a full-width board
+ * under them, is what lets two of these fit above the launcher on a
+ * phone — and it is the shape lichess's own puzzle tab uses, which is
+ * the reference lanph3re gave.
+ *
+ * Pressing it hands the puzzle to the trainer (see `handoff.ts`) so the
+ * position offered is the position that opens.
+ */
+function PuzzleCard({
+  puzzle,
+  mode,
+  title,
+  detail,
+  go,
+}: {
+  puzzle: ApiPuzzle;
+  mode: HandoffMode;
+  title: string;
+  detail?: string;
+  go: () => void;
+}) {
+  // The position the solver actually faces: after the opponent's setup
+  // move, oriented to their side. Ply 1 — the same reading the dashboard
+  // preview takes.
+  const at = positionAt(puzzle, 1);
+  const side = solverColor(puzzle);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setPendingPuzzle(mode, puzzle);
+        go();
+      }}
+      className="bg-surface border-line hover:bg-surface-2 flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-colors duration-100"
+    >
+      <Board
+        fen={at.fen}
+        orientation={side}
+        viewOnly
+        coordinates={false}
+        className="w-32 shrink-0 rounded-md"
+      />
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="text-fg text-sm font-medium">{title}</span>
+        {detail && <span className="text-subtle text-xs leading-snug">{detail}</span>}
+        {/* Whose move — the one thing you cannot read off a thumbnail
+            fast, and the thing lichess puts under every one of these. */}
+        <span className="text-muted text-xs">
+          {side === 'white' ? t('White to play') : t('Black to play')}
+        </span>
+      </span>
+      <ChevronRight className="text-subtle size-4 shrink-0" />
+    </button>
+  );
+}
+
+/**
+ * The books, most recently worked on first.
+ *
+ * A "continue" list that does not go empty on the day you import your
+ * first book: an untouched book is still the thing you were about to
+ * start, and its progress bar is simply at nought. Recency comes from
+ * the server's `lastAt` (when a puzzle in it was last attempted, not
+ * when the file changed), so the moment there IS a history this orders
+ * itself by it and the top row is genuinely where you left off.
+ */
+function BookShelfPanel({ books }: { books: BookSummary[] }) {
+  return (
+    <div className="bg-surface border-line overflow-hidden rounded-xl border">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        {t('Continue')}
+      </p>
+      {books.map((b) => (
+        <button
+          key={b.slug}
+          type="button"
+          onClick={() => navigate('puzzles', 'books', b.slug)}
+          className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left transition-colors duration-100 last:border-b-0"
+        >
+          {b.cover ? (
+            <img
+              src={`/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`}
+              alt=""
+              // Decorative: the title is right beside it, so a screen
+              // reader announcing the cover would only say it twice.
+              className="border-line h-10 w-7 shrink-0 rounded-sm border object-cover"
+            />
+          ) : (
+            <span className="bg-surface-2 text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+              <BookMarked className="size-3.5" />
+            </span>
+          )}
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="text-fg truncate text-xs font-medium">{b.title}</span>
+            <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty />
+          </span>
+          <span className="text-subtle shrink-0 font-mono text-[0.6875rem] tabular-nums">
+            {b.solved}/{b.puzzles}
+          </span>
+          <ChevronRight className="text-subtle size-3.5 shrink-0" />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** One puzzle drawn ahead of time, for the board that offers it. */
+async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
+  try {
+    const res = await fetch(`/api/puzzles/next${mode === 'failed' ? '?mode=failed' : ''}`);
+    if (!res.ok) return null; // 404 empty pool, 503 no database — no card
+    return ((await res.json()) as { puzzle: ApiPuzzle }).puzzle;
+  } catch {
+    return null;
+  }
+}
+
 function Hub() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [solvedToday, setSolvedToday] = useState<number | null>(null);
+  const [next, setNext] = useState<ApiPuzzle | null>(null);
+  const [review, setReview] = useState<ApiPuzzle | null>(null);
+  const [books, setBooks] = useState<BookSummary[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -67,6 +219,31 @@ function Hub() {
     void fetchSolvedToday().then((n) => {
       if (n !== null) setSolvedToday(n);
     });
+    // The two boards. Drawn here rather than described, because a puzzle
+    // page whose subject is nowhere on it is a menu about chess.
+    void draw('fresh').then(setNext);
+    void draw('failed').then(setReview);
+    void (async () => {
+      try {
+        const res = await fetch('/api/puzzlebooks');
+        if (!res.ok) return;
+        const { books: all } = (await res.json()) as { books: BookSummary[] };
+        // Worked on most recently first; never-opened books keep the
+        // server's alphabetical order behind them.
+        setBooks(
+          all
+            // An empty book is a shell waiting for an import, not
+            // something to carry on with. It belongs on the shelf, where
+            // it can be imported into; offering it here would be a row
+            // whose progress bar can never move.
+            .filter((b) => b.puzzles > 0)
+            .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''))
+            .slice(0, SHELF_ROWS),
+        );
+      } catch {
+        // No panel. The Books tile below still reaches the shelf.
+      }
+    })();
   }, []);
 
   // Assume the database is there until told otherwise: it is, for anyone
@@ -91,6 +268,14 @@ function Hub() {
     <PageShell width="medium" className="min-h-full pb-4">
       <PageHeader title={t('Puzzles')} />
 
+      {/* Top of the page, not in the bottom cluster: this is the one
+          block you READ rather than press blind, and it is also the one
+          that grows. Keeping it under the header leaves the slack between
+          it and the launcher instead of between the title and everything
+          — a page whose heading floats alone above 300px of nothing reads
+          as broken rather than as roomy. */}
+      {books.length > 0 && <BookShelfPanel books={books} />}
+
       <div className="mt-auto flex flex-col gap-2">
         {solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
@@ -98,26 +283,56 @@ function Hub() {
           </p>
         )}
 
-        {/* Above Train, not below it: this row appears when an answer
-            comes back, and anything that appears BELOW would shove the
-            primary button up mid-reach. The same treatment the dashboard
-            gives it — the one training action that is owed rather than
-            chosen. */}
-        {failed > 0 && (
-          <Button
-            variant="secondary"
-            className="w-full justify-center"
-            onClick={() => navigate('puzzles', 'failed')}
-          >
-            <RotateCcw className="size-4" />
-            {t('Review failed puzzles')} · {failed}
-          </Button>
+        {/* The two boards, and everything else that arrives from the
+            network, live ABOVE the primary button — a card that appeared
+            below it would shove the button up mid-reach. Growing upward
+            into the empty band costs nothing, because nothing up there is
+            being pressed. */}
+        {ready && next && (
+          <PuzzleCard
+            puzzle={next}
+            mode="fresh"
+            title={t('Go solve it')}
+            go={() => navigate('puzzles')}
+          />
+        )}
+
+        {/* The review queue, as the position you actually got wrong. The
+            plain button is the fallback for when the pool is known to be
+            non-empty but the draw itself failed — otherwise review would
+            have no way in from here at all. */}
+        {review ? (
+          <PuzzleCard
+            puzzle={review}
+            mode="failed"
+            title={t('Put this one right')}
+            detail={t('{n} waiting to be reviewed', { n: failed })}
+            go={() => navigate('puzzles', 'failed')}
+          />
+        ) : (
+          failed > 0 && (
+            <Button
+              variant="secondary"
+              className="w-full justify-center"
+              onClick={() => navigate('puzzles', 'failed')}
+            >
+              <RotateCcw className="size-4" />
+              {t('Review failed puzzles')} · {failed}
+            </Button>
+          )
         )}
 
         <Button
           variant="primary"
           className="h-14 w-full justify-center gap-2.5 rounded-xl text-base"
-          onClick={() => navigate('puzzles')}
+          // The same action as the board above, deliberately: the card is
+          // the invitation and this is the thumb target, and they must
+          // open the SAME puzzle or the board is advertising a position
+          // this button quietly swaps out.
+          onClick={() => {
+            if (next) setPendingPuzzle('fresh', next);
+            navigate('puzzles');
+          }}
         >
           {ready ? (
             <>

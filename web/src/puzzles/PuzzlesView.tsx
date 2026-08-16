@@ -44,6 +44,7 @@ import { PuzzleDbSetup } from './PuzzleDbSetup';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
 import { DIFFICULTY_KEY, bandOf } from './bands';
+import { consumePendingPuzzle } from './handoff';
 import { fetchSolvedToday } from './today';
 import { t } from '@/lib/i18n';
 import {
@@ -243,6 +244,33 @@ function Trainer({
     [mode],
   );
 
+  /**
+   * Put a puzzle on the board and start its clock.
+   *
+   * Split out of loadNext because a puzzle now arrives two ways — fetched,
+   * or handed over by the hub — and both must set up identically. `seq`
+   * is the caller's sequence number: a load that has been superseded
+   * while it was away must not write to state (see loadNext).
+   */
+  const show = useCallback((next: ApiPuzzle, seq: number) => {
+    if (seq !== loadSeq.current) return;
+    setPuzzle(next);
+    setPlies(0);
+    setReview(null);
+    setFlipped(false);
+    setView(positionAt(next, 0));
+    setPhase('setup');
+    // Let the position register, then play the opponent's setup move.
+    after(700, () => {
+      if (seq !== loadSeq.current) return;
+      setPlies(1);
+      setView(positionAt(next, 1));
+      setPhase('solving');
+    });
+    // `after` is a stable closure over refs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const loadNext = useCallback(
     async (selectedTheme: string, selectedDifficulty: DifficultyId) => {
       // Clearing the timers does not clear a fetch already in flight: two
@@ -262,6 +290,19 @@ function Trainer({
       setError(null);
       setPendingPromotion(null);
       reported.current = false;
+
+      // The hub may have drawn this puzzle already and be showing it on a
+      // board. Take that one rather than drawing again, or the position
+      // somebody just pressed would be replaced by a different one.
+      // consume() clears, so this only ever applies to the first load —
+      // Skip and Next go to the server like always.
+      if (mode !== 'single') {
+        const handed = consumePendingPuzzle(mode);
+        if (handed) {
+          show(handed, seq);
+          return;
+        }
+      }
 
       let url: string;
       if (mode === 'single') {
@@ -299,21 +340,9 @@ function Trainer({
         return;
       }
       const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
-      if (seq !== loadSeq.current) return;
-      setPuzzle(next);
-      setPlies(0);
-      setReview(null);
-      setFlipped(false);
-      setView(positionAt(next, 0));
-      setPhase('setup');
-      // Let the position register, then play the opponent's setup move.
-      after(700, () => {
-        if (seq !== loadSeq.current) return;
-        setPlies(1);
-        setView(positionAt(next, 1));
-        setPhase('solving');
-      });
+      show(next, seq);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [mode, puzzleId],
   );
 

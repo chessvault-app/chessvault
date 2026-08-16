@@ -180,11 +180,21 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     idsCache.set(slug, { mtimeMs, ids });
     return ids;
   };
+  /** `lastAt` is when this book was last SOLVED AT, not when its file
+      changed: a shelf ordered by recency has to mean "what I was working
+      on", and re-importing or renaming a book must not push it to the
+      front of that. Null for a book nobody has attempted. */
+  interface Tally {
+    puzzles: number;
+    solved: number;
+    failed: number;
+    lastAt: string | null;
+  }
   const tallyCache = new Map<
     string,
-    { puzzlesMs: number; progressMs: number; tally: { puzzles: number; solved: number; failed: number } }
+    { puzzlesMs: number; progressMs: number; tally: Tally }
   >();
-  const bookTally = (slug: string): { puzzles: number; solved: number; failed: number } => {
+  const bookTally = (slug: string): Tally => {
     const puzzlesMs = mtimeOf(puzzlesPath(slug));
     const progressMs = mtimeOf(progressPath(slug));
     const hit = tallyCache.get(slug);
@@ -193,12 +203,16 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
     let solved = 0;
     let failed = 0;
+    let lastAt: string | null = null;
     for (const p of puzzles) {
-      const last = progress[p.id]?.last;
+      const entry = progress[p.id];
+      const last = entry?.last;
       if (last === 'win') solved++;
       else if (last === 'loss') failed++;
+      // ISO-8601 in UTC throughout, so string order is time order.
+      if (entry?.at && (lastAt === null || entry.at > lastAt)) lastAt = entry.at;
     }
-    const tally = { puzzles: puzzles.length, solved, failed };
+    const tally = { puzzles: puzzles.length, solved, failed, lastAt };
     tallyCache.set(slug, { puzzlesMs, progressMs, tally });
     return tally;
   };
@@ -263,6 +277,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
           puzzles: tally.puzzles,
           solved: tally.solved,
           failed: tally.failed,
+          lastAt: tally.lastAt,
           // Cover scan (diagrams/cover.jpg), written by the book importer.
           cover: existsSync(resolve(diagramsDir(slug), 'cover.jpg')),
         };
