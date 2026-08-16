@@ -75,7 +75,9 @@ matters.
   `web/index.html`), and a code-split landing chunk because iOS
   relaunches backgrounded PWAs from scratch. Every view is lazy, including
   the analysis board — the landing page must not pay for the engine, the
-  explorer and the PGN parsers to draw six tiles. It currently loads
+  explorer and the PGN parsers to draw a launcher — which is also why the
+  home page's customise sheet is the one thing on it that is lazy. It
+  currently loads
   308 kB of JS: 216 kB of shell and 90 kB of translation dictionary.
 
 ## Deployment model

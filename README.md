@@ -98,6 +98,12 @@ is one connected body of work, and the links are what make it that.
   filtered by which side you had, whether you won, the speed, and the
   date. There is nothing to build and nothing to rebuild; games count
   the moment you collect them, and a listed game opens on the board.
+- **Home** — the landing page leads with what you were last doing, and
+  is yours to arrange: pick which destinations get a tile and in what
+  order, and switch the Continue and setup cards on or off. Anything
+  switched off keeps a button in the row underneath, so nothing can be
+  arranged out of reach. The arrangement is stored in the vault, so
+  every device that opens it agrees.
 - **Settings** — change the app password, turn on authenticator 2FA,
   set your display name and platform usernames, pick a board theme and
   piece set, manage the Lichess token, or wipe the vault — all in the

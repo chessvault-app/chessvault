@@ -2,8 +2,9 @@
 
 *English · [한국어](opening-map.ko.md)*
 
-The Opening map (a top-level entry in the sidebar; on a phone it is
-under More) shows your opening preparation as a tree:
+The Opening map (a tile on the home page, a top-level entry in the
+sidebar; on a phone it is also under More) shows your opening
+preparation as a tree:
 one map for White, one for Black. You place the moves that define your
 repertoire — the root's children are your first moves, each node's
 children the replies you intend to meet — and link your studies and
