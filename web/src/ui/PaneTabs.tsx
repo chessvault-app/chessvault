@@ -50,6 +50,7 @@ export function PaneTabs<T extends string>({
             title={t(tab.label)}
             onClick={() => onChange(tab.id)}
             className={cn(
+              'flex flex-1 items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors duration-100',
               // Icon tabs stay a thin row (the full-width flex button is a
               // wide tap target even when short); text tabs keep more height.
               //
