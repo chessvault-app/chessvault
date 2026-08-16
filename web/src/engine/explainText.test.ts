@@ -25,9 +25,10 @@ describe('motifChips plies', () => {
   });
 
   it('points at the forking move inside a longer line', () => {
-    // Two quiet moves, then Nd5–c7 forking king and rook.
+    // Two quiet moves, then Nd5–c7 forking king and rook, then the cash
+    // that proves the claim.
     const fen = 'r3k3/8/8/3N4/8/8/6P1/6K1 w - - 0 1';
-    const moves = ['g2g3', 'e8f8', 'g1g2', 'f8e8', 'd5c7'];
+    const moves = ['g2g3', 'e8f8', 'g1g2', 'f8e8', 'd5c7', 'e8d7', 'c7a8', 'd7c8'];
     const chips = motifChips(tagLine(fen, moves));
     const plies = formatPv(fen, moves).plies;
 

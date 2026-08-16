@@ -113,6 +113,39 @@ function replayLine(fen: string, uciMoves: string[]): Replay | null {
   return { mover, steps, startBoard, endBoard: pos.board.clone() };
 }
 
+interface LedgerPoint {
+  /** Ply of the enemy reply the measurement was taken after. */
+  ply: number;
+  /** Ply of the mover's move preceding it. */
+  moverPly: number;
+  /** Mover-POV material change since the start of the line. */
+  delta: number;
+}
+
+/**
+ * The line's material ledger: mover-POV deltas from the start, measured
+ * after each enemy reply — a piece en prise for half a move is
+ * bookkeeping, not a fact, so mover half-states are never sampled.
+ * The sacrifice reader and the motif proofs both run on this.
+ */
+function ledger(replay: Replay): LedgerPoint[] {
+  const start = balance(replay.startBoard, replay.mover);
+  const points: LedgerPoint[] = [];
+  let moverPly = 0;
+  for (const step of replay.steps) {
+    if (step.piece.color === replay.mover) {
+      moverPly = step.ply;
+      continue;
+    }
+    points.push({
+      ply: step.ply,
+      moverPly,
+      delta: balance(step.boardAfter, replay.mover) - start,
+    });
+  }
+  return points;
+}
+
 // ---------------------------------------------------------------------------
 // Board helpers
 
@@ -447,9 +480,58 @@ export function tagLine(fen: string, uciMoves: string[]): LineTags {
     }
   }
 
-  const motif = pickMotif(found);
+  const motif = pickMotif(provenByLine(found, replay));
   const sacrifice = findSacrifice(replay);
   return { ...(motif ? { motif } : {}), ...(sacrifice ? { sacrifice } : {}) };
+}
+
+/**
+ * What each motif type promises, in pawns of mover material the line
+ * must later show: a tactic collects at least the exchange. Promotion
+ * promises only that its own gain — already in the ledger at the move —
+ * persists past a reply.
+ */
+const MOTIF_PROMISE: Record<MotifType, number> = {
+  fork: 2,
+  pin: 2,
+  skewer: 2,
+  discovered: 2,
+  trapped: 2,
+  backRankMate: 0,
+  promotion: 0,
+};
+
+/**
+ * Hold every motif to the line it was read from. A motif is a claim —
+ * "this wins something" — and the line is the engine's own best play for
+ * both sides, so a real tactic cashes right there in the ledger: the
+ * mover's material rises by what the motif promises after the motif ply,
+ * or the mover mates. A claim the line does not prove is dropped, even
+ * when it happens to be true — a fork at the line's last ply earns its
+ * chip an iteration later, when the deeper line contains the cash
+ * (lanph3re's call: no false positives, at the price of missing chips).
+ *
+ * The geometry checks in tagLine are still what FINDS and NAMES the
+ * motif; this only decides whether the claim is believed. Static reading
+ * plus the line's own evidence is as close to certainty as this module
+ * gets without search, which its charter forbids.
+ */
+function provenByLine(found: MotifTag[], replay: Replay): MotifTag[] {
+  if (found.length === 0) return found;
+  const start = balance(replay.startBoard, replay.mover);
+  const measured = ledger(replay);
+  const last = replay.steps.at(-1);
+  const mateAt = last !== undefined && last.mates && last.piece.color === replay.mover ? last.ply : undefined;
+  return found.filter((tag) => {
+    // Mate outranks any material promise, and a mating line stops — there
+    // is nothing after it to measure.
+    if (mateAt !== undefined && mateAt >= tag.ply) return true;
+    // The gain is measured from AFTER the motif move: a capture the move
+    // itself made (a recapture, say) belongs to the trade before it, not
+    // to what the motif claims is still coming.
+    const base = balance(replay.steps[tag.ply]!.boardAfter, replay.mover) - start;
+    return measured.some((m) => m.ply > tag.ply && m.delta >= base + MOTIF_PROMISE[tag.type]);
+  });
 }
 
 function pickMotif(found: MotifTag[]): MotifTag | undefined {
@@ -483,21 +565,7 @@ function pickMotif(found: MotifTag[]): MotifTag | undefined {
  * mate, which has no second measurement to persist across.
  */
 function findSacrifice(replay: Replay): SacrificeTag | undefined {
-  const start = balance(replay.startBoard, replay.mover);
-
-  const measured: { ply: number; moverPly: number; delta: number }[] = [];
-  let moverPly = 0;
-  for (const step of replay.steps) {
-    if (step.piece.color === replay.mover) {
-      moverPly = step.ply;
-      continue;
-    }
-    measured.push({
-      ply: step.ply,
-      moverPly,
-      delta: balance(step.boardAfter, replay.mover) - start,
-    });
-  }
+  const measured = ledger(replay);
   if (measured.length === 0) return undefined;
 
   let deepest = 0;

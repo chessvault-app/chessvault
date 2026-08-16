@@ -5,21 +5,29 @@ const INITIAL = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 describe('tagLine motifs', () => {
   it('finds a knight fork of king and rook', () => {
-    // White Nd5 hops to c7: check on e8, rook hanging on a8.
-    const tags = tagLine('r3k3/8/8/3N4/8/8/8/6K1 w - - 0 1', ['d5c7']);
+    // White Nd5 hops to c7: check on e8, rook hanging on a8 — and the
+    // line goes on to collect it, which is what earns the tag.
+    const tags = tagLine('r3k3/8/8/3N4/8/8/8/6K1 w - - 0 1', [
+      'd5c7', 'e8d7', 'c7a8', 'd7c8',
+    ]);
     expect(tags.motif).toMatchObject({ type: 'fork', piece: 'knight', square: 'c7', ply: 0 });
   });
 
   it('finds an absolute pin', () => {
-    // Bf1–b5 pins the c6 knight against the king on e8.
-    const tags = tagLine('4k3/8/2n5/8/8/8/8/4KB2 w - - 0 1', ['f1b5']);
+    // Bf1–b5 pins the c6 knight against the king on e8; the knight
+    // cannot run, and the line takes it.
+    const tags = tagLine('4k3/8/2n5/8/8/8/8/4KB2 w - - 0 1', [
+      'f1b5', 'e8e7', 'b5c6', 'e7d6',
+    ]);
     expect(tags.motif).toMatchObject({ type: 'pin', piece: 'knight', square: 'c6' });
   });
 
   it('finds a skewer through the king', () => {
     // Bc1–b2+: the king on g7 must step off the diagonal and the queen
-    // on h8 falls.
-    const tags = tagLine('7q/6k1/8/8/8/8/8/2B1K3 w - - 0 1', ['c1b2']);
+    // on h8 falls, bishop for queen.
+    const tags = tagLine('7q/6k1/8/8/8/8/8/2B1K3 w - - 0 1', [
+      'c1b2', 'g7g8', 'b2h8', 'g8h8',
+    ]);
     expect(tags.motif).toMatchObject({ type: 'skewer', piece: 'bishop', square: 'b2' });
   });
 
@@ -48,7 +56,8 @@ describe('tagLine motifs', () => {
   });
 
   it('tags a promotion', () => {
-    const tags = tagLine('7k/P7/8/8/8/8/8/K7 w - - 0 1', ['a7a8q']);
+    // The new queen outlives the reply, which is the whole claim.
+    const tags = tagLine('7k/P7/8/8/8/8/8/K7 w - - 0 1', ['a7a8q', 'h8h7']);
     expect(tags.motif).toMatchObject({ type: 'promotion', square: 'a8' });
   });
 
@@ -83,11 +92,30 @@ describe('tagLine motifs', () => {
 
   it('keeps the fork when the forker holds its square (found live in a vault game)', () => {
     // 10.exd5, queen-defended, hitting the c6 knight and e6 bishop at
-    // once — the game ended on this move.
+    // once — the game ended on this move; the proof continuation is what
+    // an engine line from the position contains.
     const tags = tagLine('r2qkb1r/1p3ppp/p1npb3/3np3/4P3/1N2B3/PPPQ1PPP/R3KB1R w KQkq - 0 10', [
-      'e4d5',
+      'e4d5', 'c6e7', 'd5e6', 'f7e6',
     ]);
     expect(tags.motif).toMatchObject({ type: 'fork', piece: 'pawn', square: 'd5', ply: 0 });
+  });
+
+  it('drops a motif the line does not live to prove', () => {
+    // The royal fork from the first test, but the line stops on the
+    // forking move: a claim with no evidence wears no chip — a deeper
+    // line containing the cash earns it back.
+    const tags = tagLine('r3k3/8/8/3N4/8/8/8/6K1 w - - 0 1', ['d5c7']);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('drops a "fork" the line itself never collects', () => {
+    // Nb6 hits both rooks, but the continuation shows the mover doing
+    // other things and no material ever arriving — whatever the
+    // geometry says, the line does not believe the fork.
+    const tags = tagLine('r1r4k/8/8/8/N7/8/8/4K3 w - - 0 1', [
+      'a4b6', 'a8a7', 'e1d2', 'c8d8', 'd2e2',
+    ]);
+    expect(tags.motif).toBeUndefined();
   });
 
   it('does not call a bishop pinning a bishop a pin (found live)', () => {
@@ -109,8 +137,10 @@ describe('tagLine motifs', () => {
 
   it('keeps the pin when it is winning the pinned piece', () => {
     // Bb5 pins the c6 knight, which b7 defends — but the d5 pawn attacks
-    // it too, so the piece is falling, not merely held.
-    const tags = tagLine('4k3/1p6/2n5/3P4/8/8/8/4KB2 w - - 0 1', ['f1b5']);
+    // it too, and the line duly wins knight for pawn.
+    const tags = tagLine('4k3/1p6/2n5/3P4/8/8/8/4KB2 w - - 0 1', [
+      'f1b5', 'e8d7', 'd5c6', 'b7c6',
+    ]);
     expect(tags.motif).toMatchObject({ type: 'pin', piece: 'knight', square: 'c6' });
   });
 
@@ -128,8 +158,11 @@ describe('tagLine motifs', () => {
   });
 
   it('keeps the discovered check when the moved piece spends the tempo', () => {
-    // The same Nc1, now also attacking the queen on d3.
-    const tags = tagLine('4k3/8/8/8/8/3q4/4N3/4R1K1 w - - 0 1', ['e2c1']);
+    // The same Nc1, now also attacking the queen on d3 — which the check
+    // forces onto e3, where the rook wins it.
+    const tags = tagLine('4k3/8/8/8/8/3q4/4N3/4R1K1 w - - 0 1', [
+      'e2c1', 'd3e3', 'e1e3', 'e8d7',
+    ]);
     expect(tags.motif).toMatchObject({ type: 'discovered', piece: 'rook', ply: 0 });
   });
 
