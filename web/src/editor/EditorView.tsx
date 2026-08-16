@@ -573,7 +573,6 @@ export function EditorView({
       {sheetOpen && (
         <Modal
           title="Position"
-          hidden={photoTemplates !== null}
           onClose={() => {
             setSheetOpen(false);
             setLoadPage(false);
@@ -584,17 +583,14 @@ export function EditorView({
               sheet behind it, wires the back chevron to onClose and holds
               the height. Nothing here says any of that. */}
           {loadPage && (
-            <Modal
-              title="Load position"
-              hidden={photoTemplates !== null}
-              onClose={() => setLoadPage(false)}
-            >
+            <Modal title="Load position" onClose={() => setLoadPage(false)}>
               <LoadPositionForm
                 loadText={loadText}
                 onDone={() => {
                   setLoadPage(false);
                   setSheetOpen(false);
                 }}
+                onCancel={() => setLoadPage(false)}
                 onImage={(file) => {
                   setPhotoFile(file);
                   void builtinTemplates()
@@ -602,30 +598,29 @@ export function EditorView({
                     .catch(() => setPhotoTemplates([]));
                 }}
               />
+              {/* And the THIRD page, inside the second. It was a sibling
+                  window with `hidden` wired by hand at both levels; as a
+                  page it parks the load form itself, and its back chevron
+                  lands on the form you left rather than two pages back at
+                  Position. */}
+              {photoTemplates !== null && (
+                <Suspense fallback={null}>
+                  <PhotoImport
+                    templates={photoTemplates}
+                    initialFile={photoFile ?? undefined}
+                    onApply={(reading) => {
+                      if (reading.fen) applyImageFen(reading.fen);
+                      setPhotoTemplates(null);
+                      setSheetOpen(false);
+                      setLoadPage(false);
+                    }}
+                    onClose={() => setPhotoTemplates(null)}
+                  />
+                </Suspense>
+              )}
             </Modal>
           )}
         </Modal>
-      )}
-
-      {/* The picture flow is its own task and its own full window — the
-          sheet hides while it is up and is there again behind it. */}
-      {photoTemplates !== null && (
-        <Suspense fallback={null}>
-          <PhotoImport
-            templates={photoTemplates}
-            initialFile={photoFile ?? undefined}
-            onApply={(reading) => {
-              if (reading.fen) applyImageFen(reading.fen);
-              setPhotoTemplates(null);
-              setSheetOpen(false);
-              setLoadPage(false);
-            }}
-            onClose={() => {
-              setPhotoTemplates(null);
-              setLoadPage(false);
-            }}
-          />
-        </Suspense>
       )}
 
     </div>

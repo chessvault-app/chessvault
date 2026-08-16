@@ -1,5 +1,5 @@
 import { AlertCircle, ClipboardPaste, FolderInput, ImagePlus } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAnalysis } from '@/store/analysis';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
 import type { Template } from '@/puzzles/ocr/classify';
@@ -81,7 +81,7 @@ export function LoadPositionButton({
       >
         <FolderInput className="size-3.5" />
       </Button>
-      {open && templates === null && (
+      {open && (
         <LoadDialog
           loadText={loadText}
           onBack={onBack && (() => {
@@ -95,27 +95,31 @@ export function LoadPositionButton({
               .then(setTemplates)
               .catch(() => setTemplates([]));
           }}
-        />
-      )}
-      {templates !== null && (
-        <Suspense fallback={null}>
-        <PhotoImport
-          templates={templates}
-          initialFile={imageFile ?? undefined}
-          onApply={(reading) => {
-            if (reading.fen) {
-              if (applyImageFen) applyImageFen(reading.fen);
-              else useAnalysis.getState().loadFen(reading.fen);
-            }
-            setTemplates(null);
-            setOpen(false);
-          }}
-          onClose={() => {
-            setTemplates(null);
-            setOpen(false);
-          }}
-        />
-        </Suspense>
+        >
+          {/* The picture flow is this window's next PAGE, so it is written
+              inside it: the form parks while the picture is up and is
+              there again behind the back chevron. It used to REPLACE the
+              form — the dialog unmounted the moment templates arrived —
+              and backing out of a picture therefore dropped you all the
+              way to the board, with the FEN you had typed gone with it. */}
+          {templates !== null && (
+            <Suspense fallback={null}>
+              <PhotoImport
+                templates={templates}
+                initialFile={imageFile ?? undefined}
+                onApply={(reading) => {
+                  if (reading.fen) {
+                    if (applyImageFen) applyImageFen(reading.fen);
+                    else useAnalysis.getState().loadFen(reading.fen);
+                  }
+                  setTemplates(null);
+                  setOpen(false);
+                }}
+                onClose={() => setTemplates(null)}
+              />
+            </Suspense>
+          )}
+        </LoadDialog>
       )}
     </>
   );
@@ -273,11 +277,14 @@ function LoadDialog({
   onClose,
   onBack,
   onImage,
+  children,
 }: {
   loadText: (value: string) => string | null;
   onClose: () => void;
   onBack?: () => void;
   onImage: (file: Blob | null) => void;
+  /** Pages opened out of this one — see the picture flow at the caller. */
+  children?: ReactNode;
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
@@ -295,6 +302,7 @@ function LoadDialog({
         onCancel={onClose}
         onImage={onImage}
       />
+      {children}
     </Modal>
   );
 }
