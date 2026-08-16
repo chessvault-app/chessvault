@@ -1,5 +1,6 @@
 import { AlertTriangle, Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
@@ -124,13 +125,21 @@ export function FieldStats({
           return (
             <div
               key={move.san}
-              className={
-                isGap
-                  ? 'border-warn/40 flex items-center gap-2 rounded-lg border px-2 py-1'
-                  : 'flex items-center gap-2 px-2 py-1'
-              }
+              // The border is on every row, and invisible on most: drawn
+              // only where there is a gap, its 1px moved that row's
+              // contents in by one against its neighbours.
+              className={cn(
+                'flex items-center gap-2 rounded-lg border px-2 py-1',
+                isGap ? 'border-warn/40' : 'border-transparent',
+              )}
             >
-              {isGap && <AlertTriangle className="text-warn size-3.5 shrink-0" />}
+              {/* The slot is always there, empty or not: drawn only on
+                  the rows that have a gap, it pushed those rows' moves
+                  and bars right by its own width, so the column zigzagged
+                  down the panel. */}
+              <span className="w-3.5 shrink-0">
+                {isGap && <AlertTriangle className="text-warn size-3.5" />}
+              </span>
               <button
                 type="button"
                 className={
@@ -159,26 +168,42 @@ export function FieldStats({
               ) : (
                 <span className="min-w-0 flex-1" />
               )}
-              <span className="text-muted w-9 shrink-0 text-right text-xs">
-                {share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
-              </span>
-              {prepared.has(move.san) && (
-                <span className="text-good shrink-0 text-[0.6875rem]" title={t('A linked study prepares it')}>
-                  {t('prepared')}
+              {/* Everything after the bar in one box of one width, so
+                  every bar starts and ends on the same two lines. Left
+                  to size themselves, the marks a row happens to carry
+                  came out of the bar beside them — bars of different
+                  lengths in a column of bars, which reads as bars
+                  measuring different things. */}
+              <span className="flex w-[4.5rem] shrink-0 items-center justify-end gap-1.5">
+                <span className="text-muted text-xs">
+                  {share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
                 </span>
-              )}
-              {childId ? (
-                <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
-              ) : (
-                <button
-                  type="button"
-                  title={t('Chart it on the map')}
-                  onClick={() => onAdd(move.san)}
-                  className="text-subtle hover:text-fg shrink-0"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              )}
+                {/* A dot, not the word "prepared": the word was as wide
+                    as the percentage and the marks together, and it is
+                    the one thing here that can be said with a colour —
+                    the good green this app spends on exactly this. It
+                    keeps its name for the pointer and the screen
+                    reader. */}
+                {prepared.has(move.san) && (
+                  <span
+                    className="bg-good size-1.5 shrink-0 rounded-full"
+                    title={t('A linked study prepares it')}
+                    aria-label={t('A linked study prepares it')}
+                  />
+                )}
+                {childId ? (
+                  <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
+                ) : (
+                  <button
+                    type="button"
+                    title={t('Chart it on the map')}
+                    onClick={() => onAdd(move.san)}
+                    className="text-subtle hover:text-fg shrink-0"
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                )}
+              </span>
             </div>
           );
         })}

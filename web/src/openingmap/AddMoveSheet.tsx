@@ -186,14 +186,18 @@ export function AddMoveSheet({
                   gave up the difference — the ragged right edge in
                   lanph3re's shot, which reads as the bars disagreeing
                   about what they measure. */}
-              <span className="flex w-24 shrink-0 items-center justify-end gap-1.5">
+              <span className="flex w-[4.5rem] shrink-0 items-center justify-end gap-1.5">
                 {row.share !== null && (
                   <span className="text-muted text-xs">{Math.round(row.share * 100)}%</span>
                 )}
+                {/* The same green dot the panel's table uses, for the
+                    same fact and the same reason — see FieldStats. */}
                 {row.prepared && (
-                  <span className="text-good text-xs" title={t('A linked study prepares it')}>
-                    {t('prepared')}
-                  </span>
+                  <span
+                    className="bg-good size-1.5 shrink-0 rounded-full"
+                    title={t('A linked study prepares it')}
+                    aria-label={t('A linked study prepares it')}
+                  />
                 )}
                 {/* A tick where the move is already on the map, and
                     nothing where it is not. The plus that used to sit
