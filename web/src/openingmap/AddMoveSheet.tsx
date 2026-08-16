@@ -1,6 +1,7 @@
 import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
+import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Button } from '@/ui/Button';
@@ -203,7 +204,21 @@ export function AddMoveSheet({
           it, because a one-field form that needs a press of a button to
           be a form is a form that argues with the keyboard it opened. */}
       <form
-        className="flex items-center gap-2"
+        className={cn(
+          'border-line bg-surface sticky z-10 mt-auto flex items-center gap-2 border-t',
+          '-mx-3 px-3 pt-2',
+          // Pinned to the foot of the sheet, over its padding, the way
+          // the panel's action row is — and for a sharper reason: the
+          // keyboard this field opens takes half the screen, the sheet
+          // gives way to the band that is left, and a field sitting at
+          // the end of a list of forty replies is then somewhere above
+          // the fold. It is the thing being typed into; it does not
+          // scroll. The phone keeps the safe area as padding rather than
+          // bleeding across it.
+          'max-sm:bottom-[calc(-1.25rem-var(--safe-b))] max-sm:-mb-[calc(1.25rem+var(--safe-b))]',
+          'max-sm:pb-[calc(0.5rem+var(--safe-b))]',
+          'sm:bottom-[-0.75rem] sm:-mb-3 sm:pb-2',
+        )}
         onSubmit={(e) => {
           e.preventDefault();
           submit();

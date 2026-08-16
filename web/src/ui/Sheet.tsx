@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
@@ -152,7 +152,22 @@ export function Sheet({
           phone
             ? {
                 ...drag.style,
-                ...(cap ? { maxHeight: cap, ...(fill ? { minHeight: cap } : null) } : undefined),
+                // The parent's height as a VARIABLE, not as a height.
+                //
+                // It used to be an inline max-height, with the `fill`
+                // floor beside it — two pixel numbers measured when the
+                // sheet opened. Then the keyboard came up, the layer
+                // shrank to the band above it, and the card kept the
+                // height of a screen that was no longer there: an
+                // add-a-move sheet with its list run off the top and a
+                // hand's depth of empty card over the field being typed
+                // into. Inline beat every class that would have capped
+                // it, including `max-h-full`.
+                //
+                // Read into a `min()` below instead, so the parent's
+                // number and the band's own are both ceilings and the
+                // smaller one wins — whichever the keyboard leaves.
+                ...(cap ? ({ '--sheet-cap': `${cap}px` } as CSSProperties) : undefined),
               }
             : undefined
         }
@@ -179,14 +194,20 @@ export function Sheet({
           // is air, not a minimum height: a sheet is exactly as tall as
           // its content plus room to end comfortably.
           'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
-          'max-sm:max-h-[calc(100%-env(safe-area-inset-top)-0.75rem)]',
-          // `fill` with no sheet behind it: the floor is that same
-          // ceiling, so the card opens at exactly one height. A class
-          // rather than the inline floor above, and only when there is
-          // no cap — a min-height beats a max-height in CSS, so applied
-          // together they would grow a child sheet past the parent it is
-          // supposed to fit inside.
-          fill && !cap && 'max-sm:min-h-[calc(100%-env(safe-area-inset-top)-0.75rem)]',
+          // The lower of the two ceilings: the sheet this one was opened
+          // over, and the band the screen can show. `--sheet-cap` is
+          // unset when there is no sheet behind it, and 100% is then no
+          // constraint at all, so one expression covers both. Both are
+          // percentages of the layer, which is pinned to the visible
+          // band while a keyboard is up — so the whole thing gives way
+          // to the keyboard instead of hanging off the top of it.
+          'max-sm:max-h-[min(var(--sheet-cap,100%),calc(100%-env(safe-area-inset-top)-0.75rem))]',
+          // `fill` makes that ceiling the floor as well, so the card
+          // opens at exactly one height. The same expression, or a floor
+          // could outgrow the ceiling — in CSS a min-height wins that
+          // argument, which is how a child sheet would end up taller
+          // than the parent it is supposed to fit inside.
+          fill && 'max-sm:min-h-[min(var(--sheet-cap,100%),calc(100%-env(safe-area-inset-top)-0.75rem))]',
           'sm:max-w-sm sm:rounded-xl',
           className,
         )}
