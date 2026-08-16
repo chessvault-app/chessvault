@@ -36,13 +36,67 @@ const BASE = process.env.SHOT_BASE ?? 'http://localhost:8129';
  * also each have to illustrate the paragraph beside them: a note carrying
  * markdown, a live board and wiki-links for "the files are the format",
  * and the collection on a phone for "reach it from anywhere".
+ *
+ * Four optional fields, all for the opening map and all earning their
+ * keep there:
+ *
+ * `settle` — extra milliseconds before the shutter. The map lays itself
+ * out twice: once from the document, then again when the tagged studies
+ * have been fetched and parsed and every dot knows how big it is. The
+ * default wait catches the first layout, which is a picture of the map
+ * rearranging itself.
+ *
+ * `select` — a node label to click first. Selection is component state,
+ * not a route, so there is no URL that opens a map with a move chosen.
+ *
+ * `crop` — capture one element instead of the window. A panel shown at
+ * 320px has to BE the picture; the same panel inside a 1904px frame is a
+ * detail nobody can read.
+ *
+ * `prefs` — localStorage to write before routing, for the settings that
+ * live on the device rather than in the vault. A fresh profile is the
+ * right default for a screenshot, except where the default is the feature
+ * turned off.
  */
 const TARGETS = [
   // README + the landing hero: the full desktop layout.
   { hash: '#/analysis', out: 'board.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
   { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-line' },
   { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
-  // The landing page's two side figures.
+  // The whole repertoire at once — README and the landing page's map section.
+  //
+  // NOT ZOOMED, and NARROW. Both for the same reason.
+  //
+  // The map fits itself to its canvas, and a repertoire tree is taller
+  // than it is wide, so HEIGHT is what the fit is up against. The labels
+  // fade with the fitted scale (far out you read the shape, close in the
+  // names), which ties them to the height too: zooming this shot to 1100
+  // CSS the way the others do costs the canvas two thirds of its height
+  // and takes every label with it — measured, k = 0.23 against the 0.3
+  // labels begin at. Laying out at the window's own width instead gives
+  // the map 836 CSS px of height, k = 0.47, and names on the dots. A
+  // taller WINDOW would be the obvious fix and does nothing: it clamps to
+  // the screen, which is why this file zooms at all.
+  //
+  // Width is then free, and spending it is what made the first version
+  // of this shot look empty — the fit was still height-bound, so a wider
+  // frame only added margin: the constellation filled 40% of a 1904px
+  // canvas and 69% of a 1200px one, at the same scale.
+  {
+    hash: '#/openingmap',
+    out: 'opening-map.png',
+    win: [1200, 996],
+    css: 1200,
+    wait: 'svg[role="tree"]',
+    settle: 7000,
+    // The field is a device-local choice and defaults to off, which is a
+    // map with nothing to say about what opponents actually play: no dot
+    // sizes, no gap badges, no lit mainline. Half the feature, and the
+    // half the words beside these pictures are about. `refgames` is the
+    // demo's single mounted database (SINGLE_DB_SOURCE in field.ts).
+    prefs: { 'vault:openingmap-field': '{"source":"refgames","ratings":"1600"}' },
+  },
+  // The landing page's three side figures.
   {
     hash: `#/notes/${encodeURIComponent('Blunders to stop making')}`,
     out: 'note-phone.png',
@@ -51,7 +105,59 @@ const TARGETS = [
     wait: 'cg-board',
   },
   { hash: '#/games', out: 'games-phone.png', win: [585, 780], css: 390, wait: '.divide-line' },
+  // One node's answer to "what is prepared here" — the half of the feature
+  // a picture of the constellation cannot show. Whole, never cut: this
+  // panel IS the figure, and a figure with its last rows sliced off is a
+  // picture of the app failing to fit.
+  //
+  // WIDER than the map shot, which is what keeps it whole and usable. The
+  // panel is 22rem below `xl` and 26rem above it, and the narrow one is
+  // not a smaller picture but a taller one — every row wraps, and 308×820
+  // beside a paragraph is a column of unreadable text. Laid out at 1904
+  // the same content comes back around 380 wide and much shorter.
+  //
+  // It still needs the map to have named its dots: a label is how a dot is
+  // identified to a script as well as to a reader, and below the fitted
+  // scale where labels fade they are not in the DOM at all.
+  {
+    hash: '#/openingmap',
+    out: 'opening-map-node.png',
+    win: [1904, 996],
+    css: 1904,
+    wait: 'svg[role="tree"]',
+    settle: 7000,
+    // The same field as the shot above, for the same reason — and here it
+    // is also what fills the panel's lower half: which replies the field
+    // plays, and which of them run into preparation.
+    prefs: { 'vault:openingmap-field': '{"source":"refgames","ratings":"1600"}' },
+    select: '3. Bb5',
+    crop: 'aside[aria-label]',
+  },
 ];
+
+/**
+ * Click the map dot carrying a label. The dots are SVG groups with no id
+ * in the DOM — the label is what identifies one to a human reading the
+ * picture, so it is what identifies one here.
+ */
+const SELECT_NODE = (label) => `
+  (() => {
+    const text = [...document.querySelectorAll('svg text')]
+      .find((t) => t.textContent.trim() === ${JSON.stringify(label)});
+    if (!text) return 0;
+    text.closest('g').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    return 1;
+  })()
+`;
+
+const BOX_OF = (selector) => `
+  (() => {
+    const el = document.querySelector(${JSON.stringify(selector)});
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: r.x, y: r.y, width: r.width, height: r.height };
+  })()
+`;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -86,7 +192,7 @@ app.whenReady().then(async () => {
   // every shot silently shows yesterday's UI.
   await session.defaultSession.clearCache();
 
-  for (const { hash, out, win: [w, h], css, wait } of TARGETS) {
+  for (const { hash, out, win: [w, h], css, wait, settle = 0, select, crop, prefs = {} } of TARGETS) {
     const win = new BrowserWindow({
       width: w,
       height: h,
@@ -99,7 +205,11 @@ app.whenReady().then(async () => {
     // same document with a different hash aborts the first and rejects.
     await win.loadURL(`${BASE}/app/`);
     await win.webContents.executeJavaScript(
-      `localStorage.setItem('chess-vault:lang', 'en'); location.hash = ${JSON.stringify(hash.slice(1))}; true`,
+      `localStorage.setItem('chess-vault:lang', 'en');
+       ${Object.entries(prefs)
+         .map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(v)});`)
+         .join('\n       ')}
+       location.hash = ${JSON.stringify(hash.slice(1))}; true`,
     );
     // BEFORE the waits, not after them. A rule in the document applies to
     // whatever appears later, so hiding first means no frame ever contains
@@ -118,6 +228,13 @@ app.whenReady().then(async () => {
       `document.querySelectorAll('${wait}').length`,
     );
     await sleep(1200);
+    // After the waits: whatever this clicks has to be on the page, and on
+    // the map it also has to have stopped moving.
+    await sleep(settle);
+    const selected = select
+      ? await win.webContents.executeJavaScript(SELECT_NODE(select))
+      : null;
+    if (select) await sleep(600);
 
     // Checked at the shutter, not when the rule was added: the notice
     // getting into the docs is exactly the failure nobody notices until
@@ -127,7 +244,26 @@ app.whenReady().then(async () => {
         return el ? Math.round(el.getBoundingClientRect().height) : 0; })()`,
     );
 
-    const image = await win.webContents.capturePage();
+    // The box is measured in the page's CSS pixels and the raster is the
+    // window's, so it scales by the zoom factor that decoupled them.
+    const box = crop ? await win.webContents.executeJavaScript(BOX_OF(crop)) : null;
+    // A hidden window paints lazily, and asking it for a REGION before it
+    // has ever been asked for a frame hands back that region of a surface
+    // nothing has drawn to yet: a rectangle of the right size, correctly
+    // placed, and empty. One full capture first is what makes it paint.
+    // The cost is a discarded frame on the one shot that crops.
+    if (box) await win.webContents.capturePage();
+    const z = w / css;
+    const image = await win.webContents.capturePage(
+      box
+        ? {
+            x: Math.round(box.x * z),
+            y: Math.round(box.y * z),
+            width: Math.round(box.width * z),
+            height: Math.round(box.height * z),
+          }
+        : undefined,
+    );
     const png = image.toPNG();
     writeFileSync(resolve('docs/screenshots', out), png);
     const size = image.getSize();
@@ -138,7 +274,11 @@ app.whenReady().then(async () => {
         (found ? '' : `  (WARNING: no "${wait}" on the page — is it still loading?)`) +
         // Silence here would mean the demo notice is in the picture.
         (banners ? '' : `  (WARNING: no [data-demo-banner] — is the notice in the shot?)`) +
-        (bannerHeight ? `  (WARNING: demo notice ${bannerHeight}px tall AT CAPTURE)` : ''),
+        (bannerHeight ? `  (WARNING: demo notice ${bannerHeight}px tall AT CAPTURE)` : '') +
+        // A missed click or a missed crop is a plausible-looking picture of
+        // the wrong thing, which is the failure worth shouting about.
+        (selected === 0 ? `  (WARNING: no dot labelled "${select}" — nothing selected)` : '') +
+        (crop && !box ? `  (WARNING: no "${crop}" to crop to — captured the window)` : ''),
     );
     win.destroy();
   }
