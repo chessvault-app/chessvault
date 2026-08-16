@@ -24,15 +24,20 @@ import { ResultBar } from '@/ui/ResultBar';
  */
 
 /**
- * The move, its number and whatever is true of it, in one box.
+ * The columns a list of these rows stands on: the move, the bar, and
+ * the tail. `ROW` makes a row take all three from the list above it, so
+ * every move column in the list is as wide as the widest move in it and
+ * not one pixel wider — and the bars still start on one line.
  *
- * One box rather than two, because the mark belongs to the move: given
- * a column of its own it sat a third of an inch clear of the SAN it was
- * about, and the space came out of the bar. The box is a fixed width so
- * the bar still starts on one line; inside it the mark simply follows
- * the words.
+ * A subgrid rather than a width. The width was a fixed 5rem, which left
+ * a thumb of empty column between "2… e6" and its bar; measuring the
+ * labels in `ch` instead was worse, because `ch` is the width of a ZERO
+ * and these labels are mostly dots, spaces and narrow letters — it
+ * asked for 71px to hold 40px of text. The browser can measure text; we
+ * cannot, and it does it here for free.
  */
-const CELL_W = 'w-20';
+export const LIST = 'grid grid-cols-[max-content_1fr_max-content] gap-x-2';
+export const ROW = 'col-span-3 grid grid-cols-subgrid items-center';
 
 export function MoveCell({
   ply,
@@ -49,7 +54,7 @@ export function MoveCell({
   linked?: boolean;
 }) {
   return (
-    <span className={cn('flex shrink-0 items-center gap-1', CELL_W)}>
+    <span className="flex shrink-0 items-center gap-1">
       <span
         // The tip belongs to the WORDS, not to the button around them.
         // On the button it was an ancestor title, and an ancestor title
@@ -133,16 +138,21 @@ export function MoveResult({ move }: { move: Pick<FieldMove, 'w' | 'd' | 'b'> | 
   );
 }
 
-/** The share of games, and whatever the caller puts after it. */
+/**
+ * The share of games, and whatever the caller puts after it.
+ *
+ * Both in boxes of their own. Laid out as they came, the percentage was
+ * pushed left by whatever followed it — so a row with a tick had its
+ * number a mark's width in from a row without one, and a column of
+ * right-aligned numbers came out zigzagged.
+ */
 export function RowTail({ share, children }: { share: number | null; children?: ReactNode }) {
   return (
-    <span className="flex w-14 shrink-0 items-center justify-end gap-1.5">
-      {share !== null && (
-        <span className="text-muted text-xs">
-          {share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
-        </span>
-      )}
-      {children}
+    <span className="flex shrink-0 items-center gap-1.5">
+      <span className="text-muted w-8 text-right text-xs">
+        {share === null ? '' : share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
+      </span>
+      <span className="flex w-3.5 justify-center">{children}</span>
     </span>
   );
 }

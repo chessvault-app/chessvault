@@ -6,7 +6,7 @@ import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import type { NodeCoverage } from './coverage';
-import { MoveCell, MoveResult, RowTail } from './FieldRow';
+import { LIST, MoveCell, MoveResult, ROW, RowTail } from './FieldRow';
 import { GAP_SHARE, type NodeGaps } from './gaps';
 import type { MapNode, ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
@@ -104,6 +104,8 @@ export function FieldStats({
   const prepared = new Set(coverage?.preparedMoves ?? []);
   const flagged = new Set((gaps?.gaps ?? []).map((g) => g.san));
 
+  const shown = rows.slice(0, SHOWN);
+
   return (
     <Field
       label="Against the field"
@@ -140,8 +142,8 @@ export function FieldStats({
       {/* No gap between the rows, because they are striped: a stripe
           with air around it is a row of pills, and what makes a zebra
           readable is that the bands meet. */}
-      <div className="flex flex-col">
-        {rows.slice(0, SHOWN).map((move, at) => {
+      <div className={LIST}>
+        {shown.map((move, at) => {
           const childId = charted.get(move.san);
           const share = move.total / games;
           const isGap = flagged.has(move.san);
@@ -157,7 +159,8 @@ export function FieldStats({
               // place in, and the stripes are what carry it across from
               // the move to the share it belongs to.
               className={cn(
-                'flex items-center gap-2 rounded-lg border px-2 py-1',
+                ROW,
+                'rounded-lg border px-2 py-1',
                 isGap ? 'border-warn/40' : 'border-transparent',
                 at % 2 === 1 && 'bg-surface-2/50',
               )}

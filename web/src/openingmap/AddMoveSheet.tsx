@@ -8,7 +8,7 @@ import { Input } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Sheet } from '@/ui/Sheet';
 import type { NodeCoverage } from './coverage';
-import { MoveCell, MoveResult, RowTail } from './FieldRow';
+import { LIST, MoveCell, MoveResult, ROW, RowTail } from './FieldRow';
 import { normalizeSan, type MapNode, type ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
 
@@ -152,7 +152,7 @@ export function AddMoveSheet({
       {/* Grows into the sheet, which is as tall as the one it opened
           over — capped only from `sm`, where a sheet is a window in the
           middle of a screen rather than a page filling one. */}
-      <div className="flex min-h-0 grow flex-col gap-0.5 overflow-y-auto sm:max-h-72">
+      <div className={cn(LIST, 'min-h-0 grow content-start gap-y-0.5 overflow-y-auto sm:max-h-72')}>
         {field === null ? null : rows.length === 0 ? (
           <p className="text-muted px-1 py-3 text-center text-xs">
             {t('Nothing to offer — type the move instead.')}
@@ -170,7 +170,7 @@ export function AddMoveSheet({
               // `group` for the same reason the panel's move button has
               // one: a charted move lights as a link from anywhere on
               // the row.
-              className="hover:bg-surface-2 group flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
+              className={cn(ROW, 'hover:bg-surface-2 group rounded-lg px-2 py-1.5 text-left')}
             >
               {/* The panel's own row, part for part — see FieldRow. A
                   charted move is a link here too: pressing it goes to
