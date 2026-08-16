@@ -7,7 +7,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { KnightIcon } from '@/ui/KnightIcon';
-import { BANDS } from '@/puzzles/bands';
+import { difficultyWord } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
@@ -86,14 +86,6 @@ const writeEcho = (layout: HomeLayout | null): void => {
   if (layout === null) localStorage.removeItem(LAYOUT_KEY);
   else localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
 };
-
-/** The stored difficulty, as the word the trainer will use. */
-function bandWord(): string {
-  const stored = localStorage.getItem('vault:puzzle-difficulty');
-  return stored && stored !== 'any'
-    ? (BANDS.find((b) => b.id === stored)?.label ?? 'Any')
-    : 'Any';
-}
 
 function latest(v: unknown): DocMeta | null {
   const list = (v as { studies?: DocMeta[] })?.studies;
@@ -286,7 +278,7 @@ export function HomePage() {
                 {
                   icon: Puzzle,
                   label: t('Resume training'),
-                  detail: t(bandWord()),
+                  detail: t(difficultyWord()),
                   go: () => navigate('puzzles'),
                 },
               ]
