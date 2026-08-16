@@ -50,7 +50,18 @@ export function PaneTabs<T extends string>({
             title={t(tab.label)}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'flex flex-1 items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors duration-100',
+              // The active pill's corners are the track's, less the 1px
+              // border and the 1px inset it sits inside — which is what
+              // concentric means, and what `rounded-md` was not: this
+              // theme's --radius-lg is 14px while md is Tailwind's own
+              // 6px, so the track curved more than twice as hard as the
+              // pill in it. Unnoticeable while the row was 42px tall and
+              // the corners were a small part of it; at 26px the track is
+              // short enough to round into a capsule and the square-ish
+              // pill inside it is the first thing you see. Derived from
+              // the token rather than typed as 12px, so it stays true if
+              // the scale moves.
+              'flex flex-1 items-center justify-center whitespace-nowrap rounded-[calc(var(--radius-lg)_-_2px)] font-medium transition-colors duration-100',
               // An icon tab is its icon plus 4px, and no fixed height at
               // all. It used to be h-9 on a coarse pointer — the height a
               // standalone button gets for a thumb — which put 11px of air
