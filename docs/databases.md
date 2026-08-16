@@ -48,11 +48,11 @@ survives a rebuild.
 **More reference games.** They are plural:
 `data/refgames/<name>.sqlite`, each an independent database, listed and
 switched in the elite browser. Its manager uploads PGN collections (the
-same `vault/sources/` uploads), indexes any
-selection of them under a name, and deletes what is no longer wanted —
-so unlike puzzles there is no replace-wrinkle here: build the same name
-again to replace it, or a new name beside it. The same indexer runs from
-a terminal:
+same `vault/sources/` uploads) and indexes any selection of them under a
+name; the Databases page also deletes either kind — the built database or
+the upload it was built from. So unlike puzzles there is no
+replace-wrinkle here: build the same name again to replace it, or a new
+name beside it. The same indexer runs from a terminal:
 
 ```
 npm run build:refgames                    # every PGN in vault/sources/
@@ -89,6 +89,32 @@ starter set — the strongest games of every ECO code from one Lichess
 Elite month, ~39 k games in 25 MB, built by `build-bundled-refgames.ts`
 at release time — seeded into `data/refgames/` on first run, the same
 way the bundled starter is. It is an ordinary database from then
-on, one name among however many are built beside it, and deleting it is
-final. A server install gets no seed; it takes the commit, not the
-release artefacts.
+on, one name among however many are built beside it, and deleting it
+works like deleting any other. A server install gets no seed; it takes
+the commit, not the release artefacts.
+
+## Deleting
+
+Deleting — a built database or an uploaded collection — belongs to the
+**Databases page** and nowhere else. The same manager opens as a window
+over the elite browser, and that window has no trash in it: it is opened
+to pick or add something, generally mid-search, and the one irreversible
+control in this feature does not belong on a surface visited that often.
+The window says where deleting is instead, and links there.
+
+Where it is offered, it asks first through `ConfirmSheet` — a centred
+window on a desktop, a bottom sheet on a phone. Nothing keeps a copy:
+there is no trash directory behind either route, so the question is the
+only thing in the way. Each question says what is *not* affected, because
+that is the part that gets guessed at — deleting a database keeps the
+collections it was built from, and deleting a collection leaves every
+database already built from it alone.
+
+A deleted collection loses its build tick with it, so the next build
+cannot name a file that is no longer there. A refused delete keeps both,
+and says why.
+
+The server refuses a collection delete outright while a build is running
+(409): the indexer was handed those paths and is still reading them. The
+app disables the trigger for the same reason, but the server is the one
+that decides — a second client cannot be relied on to.

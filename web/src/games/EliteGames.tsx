@@ -40,6 +40,7 @@ import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 import { Modal } from '@/ui/Modal';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { t } from '@/lib/i18n';
 import { GamePreview, OpeningTag, ResultScore, isCoarsePointer, type Preview } from './shared';
 
@@ -67,15 +68,26 @@ export interface RefDb {
 }
 
 /**
- * Manage the reference databases: upload PGN collections, build a named
- * database from a selection of them, delete one. Every part of it works from a phone against a remote server:
- * uploads stream, and the build is a server child process that keeps
- * going if the page is left.
+ * Manage the reference databases: upload PGN collections and build a named
+ * database from a selection of them. Every part of it works from a phone
+ * against a remote server: uploads stream, and the build is a server child
+ * process that keeps going if the page is left.
  *
  * Rendered two ways: inline as the browser's empty state (where building
- * the first database IS the page's purpose), and inside a sheet from the
+ * the first database IS the page's purpose), and inside a window from the
  * ready browser. Databases are plural like books, so replacing one is not
  * a mode — build a new name beside it and delete the old.
+ *
+ * DELETING is the Databases page's alone (`grid`), for either kind. The
+ * window over the browser is opened to pick or add something, generally
+ * mid-search, and putting the one irreversible control in the app on that
+ * surface makes every visit to it a chance to lose an upload. Deleting is
+ * a trip to the page that is about the data, and the window says where
+ * that is.
+ *
+ * Where it is offered, it asks first through ConfirmSheet — a centred
+ * window on a desktop, a bottom sheet on a phone. Nothing here keeps a
+ * copy, so the question is the only thing in the way.
  */
 export function RefDbManager({
   databases,
@@ -84,10 +96,13 @@ export function RefDbManager({
 }: {
   databases: RefDb[];
   onChanged: () => void;
-  /** `stack` fits the browser's sheet; `grid` composes the Databases
+  /** `stack` fits the browser's window; `grid` composes the Databases
       page — what exists beside how more is made, not one tall pile. */
   layout?: 'stack' | 'grid';
 }) {
+  // `grid` is the Databases page and nothing else, and deleting lives
+  // there. Kept as one named thing so both lists read from one decision.
+  const canDelete = layout === 'grid';
   const [sources, setSources] = useState<{ name: string; bytes: number }[] | null>(null);
   // null until the first listing arrives, so "tick everything" happens
   // once and a user's unticking is never overwritten by a refresh.
@@ -192,12 +207,48 @@ export function RefDbManager({
 
   const del = async (dbName: string): Promise<void> => {
     setError(null);
-    const res = await fetch(`/api/refgames/${encodeURIComponent(dbName)}`, { method: 'DELETE' });
-    if (res.ok) onChanged();
-    else {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(t(body?.error ?? 'could not delete the database'));
+    try {
+      const res = await fetch(`/api/refgames/${encodeURIComponent(dbName)}`, { method: 'DELETE' });
+      if (res.ok) onChanged();
+      else {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(t(body?.error ?? 'could not delete the database'));
+      }
+    } catch {
+      setError(t('could not delete the database'));
     }
+  };
+
+  /**
+   * Delete an uploaded collection. The file is the only copy — nothing
+   * here keeps one — which is why the trigger asks first.
+   *
+   * The tick goes with it, so the next build cannot name a file that is
+   * not there; a refused delete keeps both, and says why.
+   */
+  const delSource = async (sourceName: string): Promise<void> => {
+    setError(null);
+    try {
+      const res = await fetch(`/api/sources/${encodeURIComponent(sourceName)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setPicked((p) => {
+          if (!p?.has(sourceName)) return p;
+          const next = new Set(p);
+          next.delete(sourceName);
+          return next;
+        });
+      } else {
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setError(`${sourceName}: ${t(body?.error ?? 'could not delete the PGN collection')}`);
+      }
+    } catch {
+      setError(`${sourceName}: ${t('could not delete the PGN collection')}`);
+    }
+    // Either way the server's listing is the one to believe: a row leaves
+    // because the file did, not because it was pressed.
+    await refreshSources();
   };
 
   const running = status?.running === true;
@@ -218,7 +269,7 @@ export function RefDbManager({
           {t('No databases yet — build one from an uploaded collection.')}
         </p>
       ) : (
-        <RefDbList databases={databases} onDelete={(n) => void del(n)} />
+        <RefDbList databases={databases} onDelete={canDelete ? (n) => void del(n) : undefined} />
       )}
     </div>
   );
@@ -236,8 +287,11 @@ export function RefDbManager({
       {sources !== null && sources.length > 0 && (
         <ul className="flex flex-col gap-1">
           {sources.map((s) => (
-            <li key={s.name}>
-              <label className="flex cursor-pointer items-center gap-2">
+            <li key={s.name} className="flex items-center gap-1">
+              {/* The label covers the tick, the name and the size, and
+                  nothing else: a button inside it would toggle the tick on
+                  its way to being pressed. */}
+              <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   className="accent-primary"
@@ -254,10 +308,32 @@ export function RefDbManager({
                 <span className="text-fg min-w-0 flex-1 truncate">{s.name}</span>
                 <span className="text-subtle shrink-0">{(s.bytes / 1e6).toFixed(1)} MB</span>
               </label>
-              </li>
-            ))}
-          </ul>
-        )}
+              {/* Uploading is how a phone gets a file onto the server, so
+                  deleting one has to be possible there too — the app was
+                  the only way in and the shell was the only way out. On
+                  the Databases page only, and disabled while a build runs:
+                  it is reading these files, and the server refuses it for
+                  the same reason. */}
+              {canDelete && (
+                <ConfirmSheet
+                  icon={Trash2}
+                  triggerClassName="shrink-0"
+                  disabled={running}
+                  triggerTitle={
+                    running ? 'Wait for the build to finish' : 'Delete this PGN collection'
+                  }
+                  question={t(
+                    'Delete “{name}”? Databases already built from it are not affected.',
+                    { name: s.name },
+                  )}
+                  confirmLabel="Delete"
+                  onConfirm={() => void delSource(s.name)}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
         <label
           {...pgnDrop.handlers}
           className={cn(
@@ -350,17 +426,44 @@ export function RefDbManager({
       {databases.length > 0 && dbListBlock}
       {collectionsBlock}
       {buildBlock}
+      {/* Deleting is not here, so this window has to say where it is —
+          an action with no way to reach it is the bug the rule is about.
+          Only once anything exists to delete. */}
+      {(databases.length > 0 || (sources?.length ?? 0) > 0) && (
+        <button
+          type="button"
+          className="text-subtle hover:text-fg self-start underline underline-offset-2 transition-colors duration-100"
+          // `books` is the section id the Databases page has always had.
+          onClick={() => navigate('books')}
+        >
+          {t('Delete databases and collections on the Databases page')}
+        </button>
+      )}
     </div>
   );
 }
 
 /** The built databases, one row each — name, size, and whether the
     position index is in place. */
-function RefDbList({ databases, onDelete }: { databases: RefDb[]; onDelete: (name: string) => void }) {
+function RefDbList({
+  databases,
+  onDelete,
+}: {
+  databases: RefDb[];
+  /** Omitted where deleting is not on offer — see RefDbManager: it is the
+      Databases page's, not the window the browser opens. */
+  onDelete?: (name: string) => void;
+}) {
   return (
     <ul className="divide-line border-line divide-y rounded-md border">
       {databases.map((d) => (
-        <li key={d.name} className="flex items-center gap-2 py-1 pl-2.5 pr-1">
+        // pr-1 leaves room for the trash's own padding. Without the
+        // trash the row keeps the inset it has on every other side, and
+        // the height the button was holding open.
+        <li
+          key={d.name}
+          className={cn('flex items-center gap-2 pl-2.5', onDelete ? 'py-1 pr-1' : 'py-1.5 pr-2.5')}
+        >
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
@@ -370,14 +473,20 @@ function RefDbList({ databases, onDelete }: { databases: RefDb[]; onDelete: (nam
           {/* Built before the position index existed: the explorer
               offers to add it when this database is its source. */}
           {d.indexed === false && <span className="text-warn shrink-0">{t('no position index')}</span>}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('Delete this database — deleting is final')}
-            onClick={() => onDelete(d.name)}
-          >
-            <Trash2 className="size-3.5" />
-          </Button>
+          {/* Asked in a window rather than warned about in a tooltip: a
+              title nobody reads was all that stood between a press and
+              however many minutes of indexing. */}
+          {onDelete && (
+            <ConfirmSheet
+              icon={Trash2}
+              triggerTitle="Delete this database"
+              question={t('Delete “{name}”? The collections it was built from are kept.', {
+                name: d.name,
+              })}
+              confirmLabel="Delete"
+              onConfirm={() => onDelete(d.name)}
+            />
+          )}
         </li>
       ))}
     </ul>

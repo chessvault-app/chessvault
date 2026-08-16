@@ -918,16 +918,22 @@ export const ko: Record<string, string> = {
   'no position index': '포지션 색인 없음',
   'Reference games': '참고 게임',
   'Delete this database': '이 데이터베이스 삭제',
+  'Delete “{name}”? The collections it was built from are kept.':
+    '“{name}”을(를) 지울까요? 이것을 만든 모음은 그대로 둡니다.',
   // Not 'Delete this collection' — that one is a folder of your own games.
   'Delete this PGN collection': '이 PGN 모음 삭제',
+  'Delete “{name}”? Databases already built from it are not affected.':
+    '“{name}”을(를) 지울까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
   'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
+  'Delete databases and collections on the Databases page':
+    '데이터베이스와 모음 삭제는 데이터베이스 페이지에서',
   'PGN collections': 'PGN 모음',
   'Upload PGN collections': 'PGN 모음 올리기',
   'Name — the file’s name if blank': '이름 — 비우면 파일 이름',
   'The build failed.': '만들기에 실패했습니다.',
   'could not start the build': '만들기를 시작하지 못했습니다',
   'could not delete the database': '데이터베이스를 지우지 못했습니다',
-  'could not delete the collection': '모음을 지우지 못했습니다',
+  'could not delete the PGN collection': 'PGN 모음을 지우지 못했습니다',
   'a build is reading the collections right now': '지금 만들기가 이 모음들을 읽고 있습니다',
   'Building keeps going if you leave the page. A build under an existing name replaces that database.':
     '만들기는 페이지를 떠나도 계속됩니다. 이미 있는 이름으로 만들면 그 데이터베이스를 대체합니다.',
