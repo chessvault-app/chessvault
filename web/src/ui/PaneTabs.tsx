@@ -51,17 +51,20 @@ export function PaneTabs<T extends string>({
             onClick={() => onChange(tab.id)}
             className={cn(
               'flex flex-1 items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors duration-100',
-              // Icon tabs stay a thin row (the full-width flex button is a
-              // wide tap target even when short); text tabs keep more height.
+              // An icon tab is its icon plus 4px, and no fixed height at
+              // all. It used to be h-9 on a coarse pointer — the height a
+              // standalone button gets for a thumb — which put 11px of air
+              // above and below a 14px glyph on the one screen where the
+              // board, this row and a panel are stacked together. These
+              // tabs are a third of the screen wide, so the target was
+              // never short of room; it was short of it vertically, in the
+              // panel underneath. Padding rather than a height so the row
+              // stays exactly its content plus the margin it needs to read
+              // as a button, whatever size the glyph becomes.
               //
-              // The coarse row was h-9, the height a standalone button
-              // gets for a thumb. It is not one: these tabs are a third of
-              // the screen wide each, so the target is enormous
-              // horizontally and the height was buying nothing but 11px of
-              // air above and below a 14px icon — on the phone layout where
-              // the board, this row and a panel share one screen. h-8 keeps
-              // a 32px band and gives the panel under it 4px back.
-              Icon ? 'h-6 pointer-coarse:h-8' : 'h-7 text-xs pointer-coarse:h-8',
+              // Text tabs are the book pages, not the board ones, and keep
+              // their height: a label needs the line box a glyph does not.
+              Icon ? 'py-1' : 'h-7 text-xs pointer-coarse:h-8',
               tab.id === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
             )}
           >
