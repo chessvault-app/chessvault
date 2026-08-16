@@ -41,12 +41,22 @@ export function useSheetCover(active: boolean): {
     }
     // A pixel of tolerance: both numbers are rounded off fractional
     // layouts, and being one short of the window is still covering it.
-    const check = (): void => setCovered(card.offsetHeight >= cap - 1);
+    //
+    // Against the parent as it is NOW, not as it was when this sheet
+    // opened. The ceiling is measured once on purpose — a sheet must not
+    // resize itself as its parent's content changes — but "am I hiding
+    // it" is a question about the present: a keyboard shrinks both
+    // sheets to the band above it, and comparing this one's new height
+    // against the parent's old one said it had stopped covering
+    // anything, so the chevron vanished at exactly the moment a way out
+    // is hardest to find.
+    const check = (): void =>
+      setCovered(card.offsetHeight >= Math.min(cap, parent?.height() ?? cap) - 1);
     check();
     const watch = new ResizeObserver(check);
     watch.observe(card);
     return () => watch.disconnect();
-  }, [cap, card]);
+  }, [cap, card, parent]);
 
   return { cap, covered, ref: setCard };
 }
