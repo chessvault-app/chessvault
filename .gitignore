@@ -36,8 +36,8 @@ updates/
 dist-demo/
 dist-site/
 
-# The opening book that ships inside an installer. Derived like everything
-# in data/, and built by the desktop workflow at release time — see the
-# `book` job in .github/workflows/desktop.yml. Build one locally with
-# `npm run build:bundled-book` if you are packaging by hand.
+# The starter reference games that ship inside an installer. Derived like
+# everything in data/, and built by the desktop workflow at release time —
+# see the `starter-db` job in .github/workflows/desktop.yml. Build one
+# locally with `npm run build:bundled-refgames` if you are packaging by hand.
 assets/*.sqlite
