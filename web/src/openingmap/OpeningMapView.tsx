@@ -732,7 +732,11 @@ function NodePanel({
   const tags = node.tags ?? [];
 
   return (
-    <div className="flex flex-col gap-4">
+    // min-h-full from md: the action row below ends this panel, and a
+    // panel that ends two thirds of the way down a tall window has not
+    // ended, it has stopped. Filling the height is what gives the row
+    // somewhere to be pushed TO — see its own `mt-auto`.
+    <div className="flex flex-col gap-4 md:min-h-full">
       <div className="flex items-center gap-3">
         {facts.fen && (
           <MiniBoard
@@ -984,23 +988,28 @@ function NodePanel({
         </Field>
       )}
 
-      {/* What you can DO here, pinned to the foot of the panel from the
-          width the panel is a full-height column (md, where CanvasShell
-          stops using a Sheet).
+      {/* What you can DO here, at the foot of the panel from the width
+          the panel is a full-height column (md, where CanvasShell stops
+          using a Sheet).
 
-          The panel's content is taller than any window — a board, four
-          fields, a statistics table and this row — so scrolled to the
-          bottom these buttons ended up sliced in half by the window's
-          own edge. They are the answer to "and now what", and an answer
-          cut through the middle by the screen edge reads as a broken
-          panel rather than as a list that continues. Bled out over the
-          scroller's padding so it spans the panel, and opaque, because
-          the rows now pass underneath it.
+          Two rules, because the content is sometimes taller than the
+          window and sometimes shorter. `sticky` handles the first: a
+          board, four fields and a statistics table outrun any screen,
+          and scrolled to the bottom these buttons used to come to rest
+          sliced in half by the window's own edge — an answer to "and
+          now what" cut through the middle reads as a broken panel
+          rather than as a list that continues. `mt-auto` handles the
+          second: sticky only pins what would otherwise scroll away, so
+          on a tall window the row simply sat wherever the content ended,
+          with a hand's width of empty panel beneath it.
+
+          Bled out over the scroller's padding so it spans the panel, and
+          opaque, because the rows pass underneath it.
 
           Phone-shaped sheets keep it in the flow: a sheet is as tall as
           its content, ends where the thumb is, and has nothing to pin
           against. */}
-      <div className="md:border-line md:bg-surface flex flex-wrap items-center gap-2 md:sticky md:bottom-0 md:z-10 md:-mx-4 md:-mb-4 md:border-t md:px-4 md:py-3">
+      <div className="md:border-line md:bg-surface flex flex-wrap items-center gap-2 md:sticky md:bottom-[-1rem] md:z-10 md:-mx-4 md:-mb-4 md:mt-auto md:border-t md:px-4 md:py-3">
         <Button size="sm" onClick={onAddMove} disabled={facts.fen === null}>
           <Plus className="size-3.5" /> {t('Add a move')}
         </Button>
