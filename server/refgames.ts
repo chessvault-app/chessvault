@@ -355,6 +355,17 @@ interface BuildJob {
 let job: BuildJob | null = null;
 
 /**
+ * Is an indexer running right now?
+ *
+ * Asked by the sources routes before they delete an upload: a build was
+ * handed those paths and is still reading them. Exported as a predicate
+ * rather than the job itself so nothing outside here can reach into it.
+ */
+export function refgamesBuildRunning(): boolean {
+  return job?.running === true;
+}
+
+/**
  * Mount the reference-games API.
  *
  * Two mounts, one route set. The default serves the `data/refgames/`

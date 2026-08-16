@@ -92,6 +92,22 @@ describe('sources api', () => {
     expect((await app.request('/api/sources/uploaded.pgn', { method: 'DELETE' })).status).toBe(404);
   });
 
+  it('refuses to delete a collection while a build is reading it', async () => {
+    // The build was handed these paths and reads them for minutes; on
+    // Windows the unlink throws instead, which is a 500 nobody can act on.
+    let building = true;
+    const busy = new Hono().route('/api', sourcesApi(dir, { busy: () => building }));
+    writeFileSync(join(dir, 'in-use.pgn'), PGN);
+
+    const res = await busy.request('/api/sources/in-use.pgn', { method: 'DELETE' });
+    expect(res.status).toBe(409);
+    expect(existsSync(join(dir, 'in-use.pgn'))).toBe(true);
+
+    building = false;
+    expect((await busy.request('/api/sources/in-use.pgn', { method: 'DELETE' })).status).toBe(200);
+    expect(existsSync(join(dir, 'in-use.pgn'))).toBe(false);
+  });
+
   it('answers an empty list for a directory that does not exist yet', async () => {
     const fresh = new Hono().route('/api', sourcesApi(join(dir, 'nowhere')));
     const body = await (await fresh.request('/api/sources')).json();

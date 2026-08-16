@@ -18,7 +18,20 @@ import { VAULT_SOURCES } from './paths.ts';
 /** No slashes, no dots-only names — upload names map straight to files. */
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]*$/;
 
-export function sourcesApi(dir: string = VAULT_SOURCES): Hono {
+export interface SourcesOptions {
+  /**
+   * Is something reading these files right now?
+   *
+   * A build is handed the source paths and then reads them for minutes; a
+   * delete landing in the middle of that is a build that fails halfway
+   * through (on Windows the unlink throws instead, which is a 500 nobody
+   * can act on). The predicate is passed in rather than imported so this
+   * module stays free of the refgames build state — see mountVault.
+   */
+  busy?: () => boolean;
+}
+
+export function sourcesApi(dir: string = VAULT_SOURCES, options: SourcesOptions = {}): Hono {
   const api = new Hono();
 
   api.get('/sources', (c) => {
@@ -108,6 +121,13 @@ export function sourcesApi(dir: string = VAULT_SOURCES): Hono {
     return c.json({ name, bytes: statSync(target).size });
   });
 
+  /**
+   * Delete an uploaded collection.
+   *
+   * There is no trash behind this: the app holds the request back for the
+   * length of an undo instead, so an undone deletion is one that was never
+   * asked for (web/src/ui/useUndoable.ts). What arrives here is meant.
+   */
   api.delete('/sources/:name', (c) => {
     const name = c.req.param('name');
     if (!NAME_RE.test(name) || !name.toLowerCase().endsWith('.pgn')) {
@@ -116,7 +136,15 @@ export function sourcesApi(dir: string = VAULT_SOURCES): Hono {
     const target = resolve(dir, name);
     if (resolve(target, '..') !== resolve(dir)) return c.json({ error: 'invalid name' }, 400);
     if (!existsSync(target)) return c.json({ error: 'no such file' }, 404);
-    rmSync(target);
+    if (options.busy?.()) {
+      return c.json({ error: 'a build is reading the collections right now' }, 409);
+    }
+    try {
+      rmSync(target);
+    } catch (error) {
+      // Something else has the file open — say so rather than 500.
+      return c.json({ error: `could not delete it: ${(error as Error).message}` }, 500);
+    }
     return c.json({ deleted: name });
   });
 

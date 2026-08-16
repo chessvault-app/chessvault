@@ -5,7 +5,7 @@ import { gamesApi } from './games.ts';
 import { myGamesApi } from './myGames.ts';
 import { openingsApi } from './openings.ts';
 import { puzzlesApi } from './puzzles.ts';
-import { refGamesApi } from './refgames.ts';
+import { refGamesApi, refgamesBuildRunning } from './refgames.ts';
 import { openingMapApi, remapMapTags } from './openingMap.ts';
 import { repertoireApi } from './repertoire.ts';
 import { studiesApi } from './studies.ts';
@@ -66,7 +66,9 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // Given the caller's paths, not the module defaults: the demo mounts a
   // vault at /vault, and a no-argument mount looked at the real one
   // instead — so its own uploads were invisible.
-  app.route('/api', sourcesApi(paths.sources ?? VAULT_SOURCES));
+  // `busy`: a running build is reading these very files, so deleting one
+  // out from under it is refused for as long as it runs.
+  app.route('/api', sourcesApi(paths.sources ?? VAULT_SOURCES, { busy: refgamesBuildRunning }));
   app.route('/api', openingsApi());
   app.route('/api', studiesApi(studies, 'studies', '.pgn', follow('study')));
   // The games collection speaks the same document API as studies: an
