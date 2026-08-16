@@ -112,7 +112,12 @@ export function CanvasShell({
 
         {panel &&
           (phone ? (
-            <Sheet label={panel.label} onClose={panel.onClose}>
+            // `fill`: one height whatever the selection holds. Sized to
+            // its content, this sheet stood two thirds of the screen for
+            // a move with games under it and a third for a bare one, and
+            // its footer — the row of things you can do — landed
+            // somewhere different each time you opened it.
+            <Sheet label={panel.label} onClose={panel.onClose} fill>
               {panel.content}
             </Sheet>
           ) : (

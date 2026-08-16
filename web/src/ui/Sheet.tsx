@@ -42,20 +42,27 @@ export function Sheet({
   onClose: () => void;
   className?: string;
   /**
-   * Open as tall as the sheet this one was opened over, instead of as
-   * tall as its own content.
+   * Open as tall as this sheet is allowed to be, instead of as tall as
+   * its own content.
    *
-   * For the sheets that are a PAGE of the one behind them — browse the
-   * field and pick a move, pick a study to link — where snapping from a
-   * two-thirds-height window to a shorter one reads as two windows
-   * rather than one window turning its page. Modal has had this for its
-   * second pages since the elite window; `useSheetCover` was already
-   * supplying the measurement, as a ceiling, and this is the same number
-   * used as a floor.
+   * Two floors, whichever applies. Opened OVER another sheet it takes
+   * that sheet's height, for the sheets that are a PAGE of the one
+   * behind them — browse the field and pick a move, pick a study to
+   * link — where snapping from a two-thirds-height window to a shorter
+   * one reads as two windows rather than one window turning its page.
+   * `useSheetCover` was already supplying that measurement as a ceiling,
+   * and this is the same number used as a floor.
+   *
+   * Opened on its own, the floor is the ceiling the screen gives it. A
+   * detail panel is the case: its height followed whatever the selection
+   * happened to hold, so the same sheet stood two thirds of the screen
+   * for one move and a third for the next, and its footer landed
+   * somewhere different every time. One height means the body scrolls
+   * and everything else stays where it was.
    *
    * NOT for the questions. A confirm is a sentence and two buttons, and
-   * stretching it over a whole screen to match its parent would be
-   * filling a window with nothing to say.
+   * stretching it over a whole screen to match anything would be filling
+   * a window with nothing to say.
    */
   fill?: boolean;
 }) {
@@ -173,6 +180,13 @@ export function Sheet({
           // its content plus room to end comfortably.
           'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
           'max-sm:max-h-[calc(100%-env(safe-area-inset-top)-0.75rem)]',
+          // `fill` with no sheet behind it: the floor is that same
+          // ceiling, so the card opens at exactly one height. A class
+          // rather than the inline floor above, and only when there is
+          // no cap — a min-height beats a max-height in CSS, so applied
+          // together they would grow a child sheet past the parent it is
+          // supposed to fit inside.
+          fill && !cap && 'max-sm:min-h-[calc(100%-env(safe-area-inset-top)-0.75rem)]',
           'sm:max-w-sm sm:rounded-xl',
           className,
         )}

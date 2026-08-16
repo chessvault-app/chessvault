@@ -779,11 +779,23 @@ function NodePanel({
   const tags = node.tags ?? [];
 
   return (
-    // min-h-full from md: the action row below ends this panel, and a
-    // panel that ends two thirds of the way down a tall window has not
-    // ended, it has stopped. Filling the height is what gives the row
-    // somewhere to be pushed TO — see its own `mt-auto`.
-    <div className="flex flex-col gap-4 md:min-h-full">
+    // The height of whatever is holding it — the panel on a pointer
+    // device, the sheet on a phone, both of which now have one. The
+    // action row below ends this panel, and a panel that ends two thirds
+    // of the way down has not ended, it has stopped; filling the height
+    // is what gives the row somewhere to be pushed TO (see its
+    // `mt-auto`).
+    //
+    // Said twice, because the two holders stretch a child differently.
+    // The panel's scroller is a block with a resolved height, so
+    // `min-h-full` fills it. The sheet's card is a flex column whose
+    // height comes from a min/max pair rather than a height — not
+    // definite enough for a percentage to resolve against, which is why
+    // the row sat 123px short of the bottom of an under-filled sheet —
+    // so there the free space is taken by growing instead. Each is a
+    // no-op in the other's box, and both are in the band where the
+    // sheet is a centred card sized to its content.
+    <div className="flex min-h-full grow flex-col gap-4">
       <div className="flex items-center gap-3">
         {facts.fen && (
           <MiniBoard
@@ -1035,27 +1047,28 @@ function NodePanel({
         </Field>
       )}
 
-      {/* What you can DO here, at the foot of the panel from the width
-          the panel is a full-height column (md, where CanvasShell stops
-          using a Sheet).
+      {/* What you can DO here, at the foot of whatever is holding the
+          panel — the docked column on a pointer device, the sheet on a
+          phone.
 
-          Two rules, because the content is sometimes taller than the
-          window and sometimes shorter. `sticky` handles the first: a
-          board, four fields and a statistics table outrun any screen,
-          and scrolled to the bottom these buttons used to come to rest
+          Two rules, because the content is sometimes taller than the box
+          and sometimes shorter. `sticky` handles the first: a board,
+          four fields and a statistics table outrun any screen, and
+          scrolled to the bottom these buttons used to come to rest
           sliced in half by the window's own edge — an answer to "and
-          now what" cut through the middle reads as a broken panel
-          rather than as a list that continues. `mt-auto` handles the
-          second: sticky only pins what would otherwise scroll away, so
-          on a tall window the row simply sat wherever the content ended,
-          with a hand's width of empty panel beneath it.
+          now what" cut through the middle reads as broken rather than as
+          a list that continues. `mt-auto` handles the second: sticky
+          only pins what would otherwise scroll away, so on a tall window
+          the row simply sat wherever the content ended.
 
           Bled out over the scroller's padding so it spans the panel, and
-          opaque, because the rows pass underneath it.
-
-          Phone-shaped sheets keep it in the flow: a sheet is as tall as
-          its content, ends where the thumb is, and has nothing to pin
-          against.
+          opaque, because the rows pass underneath it. The bleed is the
+          holder's own padding three times over: 0.75rem plus the safe
+          area in a bottom sheet, 0.75 in the centred card between the
+          breakpoints, 1 in the panel. The phone keeps that safe area as
+          its own bottom padding rather than bleeding across it — the
+          strip over the home indicator is the one place a row of buttons
+          must not put itself.
 
           Five columns, icon over caption, rather than five buttons in a
           row: five labelled buttons cannot fit across 22rem and never
@@ -1065,7 +1078,16 @@ function NodePanel({
           exactly this. The captions are the verb alone, with the full
           sentence on the tooltip, because a column is 4rem wide and
           "Add a move" under a plus says nothing the plus did not. */}
-      <div className="md:border-line md:bg-surface flex items-stretch gap-1 md:sticky md:bottom-[-1rem] md:z-10 md:-mx-4 md:-mb-4 md:mt-auto md:border-t md:px-2 md:py-2">
+      <div
+        className={cn(
+          'border-line bg-surface sticky z-10 mt-auto flex items-stretch gap-1 border-t',
+          '-mx-3 px-3 pt-2',
+          'max-sm:bottom-[calc(-1.25rem-var(--safe-b))] max-sm:-mb-[calc(1.25rem+var(--safe-b))]',
+          'max-sm:pb-[calc(0.5rem+var(--safe-b))]',
+          'sm:bottom-[-0.75rem] sm:-mb-3 sm:pb-2',
+          'md:bottom-[-1rem] md:-mx-4 md:-mb-4 md:px-2 md:pb-2',
+        )}
+      >
         <PanelAction
           icon={Plus}
           label="Add"
