@@ -404,7 +404,13 @@ export function CollectionView() {
       scroll={false}
       // Below sm the whole page scrolls; from sm up the two panels scroll
       // themselves, so the column pins to the viewport instead.
-      className="h-full overflow-y-auto sm:overflow-hidden pb-4 md:pb-6"
+      //
+      // The tighter bottom inset belongs to that pinned layout, where the
+      // panels end at the viewport and every spare pixel is one they do
+      // not get. A scrolling phone wants the shell's own inset, which is
+      // what studies and notes end on — and it carries --safe-b, so the
+      // last row clears the home indicator rather than sitting on it.
+      className="h-full overflow-y-auto sm:overflow-hidden pb-[calc(2rem+var(--safe-b))] sm:pb-4 md:pb-6"
     >
       {/* The heading carries what is ABOUT the page; the two controls that
           NARROW it — search, then the bookmark switch — belong with the
@@ -468,7 +474,21 @@ export function CollectionView() {
           the result badge — both shrink-0 — spilled out of it and painted
           over each other. 20rem is the narrowest the list is legible at;
           the collection gives up the difference, having the easier job. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)] lg:items-stretch">
+      {/* max-sm:shrink-0, and the flex share only from sm.
+          Below sm this box was `flex-1` inside a column pinned to the
+          viewport, so it took the ~480px left over and the collection
+          panel — `shrink-0`, as tall as its list — hung out of it. The
+          spill still scrolled (the column scrolls), which is why it
+          looked fine, but the FLEX layout ended at 480px: the Fab spacer
+          and the column's bottom padding were laid out THERE, a thousand
+          pixels above the list's real end, doing nothing. Scrolled to the
+          bottom, the list finished flush against the phone's tab bar with
+          no room for the Fab — the one place you are certain to be when
+          you reach for it. Sized to its content, the box ends where the
+          list ends and the spacer is under it again, as on studies and
+          notes. From sm up the panels scroll themselves and the share is
+          what makes that work, so it stays. */}
+      <div className="flex min-h-0 max-sm:shrink-0 sm:flex-1 flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)] lg:items-stretch">
       {
         // shrink-0 below lg: loading an archive month must not squeeze this
         // panel — the page column scrolls instead.
