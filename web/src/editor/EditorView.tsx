@@ -237,7 +237,7 @@ export function EditorView({
     }
     if (!useAnalysis.getState().loadFen(fen)) return;
     useAnalysis.setState({ handoff: true });
-    navigate('analysis');
+    navigate('board');
   };
 
   // `titled` is false in the sheet: the window is already called Position,

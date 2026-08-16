@@ -39,7 +39,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
     ),
   );
 
-  // Reached as Tools > Explorer (navigate('analysis', 'explorer')): open
+  // Reached as Tools > Explorer (navigate('board', 'explorer')): open
   // straight to the opening explorer instead of the move list.
   const wantExplorer = params[0] === 'explorer';
   // Small screens show ONE pane under the board (lichess-app style); the

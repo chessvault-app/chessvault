@@ -60,7 +60,7 @@ const BASE = process.env.SHOT_BASE ?? 'http://localhost:8129';
  */
 const TARGETS = [
   // README + the landing hero: the full desktop layout.
-  { hash: '#/analysis', out: 'board.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
+  { hash: '#/board', out: 'board.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
   { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-line' },
   { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
   // The whole repertoire at once — README and the landing page's map section.

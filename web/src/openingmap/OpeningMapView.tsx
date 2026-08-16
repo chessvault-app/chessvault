@@ -1081,7 +1081,7 @@ function NodePanel({
                         gameHeaders: null,
                         handoff: true,
                       });
-                      navigate('analysis');
+                      navigate('board');
                     }}
                   >
                     <Grid3x3 className="size-3.5" />
@@ -1215,7 +1215,7 @@ function NodePanel({
               gameHeaders: null,
               handoff: true,
             });
-            navigate('analysis');
+            navigate('board');
           }}
         />
         {!isRoot && (

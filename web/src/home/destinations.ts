@@ -55,7 +55,7 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     label: 'Board',
     blurb: 'Free board with engine and explorer',
     icon: Grid3x3,
-    nav: ['analysis'],
+    nav: ['board'],
   },
   editor: {
     id: 'editor',
@@ -118,15 +118,14 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     label: 'Explorer',
     blurb: 'Browse opening statistics move by move',
     icon: Compass,
-    nav: ['analysis', 'explorer'],
+    nav: ['board', 'explorer'],
   },
   databases: {
     id: 'databases',
     label: 'Databases',
     blurb: 'Reference game databases, built from uploaded PGNs',
     icon: Database,
-    // `#/books` is the URL this section has always had.
-    nav: ['books'],
+    nav: ['databases'],
   },
   puzzlebooks: {
     id: 'puzzlebooks',

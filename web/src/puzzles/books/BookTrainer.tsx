@@ -322,7 +322,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     if (!node) return;
     if (!useAnalysis.getState().loadFen(node.fen)) return;
     useAnalysis.setState({ handoff: true });
-    navigate('analysis');
+    navigate('board');
   };
 
   const nextUnsolved = (): string | null => {

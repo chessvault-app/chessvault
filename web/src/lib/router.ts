@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 
-export const SECTIONS = ['home', 'analysis', 'editor', 'studies', 'notes', 'games', 'puzzles', 'repertoire', 'openingmap', 'books', 'settings', 'more'] as const;
+// Named for the page each one IS. Two were not: `analysis` drew a page
+// the whole app calls the Board, and `books` was the opening-books page
+// long enough ago that books have since been retired — it is Databases,
+// and `#/puzzles/books` is the sub-route that really is about books. Both
+// renamed with no alias, so a bookmark on either old hash lands on Home
+// the way any unknown hash does (see parse).
+export const SECTIONS = ['home', 'board', 'editor', 'studies', 'notes', 'games', 'puzzles', 'repertoire', 'openingmap', 'databases', 'settings', 'more'] as const;
 export type Section = (typeof SECTIONS)[number];
 
 const isSection = (v: string): v is Section => (SECTIONS as readonly string[]).includes(v);

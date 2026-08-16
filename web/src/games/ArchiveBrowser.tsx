@@ -461,7 +461,7 @@ export function ArchiveBrowser({
       if (loadPgn(pgn)) {
         if (game.userSide) useAnalysis.setState({ orientation: game.userSide });
         useAnalysis.setState({ handoff: true });
-        navigate('analysis');
+        navigate('board');
       }
     } catch {
       setError(t('could not load that game'));

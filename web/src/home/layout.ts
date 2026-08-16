@@ -12,12 +12,12 @@ import type { HomeLayout } from '@shared/homeLayout';
  */
 
 /**
- * Stable ids, stored in the vault. Not `Section` values: Board, Editor and
- * Explorer all live under `analysis` (Explorer is the board opened on its
- * explorer pane), and Puzzle books is a param of `puzzles` — so a section
- * cannot name an entry. `databases` rather than `books` for the same
- * reason the other way round: `#/books` is the URL that section has always
- * had, and this is a new format with no reason to inherit an old name.
+ * Stable ids, stored in the vault. Not `Section` values, and they must not
+ * become them: Board and Explorer are one section (Explorer is the board
+ * opened on its explorer pane) and Puzzle books is a param of `puzzles`,
+ * so a section cannot name every entry. These ids were already what each
+ * page is called — which is why the `analysis`/`books` sections were later
+ * renamed to match them rather than the other way round.
  *
  * The order is the CATALOGUE order: it is what the launcher row is drawn
  * in, and the order the customise sheet lists everything in.

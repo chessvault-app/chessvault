@@ -229,7 +229,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     const { pgn } = (await res.json()) as { pgn: string };
     if (useAnalysis.getState().loadPgn(pgn)) {
       useAnalysis.setState({ handoff: true });
-      navigate('analysis');
+      navigate('board');
     }
   };
 

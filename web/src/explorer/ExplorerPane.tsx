@@ -109,9 +109,9 @@ export function ExplorerPane({
   /**
    * The database manager, opened here rather than navigated to.
    *
-   * The icon used to `navigate('books')`, which leaves the analysis board
-   * — and the position you were exploring — to go and build the thing you
-   * wanted to explore it with. The elite browser has opened the same
+   * The icon used to navigate to the Databases page, which leaves the
+   * board — and the position you were exploring — to go and build the
+   * thing you wanted to explore it with. The elite browser has opened the same
    * manager in a window since it had one, and this pane wants exactly
    * that: build or upload, come back to the board still on your move.
    *
@@ -813,7 +813,7 @@ function TopGamesList({
     }
     if (!useAnalysis.getState().loadPgn(pgn)) return false;
     useAnalysis.setState({ handoff: true });
-    navigateNow('analysis');
+    navigateNow('board');
     return true;
   };
 

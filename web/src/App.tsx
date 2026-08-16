@@ -76,7 +76,7 @@ const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
 
 // The Tools group: interactive boards that aren't a "collection". Explorer
 // is not a page of its own — it is the Board opened straight to its opening
-// explorer (navigate('analysis', 'explorer')), so it reuses everything.
+// explorer (navigate('board', 'explorer')), so it reuses everything.
 const TOOLS_SUBNAV: {
   key: string;
   label: string;
@@ -84,17 +84,16 @@ const TOOLS_SUBNAV: {
   nav: [Section, ...string[]];
   active: (section: Section, params: string[]) => boolean;
 }[] = [
-  { key: 'board', label: 'Board', icon: Grid3x3, nav: ['analysis'], active: (s, p) => s === 'analysis' && p[0] !== 'explorer' },
+  { key: 'board', label: 'Board', icon: Grid3x3, nav: ['board'], active: (s, p) => s === 'board' && p[0] !== 'explorer' },
   { key: 'editor', label: 'Editor', icon: SquarePen, nav: ['editor'], active: (s) => s === 'editor' },
-  { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['analysis', 'explorer'], active: (s, p) => s === 'analysis' && p[0] === 'explorer' },
+  { key: 'explorer', label: 'Explorer', icon: Compass, nav: ['board', 'explorer'], active: (s, p) => s === 'board' && p[0] === 'explorer' },
   { key: 'repertoire', label: 'Repertoire', icon: SwatchBook, nav: ['repertoire'], active: (s) => s === 'repertoire' },
 ];
-// Databases (#/books, the key the URL has always had) is deliberately NOT
-// in Tools: the entries there are boards you play on, and it is where
-// their data is looked after — so it stands on its own row below the
-// group, beside nothing.
+// Databases is deliberately NOT in Tools: the entries there are boards
+// you play on, and it is where their data is looked after — so it stands
+// on its own row below the group, beside nothing.
 const inTools = (s: Section): boolean =>
-  s === 'analysis' || s === 'editor' || s === 'repertoire';
+  s === 'board' || s === 'editor' || s === 'repertoire';
 
 export function App() {
   return (
@@ -187,7 +186,7 @@ function Shell() {
         <Suspense fallback={<div className="h-full" />}>
         {section === 'home' ? (
           <HomePage />
-        ) : section === 'analysis' ? (
+        ) : section === 'board' ? (
           // Keyed on the sub-mode: AnalysisView makes its param-dependent
           // decisions once per mount (initial pane, explorer on/off, the
           // stateless reset), so Board ↔ Explorer must REMOUNT it — same
@@ -210,7 +209,7 @@ function Shell() {
           <RepertoireView />
         ) : section === 'openingmap' ? (
           <OpeningMapView params={params} />
-        ) : section === 'books' ? (
+        ) : section === 'databases' ? (
           <DatabasesPage />
         ) : section === 'settings' ? (
           <SettingsPage />
@@ -398,7 +397,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         {/* Tools: a top-level group whose row points at its first entry. */}
         <button
           type="button"
-          onClick={() => navigate('analysis')}
+          onClick={() => navigate('board')}
           title={t('Tools')}
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
@@ -424,17 +423,17 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         {/* Databases: a top-level row of its own — management, not a tool. */}
         <button
           type="button"
-          onClick={() => navigate('books')}
+          onClick={() => navigate('databases')}
           title={t('Databases')}
-          aria-current={active === 'books' ? 'page' : undefined}
+          aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
-            active === 'books' ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
+            active === 'databases' ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
           )}
         >
-          {active === 'books' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
-          <Database className="size-[1.15rem] shrink-0" strokeWidth={active === 'books' ? 2.4 : 2} />
+          {active === 'databases' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
+          <Database className="size-[1.15rem] shrink-0" strokeWidth={active === 'databases' ? 2.4 : 2} />
           <span className="hidden lg:block">{t('Databases')}</span>
         </button>
       </div>
@@ -473,9 +472,9 @@ const MORE_GROUPS: {
   {
     heading: 'Tools',
     items: [
-      { section: 'analysis', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
+      { section: 'board', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
       { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
-      { section: 'analysis', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
+      { section: 'board', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
       { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
     ],
@@ -483,7 +482,7 @@ const MORE_GROUPS: {
   {
     heading: 'App',
     items: [
-      { section: 'books', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
+      { section: 'databases', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
     ],
   },

@@ -406,8 +406,7 @@ export function RefDbManager({
         <button
           type="button"
           className="text-subtle hover:text-fg self-start underline underline-offset-2 transition-colors duration-100"
-          // `books` is the section id the Databases page has always had.
-          onClick={() => navigate('books')}
+          onClick={() => navigate('databases')}
         >
           {t('Delete databases and collections on the Databases page')}
         </button>

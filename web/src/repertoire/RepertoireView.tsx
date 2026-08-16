@@ -1701,7 +1701,7 @@ export function RepertoireView() {
                         gameHeaders: null,
                         handoff: true,
                       });
-                      navigate('analysis');
+                      navigate('board');
                     }}
                   >
                     {/* A drill has nowhere to save TO: the line came out of a
