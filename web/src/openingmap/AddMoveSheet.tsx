@@ -1,13 +1,14 @@
-import { Check, Keyboard, Plus } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Sheet } from '@/ui/Sheet';
 import type { NodeCoverage } from './coverage';
-import type { MapNode, ResolvedNode } from './model';
+import { normalizeSan, type MapNode, type ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
 
 /**
@@ -15,7 +16,10 @@ import { fieldMovesFor } from './useGaps';
  * field actually plays here, ordered by how often, with what the studies
  * prepare and what the map already charts marked on the rows. Typing a
  * SAN stays available underneath for the move nobody has played yet —
- * the whole point of preparing it.
+ * the whole point of preparing it — in a field at the foot of this
+ * sheet rather than in a window over it. It used to close this sheet and
+ * open a prompt: two windows, in sequence, to answer one question that
+ * the window you were already in had room for.
  */
 
 interface Row {
@@ -35,7 +39,6 @@ export function AddMoveSheet({
   side,
   onAdd,
   onSelectChild,
-  onType,
   onClose,
 }: {
   facts: ResolvedNode;
@@ -46,10 +49,11 @@ export function AddMoveSheet({
   side: 'white' | 'black';
   onAdd: (san: string) => void;
   onSelectChild: (id: string) => void;
-  onType: () => void;
   onClose: () => void;
 }) {
   const [field, setField] = useState<FieldMove[] | null>(source ? null : []);
+  const [typed, setTyped] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!source || !facts.fen) {
@@ -100,6 +104,29 @@ export function AddMoveSheet({
 
   const label = moveNumberLabel(facts.ply + 1);
 
+  /**
+   * The typed move, judged here rather than by the caller: this sheet is
+   * the one that knows the position, so it can answer "not a legal move
+   * here" in place instead of handing the question to a window that has
+   * to be opened to ask it.
+   *
+   * A move already on the map selects it, exactly as its row would — a
+   * SAN somebody typed means the same thing as the row they missed.
+   */
+  const submit = (): void => {
+    const raw = typed.trim();
+    if (!raw || !facts.fen) return;
+    const san = normalizeSan(facts.fen, raw);
+    if (!san) {
+      setError(t('Not a legal move in this position'));
+      return;
+    }
+    const child = (facts.mapNode.children as MapNode[]).find((c) => c.san === san);
+    if (child) onSelectChild(child.id);
+    else onAdd(san);
+    onClose();
+  };
+
   return (
     // `fill`: this is a PAGE of the details sheet it opens over — browse
     // what the field plays and pick one — so it takes that sheet's
@@ -120,7 +147,10 @@ export function AddMoveSheet({
             : t('What the studies prepare here — pick a field source to see statistics.')}
         </p>
       </div>
-      <div className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
+      {/* Grows into the sheet, which is as tall as the one it opened
+          over — capped only from `sm`, where a sheet is a window in the
+          middle of a screen rather than a page filling one. */}
+      <div className="flex min-h-0 grow flex-col gap-0.5 overflow-y-auto sm:max-h-72">
         {field === null ? null : rows.length === 0 ? (
           <p className="text-muted px-1 py-3 text-center text-xs">
             {t('Nothing to offer — type the move instead.')}
@@ -167,9 +197,34 @@ export function AddMoveSheet({
           ))
         )}
       </div>
-      <Button variant="ghost" size="sm" className="self-start" onClick={onType}>
-        <Keyboard className="size-3.5" /> {t('Type a move…')}
-      </Button>
+      {/* The move nobody has played yet. A field and a verb, at the foot
+          of the list it is the exception to — the list answers "what is
+          played here", this answers "and what about this". Enter submits
+          it, because a one-field form that needs a press of a button to
+          be a form is a form that argues with the keyboard it opened. */}
+      <form
+        className="flex items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit();
+        }}
+      >
+        <Input
+          inputSize="md"
+          className="flex-1"
+          value={typed}
+          placeholder={t('Type a move…')}
+          aria-label={t('Type a move…')}
+          onChange={(e) => {
+            setTyped(e.target.value);
+            setError(null);
+          }}
+        />
+        <Button type="submit" variant="primary" size="sm" disabled={typed.trim() === ''}>
+          <Plus className="size-3.5" /> {t('Add')}
+        </Button>
+      </form>
+      {error && <p className="text-bad px-1 text-xs">{error}</p>}
     </Sheet>
   );
 }

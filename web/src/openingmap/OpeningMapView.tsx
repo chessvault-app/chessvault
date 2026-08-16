@@ -24,7 +24,6 @@ import { Field } from '@/ui/Field';
 import { Input, SearchInput, TextArea } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Fab, type FabAction } from '@/ui/Fab';
-import { PromptSheet } from '@/ui/PromptSheet';
 import { Select } from '@/ui/Select';
 import { Sheet } from '@/ui/Sheet';
 import { MapCanvas } from './MapCanvas';
@@ -34,7 +33,6 @@ import {
   addTag,
   chartLine,
   deleteNode,
-  normalizeSan,
   removeTag,
   resolveMap,
   updateFields,
@@ -204,27 +202,13 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const selected = selectedId && resolved?.nodes.get(selectedId) ? selectedId : null;
   useEffect(() => setSelectedId(null), [color]);
 
-  // Two ways in: the explorer-like list (addTo), and typed SAN (typeFor)
-  // for the move nobody has played yet — the whole point of preparing it.
+  // One way in, with two halves: the explorer-like list, and the field
+  // at the foot of it for the move nobody has played yet — the whole
+  // point of preparing it. Typing used to close this sheet and open a
+  // prompt on top of it; AddMoveSheet asks and answers both now.
   const [addTo, setAddTo] = useState<string | null>(null);
-  const [typeFor, setTypeFor] = useState<string | null>(null);
-  const [addError, setAddError] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [growFrom, setGrowFrom] = useState<string | null>(null);
-
-  const submitMove = (input: string): void => {
-    if (!map || !resolved || !typeFor) return;
-    const parent = resolved.nodes.get(typeFor);
-    if (!parent?.fen) return;
-    const san = normalizeSan(parent.fen, input);
-    if (!san) {
-      setAddError(t('Not a legal move in this position'));
-      return;
-    }
-    apply((d) => addChild(d, map.id, typeFor, san));
-    setAddError(null);
-    setTypeFor(null);
-  };
 
   // The page's own controls, written once. The Fab fans them out as
   // labelled pills on a phone; the top-right corner draws them as icons
@@ -301,10 +285,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
             side={map.color}
             onAdd={(san) => apply((d) => addChild(d, map.id, addTo, san))}
             onSelectChild={setSelectedId}
-            onType={() => {
-              setTypeFor(addTo);
-              setAddTo(null);
-            }}
             onClose={() => setAddTo(null)}
           />
         )}
@@ -316,20 +296,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
               apply((d) => lines.reduce((acc, l) => chartLine(acc, map.id, l), d))
             }
             onClose={() => setGrowFrom(null)}
-          />
-        )}
-        {typeFor !== null && (
-          <PromptSheet
-            label={t('Add a move')}
-            initial=""
-            submitLabel="Add"
-            error={addError}
-            closeOnSubmit={false}
-            onSubmit={submitMove}
-            onClose={() => {
-              setTypeFor(null);
-              setAddError(null);
-            }}
           />
         )}
     </>
