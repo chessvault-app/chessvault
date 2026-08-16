@@ -1,0 +1,435 @@
+{
+  "version": 1,
+  "maps": [
+    {
+      "id": "demo-w",
+      "color": "white",
+      "root": {
+        "id": "w00",
+        "children": [
+          {
+            "id": "w01",
+            "san": "e4",
+            "note": "Depth 8 is the promise: eight full moves prepared before the map admits it has run out.",
+            "depth": 8,
+            "children": [
+              {
+                "id": "w02",
+                "san": "e5",
+                "children": [
+                  {
+                    "id": "w03",
+                    "san": "Nf3",
+                    "children": [
+                      {
+                        "id": "w04",
+                        "san": "Nc6",
+                        "children": [
+                          {
+                            "id": "w05",
+                            "san": "Bb5",
+                            "depth": 10,
+                            "tags": [
+                              {
+                                "kind": "study",
+                                "id": "Openings/Sicilian - Najdorf structures",
+                                "chapter": "Main line"
+                              },
+                              {
+                                "kind": "study",
+                                "id": "Openings/Queens Gambit Declined",
+                                "chapter": "A model game"
+                              },
+                              {
+                                "kind": "note",
+                                "id": "Opening prep checklist"
+                              }
+                            ],
+                            "children": [
+                              {
+                                "id": "w06",
+                                "san": "a6",
+                                "children": [
+                                  {
+                                    "id": "w07",
+                                    "san": "Ba4",
+                                    "children": [
+                                      {
+                                        "id": "w08",
+                                        "san": "Nf6",
+                                        "children": [
+                                          {
+                                            "id": "w09",
+                                            "san": "O-O",
+                                            "children": [
+                                              {
+                                                "id": "w10",
+                                                "san": "Be7",
+                                                "children": []
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "id": "w11",
+                                "san": "Nf6",
+                                "children": [
+                                  {
+                                    "id": "w12",
+                                    "san": "O-O",
+                                    "children": [
+                                      {
+                                        "id": "w13",
+                                        "san": "d6",
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "w14",
+                "san": "c5",
+                "depth": 10,
+                "children": [
+                  {
+                    "id": "w15",
+                    "san": "Nf3",
+                    "children": [
+                      {
+                        "id": "w16",
+                        "san": "Nc6",
+                        "children": [
+                          {
+                            "id": "w17",
+                            "san": "d4",
+                            "children": [
+                              {
+                                "id": "w18",
+                                "san": "cxd4",
+                                "children": [
+                                  {
+                                    "id": "w19",
+                                    "san": "Nxd4",
+                                    "children": [
+                                      {
+                                        "id": "w20",
+                                        "san": "e6",
+                                        "children": [
+                                          {
+                                            "id": "w21",
+                                            "san": "Nc3",
+                                            "children": [
+                                              {
+                                                "id": "w22",
+                                                "san": "d6",
+                                                "tags": [
+                                                  {
+                                                    "kind": "study",
+                                                    "id": "Openings/Ruy Lopez - the Berlin",
+                                                    "chapter": "Main line"
+                                                  }
+                                                ],
+                                                "children": []
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "id": "w23",
+                        "san": "e6",
+                        "children": [
+                          {
+                            "id": "w24",
+                            "san": "d4",
+                            "children": [
+                              {
+                                "id": "w25",
+                                "san": "cxd4",
+                                "children": [
+                                  {
+                                    "id": "w26",
+                                    "san": "Nxd4",
+                                    "children": [
+                                      {
+                                        "id": "w27",
+                                        "san": "a6",
+                                        "note": "Two Sicilians answered the same way, which is the point of preparing by position rather than by name.",
+                                        "tags": [
+                                          {
+                                            "kind": "study",
+                                            "id": "Openings/Ruy Lopez - the Berlin",
+                                            "chapter": "The critical sideline"
+                                          }
+                                        ],
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "w28",
+                "san": "e6",
+                "children": [
+                  {
+                    "id": "w29",
+                    "san": "d4",
+                    "children": [
+                      {
+                        "id": "w30",
+                        "san": "d5",
+                        "children": [
+                          {
+                            "id": "w31",
+                            "san": "Nc3",
+                            "children": [
+                              {
+                                "id": "w32",
+                                "san": "Bb4",
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "demo-b",
+      "color": "black",
+      "root": {
+        "id": "b00",
+        "children": [
+          {
+            "id": "b01",
+            "san": "d4",
+            "depth": 8,
+            "children": [
+              {
+                "id": "b02",
+                "san": "Nf6",
+                "children": [
+                  {
+                    "id": "b03",
+                    "san": "c4",
+                    "children": [
+                      {
+                        "id": "b04",
+                        "san": "e6",
+                        "depth": 10,
+                        "children": [
+                          {
+                            "id": "b05",
+                            "san": "Nf3",
+                            "children": [
+                              {
+                                "id": "b06",
+                                "san": "d5",
+                                "children": [
+                                  {
+                                    "id": "b07",
+                                    "san": "Nc3",
+                                    "children": [
+                                      {
+                                        "id": "b08",
+                                        "san": "Bb4",
+                                        "tags": [
+                                          {
+                                            "kind": "study",
+                                            "id": "Openings/Catalan - the long diagonal",
+                                            "chapter": "The critical sideline"
+                                          },
+                                          {
+                                            "kind": "study",
+                                            "id": "Openings/Queens Gambit Declined",
+                                            "chapter": "The critical sideline"
+                                          }
+                                        ],
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "id": "b09",
+                            "san": "Nc3",
+                            "children": [
+                              {
+                                "id": "b10",
+                                "san": "Bb4",
+                                "children": [
+                                  {
+                                    "id": "b11",
+                                    "san": "e3",
+                                    "children": [
+                                      {
+                                        "id": "b12",
+                                        "san": "O-O",
+                                        "note": "The Nimzo-Indian: the bishop is traded for the knight and the structure decides the rest.",
+                                        "tags": [
+                                          {
+                                            "kind": "study",
+                                            "id": "Openings/Catalan - the long diagonal",
+                                            "chapter": "A model game"
+                                          }
+                                        ],
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "b13",
+            "san": "e4",
+            "depth": 8,
+            "children": [
+              {
+                "id": "b14",
+                "san": "c5",
+                "note": "One answer to 1. e4, and the games to go with it.",
+                "children": [
+                  {
+                    "id": "b15",
+                    "san": "Nf3",
+                    "children": [
+                      {
+                        "id": "b16",
+                        "san": "Nc6",
+                        "children": [
+                          {
+                            "id": "b17",
+                            "san": "d4",
+                            "children": [
+                              {
+                                "id": "b18",
+                                "san": "cxd4",
+                                "children": [
+                                  {
+                                    "id": "b19",
+                                    "san": "Nxd4",
+                                    "children": [
+                                      {
+                                        "id": "b20",
+                                        "san": "e6",
+                                        "tags": [
+                                          {
+                                            "kind": "study",
+                                            "id": "Openings/Ruy Lopez - the Berlin",
+                                            "chapter": "Main line"
+                                          }
+                                        ],
+                                        "children": []
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "b21",
+            "san": "c4",
+            "children": [
+              {
+                "id": "b22",
+                "san": "Nf6",
+                "children": [
+                  {
+                    "id": "b23",
+                    "san": "g3",
+                    "children": [
+                      {
+                        "id": "b24",
+                        "san": "e6",
+                        "children": [
+                          {
+                            "id": "b25",
+                            "san": "Bg2",
+                            "children": [
+                              {
+                                "id": "b26",
+                                "san": "d5",
+                                "tags": [
+                                  {
+                                    "kind": "study",
+                                    "id": "Openings/Sicilian - Najdorf structures",
+                                    "chapter": "A model game"
+                                  }
+                                ],
+                                "children": []
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
