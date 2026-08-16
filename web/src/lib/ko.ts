@@ -489,6 +489,8 @@ export const ko: Record<string, string> = {
   'Set up the puzzle database': '퍼즐 데이터베이스 준비하기',
   'Missed puzzle': '놓친 퍼즐',
   'Puzzle history': '퍼즐 기록',
+  // The Train tile's label while there is no database to train on.
+  'Set up': '준비하기',
   'Recently read': '최근 읽은 책',
   '{n} waiting to be reviewed': '복습할 퍼즐 {n}개',
   'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.':

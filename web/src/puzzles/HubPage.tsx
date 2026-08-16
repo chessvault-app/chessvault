@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { navigate } from '@/lib/router';
+import { cn } from '@/lib/cn';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { useMediaQuery } from '@/lib/media';
 import { Board } from '@/board/Board';
@@ -91,9 +92,10 @@ interface BookSummary {
     away and is where a list of books belongs. */
 const SHELF_ROWS = 1;
 
-/** Recent attempts to show. Enough to be a history, few enough that the
-    page still ends above the fold on a 390x844 phone. */
-const HISTORY_ROWS = 4;
+/** How much history to fetch. More than fits, deliberately: the panel
+    stretches to whatever the page has spare and scrolls its own rows, so
+    the number that fits is a property of the phone, not of this file. */
+const HISTORY_ROWS = 30;
 
 /**
  * A puzzle offered as itself: the position on the left, what it is and
@@ -177,7 +179,7 @@ function PuzzleCard({
  */
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
-    <div className="bg-surface border-line overflow-hidden rounded-xl border">
+    <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
       <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {t('Recently read')}
       </p>
@@ -230,10 +232,15 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
   // not identify a position you spent two minutes on, but the board does.
   const preview = usePuzzlePreview();
   return (
-    <div className="bg-surface border-line overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+    // This is the panel that takes the page's slack: `flex-1` against the
+    // fixed blocks around it, so there is no dead band anywhere on the
+    // page and a taller phone simply shows more of your history. The
+    // ROWS scroll, not the page — the launcher underneath must stay put.
+    <div className="bg-surface border-line flex min-h-[7rem] flex-1 flex-col overflow-hidden rounded-xl border">
+      <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {t('Puzzle history')}
       </p>
+      <div className="min-h-0 flex-1 overflow-y-auto">
       {attempts.map((h) => (
         <button
           key={h.id + h.at}
@@ -255,6 +262,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
           </span>
         </button>
       ))}
+      </div>
       {preview.layer}
     </div>
   );
@@ -359,19 +367,29 @@ function Hub() {
     // page that moves. `pb-4` replaces the shell's usual 2rem + safe
     // area: the tab bar below carries the inset itself, and dead space
     // under the buttons is the opposite of what this page is for.
-    <PageShell width="medium" className="min-h-full gap-2 pb-3">
+    // The history in the middle takes every pixel the fixed blocks do
+    // not, so there is no dead band anywhere and a taller phone simply
+    // shows more rows. Its ROWS scroll, not the page — the launcher at
+    // the bottom stays where the thumb left it.
+    //
+    // `h-full`, not `min-h-full`: a column whose height is indefinite
+    // gives flex-grow nothing to distribute, and the history then sizes
+    // to its own 30 rows and pushes the launcher off the page (measured:
+    // a 1436px column inside a 788px shell). A definite height is what
+    // makes "take the rest" mean anything.
+    //
+    // The shell still scrolls, which is the escape hatch for a screen too
+    // short to hold even a stub of history: the floor below wins, the
+    // blocks overflow, and the page moves. A launcher clipped off the
+    // bottom edge would be worse than one you have to reach for.
+    <PageShell width="medium" className="h-full gap-2 pb-3">
       <PageHeader title={t('Puzzles')} />
 
-      {/* Everything in ONE bottom-anchored block, panels included.
-          They sat above it for a while, which put the page's slack
-          between the history and the first board — the widest gap on the
-          page, in the middle of the reading, growing every time anything
-          above it got shorter. `mt-auto` has to dump the slack somewhere;
-          under the header is the one place where a gap reads as air
-          rather than as a seam. */}
-      <div className="mt-auto flex flex-col gap-2">
-        {books.length > 0 && <BookShelfPanel books={books} />}
-        {history.length > 0 && <HistoryPanel attempts={history} />}
+      {/* Pinned to the top, above the part that stretches. */}
+      {books.length > 0 && <BookShelfPanel books={books} />}
+      {history.length > 0 && <HistoryPanel attempts={history} />}
+
+      <div className="flex shrink-0 flex-col gap-2">
         {solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
@@ -417,58 +435,56 @@ function Hub() {
           )
         )}
 
-        <div className="grid grid-cols-3 gap-2">
+        {/* All four in one row, Train among them rather than a slab of
+            its own. It keeps the primary fill, because being the thing
+            you came here to press is a fact about it that survives being
+            the same size as its neighbours — and the board card above is
+            still the larger invitation. */}
+        <div className="grid grid-cols-4 gap-2">
           {(
             [
-              ['Themes', LayoutGrid, () => navigate('puzzles', 'themes')],
-              ['Books', BookMarked, () => navigate('puzzles', 'books')],
-              ['Dashboard', BarChart3, () => navigate('puzzles', 'dashboard')],
+              ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
+              ['Books', BookMarked, false, () => navigate('puzzles', 'books')],
+              ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
+              [
+                ready ? 'Train' : 'Set up',
+                ready ? Puzzle : Database,
+                true,
+                // The same action as the board above, deliberately: the
+                // card is the invitation and this is the thumb target,
+                // and they must open the SAME puzzle or the board is
+                // advertising a position this quietly swaps out.
+                () => {
+                  if (next) setPendingPuzzle('fresh', next);
+                  navigate('puzzles');
+                },
+              ],
             ] as const
-          ).map(([label, Icon, go]) => (
+          ).map(([label, Icon, primary, go]) => (
             <button
               key={label}
               type="button"
               onClick={go}
-              className="bg-surface border-line hover:bg-surface-2 flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors"
+              className={cn(
+                'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
+                'px-1 text-center text-xs font-medium leading-tight transition-colors',
+                primary
+                  ? 'bg-primary text-primary-fg border-primary hover:bg-primary-hover'
+                  : 'bg-surface border-line hover:bg-surface-2',
+              )}
             >
-              <Icon className="text-primary size-5" />
+              <Icon className={cn('size-5', primary ? '' : 'text-primary')} />
               {t(label)}
+              {/* What pressing Train will actually do, as a word. Nothing
+                  when it is Any: that is the setting you get without
+                  choosing, and naming it qualifies the button with the
+                  absence of a qualifier. */}
+              {primary && ready && word !== 'Any' && (
+                <span className="text-[0.625rem] font-normal opacity-75">{t(word)}</span>
+              )}
             </button>
           ))}
         </div>
-
-        <Button
-          variant="primary"
-          className="h-14 w-full justify-center gap-2.5 rounded-xl text-base"
-          // The same action as the board above, deliberately: the card is
-          // the invitation and this is the thumb target, and they must
-          // open the SAME puzzle or the board is advertising a position
-          // this button quietly swaps out.
-          onClick={() => {
-            if (next) setPendingPuzzle('fresh', next);
-            navigate('puzzles');
-          }}
-        >
-          {ready ? (
-            <>
-              <Puzzle className="size-5" />
-              {t('Train')}
-              {/* The difficulty as a word — what pressing this will
-                  actually do. Never the rating behind it, and nothing at
-                  all when it is Any: that is the setting you get without
-                  choosing, and "Train · Any" qualifies the button with
-                  the absence of a qualifier. */}
-              {word !== 'Any' && (
-                <span className="text-sm font-normal opacity-75">{t(word)}</span>
-              )}
-            </>
-          ) : (
-            <>
-              <Database className="size-5" />
-              {t('Set up the puzzle database')}
-            </>
-          )}
-        </Button>
       </div>
     </PageShell>
   );
