@@ -486,6 +486,20 @@
     outline-offset: 2px;
   }
 
+  /* Except the box a dialog is, which is not a control.
+     `ui/dialogFocus` gives every window `tabindex="-1"` and focuses it on
+     open, so the keyboard lands inside rather than in the page behind —
+     scripted focus, on a container nobody is meant to operate. Blink
+     agrees and paints nothing; WebKit rings it, so on an iPhone every
+     sheet opened with a blue rectangle drawn round it. The ring belongs
+     on the control that is tabbed to next, and that one still gets it —
+     this only exempts the container, matched by the two attributes the
+     hook itself sets. */
+  [role='dialog'][tabindex='-1']:focus,
+  [role='dialog'][tabindex='-1']:focus-visible {
+    outline: none;
+  }
+
   ::selection {
     background: var(--primary-soft);
     color: var(--text);
