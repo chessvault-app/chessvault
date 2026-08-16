@@ -191,9 +191,9 @@ describe('seedBundledRefgames', () => {
     expect(existsSync(target('elite'))).toBe(false);
   });
 
-  it('ignores the bundled opening book sitting in the same directory', () => {
-    // The book carries no refgames- prefix; only the prefix marks ours.
-    writeFileSync(join(assets, 'lichess-elite-2025-11.sqlite'), 'a-book');
+  it('ignores an unprefixed database sitting in the same directory', () => {
+    // Only the refgames- prefix marks an asset as ours to seed.
+    writeFileSync(join(assets, 'lichess-elite-2025-11.sqlite'), 'not-ours');
     seedBundledRefgames(data, assets);
     expect(existsSync(target('lichess-elite-2025-11'))).toBe(false);
     // And no marker: an install that gains the asset later still seeds.

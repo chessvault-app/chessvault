@@ -24,8 +24,7 @@
  * refgamesFiles.ts for why size is the signal).
  *
  * The output file name MUST keep the `refgames-` prefix: that prefix is how
- * first-run seeding tells the bundled reference games apart from the
- * bundled opening book sitting in the same assets/ directory.
+ * first-run seeding picks the bundled reference games out of assets/.
  */
 import Database from 'better-sqlite3';
 import { mkdirSync, renameSync, rmSync, statSync } from 'node:fs';

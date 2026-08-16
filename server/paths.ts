@@ -19,7 +19,7 @@ export const VAULT = fromEnv('CHESS_VAULT_DIR') ?? resolve(REPO_ROOT, 'vault');
 export const VAULT_STUDIES = resolve(VAULT, 'studies');
 export const VAULT_NOTES = resolve(VAULT, 'notes');
 export const VAULT_GAMES = resolve(VAULT, 'games');
-/** PGN files the user drops in to be indexed into opening books. */
+/** PGN files the user drops in to be indexed into reference databases. */
 export const VAULT_SOURCES = resolve(VAULT, 'sources');
 export const VAULT_CONFIG = resolve(VAULT, 'config.json');
 

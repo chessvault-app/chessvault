@@ -160,17 +160,16 @@ export function sweepUnfinishedBuilds(dataDir: string = DATA): void {
  * The starter set of reference games that comes with the app — a curated
  * slice of a CC0 Lichess Elite month (the strongest games of every ECO
  * code, ~39 k games / ~25 MB), built at release time by
- * `build-bundled-refgames.ts` next to the bundled opening book. Without it
- * a fresh install's elite browser is empty until something is uploaded.
+ * `build-bundled-refgames.ts`. Without it a fresh install's elite browser
+ * is empty until something is uploaded.
  *
- * Same contract as the bundled book (see seedBundledBook in books.ts for
- * the full reasoning): COPIED into the data directory so it is one of the
- * user's ordinary databases from then on — delete it, build others beside
- * it — and the marker records the decision, not the file, so a deleted one
- * does not come back. A database already carrying the same name wins. The
- * `refgames-` file-name prefix is what separates this asset from the book
- * in the same assets/ directory, and stripping it gives the seeded
- * database its name.
+ * COPIED into the data directory so it is one of the user's ordinary
+ * databases from then on — delete it, build others beside it — and the
+ * marker records the decision, not the file, so a deleted one does not
+ * come back. A database already carrying the same name wins. The
+ * `refgames-` file-name prefix is what marks an asset as ours among
+ * whatever else a release drops in assets/, and stripping it gives the
+ * seeded database its name.
  *
  * Called from server/index.ts at startup (after migrateLegacyRefgames),
  * not from refGamesApi(): the static demo and the tests mount these

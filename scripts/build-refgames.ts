@@ -6,13 +6,12 @@
  *   npm run build:refgames -- elite-2025-11.pgn
  *   npm run build:refgames -- a.pgn b.pgn --name otb
  *
- * Databases are plural, like books: output is data/refgames/<name>.sqlite
- * via temp + rename, ~200 MB for a Lichess Elite month. Without --name,
- * the file's name when one source is given (the books convention), and
- * `refgames` otherwise.
+ * Databases are plural: output is data/refgames/<name>.sqlite via temp +
+ * rename, ~200 MB for a Lichess Elite month. Without --name, the file's
+ * name when one source is given, and `refgames` otherwise.
  *
- * Unlike the opening books (positions only), this stores the movetext, so
- * any game can be opened on the board.
+ * The movetext is stored alongside the position index, so any game the
+ * explorer lists can be opened on the board.
  */
 import Database from 'better-sqlite3';
 import { createReadStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs';
