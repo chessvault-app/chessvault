@@ -136,6 +136,45 @@ function cheapestOf(set: SquareSet, board: Board): number {
   return cheapest;
 }
 
+/**
+ * Can `by` remove the piece worth `value` standing on `sq` without losing
+ * material — capture it with anything cheaper or equal, or with anything
+ * at all when it is undefended? Pins and zwischenzugs are invisible to
+ * this reading, so it errs toward yes; callers use it to withhold a
+ * claim, never to make one.
+ */
+function removable(sq: Square, value: number, by: Color, board: Board, occupied: SquareSet): boolean {
+  const capturers = attackersOf(sq, by, board, occupied);
+  if (capturers.isEmpty()) return false;
+  if (attackersOf(sq, opposite(by), board, occupied).isEmpty()) return true;
+  return cheapestOf(capturers, board) <= value;
+}
+
+/** How many enemy pieces `piece`, standing on `sq`, profitably attacks:
+    the king, anything worth more than itself, or an undefended piece. */
+function profitableTargets(
+  piece: Piece,
+  sq: Square,
+  enemy: Color,
+  board: Board,
+  occupied: SquareSet,
+): number {
+  let targets = 0;
+  for (const s of attacks(piece, sq, occupied).intersect(board[enemy])) {
+    const victim = board.get(s);
+    if (!victim) continue;
+    const defended = attackersOf(s, enemy, board, occupied).nonEmpty();
+    if (
+      victim.role === 'king' ||
+      VALUE[victim.role] > VALUE[piece.role] ||
+      (!defended && VALUE[victim.role] >= 3)
+    ) {
+      targets++;
+    }
+  }
+  return targets;
+}
+
 /** Is `color`'s pawn on `sq` passed — no enemy pawn ahead on its or adjacent files? */
 function isPassed(sq: Square, color: Color, board: Board): boolean {
   const file = squareFile(sq);
@@ -241,7 +280,20 @@ export function tagLine(fen: string, uciMoves: string[]): LineTags {
     const to = step.move.to;
     const enemyKing = board.pieces(enemy, 'king').first();
 
-    if ('promotion' in step.move && step.move.promotion) {
+    // What now stands on `to` — the promoted piece when the move promoted.
+    const landed: Role = 'promotion' in step.move && step.move.promotion ? step.move.promotion : step.piece.role;
+    const landedPiece: Piece = { color: step.piece.color, role: landed };
+    /**
+     * Every motif below hangs off the moved piece holding its square. If
+     * the opponent can remove it without losing material, the geometry is
+     * an offer, not a tactic — found live: a pawn "forking" two minors
+     * either of which could simply take it, and a bishop "pinning" a
+     * bishop that could resolve everything by trading itself off. A
+     * mating move has no reply, so it is exempt.
+     */
+    const safe = step.mates || !removable(to, VALUE[landed], enemy, board, occupied);
+
+    if (safe && 'promotion' in step.move && step.move.promotion) {
       found.push({ type: 'promotion', ply: step.ply, square: makeSquare(to) });
     }
 
@@ -264,59 +316,58 @@ export function tagLine(fen: string, uciMoves: string[]): LineTags {
 
     // Fork: the moved piece attacks two or more pieces it profitably
     // targets — the king, anything worth more than itself, or an
-    // undefended piece.
-    {
-      let targets = 0;
-      for (const s of attacks(step.piece, to, occupied).intersect(board[enemy])) {
-        const victim = board.get(s);
-        if (!victim) continue;
-        const defended = attackersOf(s, enemy, board, occupied).nonEmpty();
-        if (
-          victim.role === 'king' ||
-          VALUE[victim.role] > VALUE[step.piece.role] ||
-          (!defended && VALUE[victim.role] >= 3)
-        ) {
-          targets++;
-        }
-      }
-      if (targets >= 2) {
-        found.push({ type: 'fork', ply: step.ply, piece: step.piece.role, square: makeSquare(to) });
-      }
+    // undefended piece. Only from a square it can hold (`safe`): a "fork"
+    // the opponent answers by taking the forker never threatened anything.
+    if (safe && profitableTargets(landedPiece, to, enemy, board, occupied) >= 2) {
+      found.push({ type: 'fork', ply: step.ply, piece: landed, square: makeSquare(to) });
     }
 
     // Pins and skewers: the moved slider lines up two enemy pieces — with
     // the front one removed it hits the back one along the same ray. Which
-    // motif it is depends on which of the two is worth more.
-    if (step.piece.role === 'bishop' || step.piece.role === 'rook' || step.piece.role === 'queen') {
+    // motif it is depends on which of the two is worth more. Gated on
+    // `safe`, which subsumes the old front-takes-undefended-slider guard
+    // (Qxd8+ Kxd8 is a trade, not a tactic — found live on the opening
+    // mainline) and also drops the even-trade cases: a bishop "pinning" a
+    // bishop is a pin the front piece dissolves by taking (found live).
+    if (safe && (step.piece.role === 'bishop' || step.piece.role === 'rook' || step.piece.role === 'queen')) {
       for (const frontSq of attacks(step.piece, to, occupied).intersect(board[enemy])) {
         const front = board.get(frontSq);
         if (!front) continue;
         const behind = attacks(step.piece, to, occupied.without(frontSq))
           .intersect(board[enemy])
           .without(frontSq);
-        // If the front piece can simply take an undefended slider there is
-        // no pin and no skewer — Qxd8+ Kxd8 is a trade, not a tactic.
-        // Found live: the opening mainline wore a skewer chip because the
-        // geometry alone matched the queen trade.
-        const sliderDefended = attackersOf(to, replay.mover, board, occupied).without(to).nonEmpty();
-        if (attacks(front, frontSq, occupied).has(to) && !sliderDefended) continue;
         for (const backSq of behind) {
           if (!onRayBeyond(to, frontSq, backSq)) continue;
           const back = board.get(backSq);
           if (!back) continue;
           if (back.role === 'king' && front.role !== 'king') {
-            // The front piece cannot legally leave the ray: an absolute pin.
-            // Pinned pawns are everyday furniture, so only pieces get the tag.
-            if (VALUE[front.role] >= 3) {
+            // The front piece cannot legally leave the ray: an absolute
+            // pin. Pinned pawns are everyday furniture, so only pieces get
+            // the tag — and only when the pin is winning the piece, not
+            // merely holding it. Found live: every ...Bb4-on-Nc3 line in
+            // the corpus wore the chip for a knight the b-pawn was
+            // defending, which is an opening, not a tactic.
+            const guards = attackersOf(frontSq, enemy, board, occupied);
+            const pressure = attackersOf(frontSq, replay.mover, board, occupied);
+            if (
+              VALUE[front.role] >= 3 &&
+              (guards.isEmpty() ||
+                cheapestOf(pressure, board) < VALUE[front.role] ||
+                pressure.size() > guards.size())
+            ) {
               found.push({ type: 'pin', ply: step.ply, piece: front.role, square: makeSquare(frontSq) });
             }
           } else if (
             // A skewer needs the FRONT piece forced to move (a king, or
-            // worth more than the attacking slider) and something behind
-            // worth collecting once it does.
+            // worth more than the attacking slider), something behind
+            // worth collecting once it does — and the collection to be a
+            // gain: an even, defended trade at the end of the ray is a
+            // shuffle, not a skewer.
             (front.role === 'king' || VALUE[front.role] > VALUE[step.piece.role]) &&
             VALUE[back.role] >= 3 &&
-            (front.role === 'king' || VALUE[front.role] > VALUE[back.role])
+            (front.role === 'king' || VALUE[front.role] > VALUE[back.role]) &&
+            (VALUE[back.role] > VALUE[step.piece.role] ||
+              attackersOf(backSq, enemy, board, occupied).isEmpty())
           ) {
             found.push({ type: 'skewer', ply: step.ply, piece: step.piece.role, square: makeSquare(to) });
           }
@@ -336,9 +387,23 @@ export function tagLine(fen: string, uciMoves: string[]): LineTags {
       for (const targetSq of gained.intersect(board[enemy])) {
         const victim = board.get(targetSq);
         if (!victim) continue;
-        if (
-          (victim.role === 'king' || VALUE[victim.role] >= 5) &&
-          onRayBeyond(s, step.move.from, targetSq)
+        if (!onRayBeyond(s, step.move.from, targetSq)) continue;
+        // The revealed slider itself must hold its square: a discovery
+        // answered by taking the slider at no cost revealed nothing.
+        if (removable(s, VALUE[slider.role], enemy, board, occupied)) continue;
+        if (victim.role === 'king') {
+          // A discovered check earns the chip only when the moved piece
+          // spends the tempo on something — a capture, a mate, or a
+          // threat of its own. A bare discovered check is a spite check.
+          if (step.mates || step.captured || profitableTargets(landedPiece, to, enemy, board, occupied) >= 1) {
+            found.push({ type: 'discovered', ply: step.ply, piece: slider.role, square: makeSquare(s) });
+          }
+        } else if (
+          VALUE[victim.role] >= 5 &&
+          // And the revealed attack must cash: a defended piece worth no
+          // more than the slider hitting it is not being won.
+          (VALUE[victim.role] > VALUE[slider.role] ||
+            attackersOf(targetSq, enemy, board, occupied).isEmpty())
         ) {
           found.push({ type: 'discovered', ply: step.ply, piece: slider.role, square: makeSquare(s) });
         }

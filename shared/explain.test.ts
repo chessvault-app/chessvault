@@ -74,6 +74,72 @@ describe('tagLine motifs', () => {
     expect(tags.motif).toBeUndefined();
   });
 
+  it('does not call it a fork when the forker can simply be taken (found live)', () => {
+    // Nb6 "forks" the rooks on a8 and c8 — and ...cxb6 removes it. A
+    // fork by a piece the opponent can capture at no cost is an offer.
+    const tags = tagLine('r1r4k/2p5/8/8/N7/8/8/4K3 w - - 0 1', ['a4b6']);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('keeps the fork when the forker holds its square (found live in a vault game)', () => {
+    // 10.exd5, queen-defended, hitting the c6 knight and e6 bishop at
+    // once — the game ended on this move.
+    const tags = tagLine('r2qkb1r/1p3ppp/p1npb3/3np3/4P3/1N2B3/PPPQ1PPP/R3KB1R w KQkq - 0 10', [
+      'e4d5',
+    ]);
+    expect(tags.motif).toMatchObject({ type: 'fork', piece: 'pawn', square: 'd5', ply: 0 });
+  });
+
+  it('does not call a bishop pinning a bishop a pin (found live)', () => {
+    // Bb5 lines the c6 bishop up with the king, but ...Bxb5 is an even
+    // trade: geometry a capture dissolves at no cost is not a tactic —
+    // even with the slider defended, as by the a4 pawn here.
+    const tags = tagLine('4k3/8/2b5/8/P7/8/8/4KB2 w - - 0 1', ['f1b5']);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('does not call a routine defended opening pin a pin (found live: every ...Bb4 line)', () => {
+    // ...Bb4 against Nc3 with b2 holding the knight: an opening, not a
+    // tactic — the pin wins nothing.
+    const tags = tagLine('rn1qkb1r/pp3ppp/2p1pn2/5b2/P1BP4/2N1PN2/1P3PPP/R1BQK2R b KQkq - 0 7', [
+      'f8b4',
+    ]);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('keeps the pin when it is winning the pinned piece', () => {
+    // Bb5 pins the c6 knight, which b7 defends — but the d5 pawn attacks
+    // it too, so the piece is falling, not merely held.
+    const tags = tagLine('4k3/1p6/2n5/3P4/8/8/8/4KB2 w - - 0 1', ['f1b5']);
+    expect(tags.motif).toMatchObject({ type: 'pin', piece: 'knight', square: 'c6' });
+  });
+
+  it('does not call an even, defended collection a skewer', () => {
+    // The queen version of this position is the skewer test above; with a
+    // king-defended KNIGHT behind the king instead, Bxh8 trades at best.
+    const tags = tagLine('7n/6k1/8/8/8/8/8/2B1K3 w - - 0 1', ['c1b2']);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('does not call a bare discovered check a discovered attack', () => {
+    // Nc1 reveals Re1+ and does nothing else with the tempo.
+    const tags = tagLine('4k3/8/8/8/8/8/4N3/4R1K1 w - - 0 1', ['e2c1']);
+    expect(tags.motif).toBeUndefined();
+  });
+
+  it('keeps the discovered check when the moved piece spends the tempo', () => {
+    // The same Nc1, now also attacking the queen on d3.
+    const tags = tagLine('4k3/8/8/8/8/3q4/4N3/4R1K1 w - - 0 1', ['e2c1']);
+    expect(tags.motif).toMatchObject({ type: 'discovered', piece: 'rook', ply: 0 });
+  });
+
+  it('does not call a promotion into an immediate recapture a promotion', () => {
+    // c8=Q with the d8 rook standing right there: a pawn trade on the
+    // eighth, not a new queen.
+    const tags = tagLine('3r3k/2P5/8/8/8/8/8/K7 w - - 0 1', ['c7c8q']);
+    expect(tags.motif).toBeUndefined();
+  });
+
   it('does not call an ordinary trade sequence a sacrifice (found live on a QGD line)', () => {
     // ...Bxc3 bxc3 dxc4 Qxc4: the balance dips while recaptures are
     // pending, but nobody sacrificed anything.
