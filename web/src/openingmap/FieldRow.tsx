@@ -4,6 +4,7 @@ import { moveNumberLabel } from '@shared/tree';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
+import { ResultBar } from '@/ui/ResultBar';
 
 /**
  * One row of "what the field plays here", in the two places that show it:
@@ -112,28 +113,22 @@ function Mark({ label, icon }: { label: string; icon: ReactNode }) {
 }
 
 /**
- * The result split, White's wins leftmost — the explorer's own reading
- * order. A move the field never played (one the studies prepare, or one
- * already charted) has no split to draw and keeps the space, so the rows
- * above and below it do not close up around a gap in the column.
+ * The result split — the explorer's bar, which is now the app's only
+ * one (ui/ResultBar). The map drew its own: thinner, unlabelled, and a
+ * different grey for the draws, which made the same numbers two
+ * pictures depending on which pane you happened to be reading.
+ *
+ * A move the field never played (one the studies prepare, or one
+ * already charted) has no split to draw and keeps the space, so the
+ * rows above and below it do not close up around a gap in the column.
  */
-export function ResultBar({ move }: { move: Pick<FieldMove, 'w' | 'd' | 'b'> | null }) {
+export function MoveResult({ move }: { move: Pick<FieldMove, 'w' | 'd' | 'b'> | null }) {
   const w = move?.w ?? 0;
   const d = move?.d ?? 0;
   const b = move?.b ?? 0;
-  const games = w + d + b;
-  if (games === 0) return <span className="min-w-0 flex-1" />;
-  const pct = (n: number): string => `${(n / games) * 100}%`;
   return (
-    <span
-      className="border-line flex h-2.5 min-w-0 flex-1 overflow-hidden rounded-full border"
-      title={`+${Math.round((w / games) * 100)}% =${Math.round((d / games) * 100)}% -${Math.round(
-        (b / games) * 100,
-      )}%`}
-    >
-      <span style={{ width: pct(w), background: 'var(--color-eval-white)' }} />
-      <span style={{ width: pct(d), background: 'var(--color-line-strong)' }} />
-      <span style={{ width: pct(b), background: 'var(--color-eval-black)' }} />
+    <span className="min-w-0 flex-1">
+      <ResultBar w={w} d={d} b={b} />
     </span>
   );
 }

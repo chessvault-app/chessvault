@@ -8,7 +8,7 @@ import { Input } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Sheet } from '@/ui/Sheet';
 import type { NodeCoverage } from './coverage';
-import { MoveCell, ResultBar, RowTail } from './FieldRow';
+import { MoveCell, MoveResult, RowTail } from './FieldRow';
 import { normalizeSan, type MapNode, type ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
 
@@ -181,7 +181,7 @@ export function AddMoveSheet({
                 prepared={row.prepared}
                 linked={row.childId !== null}
               />
-              <ResultBar move={row.split} />
+              <MoveResult move={row.split} />
               <RowTail share={row.share}>
                 {/* A tick where the move is already on the map, and
                     nothing where it is not. The plus that used to sit

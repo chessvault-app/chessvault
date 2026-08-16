@@ -27,6 +27,7 @@ import {
   type TopGame,
 } from '@/store/explorer';
 import { Button } from '@/ui/Button';
+import { ResultBar } from '@/ui/ResultBar';
 import { Select } from '@/ui/Select';
 import { DateInput } from '@/ui/Input';
 import { FilterChip } from '@/ui/FilterChip';
@@ -712,34 +713,6 @@ function MoveRow({ move, onPlay }: { move: ExplorerMove; onPlay: () => void }) {
         <ResultBar w={move.w} d={move.d} b={move.b} />
       </td>
     </tr>
-  );
-}
-
-/** Lichess-style stacked white/draw/black percentage bar. */
-function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
-  const total = w + d + b;
-  if (total === 0) return null;
-  const pct = (n: number): number => (100 * n) / total;
-  const segments = [
-    { value: pct(w), className: 'bg-eval-white text-on-eval-white' },
-    { value: pct(d), className: 'bg-surface-3 text-muted' },
-    { value: pct(b), className: 'bg-eval-black text-on-eval-black' },
-  ];
-  return (
-    <div
-      className="border-line flex h-4 w-full overflow-hidden rounded-[4px] border font-mono text-[0.5625rem]"
-      title={`White ${pct(w).toFixed(1)}% · Draw ${pct(d).toFixed(1)}% · Black ${pct(b).toFixed(1)}%`}
-    >
-      {segments.map(({ value, className }, i) => (
-        <span
-          key={i}
-          style={{ width: `${value}%` }}
-          className={cn('flex items-center justify-center overflow-hidden', className)}
-        >
-          {value >= 12 ? `${Math.round(value)}%` : ''}
-        </span>
-      ))}
-    </div>
   );
 }
 
