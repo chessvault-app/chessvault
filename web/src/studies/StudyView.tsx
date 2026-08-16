@@ -169,29 +169,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
 
-  /**
-   * Throw the pending changes away — with a few seconds to change your
-   * mind, which is the app's answer to destructive acts everywhere else
-   * (see useUndoable). A confirm dialog would interrupt every discard to
-   * guard against the rare slip, and be no help at all once answered.
-   *
-   * Nothing has reached the vault either way: the commit is empty, and
-   * undoing simply puts the buffer back where it was.
-   */
-  const discardWithUndo = (): void => {
-    const { chapters, chapterIndex, savedPgn } = useStudy.getState();
-    const { tree, cursorId, orientation } = useAnalysis.getState();
-    undoable.remove(
-      t('Unsaved changes discarded'),
-      () => {},
-      () => {
-        useStudy.setState({ chapters, chapterIndex, savedPgn, saveState: 'dirty' });
-        useAnalysis.setState({ tree, cursorId, orientation });
-      },
-    );
-    useStudy.getState().discard();
-  };
-
   // Rendered twice — at the page top on stacked layouts, in the side column
   // on wide ones — because CSS cannot reparent. Only one is ever visible.
   const titleRow = (className: string) => (
@@ -219,12 +196,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
-      <SaveControl
-        state={saveState}
-        error={error}
-        onSave={() => void save()}
-        onDiscard={discardWithUndo}
-      />
+      <SaveControl state={saveState} error={error} onSave={() => void save()} />
     </div>
   );
 

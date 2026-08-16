@@ -293,22 +293,6 @@ function NoteEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);
 
-  /** Discard, with a few seconds to change your mind — see StudyView. */
-  const discardWithUndo = (): void => {
-    if (!editor || editor.isDestroyed) return;
-    const pending = docToMarkdown(editor.state.doc, front.current);
-    undoable.remove(
-      t('Unsaved changes discarded'),
-      () => {},
-      () => {
-        editor.commands.setContent(markdownToDoc(pending).toJSON() as object, { emitUpdate: false });
-        front.current = splitFrontMatter(pending).front;
-        setSaveState('dirty');
-      },
-    );
-    discard();
-  };
-
   // See StudyView: the same claim on the way out, for the same reasons.
   useEffect(() => {
     if (!editor) return;
@@ -364,7 +348,6 @@ function NoteEditor({
         <SaveControl
           state={saveState}
           onSave={() => editor && void save(docToMarkdown(editor.state.doc, front.current))}
-          onDiscard={discardWithUndo}
         />
       </header>
       <EditorPalette editor={editor} editable={editable} />

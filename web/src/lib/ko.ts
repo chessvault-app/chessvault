@@ -380,11 +380,8 @@ export const ko: Record<string, string> = {
   // --- saving ---------------------------------------------------------------
   // Manual save: the badge, the two buttons that resolve it, and the
   // question asked on the way out of a document with changes in it.
-  'Not saved': '저장 실패',
   'Save changes': '변경 사항 저장',
   'Discard changes': '변경 사항 버리기',
-  'Discard changes and go back to the saved version': '변경 사항을 버리고 저장된 버전으로 돌아갑니다',
-  'Unsaved changes discarded': '저장하지 않은 변경 사항을 버렸습니다',
   'Unsaved changes': '저장하지 않은 변경 사항',
   'You have unsaved changes in “{name}”. Would you like to save before leaving?':
     '“{name}”에 저장하지 않은 변경 사항이 있습니다. 나가기 전에 저장할까요?',

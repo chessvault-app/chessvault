@@ -1,4 +1,4 @@
-import { Check, CircleAlert, Loader2, Save, Undo2 } from 'lucide-react';
+import { Check, Loader2, Save } from 'lucide-react';
 import { Button } from './Button';
 import { t } from '@/lib/i18n';
 
@@ -17,27 +17,29 @@ export type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
  * Extracted from two near-identical copies — `SaveIndicator` in StudyView
  * and `SaveBadge` in NoteView — which had drifted into disagreeing about
  * whether the badge was clickable. Now saving is manual it is more than a
- * badge: a pending document shows the two buttons that resolve it, and a
- * settled one shows neither, so the header is quiet exactly when there is
+ * badge: a pending document shows the button that resolves it, and a
+ * settled one shows none, so the header is quiet exactly when there is
  * nothing to decide.
  *
- * Both buttons live here rather than one here and one in an overflow
- * menu, because they are two answers to the same question and a reader
- * looking for the second should not have to go hunting for it. `Saved`
- * and `Saving…` stay text: there is nothing to press.
+ * ONE control while a document is pending. It used to be three — a yellow
+ * dot reading "unsaved", a revert button, and Save — which said the same
+ * thing twice and put the destructive answer a thumb's width from the
+ * safe one. The Save button's presence IS the unsaved state; there is no
+ * state in which it shows and the document is clean. Discarding still
+ * exists, on the way out (see LeaveSheet), where it is asked rather than
+ * clicked by accident.
+ *
+ * `Saved` and `Saving…` stay text: there is nothing to press.
  */
 export function SaveControl({
   state,
   error,
   onSave,
-  onDiscard,
 }: {
   state: SaveState;
-  /** Shown as the retry tooltip; the badge itself never spells out a failure. */
+  /** Shown as the retry tooltip; the button itself never spells out a failure. */
   error?: string | null;
   onSave: () => void;
-  /** Back to the vault's copy. Omitted where there is nothing to go back to. */
-  onDiscard?: () => void;
 }) {
   if (state === 'saved') {
     return (
@@ -54,43 +56,22 @@ export function SaveControl({
     );
   }
 
+  // Dirty and error differ in the label and in what the tooltip says, not
+  // in a badge beside it: "Retry save" only appears after one has failed,
+  // and the failure's own words are the tooltip. On a phone the word goes
+  // and the icon carries it — the same collapse the Edit button makes, so
+  // the tooltip is where a failure is spelled out either way.
+  const failed = state === 'error';
   return (
-    <span className="flex shrink-0 items-center gap-1">
-      {/* The state, then the way out of it. On a phone the words go and
-          the icons carry it — the same collapse the Edit button makes. */}
-      {state === 'error' ? (
-        <span
-          className="text-bad flex items-center gap-1 text-xs"
-          title={error ?? t('Save failed')}
-        >
-          <CircleAlert className="size-3.5" />
-          <span className="max-md:hidden">{t('Not saved')}</span>
-        </span>
-      ) : (
-        <span className="text-warn flex items-center gap-1 text-xs">
-          <span className="bg-warn size-1.5 rounded-full" />
-          <span className="max-md:hidden">{t('Unsaved')}</span>
-        </span>
-      )}
-      {onDiscard && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('Discard changes and go back to the saved version')}
-          onClick={onDiscard}
-        >
-          <Undo2 className="size-3.5" />
-        </Button>
-      )}
-      <Button
-        variant="primary"
-        size="sm"
-        title={error ?? t('Save changes')}
-        onClick={onSave}
-      >
-        <Save className="size-3.5 md:mr-1" />
-        <span className="max-md:hidden">{t(state === 'error' ? 'Retry save' : 'Save')}</span>
-      </Button>
-    </span>
+    <Button
+      variant="primary"
+      size="sm"
+      className="shrink-0"
+      title={error ?? t(failed ? 'Save failed' : 'Save changes')}
+      onClick={onSave}
+    >
+      <Save className="size-3.5 md:mr-1" />
+      <span className="max-md:hidden">{t(failed ? 'Retry save' : 'Save')}</span>
+    </Button>
   );
 }
