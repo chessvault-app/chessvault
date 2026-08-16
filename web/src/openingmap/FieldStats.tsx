@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Plus } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
@@ -6,6 +6,7 @@ import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
 import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import type { NodeCoverage } from './coverage';
+import { MoveLabel, MoveMarks, ResultBar, RowTail } from './FieldRow';
 import { GAP_SHARE, type NodeGaps } from './gaps';
 import type { MapNode, ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
@@ -117,10 +118,6 @@ export function FieldStats({
         {rows.slice(0, SHOWN).map((move) => {
           const childId = charted.get(move.san);
           const share = move.total / games;
-          const w = move.w ?? 0;
-          const d = move.d ?? 0;
-          const b = move.b ?? 0;
-          const scored = w + d + b > 0;
           const isGap = flagged.has(move.san);
           return (
             <div
@@ -133,64 +130,17 @@ export function FieldStats({
                 isGap ? 'border-warn/40' : 'border-transparent',
               )}
             >
-              {/* The slot is always there, empty or not: drawn only on
-                  the rows that have a gap, it pushed those rows' moves
-                  and bars right by its own width, so the column zigzagged
-                  down the panel. */}
-              <span className="w-3.5 shrink-0">
-                {isGap && <AlertTriangle className="text-warn size-3.5" />}
-              </span>
               <button
                 type="button"
-                className={
-                  childId
-                    ? 'text-fg hover:text-primary w-12 shrink-0 text-left text-xs font-semibold'
-                    : 'text-fg w-12 shrink-0 cursor-default text-left text-xs font-semibold'
-                }
+                className={childId ? 'hover:text-primary text-left' : 'cursor-default text-left'}
                 onClick={() => childId && onSelectChild(childId)}
                 title={childId ? t('Show on the map') : undefined}
               >
-                {move.san}
+                <MoveLabel ply={facts.ply + 1} san={move.san} />
               </button>
-              {/* The result split, White's wins leftmost — the explorer's
-                  own reading order. */}
-              {scored ? (
-                <span
-                  className="border-line flex h-2.5 min-w-0 flex-1 overflow-hidden rounded-full border"
-                  title={`+${Math.round((w / (w + d + b)) * 100)}% =${Math.round(
-                    (d / (w + d + b)) * 100,
-                  )}% -${Math.round((b / (w + d + b)) * 100)}%`}
-                >
-                  <span style={{ width: `${(w / (w + d + b)) * 100}%`, background: 'var(--color-eval-white)' }} />
-                  <span style={{ width: `${(d / (w + d + b)) * 100}%`, background: 'var(--color-line-strong)' }} />
-                  <span style={{ width: `${(b / (w + d + b)) * 100}%`, background: 'var(--color-eval-black)' }} />
-                </span>
-              ) : (
-                <span className="min-w-0 flex-1" />
-              )}
-              {/* Everything after the bar in one box of one width, so
-                  every bar starts and ends on the same two lines. Left
-                  to size themselves, the marks a row happens to carry
-                  came out of the bar beside them — bars of different
-                  lengths in a column of bars, which reads as bars
-                  measuring different things. */}
-              <span className="flex w-[4.5rem] shrink-0 items-center justify-end gap-1.5">
-                <span className="text-muted text-xs">
-                  {share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
-                </span>
-                {/* A dot, not the word "prepared": the word was as wide
-                    as the percentage and the marks together, and it is
-                    the one thing here that can be said with a colour —
-                    the good green this app spends on exactly this. It
-                    keeps its name for the pointer and the screen
-                    reader. */}
-                {prepared.has(move.san) && (
-                  <span
-                    className="bg-good size-1.5 shrink-0 rounded-full"
-                    title={t('A linked study prepares it')}
-                    aria-label={t('A linked study prepares it')}
-                  />
-                )}
+              <MoveMarks gap={isGap} prepared={prepared.has(move.san)} />
+              <ResultBar move={move} />
+              <RowTail share={share}>
                 {childId ? (
                   <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
                 ) : (
@@ -203,7 +153,7 @@ export function FieldStats({
                     <Plus className="size-3.5" />
                   </button>
                 )}
-              </span>
+              </RowTail>
             </div>
           );
         })}

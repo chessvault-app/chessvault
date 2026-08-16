@@ -589,6 +589,7 @@ export const ko: Record<string, string> = {
     '스터디가 여기서 준비한 수 — 통계를 보려면 필드 소스를 고르세요.',
   'Nothing to offer — type the move instead.': '보여줄 것이 없습니다 — 수를 직접 입력하세요.',
   'A linked study prepares it': '연결된 스터디가 준비한 수',
+  'The field plays it and the studies do not answer': '필드는 두는데 스터디에 답이 없습니다',
   'On the map': '맵에 있음',
   'Type a move…': '수 입력…',
   'Grow from my games': '내 게임에서 키우기',

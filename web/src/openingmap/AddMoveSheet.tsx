@@ -1,6 +1,5 @@
 import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { moveNumberLabel } from '@shared/tree';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
@@ -9,6 +8,7 @@ import { Input } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Sheet } from '@/ui/Sheet';
 import type { NodeCoverage } from './coverage';
+import { MoveLabel, MoveMarks, ResultBar, RowTail } from './FieldRow';
 import { normalizeSan, type MapNode, type ResolvedNode } from './model';
 import { fieldMovesFor } from './useGaps';
 
@@ -27,6 +27,8 @@ interface Row {
   san: string;
   /** Share of games, when a field source is on. */
   share: number | null;
+  /** The result split, for the same bar the panel's table draws. */
+  split: Pick<FieldMove, 'w' | 'd' | 'b'> | null;
   prepared: boolean;
   /** The charted child standing on this move, if any. */
   childId: string | null;
@@ -85,6 +87,7 @@ export function AddMoveSheet({
       out.push({
         san: move.san,
         share: games > 0 ? move.total / games : null,
+        split: move,
         prepared: prepared.has(move.san),
         childId: children.get(move.san) ?? null,
       });
@@ -94,16 +97,14 @@ export function AddMoveSheet({
     for (const san of prepared) {
       if (!seen.has(san)) {
         seen.add(san);
-        out.push({ san, share: null, prepared: true, childId: children.get(san) ?? null });
+        out.push({ san, share: null, split: null, prepared: true, childId: children.get(san) ?? null });
       }
     }
     for (const [san, id] of children) {
-      if (!seen.has(san)) out.push({ san, share: null, prepared: false, childId: id });
+      if (!seen.has(san)) out.push({ san, share: null, split: null, prepared: false, childId: id });
     }
     return out;
   }, [field, coverage, facts.mapNode.children]);
-
-  const label = moveNumberLabel(facts.ply + 1);
 
   /**
    * The typed move, judged here rather than by the caller: this sheet is
@@ -168,37 +169,11 @@ export function AddMoveSheet({
               }}
               className="hover:bg-surface-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
             >
-              <span className="text-fg w-16 shrink-0 text-sm font-semibold">
-                {label} {row.san}
-              </span>
-              {row.share !== null && (
-                <span className="bg-surface-inset relative h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
-                  <span
-                    className="bg-primary/60 absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${Math.max(2, Math.round(row.share * 100))}%` }}
-                  />
-                </span>
-              )}
-              {/* Everything after the bar in one box of a fixed width,
-                  so the bars all start and end on the same two lines.
-                  Laid out as they come, a row carrying "prepared" and a
-                  tick took 4rem more than its neighbours and its bar
-                  gave up the difference — the ragged right edge in
-                  lanph3re's shot, which reads as the bars disagreeing
-                  about what they measure. */}
-              <span className="flex w-[4.5rem] shrink-0 items-center justify-end gap-1.5">
-                {row.share !== null && (
-                  <span className="text-muted text-xs">{Math.round(row.share * 100)}%</span>
-                )}
-                {/* The same green dot the panel's table uses, for the
-                    same fact and the same reason — see FieldStats. */}
-                {row.prepared && (
-                  <span
-                    className="bg-good size-1.5 shrink-0 rounded-full"
-                    title={t('A linked study prepares it')}
-                    aria-label={t('A linked study prepares it')}
-                  />
-                )}
+              {/* The panel's own row, part for part — see FieldRow. */}
+              <MoveLabel ply={facts.ply + 1} san={row.san} />
+              <MoveMarks prepared={row.prepared} />
+              <ResultBar move={row.split} />
+              <RowTail share={row.share}>
                 {/* A tick where the move is already on the map, and
                     nothing where it is not. The plus that used to sit
                     there was decoration: the whole row charts the move,
@@ -207,7 +182,7 @@ export function AddMoveSheet({
                 {row.childId && (
                   <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
                 )}
-              </span>
+              </RowTail>
             </button>
           ))
         )}
