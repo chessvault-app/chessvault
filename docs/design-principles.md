@@ -111,7 +111,7 @@ digit is also bold, tier marks also differ by icon shape.
 - Board and piece appearance are user-chosen (Settings → Appearance):
   board-colour presets ride the same OKLCH tokens, and piece sets are
   vendored from lila. This is orthogonal to the semantic colour grammar
-  below — the hues there dress the UI, not the board.
+  above — the hues there dress the UI, not the board.
 - Filter rows inside a panel are single-line and scroll sideways at
   every width (`ChipRow`): touch pans, fine pointers get chevron nudges
   and wheel-to-horizontal scrolling. Chips are `shrink-0` — a chip that
