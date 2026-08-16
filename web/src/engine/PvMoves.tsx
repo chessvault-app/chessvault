@@ -25,6 +25,7 @@ export function PvMoves({
   onPlayLine,
   onPeek,
   onPeekEnd,
+  marks,
   className,
 }: {
   plies: PvPly[];
@@ -37,6 +38,14 @@ export function PvMoves({
       what a coarse pointer gets, since there is no hovering to preview. */
   onPeek?: (ply: PvPly, fen: string, anchor: HTMLElement) => void;
   onPeekEnd?: () => void;
+  /**
+   * Plies to call out, by index → what happens there ("Fork", "Sacrifice").
+   *
+   * A chip saying a line contains a fork left the reader hunting for it
+   * across eight plies. The tagger already knows which move it is, so the
+   * move wears the chip's own colour and the chip becomes a legend for it.
+   */
+  marks?: ReadonlyMap<number, string>;
   className?: string;
 }) {
   if (plies.length === 0) {
@@ -82,27 +91,36 @@ export function PvMoves({
       onFocus={onPeek && peekFrom}
       onBlur={onPeekEnd}
     >
-      {plies.map((ply, i) => (
-        <Fragment key={i}>
-          {i > 0 && ' '}
-          {ply.numbered && (
-            <>
-              <span className="text-subtle font-mono">{ply.label}</span>{' '}
-            </>
-          )}
-          <button
-            type="button"
-            data-ply={i}
-            className={cn(
-              'hover:bg-surface-3 hover:text-fg rounded px-0.5 font-medium',
-              'transition-colors duration-100',
+      {plies.map((ply, i) => {
+        const mark = marks?.get(i);
+        return (
+          <Fragment key={i}>
+            {i > 0 && ' '}
+            {ply.numbered && (
+              <>
+                <span className={cn('font-mono', mark ? 'text-primary' : 'text-subtle')}>
+                  {ply.label}
+                </span>{' '}
+              </>
             )}
-            onClick={() => onPlayLine(plies.slice(0, i + 1).map((p) => p.uci))}
-          >
-            {figurine(ply.san)}
-          </button>
-        </Fragment>
-      ))}
+            <button
+              type="button"
+              data-ply={i}
+              title={mark}
+              className={cn(
+                'hover:bg-surface-3 hover:text-fg rounded px-0.5 font-medium',
+                'transition-colors duration-100',
+                // The same soft-primary as the chip above the line, so the
+                // two read as one statement rather than two facts.
+                mark && 'bg-primary-soft text-primary font-semibold',
+              )}
+              onClick={() => onPlayLine(plies.slice(0, i + 1).map((p) => p.uci))}
+            >
+              {figurine(ply.san)}
+            </button>
+          </Fragment>
+        );
+      })}
     </span>
   );
 }

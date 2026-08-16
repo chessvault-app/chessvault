@@ -59,12 +59,19 @@ export function planText(plan: PlanSummary | null): string | null {
   return plan.gestures.map(gestureText).join(', ');
 }
 
-/** Chip labels for a line's tags: at most one motif and one sacrifice. */
-export function motifChips(tags: LineTags): string[] {
-  const chips: string[] = [];
+/** A tactic in a line: what it is called, and the move it happens on. */
+export interface MotifChip {
+  label: string;
+  /** 0-based index into the line's plies — the move the chip is about. */
+  ply: number;
+}
+
+/** Chips for a line's tags: at most one motif and one sacrifice. */
+export function motifChips(tags: LineTags): MotifChip[] {
+  const chips: MotifChip[] = [];
   if (tags.motif) {
-    chips.push(
-      {
+    chips.push({
+      label: {
         fork: t('Fork'),
         pin: t('Pin'),
         skewer: t('Skewer'),
@@ -73,10 +80,14 @@ export function motifChips(tags: LineTags): string[] {
         trapped: t('Trapped piece'),
         promotion: t('Promotion'),
       }[tags.motif.type],
-    );
+      ply: tags.motif.ply,
+    });
   }
   if (tags.sacrifice) {
-    chips.push(tags.sacrifice.kind === 'sham' ? t('Temporary sacrifice') : t('Sacrifice'));
+    chips.push({
+      label: tags.sacrifice.kind === 'sham' ? t('Temporary sacrifice') : t('Sacrifice'),
+      ply: tags.sacrifice.ply,
+    });
   }
   return chips;
 }

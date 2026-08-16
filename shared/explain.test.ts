@@ -31,7 +31,9 @@ describe('tagLine motifs', () => {
       'e1e8',
     ]);
     expect(tags.motif).toMatchObject({ type: 'backRankMate', piece: 'rook' });
-    expect(tags.sacrifice).toMatchObject({ kind: 'sham', amount: 4 });
+    // ply 0 — the move that gave the queen, not ply 1 where the ledger
+    // reads deepest (that is Black recapturing).
+    expect(tags.sacrifice).toMatchObject({ kind: 'sham', amount: 4, ply: 0 });
   });
 
   it('reads an exchange sacrifice with no recovery as real', () => {

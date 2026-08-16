@@ -373,6 +373,21 @@ function PvRow({
     [fen, pvKey, line.depth],
   );
 
+  // Which ply each chip is about, so the move itself can wear the chip's
+  // colour. Dropped for plies the replay never reached — formatPv stops at
+  // the first illegal move, and a mark past its end would point at nothing.
+  const marks = useMemo(() => {
+    const byPly = new Map<number, string>();
+    for (const chip of chips) {
+      if (chip.ply >= pv.plies.length) continue;
+      // A sacrifice and the motif it sets up land on the same move often
+      // enough that the mark has to be able to name both.
+      const already = byPly.get(chip.ply);
+      byPly.set(chip.ply, already ? `${already} · ${chip.label}` : chip.label);
+    }
+    return byPly;
+  }, [chips, pv.plies.length]);
+
   return (
     <li>
       {/* A div, not a button: the plies inside are the buttons now, and
@@ -398,7 +413,7 @@ function PvRow({
         </span>
         {chips.map((chip) => (
           <span
-            key={chip}
+            key={chip.label}
             // A motif always belongs to the side to move in the line; the
             // swatch says whose it is without spending a word on it.
             title={
@@ -409,7 +424,7 @@ function PvRow({
             className="bg-primary-soft text-primary inline-flex shrink-0 items-center gap-1 rounded px-1 py-px text-[9px] font-semibold"
           >
             <SideDot side={turn} className="size-1.5 rounded-[2px]" />
-            {chip}
+            {chip.label}
           </span>
         ))}
         {/* One line at rest so three lines cost three rows; the row being
@@ -423,6 +438,7 @@ function PvRow({
           onPlayLine={onPlayLine}
           onPeek={onPeek}
           onPeekEnd={onPeekEnd}
+          marks={marks}
           className={cn(
             'min-w-0 flex-1 truncate',
             'group-focus-within:whitespace-normal pointer-fine:group-hover:whitespace-normal',

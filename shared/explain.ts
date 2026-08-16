@@ -195,6 +195,12 @@ export interface SacrificeTag {
   kind: 'sham' | 'real';
   /** Pawns of material given at the deepest point. */
   amount: number;
+  /**
+   * 0-based ply of the MOVER's move that gave the material. The ledger is
+   * read after the opponent's reply — that is what makes it a sacrifice
+   * rather than bookkeeping — but the reply is not the move anyone wants
+   * pointed at, so it is the mover's move before it that is recorded.
+   */
   ply: number;
 }
 
@@ -414,10 +420,18 @@ function pickMotif(found: MotifTag[]): MotifTag | undefined {
 function findSacrifice(replay: Replay): SacrificeTag | undefined {
   const start = balance(replay.startBoard, replay.mover);
 
-  const measured: { ply: number; delta: number }[] = [];
+  const measured: { ply: number; moverPly: number; delta: number }[] = [];
+  let moverPly = 0;
   for (const step of replay.steps) {
-    if (step.piece.color === replay.mover) continue;
-    measured.push({ ply: step.ply, delta: balance(step.boardAfter, replay.mover) - start });
+    if (step.piece.color === replay.mover) {
+      moverPly = step.ply;
+      continue;
+    }
+    measured.push({
+      ply: step.ply,
+      moverPly,
+      delta: balance(step.boardAfter, replay.mover) - start,
+    });
   }
   if (measured.length === 0) return undefined;
 
@@ -428,7 +442,7 @@ function findSacrifice(replay: Replay): SacrificeTag | undefined {
     const m = measured[i]!;
     if (m.delta < deepest) {
       deepest = m.delta;
-      deepestPly = m.ply;
+      deepestPly = m.moverPly;
     }
     if (
       persistentAt < 0 &&
