@@ -189,10 +189,13 @@ export function AddMoveSheet({
                   {t('prepared')}
                 </span>
               )}
-              {row.childId ? (
+              {/* A tick where the move is already on the map, and
+                  nothing where it is not. The plus that used to sit
+                  there was decoration: the whole row charts the move,
+                  so a mark saying "this one adds" on every row said it
+                  of the row you press to jump to a node as well. */}
+              {row.childId && (
                 <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
-              ) : (
-                <Plus className="text-subtle size-3.5 shrink-0" />
               )}
             </button>
           ))
