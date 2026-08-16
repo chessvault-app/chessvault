@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, Plus, Repeat, Sparkles, Swords, Tag, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
@@ -811,9 +811,22 @@ function NodePanel({
               </div>
             );
           })}
-          <Button variant="ghost" size="sm" className="self-start" onClick={() => setPicking(true)}>
-            <Tag className="size-3.5" /> {t('Link a study or note')}
-          </Button>
+          {/* The row that is not there yet.
+              A ghost button under the list read as a caption — a tag
+              glyph and some quiet words, the same weight as the links
+              above it, saying nothing about what pressing it would do.
+              So it takes the shape of the thing it adds: a link row with
+              a dashed border where a real one has a solid one, and a
+              plus where a real one has its kind. The empty slot in a
+              list IS the add button. */}
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="border-line text-muted hover:border-primary/40 hover:text-fg flex items-center gap-2 rounded-lg border border-dashed px-2 py-1.5 text-left text-xs transition-colors duration-100"
+          >
+            <Plus className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{t('Link a study or note')}</span>
+          </button>
         </div>
       </Field>
 
