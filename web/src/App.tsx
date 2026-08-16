@@ -555,9 +555,13 @@ function MobileNav({ active }: { active: Section }) {
           <button
             key={section}
             type="button"
-            // Phones: the Puzzles tab lands on the dashboard, the hub with
-            // big Train/Books/Themes buttons — the trainer is one tap away.
-            onClick={() => (section === 'puzzles' ? navigate('puzzles', 'dashboard') : navigate(section))}
+            // Phones: the Puzzles tab lands on the hub, a launcher whose
+            // buttons sit on the bottom edge where a thumb already is.
+            // It landed on the dashboard until that page's own shortcuts
+            // had to be read at the top of a screen of statistics to get
+            // anywhere — a page consulted now and then, opened every time
+            // anyone reached for training.
+            onClick={() => (section === 'puzzles' ? navigate('puzzles', 'hub') : navigate(section))}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               'flex flex-1 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium',

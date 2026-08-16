@@ -1,7 +1,7 @@
-import { BookMarked, Check, ChevronRight, Eraser, Eye, LayoutGrid, Puzzle, RotateCcw, X } from 'lucide-react';
+import { BookMarked, Check, ChevronRight, Eraser, Eye, RotateCcw, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { navigate } from '@/lib/router';
+import { navigate, up } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Board } from '@/board/Board';
 import { cn } from '@/lib/cn';
@@ -161,34 +161,18 @@ export function DashboardPage() {
     // the shell's column gap.
     <PageShell width="medium" className="block">
         {error && <p className="text-bad mb-3 text-xs">{error}</p>}
+        {/* This page carried a phone-only row of Train/Books/Themes
+            buttons, from when the Puzzles tab landed here and it had to
+            double as the hub. It is a launcher now (#/puzzles/hub), where
+            those buttons sit within reach of a thumb instead of pinned to
+            the top of a page of statistics — so a phone arrives from
+            there and leaves by the chevron. */}
         <PageHeader
           className="mb-4"
           title={t('Puzzle dashboard')}
+          back={() => up('puzzles', 'hub')}
           actions={<ResetButton onDone={refresh} />}
         />
-
-        {/* Phones land HERE from the Puzzles tab (the trainer is one more
-            tap), so the three destinations get big, thumbable buttons.
-            Desktop reaches them from the sidebar already. */}
-        <div className="mb-4 grid grid-cols-3 gap-2 md:hidden">
-          {(
-            [
-              ['Train', Puzzle, () => navigate('puzzles')],
-              ['Books', BookMarked, () => navigate('puzzles', 'books')],
-              ['Themes', LayoutGrid, () => navigate('puzzles', 'themes')],
-            ] as const
-          ).map(([label, Icon, go]) => (
-            <button
-              key={label}
-              type="button"
-              onClick={go}
-              className="bg-surface border-line hover:bg-surface-2 flex h-16 flex-col items-center justify-center gap-1 rounded-xl border text-xs font-medium transition-colors"
-            >
-              <Icon className="text-primary size-5" />
-              {t(label)}
-            </button>
-          ))}
-        </div>
 
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <StatCard label={t('Solved')} value={user ? String(user.wins) : '…'} />

@@ -317,7 +317,7 @@ export function Shelf() {
         <div className="mb-4 flex flex-col gap-2.5">
           <PageHeader
             title={t('Puzzle books')}
-            back={() => navigate('puzzles', 'dashboard')}
+            back={() => navigate('puzzles', 'hub')}
             actions={
               <>
               {bookmarkToggle('hidden sm:inline-flex')}

@@ -157,7 +157,7 @@ export function ThemesPage() {
         <div className="mb-4 flex flex-col gap-2.5">
           <PageHeader
             title={t('Puzzle themes')}
-            back={() => navigate('puzzles', 'dashboard')}
+            back={() => navigate('puzzles', 'hub')}
             actions={error && <span className="text-bad text-xs">{error}</span>}
           />
           <SearchInput

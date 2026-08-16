@@ -423,6 +423,7 @@ export const ko: Record<string, string> = {
   // --- puzzles -------------------------------------------------------------
   'End of line': '라인 끝',
   'Back to the dashboard': '대시보드로',
+  'Back to puzzles': '퍼즐 목록으로',
   'Back to the puzzle': '퍼즐로',
   'Back to the book': '책으로',
   'Back to the position': '포지션으로',
@@ -485,6 +486,7 @@ export const ko: Record<string, string> = {
     '한 번 누르면 기물을, 두 번 누르면 수를 알려줍니다 (실패로 세지 않음)',
   'First move': '첫 수',
   'No puzzle database yet': '아직 퍼즐 데이터베이스가 없습니다',
+  'Set up the puzzle database': '퍼즐 데이터베이스 준비하기',
   'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.':
     '트레이너는 Lichess 퍼즐 데이터베이스로 돌아갑니다 — 자유롭게 쓸 수 있는 610만 개의 퍼즐입니다. 앱이 대신 내려받아 만들어 줍니다. 내려받기는 약 300MB, 다 만들면 약 2.5GB를 씁니다.',
   'Download and build': '내려받아 만들기',

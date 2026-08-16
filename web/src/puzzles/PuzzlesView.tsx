@@ -39,6 +39,7 @@ import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
+import { HubPage } from './HubPage';
 import { PuzzleDbSetup } from './PuzzleDbSetup';
 import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
@@ -113,12 +114,14 @@ type Phase =
   | 'done';
 
 /**
- * Routes: #/puzzles trains across all themes, #/puzzles/themes is the
- * category page, #/puzzles/theme/<t> trains one theme, #/puzzles/failed
- * reviews previously failed puzzles (uncounted). The trainer is keyed so
- * switching category boots a clean state machine.
+ * Routes: #/puzzles trains across all themes, #/puzzles/hub is the
+ * phone's launcher (and the dashboard above phone width), #/puzzles/themes
+ * is the category page, #/puzzles/theme/<t> trains one theme,
+ * #/puzzles/failed reviews previously failed puzzles (uncounted). The
+ * trainer is keyed so switching category boots a clean state machine.
  */
 export function PuzzlesView({ params = [] }: { params?: string[] }) {
+  if (params[0] === 'hub') return <HubPage />;
   if (params[0] === 'themes') return <ThemesPage />;
   if (params[0] === 'dashboard') return <DashboardPage />;
   if (params[0] === 'books') return <BooksView params={params.slice(1)} />;
@@ -584,8 +587,11 @@ function Trainer({
           variant="ghost"
           size="icon-sm"
           className="md:hidden"
-          title={t('Back to the dashboard')}
-          onClick={() => navigate('puzzles', 'dashboard')}
+          // Back to where a phone came FROM, which is the hub — this
+          // chevron pointed at the dashboard for as long as the tab did.
+          // The trainer claims the bottom bar, so it is the only way out.
+          title={t('Back to puzzles')}
+          onClick={() => navigate('puzzles', 'hub')}
         >
           <ChevronLeft className="size-3.5" />
         </Button>
