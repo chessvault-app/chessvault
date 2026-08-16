@@ -2,7 +2,7 @@ import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, 
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { fenKey } from '@/repertoire/drill';
-import { MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS } from '@/repertoire/field';
+import { fieldDatabases, MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
 import { cn } from '@/lib/cn';
 import { isDemo } from '@/lib/demo';
@@ -94,11 +94,13 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
   // The field the map checks itself against — see useGaps.
   const [field, setField] = useState(readFieldPick);
-  const [databases, setDatabases] = useState<{ name: string }[]>([]);
+  const [databases, setDatabases] = useState<FieldDatabase[]>([]);
   useEffect(() => {
     void fetch('/api/refgames')
       .then((r) => (r.ok ? r.json() : { databases: [] }))
-      .then((body: { databases?: { name: string }[] }) => setDatabases(body.databases ?? []))
+      // Not `databases ?? []`: a single-file mount has one database and no
+      // list to put it in — see fieldDatabases.
+      .then((body) => setDatabases(fieldDatabases(body)))
       .catch(() => setDatabases([]));
   }, []);
   const pickField = (next: { source: string; ratings: string }): void => {
@@ -535,7 +537,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
               ? [
                   {
                     label: t('Reference databases'),
-                    options: databases.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
+                    options: databases.map((b) => ({ value: b.name, label: b.label ?? bookLabel(b.name) })),
                   },
                 ]
               : []),

@@ -8,7 +8,7 @@ import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
 import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
-import { ONLINE_SOURCE, RATING_BANDS, type FieldMove } from './field';
+import { fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
@@ -597,15 +597,19 @@ export function RepertoireView() {
   // offer the online source (no token can ship in a static bundle), so it
   // starts undecided and settles on the first database.
   const [source, setSource] = useState<string>(isDemo() ? '' : ONLINE_SOURCE);
-  const [databases, setDatabases] = useState<{ name: string }[]>([]);
+  const [databases, setDatabases] = useState<FieldDatabase[]>([]);
 
   // Which reference databases exist, for the source picker.
   useEffect(() => {
     void fetch('/api/refgames')
       .then((r) => (r.ok ? r.json() : { databases: [] }))
-      .then((body: { databases?: { name: string }[] }) => {
-        setDatabases(body.databases ?? []);
-        setSource((s) => (s === '' ? (body.databases?.[0]?.name ?? ONLINE_SOURCE) : s));
+      .then((body) => {
+        // fieldDatabases, not `databases ?? []`: on a single-file mount the
+        // one database has no list to appear in, and the demo settled on
+        // the online source instead — a source its own picker hides.
+        const found = fieldDatabases(body);
+        setDatabases(found);
+        setSource((s) => (s === '' ? (found[0]?.name ?? ONLINE_SOURCE) : s));
       })
       .catch(() => {
         setDatabases([]);
@@ -1474,7 +1478,7 @@ export function RepertoireView() {
                       ? [
                           {
                             label: 'Reference databases',
-                            options: databases.map((b) => ({ value: b.name, label: bookLabel(b.name) })),
+                            options: databases.map((b) => ({ value: b.name, label: b.label ?? bookLabel(b.name) })),
                           },
                         ]
                       : []),

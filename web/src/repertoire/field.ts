@@ -7,6 +7,7 @@
  * view. Both sources answer in the same shape: the server normalises
  * the Lichess payload to the book contract, so only the URL differs.
  */
+import { t } from '@/lib/i18n';
 
 export interface FieldMove {
   uci: string;
@@ -27,6 +28,39 @@ export const ONLINE_SOURCE = 'lichess:lichess';
 
 /** The vault's own games as a field — see server/myGames.ts. */
 export const MY_GAMES_SOURCE = 'mine:mygames';
+
+/**
+ * The reference databases a picker can offer, from `GET /api/refgames`.
+ *
+ * Two mounts answer that route (server/refgames.ts). The directory mount
+ * lists databases by name. The single-file mount — the static demo, and
+ * the tests — has no names to list and answers `{ ready, games }`, which
+ * every field picker read as `databases ?? []`: an empty list, and so no
+ * reference database on offer at all. In the demo that hid the only field
+ * there is, which took the gap badges, the dot sizes and the lit mainline
+ * with it — a database the explorer beside it was answering from.
+ *
+ * A single mount ignores `?db=`, so the name here is only ever a label
+ * and a picker's value; the routes reach the one file whatever it says.
+ */
+export const SINGLE_DB_SOURCE = 'refgames';
+
+export interface FieldDatabase {
+  name: string;
+  games?: number;
+  /** What a picker shows. Absent for a named database, which is its name. */
+  label?: string;
+}
+
+export function fieldDatabases(body: {
+  ready?: boolean;
+  games?: number;
+  databases?: FieldDatabase[];
+}): FieldDatabase[] {
+  if (body.databases) return body.databases;
+  // The one file has no name of its own, so it is offered by what it is.
+  return body.ready ? [{ name: SINGLE_DB_SOURCE, games: body.games, label: t('Reference games') }] : [];
+}
 
 /**
  * The rating groups the Lichess explorer actually has, one per option.
