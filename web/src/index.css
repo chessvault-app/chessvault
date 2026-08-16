@@ -656,11 +656,27 @@ cg-board square.check {
 /* Radius/clip/shadow live on cg-container, not .cg-wrap: chessground floors
    the container to a multiple of 8 device pixels (crisp squares), so it can
    sit up to 8 device-px short of the wrap — rounding the wrap then leaves
-   the board's own right/bottom corners square. */
+   the board's own right/bottom corners square.
+
+   The corners are PAINTED by the board rather than clipped by the
+   container, and that is a performance decision, not a cosmetic one:
+   chessground gives every piece `will-change: transform`, so all 32 of
+   them are standing compositor layers, and `overflow: hidden` here put a
+   rounded mask over the lot of them that has to be applied on every frame
+   of every move. A desktop GPU never notices; an iPhone at three device
+   pixels per CSS pixel is where the move animation stopped being smooth.
+
+   What the clip was also doing, and no longer does: hiding a piece
+   dragged past the board's edge. It now follows the finger out over the
+   page, which is the better answer anyway — the editor's drag-off-to-
+   delete used to make the piece vanish at the rail. */
 .cg-wrap cg-container {
   border-radius: calc(var(--radius) * 0.6);
-  overflow: hidden;
   box-shadow: var(--shadow-panel);
+}
+
+.cg-wrap cg-board {
+  border-radius: inherit;
 }
 
 /* ---------------------------------------------------------------------------
