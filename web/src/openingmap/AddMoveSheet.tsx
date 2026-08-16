@@ -179,24 +179,31 @@ export function AddMoveSheet({
                   />
                 </span>
               )}
-              {row.share !== null && (
-                <span className="text-muted w-10 shrink-0 text-right text-xs">
-                  {Math.round(row.share * 100)}%
-                </span>
-              )}
-              {row.prepared && (
-                <span className="text-good shrink-0 text-xs" title={t('A linked study prepares it')}>
-                  {t('prepared')}
-                </span>
-              )}
-              {/* A tick where the move is already on the map, and
-                  nothing where it is not. The plus that used to sit
-                  there was decoration: the whole row charts the move,
-                  so a mark saying "this one adds" on every row said it
-                  of the row you press to jump to a node as well. */}
-              {row.childId && (
-                <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
-              )}
+              {/* Everything after the bar in one box of a fixed width,
+                  so the bars all start and end on the same two lines.
+                  Laid out as they come, a row carrying "prepared" and a
+                  tick took 4rem more than its neighbours and its bar
+                  gave up the difference — the ragged right edge in
+                  lanph3re's shot, which reads as the bars disagreeing
+                  about what they measure. */}
+              <span className="flex w-24 shrink-0 items-center justify-end gap-1.5">
+                {row.share !== null && (
+                  <span className="text-muted text-xs">{Math.round(row.share * 100)}%</span>
+                )}
+                {row.prepared && (
+                  <span className="text-good text-xs" title={t('A linked study prepares it')}>
+                    {t('prepared')}
+                  </span>
+                )}
+                {/* A tick where the move is already on the map, and
+                    nothing where it is not. The plus that used to sit
+                    there was decoration: the whole row charts the move,
+                    so a mark saying "this one adds" on every row said it
+                    of the row you press to jump to a node as well. */}
+                {row.childId && (
+                  <Check className="text-primary size-3.5 shrink-0" aria-label={t('On the map')} />
+                )}
+              </span>
             </button>
           ))
         )}
