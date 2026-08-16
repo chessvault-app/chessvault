@@ -24,9 +24,9 @@ page, and the trainer picks the new file up with no restart.
 
 ## When you need to do anything
 
-Almost never. A deploy keeps their indexes and count tables current
-(`scripts/deploy.sh` runs `tune-dbs.ts`), and the files themselves do not
-change on their own.
+Almost never. A deploy keeps their indexes, count tables and per-move
+sums current (`scripts/deploy.sh` runs `tune-dbs.ts`), and the files
+themselves do not change on their own.
 
 There are exactly two reasons to rebuild:
 

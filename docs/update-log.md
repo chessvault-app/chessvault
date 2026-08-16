@@ -7,6 +7,29 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## 0.3.0
 
+- **The opening map colours at once.** Checking a map against a field
+  used to cost one request per charted position — hundreds of round
+  trips from a phone to a small server — and the reference databases
+  summed their answers live, which near the root meant summing most of
+  the database on every visit. Every source now answers the whole map
+  in a few batched requests (opening-name labels too, which were the
+  same flood one request at a time), the reference databases answer
+  the unfiltered question from per-move sums precomputed at build and
+  tune time (measured on the live server: 4.7 s of summing for the
+  first batch became 2 ms), and the Lichess source answers from the
+  proxy's disk cache from the second visit within a day. The page
+  holds the canvas behind a brief spinner until coverage, names and
+  the field have all answered, then shows the finished picture once,
+  whole — with a deadline past which a slow source falls back to the
+  old progressive colouring rather than keeping the map hostage.
+- **The map moves at any size.** The arrival overture, the idle drift
+  and the drag physics all animated by re-rendering the whole scene
+  through React every frame — roughly eight SVG elements per dot,
+  sixty times a second — which is why maps above 160 nodes were kept
+  still. One animation loop now writes positions straight onto the
+  SVG while React renders the scene once, so the cap is gone: a
+  400-node map scatters into place, breathes, and pulls like a web
+  when dragged, the same as a small one.
 - **The opening map is a page of its own, and reads like one.** It was a
   sub-entry under Tools, one indent down beside Board and Editor, which
   is not what it is: it is a standing view of the repertoire, the same

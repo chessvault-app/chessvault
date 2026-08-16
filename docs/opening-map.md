@@ -76,7 +76,13 @@ source is chosen — from the map's own controls, which also switch the
 colour: icon buttons in the page's top-right corner on a pointer
 device, the floating button on a phone — and the choice is device-local; answers are cached per
 session, and a source that fails (a rate limit, a network blip) is
-retried after a pause rather than remembered as empty.
+retried after a pause rather than remembered as empty. The whole map is
+asked in a handful of batched requests, not one per dot: a reference
+database or your own games answer every charted position at once, and
+the Lichess source answers whatever the server's explorer cache already
+holds the same way — so only positions it has never seen (or not seen
+within a day) cost a request each, and a map you have visited before
+colours in about one round trip.
 
 ## Games that left the book
 
@@ -139,7 +145,13 @@ is calm — no selection, no search, no accent, just the neutral
 constellation. (Highlighting every node's most-played child sounds like
 the same idea and is not: an only child is trivially the most played,
 so on a 63-node map that rule lit 54 of 63 edges and the emphasis read
-as noise.) The
+as noise.) The page
+holds the canvas behind a brief spinner until its colours are known —
+coverage, names and the field all answered — then shows the finished
+picture at once, so the overture plays in colour rather than the map
+colouring in patches as answers land; a source too slow to wait for
+(the online database warming its cache, a dead link) falls back to
+colouring in place after a moment. The
 layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots
