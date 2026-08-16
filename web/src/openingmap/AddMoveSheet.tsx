@@ -152,13 +152,16 @@ export function AddMoveSheet({
       {/* Grows into the sheet, which is as tall as the one it opened
           over — capped only from `sm`, where a sheet is a window in the
           middle of a screen rather than a page filling one. */}
-      <div className={cn(LIST, 'min-h-0 grow content-start gap-y-0.5 overflow-y-auto sm:max-h-72')}>
+      {/* No row gap, because the rows are striped: a stripe with air
+          around it is a row of pills, and what makes a zebra readable is
+          that the bands meet. The panel's table is the same. */}
+      <div className={cn(LIST, 'min-h-0 grow content-start overflow-y-auto sm:max-h-72')}>
         {field === null ? null : rows.length === 0 ? (
           <p className="text-muted col-span-3 px-1 py-3 text-center text-xs">
             {t('Nothing to offer — type the move instead.')}
           </p>
         ) : (
-          rows.map((row) => (
+          rows.map((row, at) => (
             <button
               key={row.san}
               type="button"
@@ -170,7 +173,11 @@ export function AddMoveSheet({
               // `group` for the same reason the panel's move button has
               // one: a charted move lights as a link from anywhere on
               // the row.
-              className={cn(ROW, 'hover:bg-surface-2 group rounded-lg px-2 py-1.5 text-left')}
+              className={cn(
+                ROW,
+                'hover:bg-surface-2 group rounded-lg px-2 py-1.5 text-left',
+                at % 2 === 1 && 'bg-surface-2/50',
+              )}
             >
               {/* The panel's own row, part for part — see FieldRow. A
                   charted move is a link here too: pressing it goes to
