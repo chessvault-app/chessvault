@@ -195,19 +195,20 @@ export function Sheet({
           // its content plus room to end comfortably.
           'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
           // The lower of the two ceilings: the sheet this one was opened
-          // over, and the band the screen can show. `--sheet-cap` is
-          // unset when there is no sheet behind it, and 100% is then no
-          // constraint at all, so one expression covers both. Both are
-          // percentages of the layer, which is pinned to the visible
-          // band while a keyboard is up — so the whole thing gives way
-          // to the keyboard instead of hanging off the top of it.
-          'max-sm:max-h-[min(var(--sheet-cap,100%),calc(100%-env(safe-area-inset-top)-0.75rem))]',
+          // over, and the room the screen has for one (`--sheet-band`,
+          // which knows about the notch and about the keyboard).
+          // `--sheet-cap` is unset when there is no sheet behind it, and
+          // 100% is then no constraint at all, so one expression covers
+          // both. Both are shares of the layer, which is pinned to the
+          // visible band while a keyboard is up — so the whole thing
+          // gives way to the keyboard instead of hanging off the top.
+          'max-sm:max-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
           // `fill` makes that ceiling the floor as well, so the card
           // opens at exactly one height. The same expression, or a floor
           // could outgrow the ceiling — in CSS a min-height wins that
           // argument, which is how a child sheet would end up taller
           // than the parent it is supposed to fit inside.
-          fill && 'max-sm:min-h-[min(var(--sheet-cap,100%),calc(100%-env(safe-area-inset-top)-0.75rem))]',
+          fill && 'max-sm:min-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
           'sm:max-w-sm sm:rounded-xl',
           className,
         )}

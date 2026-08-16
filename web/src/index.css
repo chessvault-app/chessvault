@@ -908,8 +908,27 @@ cg-board square.check {
   --safe-b: env(safe-area-inset-bottom);
 }
 
+/* How tall a bottom sheet may grow, as a share of the layer it floats
+   in — named here because the answer changes when the keyboard is up.
+   The percentage resolves where it is USED, against the sheet's own
+   containing block, so it can live in a variable.
+
+   At rest the layer is the whole window: a sheet has to keep off the
+   status bar itself, or its title sits behind the clock, and a little
+   air above it says there is a page behind.
+
+   With the keyboard up the layer is the band that can be seen, and
+   `.kb-open .vv-band` below already pads that band by the notch. A
+   sheet subtracting it again lost the inset twice — the sheet came up
+   visibly shorter than the room above the keyboard, which is the one
+   moment a sheet has the least room to spare. */
+:root {
+  --sheet-band: calc(100% - env(safe-area-inset-top) - 0.75rem);
+}
+
 .kb-open {
   --safe-b: 0px;
+  --sheet-band: 100%;
 }
 
 .kb-open .vv-band {
