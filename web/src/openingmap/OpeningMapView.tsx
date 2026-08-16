@@ -570,26 +570,40 @@ export function OpeningMapView({ params }: { params: string[] }) {
           {databases.length > 0 && (
             <div className="flex flex-col gap-1">
               <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
-                {t('Reference databases')}
+                {databases.length === 1 ? t('Reference database') : t('Reference databases')}
               </p>
-              <Select
-                // Empty unless one of them IS the field: a trigger
-                // naming a database while "my games" is ticked above
-                // would be showing a choice nobody has made.
-                value={pickedDatabase}
-                onChange={(name) => pickField({ ...field, source: name })}
-                ariaLabel={t('Reference database')}
-                className="w-full"
-                fill
-                groups={[
-                  {
-                    options: databases.map((b) => ({
-                      value: b.name,
-                      label: b.label ?? bookLabel(b.name),
-                    })),
-                  },
-                ]}
-              />
+              {/* A list of one is not a list. Most vaults mount a single
+                  database, and behind a dropdown that made the one local
+                  source the only field you cannot switch to in a tap:
+                  open a popover, read one option, choose it. The rows
+                  above are one tap each and this is the same kind of
+                  answer, so it is the same kind of control. */}
+              {databases.length === 1 ? (
+                <PickRow
+                  label={databases[0]!.label ?? bookLabel(databases[0]!.name)}
+                  picked={field.source === databases[0]!.name}
+                  onPick={() => pickField({ ...field, source: databases[0]!.name })}
+                />
+              ) : (
+                <Select
+                  // Empty unless one of them IS the field: a trigger
+                  // naming a database while "my games" is ticked above
+                  // would be showing a choice nobody has made.
+                  value={pickedDatabase}
+                  onChange={(name) => pickField({ ...field, source: name })}
+                  ariaLabel={t('Reference database')}
+                  className="w-full"
+                  fill
+                  groups={[
+                    {
+                      options: databases.map((b) => ({
+                        value: b.name,
+                        label: b.label ?? bookLabel(b.name),
+                      })),
+                    },
+                  ]}
+                />
+              )}
             </div>
           )}
 
