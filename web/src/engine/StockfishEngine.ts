@@ -2,12 +2,29 @@ import { parseBestMove, parseInfo, type PvLine } from './uci.ts';
 
 export type EngineFlavor = 'lite' | 'lite-single' | 'full' | 'full-single';
 
+/**
+ * RELATIVE to the document, not to the origin.
+ *
+ * These were `/engine/…`, which is only the right file when the app is
+ * served from the root of its origin. The static demo is not: it lives
+ * under `/app/` beside the landing page, and on a project page it lives
+ * under `/<repo>/app/`. There the worker 404s, `start()` reports the
+ * failure, and the failure turns the engine back off — so the toggle
+ * flicked on and off again and analysis was simply missing from the demo.
+ *
+ * `document.baseURI` is what the rest of the app already resolves its
+ * assets against (see the demo backend's ECO and database fetches), and it
+ * is the app's own base wherever it is deployed, root included.
+ */
 const SCRIPTS: Record<EngineFlavor, string> = {
-  lite: '/engine/stockfish-18-lite.js',
-  'lite-single': '/engine/stockfish-18-lite-single.js',
-  full: '/engine/stockfish-18.js',
-  'full-single': '/engine/stockfish-18-single.js',
+  lite: 'engine/stockfish-18-lite.js',
+  'lite-single': 'engine/stockfish-18-lite-single.js',
+  full: 'engine/stockfish-18.js',
+  'full-single': 'engine/stockfish-18-single.js',
 };
+
+const scriptUrl = (flavor: EngineFlavor): string =>
+  new URL(SCRIPTS[flavor], document.baseURI).href;
 
 export interface EngineOptions {
   threads: number;
@@ -78,7 +95,7 @@ export class StockfishEngine {
     if (this.worker) return;
 
     try {
-      this.worker = new Worker(SCRIPTS[this.flavor]);
+      this.worker = new Worker(scriptUrl(this.flavor));
     } catch (error) {
       this.onError(`Could not start the engine worker: ${(error as Error).message}`);
       return;
