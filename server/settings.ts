@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:f
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
+import { normaliseHomeLayout } from '../shared/homeLayout.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 
 /**
@@ -26,6 +27,10 @@ interface Config {
   totpSecret?: string;
   lichessToken?: string;
   profile?: Profile;
+  /** How this vault's home page is arranged — see shared/homeLayout.ts.
+      Absent means nobody has ever said, which is not the same as having
+      asked for nothing. */
+  home?: unknown;
   [key: string]: unknown;
 }
 
@@ -72,6 +77,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       gate: !!config.appPassword?.trim(),
       totp: !!config.totpSecret?.trim(),
       lichess: { configured: token !== '', last4: token === '' ? null : token.slice(-4) },
+      // Normalised on the way out as well as in: a config edited by hand
+      // must not be able to hand the page something it cannot draw.
+      home: normaliseHomeLayout(config.home),
       vaultPath: vaultDir,
       version: APP_VERSION,
     });
@@ -91,6 +99,32 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
         ...(clean(body.chesscom) && { chesscom: clean(body.chesscom) }),
         ...(clean(body.lichess) && { lichess: clean(body.lichess) }),
       };
+    });
+    return c.json({ ok: true });
+  });
+
+  // --- home page -----------------------------------------------------------
+  // Which destinations home leads with, in which order, and whether its two
+  // cards are drawn. In the vault rather than in a browser because it
+  // describes this vault's chess, not this screen: a phone and a desktop
+  // opening the same vault should agree about where things are.
+
+  api.put('/settings/home', async (c) => {
+    const layout = normaliseHomeLayout(await c.req.json().catch(() => null));
+    if (!layout) return c.json({ error: 'invalid home layout' }, 400);
+    writeConfig((config) => {
+      config.home = layout;
+    });
+    return c.json({ ok: true });
+  });
+
+  // Reset. Deleting rather than writing today's defaults back is what keeps
+  // "never customised" reachable — and a vault in that state inherits a
+  // later version's defaults instead of being frozen at the arrangement
+  // that happened to be current the day the button was pressed.
+  api.delete('/settings/home', (c) => {
+    writeConfig((config) => {
+      delete config.home;
     });
     return c.json({ ok: true });
   });
