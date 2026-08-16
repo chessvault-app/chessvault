@@ -30,7 +30,11 @@ export function PaneTabs<T extends string>({
     <div
       role="tablist"
       className={cn(
-        'bg-surface-2 border-line flex shrink-0 gap-0.5 rounded-lg border p-0.5',
+        // p-px, not p-0.5: this row sits between a board and the panel
+        // under it on the one screen with no vertical room to spare, and
+        // the track's inset is only there to show the active pill sitting
+        // inside it — one pixel does that as well as two.
+        'bg-surface-2 border-line flex shrink-0 gap-0.5 rounded-lg border p-px',
         className,
       )}
     >
@@ -48,8 +52,15 @@ export function PaneTabs<T extends string>({
             className={cn(
               // Icon tabs stay a thin row (the full-width flex button is a
               // wide tap target even when short); text tabs keep more height.
-              'flex flex-1 items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors duration-100',
-              Icon ? 'h-6 pointer-coarse:h-9' : 'h-7 text-xs pointer-coarse:h-9',
+              //
+              // The coarse row was h-9, the height a standalone button
+              // gets for a thumb. It is not one: these tabs are a third of
+              // the screen wide each, so the target is enormous
+              // horizontally and the height was buying nothing but 11px of
+              // air above and below a 14px icon — on the phone layout where
+              // the board, this row and a panel share one screen. h-8 keeps
+              // a 32px band and gives the panel under it 4px back.
+              Icon ? 'h-6 pointer-coarse:h-8' : 'h-7 text-xs pointer-coarse:h-8',
               tab.id === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
             )}
           >
