@@ -3,14 +3,14 @@
 *English · [한국어](repertoire.ko.md)*
 
 The Repertoire page (under Tools) plays the opening against you in two
-modes. **Sparring** is open play: you move, and the reply is drawn from
+modes. **Free play** is exactly that: you move, and the reply is drawn from
 what real games actually played in the position. **Drilling** holds you
 to one of your own studies: your moves are checked against it, the
 replies stay inside what it covers, and what you fumble is remembered.
 This page explains both, drill in particular, precisely enough to
 predict what the trainer will do in any position.
 
-## Sparring
+## Free play
 
 You pick a side, a source, and an opening to start from (the curated
 list, or any of the ~3,800 ECO openings by name or code). After each of
@@ -88,7 +88,7 @@ clean recall in a *later* session is what clears the miss.
 
 ### The field's replies: steering
 
-The field's reply is where drill differs most from sparring. The full
+The field's reply is where drill differs most from free play. The full
 move list is fetched as usual, then split against the candidate set:
 
 1. **Covered** replies — in book by the definition above.
@@ -140,10 +140,10 @@ most useful thing the trainer can say is what actually beat the prep.
   left anywhere: every move matched, and the study goes no further.
 - **A gap** — the study covered none of the field's replies (above).
 - **Past the database** — the field itself has no games left, same as
-  sparring.
+  free play.
 
-All three hand off almost the same way sparring does: engine verdict,
-analyse on the board. Where sparring offers to save the line — it exists
+All three hand off almost the same way free play does: engine verdict,
+analyse on the board. Where free play offers to save the line — it exists
 nowhere else — a drill offers the way back to the study it came from,
 since filing the line again would only write the same moves twice.
 
@@ -209,7 +209,7 @@ match your new definition of the subject.
 - Steered replies are not a statistically faithful simulation of
   opponents: a study covering a quarter of the field feels fully
   covered while you drill it. That is the intended trade — drill tests
-  recall, spar tests reality — and the gap notes and panel counts are
+  recall, free play tests reality — and the gap notes and panel counts are
   what keep the coverage truth visible.
 - Difficulty of the *moves* is the study's own: the drill never judges
   move quality, only agreement with what you prepared.

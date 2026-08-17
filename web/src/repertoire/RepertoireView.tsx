@@ -28,6 +28,7 @@ import { PromptSheet } from '@/ui/PromptSheet';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Sheet } from '@/ui/Sheet';
 import { InfoTip } from '@/ui/InfoTip';
+import { KingIcon } from '@/ui/KingIcon';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
@@ -1424,37 +1425,52 @@ export function RepertoireView() {
           <Panel flush fit className="shrink-0">
             <PanelHeader title={t('New game')} />
             <div className="flex flex-col gap-3 p-3">
-              {/* Spar plays anything; drill holds you to a study. The two
-                  toggles share one shape — segmented, not actions. */}
-              <div className="flex gap-1">
-                {(['spar', 'drill'] as const).map((m) => (
-                  <Button
-                    key={m}
-                    size="sm"
-                    variant={mode === m ? 'primary' : 'secondary'}
-                    className="h-7 flex-1 pointer-coarse:h-8"
-                    onClick={() => setMode(m)}
-                  >
-                    {m === 'spar' ? t('Spar') : t('Drill a study')}
-                  </Button>
-                ))}
+              {/* Free play plays anything; drill holds you to a study. The
+                  two toggles share one shape — segmented, not actions.
+
+                  Both carry a label, in the same style as the Selects
+                  below, so the panel is one rhythm of labelled fields.
+                  Unlabelled they were four buttons of one size stacked
+                  two by two, and nothing said which pair chose what
+                  (lanph3re's call). The kings are the second half of the
+                  same fix: whatever the eye lands on first, the side pair
+                  can no longer be mistaken for the mode pair. */}
+              <div className="flex flex-col gap-1">
+                <span className="text-muted text-xs font-medium">{t('Mode')}</span>
+                <div className="flex gap-1">
+                  {(['spar', 'drill'] as const).map((m) => (
+                    <Button
+                      key={m}
+                      size="sm"
+                      variant={mode === m ? 'primary' : 'secondary'}
+                      className="h-7 flex-1 pointer-coarse:h-8"
+                      onClick={() => setMode(m)}
+                    >
+                      {m === 'spar' ? t('Free play') : t('Drill a study')}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <div className="flex gap-1">
-                {(['white', 'black'] as const).map((c) => (
-                  <Button
-                    key={c}
-                    size="sm"
-                    variant={userColor === c ? 'primary' : 'secondary'}
-                    // Shorter than a normal sm button, coarse pointers
-                    // included: these two are a segmented control, not
-                    // actions, and at full touch height they were the
-                    // tallest thing in a panel of one-line fields.
-                    className="h-7 flex-1 pointer-coarse:h-8"
-                    onClick={() => setUserColor(c)}
-                  >
-                    {c === 'white' ? t('White') : t('Black')}
-                  </Button>
-                ))}
+              <div className="flex flex-col gap-1">
+                <span className="text-muted text-xs font-medium">{t('Play as')}</span>
+                <div className="flex gap-1">
+                  {(['white', 'black'] as const).map((c) => (
+                    <Button
+                      key={c}
+                      size="sm"
+                      variant={userColor === c ? 'primary' : 'secondary'}
+                      // Shorter than a normal sm button, coarse pointers
+                      // included: these two are a segmented control, not
+                      // actions, and at full touch height they were the
+                      // tallest thing in a panel of one-line fields.
+                      className="h-7 flex-1 pointer-coarse:h-8"
+                      onClick={() => setUserColor(c)}
+                    >
+                      <KingIcon side={c} />
+                      {c === 'white' ? t('White') : t('Black')}
+                    </Button>
+                  ))}
+                </div>
               </div>
               <label className="flex flex-col gap-1">
                 <span className="text-muted text-xs font-medium">{t('Source')}</span>
@@ -1521,7 +1537,7 @@ export function RepertoireView() {
               ) : mode === 'drill' ? (
                 studyList !== null && studyList.length === 0 ? (
                   <p className="text-muted text-xs leading-relaxed">
-                    {t('No studies yet — create one in Studies, or save a sparred line first.')}
+                    {t('No studies yet — create one in Studies, or save a line you played first.')}
                   </p>
                 ) : (
                   <>

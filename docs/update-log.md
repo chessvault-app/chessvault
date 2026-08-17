@@ -7,6 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## 0.3.0
 
+- **The repertoire's new-game panel reads as a form.** Its four
+  buttons — which mode, and which side you play — were one block of the
+  same size and shape, with nothing to say which pair chose what. Both
+  pairs now carry a label, in the style of the source and rating fields
+  under them, and the side pair carries the king of its colour, so the
+  two rows cannot be mistaken for each other at any glance. Open play
+  is called **free play** rather than *spar*.
+
 - **The Puzzles tab lands somewhere you can reach.** On a phone it
   opened the dashboard — counters, a difficulty breakdown and a
   200-row attempt log — which is a page to consult now and then, not

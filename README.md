@@ -75,7 +75,7 @@ is one connected body of work, and the links are what make it that.
 
 - **Tools** — the interactive boards, grouped: the analysis **Board**,
   the position **Editor**, a shortcut into the opening **Explorer**, and
-  a **Repertoire** trainer that spars an opening against the field — the
+  a **Repertoire** trainer that plays an opening against the field — the
   Lichess database filtered to a rating band, or any local reference database,
   the bundled one included, so it works offline (weighted-random replies,
   seamless hand-off to the engine when the line leaves book) — or drills
@@ -467,7 +467,7 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
   become verified puzzle books, with a runbook.
 - [Prepared databases](docs/databases.md) — the puzzle and reference-game
   databases: built once, copied to the server, rarely touched again.
-- [The repertoire trainer](docs/repertoire.md) — sparring and drilling,
+- [The repertoire trainer](docs/repertoire.md) — free play and drilling,
   and exactly how the drill decides hit, miss and gap.
 - [The opening map](docs/opening-map.md) — your repertoire as a tree:
   hand-placed moves, tagged studies, coverage derived live.

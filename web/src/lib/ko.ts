@@ -297,13 +297,15 @@ export const ko: Record<string, string> = {
   'Result and strength': '결과와 기력',
   Adaptive: '적응형',
   'follows your solving': '풀이 실력을 따라감',
-  Spar: '스파링',
+  Mode: '모드',
+  'Free play': '자유 대국',
   'Drill a study': '스터디 드릴',
+  'Play as': '플레이할 색',
   Chapter: '챕터',
   'Study to drill': '드릴할 스터디',
   'Chapter to drill': '드릴할 챕터',
-  'No studies yet — create one in Studies, or save a sparred line first.':
-    '아직 스터디가 없습니다. 스터디에서 만들거나, 스파링한 라인을 먼저 저장해 보세요.',
+  'No studies yet — create one in Studies, or save a line you played first.':
+    '아직 스터디가 없습니다. 스터디에서 만들거나, 방금 둔 라인을 먼저 저장해 보세요.',
   '{n} positions to review': '복습할 포지션 {n}개',
   '{n} replies with no answer yet': '아직 대비 없는 응수 {n}개',
   'Drill a missed position': '놓친 포지션 드릴',
