@@ -138,6 +138,20 @@ const cancelSizes: Record<InputSize, string> = {
 };
 
 /**
+ * Empty a field, and either stay in it or leave.
+ *
+ * Through the native setter and an input event, so a CONTROLLED field
+ * hears it as a change. Assigning el.value alone is invisible to React.
+ */
+function emptyField(el: HTMLInputElement, then: 'stay' | 'leave'): void {
+  const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  setter?.call(el, '');
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+  if (then === 'stay') el.focus();
+  else el.blur();
+}
+
+/**
  * An Input with the magnifier badge every search field carries, plus the
  * two things a search needs that a text box does not.
  *
@@ -168,17 +182,9 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
   const self = useRef<HTMLInputElement | null>(null);
   const text = value === undefined ? typed : String(value);
 
-  /** Empty it, and either stay in it or leave — see the two buttons. */
+  /** See the two buttons: the X stays in the field, Cancel leaves it. */
   const empty = (then: 'stay' | 'leave'): void => {
-    const el = self.current;
-    if (!el) return;
-    // Through the native setter and an input event, so a CONTROLLED field
-    // hears it as a change. Assigning el.value alone is invisible to React.
-    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
-    setter?.call(el, '');
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    if (then === 'stay') el.focus();
-    else el.blur();
+    if (self.current) emptyField(self.current, then);
   };
 
   return (
