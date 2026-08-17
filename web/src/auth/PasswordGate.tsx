@@ -111,7 +111,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         <p className="text-subtle mb-6 mt-1 text-sm">{t('Your chess, in plain files.')}</p>
 
         <form
-          className="bg-surface border-line w-full rounded-2xl border p-5 shadow-[var(--shadow-panel)]"
+          className="bg-surface border-line w-full rounded-2xl border p-6 shadow-[var(--shadow-panel)]"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();
