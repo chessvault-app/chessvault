@@ -140,6 +140,8 @@ export const ko: Record<string, string> = {
   Threads: '스레드',
   Lines: '변화 수',
   Depth: '깊이',
+  'Time limit': '시간 제한',
+  off: '없음',
   Hash: '해시',
   'Thinking…': '생각하는 중…',
   'Engine review — judge every move (?!/?/??) and measure accuracy':

@@ -23,6 +23,8 @@ interface EngineState {
   hashMb: number;
   multiPv: number;
   depth: number;
+  /** Seconds a single search may run for; 0 is no cap. See the default. */
+  moveSeconds: number;
 
   // -- live search state --
   /** FEN the current results belong to; guards against stale updates. */
@@ -34,7 +36,7 @@ interface EngineState {
 
   setEnabled: (on: boolean) => void;
   toggle: () => void;
-  setOption: (patch: Partial<Pick<EngineState, 'threads' | 'hashMb' | 'multiPv' | 'depth'>>) => void;
+  setOption: (patch: Partial<Pick<EngineState, 'threads' | 'hashMb' | 'multiPv' | 'depth' | 'moveSeconds'>>) => void;
   /** Analyse a position, or clear results if the engine is off. */
   analyse: (fen: string) => void;
   stop: () => void;
@@ -118,6 +120,33 @@ export const useEngine = create<EngineState>()(
          * it.
          */
         depth: 18,
+        /**
+         * A ceiling on the clock, because depth is a target and not a
+         * promise about time.
+         *
+         * The note above measures the depth-to-seconds rate on one machine
+         * and picks a depth from it — but that rate varies by an order of
+         * magnitude between a desktop and a phone, and by a good deal more
+         * between a quiet endgame and a sharp middlegame. So the one dial
+         * cannot be set correctly for both, and where it is set too high
+         * the symptom is not "slow": the pane clears itself when a search
+         * starts and only fills in when lines arrive, and the repertoire's
+         * final assessment waits for `bestmove` before it shows anything at
+         * all — so a long search looks like a hang, which is what lanph3re
+         * reported.
+         *
+         * Sent ALONGSIDE the depth, never instead of it (see the `go` in
+         * StockfishEngine): whichever limit is reached first ends the
+         * search, so a desktop still gets its full depth and only the
+         * device that would have run for a minute is cut short.
+         *
+         * 10 seconds is a backstop rather than a budget — comfortably above
+         * the 2.0s the measured depth-18 search takes on that desktop, and
+         * well below the point where a reader concludes nothing is
+         * happening. 0 turns it off for anyone who wants the depth whatever
+         * it costs.
+         */
+        moveSeconds: 10,
 
         resultFen: null,
         lines: [],
@@ -138,7 +167,7 @@ export const useEngine = create<EngineState>()(
           set({ enabled: true, error: null, threadsAvailable: supportsThreads() });
           if (pendingFen) {
             requestedFen = pendingFen;
-            void ensureEngine().analyse(pendingFen, get().depth);
+            void ensureEngine().analyse(pendingFen, get().depth, get().moveSeconds * 1000);
           }
         },
 
@@ -151,7 +180,7 @@ export const useEngine = create<EngineState>()(
           // Re-run so the change is visible immediately rather than next move.
           if (get().enabled && pendingFen) {
             set({ lines: [], finished: false });
-            void engine?.analyse(pendingFen, get().depth);
+            void engine?.analyse(pendingFen, get().depth, get().moveSeconds * 1000);
           }
         },
 
@@ -162,7 +191,7 @@ export const useEngine = create<EngineState>()(
           requestedFen = fen;
           // Clear straight away so the pane never shows another position's eval.
           set({ lines: [], finished: false, resultFen: null });
-          void ensureEngine().analyse(fen, get().depth);
+          void ensureEngine().analyse(fen, get().depth, get().moveSeconds * 1000);
         },
 
         stop: () => {
@@ -182,6 +211,7 @@ export const useEngine = create<EngineState>()(
         hashMb: s.hashMb,
         multiPv: s.multiPv,
         depth: s.depth,
+        moveSeconds: s.moveSeconds,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

@@ -72,7 +72,7 @@ export class StockfishEngine {
   private currentFen: string | null = null;
   /** Set while waiting for `bestmove` after a `stop`, so we don't overlap searches. */
   private pendingStop = false;
-  private queued: { fen: string; depth: number } | null = null;
+  private queued: { fen: string; depth: number; moveMs: number } | null = null;
 
   /**
    * While set, every engine line is diverted here instead of the UCI
@@ -154,7 +154,7 @@ export class StockfishEngine {
       this.pendingStop = false;
       const next = this.queued;
       this.queued = null;
-      if (next) void this.analyse(next.fen, next.depth);
+      if (next) void this.analyse(next.fen, next.depth, next.moveMs);
       return;
     }
   }
@@ -248,12 +248,12 @@ export class StockfishEngine {
    * queued until `bestmove` arrives. Issuing `go` while a search is live is the
    * classic way to desynchronise a UCI engine, so it is avoided.
    */
-  async analyse(fen: string, depth = 22): Promise<void> {
+  async analyse(fen: string, depth = 22, moveMs = 0): Promise<void> {
     if (!this.worker) await this.start();
     if (!this.worker) return;
 
     if (this.searching || this.pendingStop) {
-      this.queued = { fen, depth };
+      this.queued = { fen, depth, moveMs };
       if (!this.pendingStop) {
         this.pendingStop = true;
         this.send('stop');
@@ -271,7 +271,11 @@ export class StockfishEngine {
     this.currentFen = fen;
     this.searching = true;
     this.send(`position fen ${fen}`);
-    this.send(`go depth ${depth}`);
+    // Both limits at once, which UCI allows and Stockfish honours: it stops
+    // at whichever arrives first and emits `bestmove` either way, so nothing
+    // downstream can tell the two apart. Depth stays the target — the cap is
+    // only there so the target cannot cost unbounded time on a slow device.
+    this.send(`go depth ${depth}${moveMs > 0 ? ` movetime ${moveMs}` : ''}`);
   }
 
   /**

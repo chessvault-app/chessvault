@@ -304,6 +304,7 @@ function EngineSettings() {
   const hashMb = useEngine((s) => s.hashMb);
   const multiPv = useEngine((s) => s.multiPv);
   const depth = useEngine((s) => s.depth);
+  const moveSeconds = useEngine((s) => s.moveSeconds);
   const threadsAvailable = useEngine((s) => s.threadsAvailable);
   const setOption = useEngine((s) => s.setOption);
 
@@ -334,6 +335,18 @@ function EngineSettings() {
         max={40}
         onChange={(v) => setOption({ depth: v })}
       />
+      {/* Under Depth, because it is a ceiling on what Depth costs and not a
+          setting of its own: whichever comes first stops the search. Shown
+          as "off" at 0 rather than "0 s", which would read as "no time". */}
+      <Slider
+        label={t('Time limit')}
+        value={moveSeconds}
+        min={0}
+        max={60}
+        hint={moveSeconds === 0 ? t('off') : 's'}
+        format={(v) => (v === 0 ? '—' : String(v))}
+        onChange={(v) => setOption({ moveSeconds: v })}
+      />
       <Slider
         label={t('Hash')}
         value={hashMb}
@@ -354,6 +367,7 @@ function Slider({
   max,
   step = 1,
   hint,
+  format,
   disabled = false,
   onChange,
 }: {
@@ -363,6 +377,8 @@ function Slider({
   max: number;
   step?: number;
   hint?: string;
+  /** How the number reads, when the digit is not the whole story. */
+  format?: (value: number) => string;
   disabled?: boolean;
   onChange: (value: number) => void;
 }) {
@@ -371,7 +387,7 @@ function Slider({
       <span className="flex items-baseline justify-between text-xs">
         <span className="text-muted">{label}</span>
         <span className="text-fg font-mono tabular-nums">
-          {value}
+          {format ? format(value) : value}
           {hint ? <span className="text-subtle ml-1 font-sans">{hint}</span> : null}
         </span>
       </span>
