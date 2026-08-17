@@ -282,6 +282,51 @@
   --shadow-color: var(--ui-hue) 40% 4%;
 }
 
+/**
+ * The Black scheme's dark ladder: a black page under grey panels.
+ *
+ * Only the LIGHTNESSES are replaced. Hue and chroma still come from
+ * --ui-hue and --ui-tint, so this is a scheme's third dimension rather
+ * than a theme of its own — pick Black and you get tint 0, but the same
+ * block would serve a tinted one.
+ *
+ * The steps are what is being preserved, not the numbers. The comment on
+ * `.dark` above is the rule: four points between a card and the page made
+ * a shelf of cards read as one flat field, and six is enough for a card to
+ * be a card. Here the page drops to 6% and the surface to 13%, which is
+ * seven — the extra point buys back what is lost at the bottom of the
+ * scale, where the same lightness difference is a smaller ratio. The
+ * surface ladder itself (13 → 17 → 21) keeps its four-point rungs, so
+ * every panel, popover and input holds its relationship to the others.
+ *
+ * Text is untouched: it only ever gets MORE contrast against a darker
+ * ground, so nothing that passed before can fail here.
+ *
+ * Attribute rather than class, on the same element as `.dark`, so it can
+ * only ever apply on top of the dark theme — the light theme has no black
+ * page to offer and the selector cannot reach it.
+ */
+.dark[data-ink] {
+  --app-bg: oklch(6% calc(0.01 * var(--ui-tint)) var(--ui-hue));
+  --app-bg-accent: oklch(3.5% calc(0.01 * var(--ui-tint)) var(--ui-hue));
+  --surface: oklch(13% calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(17% calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(21% calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(10% calc(0.012 * var(--ui-tint)) var(--ui-hue));
+
+  --border: oklch(24% calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --border-strong: oklch(33% calc(0.022 * var(--ui-tint)) var(--ui-hue));
+
+  /* The frame the board sits in, and the black half of the eval bar: both
+     are chrome rather than board colour (the squares come from
+     `data-board` and are not a scheme's business), so they follow the
+     page down or they float on it. */
+  --board-frame: oklch(19% calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(8% calc(0.01 * var(--ui-tint)) var(--ui-hue));
+
+  --shadow-color: var(--ui-hue) 40% 0%;
+}
+
 /* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile
    to `var(--surface)` directly, so flipping `.dark` re-themes without a rebuild
    and without duplicating every utility behind a `dark:` variant. */

@@ -442,7 +442,10 @@ function AppearanceCard() {
                     // The dot has to be able to be grey, or Greyscale
                     // advertises itself with a blue spot.
                     background: `oklch(58% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
-                    outline: `2px solid oklch(90% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
+                    // The ring is the scheme's PAGE, so a black scheme
+                    // cannot advertise itself with a pale one — same
+                    // reason the dot has to be able to be grey.
+                    outline: `2px solid oklch(${preset.scheme.ink ? 12 : 90}% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
                   }}
                 />
                 {t(preset.label)}
