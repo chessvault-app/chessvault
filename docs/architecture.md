@@ -79,7 +79,7 @@ matters.
   explorer and the PGN parsers to draw a launcher — which is also why the
   home page's customise sheet is the one thing on it that is lazy. It
   currently loads
-  308 kB of JS: 216 kB of shell and 90 kB of translation dictionary.
+  298 kB of JS: 217 kB of shell and 81 kB of translation dictionary.
 
 ## Deployment model
 
