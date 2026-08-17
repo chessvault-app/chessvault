@@ -454,7 +454,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 type="button"
                 onClick={() => void openGame(g)}
                 title={t('Open on the analysis board')}
-                className="flex min-w-0 flex-1 items-center gap-3 py-3.5 pl-3 text-left"
+                className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-3 text-left"
               >
                 <span className="min-w-0 flex-1">
                   <span className="text-fg block truncate text-sm">
@@ -482,7 +482,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                   put: it is the point of this page, not a quick action. */}
               <span
                 className={cn(
-                  'flex shrink-0 items-center rounded-lg p-0.5 transition-opacity duration-100',
+                  'flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
                   'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
                   'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
                 )}
@@ -535,8 +535,9 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
             </li>
           ))}
           {rows.length < total && (
-            <li ref={sentinel} className="flex items-center justify-center p-3">
+            <li ref={sentinel} className="flex items-center justify-center gap-2 p-3">
               <Loader2 className="text-subtle size-4 animate-spin" />
+              <span className="text-subtle text-xs">{t('Loading older games…')}</span>
             </li>
           )}
       </ul>
@@ -561,7 +562,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         </div>
         {filterRow('border-t')}
         <div className="border-line shrink-0 border-t px-3 py-1 pr-1.5">
-          <div className="flex min-h-6 items-center gap-1">
+          <div className="flex min-h-6 items-center gap-2">
             <span className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
               {count}
             </span>
