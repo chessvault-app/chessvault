@@ -113,6 +113,10 @@ function StudyList() {
     (s) =>
       (!markedOnly || markedIds.has(s.id)) && (!needle || s.id.toLowerCase().includes(needle)),
   );
+  /** Whether anything is narrowing the shelf — the two filters `visible`
+      is built from, and the only reason an empty list can be blamed on
+      something the reader can undo. */
+  const filtering = markedOnly || needle !== '';
 
   return (
     // Wide tier: two columns of cards on a desktop, so the shelf shows
@@ -140,7 +144,11 @@ function StudyList() {
         // The shape of the list that is coming, rather than a blank page
         // that fills in — but only once the wait is long enough to notice.
         pending ? <SkeletonCards cards={5} /> : null
-      ) : studies.length === 0 && folders.length === 0 ? (
+      ) : /* Nothing in the vault at all — no study at any depth (the listing
+             walks the tree) and not one collection either. A shelf holding
+             only empty collections is NOT this: it has something to show,
+             and GroupedStudies below shows it. */
+      studies.length === 0 && folders.length === 0 ? (
         <EmptyState
           art={<CollectionArt />}
           title="No studies yet"
@@ -156,12 +164,17 @@ function StudyList() {
             </Button>
           }
         />
-      ) : /* The shelf HAS studies; this search or the bookmark toggle just
-            matches none of them. Without this the list was simply absent
-            under its own toolbar, which reads as the shelf having been
-            emptied rather than as a filter being on. Each ends on the
-            press that undoes it. */
-      visible.length === 0 ? (
+      ) : /* A filter is on and matches nothing. Without this the list was
+            simply absent under its own toolbar, which reads as the shelf
+            having been emptied rather than as a filter being on. Each ends
+            on the press that undoes it.
+
+            `filtering &&` is what keeps it honest: an unfiltered shelf with
+            no studies in it has nothing to blame a filter for, and used to
+            be told nothing matched a search nobody had typed — under a
+            Clear search button with nothing to clear. That shelf falls
+            through to the list, which draws its collections. */
+      filtering && visible.length === 0 ? (
         markedOnly && !needle ? (
           <EmptyState
             art={<BookmarkArt />}

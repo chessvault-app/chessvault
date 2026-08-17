@@ -151,6 +151,10 @@ function NoteList() {
     (n) =>
       (!markedOnly || markedIds.has(n.id)) && (!needle || n.id.toLowerCase().includes(needle)),
   );
+  /** Whether anything is narrowing the shelf — the two filters `visible`
+      is built from, and the only reason an empty list can be blamed on
+      something the reader can undo. */
+  const filtering = markedOnly || needle !== '';
 
   // Removal is immediate and undoable: the row goes, and the DELETE waits
   // until the undo has had its say (useUndoable).
@@ -207,7 +211,11 @@ function NoteList() {
 
       {!loaded ? (
         pending ? <SkeletonCards cards={5} /> : null
-      ) : notes.length === 0 && folders.length === 0 ? (
+      ) : /* Nothing in the vault at all — no note at any depth (the listing
+             walks the tree) and not one collection either. A shelf holding
+             only empty collections is NOT this: it has something to show,
+             and GroupedNotes below shows it. */
+      notes.length === 0 && folders.length === 0 ? (
         <EmptyState
           art={<CollectionArt />}
           title="No notes yet"
@@ -219,11 +227,16 @@ function NoteList() {
             </Button>
           }
         />
-      ) : /* The shelf HAS notes; this search or the bookmark toggle just
-            matches none of them. Without this the list was simply absent
-            under its own toolbar, which reads as the shelf having been
-            emptied rather than as a filter being on. */
-      visible.length === 0 ? (
+      ) : /* A filter is on and matches nothing. Without this the list was
+            simply absent under its own toolbar, which reads as the shelf
+            having been emptied rather than as a filter being on.
+
+            `filtering &&` is what keeps it honest: an unfiltered shelf with
+            no notes in it has nothing to blame a filter for, and used to be
+            told nothing matched a search nobody had typed — under a Clear
+            search button with nothing to clear. That shelf falls through to
+            the list, which draws its collections. */
+      filtering && visible.length === 0 ? (
         markedOnly && !needle ? (
           <EmptyState
             art={<BookmarkArt />}
