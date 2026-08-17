@@ -1,6 +1,7 @@
 import { AlertTriangle, Database, Settings2, Thermometer } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel, pathTo } from '@shared/tree';
+import type { MoveNode, NodeId } from '@shared/types';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplain } from '@/store/explain';
@@ -265,8 +266,10 @@ export function EngineBlock({
       {enabled && !error && standalone && <CurrentLine />}
       {/* Closes the expanded engine body so the Moves header below reads
           as its own section; when the engine is off the header's own
-          bottom border already does the job. */}
-      {enabled && <div className="border-line shrink-0 border-b" />}
+          bottom border already does the job. Nothing follows it when the
+          block stands alone, so there is nothing to separate from — the
+          rule just sat under the last row as a line to nowhere. */}
+      {enabled && !standalone && <div className="border-line shrink-0 border-b" />}
       <PvPeek peek={peek} orientation={orientation} />
     </div>
   );
@@ -294,40 +297,100 @@ function CurrentLine() {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const setCursor = useAnalysis((s) => s.setCursor);
-  // Drop the root: it carries no move, and `pathTo` starts there.
-  const path = [...pathTo(tree, cursorId).slice(1), ...mainlineFrom(tree, cursorId)];
   const blackFirst = blackToMoveAtRoot(tree);
-  if (path.length === 0) return null;
+
+  // `forced` is for a move that follows a bracket, or opens one: a Black
+  // move normally carries no number, and after "(2.d4 exd4 3.♘f3)" a bare
+  // ♘c6 has lost the thread of where it belongs. PGN writes 2...♘c6 there
+  // for exactly this reason.
+  const chip = (id: NodeId, node: MoveNode, forced = false): ReactNode => {
+    const numbered = forced || (node.ply + (blackFirst ? 1 : 0)) % 2 === 1;
+    const on = id === cursorId;
+    return (
+      <button
+        key={id}
+        type="button"
+        onClick={() => setCursor(id)}
+        className={cn(
+          'rounded px-1 py-0.5 text-xs transition-colors duration-100',
+          // The one you are on carries the accent, the same way a hovered
+          // ply in a variation above does — one grammar for "this move" in
+          // the whole panel.
+          on ? 'text-primary font-semibold' : 'text-muted hover:text-fg hover:bg-surface-3',
+        )}
+      >
+        {numbered && (
+          <span className="text-subtle mr-0.5 font-mono">
+            {moveNumberLabel(node.ply, blackFirst)}
+          </span>
+        )}
+        {figurine(node.san ?? '')}
+      </button>
+    );
+  };
+
+  /**
+   * A sideline, flat: its own moves and nothing else.
+   *
+   * One level deep on purpose. A bracket inside a bracket is a tree, and a
+   * tree is what the Moves tab is for — this is a sentence you read at a
+   * glance, and nesting is the first thing that stops it being one.
+   *
+   * Appended to a shared array rather than returned, because a bracket and
+   * the moves inside it have to be one flat run of inline content: the
+   * strip wraps, and a nested flex box would refuse to break in the middle
+   * of a long variation.
+   */
+  const emit = (out: ReactNode[], firstId: NodeId): void => {
+    let cur: NodeId | undefined = firstId;
+    let first = true;
+    while (cur) {
+      const id: NodeId = cur;
+      const node = getNode(tree, id);
+      out.push(chip(id, node, first));
+      first = false;
+      cur = node.children[0];
+    }
+  };
+
+  // The line THROUGH the cursor: what led here, and where it goes on from
+  // here. Walked as one chain so a cursor sitting inside a variation reads
+  // that variation as the line, which is what it is — and each move on it
+  // carries what was played instead, in brackets, PGN's own shape. The
+  // order matters: the alternative belongs beside the move it replaces,
+  // not in front of it.
+  const chain = [...pathTo(tree, cursorId).slice(1), ...mainlineFrom(tree, cursorId)];
+  if (chain.length === 0) return null;
+  const out: ReactNode[] = [];
+  let forced = false;
+  for (const id of chain) {
+    const node = getNode(tree, id);
+    out.push(chip(id, node, forced));
+    forced = false;
+    const parent = node.parentId === null ? null : getNode(tree, node.parentId);
+    for (const alt of parent ? parent.children.filter((c) => c !== id) : []) {
+      // Negative margins because the chips carry their own padding: the
+      // bracket has to sit against the move, not a gap away from it.
+      out.push(
+        <span key={`${alt}-(`} className="text-subtle -mr-1 text-xs">
+          (
+        </span>,
+      );
+      emit(out, alt);
+      out.push(
+        <span key={`${alt}-)`} className="text-subtle -ml-1 text-xs">
+          )
+        </span>,
+      );
+      forced = true;
+    }
+  }
+
   return (
-    <div className="border-line shrink-0 border-t px-3 py-1.5">
-      <div className="flex flex-wrap items-baseline gap-x-0.5 gap-y-1">
-        {path.map((id) => {
-          const node = getNode(tree, id);
-          const numbered = (node.ply + (blackFirst ? 1 : 0)) % 2 === 1;
-          const on = id === cursorId;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setCursor(id)}
-              className={cn(
-                'rounded px-1 py-0.5 text-xs transition-colors duration-100',
-                // The one you are on carries the accent, the same way a
-                // hovered ply in a variation above does — one grammar for
-                // "this move" in the whole panel.
-                on ? 'text-primary font-semibold' : 'text-muted hover:text-fg hover:bg-surface-3',
-              )}
-            >
-              {numbered && (
-                <span className="text-subtle mr-0.5 font-mono">
-                  {moveNumberLabel(node.ply, blackFirst)}
-                </span>
-              )}
-              {figurine(node.san ?? '')}
-            </button>
-          );
-        })}
-      </div>
+    // Capped and scrollable: a game with sidelines at every move would
+    // otherwise grow this box until it had eaten the variations above it.
+    <div className="border-line max-h-24 shrink-0 overflow-y-auto border-t px-3 py-1.5">
+      <div className="flex flex-wrap items-baseline gap-x-0.5 gap-y-1">{out}</div>
     </div>
   );
 }
