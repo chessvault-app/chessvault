@@ -436,6 +436,11 @@ Settings page, or put it in `vault/config.json` (gitignored):
 `config.json` also holds `appPassword` and the 2FA `totpSecret` when the
 lock screen is on — the Settings page manages all three, and the vault's
 history repo deliberately excludes the file so secrets never enter it.
+The password is stored as a salted hash (`scrypt:…`); writing a plain
+value by hand still works — it is hashed at the next start or login.
+Signed-in sessions live beside it in `vault/sessions.json` (hashes only,
+never the tokens themselves), excluded from the history repo the same
+way; signing out or changing the password revokes them.
 
 ## Commands
 
