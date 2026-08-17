@@ -11,6 +11,13 @@
 > `bookConfigSearch.ts`, `bookSolve.ts`, `bookGlyphs.ts`, `bookRepair.ts` —
 > so the two cannot drift.
 
+That doc indexes the import stages and every script they run; this file
+is the models. Between the two sit three tools documented in their own
+headers: `search-config.ts` works a book's notation settings out from
+its own printed solutions, `read-anchors.ts` reads the diagrams an
+annotated-games book prints so its games anchor to positions, and
+`filter_agree.py` agreement-filters pseudo-labels before training.
+
 ## Text-side models (stage 1: number labels — `digit_labels.py`)
 
 The PDF text layer loses 83 of the 1001 puzzle numbers (and its OCR of the
