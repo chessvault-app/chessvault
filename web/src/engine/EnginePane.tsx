@@ -264,9 +264,22 @@ function PvRow({
       {/* No `title` any more. It existed because the row truncated and hid
           the rest of the line — which hovering now shows in full, and the
           global title tooltip would have opened over the preview board. */}
+      {/* Stacked, the score goes on its own line and the moves take the
+          whole panel under it.
+          Beside the score a phone left the line about 300px, which is
+          four or five plies of a twelve-ply variation — and the rest was
+          unreachable, because the row only opens up on hover and a touch
+          device has none. Every ply is a button and a handoff into the
+          position after it, so a line nobody can see is most of the
+          feature missing. Under the score they wrap instead, and the row
+          is as tall as its line needs.
+          Only when stacked: beside the board there is a column to fit,
+          three lines cost three rows, and hovering already opens the one
+          being read. */}
       <div
         className={cn(
           'group hover:bg-surface-2 flex w-full items-baseline gap-2 px-3 py-1 text-left',
+          'stacked:flex-col stacked:items-start stacked:gap-0.5',
           'transition-colors duration-100',
         )}
       >
@@ -291,6 +304,10 @@ function PvRow({
           onPeekEnd={onPeekEnd}
           className={cn(
             'min-w-0 flex-1 truncate',
+            // `truncate` is three declarations, and wrapping needs two of
+            // them undone: the clip as well as the nowrap, or the lines
+            // past the first are hidden rather than shown.
+            'stacked:w-full stacked:flex-none stacked:overflow-visible stacked:whitespace-normal',
             'group-focus-within:whitespace-normal pointer-fine:group-hover:whitespace-normal',
           )}
         />
