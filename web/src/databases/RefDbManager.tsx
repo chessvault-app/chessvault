@@ -703,18 +703,13 @@ function BuildWindow({
           'Building keeps going if you leave the page. A build under an existing name replaces that database.',
         )}
       </p>
-      <div className="mt-1 flex flex-col gap-2">
-        <Button
-          variant="primary"
-          size="md"
-          className="w-full justify-center"
-          onClick={() => onBuild(name)}
-        >
+      <div className="mt-1 flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          {t('Cancel')}
+        </Button>
+        <Button variant="primary" size="sm" onClick={() => onBuild(name)}>
           <Database className="size-3.5" />
           {t('Build')}
-        </Button>
-        <Button variant="secondary" size="md" className="w-full justify-center" onClick={onClose}>
-          {t('Cancel')}
         </Button>
       </div>
     </Modal>

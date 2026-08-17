@@ -100,7 +100,7 @@ export function GrowSheet({
           </div>
         </>
       )}
-      <div className="flex justify-end gap-2">
+      <div className="mt-1 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}
         </Button>

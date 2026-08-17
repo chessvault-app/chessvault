@@ -700,7 +700,7 @@ export function PdfImport({
             that had not scanned anything yet — or was still scanning its
             first page — had no button at all, and no X either. Cancel is
             always here; Add appears once there is something to add. */}
-        <div className="flex items-center justify-end gap-2">
+        <div className="mt-1 flex items-center justify-end gap-2">
           {found.length > 0 && (
             <span className="text-subtle mr-auto text-xs">
               {t('{n} selected', { n: selectedCount })}

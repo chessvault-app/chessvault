@@ -428,7 +428,7 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
         />
       </FilterGroup>
 
-      <div className="border-line flex items-center justify-end gap-2 border-t pt-3 text-xs">
+      <div className="mt-1 flex items-center justify-end gap-2 text-xs">
         {hasRefFilters(filters) && (
           <Button
             variant="ghost"
@@ -650,7 +650,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 
       {/* The count is what makes the filters legible: it says what the row
           above just did to the corpus the explorer is answering from. */}
-      <div className="border-line text-subtle flex items-center gap-2 border-t pt-3 text-xs">
+      <div className="text-subtle mt-1 flex items-center gap-2 text-xs">
         {stats && (
           <span className="mr-auto tabular-nums">
             {hasMyFilters(filters)
