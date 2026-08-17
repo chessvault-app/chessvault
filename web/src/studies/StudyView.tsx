@@ -121,6 +121,16 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     };
   }, [id, base, open, close]);
 
+  // A game review left running would walk the whole game on background
+  // threads with no visible sign anywhere else in the app — abort it on
+  // leave, exactly as AnalysisView does. Keyed on the chapter, because
+  // switching chapters swaps the tree out from under a run in flight; the
+  // run loop bails after the in-flight ply and frees its worker.
+  const chapterIndex = useStudy((s) => s.chapterIndex);
+  useEffect(() => () => {
+    if (useReview.getState().status === 'running') useReview.getState().clear();
+  }, [chapterIndex]);
+
   // Reviewing a game starts quiet: engine and explorer off, so the position
   // is judged by eye first. The explorer preference is restored on leave; the
   // engine always starts off anyway.
