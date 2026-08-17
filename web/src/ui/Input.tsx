@@ -51,6 +51,8 @@ const base =
  */
 export const noAutofill = {
   type: 'search',
+  // Half a disguise is not one. See NEUTRAL_NAME.
+  name: 'search',
   autoComplete: 'off',
   autoCorrect: 'off',
   autoCapitalize: 'none',
@@ -66,6 +68,27 @@ export const noAutofill = {
 /** Undoes what type="search" looks like: the clear button and the pill. */
 export const noAutofillClass = 'appearance-none [&::-webkit-search-cancel-button]:hidden';
 
+/**
+ * The other half of the search-box disguise.
+ *
+ * `type="search"` alone was not enough, and the case that proved it was
+ * the book shelf's rename. Safari classifies a field from everything it
+ * can see, and what it could see there was: no `name`, no `id`, no
+ * label element — and a dialog whose only text is "이 책 이름 바꾸기".
+ * `이름` is Korean for *name*, so the one worded signal in reach said
+ * "person's name" and up came 자동 완성 연락처. Every rename and "name
+ * this" prompt in the app shares that field (ui/PromptSheet), and the
+ * English wording says "Rename this…" just as plainly.
+ *
+ * A field that claims to be a search box should also be NAMED like one:
+ * with this, the two strongest attributes agree, and the classifier has
+ * something concrete to read instead of falling back to the prose
+ * around it. Applied only where the type is already faked, so a real
+ * password field keeps its own identity and password managers still
+ * recognise it; any caller passing `name` outranks it.
+ */
+const NEUTRAL_NAME = 'search';
+
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   inputSize?: InputSize;
 }
@@ -80,13 +103,14 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
  * placeholder says "name" is a person's name as far as it is concerned.
  *
  * What Safari does not offer contacts for is a SEARCH field, so a plain
- * text box becomes one — the type is the only lever the browser honours.
+ * text box becomes one — in its `type` and, since the rename prompt proved
+ * the type alone insufficient, in its `name` too (see NEUTRAL_NAME).
  * Nothing else changes: WebKit's clear button is hidden, its appearance is
  * reset, and the keyboard's return key is told this is not a search. A
  * caller that wants a real suggestion passes autoComplete and a type.
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, inputSize = 'md', type = 'text', enterKeyHint, ...props },
+  { className, inputSize = 'md', type = 'text', enterKeyHint, name, ...props },
   ref,
 ) {
   const plainText = type === 'text';
@@ -94,6 +118,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     <input
       ref={ref}
       type={plainText ? 'search' : type}
+      name={name ?? (plainText ? NEUTRAL_NAME : undefined)}
       enterKeyHint={enterKeyHint ?? (plainText ? 'done' : undefined)}
       autoComplete="off"
       autoCorrect="off"
