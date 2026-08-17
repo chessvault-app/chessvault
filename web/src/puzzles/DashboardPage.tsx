@@ -214,7 +214,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => navigate('puzzles', 'books', b.slug)}
-                    className="hover:bg-surface-2 flex w-full items-center gap-3 px-3 py-2 text-left text-xs transition-colors duration-100"
+                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors duration-100"
                   >
                     <span className="text-fg min-w-0 flex-1 truncate font-medium">{b.title}</span>
                     <span className="text-subtle shrink-0 font-mono tabular-nums">
