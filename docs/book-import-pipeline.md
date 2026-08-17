@@ -20,9 +20,11 @@ anywhere.
 same shared code (`shared/bookImport.ts`, `shared/bookConfigSearch.ts`,
 `shared/bookSolve.ts`) over pre-rendered pages, which is what makes it
 possible to measure a change against a whole book in a minute instead of
-re-scanning in a browser. It also still carries two passes the app has
-not got yet — glyph hints and solution-constrained board repair — which
-is the gap between 667 and 707 solved on 1001 Chess Exercises.
+re-scanning in a browser. The two passes it once carried alone — glyph
+hints and solution-constrained board repair — are in the app now. What
+stays offline-only is the engine tiering of stage 3 and the repair
+search's third cell: the app stops at two edits, because its search runs
+while somebody watches an import finish.
 
 The per-book config files under `scripts/ml/books/` belong to the offline
 side only. The app states none of it: number style and ceiling are read
