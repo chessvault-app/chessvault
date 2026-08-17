@@ -262,30 +262,24 @@ export function RefDbManager({
       <Panel flush className="min-h-0">
         {/* The switch gets the header to itself. Sharing it with the
             search meant the two segments were squeezed to whatever the
-            field left over, and Segmented gives its segments equal
-            widths — so the longer label wore its padding while the
-            shorter one sat in slack.
-            `w-fit` because PanelHeader's title slot is flex-1: left to
-            the slot the control spanned the whole panel, which is the
-            same complaint the other way up. fit-content over flex-1
-            children resolves to twice the wider label, which is exactly
-            a segmented control's natural size.
-            `md` rather than `sm` for the padding: sm's px-1.5 left the
-            Databases pill hugging its own text.
-            `[&>button]:flex-none` because that alone did not settle it.
-            Segmented's segments are flex-1, so both take the same width
-            and the WIDER label fills its half exactly while the shorter
-            is centred in slack — measured at 6px of breathing room
-            against 14px, from one rule rather than a mistake. Released
-            from flex-1 each segment wraps its own label and both wear
-            the same px-2.5. Done here rather than in Segmented: equal
-            widths are right for the archive's two providers and the
-            shelf's grid/list switch, whose labels are the same length.
-            `p-0.5` halves the track's own padding, which is what stood
-            above and below the pills — but on a MOUSE only. A coarse
-            pointer gets its 36px box back (`pointer-coarse:p-1`), because
-            that size is a target, not a look, and the phone was right as
-            it was. */}
+            field left over.
+
+            `w-fit` is the only thing said here, and it is a layout
+            constraint rather than a restyle: PanelHeader's title slot is
+            flex-1, so left alone the control spanned the whole panel.
+            fit-content over flex-1 children resolves to twice the wider
+            label, which is a segmented control's natural size — the same
+            kind of instruction the archive's `w-full` and the shelf's
+            `hidden sm:flex` are.
+
+            The padding and the segments' flex used to be overridden here
+            too, to stop the shorter label sitting in slack. That bought
+            one panel's pixels at the price of this being the only
+            segmented control in the app that is not the segmented
+            control — every other call site passes layout and nothing
+            else, and a shared component that each page tunes is a
+            component in name only. If the equal widths are wrong they
+            are wrong in Segmented, for everyone (lanph3re's call). */}
         <PanelHeader
           className="h-auto py-2"
           title={
@@ -293,7 +287,7 @@ export function RefDbManager({
               value={tab}
               onChange={setTab}
               ariaLabel="What to manage"
-              className="w-fit p-0.5 pointer-coarse:p-1 [&>button]:flex-none"
+              className="w-fit"
               segments={[
                 {
                   value: 'databases',
