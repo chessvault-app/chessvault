@@ -6,7 +6,7 @@ import {
   RotateCcw,
   Undo2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
 import { makeFen, parseFen } from 'chessops/fen';
@@ -37,7 +37,7 @@ import { featuresFromImage, loadImage } from '../ocr/browser';
 
 import { PaneTabs } from '@/ui/PaneTabs';
 
-import { evaluateWhitePov } from '@/engine/adjudicate';
+import { evaluateWhitePov, releaseAdjudicator } from '@/engine/adjudicate';
 
 import { formatScore } from '@/engine/uci';
 import { t } from '@/lib/i18n';
@@ -305,6 +305,17 @@ function SolutionRecorder({
   const [verdicts, setVerdicts] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // The proofread below runs one engine search per solver move, and
+  // nothing else would stop it queueing the rest after this view is
+  // gone — Stockfish kept grinding for nobody. Verify re-checks the flag
+  // after every await, and the shared worker is freed on the way out
+  // (it reboots lazily on the next verdict).
+  const alive = useRef(true);
+  useEffect(() => () => {
+    alive.current = false;
+    releaseAdjudicator();
+  }, []);
+
   const solverSide: Color = parseFen(fen).unwrap().turn;
   const currentFen = line.at(-1)?.fen ?? fen;
   const pos = Chess.fromSetup(parseFen(currentFen).unwrap()).unwrap();
@@ -365,6 +376,7 @@ function SolutionRecorder({
       // Odd plies are the defender's replies — only the solver's moves are judged.
       if (i % 2 === 1) continue;
       const score = await evaluateWhitePov(line[i]!.fen);
+      if (!alive.current) return;
       const pov = solverSide === 'white' ? 1 : -1;
       const cp = score.mate !== undefined ? (score.mate * pov > 0 ? 10000 : -10000) : (score.cp ?? 0) * pov;
       if (cp < 150) {

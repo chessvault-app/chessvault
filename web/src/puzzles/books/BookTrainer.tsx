@@ -52,7 +52,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 
 import { judgeBookMove, type BookSolution } from '../bookJudge';
 
-import { movePasses } from '@/engine/adjudicate';
+import { movePasses, releaseAdjudicator } from '@/engine/adjudicate';
 import { AnswerPanel } from '../AnswerPanel';
 
 import { t } from '@/lib/i18n';
@@ -101,6 +101,15 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   const reported = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  // Leaving mid-check must not leave the engine adjudicating for nobody,
+  // nor report an attempt the solver never saw graded: submit() bails at
+  // this flag after its await, and the shared worker is freed (it reboots
+  // lazily on the next engine verdict).
+  const alive = useRef(true);
+  useEffect(() => () => {
+    alive.current = false;
+    releaseAdjudicator();
+  }, []);
   const wide = useWideLayout();
 
   const index = book?.puzzles.findIndex((p) => p.id === puzzleId) ?? -1;
@@ -247,6 +256,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       }
       if (verdict.kind === 'engine') {
         const passes = await movePasses(move.fen, mover);
+        if (!alive.current) return;
         if (!passes) {
           wrongId = id;
           break;
