@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
+import { useMediaQuery } from '@/lib/media';
 
 interface PanelProps {
   children: ReactNode;
@@ -34,20 +35,10 @@ interface PanelProps {
 const storageKey = (key: string): string => `vault:panel-h:${key}`;
 
 /** Tailwind's lg breakpoint — resizing only makes sense when every panel is
-    on screen at once; below that the layouts flex a single visible pane. */
+    on screen at once; below that the layouts flex a single visible pane.
+    A grip-less panel passes enabled=false and never subscribes. */
 function useLgViewport(enabled: boolean): boolean {
-  const [lg, setLg] = useState(
-    () => enabled && window.matchMedia('(min-width: 64rem)').matches,
-  );
-  useEffect(() => {
-    if (!enabled) return;
-    const mq = window.matchMedia('(min-width: 64rem)');
-    const update = (): void => setLg(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, [enabled]);
-  return lg;
+  return useMediaQuery('(min-width: 64rem)', enabled);
 }
 
 /** The standard raised surface: every pane in the app sits in one of these. */

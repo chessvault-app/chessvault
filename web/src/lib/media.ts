@@ -33,14 +33,22 @@ export function autoFocusField(): boolean {
   return !window.matchMedia('(pointer: coarse)').matches;
 }
 
-export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
+/**
+ * `enabled` lets a caller opt out wholesale — no initial read, no
+ * subscription — for the hooks-must-be-unconditional case where the
+ * feature the query gates is off (a Panel with no resize grip). While
+ * disabled the answer is simply false, or whatever the last enabled read
+ * said; nothing resets it, because nothing is listening.
+ */
+export function useMediaQuery(query: string, enabled = true): boolean {
+  const [matches, setMatches] = useState(() => enabled && window.matchMedia(query).matches);
   useEffect(() => {
+    if (!enabled) return;
     const mq = window.matchMedia(query);
     const update = (): void => setMatches(mq.matches);
     update();
     mq.addEventListener('change', update);
     return () => mq.removeEventListener('change', update);
-  }, [query]);
+  }, [query, enabled]);
   return matches;
 }
