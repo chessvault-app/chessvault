@@ -6,7 +6,6 @@ import {
   Database,
   LayoutGrid,
   Puzzle,
-  RotateCcw,
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -15,8 +14,8 @@ import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { useMediaQuery } from '@/lib/media';
+import { INITIAL_FEN } from '@shared/tree';
 import { Board } from '@/board/Board';
-import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { ProgressBar } from '@/ui/ProgressBar';
@@ -202,6 +201,67 @@ function PuzzleCard({
 }
 
 /**
+ * A card-shaped slot with no position in it.
+ *
+ * The board's box is still there and still square, because the slot's SIZE
+ * must not depend on what the draw found: the cards share the page's spare
+ * height, so one that collapsed when it came back empty would resize every
+ * board beside it. Same reason the panels wait for each other (see
+ * ANSWERS) — this is that rule applied to a single card.
+ *
+ * Actionable when there IS somewhere to go, which is how the pool-known-
+ * but-draw-failed case still reaches the review queue.
+ */
+function EmptySlot({
+  title,
+  detail,
+  fill,
+  go,
+}: {
+  title: string;
+  detail?: string;
+  fill?: boolean;
+  go?: () => void;
+}) {
+  const body = (
+    <>
+      {/* A real board at the starting position, not a placeholder box: the
+          slot reads as a card either way, and a dashed outline in a column
+          of boards is a hole in the page. Nothing to solve here, so it is
+          the position before anything has happened. */}
+      <Board
+        fen={INITIAL_FEN}
+        viewOnly
+        coordinates={false}
+        className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
+      />
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
+        <span className="text-muted text-sm font-medium">{title}</span>
+        {detail && <span className="text-subtle text-xs leading-snug">{detail}</span>}
+      </span>
+      {go && <ChevronRight className="text-subtle size-4 shrink-0 self-center" />}
+    </>
+  );
+  // PuzzleCard's geometry exactly; only the hover and the press differ.
+  const shape = cn(
+    'bg-surface border-line flex w-full items-stretch gap-3',
+    'rounded-xl border px-2.5 py-1.5 text-left',
+    fill && 'min-h-0 flex-1',
+  );
+  return go ? (
+    <button
+      type="button"
+      onClick={go}
+      className={cn(shape, 'hover:bg-surface-2 transition-colors duration-100')}
+    >
+      {body}
+    </button>
+  ) : (
+    <div className={shape}>{body}</div>
+  );
+}
+
+/**
  * The books, most recently worked on first.
  *
  * A "continue" list that does not go empty on the day you import your
@@ -277,11 +337,22 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // fixed blocks around it, so there is no dead band anywhere on the
     // page and a taller phone simply shows more of your history. The
     // ROWS scroll, not the page — the launcher underneath must stay put.
+    //
+    // Shown with nothing in it too, and at the SAME size (lanph3re's
+    // call): the page's shape is a property of the phone, not of what the
+    // vault happens to hold, so a first session and a hundredth one put
+    // every target in the same place. A section that appears only once it
+    // has content also teaches nobody that it is there.
     <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
       <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {t('Puzzle history')}
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
+      {attempts.length === 0 && (
+        <p className="text-subtle px-3 py-2.5 text-xs">
+          {t('Nothing solved yet — the puzzles you attempt turn up here.')}
+        </p>
+      )}
       {attempts.map((h) => (
         <button
           key={h.id + h.at}
@@ -390,17 +461,36 @@ function Hub() {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [outstanding, setOutstanding] = useState(ANSWERS);
-  const settled = outstanding === 0;
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
-    // Counted down in a `finally`, always after the state it gates: the
-    // page is drawn on the render that takes this to nought, so an answer
-    // that reported itself before storing its result would be drawn missing.
-    // Floored, because the deadline below can get there first and an answer
-    // arriving after it would otherwise take the count NEGATIVE — which is
-    // not nought, and would blank a page that had already been drawn.
-    const done = (): void => setOutstanding((n) => Math.max(0, n - 1));
+    /**
+     * The count lives in the EFFECT, not in state, and a run that has been
+     * cleaned up stops counting.
+     *
+     * It was a piece of state counted down from ANSWERS, which is wrong the
+     * moment this effect runs twice against the same component — exactly
+     * what StrictMode does in development. Twelve answers then reported
+     * against a counter of six, it reached nought halfway through, and the
+     * page drew itself while the rest were still arriving: measured on the
+     * dev server at 390x700, two boards mounted at 160px and the third card
+     * landed afterwards and took them to 144. Which is the very bug this
+     * gate exists to stop, reproduced by the gate.
+     *
+     * Per-run counting is idempotent under a double invoke — each run
+     * settles on its own six — and `live` makes the abandoned run's answers
+     * harmless. Only ever set TRUE, so a straggler cannot un-draw a page.
+     */
+    let live = true;
+    let left = ANSWERS;
+    // Called in a `finally`, always after the state it gates: the page is
+    // drawn on the render that settles it, so an answer that reported
+    // itself before storing its result would be drawn missing.
+    const done = (): void => {
+      if (!live) return;
+      left -= 1;
+      if (left <= 0) setSettled(true);
+    };
     void (async () => {
       try {
         setMeta(await api<Meta>('/api/puzzles/meta'));
@@ -464,8 +554,13 @@ function Hub() {
         done();
       }
     })();
-    const deadline = setTimeout(() => setOutstanding(0), DEADLINE_MS);
-    return () => clearTimeout(deadline);
+    const deadline = setTimeout(() => {
+      if (live) setSettled(true);
+    }, DEADLINE_MS);
+    return () => {
+      live = false;
+      clearTimeout(deadline);
+    };
   }, []);
 
   // Assume the database is there until told otherwise: it is, for anyone
@@ -508,11 +603,14 @@ function Hub() {
    */
   const roomForBooks = useMediaQuery('(min-height: 46rem)');
   const roomForHistory = useMediaQuery('(min-height: 50rem)');
-  // `settled` on both, and on every card below: the blocks share one
+  // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
   const showBooks = settled && roomForBooks && books.length > 0;
-  const showHistory = settled && roomForHistory && history.length > 0;
+  // The history panel is shown wherever there is ROOM for it, whether or
+  // not there is anything in it — a section that appears only once it has
+  // content teaches nobody that it exists (lanph3re's call).
+  const showHistory = settled && roomForHistory;
 
   // Subscribed rather than read once: the trainer writes it and coming back
   // here re-mounts, which used to be the whole story — but the vault owns
@@ -608,10 +706,16 @@ function Hub() {
           />
         )}
 
-        {/* The review queue, as the position you actually got wrong. The
-            plain button is the fallback for when the pool is known to be
-            non-empty but the draw itself failed — otherwise review would
-            have no way in from here at all. */}
+        {/* The review queue, as the position you actually got wrong — and
+            an empty slot of the same size when there is nothing to review,
+            rather than no slot at all (lanph3re's call). A queue you only
+            hear about when it has something in it is a queue nobody knows
+            they have; and a card that came and went with the draw was one
+            more thing resizing the boards beside it.
+
+            Three cases, one shape. The middle one — a pool the count says
+            is non-empty but a draw that failed anyway — keeps review
+            reachable from here, which it would not otherwise be. */}
         {!settled ? null : review ? (
           <PuzzleCard
             fen={positionAt(review, 1).fen}
@@ -624,17 +728,19 @@ function Hub() {
               navigate('puzzles', 'failed');
             }}
           />
+        ) : failed > 0 ? (
+          <EmptySlot
+            fill={!showHistory}
+            title={t('Review failed puzzles')}
+            detail={t('{n} waiting to be reviewed', { n: failed })}
+            go={() => navigate('puzzles', 'failed')}
+          />
         ) : (
-          failed > 0 && (
-            <Button
-              variant="secondary"
-              className="w-full justify-center"
-              onClick={() => navigate('puzzles', 'failed')}
-            >
-              <RotateCcw className="size-4" />
-              {t('Review failed puzzles')} · {failed}
-            </Button>
-          )
+          <EmptySlot
+            fill={!showHistory}
+            title={t('No puzzle to review')}
+            detail={t('Puzzles you get wrong come back here.')}
+          />
         )}
 
         {/* The book you were last in, as the position it left you on.
