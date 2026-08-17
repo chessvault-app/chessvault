@@ -360,6 +360,9 @@ export function CollectionView() {
     resultFilter !== 'any' ||
     notesFilter !== 'any' ||
     hasStructuredFilters(structured);
+  /** Whether anything the reader chose is narrowing the list — the only
+      reason an empty list can be blamed on something they can undo. */
+  const filtering = filtersOn || markedOnly || needle !== '';
   const clearFilters = (): void => {
     setOwnFilter('any');
     setResultFilter('any');
@@ -577,7 +580,15 @@ export function CollectionView() {
               )}
             </FilterRow>
           )}
-          {loaded && games.length === 0 ? (
+          {/* Nothing to show and nothing narrowing the list. Two ways to get
+              here: the collection really is empty, or its last rows were just
+              removed and the undo is still running — `hidden` is inside
+              `visible` but not inside `games`, so the raw count alone said
+              the collection was full while the list was bare, and the filter
+              states below took it and blamed a search nobody had typed. What
+              the reader sees is an empty collection either way, and Undo puts
+              the rows back. */}
+          {loaded && (games.length === 0 || (!filtering && visible.length === 0)) ? (
             <EmptyState
               // Centred in the PANEL, not parked under its header: an empty
               // state pinned to the top of a full-height box is the thing
@@ -594,12 +605,13 @@ export function CollectionView() {
               }
             />
           ) : loaded && visible.length === 0 ? (
-            /* The collection HAS games; this search or the bookmark toggle
-               just matches none of them. Saying so beats a box with nothing
-               under its header, which reads as the collection having been
-               emptied. Each of these ends on the press that undoes it —
-               an empty state whose only advice is "go and do something
-               else" leaves the reader looking at dead space. */
+            /* The collection has games and a filter of the reader's own is
+               keeping every one of them out — the branch above has already
+               taken the unfiltered case. Saying which filter beats a box
+               with nothing under its header, which reads as the collection
+               having been emptied. Each of these ends on the press that
+               undoes it: an empty state whose only advice is "go and do
+               something else" leaves the reader looking at dead space. */
             markedOnly && !needle && !filtersOn ? (
               <EmptyState
                 className="min-h-0 flex-1"
