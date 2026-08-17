@@ -144,10 +144,9 @@ export function PuzzleEntry({
           source.blackAtBottom,
           existing,
         );
-        await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`, {
+        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`, {
           method: 'PUT',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ templates: next }),
+          json: { templates: next },
         });
       } catch {
         // learning is best-effort
@@ -160,9 +159,13 @@ export function PuzzleEntry({
     // The saved puzzle replaces its draft.
     if (draft) {
       forgetBook(slug);
-      void fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts/${draft.id}`, {
+      // Best-effort cleanup: the saved puzzle already exists, so a draft
+      // that refuses to die must not hold the flow hostage.
+      void api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts/${draft.id}`, {
         method: 'DELETE',
-      }).finally(onDone);
+      })
+        .catch(() => {})
+        .finally(onDone);
     } else {
       onDone();
     }

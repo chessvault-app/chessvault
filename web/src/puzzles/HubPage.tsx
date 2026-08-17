@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -327,13 +328,12 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
  */
 async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
   try {
-    const res = await fetch(
+    const body = await api<{ puzzle: ApiPuzzle }>(
       `/api/puzzles/next${mode === 'failed' ? '?mode=failed' : difficultyQuery(storedDifficulty())}`,
     );
-    if (!res.ok) return null; // 404 empty pool, 503 no database — no card
-    return ((await res.json()) as { puzzle: ApiPuzzle }).puzzle;
+    return body.puzzle;
   } catch {
-    return null;
+    return null; // 404 empty pool, 503 no database, network gone — no card
   }
 }
 
@@ -349,8 +349,7 @@ function Hub() {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch('/api/puzzles/meta');
-        if (res.ok) setMeta((await res.json()) as Meta);
+        setMeta(await api<Meta>('/api/puzzles/meta'));
       } catch {
         // Every button still works; only the review row and the tally
         // are missing, and both are decoration on a page of links.
@@ -361,11 +360,12 @@ function Hub() {
     });
     void (async () => {
       try {
-        const res = await fetch(`/api/puzzles/history?limit=${HISTORY_ROWS}`);
-        if (!res.ok) return;
         // Already newest-first, and the server caps what it reads — the
         // limit is the row count, so nothing is fetched to be thrown away.
-        setHistory((await res.json() as { attempts: HistoryEntry[] }).attempts);
+        const body = await api<{ attempts: HistoryEntry[] }>(
+          `/api/puzzles/history?limit=${HISTORY_ROWS}`,
+        );
+        setHistory(body.attempts);
       } catch {
         // No panel; the dashboard tile still reaches the full log.
       }
@@ -376,9 +376,7 @@ function Hub() {
     void draw('failed').then(setReview);
     void (async () => {
       try {
-        const res = await fetch('/api/puzzlebooks');
-        if (!res.ok) return;
-        const { books: all } = (await res.json()) as { books: BookSummary[] };
+        const { books: all } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
         // Worked on most recently first; never-opened books keep the
         // server's alphabetical order behind them.
         const shelf = all
@@ -394,10 +392,12 @@ function Hub() {
         // to ask about is the thing this request just decided.
         const top = shelf[0];
         if (!top) return;
-        const one = await fetch(`/api/puzzlebooks/${encodeURIComponent(top.slug)}/next`);
-        // 404 is a finished book, which is a card not to draw.
-        if (!one.ok) return;
-        setBookNext({ book: top, puzzle: ((await one.json()) as { puzzle: BookNext }).puzzle });
+        // 404 is a finished book, which is a card not to draw — api()
+        // throws it into the same catch as everything else.
+        const one = await api<{ puzzle: BookNext }>(
+          `/api/puzzlebooks/${encodeURIComponent(top.slug)}/next`,
+        );
+        setBookNext({ book: top, puzzle: one.puzzle });
       } catch {
         // No panel. The Books tile below still reaches the shelf.
       }

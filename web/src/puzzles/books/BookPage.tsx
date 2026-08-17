@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
 
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
@@ -135,11 +136,12 @@ export function BookPage({ slug }: { slug: string }) {
         });
       }
       forgetBook(slug);
-      await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
+      // A refused save is swallowed: the reload below redraws the drafts
+      // as the server actually holds them, which says what happened.
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ updates }),
-      });
+        json: { updates },
+      }).catch(() => {});
       await load();
     } finally {
       setRereading(false);
@@ -166,19 +168,24 @@ export function BookPage({ slug }: { slug: string }) {
   const rename = async (title: string): Promise<void> => {
     const next = title.trim();
     if (!next || next === book?.title) return;
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: next }),
-    });
-    if (res.ok) {
+    try {
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+        method: 'PATCH',
+        json: { title: next },
+      });
       forgetBook(slug);
       await load();
+    } catch {
+      // The header keeps the old title, which is what the server kept.
     }
   };
 
   const resetProgress = async (): Promise<void> => {
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/progress`, { method: 'DELETE' });
+    // The reload redraws whatever the server actually holds, so a failed
+    // delete simply shows the progress still standing.
+    await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/progress`, {
+      method: 'DELETE',
+    }).catch(() => {});
     forgetBook(slug);
     void load();
   };

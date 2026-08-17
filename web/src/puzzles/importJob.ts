@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import {
   assignLabels,
   deriveNumbering,
@@ -303,10 +304,9 @@ async function uploadCover(slug: string, page: HTMLCanvasElement): Promise<void>
     thumb.width = w;
     thumb.height = h;
     thumb.getContext('2d')!.drawImage(page, 0, 0, w, h);
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/cover`, {
+    await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/cover`, {
       method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ image: thumb.toDataURL('image/jpeg', 0.82) }),
+      json: { image: thumb.toDataURL('image/jpeg', 0.82) },
     });
   } catch {
     /* cover is a nicety; ignore failures */
@@ -615,15 +615,15 @@ async function readSolutions(
   for (let i = 0; i < pages.length; i += 12) {
     const chunk = pages.slice(i, i + 12).filter((p) => p.image);
     if (chunk.length === 0) continue;
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/evidence`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ pages: chunk }),
-    });
     // Evidence is the floor everything else stands on. If it did not land,
     // stop here: the throw keeps the checkpoint, so this resumes rather
     // than silently minting puzzles that point at pages that are not there.
-    if (!res.ok) throw new Error(`the server refused the evidence pages (${res.status})`);
+    await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/evidence`, {
+      method: 'POST',
+      json: { pages: chunk },
+    }).catch((e: unknown) => {
+      throw new Error(`the server refused the evidence pages (${apiErrorMessage(e)})`);
+    });
   }
 
   /**
@@ -676,32 +676,38 @@ async function readSolutions(
     const rect = where.rect;
     // The rect is stored as fractions of the page, so it survives whatever
     // size the evidence image happens to be.
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        number: puzzle.number,
-        fen: puzzle.fen,
-        uci: puzzle.uci,
-        san: puzzle.san,
-        provenance: puzzle.provenance,
-        evidence: {
-          page: `page${String(where.page).padStart(3, '0')}.jpg`,
-          rect: {
-            x: rect.x / size.w,
-            y: rect.y / size.h,
-            w: rect.w / size.w,
-            h: rect.h / size.h,
+    try {
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
+        method: 'POST',
+        json: {
+          number: puzzle.number,
+          fen: puzzle.fen,
+          uci: puzzle.uci,
+          san: puzzle.san,
+          provenance: puzzle.provenance,
+          evidence: {
+            page: `page${String(where.page).padStart(3, '0')}.jpg`,
+            rect: {
+              x: rect.x / size.w,
+              y: rect.y / size.h,
+              w: rect.w / size.w,
+              h: rect.h / size.h,
+            },
           },
         },
-      }),
-    });
-    // A refused save must not be reported as an import. The diagram stays
-    // a SELECTED draft — better offered again than silently gone — and the
-    // summary owns up to the count.
-    if (!res.ok) {
-      saveFailed += 1;
-      continue;
+      });
+    } catch (e) {
+      // A refused save must not be reported as an import. The diagram
+      // stays a SELECTED draft — better offered again than silently gone —
+      // and the summary owns up to the count. The network GOING, though,
+      // is the whole scan failing: rethrown so the checkpoint survives
+      // and the import resumes instead of degrading every puzzle after
+      // the outage into a draft.
+      if (e instanceof ApiError && e.status !== 0) {
+        saveFailed += 1;
+        continue;
+      }
+      throw e;
     }
     const index = foundAt.get(`${where.page}:${rect.x}:${rect.y}`);
     if (index !== undefined) {

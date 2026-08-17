@@ -27,6 +27,7 @@ import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { navigate } from '@/lib/router';
@@ -196,8 +197,7 @@ function Trainer({
     // Meta is decoration around the trainer (counts, the setup gate); if
     // the server is away, loadNext will say so where it can be acted on.
     try {
-      const res = await fetch('/api/puzzles/meta');
-      setMeta((await res.json()) as Meta);
+      setMeta(await api<Meta>('/api/puzzles/meta'));
     } catch {
       /* the puzzle fetch reports the outage, with a retry */
     }
@@ -207,24 +207,23 @@ function Trainer({
     async (id: string, win: boolean) => {
       if (reported.current) return;
       reported.current = true;
-      const send = (): Promise<Response | null> =>
-        fetch('/api/puzzles/attempt', {
+      const send = (): Promise<{ user: UserState } | null> =>
+        api<{ user: UserState }>('/api/puzzles/attempt', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ id, win, counted: mode === 'fresh' }),
+          json: { id, win, counted: mode === 'fresh' },
         }).catch(() => null);
       // One quiet retry a moment later: a blip at exactly the "Solved!"
       // moment used to lose the attempt for good — streak and history
       // under-counted with nothing said (and a thrown fetch escaped as an
       // unhandled rejection besides).
-      let res = await send();
-      if (!res?.ok) {
+      let data = await send();
+      if (!data) {
         await new Promise((r) => setTimeout(r, 2000));
-        res = await send();
+        data = await send();
       }
-      if (res?.ok) {
-        const data = (await res.json()) as { user: UserState };
-        setMeta((m) => (m ? { ...m, user: data.user } : m));
+      if (data) {
+        const { user } = data;
+        setMeta((m) => (m ? { ...m, user } : m));
         if (win && mode === 'fresh') setSolvedToday((n) => (n === null ? n : n + 1));
       }
     },
@@ -297,26 +296,22 @@ function Trainer({
           : mode === 'failed'
             ? '/api/puzzles/next?mode=failed'
             : `/api/puzzles/next${difficultyQuery(selectedDifficulty, selectedTheme)}`;
-      // A fetch that THROWS — server down, network gone — used to fall
-      // straight through this function, leaving the phase on 'loading'
-      // and the board on a spinner that nothing would ever stop. An error
-      // is a state the trainer must be able to be in.
-      let res: Response;
+      // A request that FAILS — server down, network gone, an error
+      // status — used to fall straight through this function, leaving
+      // the phase on 'loading' and the board on a spinner that nothing
+      // would ever stop. An error is a state the trainer must be able to
+      // be in. api() folds the network and status cases into one throw,
+      // carrying the same wording each branch used to build by hand —
+      // and only the sequence holder may write it.
+      let next: ApiPuzzle;
       try {
-        res = await fetch(url);
-      } catch {
+        ({ puzzle: next } = await api<{ puzzle: ApiPuzzle }>(url));
+      } catch (e) {
         if (seq !== loadSeq.current) return;
-        setError(navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
+        setError(apiErrorMessage(e));
         return;
       }
       if (seq !== loadSeq.current) return;
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        if (seq !== loadSeq.current) return;
-        setError(body?.error ?? t('Request failed ({status})', { status: res.status }));
-        return;
-      }
-      const { puzzle: next } = (await res.json()) as { puzzle: ApiPuzzle };
       show(next, seq);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

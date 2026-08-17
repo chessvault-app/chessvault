@@ -347,7 +347,10 @@ function ResetButton({ onDone }: { onDone: () => void }) {
       question="Wipe all attempts, history and the review pool?"
       confirmLabel={t('Wipe everything')}
       onConfirm={() => {
-        void fetch('/api/puzzles/reset', { method: 'POST' }).then(onDone);
+        // Refresh either way: the reload shows what the wipe really did.
+        void api('/api/puzzles/reset', { method: 'POST' })
+          .catch(() => {})
+          .finally(onDone);
       }}
     />
   );

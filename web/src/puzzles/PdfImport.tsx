@@ -1,6 +1,7 @@
 import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -15,6 +16,12 @@ import { t } from '@/lib/i18n';
 /** How wide the hovered crop is drawn, in px. Big enough to read the
     pieces on a diagram; small enough to sit beside a window. */
 const PEEK_W = 208;
+
+/** Refused at the door, not discovered mid-scan: pdf.js holds the whole
+    file in memory while it renders, so a multi-gigabyte pick would go
+    straight into the page's heap — and a phone tab is killed far below
+    this cap. One sentence at intake beats a dead tab on page three. */
+const MAX_PDF_BYTES = 300 * 1024 * 1024;
 
 /**
  * The hovered row's crop, floating beside the list.
@@ -150,6 +157,14 @@ export function PdfImport({
 
   const begin = async (file: File): Promise<void> => {
     setSaveError(null);
+    if (file.size > MAX_PDF_BYTES) {
+      setSaveError(
+        t('That PDF is too big to read in the browser — the limit is {mb} MB.', {
+          mb: MAX_PDF_BYTES / (1024 * 1024),
+        }),
+      );
+      return;
+    }
     // An untitled book takes its name from the PDF it is being fed —
     // the shelf otherwise fills with "Untitled book 3" cards whose only
     // identity is a cover.
@@ -157,26 +172,25 @@ export function PdfImport({
       const suggested = suggestTitle(file);
       if (suggested) onSuggestName(suggested);
     }
-    if (existing > 0 && mode === 'rebuild') {
-      setPreparing(true);
-      try {
-        // Prove the file opens as a PDF before anything irreversible: the
-        // clear used to run on nothing but the file picker's word, so an
-        // unreadable file emptied the book and then imported nothing.
-        if (!(await canReadPdf(file))) {
-          setSaveError(t('That file could not be read as a PDF — the book was left untouched.'));
-          return;
-        }
-        const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, {
-          method: 'DELETE',
-        });
-        if (!res.ok) throw new Error(`could not clear the book (${res.status})`);
-      } catch (e) {
-        setSaveError((e as Error).message);
+    setPreparing(true);
+    try {
+      // Prove the file opens as a PDF before any work starts — and, on a
+      // rebuild, before anything irreversible: the clear used to run on
+      // nothing but the file picker's word, so an unreadable file emptied
+      // the book and then imported nothing. The update path used to skip
+      // the probe and discover the same thing only inside a started job.
+      if (!(await canReadPdf(file))) {
+        setSaveError(t('That file could not be read as a PDF — the book was left untouched.'));
         return;
-      } finally {
-        setPreparing(false);
       }
+      if (existing > 0 && mode === 'rebuild') {
+        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, { method: 'DELETE' });
+      }
+    } catch (e) {
+      setSaveError(apiErrorMessage(e));
+      return;
+    } finally {
+      setPreparing(false);
     }
     job.start(slug, file, templates, { repair });
   };
@@ -284,10 +298,9 @@ export function PdfImport({
       // Chunked: hundreds of crops would make one giant request body.
       for (let at = 0; at < chosen.length; at += 20) {
         const chunk = chosen.slice(at, at + 20);
-        const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
+        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/drafts`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
+          json: {
             // A draft is finished by hand from the printed page, so it
             // carries the same evidence a verified puzzle does: the page,
             // where on it the diagram sat, and the answers page for its
@@ -303,9 +316,8 @@ export function PdfImport({
                 ...(f.solutionPage ? { solutionPage: f.solutionPage } : {}),
               },
             })),
-          }),
+          },
         });
-        if (!res.ok) throw new Error(`save failed (${res.status})`);
         // This chunk is on disk: deselect its rows NOW, so a later
         // chunk's failure leaves only the unsaved rows selected and
         // retrying Save cannot duplicate the drafts that already landed.
@@ -317,7 +329,7 @@ export function PdfImport({
       job.clear();
       onDone();
     } catch (e) {
-      setSaveError((e as Error).message);
+      setSaveError(apiErrorMessage(e));
       setSaving(false);
     }
   };
@@ -449,7 +461,9 @@ export function PdfImport({
         {preparing && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />
-            {t('clearing the book')}
+            {/* Covers both halves of the preparation: the readability
+                probe every path runs, and the clear a rebuild adds. */}
+            {t('checking the PDF')}
           </p>
         )}
         {scanning && (

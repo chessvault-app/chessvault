@@ -58,11 +58,32 @@ export function PhotoImport({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dragging = useRef<number | null>(null);
 
+  // The decode in flight, as the act of cancelling it. The blob URL used
+  // to be revoked only in onload — a corrupt or unsupported file, whose
+  // onload never fires, kept the URL (and the whole file behind it)
+  // pinned for the session, and closing the dialog mid-decode leaked the
+  // same way. Cancelling revokes and turns the handlers into no-ops, so
+  // a superseded decode cannot fire its error over the picture that
+  // replaced it.
+  const cancelDecode = useRef<(() => void) | null>(null);
+  useEffect(() => () => cancelDecode.current?.(), []);
+
   const pick = useCallback((file: Blob): void => {
+    cancelDecode.current?.();
     const url = URL.createObjectURL(file);
     const image = new Image();
-    image.onload = () => {
+    let stale = false;
+    cancelDecode.current = () => {
+      stale = true;
       URL.revokeObjectURL(url);
+    };
+    const settle = (): void => {
+      cancelDecode.current = null;
+      URL.revokeObjectURL(url);
+    };
+    image.onload = () => {
+      if (stale) return;
+      settle();
       setImg(image);
       setReading(null);
       setPasteHint(null);
@@ -78,6 +99,13 @@ export function PhotoImport({
           { x: ix, y: image.naturalHeight - iy },
         ],
       );
+    };
+    image.onerror = () => {
+      if (stale) return;
+      settle();
+      // Same line the other ways in use for their failures — the file was
+      // chosen, so silence would read as the app having ignored it.
+      setPasteHint(t('That image could not be read — it may be corrupt or an unsupported format.'));
     };
     image.src = url;
   }, []);

@@ -1,5 +1,6 @@
 import { Download, Loader2, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { Button } from '@/ui/Button';
@@ -40,8 +41,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
 
   const poll = useCallback(async () => {
     try {
-      const res = await fetch('/api/puzzles/build');
-      const next = (await res.json()) as BuildStatus;
+      const next = await api<BuildStatus>('/api/puzzles/build');
       setStatus(next);
       if (wasRunning.current && !next.running) {
         wasRunning.current = false;
@@ -65,14 +65,11 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
     setStarting(true);
     setFailed(null);
     try {
-      const res = await fetch('/api/puzzles/build', { method: 'POST' });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        setFailed(body?.error ?? t('The build could not be started.'));
-        return;
-      }
+      await api('/api/puzzles/build', { method: 'POST' });
       wasRunning.current = true;
       await poll();
+    } catch (e) {
+      setFailed(apiErrorMessage(e));
     } finally {
       setStarting(false);
     }

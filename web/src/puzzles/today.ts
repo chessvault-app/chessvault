@@ -12,16 +12,16 @@
  * would let the same puzzle raise the number twice.
  */
 
+import { api } from '@/lib/api';
+
 /** Clean, counted solves recorded today — or null if the server did not
     answer, which is the caller's cue to leave the line as it was rather
     than show a nought that is really an error. */
 export async function fetchSolvedToday(): Promise<number | null> {
   try {
-    const res = await fetch('/api/puzzles/history?limit=200');
-    if (!res.ok) return null;
-    const { attempts } = (await res.json()) as {
+    const { attempts } = await api<{
       attempts: { win: boolean; counted?: boolean; at: string }[];
-    };
+    }>('/api/puzzles/history?limit=200');
     const today = new Date().toDateString();
     return attempts.filter(
       (h) => h.win && h.counted !== false && new Date(h.at).toDateString() === today,

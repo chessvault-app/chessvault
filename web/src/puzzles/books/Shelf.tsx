@@ -174,7 +174,9 @@ export function Shelf() {
   useEffect(() => void load(), [load]);
 
   const removeBook = async (slug: string): Promise<void> => {
-    await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    // A failed delete is not reported here: the reload below redraws the
+    // shelf from the server, so a book that survived simply reappears.
+    await api(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' }).catch(() => {});
     forgetBook(slug);
     void load();
   };
@@ -187,8 +189,7 @@ export function Shelf() {
   const [markedOnly, setMarkedOnly] = useState(false);
   const [query, setQuery] = useState('');
   useEffect(() => {
-    void fetch('/api/puzzlebooks/bookmarks')
-      .then((r) => (r.ok ? (r.json() as Promise<{ slugs: string[] }>) : null))
+    void api<{ slugs: string[] } | undefined>('/api/puzzlebooks/bookmarks')
       .then((body) => setMarked(new Set(body?.slugs ?? [])))
       .catch(() => {});
   }, []);
@@ -199,11 +200,12 @@ export function Shelf() {
       else next.add(slug);
       return next;
     });
-    await fetch('/api/puzzlebooks/bookmarks/toggle', {
+    // Optimistic: the set above is already flipped, so a failure here is
+    // swallowed rather than allowed to escape as an unhandled rejection.
+    await api('/api/puzzlebooks/bookmarks/toggle', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ slug }),
-    });
+      json: { slug },
+    }).catch(() => {});
   };
 
   const dropBook = (slug: string, title: string): void => {
@@ -447,14 +449,15 @@ function BookCard({
     setRenaming(false);
     const next = value.trim();
     if (!next || next === book.title) return;
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(book.slug)}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ title: next }),
-    });
-    if (res.ok) {
+    try {
+      await api(`/api/puzzlebooks/${encodeURIComponent(book.slug)}`, {
+        method: 'PATCH',
+        json: { title: next },
+      });
       forgetBook(book.slug);
       onChanged();
+    } catch {
+      // The card keeps its old title, which is also what the server kept.
     }
   };
 

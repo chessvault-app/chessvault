@@ -9,6 +9,8 @@ import { useEffect, useState } from 'react';
 
 import { parseFen } from 'chessops/fen';
 
+import { api, ApiError } from '@/lib/api';
+
 import {
   isValidTemplate,
   type Template,
@@ -87,9 +89,10 @@ export interface BookDetail {
 
 export async function bookTemplates(slug: string): Promise<Template[]> {
   try {
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`);
-    if (!res.ok) return [];
-    return ((await res.json()) as { templates: unknown[] }).templates.filter(isValidTemplate);
+    const body = await api<{ templates: unknown[] }>(
+      `/api/puzzlebooks/${encodeURIComponent(slug)}/ocr`,
+    );
+    return body.templates.filter(isValidTemplate);
   } catch {
     return [];
   }
@@ -131,15 +134,16 @@ export function usePuzzleEvidence(slug: string, id: string | undefined): BookEvi
     let live = true;
     void (async () => {
       try {
-        const res = await fetch(
-          `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(id)}/evidence`,
-        );
-        // A missing scan is a missing button, not a broken puzzle.
-        const body = res.ok ? ((await res.json()) as { evidence?: BookEvidence }) : {};
+        const body =
+          (await api<{ evidence?: BookEvidence } | undefined>(
+            `/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles/${encodeURIComponent(id)}/evidence`,
+          )) ?? {};
         evidenceCache.set(key, body.evidence);
-      } catch {
-        // But a transient failure must not be REMEMBERED as "no evidence"
-        // for the rest of the session — the next look simply asks again.
+      } catch (e) {
+        // A missing scan is a missing button, not a broken puzzle: the
+        // server SAYING no is remembered as no evidence. But a transient
+        // network failure must not be — the next look simply asks again.
+        if (e instanceof ApiError && e.status !== 0) evidenceCache.set(key, undefined);
       }
       if (live) bump((n) => n + 1);
     })();
@@ -188,10 +192,10 @@ export async function loadSolutions(slug: string): Promise<Record<string, Puzzle
   const hit = solutionCache.get(slug);
   if (hit) return hit;
   try {
-    const res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/solutions`);
-    if (!res.ok) return {};
-    const body = (await res.json()) as { solutions?: Record<string, PuzzleSolution> };
-    const solutions = body.solutions ?? {};
+    const body = await api<{ solutions?: Record<string, PuzzleSolution> } | undefined>(
+      `/api/puzzlebooks/${encodeURIComponent(slug)}/solutions`,
+    );
+    const solutions = body?.solutions ?? {};
     // One corrupt fen in vault data must cost ONE puzzle, not the book:
     // the trainer and the judge unwrap() these, and a single bad row
     // white-paged the whole trainer. A dropped entry degrades to the
@@ -214,17 +218,19 @@ export async function loadBook(slug: string, force = false): Promise<BookDetail 
     const hit = bookCache.get(slug);
     if (hit) return hit;
   }
-  let res: Response;
+  let detail: BookDetail | undefined;
   try {
-    res = await fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
-  } catch {
+    detail = await api<BookDetail | undefined>(`/api/puzzlebooks/${encodeURIComponent(slug)}`);
+  } catch (e) {
     // A thrown fetch used to escape every caller and pin the view on its
-    // skeleton with nothing to say. Offline, the cached copy (even a
-    // force-refresh wanted fresher) beats both that and an error.
-    return bookCache.get(slug) ?? null;
+    // skeleton with nothing to say. Offline (status 0), the cached copy
+    // (even a force-refresh wanted fresher) beats both that and an error;
+    // the server actually refusing stays "no such book".
+    if (e instanceof ApiError && e.status === 0) return bookCache.get(slug) ?? null;
+    return null;
   }
-  if (!res.ok) return null;
-  const detail = (await res.json()) as BookDetail;
+  // A success with no body is not a book; only a real one may be cached.
+  if (!detail) return null;
   bookCache.set(slug, detail);
   return detail;
 }

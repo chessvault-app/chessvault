@@ -1,6 +1,7 @@
 import { Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Board } from '@/board/Board';
+import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
@@ -56,9 +57,12 @@ export function usePuzzlePreview(): {
     const seq = ++seqRef.current;
     let puzzle = cache.current.get(id);
     if (!puzzle) {
-      const res = await fetch(`/api/puzzles/by-id/${encodeURIComponent(id)}`);
-      if (!res.ok) return;
-      puzzle = ((await res.json()) as { puzzle: ApiPuzzle }).puzzle;
+      try {
+        puzzle = (await api<{ puzzle: ApiPuzzle }>(`/api/puzzles/by-id/${encodeURIComponent(id)}`))
+          .puzzle;
+      } catch {
+        return; // no preview is a missing nicety, not an error to show
+      }
       cache.current.set(id, puzzle);
     }
     if (seq !== seqRef.current) return; // pointer moved on

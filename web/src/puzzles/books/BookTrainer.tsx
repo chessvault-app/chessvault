@@ -38,6 +38,7 @@ import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 
+import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
 
 import { navigate } from '@/lib/router';
@@ -129,8 +130,20 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     : null;
 
   useEffect(() => {
-    void loadBook(slug).then(setBook);
-    void loadSolutions(slug).then(setSolutions);
+    // Latest wins, like every other fetch effect: this trainer is keyed
+    // on slug and puzzle id, so a remount can happen while the old
+    // instance's requests are still out — an answer for a book already
+    // left must not land in the state of the one now open.
+    let live = true;
+    void loadBook(slug).then((b) => {
+      if (live) setBook(b);
+    });
+    void loadSolutions(slug).then((s) => {
+      if (live) setSolutions(s);
+    });
+    return () => {
+      live = false;
+    };
   }, [slug]);
 
   useEffect(() => {
@@ -164,27 +177,29 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   const report = async (win: boolean): Promise<void> => {
     if (reported.current || !puzzle) return;
     reported.current = true;
-    const send = (): Promise<Response | null> =>
-      fetch(`/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id: puzzle.id, win }),
-      }).catch(() => null);
+    // null is "the request failed"; a success with no body settles to {}.
+    const send = (): Promise<{ progress?: PuzzleProgress } | null> =>
+      api<{ progress?: PuzzleProgress } | undefined>(
+        `/api/puzzlebooks/${encodeURIComponent(slug)}/attempt`,
+        { method: 'POST', json: { id: puzzle.id, win } },
+      )
+        .then((body) => body ?? {})
+        .catch(() => null);
     // One quiet retry — same reasoning as the trainer's report(): a blip
     // at the moment of solving must not silently lose the attempt.
-    let res = await send();
-    if (!res?.ok) {
+    let body = await send();
+    if (!body) {
       await new Promise((r) => setTimeout(r, 2000));
-      res = await send();
+      body = await send();
     }
     // Fold the server's own new entry into the cache, so the grid and
     // "next unsolved" are right on the next puzzle without a refetch.
-    if (res?.ok) {
-      const body = (await res.json().catch(() => null)) as { progress?: PuzzleProgress } | null;
-      if (body?.progress) {
-        const next = patchProgress(slug, puzzle.id, body.progress);
-        if (next) setBook(next);
-      }
+    if (body?.progress) {
+      const next = patchProgress(slug, puzzle.id, body.progress);
+      // The cache is patched either way; the STATE is only touched while
+      // this trainer is still mounted — the retry means the answer can
+      // arrive seconds after the solver has already moved on.
+      if (next && alive.current) setBook(next);
     }
   };
 
