@@ -148,7 +148,7 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
  * repertoire answering — so they say that rather than pretending to be a
  * game, and the side to move is the one shown in full strength.
  */
-function PlayerSlot({ side, fen, className }: { side: 'white' | 'black'; fen: string; className?: string }) {
+function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
   const toMove = (fen.split(' ')[1] === 'b' ? 'black' : 'white') === side;
   return (
     // Shown at every width, like the Board tab's. These were hidden on
@@ -157,7 +157,14 @@ function PlayerSlot({ side, fen, className }: { side: 'white' | 'black'; fen: st
     // not: the panel's own column was a nested scroll container that
     // clipped what its min-height under-measured. With that fixed the rows
     // cost nothing but the height they occupy, and the page scrolls.
-    <div className={cn('flex h-6 w-full items-center gap-2 px-0.5', className)}>
+    //
+    // A plain h-6 row, ALWAYS — the wide layout's taller top strip is a box
+    // around this one (see the board column below), never this box grown.
+    // Stretched to h-10 itself, `items-end` bottom-aligned the dot and the
+    // name rather than the row holding them, and they sat 7px lower than
+    // the Board tab's (measured, 958px wide: centre 13px above the board's
+    // top edge against 20px).
+    <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
       <span className={cn('min-w-0 flex-1 truncate text-sm', toMove ? 'text-fg font-medium' : 'text-subtle')}>
         {side === 'white' ? t('White') : t('Black')}
@@ -929,12 +936,17 @@ export function RepertoireView() {
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           {/* wide:h-10 + the column's gap-2 equals the other board pages'
               top strip, so this board's top edge sits level with theirs
-              (and with the side column's first panel: h-9 + gap-3). */}
-          <PlayerSlot
-            side={orientation === 'white' ? 'black' : 'white'}
-            fen={node.fen}
-            className="wide:h-10 wide:items-end"
-          />
+              (and with the side column's first panel: h-9 + gap-3).
+
+              The height belongs to this BOX, and the name row sits at the
+              bottom of it — AnalysisBoard's strip exactly. The two must be
+              built the same way, not merely add up to the same number: the
+              row is 24px inside a 40px strip, so where its contents end up
+              is the row's business, and a slot stretched to 40px itself put
+              them 7px lower than every other board page's. */}
+          <div className="flex w-full items-end wide:h-10">
+            <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
+          </div>
           <Board
             apiRef={boardApi}
             fen={node.fen}
