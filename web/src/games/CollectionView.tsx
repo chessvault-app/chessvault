@@ -51,6 +51,7 @@ import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { ActionSheet } from '@/ui/ActionSheet';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
+import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 
 import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
@@ -166,6 +167,7 @@ const CollectionRow = memo(function CollectionRow({
 export function CollectionView() {
   const [games, setGames] = useState<GameSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const listPending = useSlowLoad(!loaded);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
@@ -580,15 +582,23 @@ export function CollectionView() {
               )}
             </FilterRow>
           )}
-          {/* Nothing to show and nothing narrowing the list. Two ways to get
+          {/* The wait, in the shape of the rows that are coming — the same
+              SkeletonGameRows the archive and the elite list on this very
+              page already use. This panel was the one that showed a header
+              with nothing under it, which is what an emptied collection
+              looks like. */}
+          {!loaded ? (
+            listPending ? <SkeletonGameRows rows={6} /> : null
+          ) : /* Nothing to show and nothing narrowing the list. Two ways to get
               here: the collection really is empty, or its last rows were just
               removed and the undo is still running — `hidden` is inside
               `visible` but not inside `games`, so the raw count alone said
               the collection was full while the list was bare, and the filter
               states below took it and blamed a search nobody had typed. What
               the reader sees is an empty collection either way, and Undo puts
-              the rows back. */}
-          {loaded && (games.length === 0 || (!filtering && visible.length === 0)) ? (
+              the rows back. Both halves drop their `loaded &&` — the branch
+              above has already taken every render before the list is in. */
+          games.length === 0 || (!filtering && visible.length === 0) ? (
             <EmptyState
               // Centred in the PANEL, not parked under its header: an empty
               // state pinned to the top of a full-height box is the thing
@@ -604,7 +614,7 @@ export function CollectionView() {
                 </Button>
               }
             />
-          ) : loaded && visible.length === 0 ? (
+          ) : visible.length === 0 ? (
             /* The collection has games and a filter of the reader's own is
                keeping every one of them out — the branch above has already
                taken the unfiltered case. Saying which filter beats a box

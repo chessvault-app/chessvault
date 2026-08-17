@@ -8,7 +8,7 @@ import {
   Puzzle,
   X,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
@@ -19,6 +19,7 @@ import { Board } from '@/board/Board';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { ProgressBar } from '@/ui/ProgressBar';
+import { Skeleton, SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/ui/KingIcon';
@@ -198,6 +199,75 @@ function PuzzleCard({
       <ChevronRight className="text-subtle size-4 shrink-0 self-center" />
     </button>
   );
+}
+
+/**
+ * The wait, in the shape of what the gate is about to draw.
+ *
+ * This page can promise its shape before it has its data, which is what
+ * makes a skeleton honest here: the two height queries are synchronous, so
+ * whether the history panel and the book row will be there is already
+ * known, and the cards' size follows from that alone (`fill`). The layout
+ * below is the settled layout with the content taken out.
+ *
+ * What it cannot know is whether there are any BOOKS — the height queries
+ * say there is room for the shelf row and the third card, not that the
+ * vault has one to put there. Three cards is the common case and the
+ * maximum (the next puzzle, the review slot, which is drawn now whether
+ * or not it has anything in it, and the book you were last in), and it is
+ * the right way to be wrong: guessing too few would GROW the boards when
+ * the third landed, which is the jump the gate exists to stop. A bookless
+ * vault settles to two and the boards grow once, on a screen that has
+ * already waited long enough for a skeleton to be worth drawing.
+ *
+ * The launcher is not in here. It never waits, it is already drawn, and
+ * it does not move when this is replaced.
+ */
+function HubSkeletonPanels({ history, books }: { history: boolean; books: boolean }) {
+  return (
+    <>
+      {history && (
+        <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
+          <Skeleton className="m-3 mb-2 h-2.5 w-24 rounded" />
+          <div className="min-h-0 flex-1">
+            <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
+          </div>
+        </div>
+      )}
+      {history && books && <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />}
+      {books && (
+        <div className="bg-surface border-line flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2">
+          <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <Skeleton className="h-2.5 w-2/3" />
+            <Skeleton className="h-1.5 w-full rounded-full" />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** The card cluster's own placeholders; see HubSkeletonPanels. */
+function HubSkeletonCards({ fill }: { fill: boolean }) {
+  const card = (i: number): ReactNode => (
+    <div
+      key={i}
+      className={cn(
+        'bg-surface border-line flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
+        fill && 'min-h-0 flex-1',
+      )}
+    >
+      <Skeleton
+        className={cn('aspect-square shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
+      />
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+        <Skeleton className="h-3 w-1/3" />
+        <Skeleton className="h-2.5 w-1/2" />
+      </div>
+    </div>
+  );
+  return <>{[0, 1, 2].map(card)}</>;
 }
 
 /**
@@ -611,6 +681,18 @@ function Hub() {
   // not there is anything in it — a section that appears only once it has
   // content teaches nobody that it exists (lanph3re's call).
   const showHistory = settled && roomForHistory;
+  /**
+   * Whether a history-shaped block is on the page at all — the panel once
+   * the answers are in, its placeholder before. The cards take their size
+   * from this and not from `showHistory`, so the skeleton's cards are the
+   * size the real ones will be and the swap moves nothing.
+   */
+  const historyBlock = settled ? showHistory : roomForHistory;
+  // Nothing is drawn for a wait too short to notice — most are (the six
+  // answers take about 50ms against a warm vault, well under useSlowLoad's
+  // threshold), and a skeleton that flashes reads as a fault.
+  const pending = useSlowLoad(!settled);
+  const skeleton = !settled && pending;
 
   // Subscribed rather than read once: the trainer writes it and coming back
   // here re-mounts, which used to be the whole story — but the vault owns
@@ -649,6 +731,7 @@ function Hub() {
           the order they are written in, so this is purely about reading
           order — and it puts the one fixed-size panel next to the cards
           it belongs with, rather than stranded above a panel that grows. */}
+      {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks} />}
       {showHistory && <HistoryPanel attempts={history} />}
       {/* The line between what you have DONE and what there is to do
           next — the book row belongs with the cards under it, not with
@@ -677,9 +760,11 @@ function Hub() {
       <div
         className={cn(
           'flex flex-col gap-2',
-          showHistory ? 'shrink-0' : 'flex-1',
+          historyBlock ? 'shrink-0' : 'flex-1',
         )}
       >
+        {skeleton && <HubSkeletonCards fill={!historyBlock} />}
+
         {settled && solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
@@ -698,7 +783,7 @@ function Hub() {
             fen={positionAt(next, 1).fen}
             side={solverColor(next)}
             title={t('Next puzzle')}
-            fill={!showHistory}
+            fill={!historyBlock}
             go={() => {
               setPendingPuzzle('fresh', next);
               navigate('puzzles');
@@ -721,7 +806,7 @@ function Hub() {
             fen={positionAt(review, 1).fen}
             side={solverColor(review)}
             title={t('Missed puzzle')}
-            fill={!showHistory}
+            fill={!historyBlock}
             detail={t('{n} waiting to be reviewed', { n: failed })}
             go={() => {
               setPendingPuzzle('failed', review);
@@ -730,14 +815,14 @@ function Hub() {
           />
         ) : failed > 0 ? (
           <EmptySlot
-            fill={!showHistory}
+            fill={!historyBlock}
             title={t('Review failed puzzles')}
             detail={t('{n} waiting to be reviewed', { n: failed })}
             go={() => navigate('puzzles', 'failed')}
           />
         ) : (
           <EmptySlot
-            fill={!showHistory}
+            fill={!historyBlock}
             title={t('No puzzle to review')}
             detail={t('Puzzles you get wrong come back here.')}
           />
@@ -761,7 +846,7 @@ function Hub() {
                 : t('Book puzzle {n}', { n: bookNext.puzzle.number })
             }
             detail={bookNext.book.title}
-            fill={!showHistory}
+            fill={!historyBlock}
             go={() =>
               navigate('puzzles', 'books', bookNext.book.slug, bookNext.puzzle.id)
             }
