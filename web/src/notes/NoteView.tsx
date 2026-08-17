@@ -6,7 +6,7 @@ import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { usePrefs } from '@/store/prefs';
 import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
+import { ClearableInput } from '@/ui/Input';
 import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
@@ -428,7 +428,7 @@ function NoteTitle({ id }: { id: string }) {
 
   if (editing) {
     return (
-      <Input
+      <ClearableInput
         autoFocus
         inputSize="sm"
         value={draft}
@@ -438,7 +438,8 @@ function NoteTitle({ id }: { id: string }) {
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           if (e.key === 'Escape') setEditing(false);
         }}
-        className="flex-1 text-sm font-semibold"
+        className="flex-1"
+        inputClassName="text-sm font-semibold"
       />
     );
   }

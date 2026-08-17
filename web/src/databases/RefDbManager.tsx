@@ -7,7 +7,7 @@ import { t } from '@/lib/i18n';
 
 import { Button } from '@/ui/Button';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { Input, SearchInput } from '@/ui/Input';
+import { ClearableInput, SearchInput } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Skeleton } from '@/ui/Skeleton';
@@ -690,7 +690,7 @@ function BuildWindow({
       <p className="text-muted text-xs leading-relaxed">
         {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
       </p>
-      <Input
+      <ClearableInput
         inputSize="sm"
         value={name}
         autoFocus

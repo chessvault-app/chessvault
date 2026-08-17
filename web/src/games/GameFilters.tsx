@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import { Select } from '@/ui/Select';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
-import { DateInput, Input } from '@/ui/Input';
+import { ClearableInput, DateInput } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -237,7 +237,7 @@ export function StructuredFiltersWindow({
     <Modal title="Filter games" icon={SlidersHorizontal} onClose={onClose}>
       <Field label="Player">
         <div className="flex gap-2">
-          <Input
+          <ClearableInput
             // Desktop only — the mouse saves a click; a thumb gets the
             // keyboard over a window that is six fields to be READ, and
             // this window opens as a page of the list it filters.
@@ -287,7 +287,7 @@ export function StructuredFiltersWindow({
       </Field>
 
       <Field label="Opening or ECO">
-        <Input
+        <ClearableInput
           inputSize="sm"
           value={draft.opening}
           onChange={(e) => patch({ opening: e.target.value })}
@@ -298,7 +298,7 @@ export function StructuredFiltersWindow({
 
       {showEvent && (
         <Field label="Tournament">
-          <Input
+          <ClearableInput
             inputSize="sm"
             value={draft.event}
             onChange={(e) => patch({ event: e.target.value })}

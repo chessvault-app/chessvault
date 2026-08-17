@@ -20,7 +20,7 @@ import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { Input, TextArea } from '@/ui/Input';
+import { ClearableInput, TextArea } from '@/ui/Input';
 import { Field } from '@/ui/Field';
 import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
@@ -423,7 +423,7 @@ function CreateMenu() {
             </Field>
           )}
           <Field label="Study title">
-            <Input
+            <ClearableInput
               autoFocus={autoFocusField()}
               value={name}
               onChange={(e) => {
@@ -573,7 +573,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
       {/* No heading here: the window it opens in is already called this. */}
       <Field label="Lichess username">
         <div className="flex gap-2">
-          <Input
+          <ClearableInput
             autoFocus={autoFocusField()}
             type="text"
             value={user}

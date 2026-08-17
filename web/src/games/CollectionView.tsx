@@ -27,7 +27,7 @@ import { PageShell } from '@/ui/PageShell';
 import { EmptyState } from '@/ui/EmptyState';
 import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 
-import { Input, SearchInput, TextArea } from '@/ui/Input';
+import { ClearableInput, SearchInput, TextArea } from '@/ui/Input';
 import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
@@ -949,39 +949,39 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
               half-column leaves — once the event stopped calling itself a
               tournament as well, which it was at 157 of them. */}
           <div className="grid grid-cols-2 gap-2">
-            <Input
+            <ClearableInput
               value={white}
               onChange={(e) => setWhite(e.target.value)}
               onFocus={scrollFocusIntoView}
               placeholder={t('White (optional)')}
             />
-            <Input
+            <ClearableInput
               value={black}
               onChange={(e) => setBlack(e.target.value)}
               onFocus={scrollFocusIntoView}
               placeholder={t('Black (optional)')}
             />
-            <Input
+            <ClearableInput
               value={whiteElo}
               onChange={(e) => setWhiteElo(e.target.value)}
               onFocus={scrollFocusIntoView}
               placeholder={t('White rating')}
               inputMode="numeric"
             />
-            <Input
+            <ClearableInput
               value={blackElo}
               onChange={(e) => setBlackElo(e.target.value)}
               onFocus={scrollFocusIntoView}
               placeholder={t('Black rating')}
               inputMode="numeric"
             />
-            <Input
+            <ClearableInput
               value={date}
               onChange={(e) => setDate(e.target.value)}
               onFocus={scrollFocusIntoView}
               placeholder={t('Date, e.g. 2026-08-08')}
             />
-            <Input
+            <ClearableInput
               value={event}
               onChange={(e) => setEvent(e.target.value)}
               onFocus={scrollFocusIntoView}

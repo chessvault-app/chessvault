@@ -2,7 +2,7 @@ import { Folder as FolderIcon, ChevronRight, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './Button';
-import { Input } from './Input';
+import { ClearableInput } from './Input';
 import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
 
@@ -65,7 +65,7 @@ export function MoveToPopover({
           The ↵ glyph that used to sit here was the only instruction, and it
           only means "press enter" to somebody who already knew. */}
       <div className="border-line flex items-center gap-1 border-t pt-2">
-        <Input
+        <ClearableInput
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={t('New collection…')}

@@ -24,7 +24,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { CollectionArt } from '@/ui/EmptyArt';
 import { Field } from '@/ui/Field';
-import { Input, SearchInput, TextArea } from '@/ui/Input';
+import { ClearableInput, Input, SearchInput, TextArea } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Fab, type FabAction } from '@/ui/Fab';
 import { Select } from '@/ui/Select';
@@ -898,7 +898,7 @@ function NodePanel({
       {!isRoot && (
         <>
           <Field label="Name">
-            <Input
+            <ClearableInput
               defaultValue={node.name ?? ''}
               placeholder={t('Named from the opening catalogue')}
               onBlur={(e) => {

@@ -151,6 +151,92 @@ function emptyField(el: HTMLInputElement, then: 'stay' | 'leave'): void {
   else el.blur();
 }
 
+export interface ClearableInputProps extends InputProps {
+  /** Styling the FIELD needs (fonts, weights); `className` sizes the wrapper. */
+  inputClassName?: string;
+}
+
+/**
+ * An Input that can be emptied in one press — the form-field counterpart
+ * of SearchInput's X.
+ *
+ * Same button, different lifetime: it is only there while the field is
+ * FOCUSED and holds text, which is the platform convention for form
+ * fields. A search box wears its X whenever it is filtering, because
+ * clearing is how the list under it comes back; a filled form at rest is
+ * not asking to be emptied, and a page of six saved fields wearing six
+ * X's reads as six warnings. preventDefault on the press keeps the
+ * focus, so a blur-commit field (the inline renames) clears without
+ * committing, and a phone keeps its keyboard.
+ */
+export const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
+  function ClearableInput(
+    {
+      className,
+      inputClassName,
+      inputSize = 'md',
+      onFocus,
+      onBlur,
+      onChange,
+      value,
+      defaultValue,
+      ...props
+    },
+    ref,
+  ) {
+    const [focused, setFocused] = useState(false);
+    // For an uncontrolled caller, which the X still has to know about.
+    const [typed, setTyped] = useState(() => String(defaultValue ?? ''));
+    const self = useRef<HTMLInputElement | null>(null);
+    const text = value === undefined ? typed : String(value);
+    const showClear = focused && text !== '';
+
+    return (
+      <span className={cn('relative inline-flex min-w-0 items-center', className)}>
+        <Input
+          ref={(node) => {
+            self.current = node;
+            if (typeof ref === 'function') ref(node);
+            else if (ref) ref.current = node;
+          }}
+          inputSize={inputSize}
+          value={value}
+          defaultValue={defaultValue}
+          className={cn('w-full', showClear && 'pr-7', inputClassName)}
+          onFocus={(e) => {
+            setFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            onBlur?.(e);
+          }}
+          onChange={(e) => {
+            setTyped(e.target.value);
+            onChange?.(e);
+          }}
+          {...props}
+        />
+        {showClear && (
+          <button
+            type="button"
+            title={t('Clear')}
+            aria-label={t('Clear')}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => self.current && emptyField(self.current, 'stay')}
+            className={cn(
+              'text-subtle hover:text-fg hover:bg-fg/10 absolute right-1.5 top-1/2 grid -translate-y-1/2',
+              'size-5 place-items-center rounded-full transition-colors duration-100',
+            )}
+          >
+            <X className="size-3.5 shrink-0" />
+          </button>
+        )}
+      </span>
+    );
+  },
+);
+
 /**
  * An Input with the magnifier badge every search field carries, plus the
  * two things a search needs that a text box does not.

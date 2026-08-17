@@ -18,7 +18,7 @@ import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 import { PageShell } from '@/ui/PageShell';
 
-import { Input } from '@/ui/Input';
+import { ClearableInput } from '@/ui/Input';
 
 import { Suspense, lazy } from 'react';
 
@@ -259,7 +259,7 @@ export function BookPage({ slug }: { slug: string }) {
             <ChevronLeft className="size-3.5" />
           </Button>
           {renaming ? (
-            <Input
+            <ClearableInput
               autoFocus
               inputSize="sm"
               value={titleDraft}
@@ -272,7 +272,8 @@ export function BookPage({ slug }: { slug: string }) {
                 if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                 if (e.key === 'Escape') setRenaming(false);
               }}
-              className="min-w-0 flex-1 text-lg font-semibold tracking-tight"
+              className="min-w-0 flex-1"
+              inputClassName="text-lg font-semibold tracking-tight"
             />
           ) : (
             <>

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from './Button';
-import { Input } from './Input';
+import { ClearableInput } from './Input';
 import { Sheet } from './Sheet';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -53,7 +53,7 @@ export function PromptSheet({
   return (
     <Sheet label={label} onClose={onClose}>
       {extra}
-      <Input
+      <ClearableInput
         autoFocus={autoFocusField()}
         value={draft}
         onFocus={(e) => e.target.select()}

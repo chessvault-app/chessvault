@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
+import { ClearableInput } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Sheet } from '@/ui/Sheet';
 import type { NodeCoverage } from './coverage';
@@ -229,7 +229,7 @@ export function AddMoveSheet({
           submit();
         }}
       >
-        <Input
+        <ClearableInput
           inputSize="md"
           className="flex-1"
           value={typed}

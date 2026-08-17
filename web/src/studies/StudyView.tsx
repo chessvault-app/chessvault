@@ -34,7 +34,7 @@ import { useStudy } from '@/store/study';
 import { fenKey } from '@/repertoire/drill';
 import { consumeJumpTarget } from './jumpTarget';
 import { Button } from '@/ui/Button';
-import { Input } from '@/ui/Input';
+import { ClearableInput } from '@/ui/Input';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -388,7 +388,7 @@ function TitleEditor({
 
   if (editing) {
     return (
-      <Input
+      <ClearableInput
         autoFocus
         inputSize="sm"
         value={draft}
@@ -398,7 +398,8 @@ function TitleEditor({
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
           if (e.key === 'Escape') setEditing(false);
         }}
-        className="flex-1 text-sm font-semibold"
+        className="flex-1"
+        inputClassName="text-sm font-semibold"
       />
     );
   }
@@ -602,7 +603,7 @@ function ChapterRow({
           />
         </>
       ) : renaming === index ? (
-        <Input
+        <ClearableInput
           autoFocus
           inputSize="sm"
           onFocus={(e) => e.target.select()}

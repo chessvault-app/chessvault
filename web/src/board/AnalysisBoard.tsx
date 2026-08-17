@@ -5,8 +5,9 @@ import {
   ChevronLeft,
   ChevronRight,
   FlipVertical2,
+  X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -270,6 +271,68 @@ function formatClock(seconds: number): string {
 }
 
 /**
+ * The editable player name, styled bare over the board rather than as an
+ * Input, with the app's usual clear affordance: an X while the field is
+ * focused and holds text (ui/Input's ClearableInput carries the same
+ * rules, but its bordered chrome has no place on a name plate). Controlled
+ * so the X is one state write; the caller's `key` resets it when a loaded
+ * game brings its own names.
+ */
+function NameField({
+  initial,
+  placeholder,
+  onCommit,
+}: {
+  initial: string;
+  placeholder: string;
+  onCommit: (value: string) => void;
+}) {
+  const [draft, setDraft] = useState(initial);
+  const [focused, setFocused] = useState(false);
+  const showClear = focused && draft !== '';
+  return (
+    <span className="relative flex min-w-0 flex-1 items-center">
+      <input
+        {...noAutofill}
+        value={draft}
+        placeholder={placeholder}
+        spellCheck={false}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => setDraft(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={(e) => {
+          setFocused(false);
+          onCommit(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+        }}
+        className={cn(
+          'text-fg placeholder:text-subtle w-full min-w-0 truncate bg-transparent text-sm font-medium outline-none',
+          showClear && 'pr-6',
+          noAutofillClass,
+        )}
+      />
+      {showClear && (
+        <button
+          type="button"
+          title={t('Clear')}
+          aria-label={t('Clear')}
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={() => setDraft('')}
+          className={cn(
+            'text-subtle hover:text-fg hover:bg-fg/10 absolute right-0 top-1/2 grid -translate-y-1/2',
+            'size-5 place-items-center rounded-full transition-colors duration-100',
+          )}
+        >
+          <X className="size-3.5 shrink-0" />
+        </button>
+      )}
+    </span>
+  );
+}
+
+/**
  * Name plate for one side of a loaded game: player, rating, and the clock as
  * it stood at the current move (from the [%clk] comments chess.com and
  * lichess write). Renders nothing for scratch analysis.
@@ -315,21 +378,11 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
     <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
       {editable ? (
-        <input
+        <NameField
           key={name}
-          {...noAutofill}
-          defaultValue={name === '?' ? '' : name}
+          initial={name === '?' ? '' : name}
           placeholder={side === 'white' ? t('White') : t('Black')}
-          spellCheck={false}
-          onClick={(e) => e.stopPropagation()}
-          onBlur={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
-          }}
-          className={cn(
-            'text-fg placeholder:text-subtle min-w-0 flex-1 truncate bg-transparent text-sm font-medium outline-none',
-            noAutofillClass,
-          )}
+          onCommit={setName}
         />
       ) : (
         <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>

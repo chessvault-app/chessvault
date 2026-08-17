@@ -5,7 +5,7 @@ import { Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, Sav
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
-import { Input } from '@/ui/Input';
+import { ClearableInput, Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Select } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
@@ -206,14 +206,14 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
   return (
     <Card icon={User} title={t('Profile')}>
       <Field label={t('Display name')}>
-        <Input inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('How the app greets you')} />
+        <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('How the app greets you')} />
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={t('chess.com username')}>
-          <Input inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder={t('your chess.com handle')} autoCapitalize="none" />
+          <ClearableInput inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder={t('your chess.com handle')} autoCapitalize="none" />
         </Field>
         <Field label={t('Lichess username')}>
-          <Input inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess handle')} autoCapitalize="none" />
+          <ClearableInput inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess handle')} autoCapitalize="none" />
         </Field>
       </div>
       <p className="text-subtle text-xs">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
@@ -1036,7 +1036,7 @@ function DangerCard({ gate }: { gate: boolean }) {
         {t('Wipe every game, study, note, puzzle and imported book from the vault — including its change history. The app password, 2FA and tokens survive. There is no undo; if the vault matters, back it up first.')}
       </p>
       <div className="flex items-center gap-2">
-        <Input
+        <ClearableInput
           inputSize="lg"
           placeholder={t('Type “{phrase}” to arm', { phrase: WIPE_PHRASE })}
           className="flex-1"
