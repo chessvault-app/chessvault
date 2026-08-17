@@ -5,6 +5,7 @@ import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { createLiveSim, layoutGraph, type LiveSim } from './graph';
+import { favouriteChild } from './mainline';
 import type { OpeningMap, ResolvedMap } from './model';
 
 /**
@@ -665,18 +666,8 @@ export function MapCanvas({
     const nodes = new Map<string, string>();
     if (!shares) return { edges, nodes };
 
-    const favourite = (id: string): string | null => {
-      let best: string | null = null;
-      let bestShare = 0;
-      for (const child of resolved.nodes.get(id)?.mapNode.children ?? []) {
-        const share = shares.get(child.id) ?? 0;
-        if (share > bestShare) {
-          bestShare = share;
-          best = child.id;
-        }
-      }
-      return best;
-    };
+    const favourite = (id: string): string | null =>
+      favouriteChild(resolved.nodes.get(id)?.mapNode.children ?? [], (child) => shares.get(child) ?? 0);
 
     // A search speaks for the whole set of hits; otherwise the selection
     // speaks for itself. A search with no hits highlights nothing, which
