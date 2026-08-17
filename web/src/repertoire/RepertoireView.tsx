@@ -1,37 +1,35 @@
 ﻿import { parseSquare } from 'chessops/util';
-import { BookmarkPlus, BookOpen, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { BookmarkPlus, BookOpen, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Play, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
-import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
-import { fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
+import { DEFAULT_BAND, fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
+import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker';
+import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
-import { EvalBar } from '@/engine/EvalBar';
-import { formatScore, toWhitePov } from '@/engine/uci';
-import { useEngine } from '@/store/engine';
 import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { SearchInput } from '@/ui/Input';
 import { rememberDrill, rememberedDrill } from '@/lib/training';
-import { autoFocusField } from '@/lib/media';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { Sheet } from '@/ui/Sheet';
+import { Field } from '@/ui/Field';
 import { InfoTip } from '@/ui/InfoTip';
 import { KingIcon } from '@/ui/KingIcon';
+import { Segmented } from '@/ui/Segmented';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
@@ -51,34 +49,19 @@ import { t } from '@/lib/i18n';
 
 type Phase = 'idle' | 'playing' | 'thinking' | 'ended';
 
-interface Template {
-  eco: string;
-  name: string;
-  sans: string[];
-}
+/** A steady minimum "thinking" time for the field's reply: the DB fetch
+    is instant when the position is cached and slow when it isn't, which
+    felt jarringly random. Waiting out the rest of this makes the reply
+    land at a consistent, deliberate pace. */
+const MIN_THINK_MS = 550;
 
-// A spread of the major openings, each seeded to the point where it earns its
-// name. "Free" starts at move one. ECO codes are the opening's root.
-const TEMPLATES: Template[] = [
-  { eco: '', name: 'Start position', sans: [] },
-  { eco: 'B20', name: 'Sicilian Defence', sans: ['e4', 'c5'] },
-  { eco: 'C00', name: 'French Defence', sans: ['e4', 'e6'] },
-  { eco: 'B10', name: 'Caro-Kann Defence', sans: ['e4', 'c6'] },
-  { eco: 'B01', name: 'Scandinavian Defence', sans: ['e4', 'd5'] },
-  { eco: 'B07', name: 'Pirc Defence', sans: ['e4', 'd6'] },
-  { eco: 'C60', name: 'Ruy López', sans: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5'] },
-  { eco: 'C50', name: 'Italian Game', sans: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4'] },
-  { eco: 'C45', name: 'Scotch Game', sans: ['e4', 'e5', 'Nf3', 'Nc6', 'd4'] },
-  { eco: 'C25', name: 'Vienna Game', sans: ['e4', 'e5', 'Nc3'] },
-  { eco: 'D06', name: "Queen's Gambit", sans: ['d4', 'd5', 'c4'] },
-  { eco: 'D10', name: 'Slav Defence', sans: ['d4', 'd5', 'c4', 'c6'] },
-  { eco: 'D02', name: 'London System', sans: ['d4', 'd5', 'Nf3', 'Nf6', 'Bf4'] },
-  { eco: 'E60', name: "King's Indian Defence", sans: ['d4', 'Nf6', 'c4', 'g6'] },
-  { eco: 'E20', name: 'Nimzo-Indian Defence', sans: ['d4', 'Nf6', 'c4', 'e6', 'Nc3', 'Bb4'] },
-  { eco: 'A80', name: 'Dutch Defence', sans: ['d4', 'f5'] },
-  { eco: 'A10', name: 'English Opening', sans: ['c4'] },
-  { eco: 'A04', name: 'Réti Opening', sans: ['Nf3'] },
-];
+/** How long a refused drill move stands on the board before it snaps
+    back — the same rhythm as the puzzle trainer's wrong-move rollback. */
+const ROLLBACK_MS = 650;
+
+/** Which click a move earns; the 'x' in a SAN is how a capture is spelt. */
+const soundFor = (san: string | null | undefined): 'capture' | 'move' =>
+  san?.includes('x') ? 'capture' : 'move';
 
 type ExplorerMove = FieldMove;
 
@@ -183,391 +166,52 @@ function PlayerSlot({ side, fen, className }: { side: 'white' | 'black'; fen: st
   );
 }
 
-/**
- * Opening picker: the curated spread when idle, the ENTIRE ECO catalogue
- * (served from the vendored lichess chess-openings set) as soon as you type.
- * A combobox rather than a Select — 3,800 openings need a filter, not a list.
- *
- * Touch gets a different shape: an inline input under the board sits exactly
- * where the keyboard lands, so tapping it hid everything (lanph3re's report).
- * On coarse pointers the trigger is a plain button and the search opens as a
- * sheet pinned to the TOP of the viewport — visible above any keyboard, and
- * nothing on the page is scripted to scroll while it animates.
- */
-/**
- * Pick an opening to spar from.
- *
- * Two shapes for two pointers. On a phone it is the app's own Sheet —
- * rising from the bottom with the drag, the scrim and the Escape every
- * other window has. On a desktop it is a combobox: the list drops
- * anchored under the field itself (portalled past the Panel's clipping,
- * like every floating layer here), capped in height with the search
- * pinned above the scroll — so the board stays on screen while an
- * opening is being chosen, instead of disappearing behind a centred
- * card. lanph3re's report: the modal covered the board and broke the
- * visual context.
- */
-function OpeningPicker({
-  value,
-  onChange,
-}: {
-  value: Template;
-  onChange: (t: Template) => void;
-}) {
-  const [all, setAll] = useState<Template[] | null>(null);
-  const [query, setQuery] = useState('');
-  const [open, setOpen] = useState(false);
-  /** Where the desktop popover goes; null means the phone's sheet. */
-  const [anchor, setAnchor] = useState<{
-    top?: number;
-    bottom?: number;
-    left: number;
-    width: number;
-    maxHeight: number;
-  } | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetch('/api/openings')
-      .then((r) => r.json())
-      .then((body: { openings?: Template[] }) => {
-        if (!cancelled) setAll(body.openings ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setAll([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  /** Rendered at once. The catalogue is thousands of entries, and building
-      that many buttons to open a list costs most of a second. */
-  const SHOWN = 300;
-
-  const { matches, hidden } = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    // An empty box offers the whole catalogue, ordered by ECO, with the
-    // curated few first — so the picker can be browsed and not only
-    // searched.
-    const pool = q
-      ? (all ?? []).filter(
-          (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
-        )
-      : [...TEMPLATES, ...(all ?? []).filter((o) => !TEMPLATES.some((t) => t.name === o.name))];
-    return { matches: pool.slice(0, SHOWN), hidden: Math.max(0, pool.length - SHOWN) };
-  }, [query, all]);
-
-  const pick = (o: Template): void => {
-    onChange(o);
-    setOpen(false);
-  };
-
-  /**
-   * Open under the field on a desktop, as a sheet otherwise.
-   *
-   * The anchor is read once, when it opens — the same rule ActionSheet
-   * follows — and the list prefers to hang BELOW the field, flipping
-   * above only when the field is near the bottom and there is more room
-   * over it. Height is capped so the whole thing stays inside the
-   * viewport and the list scrolls instead.
-   */
-  const openPicker = (): void => {
-    setQuery('');
-    const rect = window.matchMedia('(min-width: 40rem)').matches
-      ? triggerRef.current?.getBoundingClientRect()
-      : undefined;
-    if (rect) {
-      const wanted = 384;
-      const width = Math.max(rect.width, 288);
-      const left = Math.min(rect.left, window.innerWidth - width - 8);
-      const below = window.innerHeight - rect.bottom - 12;
-      setAnchor(
-        below >= 240 || below >= rect.top - 12
-          ? { top: rect.bottom + 4, left, width, maxHeight: Math.min(wanted, below) }
-          : {
-              bottom: window.innerHeight - rect.top + 4,
-              left,
-              width,
-              maxHeight: Math.min(wanted, rect.top - 12),
-            },
-      );
-    } else {
-      setAnchor(null);
-    }
-    setOpen(true);
-  };
-
-  // The popover has no scrim, so it dismisses itself: Escape, and any
-  // press outside it (a press on the field again just closes it).
-  useEffect(() => {
-    if (!open || !anchor) return;
-    const onDown = (e: PointerEvent): void => {
-      const target = e.target as Node;
-      if (popoverRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, anchor]);
-
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => {
-          if (open) {
-            setOpen(false);
-            return;
-          }
-          openPicker();
-        }}
-        className={cn(
-          'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border',
-          'px-2.5 text-left text-xs transition-colors duration-100',
-          'hover:border-primary/40',
-        )}
-      >
-        <span className="min-w-0 flex-1 truncate">
-          {/* t() so "Start position" translates; real opening names are
-              proper nouns and pass through untouched. */}
-          {value.eco ? `${value.eco}  ${value.name}` : t(value.name)}
-        </span>
-      </button>
-
-      {open &&
-        (() => {
-          // One search box and one list, whichever container they open in.
-          // A real SearchInput: it filters the list live, so it gets the
-          // X and Cancel every other live filter carries. Desktop-only
-          // autofocus, per the search-field rule — on a phone the sheet
-          // opens to browse the list, not with a keyboard over it.
-          const searchBox = (
-            <SearchInput
-              autoFocus={autoFocusField()}
-              inputSize="sm"
-              className="w-full"
-              value={query}
-              placeholder={t('Search any opening or ECO code…')}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          );
-          // The container owns the height; the list scrolls inside it
-          // rather than growing past the keyboard (sheet) or the
-          // viewport (popover).
-          const list = (
-            <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-              {matches.length === 0 ? (
-                <li className="text-subtle px-2 py-1.5 text-xs">
-                  {all === null ? t('Reading the catalogue…') : t('No opening matches that.')}
-                </li>
-              ) : (
-                matches.map((o, i) => (
-                  <li key={`${o.eco}-${o.name}-${i}`} className="[content-visibility:auto]">
-                    <button
-                      type="button"
-                      onClick={() => pick(o)}
-                      className={cn(
-                        'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
-                        'hover:bg-surface-2 transition-colors duration-100 pointer-coarse:py-2.5',
-                        o.name === value.name && o.eco === value.eco
-                          ? 'text-primary font-medium'
-                          : 'text-fg',
-                      )}
-                    >
-                      {o.eco && (
-                        <span className="text-subtle w-7 shrink-0 font-mono text-[0.6875rem]">
-                          {o.eco}
-                        </span>
-                      )}
-                      <span className="min-w-0 flex-1 truncate">{t(o.name)}</span>
-                    </button>
-                  </li>
-                ))
-              )}
-              {hidden > 0 && (
-                <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
-                  {t('{count} more — type to narrow.', { count: hidden.toLocaleString() })}
-                </li>
-              )}
-            </ul>
-          );
-
-          if (!anchor) {
-            return (
-              <Sheet label={t('Opening')} onClose={() => setOpen(false)} className="gap-2">
-                {searchBox}
-                {list}
-              </Sheet>
-            );
-          }
-
-          // Portalled past the Panel: a Panel clips its children, and a
-          // floating layer has no business living inside the thing it
-          // floats over (see ActionSheet).
-          return createPortal(
-            <div
-              ref={popoverRef}
-              role="dialog"
-              aria-label={t('Opening')}
-              style={{
-                position: 'fixed',
-                top: anchor.top,
-                bottom: anchor.bottom,
-                left: anchor.left,
-                width: anchor.width,
-                maxHeight: anchor.maxHeight,
-              }}
-              className={cn(
-                'bg-surface border-line z-50 flex flex-col overflow-hidden rounded-lg border',
-                'shadow-[var(--shadow-pop)]',
-              )}
-            >
-              {/* Above the scroll, not inside it: the search stays put
-                  while the catalogue scrolls under it. */}
-              <div className="border-line shrink-0 border-b p-2">{searchBox}</div>
-              <div className="flex min-h-0 flex-1 flex-col p-1">{list}</div>
-            </div>,
-            document.body,
-          );
-        })()}
-    </>
-  );
+/** The live drill: the chapters in scope, their position index, and the
+    current candidate nodes — mutated in place as moves match. */
+interface DrillScope {
+  chapters: Chapter[];
+  posIndex: Map<string, DrillCand[]>;
+  cands: DrillCand[];
+  study: string;
+  /** Per-chapter study ids, when the scope pools several studies (a
+      map-wide drill) — records file under the real study, not a
+      synthetic one. Index-parallel with `chapters`. */
+  studies?: string[];
+  /** For the practice memo: the chapter's name, or "Whole study". */
+  label: string;
+  /** Where the shared lead-in ends — gap relevance turns on it. */
+  trunkPly: number;
+  trunkFen: string;
+  /** The trunk end's opening family, fetched once on first need;
+      undefined = not asked yet, null = the position has no name. */
+  subjectFamily?: string | null;
+  /** Position key -> opening family, so one deviation asks once. */
+  families: Map<string, string | null>;
+  missed: Set<string>;
+  gapNoted: Set<string>;
 }
 
-/**
- * How the line ended, and a way into the board.
- *
- * The trainer's job stops when the line leaves the database — the panel
- * has always SAID to go and analyse it, and then offered nothing to do
- * that with. So the button is back, at the one moment it means
- * something, and it carries the answer to the question you would open
- * the board to ask: how does this position actually stand.
- *
- * The engine is switched on to answer it. That is a session switch, not
- * a stored preference — `enabled` is deliberately not persisted (see
- * store/engine.ts) — so this turns it on for the evaluation and leaves
- * it visibly on, rather than running something the app says is off.
- */
-function FinalAssessment({
-  fen,
-  onAnalyse,
-  children,
-}: {
-  fen: string;
-  onAnalyse: () => void;
-  /** What else this ending offers, beside Analyse — one row of buttons. */
-  children?: ReactNode;
-}) {
-  const enabled = useEngine((s) => s.enabled);
-  const setEnabled = useEngine((s) => s.setEnabled);
-  const analyse = useEngine((s) => s.analyse);
-  const lines = useEngine((s) => s.lines);
-  const resultFen = useEngine((s) => s.resultFen);
-  const finished = useEngine((s) => s.finished);
-
-  /**
-   * The verdict, kept here rather than read from the engine.
-   *
-   * Switching the engine off frees its worker AND clears its results (see
-   * store/engine.ts), so the number has to be taken out before the engine
-   * goes — otherwise stopping it would erase the very thing it was
-   * started for.
-   */
-  const [verdict, setVerdict] = useState<{ cp?: number; mate?: number } | null>(null);
-  // Whether WE turned it on. An engine the reader had already running is
-  // theirs, and stopping it because a sparring line ended would be this
-  // page reaching outside itself.
-  const startedByUs = useRef(false);
-
-  useEffect(() => {
-    if (verdict) return;
-    if (!enabled) {
-      startedByUs.current = true;
-      setEnabled(true);
-      return;
-    }
-    analyse(fen);
-  }, [enabled, fen, verdict, analyse, setEnabled]);
-
-  // One position, one search: take the answer at the end of it and stop.
-  // It used to run on after the number appeared, which on a phone is a
-  // fan spinning for a line that finished a minute ago.
-  useEffect(() => {
-    if (verdict || !finished || resultFen !== fen) return;
-    const best = lines[0];
-    if (!best) return;
-    const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
-    setVerdict(toWhitePov({ cp: best.cp, mate: best.mate }, turn));
-    if (startedByUs.current) setEnabled(false);
-  }, [finished, resultFen, fen, lines, verdict, setEnabled]);
-
-  // Leaving mid-search stops it too, for the same reason.
-  useEffect(
-    () => () => {
-      if (startedByUs.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
-
-  // Before the verdict is in, show the engine's running best guess.
-  const live =
-    resultFen === fen && lines[0]
-      ? toWhitePov(
-          { cp: lines[0].cp, mate: lines[0].mate },
-          fen.split(' ')[1] === 'b' ? 'black' : 'white',
-        )
-      : null;
-  const score = verdict ?? live;
-
-  return (
-    <div className="flex flex-col gap-2">
-      {/* The verdict is ONE block — the number, the bar and the line that
-          says the search is still running — so it is spaced as one, and
-          only the buttons under it get the panel's own gap. Spread over
-          three equal gaps it read as three separate things with the
-          button pushed a long way clear of the score it belongs to.
-
-          The number's slot is held whether or not there is a number in it,
-          and the bar is drawn empty rather than absent, so the answer
-          lands in place instead of pushing the button down when it
-          arrives. Starting an engine and searching a position takes long
-          enough to look like nothing is happening — hence the spinner in
-          the slot and a line that says so. */}
-      <div className="flex flex-col gap-0.5">
-        <div className="flex items-center gap-2">
-          <span className="text-fg flex min-w-[3.75rem] items-center font-mono text-lg font-semibold tabular-nums">
-            {score ? formatScore(score) : <Loader2 className="text-subtle size-4 animate-spin" />}
-          </span>
-          <EvalBar score={score} orientation="horizontal" className="flex-1" />
-        </div>
-        <p className="text-subtle min-h-[0.875rem] text-[0.6875rem] leading-none">
-          {verdict ? '' : t('Evaluating the position…')}
-        </p>
-      </div>
-      {/* One row: analysing the line and whatever else this ending offers
-          are the same kind of choice, and stacking them spent a whole row
-          of a panel that is already tall on a phone. It wraps where the
-          two do not fit side by side. */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" size="sm" onClick={onAnalyse}>
-          <Microscope className="size-3.5" />
-          {t('Analyse on the board')}
-        </Button>
-        {children}
-      </div>
-    </div>
-  );
+/** A fresh drill scope. Three start paths build one, differing only in
+    what they drill; the session's own bookkeeping — families asked,
+    misses, gaps noted — always starts empty. */
+function makeDrillScope(scope: {
+  chapters: Chapter[];
+  posIndex: Map<string, DrillCand[]>;
+  cands: DrillCand[];
+  study: string;
+  studies?: string[];
+  label: string;
+  trunk: { ply: number; fen: string };
+}): DrillScope {
+  const { trunk, ...rest } = scope;
+  return {
+    ...rest,
+    trunkPly: trunk.ply,
+    trunkFen: trunk.fen,
+    families: new Map(),
+    missed: new Set(),
+    gapNoted: new Set(),
+  };
 }
 
 export function RepertoireView() {
@@ -575,9 +219,8 @@ export function RepertoireView() {
   // set, drill mode holds the map's whole repertoire instead of one study.
   const [mapDrill, setMapDrill] = useState<MapDrillTarget | null>(() => consumeMapDrill());
   const [userColor, setUserColor] = useState<'white' | 'black'>(mapDrill?.color ?? 'white');
-  // 1600–1800: the group the database as a whole averages into.
-  const [band, setBand] = useState(RATING_BANDS[4]!.ratings);
-  const [template, setTemplate] = useState<Template>(TEMPLATES[0]!);
+  const [band, setBand] = useState(DEFAULT_BAND.ratings);
+  const [template, setTemplate] = useState<OpeningTemplate>(TEMPLATES[0]!);
   // '' = undecided, resolved when the database list arrives. The demo cannot
   // offer the online source (no token can ship in a static bundle), so it
   // starts undecided and settles on the first database.
@@ -586,8 +229,7 @@ export function RepertoireView() {
 
   // Which reference databases exist, for the source picker.
   useEffect(() => {
-    void fetch('/api/refgames')
-      .then((r) => (r.ok ? r.json() : { databases: [] }))
+    void api<{ ready?: boolean; games?: number; databases?: FieldDatabase[] }>('/api/refgames')
       .then((body) => {
         // fieldDatabases, not `databases ?? []`: on a single-file mount the
         // one database has no list to appear in, and the demo settled on
@@ -626,40 +268,19 @@ export function RepertoireView() {
   /** Why the line ended: past the database, the study's edge, or a gap. */
   const [endKind, setEndKind] = useState<'book' | 'line' | 'gap'>('book');
   const [gapMsg, setGapMsg] = useState('');
-  /** The live drill: the chapters in scope, their position index, and
-      the current candidate nodes — mutated in place as moves match;
-      render state never reads it, so a ref is honest. */
-  const drillRef = useRef<{
-    chapters: Chapter[];
-    posIndex: Map<string, DrillCand[]>;
-    cands: DrillCand[];
-    study: string;
-    /** Per-chapter study ids, when the scope pools several studies (a
-        map-wide drill) — records file under the real study, not a
-        synthetic one. Index-parallel with `chapters`. */
-    studies?: string[];
-    /** For the practice memo: the chapter's name, or "Whole study". */
-    label: string;
-    /** Where the shared lead-in ends — gap relevance turns on it. */
-    trunkPly: number;
-    trunkFen: string;
-    /** The trunk end's opening family, fetched once on first need;
-        undefined = not asked yet, null = the position has no name. */
-    subjectFamily?: string | null;
-    /** Position key -> opening family, so one deviation asks once. */
-    families: Map<string, string | null>;
-    missed: Set<string>;
-    gapNoted: Set<string>;
-  } | null>(null);
+  /** The live drill — render state never reads it, so a ref is honest. */
+  const drillRef = useRef<DrillScope | null>(null);
   const wholeStudy = chapterPick === 'all';
   const chapterIdx = wholeStudy ? 0 : Number(chapterPick) || 0;
 
-  // The studies list, first needed when drilling is chosen.
+  // The studies list, first needed when drilling is chosen. `mapDrill` is
+  // a real dependency: letting a map-wide drill go ("Drill a study
+  // instead") changes nothing else this effect reads, and without it the
+  // study picker stayed empty. The guards make the re-run idempotent.
   useEffect(() => {
     if (mode !== 'drill' || mapDrill !== null || studyList !== null) return;
-    void fetch('/api/studies')
-      .then((r) => r.json())
-      .then((body: { studies?: { id: string }[] }) => {
+    void api<{ studies?: { id: string }[] }>('/api/studies')
+      .then((body) => {
         const ids = (body.studies ?? []).map((st) => st.id);
         setStudyList(ids);
         const remembered = rememberedDrill();
@@ -668,17 +289,18 @@ export function RepertoireView() {
         );
       })
       .catch(() => setStudyList([]));
-  }, [mode, studyList]);
+  }, [mode, mapDrill, studyList]);
 
   // The chosen study's chapters, through the same codec the editor uses.
+  // `mapDrill` for the same reason as above: it gates the fetch, so it is
+  // a dependency, and the guards keep the re-run idempotent.
   useEffect(() => {
     if (mode !== 'drill' || mapDrill !== null || !drillStudy) return;
     let cancelled = false;
     setDrillChapters(null);
     setChapterPick('0');
-    void fetch(`/api/studies/${encodeURIComponent(drillStudy)}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((body: { pgn?: string } | null) => {
+    void api<{ pgn?: string } | null>(`/api/studies/${encodeURIComponent(drillStudy)}`)
+      .then((body) => {
         if (cancelled) return;
         const chapters = typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : [];
         setDrillChapters(chapters);
@@ -698,7 +320,7 @@ export function RepertoireView() {
     return () => {
       cancelled = true;
     };
-  }, [mode, drillStudy]);
+  }, [mode, mapDrill, drillStudy]);
 
   // What the record says about this chapter. Re-asked when a session ends
   // (phase is a dependency) so the idle panel's counts are never stale.
@@ -709,9 +331,10 @@ export function RepertoireView() {
     }
     let cancelled = false;
     const scope = wholeStudy ? '' : `&chapter=${encodeURIComponent(chapter.name)}`;
-    void fetch(`/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((body: { attempted?: number; review?: ReviewEntry[]; gaps?: unknown[] } | null) => {
+    void api<{ attempted?: number; review?: ReviewEntry[]; gaps?: unknown[] } | null>(
+      `/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`,
+    )
+      .then((body) => {
         if (!cancelled) {
           setSummary(
             body
@@ -736,10 +359,9 @@ export function RepertoireView() {
       answer null — no name, no filtering. */
   const fetchFamily = async (fen: string): Promise<string | null> => {
     try {
-      const res = await fetch(`/api/opening?fen=${encodeURIComponent(fen)}`);
-      const body = (await res.json().catch(() => null)) as {
-        opening?: { name?: string } | null;
-      } | null;
+      const body = await api<{ opening?: { name?: string } | null } | null>(
+        `/api/opening?fen=${encodeURIComponent(fen)}`,
+      );
       return openingFamily(body?.opening?.name ?? null);
     } catch {
       return null;
@@ -763,10 +385,9 @@ export function RepertoireView() {
     const ci = d.cands[0]?.ci ?? 0;
     const chapter = d.chapters[ci]?.name ?? '';
     const study = d.studies?.[ci] ?? d.study;
-    void fetch('/api/repertoire/attempt', {
+    void api('/api/repertoire/attempt', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ study, chapter, ...entry }),
+      json: { study, chapter, ...entry },
     }).catch(() => {});
   };
   const [flipped, setFlipped] = useState(false);
@@ -784,16 +405,9 @@ export function RepertoireView() {
 
   // Seed a tree with the template's line — used both for the idle preview
   // (picking an opening shows its position at once) and for starting a game.
-  const seedTree = (tpl: Template): { t: MoveTree; id: NodeId } => {
-    let t = createTree();
-    let id = t.rootId;
-    for (const san of tpl.sans) {
-      const added = addSan(t, id, san);
-      if (!added) break;
-      t = added.tree;
-      id = added.nodeId;
-    }
-    return { t, id };
+  const seedTree = (tpl: OpeningTemplate): { tree: MoveTree; tip: NodeId } => {
+    const fresh = createTree();
+    return replayLine(fresh, fresh.rootId, tpl.sans);
   };
 
   // Idle previews the chosen opening immediately, last move highlighted —
@@ -803,30 +417,24 @@ export function RepertoireView() {
     if (mode === 'drill') {
       if (mapDrill) {
         // Preview the node the map-wide drill will start from.
-        let t = createTree();
-        let id = t.rootId;
-        for (const san of mapDrill.path) {
-          const added = addSan(t, id, san);
-          if (!added) break;
-          t = added.tree;
-          id = added.nodeId;
-        }
-        setTree(t);
-        setTipId(id);
-        setCursorId(id);
+        const start = createTree();
+        const { tree: preview, tip } = replayLine(start, start.rootId, mapDrill.path);
+        setTree(preview);
+        setTipId(tip);
+        setCursorId(tip);
         return;
       }
       const chapter = drillChapters?.[chapterIdx];
-      const t = chapter ? createTree(getNode(chapter.tree, chapter.tree.rootId).fen) : createTree();
-      setTree(t);
-      setTipId(t.rootId);
-      setCursorId(t.rootId);
+      const fresh = chapter ? createTree(getNode(chapter.tree, chapter.tree.rootId).fen) : createTree();
+      setTree(fresh);
+      setTipId(fresh.rootId);
+      setCursorId(fresh.rootId);
       return;
     }
-    const { t, id } = seedTree(template);
-    setTree(t);
-    setTipId(id);
-    setCursorId(id);
+    const { tree: seeded, tip } = seedTree(template);
+    setTree(seeded);
+    setTipId(tip);
+    setCursorId(tip);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [template, phase, mode, drillChapters, chapterIdx, mapDrill]);
 
@@ -857,10 +465,6 @@ export function RepertoireView() {
       const token = runId.current;
       setPhase('thinking');
       setError(null);
-      // A steady minimum "thinking" time: the DB fetch is instant when the
-      // position is cached and slow when it isn't, which felt jarringly
-      // random. Waiting out the rest of MIN_THINK makes the reply land at a
-      // consistent, deliberate pace.
       const started = Date.now();
       // Both sources answer in the same shape — the server normalises the
       // Lichess payload to the book contract — so only the URL differs.
@@ -870,15 +474,14 @@ export function RepertoireView() {
         : 'Could not read the reference database.';
       try {
         const fen = getNode(curTree, curId).fen;
-        const res = await fetch(
+        const body = await api<{ moves?: ExplorerMove[] } | null>(
           online
             ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
             : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`,
         );
         if (token !== runId.current) return;
-        const body = (await res.json().catch(() => null)) as { moves?: ExplorerMove[]; error?: string } | null;
-        if (!res.ok || !body?.moves) {
-          setError(t(body?.error ?? fallback));
+        if (!body?.moves) {
+          setError(t(fallback));
           setPhase('playing');
           return;
         }
@@ -962,7 +565,7 @@ export function RepertoireView() {
             }
           }
         }
-        const wait = 550 - (Date.now() - started);
+        const wait = MIN_THINK_MS - (Date.now() - started);
         if (wait > 0) await new Promise((r) => setTimeout(r, wait));
         if (token !== runId.current) return;
         const added = addUci(curTree, curId, choice.uci);
@@ -970,7 +573,7 @@ export function RepertoireView() {
           if (!added) setPhase('ended');
           return;
         }
-        playSound(getNode(added.tree, added.nodeId).san?.includes('x') ? 'capture' : 'move');
+        playSound(soundFor(getNode(added.tree, added.nodeId).san));
         setTree(added.tree);
         setTipId(added.nodeId);
         setCursorId(added.nodeId);
@@ -1010,9 +613,12 @@ export function RepertoireView() {
           }
         }
         setPhase('playing');
-      } catch {
+      } catch (err) {
+        // The server's own words when it sent any (api() carried them out
+        // of the error envelope); the source's fallback for a network
+        // failure or anything else.
         if (token === runId.current) {
-          setError(t(fallback));
+          setError(err instanceof ApiError && err.status > 0 ? err.message : t(fallback));
           setPhase('playing');
         }
       }
@@ -1044,8 +650,7 @@ export function RepertoireView() {
           t('Your study plays {moves} here — try it again.', { moves: expected.join(' / ') }),
         );
         // The tree never takes the move, but chessground has already
-        // played it on screen. Let it stand for a beat — the same rhythm
-        // as the puzzle trainer's wrong-move rollback — then snap the
+        // played it on screen. Let it stand for a beat, then snap the
         // board back to the position that is still waiting.
         const back = getNode(tree, cursorId);
         const backDests = dests;
@@ -1059,7 +664,7 @@ export function RepertoireView() {
             lastMove: moveSquares(back) as Key[] | undefined,
             movable: { color: userColor, dests: backDests as Dests },
           });
-        }, 650);
+        }, ROLLBACK_MS);
         return;
       }
       if (!d.missed.has(key)) {
@@ -1067,7 +672,7 @@ export function RepertoireView() {
       }
       setDrillNotice(null);
       d.cands = next;
-      playSound(san.includes('x') ? 'capture' : 'move');
+      playSound(soundFor(san));
       setTree(added.tree);
       setTipId(added.nodeId);
       setCursorId(added.nodeId);
@@ -1079,7 +684,7 @@ export function RepertoireView() {
       void reply(added.tree, added.nodeId, source, band);
       return;
     }
-    playSound(getNode(added.tree, added.nodeId).san?.includes('x') ? 'capture' : 'move');
+    playSound(soundFor(getNode(added.tree, added.nodeId).san));
     setTree(added.tree);
     setTipId(added.nodeId);
     setCursorId(added.nodeId);
@@ -1103,32 +708,22 @@ export function RepertoireView() {
       const scoped = mapDrill.entries.map((e) => e.chapter);
       if (scoped.length === 0) return;
       const posIndex = buildPosIndex(scoped);
-      let fresh = createTree();
-      let tip = fresh.rootId;
-      for (const san of mapDrill.path) {
-        const added = addSan(fresh, tip, san);
-        if (!added) break;
-        fresh = added.tree;
-        tip = added.nodeId;
-      }
+      const start = createTree();
+      const { tree: fresh, tip } = replayLine(start, start.rootId, mapDrill.path);
       const startFen = getNode(fresh, tip).fen;
       const cands = posIndex.get(fenKey(startFen)) ?? [];
       if (cands.length === 0) return;
       const rootFen = getNode(fresh, fresh.rootId).fen;
       const trunk = trunkOf(scoped, posIndex, posIndex.get(fenKey(rootFen)) ?? [], rootFen);
-      drillRef.current = {
+      drillRef.current = makeDrillScope({
         chapters: scoped,
         posIndex,
         cands,
         study: mapDrill.entries[0]!.study,
         studies: mapDrill.entries.map((e) => e.study),
         label: mapDrill.label,
-        trunkPly: trunk.ply,
-        trunkFen: trunk.fen,
-        families: new Map(),
-        missed: new Set(),
-        gapNoted: new Set(),
-      };
+        trunk,
+      });
       setTree(fresh);
       setTipId(tip);
       setCursorId(tip);
@@ -1148,18 +743,14 @@ export function RepertoireView() {
       if (cands.length === 0) return;
       const trunk = trunkOf(scoped, posIndex, cands, rootFen);
       rememberDrill(drillStudy, chapterPick);
-      drillRef.current = {
+      drillRef.current = makeDrillScope({
         chapters: scoped,
         posIndex,
         cands,
         study: drillStudy,
         label: wholeStudy ? t('Whole study') : startChapter.name,
-        trunkPly: trunk.ply,
-        trunkFen: trunk.fen,
-        families: new Map(),
-        missed: new Set(),
-        gapNoted: new Set(),
-      };
+        trunk,
+      });
       const fresh = createTree(rootFen);
       setTree(fresh);
       setTipId(fresh.rootId);
@@ -1169,12 +760,11 @@ export function RepertoireView() {
       return;
     }
     drillRef.current = null;
-    // `seeded`, not `t`: the drill branch above needs the translator.
-    const { t: seeded, id } = seedTree(template);
+    const { tree: seeded, tip } = seedTree(template);
     setTree(seeded);
-    setTipId(id);
-    const last = getNode(seeded, id);
-    if (positionAt(seeded, id).turn === userColor) {
+    setTipId(tip);
+    const last = getNode(seeded, tip);
+    if (positionAt(seeded, tip).turn === userColor) {
       // The line ends on the OPPONENT'S move and no reply will follow, so
       // nothing would ever animate (the idle preview already sits on the
       // final position). Start one move back and play it in a beat later —
@@ -1183,17 +773,17 @@ export function RepertoireView() {
         setCursorId(last.parentId);
         setTimeout(() => {
           if (runId.current !== token) return;
-          setCursorId(id);
-          playSound(last.san?.includes('x') ? 'capture' : 'move');
+          setCursorId(tip);
+          playSound(soundFor(last.san));
         }, 400);
       } else {
-        setCursorId(id);
+        setCursorId(tip);
       }
       setPhase('playing');
     } else {
       // The bot moves first; its reply animates on its own.
-      setCursorId(id);
-      void reply(seeded, id, source, band);
+      setCursorId(tip);
+      void reply(seeded, tip, source, band);
     }
   };
 
@@ -1257,18 +847,14 @@ export function RepertoireView() {
     const rootFen = getNode(chapter.tree, chapter.tree.rootId).fen;
     const trunk = trunkOf(scoped, posIndex, posIndex.get(fenKey(rootFen)) ?? [], rootFen);
     rememberDrill(drillStudy, chapterPick);
-    drillRef.current = {
+    drillRef.current = makeDrillScope({
       chapters: scoped,
       posIndex,
       cands,
       study: drillStudy,
       label: wholeStudy ? t('Whole study') : chapter.name,
-      trunkPly: trunk.ply,
-      trunkFen: trunk.fen,
-      families: new Map(),
-      missed: new Set(),
-      gapNoted: new Set(),
-    };
+      trunk,
+    });
     setTree(gameTree);
     setTipId(gameId);
     setCursorId(gameId);
@@ -1295,20 +881,16 @@ export function RepertoireView() {
       Black: userColor === 'black' ? 'You' : sourceLabel,
     });
     try {
-      const res = await fetch('/api/studies', {
+      const body = await api<{ id?: string } | null>('/api/studies', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, pgn }),
+        json: { name, pgn },
       });
-      const body = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
-      if (!res.ok) {
-        setSaveError(t(body?.error ?? 'could not create study'));
-        return;
-      }
       setSaveOpen(false);
       navigate('studies', encodeURIComponent(body?.id ?? name));
-    } catch {
-      setSaveError(t('vault server unreachable'));
+    } catch (err) {
+      // api() carries the server's own words; a network failure answers
+      // "vault server unreachable", as this always did.
+      setSaveError(apiErrorMessage(err));
     }
   };
 
@@ -1398,7 +980,8 @@ export function RepertoireView() {
             <PanelHeader title={t('New game')} />
             <div className="flex flex-col gap-3 p-3">
               {/* Free play plays anything; drill holds you to a study. The
-                  two toggles share one shape — segmented, not actions.
+                  two toggles share one shape — Segmented, the control that
+                  says one-of-these in its track, not pairs of actions.
 
                   Both carry a label, in the same style as the Selects
                   below, so the panel is one rhythm of labelled fields.
@@ -1407,45 +990,34 @@ export function RepertoireView() {
                   (lanph3re's call). The kings are the second half of the
                   same fix: whatever the eye lands on first, the side pair
                   can no longer be mistaken for the mode pair. */}
-              <div className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">{t('Mode')}</span>
-                <div className="flex gap-1">
-                  {(['spar', 'drill'] as const).map((m) => (
-                    <Button
-                      key={m}
-                      size="sm"
-                      variant={mode === m ? 'primary' : 'secondary'}
-                      className="h-7 flex-1 pointer-coarse:h-8"
-                      onClick={() => setMode(m)}
-                    >
-                      {m === 'spar' ? t('Free play') : t('Drill a study')}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">{t('Play as')}</span>
-                <div className="flex gap-1">
-                  {(['white', 'black'] as const).map((c) => (
-                    <Button
-                      key={c}
-                      size="sm"
-                      variant={userColor === c ? 'primary' : 'secondary'}
-                      // Shorter than a normal sm button, coarse pointers
-                      // included: these two are a segmented control, not
-                      // actions, and at full touch height they were the
-                      // tallest thing in a panel of one-line fields.
-                      className="h-7 flex-1 pointer-coarse:h-8"
-                      onClick={() => setUserColor(c)}
-                    >
-                      <KingIcon side={c} />
-                      {c === 'white' ? t('White') : t('Black')}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <label className="flex flex-col gap-1">
-                <span className="text-muted text-xs font-medium">{t('Source')}</span>
+              <Field label="Mode">
+                <Segmented
+                  value={mode}
+                  onChange={setMode}
+                  ariaLabel="Mode"
+                  segments={[
+                    { value: 'spar', label: t('Free play') },
+                    { value: 'drill', label: t('Drill a study') },
+                  ]}
+                />
+              </Field>
+              <Field label="Play as">
+                <Segmented
+                  value={userColor}
+                  onChange={setUserColor}
+                  ariaLabel="Play as"
+                  segments={(['white', 'black'] as const).map((c) => ({
+                    value: c,
+                    label: (
+                      <>
+                        <KingIcon side={c} />
+                        {c === 'white' ? t('White') : t('Black')}
+                      </>
+                    ),
+                  }))}
+                />
+              </Field>
+              <Field label="Source">
                 <Select
                   value={source}
                   onChange={setSource}
@@ -1472,13 +1044,12 @@ export function RepertoireView() {
                       : []),
                   ]}
                 />
-              </label>
+              </Field>
               {/* A rating band is the online database's own dimension. A book
                   has none: its population was fixed when it was built, so the
                   choice of book IS the choice of field. */}
               {source === ONLINE_SOURCE && (
-                <label className="flex flex-col gap-1">
-                  <span className="text-muted text-xs font-medium">{t('Rating')}</span>
+                <Field label="Rating">
                   <Select
                     value={band}
                     onChange={setBand}
@@ -1486,7 +1057,7 @@ export function RepertoireView() {
                     steady
                     groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
                   />
-                </label>
+                </Field>
               )}
               {mode === 'drill' && mapDrill ? (
                 // Sent over by the opening map: the whole repertoire as one
@@ -1513,8 +1084,7 @@ export function RepertoireView() {
                   </p>
                 ) : (
                   <>
-                    <label className="flex flex-col gap-1">
-                      <span className="text-muted text-xs font-medium">{t('Study')}</span>
+                    <Field label="Study">
                       <Select
                         value={drillStudy}
                         onChange={setDrillStudy}
@@ -1524,10 +1094,9 @@ export function RepertoireView() {
                           { options: (studyList ?? []).map((id) => ({ value: id, label: id })) },
                         ]}
                       />
-                    </label>
+                    </Field>
                     {drillChapters && drillChapters.length > 1 && (
-                      <label className="flex flex-col gap-1">
-                        <span className="text-muted text-xs font-medium">{t('Chapter')}</span>
+                      <Field label="Chapter">
                         <Select
                           value={chapterPick}
                           onChange={setChapterPick}
@@ -1554,15 +1123,14 @@ export function RepertoireView() {
                             },
                           ]}
                         />
-                      </label>
+                      </Field>
                     )}
                   </>
                 )
               ) : (
-                <label className="flex flex-col gap-1">
-                  <span className="text-muted text-xs font-medium">{t('Opening')}</span>
+                <Field label="Opening">
                   <OpeningPicker value={template} onChange={setTemplate} />
-                </label>
+                </Field>
               )}
               {/* A disabled Start with no word is a riddle; the reason
                   is one line. */}
@@ -1594,7 +1162,7 @@ export function RepertoireView() {
                     question="Forget the whole drill record, across all studies?"
                     confirmLabel={t('Forget everything')}
                     onConfirm={() => {
-                      void fetch('/api/repertoire/reset', { method: 'POST' })
+                      void api('/api/repertoire/reset', { method: 'POST' })
                         .then(() => setSummary({ attempted: 0, review: [], gaps: 0 }))
                         .catch(() => {});
                     }}
@@ -1655,10 +1223,10 @@ export function RepertoireView() {
                       : drillNotice
                         ? drillNotice
                         : phase === 'thinking'
-                          ? 'Your opponent is replying…'
+                          ? t('Your opponent is replying…')
                           : pos.turn === userColor && atTip
-                            ? 'Your move.'
-                            : 'Reviewing an earlier move — step to the end to keep playing.'}
+                            ? t('Your move.')
+                            : t('Reviewing an earlier move — step to the end to keep playing.')}
                 </p>
                 {gapNote && phase !== 'ended' && (
                   <p className="text-subtle text-xs leading-relaxed">{gapNote}</p>

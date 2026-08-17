@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree, getNode } from '@shared/tree';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
-import { advanceCands, buildPosIndex, expectedSans, openingFamily, trunkOf, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, expectedSans, openingFamily, replayLine, trunkOf, type DrillCand } from './drill';
 import { fenKey } from '@/lib/fen';
 
 /** A chapter whose mainline is the given SANs. */
@@ -108,6 +108,31 @@ describe('repertoire drill candidates', () => {
     }
     expect(cands).toHaveLength(1);
     expect(expectedSans(chapters, cands)).toEqual(['e6']);
+  });
+});
+
+describe('replayLine', () => {
+  it('replays every legal SAN and returns the tip', () => {
+    const start = createTree();
+    const { tree, tip } = replayLine(start, start.rootId, ['e4', 'e5', 'Nf3']);
+    // The tip holds the position the line reaches, evidence it played out.
+    expect(getNode(tree, tip).san).toBe('Nf3');
+    expect(getNode(tree, tip).fen).toContain(' b ');
+  });
+
+  it('stops at the first illegal move, keeping what replayed', () => {
+    const start = createTree();
+    const { tree, tip } = replayLine(start, start.rootId, ['e4', 'Ke7', 'e5']);
+    // Ke7 will not play from the start position: the replay ends on e4
+    // rather than inventing moves past the break.
+    expect(getNode(tree, tip).san).toBe('e4');
+  });
+
+  it('an empty line answers the starting node unchanged', () => {
+    const start = createTree();
+    const { tree, tip } = replayLine(start, start.rootId, []);
+    expect(tree).toBe(start);
+    expect(tip).toBe(start.rootId);
   });
 });
 

@@ -7,6 +7,7 @@
  * view. Both sources answer in the same shape: the server normalises
  * the Lichess payload to the book contract, so only the URL differs.
  */
+import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
 export interface FieldMove {
@@ -92,6 +93,10 @@ export const RATING_BANDS: { label: string; ratings: string }[] = [
   { label: 'All ratings', ratings: '400,1000,1200,1400,1600,1800,2000,2200,2500' },
 ];
 
+/** Where a fresh session starts: 1600–1800, the group the database as a
+    whole averages into — named, so no view carries a magic index. */
+export const DEFAULT_BAND = RATING_BANDS[4]!;
+
 /**
  * The same question for MANY positions in one request, answered with
  * whatever the source can say at once.
@@ -126,15 +131,11 @@ export async function fetchFieldBatch(
       : source === MY_GAMES_SOURCE
         ? `/api/mygames/explore-batch${side ? `?side=${side}` : ''}`
         : `/api/refgames/explore-batch?db=${encodeURIComponent(source)}`;
-  const res = await fetch(url, {
+  const body = await api<{ positions?: { fen: string; moves: FieldMove[] }[] } | null>(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ fens }),
+    json: { fens },
   });
-  const body = (await res.json().catch(() => null)) as {
-    positions?: { fen: string; moves: FieldMove[] }[];
-  } | null;
-  if (!res.ok || !body?.positions) throw new Error('field unavailable');
+  if (!body?.positions) throw new Error('field unavailable');
   return new Map(body.positions.map((p) => [p.fen, p.moves]));
 }
 
@@ -154,8 +155,7 @@ export async function fetchField(
       : source === MY_GAMES_SOURCE
         ? `/api/mygames?fen=${encodeURIComponent(fen)}${side ? `&side=${side}` : ''}`
         : `/api/refgames/explore?db=${encodeURIComponent(source)}&fen=${encodeURIComponent(fen)}`;
-  const res = await fetch(url);
-  const body = (await res.json().catch(() => null)) as { moves?: FieldMove[] } | null;
-  if (!res.ok || !body?.moves) throw new Error('field unavailable');
+  const body = await api<{ moves?: FieldMove[] } | null>(url);
+  if (!body?.moves) throw new Error('field unavailable');
   return body.moves;
 }

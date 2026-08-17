@@ -23,6 +23,25 @@ export const GAP_NOTE_SHARE = 0.05;
 export const studyChild = (tree: MoveTree, id: NodeId, san: string): NodeId | null =>
   getNode(tree, id).children.find((c) => getNode(tree, c).san === san) ?? null;
 
+/** SANs replayed down a tree from a node — a template's line, a recorded
+    path — stopping at the first that will not play. Returns the grown
+    tree and the tip the replay reached. */
+export const replayLine = (
+  tree: MoveTree,
+  fromId: NodeId,
+  sans: string[],
+): { tree: MoveTree; tip: NodeId } => {
+  let grown = tree;
+  let tip = fromId;
+  for (const san of sans) {
+    const added = addSan(grown, tip, san);
+    if (!added) break;
+    grown = added.tree;
+    tip = added.nodeId;
+  }
+  return { tree: grown, tip };
+};
+
 export interface DrillCand {
   /** Index into the drill's chapters array. */
   ci: number;
