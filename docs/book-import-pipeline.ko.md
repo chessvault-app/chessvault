@@ -17,7 +17,8 @@
 
 **오프라인**은 예비 경로이자 실험실입니다. 아래 단계들은 미리 렌더링해 둔
 페이지에 대해 같은 공유 코드(`shared/bookImport.ts`,
-`shared/bookConfigSearch.ts`, `shared/bookSolve.ts`)를 돌리며, 덕분에
+`shared/bookConfigSearch.ts`, `shared/bookSolve.ts`, `shared/bookGlyphs.ts`,
+`shared/bookRepair.ts`)를 돌리며, 덕분에
 브라우저에서 다시 스캔하는 대신 1분 안에 책 한 권 전체에 대해 변경을 측정할
 수 있습니다. 한때 오프라인만 지니던 두 패스 — 글리프 힌트와 정답으로 제약한
 보드 복구 — 는 이제 앱에도 있습니다. 오프라인에만 남은 것은 3단계의 엔진

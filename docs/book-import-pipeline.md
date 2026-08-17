@@ -18,7 +18,8 @@ anywhere.
 
 **Offline** is the backup and the laboratory. The stages below run the
 same shared code (`shared/bookImport.ts`, `shared/bookConfigSearch.ts`,
-`shared/bookSolve.ts`) over pre-rendered pages, which is what makes it
+`shared/bookSolve.ts`, `shared/bookGlyphs.ts`, `shared/bookRepair.ts`)
+over pre-rendered pages, which is what makes it
 possible to measure a change against a whole book in a minute instead of
 re-scanning in a browser. The two passes it once carried alone — glyph
 hints and solution-constrained board repair — are in the app now. What
