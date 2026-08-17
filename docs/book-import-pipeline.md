@@ -141,6 +141,14 @@ supplied by whoever ran it. The books are commercial and none of them —
 no page, no diagram, no puzzle — is in this repository or ships with the
 app; what a book yields stays in that person's vault.
 
+Each row is the last run recorded for that book, not a number today's
+pipeline reproduces: the 1001 config's own note records that its read
+cache carries 980 rects fresh detection no longer finds, and warns
+against re-importing on these figures. Where `ml-history.md` tells the
+same story with slightly different numbers (Woodpecker at 1,042 imported
+and 82 drafts), that is the earlier run of the same re-measure, kept as
+history.
+
 | Book | Imported | Book solutions | Drafts |
 | --- | --- | --- | --- |
 | 1001 Chess Exercises for Beginners | 970 / 1001 | 739 | 10 |

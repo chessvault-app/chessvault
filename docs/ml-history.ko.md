@@ -73,7 +73,9 @@
 모델이 스스로 고친 실수에서 배웁니다. 따뜻하게 시작한 CPU 4에폭(옛 말뭉치를
 합쳐 총 51.1만 타일) 결과: 홀드아웃 **100%(11/11 보드)**, 검증 99.49%. 새
 가중치로 Woodpecker를 다시 읽으니 불법 261→57, 검증 509→619, 초안 301→82,
-가져온 것 823→1,042가 되었습니다. 절차: `build_validated_npz.py` →
+가져온 것 823→1,042가 되었습니다(같은 재측정의 더 나중 실행 —
+`book-import-pipeline.md`의 결과 표가 기록한 것 — 은 1,043과 81을
+남겼습니다). 절차: `build_validated_npz.py` →
 `train.py --init cellnet-best.pt` → `export_weights.py <ckpt>`(브라우저용
 bin과 기준 대조 벡터를 다시 만듭니다) → `<slug>-reads.json` 삭제 → 다시
 측정.

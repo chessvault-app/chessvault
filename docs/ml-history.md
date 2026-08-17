@@ -76,7 +76,9 @@ repaired fens*, so the model learns from its own corrected mistakes.
 Four warm-started CPU epochs (511k tiles total with the older corpora):
 holdout **100% (11/11 boards)**, val 99.49%. Re-reading Woodpecker with
 the new weights: illegal 261→57, validated 509→619, drafts 301→82,
-imported 823→1,042. Recipe: `build_validated_npz.py` → `train.py
+imported 823→1,042 (a later run of the same re-measure, the one the
+results table in `book-import-pipeline.md` records, logged 1,043 and
+81). Recipe: `build_validated_npz.py` → `train.py
 --init cellnet-best.pt` → `export_weights.py <ckpt>` (regenerates the
 browser bin + golden parity vectors) → delete `<slug>-reads.json` →
 re-measure.
