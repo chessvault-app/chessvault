@@ -246,11 +246,18 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
   // not identify a position you spent two minutes on, but the board does.
   const preview = usePuzzlePreview();
   return (
+    // The floor is 6.5rem rather than 7: the divider above this panel
+    // costs 9px (its own line, plus a second helping of the column's
+    // gap), and on a 390x844 phone this panel is already AT its floor,
+    // so there was nothing to take it from and the page tipped into
+    // scrolling. Better to pay it here — a caption and two and a bit
+    // rows, where the part-row is itself the hint that the list scrolls.
+    //
     // This is the panel that takes the page's slack: `flex-1` against the
     // fixed blocks around it, so there is no dead band anywhere on the
     // page and a taller phone simply shows more of your history. The
     // ROWS scroll, not the page — the launcher underneath must stay put.
-    <div className="bg-surface border-line flex min-h-[7rem] flex-1 flex-col overflow-hidden rounded-xl border">
+    <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
       <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {t('Puzzle history')}
       </p>
@@ -421,6 +428,24 @@ function Hub() {
           order — and it puts the one fixed-size panel next to the cards
           it belongs with, rather than stranded above a panel that grows. */}
       {history.length > 0 && <HistoryPanel attempts={history} />}
+      {/* The line between what you have DONE and what there is to do
+          next — the book row belongs with the cards under it, not with
+          the log above it. It sits in the column's own gap, so the small
+          space either side of it comes for free and stays equal.
+
+          Only when both sides exist: a rule with nothing above it is a
+          line drawn under the page title. */}
+      {history.length > 0 && books.length > 0 && (
+        // `line-strong`, not `line`: at the panels' own border colour it
+        // was a third hairline sitting 8px from two others exactly like
+        // it, which reads as a smudge rather than as a division. A rule
+        // between bordered cards has to be MORE than they are or it
+        // should not be there at all — and it was the colour that fixed
+        // it, not extra air. Padding it out cost 8px the history has no
+        // room to give (it sits at its floor here) and tipped the page
+        // into scrolling by 13.
+        <div className="border-line-strong shrink-0 border-t" role="presentation" />
+      )}
       {books.length > 0 && <BookShelfPanel books={books} />}
 
       <div className="flex shrink-0 flex-col gap-2">
