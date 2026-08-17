@@ -73,6 +73,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
     set({ status: 'running', progress: 0, white: null, black: null, error: null });
 
     let resolveUpdate: ((update: SearchUpdate) => void) | null = null;
+    let rejectPly: ((error: Error) => void) | null = null;
     const engine = new StockfishEngine(
       defaultFlavor(),
       {
@@ -90,6 +91,10 @@ export const useReview = create<ReviewState>()((set, get) => ({
         // run tears the worker down — never let a late error overwrite a
         // finished review.
         if (get().status === 'running') set({ status: 'error', error: message });
+        // A ply awaiting `bestmove` from a dead worker would wait forever —
+        // and with it the `finally` below that frees the worker. Fail the
+        // wait instead; rejecting an already-settled ply is a no-op.
+        rejectPly?.(new Error(message));
       },
     );
 
@@ -116,8 +121,9 @@ export const useReview = create<ReviewState>()((set, get) => ({
       const scores: Score[] = [];
       for (let i = 0; i < ids.length; i++) {
         const fen = fens[i]!;
-        const update = await new Promise<SearchUpdate>((resolve) => {
+        const update = await new Promise<SearchUpdate>((resolve, reject) => {
           resolveUpdate = resolve;
+          rejectPly = reject;
           void engine.analyse(fen, REVIEW_DEPTH);
         });
         if (get().status !== 'running') return; // cleared or errored mid-run
@@ -191,7 +197,9 @@ export const useReview = create<ReviewState>()((set, get) => ({
         })),
       });
     } catch (error) {
-      set({ status: 'error', error: (error as Error).message });
+      // Not when the run was cleared: an abort stays quiet even if the
+      // rejected ply lands after it.
+      if (get().status !== 'idle') set({ status: 'error', error: (error as Error).message });
     } finally {
       engine.terminate();
     }
