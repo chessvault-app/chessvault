@@ -8,7 +8,7 @@
 # is a property of the project: a version, a tag, and three installers built
 # from that commit. Anyone with push access can cut one.
 #
-# It used to deploy a particular cloud box and refuse to tag until that
+# It used to deploy one particular cloud box and refuse to tag until that
 # box answered — which made releasing depend on one person's private
 # infrastructure being reachable, and meant nobody else could do it at all.
 # Deploying a server is a separate act, run by whoever operates that server,

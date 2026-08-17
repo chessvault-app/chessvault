@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const REPO_ROOT = resolve(here, '..');
 
 /** Env override, for deployments where the data lives outside the repo
-    (the desktop app's local mode, a cloud volume). Empty means unset. */
+    (the desktop app's local mode, an attached cloud volume). Empty means unset. */
 const fromEnv = (key: string): string | undefined => {
   const value = process.env[key]?.trim();
   return value ? resolve(value) : undefined;
