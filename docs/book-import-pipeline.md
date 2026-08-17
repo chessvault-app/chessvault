@@ -107,8 +107,9 @@ Books that put an answers section after **every chapter** instead of one
 at the back list their spans in `solutionRanges` (`[[28,33],[45,48],…]`),
 which replaces the "everything after `solutionsAfterPage`" rule — that
 rule would swallow the puzzle pages sitting between the sections. Add `pdf` (the file's NAME, not its path — point `CHESS_BOOK_PDFS` at
-wherever your copies live) and `coverPage` so `render_book_pages.py` can
-find the source; the configs written before that script still lack both
+wherever your copies live; name the file for the book's `slug`, so a
+committed config never carries whatever your copy happened to be called)
+and `coverPage` so `render_book_pages.py` can find the source; the configs written before that script still lack both
 fields, and its runbook step cannot run for those books until they gain
 them. Configs are committed; nobody's disk layout should be.
 
