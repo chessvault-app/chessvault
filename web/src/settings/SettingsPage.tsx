@@ -1101,8 +1101,8 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
       )}
       <Feedback note={note} />
       <div className="mt-1 flex justify-end gap-2">
-        <Button variant="ghost" onClick={onClose}>{t('Cancel')}</Button>
-        <Button variant="danger" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
+        <Button variant="ghost" size="sm" onClick={onClose}>{t('Cancel')}</Button>
+        <Button variant="danger" size="sm" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
           {busy ? t('Wiping…') : t('Wipe everything')}
         </Button>
       </div>
