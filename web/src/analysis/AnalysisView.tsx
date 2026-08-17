@@ -73,6 +73,11 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
     // Tools > Explorer opens with the explorer already on; otherwise off.
     useExplorer.setState({ enabled: wantExplorer });
     useReview.getState().clear();
+    // Mount-only, and wantExplorer is deliberately not a dependency: App
+    // keys this view on the board/explorer sub-mode, so a change to it
+    // arrives as a REMOUNT and is read correctly by the next mount. The
+    // safety lives in that key, in another file — hence this note.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // A game review left running would walk the whole game on background

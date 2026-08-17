@@ -253,10 +253,13 @@ export function MapCanvas({
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let frame = 0;
+    // Read once, here: the ref holds the same Map for the component's life
+    // (it is never reassigned), and the cleanup below must clear THAT Map
+    // rather than whatever the ref happens to point at when it runs.
+    const pos = currentPos.current;
     const step = (now: number): void => {
       frame = requestAnimationFrame(step);
       const time = now / 1000;
-      const pos = currentPos.current;
       pos.clear();
       const o = overture.current;
       if (o) {
@@ -338,7 +341,7 @@ export function MapCanvas({
     frame = requestAnimationFrame(step);
     return () => {
       cancelAnimationFrame(frame);
-      currentPos.current.clear();
+      pos.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graph, phases]);

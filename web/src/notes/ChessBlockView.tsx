@@ -66,6 +66,11 @@ function cleanBlockPgn(pgn: string): string {
  * the autosave serialises into the ```chess fence.
  */
 export function ChessBlockView({ node, updateAttributes, deleteNode, selected, editor }: NodeViewProps) {
+  // Parsed ONCE, on purpose: this block owns its tree from here on and
+  // writes every change back to node.attrs.pgn, so re-parsing when that
+  // attribute changes would feed the board its own output and clobber
+  // whatever the user was in the middle of.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const initial = useMemo(() => parseBlock(String(node.attrs.pgn ?? '*')), []);
   /**
    * Whether the note's own TOOLS are offered on this board — pasting a

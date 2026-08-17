@@ -161,11 +161,14 @@ const NOTHING_UNRESOLVED: string[] = [];
  */
 export function useBookTags(tree: MoveTree, enabled = true): Set<NodeId> {
   const [version, setVersion] = useState(0);
-  // `version` only exists to re-run the walk once lookups resolve.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const { book, unresolved } = useMemo(
     () =>
       enabled ? classifyBook(tree) : { book: NO_TAGS, unresolved: NOTHING_UNRESOLVED },
+    // `version` is never READ by the walk — it is the signal to redo it once
+    // the effect below has filled the lookup cache, so being an unused
+    // dependency is the whole point. The directive has to sit here, on the
+    // line the rule reports: above the useMemo it silently covered nothing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [tree, enabled, version],
   );
   useEffect(() => {

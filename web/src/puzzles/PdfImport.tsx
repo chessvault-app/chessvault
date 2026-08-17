@@ -23,6 +23,10 @@ const PEEK_W = 208;
     this cap. One sentence at intake beats a dead tab on page three. */
 const MAX_PDF_BYTES = 300 * 1024 * 1024;
 
+/** One shared empty list, so "this job isn't mine" keeps a stable identity
+    and the memos downstream of it stay memos. */
+const NO_FOUND: FoundDiagram[] = [];
+
 /**
  * The hovered row's crop, floating beside the list.
  *
@@ -223,7 +227,10 @@ export function PdfImport({
     onFiles: ([file]) => void begin(file!),
   });
   const mine = job.slug === slug;
-  const found = mine ? job.found : [];
+  // NO_FOUND, not a fresh []: a literal here is a new array identity every
+  // render, so the `place` memo below recomputed on every render of a page
+  // whose job isn't even this book's.
+  const found = mine ? job.found : NO_FOUND;
   /**
    * Where each diagram sits on its own page: the nth of m.
    *
