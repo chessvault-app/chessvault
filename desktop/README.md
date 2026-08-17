@@ -24,7 +24,8 @@ canonical.
 ## Packaging
 
 `npm run desktop:package` → `release/installer/Chess Vault Setup <v>.exe`
-(NSIS one-click; macOS dmg target is pre-configured for later). Pipeline:
+(NSIS one-click); `desktop:package:mac` builds the dmg and
+`desktop:package:linux` the AppImage and deb. Pipeline:
 
 1. `desktop/build-server.mjs`: esbuild-bundles the server to
    `release/server/index.mjs` and the database builders beside it

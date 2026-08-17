@@ -25,8 +25,8 @@ Switch vault…):
 ## 패키징
 
 `npm run desktop:package` → `release/installer/Chess Vault Setup <v>.exe`
-(NSIS 원클릭. macOS dmg 대상은 나중을 위해 미리 설정해 두었습니다). 과정은
-이렇습니다:
+(NSIS 원클릭). `desktop:package:mac`은 dmg를, `desktop:package:linux`는
+AppImage와 deb를 만듭니다. 과정은 이렇습니다:
 
 1. `desktop/build-server.mjs`: 서버를 esbuild로 묶어
    `release/server/index.mjs`로, 데이터베이스 빌더들을
