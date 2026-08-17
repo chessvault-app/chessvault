@@ -73,15 +73,19 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const initial = useMemo(() => parseBlock(String(node.attrs.pgn ?? '*')), []);
   /**
-   * Whether the note's own TOOLS are offered on this board — pasting a
-   * new position into it, removing it from the note.
+   * Whether the note is being EDITED, which is what decides whether this
+   * board can be changed at all: its own tools (paste a position in,
+   * remove it) and, with them, the pieces.
    *
-   * The pieces move either way. A note stays non-editable while reading
-   * so a plain click follows a wiki-link, but that is about the prose;
-   * trying a move on a board you are reading is the same pending change
-   * as any other, held until the note is saved. `updateAttributes`
-   * dispatches a transaction whether or not the editor is editable, and
-   * `update` fires on any doc change, so the note notices.
+   * The pieces used to move either way, on the reasoning that a move
+   * tried while reading is just another pending change. But a note is a
+   * document, and a reader is reading it — a board that quietly rewrites
+   * itself under a finger is the diagram editing the page. Reading gives
+   * back the line the note's author wrote; the strip and the arrows walk
+   * it, and Edit is one press away for anyone who meant to change it.
+   *
+   * `setEditable` on the editor emits `update`, which is the same event
+   * an ordinary edit fires, so one listener notices both.
    */
   const [editable, setEditable] = useState(editor.isEditable);
   useEffect(() => {
@@ -113,6 +117,11 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
    * So on a touch device the board starts inert, binds no listeners, and
    * lets the page scroll under it until it is tapped once. A mouse has no
    * such problem (the wheel is never captured), so it never waits.
+   *
+   * Only ever asked while EDITING now (see `live` below): a reader's board
+   * is view-only, and chessground binds no touch listeners at all on one
+   * of those — so the tap that used to be the price of scrolling past a
+   * diagram is not charged for reading any more.
    */
   const [awake, setAwake] = useState(() => !window.matchMedia('(pointer: coarse)').matches);
   // The shared gate (board/usePromotion); the chosen piece rides the same
@@ -132,6 +141,9 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   const pos = useMemo(() => positionAt(tree, cursorId), [tree, cursorId]);
   const dests = useMemo(() => legalDests(tree, cursorId), [tree, cursorId]);
   const lastMove = moveSquares(current);
+  /** Whether the pieces can be moved: the note is open for editing, and on
+      a touch device this board has had its one waking tap. */
+  const live = editable && awake;
 
   const commit = (nextTree: MoveTree, nextCursor: NodeId): void => {
     setTree(nextTree);
@@ -191,18 +203,22 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
         className="relative w-full shrink-0 sm:max-w-[19rem]"
         contentEditable={false}
         // One tap wakes the board on a phone; see `awake` above. A tap is
-        // not a scroll, so this costs the reader nothing.
-        onPointerDown={() => setAwake(true)}
+        // not a scroll, so this costs the reader nothing. Nothing to wake
+        // while reading — the board is a picture then.
+        onPointerDown={editable ? () => setAwake(true) : undefined}
       >
         <Board
           // Remounted when it wakes, because chessground binds its touch
           // listeners once at construction and its own API refuses
-          // viewOnly in set().
-          key={awake ? 'live' : 'inert'}
-          viewOnly={!awake}
+          // viewOnly in set(). Leaving Edit remounts it the same way, back
+          // to the picture.
+          key={live ? 'live' : 'inert'}
+          viewOnly={!live}
           fen={current.fen}
           orientation={orientation}
-          dests={dests}
+          // A read-only board has no destinations to offer, and chessground
+          // ignores them under viewOnly anyway — say so rather than rely on it.
+          dests={live ? dests : undefined}
           lastMove={lastMove}
           check={pos.isCheck()}
           coordinates={false}
