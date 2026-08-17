@@ -76,7 +76,7 @@ engine-backed tiers or drafts — nothing is silently dropped.
    to `<report>-engine-cache.json`, so re-imports are cheap. Writes the
    vault book (puzzles/drafts/book.json + evidence manifest).
 4. **Evidence images** — `evidence_jpegs.py` converts emitted grays.
-5. **Solution pages** — `enrich_solution_pages.py --book <cfg>` stamps
+5. **Solution pages** — `enrich_solution_pages.py <cfg>` stamps
    every puzzle/draft with the solutions-chapter page covering its
    number (rendered separately into `diagrams/`), so the trainer can
    peek at the printed answer.
@@ -111,15 +111,15 @@ find the source. Configs are committed; nobody's disk layout should be.
 
 ```
 # once: extract text, write the config, render pages
-python extract_pdf_words.py book.pdf data/ml/<slug>-text.json
-python harvest_pdfs.py book.pdf data/ml/<slug>-pages          # page-NNN.gray
-npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
-npx tsx derotate.ts <renders> --book cfg.json                 # if any page is upside down
-npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6   --extra-labels data/ml/<slug>-extra-labels.json
-npx tsx autoimport-import.ts  <emit>    --book cfg.json --jobs 6
-python evidence_jpegs.py
-python render_book_pages.py cfg.json                          # cover + answers
-python enrich_solution_pages.py cfg.json
+python scripts/ml/extract_pdf_words.py book.pdf data/ml/<slug>-text.json
+python scripts/ml/harvest_pdfs.py book.pdf data/ml/<slug>-pages   # page-NNN.gray
+npx tsx scripts/ml/autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
+npx tsx scripts/ml/derotate.ts <renders> --book cfg.json          # if any page is upside down
+npx tsx scripts/ml/autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6   --extra-labels data/ml/<slug>-extra-labels.json
+npx tsx scripts/ml/autoimport-import.ts  <emit>    --book cfg.json --jobs 6
+python scripts/ml/evidence_jpegs.py
+python scripts/ml/render_book_pages.py cfg.json                   # cover + answers
+python scripts/ml/enrich_solution_pages.py cfg.json
 ```
 
 Caveats: a re-import wipes `diagrams/` — cover and solution-page jpgs

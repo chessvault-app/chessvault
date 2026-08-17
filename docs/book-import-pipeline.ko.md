@@ -71,7 +71,7 @@
    캐시되어 다시 가져오기가 쌉니다. 보관함의 책(puzzles/drafts/book.json +
    근거 목록)을 씁니다.
 4. **근거 이미지** — `evidence_jpegs.py`가 내놓은 회색 이미지를 변환합니다.
-5. **정답 페이지** — `enrich_solution_pages.py --book <cfg>`가 모든 퍼즐과
+5. **정답 페이지** — `enrich_solution_pages.py <cfg>`가 모든 퍼즐과
    초안에 그 번호를 담고 있는 정답 챕터 페이지를 새겨 넣어 (`diagrams/`에
    따로 렌더링됩니다) 트레이너에서 인쇄된 답을 들춰 볼 수 있게 합니다.
 
@@ -105,15 +105,15 @@
 
 ```
 # 한 번만: 텍스트 추출, 설정 작성, 페이지 렌더링
-python extract_pdf_words.py book.pdf data/ml/<slug>-text.json
-python harvest_pdfs.py book.pdf data/ml/<slug>-pages          # page-NNN.gray
-npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
-npx tsx derotate.ts <renders> --book cfg.json                 # 거꾸로 된 페이지가 있다면
-npx tsx autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6   --extra-labels data/ml/<slug>-extra-labels.json
-npx tsx autoimport-import.ts  <emit>    --book cfg.json --jobs 6
-python evidence_jpegs.py
-python render_book_pages.py cfg.json                          # 표지 + 정답
-python enrich_solution_pages.py cfg.json
+python scripts/ml/extract_pdf_words.py book.pdf data/ml/<slug>-text.json
+python scripts/ml/harvest_pdfs.py book.pdf data/ml/<slug>-pages   # page-NNN.gray
+npx tsx scripts/ml/autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6
+npx tsx scripts/ml/derotate.ts <renders> --book cfg.json          # 거꾸로 된 페이지가 있다면
+npx tsx scripts/ml/autoimport-measure.ts <renders> --book cfg.json --emit <emit> --repair --jobs 6   --extra-labels data/ml/<slug>-extra-labels.json
+npx tsx scripts/ml/autoimport-import.ts  <emit>    --book cfg.json --jobs 6
+python scripts/ml/evidence_jpegs.py
+python scripts/ml/render_book_pages.py cfg.json                   # 표지 + 정답
+python scripts/ml/enrich_solution_pages.py cfg.json
 ```
 
 주의할 점: 다시 가져오면 `diagrams/`가 지워지므로, `evidence_jpegs.py` 뒤에
