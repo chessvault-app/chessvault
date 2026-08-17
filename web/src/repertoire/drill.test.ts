@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree, getNode } from '@shared/tree';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
-import { advanceCands, buildPosIndex, expectedSans, fenKey, openingFamily, trunkOf, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, expectedSans, openingFamily, trunkOf, type DrillCand } from './drill';
+import { fenKey } from '@/lib/fen';
 
 /** A chapter whose mainline is the given SANs. */
 function chapterOf(name: string, sans: string[]): Chapter {

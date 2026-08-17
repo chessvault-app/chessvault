@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addSan, createTree, getNode } from '@shared/tree';
-import { fenKey } from '@/repertoire/drill';
+import { fenKey } from '@/lib/fen';
 import { seedFromGames } from './seed';
 
 /** A fake games index: SAN lines with counts, answered by position. */

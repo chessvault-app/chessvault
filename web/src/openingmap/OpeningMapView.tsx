@@ -5,7 +5,7 @@ import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { treeToPgn } from '@shared/pgn';
 import { sanitizeSegment } from '@shared/vaultNames';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
-import { fenKey } from '@/repertoire/drill';
+import { fenKey } from '@/lib/fen';
 import { fieldDatabases, MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
 import { cn } from '@/lib/cn';

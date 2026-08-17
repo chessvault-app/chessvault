@@ -6,7 +6,8 @@ import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSqua
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
-import { advanceCands, buildPosIndex, expectedSans, fenKey, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
+import { advanceCands, buildPosIndex, expectedSans, GAP_NOTE_SHARE, openingFamily, studyChild, trunkOf, type DrillCand } from './drill';
+import { fenKey } from '@/lib/fen';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import { fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
 import type { Dests, Key } from '@lichess-org/chessground/types';

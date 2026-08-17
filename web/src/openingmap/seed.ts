@@ -1,6 +1,6 @@
 import { addSan, createTree, getNode } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
-import { fenKey } from '@/repertoire/drill';
+import { fenKey } from '@/lib/fen';
 import type { FieldMove } from '@/repertoire/field';
 
 /**

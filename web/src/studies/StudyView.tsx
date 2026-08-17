@@ -31,7 +31,7 @@ import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { usePrefs } from '@/store/prefs';
 import { useStudy } from '@/store/study';
-import { fenKey } from '@/repertoire/drill';
+import { fenKey } from '@/lib/fen';
 import { consumeJumpTarget } from './jumpTarget';
 import { Button } from '@/ui/Button';
 import { ClearableInput } from '@/ui/Input';

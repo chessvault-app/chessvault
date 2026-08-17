@@ -1,5 +1,6 @@
 import { addSan, createTree, getNode } from '@shared/tree';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
+import { fenKey } from '@/lib/fen';
 
 /**
  * The drill's pure half: what "in book" means over a study.
@@ -14,10 +15,6 @@ import type { Chapter, MoveTree, NodeId } from '@shared/types';
  * The stateful half — steering the field, recording, the session — lives
  * in RepertoireView; see docs/repertoire.md for the algorithm end to end.
  */
-
-/** Position identity: the FEN without its move counters, so a
-    transposition lands on one entry. */
-export const fenKey = (fen: string): string => fen.split(' ').slice(0, 4).join(' ');
 
 /** An uncovered field reply is worth a note (and a vault record) from
     this share of games — below it, oddballs would drown the panel. */

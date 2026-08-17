@@ -4,9 +4,9 @@ import {
   advanceCands,
   buildPosIndex,
   expectedSans,
-  fenKey,
   type DrillCand,
 } from '@/repertoire/drill';
+import { fenKey } from '@/lib/fen';
 import type { MapTag, OpeningMap, ResolvedMap } from './model';
 
 /**

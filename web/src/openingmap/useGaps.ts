@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fenKey } from '@/repertoire/drill';
+import { fenKey } from '@/lib/fen';
 import { fetchField, fetchFieldBatch, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import type { NodeCoverage } from './coverage';
 import { computeGaps, type NodeGaps } from './gaps';
