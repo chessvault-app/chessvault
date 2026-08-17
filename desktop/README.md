@@ -2,7 +2,8 @@
 
 *English · [한국어](README.ko.md)*
 
-Two modes, chosen on first launch (Vault → Switch vault… to change):
+Two modes, chosen on first launch (change later from the Switch vault
+card in Settings — or the Vault menu, which hides behind Alt):
 
 - **remote** — a window onto a Chess Vault server somewhere else. Pure
   client.
