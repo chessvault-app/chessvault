@@ -1,9 +1,11 @@
 /**
  * Rescue the pages a scanner fed in upside down — the offline path.
  *
- * The thinking lives in web/src/puzzles/ocr/derotate.ts so the app runs it
- * too; this is the file I/O around it, for the pipeline that works from
- * pre-rendered page dumps.
+ * The thinking lives in web/src/puzzles/ocr/derotate.ts — shared so the app
+ * COULD run it, though today only the offline tools (this file,
+ * read-anchors.ts) and its own tests do; the in-app importer does not
+ * derotate. This is the file I/O around it, for the pipeline that works
+ * from pre-rendered page dumps.
  *
  *   npx tsx scripts/ml/derotate.ts <pages_dir> --book scripts/ml/books/<slug>.json
  *

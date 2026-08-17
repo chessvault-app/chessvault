@@ -127,7 +127,7 @@ def augment(batch):
 # --- model --------------------------------------------------------------------
 
 class CellNet(nn.Module):
-    """~110k params; small enough for hand-rolled TS inference later."""
+    """~59k params (59,077, printed at startup); small enough for hand-rolled TS inference."""
 
     def __init__(self):
         super().__init__()
