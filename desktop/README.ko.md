@@ -62,7 +62,7 @@ Node로(`ELECTRON_RUN_AS_NODE`) 돌리며,
 | | `app-update.yml` | `latest.yml` |
 | --- | --- | --- |
 | 있는 곳 | 설치된 앱 안 | 릴리스 위 |
-| 하는 말 | "이 주소에 물어봐라" | "최신은 0.2.0이고, 여기 있다" |
+| 하는 말 | "이 주소에 물어봐라" | "최신은 `<v>`이고, 여기 있다" |
 | 쓰는 주체 | electron-builder가 번들 안에 | electron-builder가 설치 파일 옆에 |
 | 바뀌는 때 | 설치 후에는 절대 안 바뀜 | 릴리스마다 |
 
@@ -94,7 +94,7 @@ Node로(`ELECTRON_RUN_AS_NODE`) 돌리며,
 # 2. 검사, 태그, 푸시 — GitHub이 그 태그에서 빌드합니다
 npm run desktop:release
 # 3. 워크플로가 끝나면 초안을 확인하고 Publish
-gh release view v0.3.0 --web
+gh release view v<version> --web
 ```
 
 세 주체가 순서대로 맡습니다:

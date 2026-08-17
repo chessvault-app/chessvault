@@ -62,7 +62,7 @@ Two files with confusingly similar names are involved, at opposite ends:
 | | `app-update.yml` | `latest.yml` |
 | --- | --- | --- |
 | lives | inside the installed app | on the release |
-| says | "ask this address" | "newest is 0.2.0, here it is" |
+| says | "ask this address" | "newest is `<v>`, here it is" |
 | written by | electron-builder, into the bundle | electron-builder, beside the installer |
 | changes | never after install | every release |
 
@@ -94,7 +94,7 @@ where updates come from.
 # 2. check, tag, push — GitHub builds from the tag
 npm run desktop:release
 # 3. when the workflow finishes, check the draft and press Publish
-gh release view v0.3.0 --web
+gh release view v<version> --web
 ```
 
 Three parties, in order:
