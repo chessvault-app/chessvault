@@ -93,8 +93,19 @@ export function PvMoves({
           <button
             type="button"
             data-ply={i}
+            // The hovered ply in the accent colour and a weight heavier,
+            // because this row is also a peek trigger: the preview that
+            // opens beside it is OF this move, and a chip a shade lighter
+            // than the panel did not say which one clearly enough to
+            // follow while the engine rewrites the line underneath.
+            //
+            // Only the colour transitions. Animating the weight would
+            // have every neighbour creeping sideways for 100ms; jumping
+            // it moves them once, and never the hovered ply itself —
+            // text grows to the right, so its own left edge stays put and
+            // the pointer cannot fall off what it is pointing at.
             className={cn(
-              'hover:bg-surface-3 hover:text-fg rounded px-0.5 font-medium',
+              'hover:bg-surface-3 hover:text-primary rounded px-0.5 font-medium hover:font-semibold',
               'transition-colors duration-100',
             )}
             onClick={() => onPlayLine(plies.slice(0, i + 1).map((p) => p.uci))}
