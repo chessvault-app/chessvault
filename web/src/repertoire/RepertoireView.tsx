@@ -32,7 +32,7 @@ import { InfoTip } from '@/ui/InfoTip';
 import { KingIcon } from '@/ui/KingIcon';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { Select } from '@/ui/Select';
 import { t } from '@/lib/i18n';
 
@@ -1350,19 +1350,7 @@ export function RepertoireView() {
   );
 
   return (
-    // stacked:pb-8 — this column is what scrolls on a phone, and its last
-    // panel used to end flush against the bottom navigation with its own
-    // border cut off. Padding inside the scroll area gives it somewhere to
-    // finish.
-    //
-    // pr-4 and the stable gutter are the same idea sideways. A scrollbar
-    // is drawn OUTSIDE the padding (measured: 12 px of padding, then a
-    // 10 px scrollbar), so p-3 alone left the panels almost touching the
-    // thumb while the whole column sat 10 px left of centre. Reserving the
-    // gutter on both edges squares that up, and the wider right padding is
-    // the air between the panels and the bar — the treatment the other
-    // board pages (puzzles, editor) already had.
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
+    <div className={BOARD_SCROLL_SHELL}>
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
         <Button
           variant="ghost"

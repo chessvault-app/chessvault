@@ -27,7 +27,7 @@ import { Select } from '@/ui/Select';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
@@ -385,7 +385,7 @@ export function EditorView({
   );
 
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
+    <div className={BOARD_SCROLL_SHELL}>
       {/* Phones lead with a header like every other page (the Editor title
           otherwise lives only in the wide-only side column). Suppressed when
           embedded (onUse) — the host page carries its own header. */}

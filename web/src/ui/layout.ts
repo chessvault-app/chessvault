@@ -34,3 +34,26 @@ export const BOARD_WIDE_SHELL =
 
 /** The side column next to the board: fixed share of the row at `wide`. */
 export const BOARD_WIDE_SIDE = 'wide:w-[min(27rem,38%)] wide:flex-none';
+
+/**
+ * The whole shell — stacked and wide halves — for the board pages whose
+ * COLUMN scrolls when stacked: the trainers, the solution recorder, the
+ * repertoire and the editor. One string, because these six shells were
+ * six pasted literals and drifted exactly as pasted literals do.
+ *
+ * stacked:pb-8 — this column is what scrolls on a phone, and its last
+ * panel used to end flush against the bottom navigation with its own
+ * border cut off. Padding inside the scroll area gives it somewhere to
+ * finish. pr-4 and the stable gutter are the same idea sideways: the
+ * scrollbar is drawn OUTSIDE the padding (measured: 12px of padding,
+ * then a 10px scrollbar), so p-3 alone left the panels almost touching
+ * the thumb while the whole column sat 10px left of centre.
+ *
+ * Analysis and study deliberately do NOT use this: stacked, they are
+ * overflow-hidden columns whose panels own the scrolling, so flush
+ * against the bottom bar is their design — they append BOARD_WIDE_SHELL
+ * to stacked classes of their own.
+ */
+export const BOARD_SCROLL_SHELL =
+  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ' +
+  BOARD_WIDE_SHELL;
