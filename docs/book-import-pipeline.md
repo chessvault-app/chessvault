@@ -99,14 +99,18 @@ style (`bare` digits vs `123)`), solutions anchor (`N - 1.` / `N) Name`
 is printed (`chapter` header, per-puzzle `label` "White to play", or a
 bare `letter` W/B under the number), label-matching window, and
 `cropTrim` for books that print coordinates in a gutter outside the
-frame. The 1001 book's config encodes the original defaults.
+frame. A config states only what its book needed: the 1001 book's
+overrides one default (`moveMarkers`) and leaves the rest —
+`numberStyle`, the label window — to the script's own.
 
 Books that put an answers section after **every chapter** instead of one
 at the back list their spans in `solutionRanges` (`[[28,33],[45,48],…]`),
 which replaces the "everything after `solutionsAfterPage`" rule — that
 rule would swallow the puzzle pages sitting between the sections. Add `pdf` (the file's NAME, not its path — point `CHESS_BOOK_PDFS` at
 wherever your copies live) and `coverPage` so `render_book_pages.py` can
-find the source. Configs are committed; nobody's disk layout should be.
+find the source; the configs written before that script still lack both
+fields, and its runbook step cannot run for those books until they gain
+them. Configs are committed; nobody's disk layout should be.
 
 ## Runbook (per book)
 
