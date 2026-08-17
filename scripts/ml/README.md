@@ -84,8 +84,13 @@ npx tsx scripts/ml/harvest-align.ts <pages_dir> data/ml/harvest-boards <tag>
 python scripts/ml/pseudo_label.py <teacher_model> data/ml/real-boards data/ml/real-1001.npz
 python scripts/ml/pseudo_label.py <teacher_model> data/ml/harvest-boards data/ml/real-harvest.npz
 
-# training (torch-env, GPU)
+# training (torch-env; training from scratch wants a GPU)
 python scripts/ml/train.py --epochs 16
+
+# fine-tune on the books' own validated boards — four warm-started
+# epochs, fine on CPU (docs/ml-history.md, section 4)
+python scripts/ml/build_validated_npz.py <emit_dir:report.json>
+python scripts/ml/train.py --init cellnet-best.pt --epochs 4
 ```
 
 Outputs: `data/ml/cellnet-best.pt` (state dict). Export/browser format comes

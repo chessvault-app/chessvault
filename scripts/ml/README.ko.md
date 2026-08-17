@@ -88,8 +88,13 @@ npx tsx scripts/ml/harvest-align.ts <pages_dir> data/ml/harvest-boards <tag>
 python scripts/ml/pseudo_label.py <teacher_model> data/ml/real-boards data/ml/real-1001.npz
 python scripts/ml/pseudo_label.py <teacher_model> data/ml/harvest-boards data/ml/real-harvest.npz
 
-# 학습 (torch-env, GPU)
+# 학습 (torch-env, 처음부터 학습할 때는 GPU)
 python scripts/ml/train.py --epochs 16
+
+# 책들 자신의 검증된 보드로 미세 조정 — 따뜻하게 시작한 4에폭이면 되고,
+# CPU로도 충분합니다 (docs/ml-history.md 4절)
+python scripts/ml/build_validated_npz.py <emit_dir:report.json>
+python scripts/ml/train.py --init cellnet-best.pt --epochs 4
 ```
 
 산출물: `data/ml/cellnet-best.pt`(state dict). 내보내기와 브라우저 형식은
