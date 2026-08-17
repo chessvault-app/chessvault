@@ -115,10 +115,18 @@ export function AnalysisBoard({
 
   // Every rendered move sounds — played AND replayed — like lichess. The
   // ref skips the mount so opening a study mid-game stays quiet.
+  //
+  // The root gets one too, and used to be the exception: it is the only
+  // node with no `san`, so a guard on `node.san` silenced it — and going
+  // back to the starting position, which is a piece visibly moving on the
+  // board and the thing ⏮ does from anywhere, was the one position change
+  // in the app that made no sound. Measured: stepping back from 1...e5
+  // sounded twice over three steps, the missing one being the arrival at
+  // the start. A plain move, because nothing is captured by undoing one.
   const lastCursor = useRef<string | null>(null);
   useEffect(() => {
-    if (lastCursor.current !== null && lastCursor.current !== cursorId && node.san) {
-      playSound(soundForSan(node.san));
+    if (lastCursor.current !== null && lastCursor.current !== cursorId) {
+      playSound(node.san ? soundForSan(node.san) : 'move');
     }
     lastCursor.current = cursorId;
     // eslint-disable-next-line react-hooks/exhaustive-deps
