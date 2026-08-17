@@ -673,6 +673,22 @@ cg-board square.check {
 .cg-wrap cg-container {
   border-radius: calc(var(--radius) * 0.6);
   box-shadow: var(--shadow-panel);
+  /* Centre the shortfall instead of dropping it all at the bottom.
+     Chessground floors the container to a multiple of 8 DEVICE pixels
+     (the note above) and then pins it to top-left, so every board in the
+     app is up to 8 device-px short of its box with the whole remainder
+     below it. On a phone at 3x that is under 3 CSS px and nobody sees
+     it; at 112px on a 0.75x display it is 5.3px against 112, and the
+     board visibly sits high in its card.
+
+     Safe to move: coords and pieces are children of the container, so
+     they travel with it, and chessground hit-tests against the
+     container's own rect rather than the wrap's — the squares stay
+     where they are drawn. `translate` rather than `transform` so a
+     future transform here would not silently drop it. */
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
 }
 
 .cg-wrap cg-board {

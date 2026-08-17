@@ -165,7 +165,7 @@ function PuzzleCard({
         // Complete literals, both of them: the Tailwind scanner reads
         // class names out of this file and would never emit one that was
         // assembled from pieces.
-        className={cn('shrink-0 rounded-md', compact ? 'w-24' : 'w-32')}
+        className={cn('shrink-0 rounded-md', compact ? 'w-24' : 'w-28')}
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-fg text-sm font-medium">{title}</span>
@@ -404,32 +404,34 @@ function Hub() {
    * Both panels exist to use space the launcher does not need. On a
    * screen with none to give they are not a short history and a squeezed
    * book row — they are two blocks pushing the thing you came for off
-   * the bottom. So each has a height below which it simply is not there.
+   * the bottom. So each has a height below which it simply is not there,
+   * and below both, the boards come down too.
    *
-   * The numbers are measured, not guessed (390px wide, this vault):
-   * header 28 + cards and tiles 514 + the shell's own 28 of padding =
-   * 578 for the launcher alone; the book row adds 98 to make 676; the
-   * history at its floor adds another 121 to make 797. Those are
-   * COLUMN heights — a phone also spends about 56 on the tab bar — so
-   * the viewport each needs is 634, 732 and 853.
+   * The numbers are measured rather than guessed (this vault, 375-390
+   * wide): with 112px boards the launcher alone is a 530px column, the
+   * book row takes it to 628, and the history at its floor to 737. A
+   * phone spends about 56 more on the tab bar, so the viewports needed
+   * are 586, 684 and 793.
    *
-   * The thresholds clear those and fall BETWEEN real phones rather than
-   * through one, so nothing flickers as a toolbar retracts. Verified at
-   * each of these:
+   * 112px rather than 128 for the boards is what buys the last one.
+   * At 128 the history needed 853 of viewport, which is past the 812 of
+   * a 13 mini and only just inside a 14 — so the phones that had it had
+   * it at the floor. Sixteen pixels off each board is 48 off the column,
+   * and it turns "only the big ones, barely" into "everything from 800
+   * up, with rows to spare": 2.7 rows at 812, 3.8 at 844 where there
+   * were 2.4, 6.8 at 932.
    *
-   *   568 (SE 1)       launcher only          — 54px over, as close as it gets
-   *   667 (SE 2/8)     launcher only          — fits
-   *   736 (8 Plus)     + book row             — fits
-   *   812 (13 mini)    + book row             — fits
-   *   844+ (14/15/max) + book row and history — fits
+   * Verified at each of these, all 0px overflow:
+   *
+   *   568 (SE 1)      96px boards, launcher only
+   *   667 (SE 2/8)    launcher only
+   *   736 (8 Plus)    + book row
+   *   800 / 812       + book row and history
+   *   844 (14) / 932  + book row and history, more of it
    */
-  // Below this even the three cards alone do not fit (they need 634 of
-  // viewport at full size), so the boards come down from 128px to 96 —
-  // which buys 96px across the three and lands a 320x568 phone inside
-  // its own screen. Nothing above this tier is touched.
   const fullBoards = useMediaQuery('(min-height: 40rem)');
   const roomForBooks = useMediaQuery('(min-height: 46rem)');
-  const roomForHistory = useMediaQuery('(min-height: 52rem)');
+  const roomForHistory = useMediaQuery('(min-height: 50rem)');
   const showBooks = roomForBooks && books.length > 0;
   const showHistory = roomForHistory && history.length > 0;
 
@@ -485,14 +487,20 @@ function Hub() {
       )}
       {showBooks && <BookShelfPanel books={books} />}
 
-      {/* `mt-auto` ONLY when there is no history.
-          An auto margin on the main axis takes all the free space BEFORE
-          flex-grow gets a look in, so applying it unconditionally left
-          the history pinned at its floor with the slack sitting above
-          this cluster — the exact dead band the stretch was for. Without
-          a history it is what keeps the launcher on the bottom edge
-          instead of floating up under the cards. */}
-      <div className={cn('flex shrink-0 flex-col gap-2', !showHistory && 'mt-auto')}>
+      {/* Whichever block is going to absorb the page's slack.
+          With a history, that is the history — this cluster keeps its
+          natural height and sits on the bottom edge. Without one, the
+          slack has nowhere else to go, and pooling it (an auto margin,
+          which takes free space BEFORE flex-grow is even considered)
+          left a visible void under the header. Spreading it between the
+          cards instead gives them a little more air on a screen that
+          has it, and no part of the page reads as empty. */}
+      <div
+        className={cn(
+          'flex flex-col gap-2',
+          showHistory ? 'shrink-0' : 'flex-1 justify-between',
+        )}
+      >
         {solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
