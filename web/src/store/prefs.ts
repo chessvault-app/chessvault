@@ -62,18 +62,6 @@ export interface Scheme {
    * stored scheme without it means the accent it has always had.
    */
   accentTint?: number;
-  /**
-   * Take the DARK theme's page to black and leave its panels grey.
-   *
-   * The other three numbers are hue and chroma; this one is lightness, and
-   * it is a flag rather than a fourth number because there is one useful
-   * answer and not a range: the ladder below the surfaces has to keep its
-   * steps or a card stops reading as a card (see index.css), so "how
-   * black" is not a knob anyone can usefully turn — it is a different
-   * ladder, drawn once. Nothing in the light theme is affected: a black
-   * page is a dark-theme idea.
-   */
-  ink?: boolean;
 }
 
 export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
@@ -85,15 +73,12 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
   // Mono greys the panels and keeps a blue button; this greys that too.
   { id: 'greyscale', label: 'Greyscale', scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0 } },
-  // Grey panels on a black page, and the app's own blue on top of them —
-  // Mono's neutrals with the default accent rather than Mono's own, which
-  // leans violet. The one preset that changes lightness as well as hue.
-  // Named Ink and not Black: labels are the translation keys themselves
-  // (see lib/i18n), and 'Black' is already the chess colour — a scheme
-  // called that would advertise itself in Korean as the black pieces.
-  // It also puts it in the family the others are named from: Paper,
-  // Slate, Ink are all things you write on or with.
-  { id: 'ink', label: 'Ink', scheme: { hue: 264, tint: 0, accent: 240, ink: true } },
+  // Mono's surfaces with Slate's accent: the neutrals fully grey, and the
+  // blue the app is drawn in rather than Mono's own, which leans violet.
+  // The two differ by nothing else, which is the point — it is the
+  // greyscale scheme for anyone who still wants the app's own colour on
+  // the buttons.
+  { id: 'graphite', label: 'Graphite', scheme: { hue: 264, tint: 0, accent: 240 } },
 ];
 
 /**
@@ -254,18 +239,13 @@ const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
   }
 };
 
-/** Four custom properties and one flag; every token in index.css reads
-    from them. `ink` is an attribute rather than a property because what it
-    selects is a whole block of replacement lightnesses (`.dark[data-ink]`),
-    the same way the board palettes hang off `data-board`. */
-const applyScheme = ({ hue, tint, accent, accentTint = 1, ink = false }: Scheme): void => {
+/** Four custom properties; every token in index.css reads from them. */
+const applyScheme = ({ hue, tint, accent, accentTint = 1 }: Scheme): void => {
   const el = document.documentElement;
   el.style.setProperty('--ui-hue', String(hue));
   el.style.setProperty('--ui-tint', String(tint));
   el.style.setProperty('--accent-hue', String(accent));
   el.style.setProperty('--accent-tint', String(accentTint));
-  if (ink) el.dataset.ink = '';
-  else delete el.dataset.ink;
 };
 
 export const usePrefs = create<PrefsState>()(
