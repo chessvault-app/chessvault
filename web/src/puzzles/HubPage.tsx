@@ -337,6 +337,51 @@ async function draw(mode: HandoffMode): Promise<ApiPuzzle | null> {
   }
 }
 
+/**
+ * How many of the page's answers are still outstanding, counted down as
+ * each settles — six requests, five of which decide part of the layout.
+ *
+ * Everything above the launcher shares ONE column of spare height, so a
+ * block that arrives late does not appear beside the others: it resizes
+ * them. The boards are what makes that visible. Chessground draws its
+ * squares and its pieces to the size its box had when it mounted, and
+ * catches up on the next frame — so a card landing a beat after the ones
+ * already on screen leaves them drawn at the old size over the new box,
+ * pieces hanging past the edge, until it does.
+ *
+ * Measured on the phone hub (390x700, warm vault): the two puzzle draws
+ * answer together and mount two boards at 160px; the book card needs two
+ * chained requests and lands after them, at which point three cards share
+ * the same column and every board is re-laid-out to 144. Coming back from
+ * Themes is where it shows, because that is when the two fast answers are
+ * fast enough to paint before the slow one arrives.
+ *
+ * So the blocks wait for each other and are drawn once, at the size they
+ * are going to keep. The launcher below them never waits — it is a page
+ * of links, and it is what a thumb is reaching for — and it does not
+ * move when they arrive: it is already on the bottom edge, and the
+ * cluster above either grows into the empty band or hands its slack to
+ * the history panel.
+ */
+const ANSWERS = 6;
+
+/**
+ * How long they are allowed to wait for each other.
+ *
+ * A request that never answers must not cost the page its cards: fetch has
+ * no timeout of its own, and a phone that loses its connection mid-request
+ * would otherwise hold the block above the launcher empty for as long as
+ * the page is open. At the deadline the page draws whatever did arrive —
+ * which is exactly what it did before the blocks waited at all, so the
+ * worst case is the old behaviour and not a worse one.
+ *
+ * Two seconds because it is a backstop and not a tuning knob: the six
+ * answers take about 50ms against a warm vault on the same machine, and
+ * the slowest of them is two chained requests, so a server that is merely
+ * slow still gets to answer first.
+ */
+const DEADLINE_MS = 2000;
+
 function Hub() {
   const [meta, setMeta] = useState<Meta | null>(null);
   const [solvedToday, setSolvedToday] = useState<number | null>(null);
@@ -345,19 +390,32 @@ function Hub() {
   const [books, setBooks] = useState<BookSummary[]>([]);
   const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [outstanding, setOutstanding] = useState(ANSWERS);
+  const settled = outstanding === 0;
 
   useEffect(() => {
+    // Counted down in a `finally`, always after the state it gates: the
+    // page is drawn on the render that takes this to nought, so an answer
+    // that reported itself before storing its result would be drawn missing.
+    // Floored, because the deadline below can get there first and an answer
+    // arriving after it would otherwise take the count NEGATIVE — which is
+    // not nought, and would blank a page that had already been drawn.
+    const done = (): void => setOutstanding((n) => Math.max(0, n - 1));
     void (async () => {
       try {
         setMeta(await api<Meta>('/api/puzzles/meta'));
       } catch {
         // Every button still works; only the review row and the tally
         // are missing, and both are decoration on a page of links.
+      } finally {
+        done();
       }
     })();
-    void fetchSolvedToday().then((n) => {
-      if (n !== null) setSolvedToday(n);
-    });
+    void fetchSolvedToday()
+      .then((n) => {
+        if (n !== null) setSolvedToday(n);
+      })
+      .finally(done);
     void (async () => {
       try {
         // Already newest-first, and the server caps what it reads — the
@@ -368,12 +426,14 @@ function Hub() {
         setHistory(body.attempts);
       } catch {
         // No panel; the dashboard tile still reaches the full log.
+      } finally {
+        done();
       }
     })();
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
-    void draw('fresh').then(setNext);
-    void draw('failed').then(setReview);
+    void draw('fresh').then(setNext).finally(done);
+    void draw('failed').then(setReview).finally(done);
     void (async () => {
       try {
         const { books: all } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
@@ -400,8 +460,12 @@ function Hub() {
         setBookNext({ book: top, puzzle: one.puzzle });
       } catch {
         // No panel. The Books tile below still reaches the shelf.
+      } finally {
+        done();
       }
     })();
+    const deadline = setTimeout(() => setOutstanding(0), DEADLINE_MS);
+    return () => clearTimeout(deadline);
   }, []);
 
   // Assume the database is there until told otherwise: it is, for anyone
@@ -444,8 +508,11 @@ function Hub() {
    */
   const roomForBooks = useMediaQuery('(min-height: 46rem)');
   const roomForHistory = useMediaQuery('(min-height: 50rem)');
-  const showBooks = roomForBooks && books.length > 0;
-  const showHistory = roomForHistory && history.length > 0;
+  // `settled` on both, and on every card below: the blocks share one
+  // column of height, so each of them is part of how the others are sized
+  // (see ANSWERS). They go up together or not at all.
+  const showBooks = settled && roomForBooks && books.length > 0;
+  const showHistory = settled && roomForHistory && history.length > 0;
 
   // Subscribed rather than read once: the trainer writes it and coming back
   // here re-mounts, which used to be the whole story — but the vault owns
@@ -515,7 +582,7 @@ function Hub() {
           showHistory ? 'shrink-0' : 'flex-1',
         )}
       >
-        {solvedToday !== null && solvedToday > 0 && (
+        {settled && solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
           </p>
@@ -526,7 +593,7 @@ function Hub() {
             below it would shove the button up mid-reach. Growing upward
             into the empty band costs nothing, because nothing up there is
             being pressed. */}
-        {ready && next && (
+        {settled && ready && next && (
           <PuzzleCard
             // Ply 1: after the opponent's setup move, which is the
             // position the solver is actually handed.
@@ -545,7 +612,7 @@ function Hub() {
             plain button is the fallback for when the pool is known to be
             non-empty but the draw itself failed — otherwise review would
             have no way in from here at all. */}
-        {review ? (
+        {!settled ? null : review ? (
           <PuzzleCard
             fen={positionAt(review, 1).fen}
             side={solverColor(review)}
@@ -578,7 +645,7 @@ function Hub() {
             Its own endpoint, not the book: opening a book downloads
             every id and every progress entry, and the solutions are 1.7
             MB on the biggest one. A launcher wants one puzzle. */}
-        {bookNext && (
+        {settled && bookNext && (
           <PuzzleCard
             fen={bookNext.puzzle.fen}
             side={turnOf(bookNext.puzzle.fen)}
