@@ -2,7 +2,7 @@
  * Add (or rebuild) the position index of an existing reference-games
  * database, in place — the pass that makes it an explorer source.
  *
- *   npm run index:refgames -- lichess_elite_2025-11
+ *   npx tsx scripts/index-refgames-positions.ts lichess_elite_2025-11
  *
  * Fresh builds run the same pass themselves (build-refgames.ts); this
  * script exists for the databases built before the index did, spawned by
