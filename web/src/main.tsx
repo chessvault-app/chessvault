@@ -6,6 +6,8 @@ import { initPrefs } from './store/prefs';
 import { installTooltips } from './ui/tooltip';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { initLang } from './lib/i18n';
+import { sweepStorage } from './lib/storageSweep';
+import { hydrateTraining } from './lib/training';
 import './index.css';
 
 // The static demo answers its own /api from an in-memory vault. Installed
@@ -17,9 +19,17 @@ if (typeof __DEMO__ !== 'undefined' && __DEMO__) {
   await installDemoBackend();
 }
 
+// Before anything reads storage at module scope — see lib/storageSweep.
+sweepStorage();
+
 initTheme();
 watchSystemTheme();
 initPrefs();
+// NOT awaited, unlike the three above. Those decide the first paint, so
+// the frame waits for them; the difficulty word does not — the echo in
+// localStorage already draws it, and this only replaces that with the
+// vault's answer, which subscribers re-render for when it lands.
+void hydrateTraining();
 // Awaited: the saved language's dictionary loads lazily now, and the
 // first render must not happen before it (English pays nothing — its
 // dictionary is the keys themselves).

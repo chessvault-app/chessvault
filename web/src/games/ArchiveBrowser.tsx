@@ -75,12 +75,12 @@ interface ArchiveBrowseState {
   cache: Record<string, GameSummary[]>;
 }
 // Remembered PER PROVIDER: one shared key meant looking up a Lichess
-// handle and reloading prefilled it into the chess.com box. The old
-// single key seeds the chesscom entry so nobody loses their prefill.
+// handle and reloading prefilled it into the chess.com box. The original
+// single key is folded into the chesscom entry at boot and then deleted,
+// so nobody loses their prefill and this only has to know about one
+// shape — see lib/storageSweep.
 const userKey = (provider: string): string => `chess-vault:archive-user:${provider}`;
-const savedUser = (provider: string): string =>
-  localStorage.getItem(userKey(provider)) ??
-  (provider === 'chesscom' ? (localStorage.getItem('chess-vault:chesscom-user') ?? '') : '');
+const savedUser = (provider: string): string => localStorage.getItem(userKey(provider)) ?? '';
 
 const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
   provider: 'chesscom',
