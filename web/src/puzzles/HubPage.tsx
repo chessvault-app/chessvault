@@ -415,9 +415,13 @@ function Hub() {
     <PageShell width="medium" className="h-full gap-2 pb-3">
       <PageHeader title={t('Puzzles')} />
 
-      {/* Pinned to the top, above the part that stretches. */}
-      {books.length > 0 && <BookShelfPanel books={books} />}
+      {/* History first, then the book. Which one stretches is a property
+          of the panels themselves (`flex-1` against `shrink-0`), not of
+          the order they are written in, so this is purely about reading
+          order — and it puts the one fixed-size panel next to the cards
+          it belongs with, rather than stranded above a panel that grows. */}
       {history.length > 0 && <HistoryPanel attempts={history} />}
+      {books.length > 0 && <BookShelfPanel books={books} />}
 
       <div className="flex shrink-0 flex-col gap-2">
         {solvedToday !== null && solvedToday > 0 && (
