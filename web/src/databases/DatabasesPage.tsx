@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
@@ -36,9 +37,8 @@ export function DatabasesPage() {
     databases?: RefDb[];
   } | null>(null);
   const loadMeta = useCallback(() => {
-    void fetch('/api/refgames')
-      .then((r) => r.json())
-      .then((d: { ready: boolean; games?: number; databases?: RefDb[] }) => setMeta(d))
+    void api<{ ready: boolean; games?: number; databases?: RefDb[] }>('/api/refgames')
+      .then(setMeta)
       .catch(() => setMeta(null));
   }, []);
   useEffect(() => {

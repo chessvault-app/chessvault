@@ -1,6 +1,7 @@
 import { Database, FileText, Loader2, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
@@ -78,8 +79,7 @@ export function RefDbManager({
 
   const refreshSources = useCallback(async (): Promise<void> => {
     try {
-      const res = await fetch('/api/sources');
-      const body = (await res.json()) as { sources: Source[] };
+      const body = await api<{ sources: Source[] }>('/api/sources');
       setSources(body.sources);
       setPicked((p) => p ?? new Set(body.sources.map((s) => s.name)));
     } catch {
@@ -95,11 +95,11 @@ export function RefDbManager({
   useEffect(() => {
     const tick = async (): Promise<void> => {
       try {
-        const s = (await (await fetch('/api/refgames/build/status')).json()) as {
+        const s = await api<{
           running: boolean;
           exitCode?: number | null;
           log?: string[];
-        };
+        }>('/api/refgames/build/status');
         setStatus(s);
         if (s.running) {
           wasRunning.current = true;
@@ -132,18 +132,13 @@ export function RefDbManager({
       }
       setUploading(file.name);
       try {
-        const res = await fetch(`/api/sources?name=${encodeURIComponent(file.name)}`, {
+        await api(`/api/sources?name=${encodeURIComponent(file.name)}`, {
           method: 'POST',
           body: file,
         });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => null)) as { error?: string } | null;
-          setError(`${file.name}: ${t(body?.error ?? res.statusText)}`);
-        } else {
-          setPicked((p) => new Set(p ?? []).add(file.name));
-        }
-      } catch {
-        setError(t('{name}: upload failed', { name: file.name }));
+        setPicked((p) => new Set(p ?? []).add(file.name));
+      } catch (error) {
+        setError(`${file.name}: ${t(apiErrorMessage(error))}`);
       }
     }
     setUploading(null);
@@ -155,14 +150,13 @@ export function RefDbManager({
 
   const build = async (name: string): Promise<void> => {
     setError(null);
-    const res = await fetch('/api/refgames/build', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: name.trim() || undefined, sources: [...(picked ?? [])] }),
-    });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(t(body?.error ?? 'could not start the build'));
+    try {
+      await api('/api/refgames/build', {
+        method: 'POST',
+        json: { name: name.trim() || undefined, sources: [...(picked ?? [])] },
+      });
+    } catch (error) {
+      setError(t(apiErrorMessage(error)));
       return;
     }
     setStatus({ running: true, log: [] });
@@ -178,14 +172,10 @@ export function RefDbManager({
   const del = async (dbName: string): Promise<void> => {
     setError(null);
     try {
-      const res = await fetch(`/api/refgames/${encodeURIComponent(dbName)}`, { method: 'DELETE' });
-      if (res.ok) onChanged();
-      else {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(t(body?.error ?? 'could not delete the database'));
-      }
-    } catch {
-      setError(t('could not delete the database'));
+      await api(`/api/refgames/${encodeURIComponent(dbName)}`, { method: 'DELETE' });
+      onChanged();
+    } catch (error) {
+      setError(t(apiErrorMessage(error)));
     }
   };
 
@@ -199,22 +189,15 @@ export function RefDbManager({
   const delSource = async (sourceName: string): Promise<void> => {
     setError(null);
     try {
-      const res = await fetch(`/api/sources/${encodeURIComponent(sourceName)}`, {
-        method: 'DELETE',
+      await api(`/api/sources/${encodeURIComponent(sourceName)}`, { method: 'DELETE' });
+      setPicked((p) => {
+        if (!p?.has(sourceName)) return p;
+        const next = new Set(p);
+        next.delete(sourceName);
+        return next;
       });
-      if (res.ok) {
-        setPicked((p) => {
-          if (!p?.has(sourceName)) return p;
-          const next = new Set(p);
-          next.delete(sourceName);
-          return next;
-        });
-      } else {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        setError(`${sourceName}: ${t(body?.error ?? 'could not delete the PGN collection')}`);
-      }
-    } catch {
-      setError(`${sourceName}: ${t('could not delete the PGN collection')}`);
+    } catch (error) {
+      setError(`${sourceName}: ${t(apiErrorMessage(error))}`);
     }
     // Either way the server's listing is the one to believe: a row leaves
     // because the file did, not because it was pressed.

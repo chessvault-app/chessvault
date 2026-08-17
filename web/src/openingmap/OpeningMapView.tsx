@@ -99,10 +99,10 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [field, setField] = useState(readFieldPick);
   const [databases, setDatabases] = useState<FieldDatabase[]>([]);
   useEffect(() => {
-    void fetch('/api/refgames')
-      .then((r) => (r.ok ? r.json() : { databases: [] }))
-      // Not `databases ?? []`: a single-file mount has one database and no
-      // list to put it in — see fieldDatabases.
+    // Not `databases ?? []`: a single-file mount has one database and no
+    // list to put it in — see fieldDatabases. Any failure is simply "no
+    // databases to offer" — the map is useful without a field.
+    void api<Parameters<typeof fieldDatabases>[0]>('/api/refgames')
       .then((body) => setDatabases(fieldDatabases(body)))
       .catch(() => setDatabases([]));
   }, []);
@@ -203,6 +203,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A selection survives edits but not a map switch or its node's deletion.
   const selected = selectedId && resolved?.nodes.get(selectedId) ? selectedId : null;
+  // The selection's facts, resolved once for everything below that names it.
+  const selectedFacts = selected ? (resolved?.nodes.get(selected) ?? null) : null;
   useEffect(() => setSelectedId(null), [color]);
 
   // One way in, with two halves: the explorer-like list, and the field
@@ -439,7 +441,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           is the app's own idiom for this — a leaf page claims the row
           the global tabs were using — so leaving is the back chevron,
           exactly as it is on the board and in a study. */}
-      {phone && selected && resolved && (
+      {phone && selected && selectedFacts && (
         <MobileActionBar>
           {/* The app's gutter, not a smaller one of its own: every other
               claimant of this row is a centred button strip, so this is
@@ -451,9 +453,9 @@ export function OpeningMapView({ params }: { params: string[] }) {
               onClick={() => setDetailsOpen(true)}
             >
               <span className="text-fg block truncate text-sm font-medium">
-                {resolved.nodes.get(selected)!.parentId === null
+                {selectedFacts.parentId === null
                   ? t('Start position')
-                  : `${moveNumberLabel(resolved.nodes.get(selected)!.ply)} ${resolved.nodes.get(selected)!.mapNode.san ?? ''}`}
+                  : `${moveNumberLabel(selectedFacts.ply)} ${selectedFacts.mapNode.san ?? ''}`}
               </span>
               <span className="text-subtle block truncate text-xs">
                 {labels.get(selected) ?? t('Tap for details')}

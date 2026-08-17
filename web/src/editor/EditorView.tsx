@@ -240,22 +240,29 @@ export function EditorView({
     navigate('board');
   };
 
-  // `titled` is false in the sheet: the window is already called Position,
-  // and a panel header repeating it under the window's own title bar is
-  // the same word twice, three lines apart.
-  const positionPanels = (titled: boolean, nested = false) => (
+  /**
+   * Where the panel is being shown, which decides its chrome — named
+   * places rather than two booleans, the same fix as ArchiveBrowser's
+   * `place`: `positionPanels(false, true)` said nothing at the call site.
+   *
+   * - `column` — the wide layout's side column: carries its own Position
+   *              header, with the Load button beside it.
+   * - `sheet`  — the phone's Position window: the Modal already says
+   *              Position, so no header (the same word twice, three lines
+   *              apart), and the loader is a page turn from the FEN
+   *              footer, having no header to live in.
+   */
+  const positionPanels = (place: 'column' | 'sheet') => (
     <>
         <Panel flush>
           {/* The Load button lives up here with the panel's name, not
               buried at the end of the FEN footer (lanph3re's call) — the
               sheet keeps its page-turn button in the footer, having no
               header to carry it. */}
-          {titled && (
+          {place === 'column' && (
             <PanelHeader
               title={t('Position')}
-              actions={
-                !nested && <LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />
-              }
+              actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
             />
           )}
           <div className="grid gap-3 p-3">
@@ -368,7 +375,7 @@ export function EditorView({
                 loader opens, and the loader's back chevron brings it
                 straight back. Two scrims deep on a phone is a window you
                 have to dismiss twice to get out of. */}
-            {nested && (
+            {place === 'sheet' && (
               // Inside the sheet this is a page turn, not a new window.
               <Button
                 variant="ghost"
@@ -561,7 +568,7 @@ export function EditorView({
         <div className="flex h-9 shrink-0 items-center gap-2">
           <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
         </div>
-        {positionPanels(true)}
+        {positionPanels('column')}
       </div>
 
       {/* The app's own window, not a second one hand-rolled here. This was
@@ -578,7 +585,7 @@ export function EditorView({
             setLoadPage(false);
           }}
         >
-          {positionPanels(false, true)}
+          {positionPanels('sheet')}
           {/* The second page, written inside the first: Modal parks this
               sheet behind it, wires the back chevron to onClose and holds
               the height. Nothing here says any of that. */}

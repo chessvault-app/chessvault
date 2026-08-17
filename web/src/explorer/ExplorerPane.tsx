@@ -1,6 +1,7 @@
 import { Database, ExternalLink, Hammer, Loader2, RotateCw, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { getNode, pathTo } from '@shared/tree';
+import { api } from '@/lib/api';
 import { navigate, navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
 import { cn } from '@/lib/cn';
@@ -466,11 +467,11 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
     let live = true;
     const tick = async (): Promise<void> => {
       try {
-        const s = (await (await fetch('/api/refgames/build/status')).json()) as {
+        const s = await api<{
           running: boolean;
           exitCode?: number | null;
           log?: string[];
-        };
+        }>('/api/refgames/build/status');
         if (!live) return;
         setLine(s.log?.at(-1) ?? null);
         if (!s.running) {
@@ -492,12 +493,13 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
   const start = async (): Promise<void> => {
     setState('running');
     setLine(null);
-    const res = await fetch('/api/refgames/index-positions', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ db: name }),
-    });
-    if (!res.ok) setState('failed');
+    try {
+      await api('/api/refgames/index-positions', { method: 'POST', json: { db: name } });
+    } catch {
+      // A refusal and an unreachable server both mean the job never
+      // started, and the poll would otherwise spin on 'running' forever.
+      setState('failed');
+    }
   };
 
   return (
@@ -799,29 +801,23 @@ function TopGamesList({
       // heard of, which is every game you have played.
       if (g.file !== undefined && g.index !== undefined) {
         const query = new URLSearchParams({ file: g.file, index: String(g.index) });
-        const res = await fetch(`/api/games/pgn?${query}`);
-        if (res.ok) {
-          const { pgn } = (await res.json()) as { pgn: string };
-          if (await loadPgn(pgn)) return;
-        }
+        const { pgn } = await api<{ pgn: string }>(`/api/games/pgn?${query}`);
+        if (await loadPgn(pgn)) return;
       } else {
         const query = new URLSearchParams({ white: g.white, black: g.black });
         if (g.date) query.set('date', g.date);
         if (g.result) query.set('result', g.result);
-        const found = await fetch(`/api/refgames/find?${query}`);
-        if (found.ok) {
-          // `db` says which reference database held the match — absent on a
-          // single-database mount (the demo), where the default is it.
-          const { id, db } = (await found.json()) as { id: number; db?: string };
-          const res = await fetch(`/api/refgames/${id}/pgn${db ? `?db=${encodeURIComponent(db)}` : ''}`);
-          if (res.ok) {
-            const { pgn } = (await res.json()) as { pgn: string };
-            if (await loadPgn(pgn)) return;
-          }
-        }
+        // `db` says which reference database held the match — absent on a
+        // single-database mount (the demo), where the default is it.
+        const { id, db } = await api<{ id: number; db?: string }>(`/api/refgames/find?${query}`);
+        const { pgn } = await api<{ pgn: string }>(
+          `/api/refgames/${id}/pgn${db ? `?db=${encodeURIComponent(db)}` : ''}`,
+        );
+        if (await loadPgn(pgn)) return;
       }
     } catch {
-      // offline server hiccup — the fallback below still works
+      // offline hiccup or a game the server cannot find — the fallback
+      // below still works
     }
     onPlay(g.uci);
   };
@@ -832,10 +828,18 @@ function TopGamesList({
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
-        {shown.map((g, i) => {
+        {shown.map((g) => {
           const gameUrl = g.site?.startsWith('https://') ? g.site : null;
+          // Keyed on the game's identity — the same facts open() locates
+          // it by — not the row number: the whole list is replaced per
+          // position, and an index key told React the new position's
+          // rows were the old ones edited in place.
+          const key =
+            g.file !== undefined && g.index !== undefined
+              ? `${g.file}#${g.index}`
+              : `${g.white}|${g.black}|${g.date ?? ''}|${g.result}|${g.site ?? ''}`;
           return (
-            <li key={i} className="flex items-center">
+            <li key={key} className="flex items-center">
               <button
                 type="button"
                 onClick={() => void open(g)}

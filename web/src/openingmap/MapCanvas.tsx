@@ -98,6 +98,27 @@ export function MapCanvas({
 
   const host = useRef<HTMLDivElement | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
+  /**
+   * The viewport twice over: state for React, a ref for the gestures.
+   *
+   * A pan used to setView per pointermove, and the viewport transform
+   * sits on the one <g> holding the whole scene — so the commonest
+   * gesture of all re-rendered and reconciled every dot and thread per
+   * frame, which is exactly the cost the animation loop below was built
+   * to remove. A pan now writes this ref and the <g>'s transform
+   * attribute directly, and React hears about it once, on release. Zoom
+   * stays on state because it legitimately changes per-node values (inv,
+   * labelOpacity) — but it READS the ref, so a wheel or a pinch lands on
+   * top of the pans React was never told about.
+   */
+  const viewRef = useRef(view);
+  /** The scene's <g>, for the pan path's direct transform writes. */
+  const scene = useRef<SVGGElement | null>(null);
+  /** Every viewport change goes through here, so ref and state agree. */
+  const commitView = (v: View): void => {
+    viewRef.current = v;
+    setView(v);
+  };
 
   // The moving parts, addressed directly: the animation loop below writes
   // positions straight onto these elements, so a frame of motion costs
@@ -382,7 +403,7 @@ export function MapCanvas({
     const w = graph.maxX - graph.minX;
     const h = graph.maxY - graph.minY;
     const k = Math.min(2, 0.92 * Math.min(box.width / w, box.height / h));
-    setView({
+    commitView({
       x: box.width / 2 - ((graph.minX + graph.maxX) / 2) * k,
       y: box.height / 2 - ((graph.minY + graph.maxY) / 2) * k,
       k,
@@ -482,7 +503,12 @@ export function MapCanvas({
         moved.current = true;
         return;
       }
-      setView((v) => ({ ...v, x: v.x + now.x - before.x, y: v.y + now.y - before.y }));
+      // A pan: the ref and the attribute, never setState — see viewRef.
+      // React paints this transform again on release.
+      const v = viewRef.current;
+      const next = { ...v, x: v.x + now.x - before.x, y: v.y + now.y - before.y };
+      viewRef.current = next;
+      scene.current?.setAttribute('transform', `translate(${next.x} ${next.y}) scale(${next.k})`);
     } else {
       // Pinch: scale by the distance ratio, anchored on the midpoint.
       const anchor = others[0]![1];
@@ -491,27 +517,29 @@ export function MapCanvas({
       const box = host.current!.getBoundingClientRect();
       const mx = (now.x + anchor.x) / 2 - box.left;
       const my = (now.y + anchor.y) / 2 - box.top;
-      setView((v) => {
-        const k = Math.min(3, Math.max(0.2, (v.k * d1) / d0));
-        const scale = k / v.k;
-        return { k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale };
-      });
+      const v = viewRef.current;
+      const k = Math.min(3, Math.max(0.2, (v.k * d1) / d0));
+      const scale = k / v.k;
+      commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
     }
     pointers.current.set(e.pointerId, now);
     moved.current = true;
   };
   const onPointerUp = (e: React.PointerEvent): void => {
     pointers.current.delete(e.pointerId);
+    // Land React on wherever the pan left the ref, once. A gesture that
+    // never panned left the ref holding the object state already holds,
+    // so this costs no render then.
+    setView(viewRef.current);
   };
   const onWheel = (e: React.WheelEvent): void => {
     const box = host.current!.getBoundingClientRect();
     const mx = e.clientX - box.left;
     const my = e.clientY - box.top;
-    setView((v) => {
-      const k = Math.min(3, Math.max(0.2, v.k * Math.exp(-e.deltaY * 0.0016)));
-      const scale = k / v.k;
-      return { k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale };
-    });
+    const v = viewRef.current;
+    const k = Math.min(3, Math.max(0.2, v.k * Math.exp(-e.deltaY * 0.0016)));
+    const scale = k / v.k;
+    commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
   };
 
   // Opening families as nebulae: each node belongs to the family of its
@@ -732,7 +760,7 @@ export function MapCanvas({
       }}
     >
       <svg width="100%" height="100%" className="block" role="tree" aria-label={t('Opening map')}>
-        <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+        <g ref={scene} transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
           {graph.nodes.map(({ id }) => {
             const hue = familyHue.get(id);
             if (hue === undefined) return null;
@@ -899,7 +927,10 @@ export function MapCanvas({
                   // press: a tap to select must not set the map swinging.
                   if (!drag.moved) grab(id, { x: drag.origX, y: drag.origY });
                   drag.moved = true;
-                  haul(id, { x: drag.origX + dx / view.k, y: drag.origY + dy / view.k });
+                  // The ref, not state: mid-gesture the state can be a
+                  // pan behind the picture on screen.
+                  const k = viewRef.current.k;
+                  haul(id, { x: drag.origX + dx / k, y: drag.origY + dy / k });
                 }}
                 onPointerUp={(e) => {
                   try {
