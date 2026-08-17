@@ -19,8 +19,8 @@ import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 
 import { parseFen } from 'chessops/fen';
 
-import { parseSquare, squareRank } from 'chessops/util';
-import type { Color, Role } from 'chessops/types';
+import { roleToChar } from 'chessops/util';
+import type { Color } from 'chessops/types';
 import {
   addUci,
   createTree,
@@ -37,6 +37,7 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
+import { usePromotion } from '@/board/usePromotion';
 
 import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -94,11 +95,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // The puzzle grid reveals from the Puzzle panel header, like the lichess
   // trainer's difficulty row.
   const [showNav, setShowNav] = useState(false);
-  const [pendingPromotion, setPendingPromotion] = useState<{
-    orig: string;
-    dest: string;
-    color: Color;
-  } | null>(null);
+  // The shared gate (board/usePromotion); the chosen piece re-enters the
+  // ordinary free-entry path below.
+  const promotion = usePromotion((orig, dest, role) => applyMove(orig, dest, roleToChar(role)));
   const reported = useRef(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -216,23 +215,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   };
 
   const onMove = (orig: string, dest: string): void => {
-    if (phase !== 'solving' || !pos) return;
-    const from = parseSquare(orig);
-    const to = parseSquare(dest);
-    const piece = from !== undefined ? pos.board.get(from) : undefined;
-    const lastRank = pos.turn === 'white' ? 7 : 0;
-    if (piece?.role === 'pawn' && to !== undefined && squareRank(to) === lastRank) {
-      setPendingPromotion({ orig, dest, color: pos.turn });
-      return;
-    }
+    if (phase !== 'solving' || !pos || !node) return;
+    if (promotion.maybeStart(node.fen, pos.turn, orig, dest)) return;
     applyMove(orig, dest);
-  };
-
-  const completePromotion = (role: Role): void => {
-    if (!pendingPromotion) return;
-    const letter = { queen: 'q', rook: 'r', bishop: 'b', knight: 'n', king: '', pawn: '' }[role];
-    applyMove(pendingPromotion.orig, pendingPromotion.dest, letter);
-    setPendingPromotion(null);
   };
 
   /**
@@ -460,13 +445,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               check={pos.isCheck()}
               onMove={onMove}
             />
-            {pendingPromotion && (
+            {promotion.pending && (
               <PromotionPicker
-                color={pendingPromotion.color}
-                dest={pendingPromotion.dest}
+                color={promotion.pending.color}
+                dest={promotion.pending.dest}
                 orientation={orientation}
-                onSelect={completePromotion}
-                onCancel={() => setPendingPromotion(null)}
+                onSelect={promotion.complete}
+                onCancel={promotion.cancel}
               />
             )}
           </div>

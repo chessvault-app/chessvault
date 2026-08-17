@@ -15,14 +15,15 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Color, Role } from 'chessops/types';
-import { parseSquare, squareRank } from 'chessops/util';
+import type { Color } from 'chessops/types';
+import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
+import { usePromotion } from '@/board/usePromotion';
 import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { mainlineFrom } from '@shared/tree';
@@ -159,11 +160,9 @@ function Trainer({
   const [difficulty, setDifficulty] = useState<DifficultyId>(storedDifficulty);
   // Stacked: the difficulty row hides behind the Puzzle panel's gear.
   const [showDifficulty, setShowDifficulty] = useState(false);
-  const [pendingPromotion, setPendingPromotion] = useState<{
-    orig: string;
-    dest: string;
-    color: Color;
-  } | null>(null);
+  // The shared gate (board/usePromotion): the apply callback closes over
+  // applyUserMove from the same render the picker's choice arrives in.
+  const promotion = usePromotion((orig, dest, role) => applyUserMove(orig + dest + roleToChar(role)));
   // Reviewing an earlier ply of the line (null = live), via the panel's
   // toolbar; any machine progress snaps back to live.
   const [review, setReview] = useState<number | null>(null);
@@ -274,7 +273,7 @@ function Trainer({
       setRevealed(false);
       setHint(0);
       setError(null);
-      setPendingPromotion(null);
+      promotion.cancel();
       reported.current = false;
 
       // The hub may have drawn this puzzle already and be showing it on a
@@ -438,20 +437,8 @@ function Trainer({
   const onMove = (orig: string, dest: string): void => {
     if (!puzzle || !view || phase !== 'solving' || reviewing) return;
     // A pawn reaching the last rank needs the picker before it can be judged.
-    const to = parseSquare(dest);
-    const lastRank = view.turn === 'white' ? 7 : 0;
-    if (to !== undefined && squareRank(to) === lastRank && isPawnMove(view.fen, orig)) {
-      setPendingPromotion({ orig, dest, color: view.turn });
-      return;
-    }
+    if (promotion.maybeStart(view.fen, view.turn, orig, dest)) return;
     applyUserMove(orig + dest);
-  };
-
-  const completePromotion = (role: Role): void => {
-    if (!pendingPromotion) return;
-    const letter = { queen: 'q', rook: 'r', bishop: 'b', knight: 'n', king: '', pawn: '' }[role];
-    applyUserMove(pendingPromotion.orig + pendingPromotion.dest + letter);
-    setPendingPromotion(null);
   };
 
   const viewSolution = (): void => {
@@ -636,13 +623,13 @@ function Trainer({
                 )}
               </div>
             )}
-            {pendingPromotion && (
+            {promotion.pending && (
               <PromotionPicker
-                color={pendingPromotion.color}
-                dest={pendingPromotion.dest}
+                color={promotion.pending.color}
+                dest={promotion.pending.dest}
                 orientation={orientation}
-                onSelect={completePromotion}
-                onCancel={() => setPendingPromotion(null)}
+                onSelect={promotion.complete}
+                onCancel={promotion.cancel}
               />
             )}
             {!reviewing && phase === 'wrong' && (
@@ -1035,23 +1022,4 @@ function MoveBadge({
       {kind === 'good' ? '✓' : '✗'}
     </span>
   );
-}
-
-/** Is the piece on `orig` a pawn? (For promotion detection.) */
-function isPawnMove(fen: string, orig: string): boolean {
-  const board = fen.split(' ')[0]!;
-  const rows = board.split('/');
-  const file = orig.charCodeAt(0) - 97;
-  const rank = Number(orig[1]) - 1;
-  const row = rows[7 - rank];
-  if (!row) return false;
-  let col = 0;
-  for (const ch of row) {
-    if (/\d/.test(ch)) col += Number(ch);
-    else {
-      if (col === file) return ch === 'p' || ch === 'P';
-      col++;
-    }
-  }
-  return false;
 }

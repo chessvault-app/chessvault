@@ -7,8 +7,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { parseSquare, squareRank } from 'chessops/util';
-import type { Color, Role } from 'chessops/types';
+import { parseSquare } from 'chessops/util';
+import type { Color } from 'chessops/types';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import {
   addMove,
@@ -25,6 +25,7 @@ import {
 import type { Headers, MoveTree, NodeId } from '@shared/types';
 import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
+import { usePromotion } from '@/board/usePromotion';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
@@ -109,11 +110,16 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
    * such problem (the wheel is never captured), so it never waits.
    */
   const [awake, setAwake] = useState(() => !window.matchMedia('(pointer: coarse)').matches);
-  const [pendingPromotion, setPendingPromotion] = useState<{
-    orig: string;
-    dest: string;
-    color: Color;
-  } | null>(null);
+  // The shared gate (board/usePromotion); the chosen piece rides the same
+  // addMove → commit path an ordinary move takes, so it autosaves too.
+  const promotion = usePromotion((orig, dest, role) => {
+    const result = addMove(tree, cursorId, {
+      from: parseSquare(orig)!,
+      to: parseSquare(dest)!,
+      promotion: role,
+    });
+    commit(result.tree, result.nodeId);
+  });
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
 
@@ -132,23 +138,9 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
     const from = parseSquare(orig);
     const to = parseSquare(dest);
     if (from === undefined || to === undefined) return;
-    const piece = pos.board.get(from);
-    if (!piece) return;
-    const lastRank = piece.color === 'white' ? 7 : 0;
-    if (piece.role === 'pawn' && squareRank(to) === lastRank) {
-      setPendingPromotion({ orig, dest, color: piece.color });
-      return;
-    }
+    if (!pos.board.get(from)) return;
+    if (promotion.maybeStart(current.fen, pos.turn, orig, dest)) return;
     const result = addMove(tree, cursorId, { from, to });
-    commit(result.tree, result.nodeId);
-  };
-
-  const completePromotion = (role: Role): void => {
-    if (!pendingPromotion) return;
-    const from = parseSquare(pendingPromotion.orig)!;
-    const to = parseSquare(pendingPromotion.dest)!;
-    const result = addMove(tree, cursorId, { from, to, promotion: role });
-    setPendingPromotion(null);
     commit(result.tree, result.nodeId);
   };
 
@@ -211,13 +203,13 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
           coordinates={false}
           onMove={playMove}
         />
-        {pendingPromotion && (
+        {promotion.pending && (
           <PromotionPicker
-            color={pendingPromotion.color}
-            dest={pendingPromotion.dest}
+            color={promotion.pending.color}
+            dest={promotion.pending.dest}
             orientation={orientation}
-            onSelect={completePromotion}
-            onCancel={() => setPendingPromotion(null)}
+            onSelect={promotion.complete}
+            onCancel={promotion.cancel}
           />
         )}
       </div>

@@ -11,13 +11,14 @@ import { Chess } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
 import { makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay } from 'chessops/san';
-import { parseSquare, parseUci, squareRank } from 'chessops/util';
-import type { Color, Role } from 'chessops/types';
+import { parseUci, roleToChar } from 'chessops/util';
+import type { Color } from 'chessops/types';
 import { moveSquares } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
+import { usePromotion } from '@/board/usePromotion';
 import { EditorView } from '@/editor/EditorView';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -298,11 +299,9 @@ function SolutionRecorder({
 }) {
   const [line, setLine] = useState<{ uci: string; san: string; fen: string }[]>([]);
   const [wildcards, setWildcards] = useState<ReadonlySet<number>>(new Set());
-  const [pendingPromotion, setPendingPromotion] = useState<{
-    orig: string;
-    dest: string;
-    color: Color;
-  } | null>(null);
+  // The shared gate (board/usePromotion); the chosen piece finishes the
+  // UCI that play() records.
+  const promotion = usePromotion((orig, dest, role) => play(orig + dest + roleToChar(role)));
   const [saving, setSaving] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [verdicts, setVerdicts] = useState<string[] | null>(null);
@@ -335,21 +334,8 @@ function SolutionRecorder({
   };
 
   const onMove = (orig: string, dest: string): void => {
-    const to = parseSquare(dest);
-    const lastRank = turn === 'white' ? 7 : 0;
-    const piece = to !== undefined ? pos.board.get(parseSquare(orig)!) : undefined;
-    if (piece?.role === 'pawn' && to !== undefined && squareRank(to) === lastRank) {
-      setPendingPromotion({ orig, dest, color: turn });
-      return;
-    }
+    if (promotion.maybeStart(currentFen, turn, orig, dest)) return;
     play(orig + dest);
-  };
-
-  const completePromotion = (role: Role): void => {
-    if (!pendingPromotion) return;
-    const letter = { queen: 'q', rook: 'r', bishop: 'b', knight: 'n', king: '', pawn: '' }[role];
-    play(pendingPromotion.orig + pendingPromotion.dest + letter);
-    setPendingPromotion(null);
   };
 
   const undo = (): void => {
@@ -431,13 +417,13 @@ function SolutionRecorder({
               check={pos.isCheck()}
               onMove={onMove}
             />
-            {pendingPromotion && (
+            {promotion.pending && (
               <PromotionPicker
-                color={pendingPromotion.color}
-                dest={pendingPromotion.dest}
+                color={promotion.pending.color}
+                dest={promotion.pending.dest}
                 orientation={solverSide}
-                onSelect={completePromotion}
-                onCancel={() => setPendingPromotion(null)}
+                onSelect={promotion.complete}
+                onCancel={promotion.cancel}
               />
             )}
           </div>
