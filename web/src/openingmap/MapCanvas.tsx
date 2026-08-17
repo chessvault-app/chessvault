@@ -72,6 +72,7 @@ export function MapCanvas({
   labels,
   matches,
   selectedId,
+  focus,
   onSelect,
 }: {
   map: OpeningMap;
@@ -91,6 +92,14 @@ export function MapCanvas({
    */
   matches?: ReadonlySet<string> | null;
   selectedId: string | null;
+  /**
+   * What the lit line runs down from: every search hit, or the selection
+   * alone, or nothing. Decided by the view rather than here because the
+   * field sweep is asked to answer these positions FIRST — a line drawn
+   * from one node and fetched for another would be the slowest thing on
+   * the map instead of the fastest.
+   */
+  focus: readonly string[];
   /** A node id, or null for the ground — a press on dead space clears. */
   onSelect: (id: string | null) => void;
 }) {
@@ -669,19 +678,14 @@ export function MapCanvas({
     const favourite = (id: string): string | null =>
       favouriteChild(resolved.nodes.get(id)?.mapNode.children ?? [], (child) => shares.get(child) ?? 0);
 
-    // A search speaks for the whole set of hits; otherwise the selection
-    // speaks for itself. A search with no hits highlights nothing, which
-    // is the right answer to a question with no answer.
-    const from = matches ? [...matches] : selectedId ? [selectedId] : [];
-
     // Walk first. A hit already standing on an earlier hit's line is not
     // a line of its own — it is a place on one — so it starts nothing and
-    // costs nothing. `matches` arrives in the tree's own pre-order, so
+    // costs nothing. `focus` arrives in the tree's own pre-order, so
     // the earlier hit is always the ancestor: the line that contains the
     // other, which is the one that should own the shared stretch.
     const claimed = new Set<string>();
     const lines: { nodes: string[]; edges: string[] }[] = [];
-    for (const start of from) {
+    for (const start of focus) {
       if (claimed.has(start)) continue;
       const line = { nodes: [] as string[], edges: [] as string[] };
       let cursor: string | null = start;
@@ -712,7 +716,7 @@ export function MapCanvas({
       for (const key of line.edges) edges.set(key, paint);
     });
     return { edges, nodes };
-  }, [resolved, shares, matches, selectedId]);
+  }, [resolved, shares, focus]);
 
   /**
    * How present a dot is while a search is running. Faded rather than

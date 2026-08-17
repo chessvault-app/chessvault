@@ -123,7 +123,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
       /* full or blocked storage loses the memo, nothing else */
     }
   };
-  const { gaps, shares, ready: fieldReady } = useGaps(map, resolved, coverage, field.source, field.ratings);
 
   // One label lookup for the whole canvas: each node's own position, as
   // deep as the catalogue can possibly name.
@@ -145,6 +144,56 @@ export function OpeningMapView({ params }: { params: string[] }) {
     }
     return out;
   }, [resolved, names]);
+
+  /**
+   * The search. It matches a node's move, the name you gave it and the
+   * name the catalogue gives its position, so "naj", "Bg5" and "6." all
+   * find something — and it answers by fading the rest of the
+   * constellation rather than by taking you somewhere. Where the hits sit
+   * relative to everything else IS the answer on a map; a result list
+   * that flies you to one dot throws that away.
+   */
+  const [query, setQuery] = useState('');
+  const matches = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle || !resolved) return null;
+    const out = new Set<string>();
+    for (const [id, facts] of resolved.nodes) {
+      const node = facts.mapNode;
+      const move = facts.parentId === null ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
+      const haystack = `${move} ${node.name ?? ''} ${labels.get(id) ?? ''}`.toLowerCase();
+      if (haystack.includes(needle)) out.add(id);
+    }
+    return out;
+  }, [query, resolved, labels]);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // A selection survives edits but not a map switch or its node's deletion.
+  const selected = selectedId && resolved?.nodes.get(selectedId) ? selectedId : null;
+  // The selection's facts, resolved once for everything below that names it.
+  const selectedFacts = selected ? (resolved?.nodes.get(selected) ?? null) : null;
+  useEffect(() => setSelectedId(null), [color]);
+
+  /**
+   * What a line is lit down from. A search speaks for the whole set of
+   * hits; otherwise the selection speaks for itself; a search with no
+   * hits lights nothing, which is the right answer to a question with no
+   * answer.
+   *
+   * It lives here rather than in the canvas because the field sweep is
+   * asked for from here and is told to answer these lines FIRST. The two
+   * readings have to be one reading: a line drawn from one node and
+   * fetched for another would be the last thing on the map to appear.
+   */
+  const focus = useMemo(
+    () => (matches ? [...matches] : selected ? [selected] : []),
+    [matches, selected],
+  );
+  const {
+    gaps,
+    shares,
+    ready: fieldReady,
+  } = useGaps(map, resolved, coverage, field.source, field.ratings, focus);
 
   /**
    * Hold the canvas until its colours are known, then show it once, whole.
@@ -177,35 +226,6 @@ export function OpeningMapView({ params }: { params: string[] }) {
     const deadline = window.setTimeout(() => setRevealed(true), 2500);
     return () => clearTimeout(deadline);
   }, [ready, revealed, mapId]);
-
-  /**
-   * The search. It matches a node's move, the name you gave it and the
-   * name the catalogue gives its position, so "naj", "Bg5" and "6." all
-   * find something — and it answers by fading the rest of the
-   * constellation rather than by taking you somewhere. Where the hits sit
-   * relative to everything else IS the answer on a map; a result list
-   * that flies you to one dot throws that away.
-   */
-  const [query, setQuery] = useState('');
-  const matches = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle || !resolved) return null;
-    const out = new Set<string>();
-    for (const [id, facts] of resolved.nodes) {
-      const node = facts.mapNode;
-      const move = facts.parentId === null ? t('Start') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
-      const haystack = `${move} ${node.name ?? ''} ${labels.get(id) ?? ''}`.toLowerCase();
-      if (haystack.includes(needle)) out.add(id);
-    }
-    return out;
-  }, [query, resolved, labels]);
-
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // A selection survives edits but not a map switch or its node's deletion.
-  const selected = selectedId && resolved?.nodes.get(selectedId) ? selectedId : null;
-  // The selection's facts, resolved once for everything below that names it.
-  const selectedFacts = selected ? (resolved?.nodes.get(selected) ?? null) : null;
-  useEffect(() => setSelectedId(null), [color]);
 
   // One way in, with two halves: the explorer-like list, and the field
   // at the foot of it for the move nobody has played yet — the whole
@@ -399,6 +419,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           labels={labels}
           matches={matches}
           selectedId={selected}
+          focus={focus}
           // Pressing the selected dot again lets it go. Selecting is what
           // opens the panel and lights the mainline, so it needs an undo
           // that is the same gesture — hunting for empty canvas to click

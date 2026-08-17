@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { fenKey } from '@/lib/fen';
 import { fetchField, fetchFieldBatch, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import type { NodeCoverage } from './coverage';
 import { computeGaps, type NodeGaps } from './gaps';
+import { chaseFrontier } from './mainline';
 import type { OpeningMap, ResolvedMap } from './model';
 
 /**
@@ -104,6 +105,9 @@ export function useGaps(
   coverage: ReadonlyMap<string, NodeCoverage> | undefined,
   source: string,
   ratings: string,
+  /** Whatever the canvas is lighting a line down from — the selection,
+      or every search hit. The sweep asks about those lines first. */
+  focus: readonly string[],
 ): {
   gaps: ReadonlyMap<string, NodeGaps>;
   /** Per node: how often its move gets played at the parent, 0..1 —
@@ -120,6 +124,14 @@ export function useGaps(
   // ignores it, and a constant key part is harmless there.
   const side = map?.color;
   const keyOf = (fen: string): string => `${source}\n${ratings}\n${side ?? ''}\n${fenKey(fen)}`;
+
+  // Through a ref, because a selection must not restart the sweep: the
+  // effect below is keyed on what is still unanswered, and re-running it
+  // whenever a dot is tapped would throw the lanes' progress away.
+  const focusRef = useRef<readonly string[]>(focus);
+  useEffect(() => {
+    focusRef.current = focus;
+  }, [focus]);
 
   // Every charted position: gap questions apply only where the opponent
   // moves, but move shares (node sizing) need the parent field at every
@@ -245,15 +257,54 @@ export function useGaps(
       queue.push(...unanswered);
     };
 
+    /**
+     * What to ask about next, and why the lit line is not last.
+     *
+     * The queue is the whole map shallowest-first, which is the right
+     * order for colouring the picture and the wrong one for answering a
+     * question. Picking a dot lights the line running down from it, and
+     * every edge of that line waits on the position above it: in queue
+     * order those positions sit one whole ply-level of the map apart, so
+     * against the online source — one request per position, two lanes,
+     * a third of a second each — the line grew an edge every several
+     * seconds and finished last of all. The map is still swept; the
+     * line just goes first, because it is the only part of the picture
+     * somebody is waiting on.
+     */
+    const nextWanted = (): { fen: string; chased: boolean } | undefined => {
+      const focused = focusRef.current;
+      if (resolved && focused.length > 0) {
+        const [target] = chaseFrontier(
+          resolved.nodes,
+          focused,
+          (fen) => cache.get(keyOf(fen)),
+          // Out already, or refused recently: this line is as fast as it
+          // is going to be, and asking again would only take a lane off
+          // another one.
+          (fen) =>
+            inflight.has(keyOf(fen)) || Date.now() - (failedAt.get(keyOf(fen)) ?? 0) < RETRY_MS,
+        );
+        // Left in the queue: it answers from the cache when its turn
+        // comes, which costs a loop and no request.
+        if (target) return { fen: target.fen, chased: true };
+      }
+      const next = queue.shift();
+      return next && { fen: next.fen, chased: false };
+    };
+
     const worker = async (): Promise<void> => {
       for (;;) {
-        const next = queue.shift();
+        const next = nextWanted();
         if (!next || !live) return;
         // fieldMovesFor caches, and answers empty on an unreachable
         // field — a shrug, not an error banner.
         await fieldMovesFor(source, ratings, next.fen, side);
         done += 1;
-        if (live && (done >= 12 || Date.now() - published > 500)) publish();
+        // A chased answer is one edge of the lit line and the only thing
+        // that draws it, so it is published on the spot rather than at
+        // the sweep's pace — one render for one edge, which is what the
+        // edge costs however it is timed.
+        if (live && (next.chased || done >= 12 || Date.now() - published > 500)) publish();
       }
     };
     // The Lichess proxy rate-limits; two lanes make a burst of thirty
