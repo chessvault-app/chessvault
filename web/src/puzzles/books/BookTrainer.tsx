@@ -51,6 +51,7 @@ import { Modal } from '@/ui/Modal';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
 
 import { judgeBookMove, type BookSolution } from '../bookJudge';
 
@@ -362,17 +363,27 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node?.fen]);
 
+  // Declared before the early return below — hooks must run in the same
+  // order every render, and the branch it feeds is one of the returns.
+  const pending = useSlowLoad(book === null || !puzzle || !tree || !node || !pos);
+
   if (book === null || !puzzle || !tree || !node || !pos) {
     // A puzzle needs BOTH the book and the solutions, which arrive in two
     // requests — so "no such puzzle" may only be said once both are in.
     // Judging it on `puzzle` alone flashed the message at every puzzle
     // that does exist, in the gap between the two.
     const missing = book !== null && solutions !== null && (index < 0 || !answer);
-    return (
-      <div className="text-subtle grid h-full place-items-center text-sm">
-        {missing ? t('That puzzle does not exist.') : <Loader2 className="size-5 animate-spin" />}
-      </div>
-    );
+    if (missing) {
+      return (
+        <div className="text-subtle grid h-full place-items-center text-sm">
+          {t('That puzzle does not exist.')}
+        </div>
+      );
+    }
+    // The trainer is a board beside its panel, so the wait is that shape
+    // rather than a spinner in the middle of an empty page — the columns
+    // settle before the position arrives instead of snapping when it does.
+    return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
 
   const solverSide = parseFen(puzzle.fen).unwrap().turn;

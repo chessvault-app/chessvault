@@ -9,7 +9,6 @@ import {
   Eye,
   LayoutGrid,
   Lightbulb,
-  Loader2,
   RotateCw,
   Swords,
   X,
@@ -39,6 +38,7 @@ import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { Skeleton } from '@/ui/Skeleton';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { HubPage } from './HubPage';
@@ -602,26 +602,29 @@ function Trainer({
                 autoShapes={hintShapes}
                 onMove={onMove}
               />
-            ) : (
+            ) : error ? (
+              // What happened, and a way to go again — a dead end here
+              // used to need a full page reload to recover from.
               <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
-                {error ? (
-                  // What happened, and a way to go again — a dead end here
-                  // used to need a full page reload to recover from.
-                  <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                    <p className="text-muted text-xs">{error}</p>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void loadNext(theme, difficulty)}
-                    >
-                      <RotateCw className="size-3.5" />
-                      {t('Try again')}
-                    </Button>
-                  </div>
-                ) : (
-                  <Loader2 className="text-subtle size-6 animate-spin" />
-                )}
+                <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
+                  <p className="text-muted text-xs">{error}</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void loadNext(theme, difficulty)}
+                  >
+                    <RotateCw className="size-3.5" />
+                    {t('Try again')}
+                  </Button>
+                </div>
               </div>
+            ) : (
+              // The bare Skeleton and not SkeletonBoard: the page around
+              // this is already drawn — its header, its panel, its bottom
+              // band — and only the board itself is still missing. A whole
+              // page's skeleton dropped into a board's slot would draw a
+              // second header inside the first.
+              <Skeleton className="aspect-square w-full rounded-xl" />
             )}
             {promotion.pending && (
               <PromotionPicker

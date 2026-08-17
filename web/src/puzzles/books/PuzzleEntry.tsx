@@ -37,6 +37,7 @@ import {
 import { featuresFromImage, loadImage } from '../ocr/browser';
 
 import { PaneTabs } from '@/ui/PaneTabs';
+import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
 
 import { evaluateWhitePov, releaseAdjudicator } from '@/engine/adjudicate';
 
@@ -63,12 +64,11 @@ export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: st
     void loadBook(slug).then(setBook);
   }, [slug]);
   const puzzle = book?.puzzles.find((p) => p.id === puzzleId);
+  const pending = useSlowLoad(!book);
   if (!book) {
-    return (
-      <div className="text-subtle grid h-full place-items-center">
-        <Loader2 className="size-5 animate-spin" />
-      </div>
-    );
+    // The correction screen is a board beside its panel, like the trainer
+    // it corrects; the wait takes that shape rather than a spinner.
+    return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
   if (!puzzle) {
     return <div className="text-muted grid h-full place-items-center text-sm">{t('Puzzle not found.')}</div>;
