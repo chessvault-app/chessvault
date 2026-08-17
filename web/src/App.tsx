@@ -18,13 +18,14 @@ import {
   SwatchBook,
   Wrench,
 } from 'lucide-react';
-import { Fragment, Suspense, useEffect, useState } from 'react';
+import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
 import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/ui/MobileActionBar';
+import { Button } from '@/ui/Button';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { ShortcutsHelp } from '@/ui/ShortcutsHelp';
 import { LeaveSheet } from '@/ui/LeaveSheet';
@@ -183,6 +184,7 @@ function Shell() {
           over a local network and usually arrives before a paint; a
           skeleton here would flash on every single navigation.
         */}
+        <RouteErrorBoundary key={section}>
         <Suspense fallback={<div className="h-full" />}>
         {section === 'home' ? (
           <HomePage />
@@ -219,6 +221,7 @@ function Shell() {
           <Placeholder section={section} />
         )}
         </Suspense>
+        </RouteErrorBoundary>
       </main>
 
       <MobileBottom active={section} />
@@ -589,6 +592,47 @@ function MobileNav({ active }: { active: Section }) {
       </button>
     </nav>
   );
+}
+
+/**
+ * The floor under every routed view.
+ *
+ * Without this, anything thrown during render — including the error
+ * lazyRoute deliberately rethrows once its one-reload guard is spent —
+ * unmounted the whole root and left a silent blank window, which is the
+ * exact symptom lazyRoute exists to remove. Keyed on the section by the
+ * caller, so navigating anywhere else discards the crashed instance and
+ * gives the next view a clean start.
+ */
+class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="grid h-full place-items-center p-8">
+        <div className="flex max-w-sm flex-col items-center gap-3 text-center">
+          <div className="bg-surface-2 text-subtle grid size-14 place-items-center rounded-2xl">
+            <Wrench className="size-6" strokeWidth={1.75} />
+          </div>
+          <h1 className="text-lg font-semibold tracking-tight">{t('Something went wrong')}</h1>
+          <p className="text-muted text-sm leading-relaxed">
+            {t('This page hit an error it could not recover from. Reloading usually clears it — nothing in your vault is affected.')}
+          </p>
+          <div className="mt-1 flex gap-2">
+            <Button onClick={() => location.reload()}>{t('Reload')}</Button>
+            <Button variant="ghost" onClick={() => navigate('home')}>
+              {t('Go home')}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
 
 /** Unreachable in practice — every section is routed above, and the router
