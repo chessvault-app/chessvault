@@ -397,8 +397,9 @@ npm install
 npm run dev          # 서버 + 웹, 핫 리로드, http://localhost:5173
 ```
 
-처음 실행하면 Stockfish 엔진 자산을 받습니다(7 MB 라이트 빌드.
-`npm run setup:engine -- --full`로 full 빌드로 바꿀 수 있습니다).
+처음 실행하면 Stockfish 엔진 자산을 `node_modules`에서 복사해
+옵니다(7 MB 라이트 빌드. `npm run setup:engine -- --full`은 그 옆에 full
+빌드를 더해 줍니다).
 
 ## Lichess 토큰 (선택 사항)
 

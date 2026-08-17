@@ -416,8 +416,9 @@ npm install
 npm run dev          # server + web with hot reload, http://localhost:5173
 ```
 
-First run downloads the Stockfish engine assets (7 MB lite build;
-`npm run setup:engine -- --full` swaps in the full-strength one).
+First run copies the Stockfish engine assets out of `node_modules`
+(the 7 MB lite build; `npm run setup:engine -- --full` adds the
+full-strength one beside it).
 
 ## Lichess token (optional)
 

@@ -49,8 +49,8 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
-      # Fetched rather than committed: the demo would ship without an engine
-      # otherwise.
+      # Copied from node_modules rather than committed: the demo would ship
+      # without an engine otherwise.
       - run: npm run setup:engine
 
       # The curated databases are built from the full ones, which are far too
