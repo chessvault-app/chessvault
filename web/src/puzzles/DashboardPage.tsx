@@ -249,7 +249,7 @@ export function DashboardPage() {
             nine buttons. `steady` keeps each from resizing as it is
             changed and shoving the other along the row.
           */}
-          <div className="border-line flex items-center gap-2 border-b px-3 py-2">
+          <div className="border-line flex items-center gap-1.5 border-b px-3 py-2">
             <Select
               value={resultFilter}
               onChange={(v) => setResultFilter(v as ResultFilter)}

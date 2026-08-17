@@ -29,6 +29,7 @@ import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';
 import {
   EMPTY_STRUCTURED_FILTERS,
+  FilterRow,
   hasStructuredFilters,
   matchesStructured,
   ResultSelect,
@@ -755,7 +756,7 @@ export function ArchiveBrowser({
             is currently set without scrolling to look. A select states
             its own value, takes one line whatever the options are, and
             wraps onto a second when the column is narrow. */}
-        <div className="border-line flex flex-wrap items-center gap-1.5 border-t px-3 py-2">
+        <FilterRow className="border-t">
           <Select
             value={month}
             onChange={(m) => void loadMonth(m)}
@@ -847,11 +848,11 @@ export function ArchiveBrowser({
               onClose={() => setEditingFilters(false)}
             />
           )}
-        </div>
+        </FilterRow>
         </div>
       )}
       {((offline && months.length > 0) || error) && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
           {offline && months.length > 0 && (
             <span className="text-warn text-xs">{t('offline — cached months only')}</span>
           )}
