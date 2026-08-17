@@ -8,7 +8,7 @@ than growing with your vault the way everything else does:
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
-| `data/refgames/*.sqlite` | the elite-games browser in Games | ~160 MB per month indexed | the app, on the Databases page (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
+| `data/refgames/*.sqlite` | the elite-games browser, the local explorer, the repertoire trainer and the opening map | ~160 MB per month indexed | the app, on the Databases page (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
 inside the app, and `data/mygames.sqlite` is not even that: the explorer's

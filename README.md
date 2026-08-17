@@ -277,7 +277,7 @@ terminal alternative, not the requirement.
 | Dataset | Lights up | Built by |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | the puzzle trainer | in the app, or `npm run build:puzzles` |
-| `data/refgames/*.sqlite` | the elite browser, the local explorer and the repertoire trainer | a starter set comes with the app; more in the app, or `npm run build:refgames` |
+| `data/refgames/*.sqlite` | the elite browser, the local explorer, the repertoire trainer and the opening map | a starter set comes with the app; more in the app, or `npm run build:refgames` |
 | `data/openings.json` | ECO opening names | the app, on first use |
 
 `data/mygames.sqlite` is not in the table because you never build it: the

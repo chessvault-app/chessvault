@@ -266,7 +266,7 @@ SSH는 공개 인터넷에 두지 마세요. 참조 배포는 방화벽에서 22
 | 데이터 | 켜지는 기능 | 만드는 방법 |
 | --- | --- | --- |
 | `data/puzzles.sqlite` | 퍼즐 트레이너 | 앱 안에서, 또는 `npm run build:puzzles` |
-| `data/refgames/*.sqlite` | 엘리트 브라우저, 로컬 탐색기, 레퍼토리 트레이너 | 시작용 세트가 앱과 함께 옵니다. 더 만들려면 앱 안에서, 또는 `npm run build:refgames` |
+| `data/refgames/*.sqlite` | 엘리트 브라우저, 로컬 탐색기, 레퍼토리 트레이너, 오프닝 맵 | 시작용 세트가 앱과 함께 옵니다. 더 만들려면 앱 안에서, 또는 `npm run build:refgames` |
 | `data/openings.json` | ECO 오프닝 이름 | 앱이 처음 쓸 때 스스로 |
 
 `data/mygames.sqlite`가 표에 없는 이유는 만들 필요가 없기 때문입니다.
