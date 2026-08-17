@@ -415,7 +415,7 @@ function SolutionRecorder({
   };
 
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ${BOARD_WIDE_SHELL}`}>
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
         <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />

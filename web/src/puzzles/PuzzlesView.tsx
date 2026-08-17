@@ -545,7 +545,7 @@ function Trainer({
 
   if (analysing && puzzle) {
     return (
-      <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
+      <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
         <AnalysisBoard />
         <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
           <div className="flex shrink-0 items-center gap-2">
@@ -585,7 +585,7 @@ function Trainer({
   }
 
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
       {/* Stacked layouts lead with the header, convention-style; on wide
           the band lives in the side column so it aligns with the board. */}
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">

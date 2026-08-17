@@ -429,7 +429,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   );
 
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ${BOARD_WIDE_SHELL}`}>
+    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ${BOARD_WIDE_SHELL}`}>
       {/* Stacked: the identity bar stays glued to the top of the page,
           above the board (lanph3re's spec) — wide keeps it in the side column. */}
       {!wide && header}
