@@ -26,6 +26,7 @@ import { Button } from '@/ui/Button';
 import { EmptyState } from '@/ui/EmptyState';
 import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 import { t } from '@/lib/i18n';
+import { api, apiErrorMessage } from '@/lib/api';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
 // pays for it; it loads when a note is actually opened.
@@ -51,13 +52,12 @@ const API = '/api/notes';
  * its indentation and half its meaning.
  */
 async function post(url: string, body: unknown): Promise<string | null> {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (res.ok) return null;
-  return t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'failed');
+  try {
+    await api(url, { method: 'POST', json: body });
+    return null;
+  } catch (error) {
+    return t(apiErrorMessage(error));
+  }
 }
 
 /** Router shell for Notes: the list, or one open note. */
@@ -106,19 +106,19 @@ function NoteList() {
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      const [res, marks] = await Promise.all([
-        fetch(API),
-        fetch(`${API}/bookmarks`).then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null)),
+      const [body, marks] = await Promise.all([
+        api<{ studies: NoteMeta[]; folders: string[] }>(API),
+        // Missing bookmarks are an empty set, not a broken shelf.
+        api<{ ids: string[] }>(`${API}/bookmarks`).catch(() => null),
       ]);
-      const body = (await res.json()) as { studies: NoteMeta[]; folders: string[] };
       setNotes(body.studies);
       setFolders(body.folders);
       setMarked(new Set(marks?.ids ?? []));
       setLoaded(true);
       setError(null);
-    } catch {
+    } catch (error) {
       setLoaded(true);
-      setError(t('vault server unreachable'));
+      setError(t(apiErrorMessage(error)));
     }
   }, []);
 
@@ -134,12 +134,12 @@ function NoteList() {
       else next.add(id);
       return next;
     });
-    const res = await fetch(`${API}/bookmarks/toggle`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    if (!res.ok) await refresh();
+    try {
+      await api(`${API}/bookmarks/toggle`, { method: 'POST', json: { id } });
+    } catch {
+      // The vault disagreed (or was unreachable): put its truth back.
+      await refresh();
+    }
   };
 
   useEffect(() => {
@@ -167,10 +167,17 @@ function NoteList() {
     undoable.remove(
       id.split('/').at(-1)!,
       () => {
-        void fetch(`${API}/${encodeURIComponent(id)}`, { method: 'DELETE' }).then(async () => {
-          unhide(id);
-          await refresh();
-        });
+        void api(`${API}/${encodeURIComponent(id)}`, { method: 'DELETE' })
+          .then(async () => {
+            unhide(id);
+            await refresh();
+          })
+          .catch((error: unknown) => {
+            // The DELETE never landed, so the note still exists; hiding it
+            // any longer would be the shelf lying about the vault.
+            unhide(id);
+            setError(t(apiErrorMessage(error)));
+          });
       },
       () => unhide(id),
     );
@@ -391,15 +398,12 @@ function GroupedNotes({
                 return err;
               }}
               onDelete={async () => {
-                const res = await fetch(`${API}/folders/${encodeURIComponent(folder)}`, {
-                  method: 'DELETE',
-                });
-                const err = res.ok
-                  ? null
-                  : t(
-                      ((await res.json().catch(() => null)) as { error?: string } | null)?.error ??
-                        'failed',
-                    );
+                let err: string | null = null;
+                try {
+                  await api(`${API}/folders/${encodeURIComponent(folder)}`, { method: 'DELETE' });
+                } catch (error) {
+                  err = t(apiErrorMessage(error));
+                }
                 await onChanged();
                 return err;
               }}

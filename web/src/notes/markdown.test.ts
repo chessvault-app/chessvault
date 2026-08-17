@@ -122,4 +122,57 @@ describe('note markdown codec', () => {
       expect(docToMarkdown(markdownToDoc('# Plain\n\nBody.\n'))).toBe('# Plain\n\nBody.\n');
     });
   });
+
+  describe('hostile input', () => {
+    // Notes are user-authored and rendered by a rich editor, and the entire
+    // raw-HTML defence is two settings on the MarkdownIt instance: `html:
+    // false`, and its default validateLink. Nothing else exercises either,
+    // so this block exists to make a future `html: true` (or a laxer custom
+    // validateLink) fail here instead of shipping.
+
+    /** Every link href in the parsed document. */
+    const linkHrefs = (md: string): string[] => {
+      const hrefs: string[] = [];
+      markdownToDoc(md).descendants((node) => {
+        for (const mark of node.marks) {
+          if (mark.type.name === 'link') hrefs.push(String(mark.attrs.href));
+        }
+      });
+      return hrefs;
+    };
+
+    it('keeps a script tag as literal text', () => {
+      const doc = markdownToDoc('Before <script>alert(1)</script> after.\n');
+      // Text, verbatim — the tag never became markup of any kind. (With
+      // html: true the parser meets an html token it has no mapping for
+      // and this parse would not even succeed.)
+      expect(doc.textContent).toContain('<script>alert(1)</script>');
+    });
+
+    it('keeps an event-handler tag as literal text', () => {
+      const doc = markdownToDoc('<img src=x onerror=alert(1)>\n');
+      expect(doc.textContent).toContain('<img src=x onerror=alert(1)>');
+    });
+
+    it('refuses a javascript: href instead of making a link', () => {
+      const md = '[link](javascript:alert(1))\n';
+      // validateLink rejects the scheme, so no link mark exists at all and
+      // the text stays on the page as the literal characters typed.
+      expect(linkHrefs(md)).toEqual([]);
+      expect(markdownToDoc(md).textContent).toContain('[link](javascript:alert(1))');
+      // And an ordinary link still works, so the guard is the scheme check
+      // rather than links being broken across the board.
+      expect(linkHrefs('[ok](https://lichess.org)\n')).toEqual(['https://lichess.org']);
+    });
+
+    it('treats benign inline HTML as literal text too', () => {
+      const doc = markdownToDoc('some <b>bold</b> words\n');
+      expect(doc.textContent).toContain('<b>bold</b>');
+      let bolded = false;
+      doc.descendants((node) => {
+        if (node.marks.some((mark) => mark.type.name === 'bold')) bolded = true;
+      });
+      expect(bolded).toBe(false);
+    });
+  });
 });

@@ -3,6 +3,7 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import type { Node as PmNode } from '@tiptap/pm/model';
 import { navigate } from '@/lib/router';
+import { api } from '@/lib/api';
 
 /**
  * Obsidian-style wiki links: `[[Najdorf Mainlines]]` in a note is styled
@@ -33,9 +34,7 @@ async function resolveAndOpen(target: string): Promise<void> {
   ] as const;
   for (const { section, url } of sections) {
     try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const { studies } = (await res.json()) as { studies: { id: string }[] };
+      const { studies } = await api<{ studies: { id: string }[] }>(url);
       const ids = studies.map((s) => s.id);
       const exact = ids.find((id) => id.toLowerCase() === wanted);
       if (exact) {
@@ -85,9 +84,7 @@ async function allTargets(): Promise<string[]> {
   const items: string[] = [];
   for (const url of ['/api/notes', '/api/studies', '/api/games/docs']) {
     try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const { studies } = (await res.json()) as { studies: { id: string }[] };
+      const { studies } = await api<{ studies: { id: string }[] }>(url);
       items.push(...studies.map((s) => s.id));
     } catch {
       // section unreachable

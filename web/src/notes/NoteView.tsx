@@ -16,6 +16,7 @@ import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from '
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { isUntitled, t } from '@/lib/i18n';
+import { api, apiErrorMessage } from '@/lib/api';
 
 const AUTOSAVE_MS = 1500;
 /** How long after the last edit the pending copy is parked. See the study
@@ -51,22 +52,18 @@ export function NoteView({ id }: { id: string }) {
     setFailed(null);
     setFrontMatter('');
     setRecovery(null);
-    void fetch(`/api/notes/${encodeURIComponent(id)}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`could not open “${id}”`);
-        const { pgn, draft, draftAt } = (await res.json()) as {
-          pgn: string;
-          draft?: string;
-          draftAt?: string;
-        };
+    void api<{ pgn: string; draft?: string; draftAt?: string }>(
+      `/api/notes/${encodeURIComponent(id)}`,
+    )
+      .then(({ pgn, draft, draftAt }) => {
         if (cancelled) return;
         setFrontMatter(splitFrontMatter(pgn).front);
         setLoaded(pgn);
         setInitialDoc(markdownToDoc(pgn).toJSON() as object);
         if (draft && draftAt) setRecovery({ pgn: draft, at: draftAt });
       })
-      .catch((error: Error) => {
-        if (!cancelled) setFailed(error.message);
+      .catch(() => {
+        if (!cancelled) setFailed(t('could not open “{id}”', { id }));
       });
     return () => {
       cancelled = true;
@@ -180,16 +177,15 @@ function NoteEditor({
   };
   const dropPark = (): void => {
     cancelPark();
-    void fetch(`/api/notes/${encodeURIComponent(id)}?draft=1`, { method: 'DELETE' }).catch(() => {});
+    void api(`/api/notes/${encodeURIComponent(id)}?draft=1`, { method: 'DELETE' }).catch(() => {});
   };
   const schedulePark = (markdown: string): void => {
     cancelPark();
     parkTimer.current = setTimeout(() => {
       parkTimer.current = null;
-      void fetch(`/api/notes/${encodeURIComponent(id)}?draft=1`, {
+      void api(`/api/notes/${encodeURIComponent(id)}?draft=1`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pgn: markdown }),
+        json: { pgn: markdown },
         // A crash net that cannot reach the server is simply not there;
         // the badge already says the work is unsaved.
       }).catch(() => {});
@@ -242,18 +238,17 @@ function NoteEditor({
     // park cannot fire afterwards and re-park what is now on disk.
     cancelPark();
     try {
-      const res = await fetch(`/api/notes/${encodeURIComponent(id)}`, {
+      await api(`/api/notes/${encodeURIComponent(id)}`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pgn: markdown }),
+        json: { pgn: markdown },
       });
       // The baseline moves only when the write LANDED. It used to be set
       // before the request went out, so a failed save left the note
       // claiming the unwritten text was what the vault had — harmless
       // while nothing read the baseline, wrong the moment discard does.
-      if (res.ok) lastSaved.current = markdown;
-      setSaveState(res.ok ? 'saved' : 'error');
-      return res.ok;
+      lastSaved.current = markdown;
+      setSaveState('saved');
+      return true;
     } catch {
       setSaveState('error');
       return false;
@@ -412,17 +407,13 @@ function NoteTitle({ id }: { id: string }) {
     const next = draft.trim();
     if (!next || next === name) return;
     const to = folder ? `${folder}/${next}` : next;
-    const res = await fetch('/api/notes/move', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ from: id, to }),
-    });
-    // navigateNow: a rename lands on the SAME note under a new id, so there
-    // is nothing to ask about leaving.
-    if (res.ok) navigateNow('notes', encodeURIComponent(to));
-    else {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setFailure(t(body?.error ?? 'could not rename'));
+    try {
+      await api('/api/notes/move', { method: 'POST', json: { from: id, to } });
+      // navigateNow: a rename lands on the SAME note under a new id, so
+      // there is nothing to ask about leaving.
+      navigateNow('notes', encodeURIComponent(to));
+    } catch (error) {
+      setFailure(t(apiErrorMessage(error)));
     }
   };
 
