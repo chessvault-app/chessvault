@@ -134,7 +134,7 @@ export function AnnotationPane({
   };
 
   return (
-    <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-2 py-2', className)}>
+    <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-3 py-2', className)}>
       {!atRoot && paletteOpen && palette}
       <div className="flex items-stretch gap-1">
         {!atRoot && toggle}
