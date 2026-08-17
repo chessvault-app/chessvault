@@ -82,11 +82,15 @@ trainer picks a puzzle, not a verdict to hand back to whoever solved it.
 
 Both of these, every time, before the version is bumped:
 
-**Audit the repo against this file.** Grep every tracked file for absolute
-paths, hostnames, addresses and tokens. Check that nothing new is
-per-book code, one-machine tooling, or a user action that needs a shell.
-Check no UI has started showing a rating. The point is to catch drift
-while it is one line, not at the moment of publishing.
+**Audit the repo against this file.** `npm run verify` now does the two
+mechanical halves on every push and pull request — `check:repo` greps every
+tracked file for absolute paths and credentials, and fails on a rating
+rendered without `bandOf()`. Both are tripwires for the shapes those
+mistakes actually take, not proofs, so the reading still matters: check
+that nothing new is per-book code, one-machine tooling, or a user action
+that needs a shell, and that no UI has started showing a rating by a route
+the grep cannot see. The point is to catch drift while it is one line, not
+at the moment of publishing.
 
 **Read the docs and fix what has gone stale.** `README.md`, everything in
 `docs/`, `scripts/ml/README.md`, `desktop/README.md`. Docs rot silently —

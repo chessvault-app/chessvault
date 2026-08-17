@@ -1,0 +1,37 @@
+# The gate that was missing.
+#
+# The other two workflows here package and publish; they run on a version
+# tag, which is far too late to learn that the suite is red. This one runs
+# `npm run verify` — lint, the repo-hygiene checks, typecheck, tests — on
+# every push to main and every pull request, so the checks that already
+# existed finally run without anyone remembering to type them.
+#
+# Deliberately no `setup:engine`: the engine's WASM is a runtime asset for
+# the browser, and the tests that cover eval parsing use recorded output
+# rather than a live search, so downloading it here would buy nothing.
+name: verify
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+# Read-only: this workflow reports, it never writes to the repository.
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm run verify
