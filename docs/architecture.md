@@ -102,8 +102,9 @@ puzzle pool and the reference games; [databases](databases.md) covers how
 each machine comes by them (the app builds both — the puzzle pool from
 the public dump, reference games from uploaded PGN collections — and the
 desktop installer seeds starters besides). Desktop builds
-update from a feed the server hosts at `/updates`, so releases need no
-third party and no public repository.
+update from this repository's GitHub releases; a server can host its own
+feed at `/updates` instead, for anyone who would rather not use them
+(see [desktop/README.md](../desktop/README.md)).
 
 Backups are layered: `vault/.history.git` (per-change undo), host
 snapshots, and `scripts/backup-vault.sh` for an off-host pull.
