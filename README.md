@@ -116,7 +116,8 @@ is one connected body of work, and the links are what make it that.
   actions), chess.com/Lichess-style.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
-end · `f` flip board.
+end · `f` flip board · `Enter` play the typed move · `Ctrl/⌘ S` save ·
+`Esc` close the open window · `?` this list, inside the app.
 
 ## Two ways to run it
 
