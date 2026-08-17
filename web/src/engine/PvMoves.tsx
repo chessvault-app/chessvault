@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { figurine } from '@/analysis/MoveTreePane';
+import { figurine } from '@/analysis/notation';
 import { cn } from '@/lib/cn';
 import { fenAfter, type PvPly } from './pv.ts';
 

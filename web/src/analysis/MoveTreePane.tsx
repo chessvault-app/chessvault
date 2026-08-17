@@ -9,27 +9,7 @@ import { useReview } from '@/store/review';
 import { useBookTags } from '@/lib/opening';
 import { t } from '@/lib/i18n';
 
-/** Glyphs for the NAGs a study realistically uses. */
-export const NAG_GLYPH: Record<number, string> = {
-  1: '!',
-  2: '?',
-  // Standard ASCII pairs, matching the board badges (BOARD_NAGS) so a move's
-  // mark reads identically in the tree and on the board.
-  3: '!!',
-  4: '??',
-  5: '!?',
-  6: '?!',
-  7: '□',
-  10: '=',
-  13: '∞',
-  14: '⩲',
-  15: '⩱',
-  16: '±',
-  17: '∓',
-  18: '+−',
-  19: '−+',
-  22: '⨀',
-};
+import { figurine, NAG_GLYPH } from './notation';
 
 /** Colour for the quality NAGs, matching board badges and the eval graph. */
 const NAG_CLASS: Record<number, string> = {
@@ -87,11 +67,6 @@ export function SidelinesToggle() {
     </button>
   );
 }
-
-const FIGURINE: Record<string, string> = { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' };
-
-/** SAN with figurines — uppercase piece letters never mean anything else. */
-export const figurine = (san: string): string => san.replace(/[KQRBN]/g, (m) => FIGURINE[m]!);
 
 /**
  * The move list, lichess-style (lanph3re's mock): the mainline is a table —

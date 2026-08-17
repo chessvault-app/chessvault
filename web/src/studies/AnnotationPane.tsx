@@ -2,7 +2,7 @@ import { TextArea } from '@/ui/Input';
 import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getNode } from '@shared/tree';
-import { NAG_GLYPH } from '@/analysis/MoveTreePane';
+import { NAG_GLYPH } from '@/analysis/notation';
 import { cn } from '@/lib/cn';
 import { useAnalysis } from '@/store/analysis';
 import { autoFocusField } from '@/lib/media';
