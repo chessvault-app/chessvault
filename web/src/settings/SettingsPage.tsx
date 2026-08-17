@@ -8,6 +8,7 @@ import { PageShell } from '@/ui/PageShell';
 import { ClearableInput, Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Select } from '@/ui/Select';
+import { SettingRow } from '@/ui/SettingRow';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -376,17 +377,14 @@ function DesktopCard() {
   if (!shell?.switchVault) return null;
   return (
     <Card icon={MonitorSmartphone} title={t('Desktop app')}>
-      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{t('Vault')}</div>
-          <div className="text-subtle text-xs">
-            {t('Point this window at a server, or host a folder on this machine.')}
-          </div>
-        </div>
+      <SettingRow
+        title={t('Vault')}
+        blurb={t('Point this window at a server, or host a folder on this machine.')}
+      >
         <Button variant="secondary" size="sm" onClick={() => void shell.switchVault!()}>
           {t('Switch…')}
         </Button>
-      </div>
+      </SettingRow>
     </Card>
   );
 }
@@ -493,17 +491,16 @@ function AppearanceCard() {
         />
       </Field>
 
-      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{t('Board coordinates')}</div>
-          <div className="text-subtle text-xs">{t('File and rank labels on the board edge.')}</div>
-        </div>
+      <SettingRow
+        title={t('Board coordinates')}
+        blurb={t('File and rank labels on the board edge.')}
+      >
         <Switch
           checked={coordinates}
           onToggle={() => setCoordinates(!coordinates)}
           label={t('Board coordinates')}
         />
-      </div>
+      </SettingRow>
 
     </Card>
   );
@@ -529,19 +526,16 @@ function DocumentsCard() {
 
   return (
     <Card icon={Save} title={t('Documents')}>
-      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{t('Auto-save')}</div>
-          <div className="text-subtle text-xs">
-            {t('Write changes to the vault as you make them. Off, they wait for you to save.')}
-          </div>
-        </div>
+      <SettingRow
+        title={t('Auto-save')}
+        blurb={t('Write changes to the vault as you make them. Off, they wait for you to save.')}
+      >
         <Switch
           checked={autosave}
           onToggle={() => setAutosave(!autosave)}
           label={t('Auto-save')}
         />
-      </div>
+      </SettingRow>
     </Card>
   );
 }
@@ -581,29 +575,21 @@ function SoundCard() {
 
   return (
     <Card icon={Volume2} title={t('Sound')}>
-      <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{t('Move sounds')}</div>
-          <div className="text-subtle text-xs">{t('Play a click on moves and captures.')}</div>
-        </div>
+      <SettingRow title={t('Move sounds')} blurb={t('Play a click on moves and captures.')}>
         <Switch checked={sound} onToggle={() => setSound(!sound)} label={t('Move sounds')} />
-      </div>
+      </SettingRow>
 
       {/* Only where the browser has the API at all (Android, in practice).
           iOS Safari has no web haptics, and a switch that can only ever
           no-op is worse than an absent one. */}
       {'vibrate' in navigator && (
-        <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
-          <div className="min-w-0">
-            <div className="text-sm font-medium">{t('Vibrate on moves')}</div>
-            <div className="text-subtle text-xs">{t('One short tick when your piece lands.')}</div>
-          </div>
+        <SettingRow title={t('Vibrate on moves')} blurb={t('One short tick when your piece lands.')}>
           <Switch
             checked={haptics}
             onToggle={() => setHaptics(!haptics)}
             label={t('Vibrate on moves')}
           />
-        </div>
+        </SettingRow>
       )}
 
       <label className={cn('grid gap-1', !sound && 'opacity-50')}>

@@ -744,7 +744,7 @@ function Trainer({
                 onClick={() => navigate('puzzles', 'themes')}
                 className={cn(
                   'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-                  'border-line border px-2.5 py-2 text-left transition-colors duration-100',
+                  'border-line border px-3 py-2.5 text-left transition-colors duration-100',
                 )}
               >
                 <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
