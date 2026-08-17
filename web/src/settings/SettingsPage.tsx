@@ -29,8 +29,10 @@ interface Settings {
   version: string;
 }
 
-/** A change that rotated the session secret: every cookie is dead, so the
-    cleanest continuation is the lock screen with fresh state. */
+/** This tab's session just stopped being honoured — a credential change
+    revoked every session, or Sign out revoked this one — so the cleanest
+    continuation is the lock screen with fresh state. The delay gives the
+    feedback note a beat to be read before the reload takes it. */
 const reauth = (): void => {
   setTimeout(() => window.location.reload(), 1200);
 };
@@ -661,7 +663,60 @@ function SecurityCard({ settings, onChanged }: { settings: Settings; onChanged: 
       <PasswordBlock gate={settings.gate} />
       <hr className="border-line" />
       <TotpBlock settings={settings} onChanged={onChanged} />
+      {/* Only when a gate exists: with no password there is no session to
+          end, and a Sign out that reloads into an open app is noise. */}
+      {settings.gate && (
+        <>
+          <hr className="border-line" />
+          <SignOutBlock />
+        </>
+      )}
     </Card>
+  );
+}
+
+/**
+ * The way out of a session from inside the app. /auth/logout genuinely
+ * revokes now (the store forgets this token, so a stolen copy dies with
+ * it) — but nothing called it, which made signing out a user action that
+ * needed a shell. PasswordGate has no relock hook to reach from here (its
+ * 401 handler only fires on an unauthorised api() reply, and logout
+ * answers 200), so this takes the card's own reauth() path: the same
+ * note-then-reload every credential change uses, landing on the lock
+ * screen once the cookie is gone.
+ */
+function SignOutBlock() {
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<Note>(null);
+
+  const signOut = async (): Promise<void> => {
+    setBusy(true);
+    try {
+      await api('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      setBusy(false);
+      return;
+    }
+    // Deliberately still busy: the button must not invite a second press
+    // during the beat before the reload.
+    setNote({ kind: 'ok', text: t('Signed out — back to the lock screen…') });
+    reauth();
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="text-sm font-medium">{t('Sign out')}</span>
+      <p className="text-subtle text-xs">
+        {t('Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.')}
+      </p>
+      <div className="flex items-center gap-3">
+        <Button variant="secondary" disabled={busy} onClick={() => void signOut()}>
+          {t('Sign out')}
+        </Button>
+        <Feedback note={note} />
+      </div>
+    </div>
   );
 }
 

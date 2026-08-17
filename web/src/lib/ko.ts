@@ -1249,6 +1249,10 @@ export const ko: Record<string, string> = {
   "2FA is on — signing you out to the lock screen…": "2단계 인증을 켰습니다 — 잠금 화면으로 보냅니다…",
   "Could not turn 2FA off.": "2단계 인증을 끄지 못했습니다.",
   "2FA is off — signing you out to the lock screen…": "2단계 인증을 껐습니다 — 잠금 화면으로 보냅니다…",
+  "Sign out": "로그아웃",
+  "Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.":
+    "이 기기의 세션을 서버에서 끝냅니다 — 쿠키 사본도 더는 쓸 수 없습니다. 다른 기기는 로그인 상태로 남습니다.",
+  "Signed out — back to the lock screen…": "로그아웃했습니다 — 잠금 화면으로 돌아갑니다…",
   "Could not save the token.": "토큰을 저장하지 못했습니다.",
   "Token saved.": "토큰을 저장했습니다.",
   "Token removed.": "토큰을 삭제했습니다.",
