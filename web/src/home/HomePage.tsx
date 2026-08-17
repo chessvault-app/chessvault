@@ -7,7 +7,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/ui/Button';
 import { Skeleton } from '@/ui/Skeleton';
 import { KnightIcon } from '@/ui/KnightIcon';
-import { difficultyWord } from '@/puzzles/bands';
+import { useDifficultyWord } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
 import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
@@ -117,6 +117,9 @@ export function HomePage() {
     const n = Number(localStorage.getItem(CONTINUE_ROWS_KEY));
     return Number.isInteger(n) && n > 0 && n <= 3 ? n : 0;
   });
+  // Hoisted out of the Continue row it labels: that row is built inside a
+  // conditional spread, and a hook cannot be called from one.
+  const difficultyLabel = useDifficultyWord();
 
   useEffect(() => {
     const grab = async (url: string): Promise<unknown> => {
@@ -278,7 +281,7 @@ export function HomePage() {
                 {
                   icon: Puzzle,
                   label: t('Resume training'),
-                  detail: t(difficultyWord()),
+                  detail: t(difficultyLabel),
                   go: () => navigate('puzzles'),
                 },
               ]

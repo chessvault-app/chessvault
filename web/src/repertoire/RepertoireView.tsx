@@ -1,4 +1,4 @@
-import { parseSquare } from 'chessops/util';
+﻿import { parseSquare } from 'chessops/util';
 import { BookmarkPlus, BookOpen, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Loader2, Microscope, Play, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -24,6 +24,7 @@ import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { SearchInput } from '@/ui/Input';
+import { rememberDrill, rememberedDrill } from '@/lib/training';
 import { autoFocusField } from '@/lib/media';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
@@ -81,37 +82,14 @@ const TEMPLATES: Template[] = [
 type ExplorerMove = FieldMove;
 
 /**
- * The last drilled study and chapter, device-local like the puzzle
- * trainer's difficulty: a user drills the same opening for weeks, so
- * the pickers open on it instead of on the alphabet's first study.
- * Written when a drill starts, not when one is browsed to.
+ * The last drilled study and chapter, kept in the VAULT like the puzzle
+ * trainer's difficulty: a user drills the same opening for weeks, so the
+ * pickers open on it instead of on the alphabet's first study — and they
+ * drill the same opening on the phone as on the desktop, which a memo
+ * kept per browser could not do. Written when a drill starts, not when
+ * one is browsed to. See lib/training.ts for the echo that still answers
+ * before the vault does.
  */
-const DRILL_KEY = 'vault:repertoire-drill';
-
-function readDrillPick(): { study: string; chapter: string } | null {
-  try {
-    const raw = localStorage.getItem(DRILL_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    if (
-      parsed &&
-      typeof (parsed as { study?: unknown }).study === 'string' &&
-      typeof (parsed as { chapter?: unknown }).chapter === 'string'
-    ) {
-      return parsed as { study: string; chapter: string };
-    }
-  } catch {
-    /* an unreadable memo is no memo */
-  }
-  return null;
-}
-
-function writeDrillPick(study: string, chapter: string): void {
-  try {
-    localStorage.setItem(DRILL_KEY, JSON.stringify({ study, chapter }));
-  } catch {
-    /* full or blocked storage loses the memo, nothing else */
-  }
-}
 
 /** Weighted-random pick by game count — the field's move, not the best move. */
 function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
@@ -683,7 +661,7 @@ export function RepertoireView() {
       .then((body: { studies?: { id: string }[] }) => {
         const ids = (body.studies ?? []).map((st) => st.id);
         setStudyList(ids);
-        const remembered = readDrillPick();
+        const remembered = rememberedDrill();
         setDrillStudy(
           (d) => d || (remembered && ids.includes(remembered.study) ? remembered.study : (ids[0] ?? '')),
         );
@@ -704,7 +682,7 @@ export function RepertoireView() {
         const chapters = typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : [];
         setDrillChapters(chapters);
         // The memo names a chapter of THIS study: reopen on it.
-        const remembered = readDrillPick();
+        const remembered = rememberedDrill();
         if (
           remembered &&
           remembered.study === drillStudy &&
@@ -1168,7 +1146,7 @@ export function RepertoireView() {
       const cands = posIndex.get(fenKey(rootFen)) ?? [];
       if (cands.length === 0) return;
       const trunk = trunkOf(scoped, posIndex, cands, rootFen);
-      writeDrillPick(drillStudy, chapterPick);
+      rememberDrill(drillStudy, chapterPick);
       drillRef.current = {
         chapters: scoped,
         posIndex,
@@ -1277,7 +1255,7 @@ export function RepertoireView() {
     const cands = posIndex.get(fenKey(getNode(gameTree, gameId).fen)) ?? [{ ci, nodeId: studyId }];
     const rootFen = getNode(chapter.tree, chapter.tree.rootId).fen;
     const trunk = trunkOf(scoped, posIndex, posIndex.get(fenKey(rootFen)) ?? [], rootFen);
-    writeDrillPick(drillStudy, chapterPick);
+    rememberDrill(drillStudy, chapterPick);
     drillRef.current = {
       chapters: scoped,
       posIndex,

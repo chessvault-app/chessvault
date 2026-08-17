@@ -1,3 +1,6 @@
+import type { DifficultyId } from '@shared/training';
+import { setDifficulty, storedDifficulty, useDifficulty } from '@/lib/training';
+
 /**
  * Difficulty as a word, never a number.
  *
@@ -21,14 +24,15 @@ export const bandOf = (rating: number): string =>
   BANDS.find((b) => rating >= b.min && rating <= b.max)?.label ?? '—';
 
 /**
- * Where the trainer remembers the difficulty it was last set to.
- *
- * Here rather than in the trainer because two other pages read it to say
- * what pressing Train will do, and the eager landing chunk is one of them
- * — this module is the only part of the puzzle tree small enough for it
- * to import.
+ * Where the trainer remembers the difficulty it was last set to: the
+ * VAULT, since the release that moved it there — see lib/training.ts and
+ * shared/training.ts. Re-exported through here because two other pages
+ * read it to say what pressing Train will do, and the eager landing chunk
+ * is one of them; this module is the only part of the puzzle tree small
+ * enough for it to import, so it stays the front door.
  */
-export const DIFFICULTY_KEY = 'vault:puzzle-difficulty';
+export { setDifficulty, storedDifficulty, useDifficulty };
+export type { DifficultyId };
 
 /**
  * What the trainer can be set to, and what each setting ASKS THE SERVER
@@ -57,20 +61,23 @@ export const DIFFICULTIES = [
   { id: 'medium', label: 'Medium', query: { min: 1400, max: 1800 }, hint: '1400–1800' },
   { id: 'hard', label: 'Hard', query: { min: 1800, max: 2200 }, hint: '1800–2200' },
   { id: 'expert', label: 'Expert', query: { min: 2200 }, hint: '2200+' },
-] as const;
-
-export type DifficultyId = (typeof DIFFICULTIES)[number]['id'];
-
-/** The stored setting, or `any` when nothing valid has been chosen. */
-export function storedDifficulty(): DifficultyId {
-  const stored = localStorage.getItem(DIFFICULTY_KEY);
-  return DIFFICULTIES.some((d) => d.id === stored) ? (stored as DifficultyId) : 'any';
-}
+  // `satisfies`, so adding a setting here without teaching the vault about
+  // it is a type error rather than a value the server silently drops on
+  // its way into config.json. `as const` still supplies the literal types
+  // the query builder below narrows on.
+] as const satisfies readonly { id: DifficultyId; label: string; query: object; hint?: string }[];
 
 /** That setting as the word to show for it — English, as `t()`'s key. */
 export function difficultyWord(): string {
-  return DIFFICULTIES.find((d) => d.id === storedDifficulty())!.label;
+  return labelOf(storedDifficulty());
 }
+
+/** The same word, re-rendered when the vault's answer arrives. */
+export function useDifficultyWord(): string {
+  return labelOf(useDifficulty());
+}
+
+const labelOf = (id: DifficultyId): string => DIFFICULTIES.find((d) => d.id === id)!.label;
 
 /**
  * The `/api/puzzles/next` query a setting means, as a leading `?…` or the

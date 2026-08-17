@@ -3,6 +3,7 @@ import { installBuffer } from './nodeShim/buffer.ts';
 import { seedFile } from './nodeShim/fs.ts';
 import { loadDemoDatabases } from './nodeShim/sqlite.ts';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
+import { normaliseTraining, type Training } from '@shared/training';
 import { mountVault } from '../../../server/mountVault.ts';
 import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
@@ -69,8 +70,13 @@ function buildApp(): Hono {
    * the same promise the demo banner already makes about every edit made
    * here — and is validated by the shared normaliser, so the demo cannot
    * accept a layout the real route would refuse.
+   *
+   * Training state is here for the same reason: the difficulty picker is
+   * one of the first things a visitor touches, and a route that 404s would
+   * have the trainer quietly disagree with the word the hub shows.
    */
   let home: HomeLayout | null = null;
+  let training: Training = {};
   app.get('/api/settings', (c) =>
     c.json({
       profile: {},
@@ -78,11 +84,19 @@ function buildApp(): Hono {
       totp: false,
       lichess: { configured: false, last4: null },
       home,
+      training,
       vaultPath: 'demo',
       version: 'demo',
       demo: true,
     }),
   );
+  app.put('/api/settings/training', async (c) => {
+    const body: unknown = await c.req.json().catch(() => null);
+    if (!body || typeof body !== 'object') return c.json({ error: 'invalid training' }, 400);
+    // Merged, exactly like the real route: two pages patch this one object.
+    training = { ...training, ...normaliseTraining(body) };
+    return c.json({ ok: true });
+  });
   app.put('/api/settings/home', async (c) => {
     const next = normaliseHomeLayout(await c.req.json().catch(() => null));
     if (!next) return c.json({ error: 'invalid home layout' }, 400);

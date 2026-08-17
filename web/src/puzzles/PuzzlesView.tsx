@@ -45,9 +45,9 @@ import { ThemesPage, themeLabel } from './ThemesPage';
 import { AnswerPanel } from './AnswerPanel';
 import {
   DIFFICULTIES,
-  DIFFICULTY_KEY,
   bandOf,
   difficultyQuery,
+  setDifficulty as rememberDifficulty,
   storedDifficulty,
   type DifficultyId,
 } from './bands';
@@ -337,7 +337,7 @@ function Trainer({
 
   const pickDifficulty = (id: DifficultyId): void => {
     setDifficulty(id);
-    localStorage.setItem(DIFFICULTY_KEY, id);
+    rememberDifficulty(id);
     void loadNext(theme, id);
   };
 

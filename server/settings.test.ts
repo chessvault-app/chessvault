@@ -125,6 +125,56 @@ describe('home layout', () => {
   });
 });
 
+describe('training', () => {
+  it('reports an empty object for a vault that never trained', async () => {
+    expect((await (await json('GET', '/api/settings')).json()).training).toEqual({});
+  });
+
+  it('round-trips difficulty and the drilled study', async () => {
+    expect((await json('PUT', '/api/settings/training', { difficulty: 'hard' })).status).toBe(200);
+    await json('PUT', '/api/settings/training', { drill: { study: 'openings/najdorf', chapter: 'all' } });
+    const body = await (await json('GET', '/api/settings')).json();
+    expect(body.training).toEqual({
+      difficulty: 'hard',
+      drill: { study: 'openings/najdorf', chapter: 'all' },
+    });
+    expect(config().keepMe).toBe(1);
+    expect(config().appPassword).toBe('hunter22');
+  });
+
+  it('patches rather than replaces', async () => {
+    // The whole reason the route merges: the trainer and the driller write
+    // this object from different pages, and a replace would have each one
+    // forget what the other had just said.
+    await json('PUT', '/api/settings/training', { drill: { study: 's', chapter: '2' } });
+    await json('PUT', '/api/settings/training', { difficulty: 'easy' });
+    const body = await (await json('GET', '/api/settings')).json();
+    expect(body.training).toEqual({ difficulty: 'easy', drill: { study: 's', chapter: '2' } });
+  });
+
+  it('drops values it cannot use without failing the write beside them', async () => {
+    await json('PUT', '/api/settings/training', {
+      difficulty: 'impossible',
+      drill: { study: 'kept', chapter: '0' },
+      unknownField: 'ignored',
+    });
+    const body = await (await json('GET', '/api/settings')).json();
+    expect(body.training).toEqual({ drill: { study: 'kept', chapter: '0' } });
+  });
+
+  it('refuses a body that is not an object', async () => {
+    expect((await json('PUT', '/api/settings/training', 'hard')).status).toBe(400);
+    expect(config().training).toBeUndefined();
+  });
+
+  it('answers for a config somebody broke by hand', async () => {
+    writeFileSync(join(vault, 'config.json'), JSON.stringify({ training: 'nonsense' }));
+    const res = await json('GET', '/api/settings');
+    expect(res.status).toBe(200);
+    expect((await res.json()).training).toEqual({});
+  });
+});
+
 describe('password change', () => {
   it('requires the current password and a sane new one', async () => {
     expect((await json('POST', '/api/settings/password', { current: 'nope', next: 'longenough' })).status).toBe(403);

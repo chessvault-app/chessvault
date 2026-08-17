@@ -22,7 +22,7 @@ import { ProgressBar } from '@/ui/ProgressBar';
 import { t } from '@/lib/i18n';
 import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/ui/KingIcon';
-import { bandOf, difficultyQuery, difficultyWord, storedDifficulty } from './bands';
+import { bandOf, difficultyQuery, storedDifficulty, useDifficultyWord } from './bands';
 import { setPendingPuzzle, type HandoffMode } from './handoff';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
@@ -447,9 +447,11 @@ function Hub() {
   const showBooks = roomForBooks && books.length > 0;
   const showHistory = roomForHistory && history.length > 0;
 
-  // Read at render, not in state: the trainer writes this key and coming
-  // back here re-mounts, so there is nothing to keep in step.
-  const word = difficultyWord();
+  // Subscribed rather than read once: the trainer writes it and coming back
+  // here re-mounts, which used to be the whole story — but the vault owns
+  // it now, and on a device opening this vault for the first time the
+  // answer arrives after this has already drawn the echo.
+  const word = useDifficultyWord();
 
   return (
     // The scrolling family with its column pinned low: `min-h-full` and

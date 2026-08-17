@@ -6,6 +6,7 @@ import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
 import { normaliseHomeLayout } from '../shared/homeLayout.ts';
+import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 
 /**
@@ -31,6 +32,10 @@ interface Config {
       Absent means nobody has ever said, which is not the same as having
       asked for nothing. */
   home?: unknown;
+  /** Puzzle difficulty and the last drilled study — see shared/training.ts.
+      Chess, not screen, so it belongs to the vault and follows you between
+      devices. */
+  training?: unknown;
   [key: string]: unknown;
 }
 
@@ -80,6 +85,7 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       // Normalised on the way out as well as in: a config edited by hand
       // must not be able to hand the page something it cannot draw.
       home: normaliseHomeLayout(config.home),
+      training: normaliseTraining(config.training),
       vaultPath: vaultDir,
       version: APP_VERSION,
     });
@@ -125,6 +131,31 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   api.delete('/settings/home', (c) => {
     writeConfig((config) => {
       delete config.home;
+    });
+    return c.json({ ok: true });
+  });
+
+  // --- training ------------------------------------------------------------
+  // The puzzle trainer's difficulty and the last drilled study. In the vault
+  // for the same reason the home layout is: it describes this vault's chess
+  // rather than one screen, so picking Hard on the desktop is still Hard on
+  // the phone.
+
+  /**
+   * A PATCH, not a replacement.
+   *
+   * Difficulty and the drill memo are written by different pages at
+   * different moments, so a whole-object write would have the trainer
+   * silently forget which study was being drilled (and the driller forget
+   * the difficulty) every time either one was touched. Merging also means
+   * an older client that has never heard of a field cannot amputate it.
+   */
+  api.put('/settings/training', async (c) => {
+    const body: unknown = await c.req.json().catch(() => null);
+    if (!body || typeof body !== 'object') return c.json({ error: 'invalid training' }, 400);
+    const patch = normaliseTraining(body);
+    writeConfig((config) => {
+      config.training = { ...normaliseTraining(config.training), ...patch };
     });
     return c.json({ ok: true });
   });
