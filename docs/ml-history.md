@@ -51,7 +51,7 @@ the reason the later work landed where it mattered.
 
 - **Solution-constrained repair** (measure `--repair`): the validated
   solution text is a checksum strong enough to find misread cells. Try
-  runner-up labels (TTA-vote-prioritised) for 1–2 cells; accept only a
+  runner-up labels (TTA-vote-prioritised) for 1–3 cells; accept only a
   unique position that replays the whole line. 1001: +30. Woodpecker:
   +141. Ambiguous ties (several positions replay) are never guessed —
   they export as candidates and the **import's engine settles them**

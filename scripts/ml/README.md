@@ -31,8 +31,8 @@ hints that `autoimport-measure --glyph-hints` applies as pass 3 — +24
 validated over the text-only dialect. Stage 3 (`--repair` on the
 measure): solution-constrained board repair — ~99.4% per-cell accuracy
 leaves ~1/3 of boards with a wrong cell or two, so failed replays retry
-with the classifier's runner-up labels (1-cell anywhere, 2-cell among the
-20 shakiest), accepting only a UNIQUE position that replays the book's
+with the classifier's runner-up labels (1 cell anywhere, then 2 among the
+20 shakiest and 3 among the 12), accepting only a UNIQUE position that replays the book's
 whole line; +30 more validated, multi-candidate cases left alone.
 
 ## Diagram-side model (CellNet)

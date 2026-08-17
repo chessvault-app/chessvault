@@ -54,9 +54,9 @@ engine-backed tiers or drafts — nothing is silently dropped.
      pieces, learned from this book's own validated entries);
    - pass 3: `--glyph-hints` (image-read figurine glyphs, see below);
    - pass 4: `--repair` — solution-constrained board repair: retry the
-     line under the classifier's runner-up labels (1-cell anywhere,
-     2-cell among the least-confident, test-time-augmentation votes
-     prioritised); accept only a UNIQUE working position; ties export
+     line under the classifier's runner-up labels (1 cell anywhere, then
+     2 and 3 cells among the least-confident, test-time-augmentation
+     votes prioritised); accept only a UNIQUE working position; ties export
      as `repairCandidates`.
    `--jobs N` shards page reads and the repair search across N child
    processes. Reads cache to `<slug>-reads.json` (with rects and sides);
