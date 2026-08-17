@@ -5,6 +5,7 @@ import {
   type DifficultyId,
   type DrillPick,
 } from '@shared/training';
+import { api } from '@/lib/api';
 
 /**
  * The vault's training state, on this device.
@@ -107,11 +108,7 @@ export function useDifficulty(): DifficultyId {
     anyone over, and the echo means this device still behaves correctly. */
 async function patch(body: Partial<{ difficulty: DifficultyId; drill: DrillPick }>): Promise<void> {
   try {
-    await fetch('/api/settings/training', {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    await api('/api/settings/training', { method: 'PUT', json: body });
   } catch {
     /* offline — the echo already holds it, and the next change tries again */
   }
@@ -133,9 +130,11 @@ async function patch(body: Partial<{ difficulty: DifficultyId; drill: DrillPick 
 export async function hydrateTraining(): Promise<void> {
   let training;
   try {
-    const res = await fetch('/api/settings');
-    if (!res.ok) return;
-    training = normaliseTraining(((await res.json()) as { training?: unknown }).training);
+    // Runs at boot, before PasswordGate has registered api()'s 401
+    // handler — so a gated vault's 401 stays a quiet throw here, exactly
+    // the silence this function promises.
+    const body = await api<{ training?: unknown }>('/api/settings');
+    training = normaliseTraining(body.training);
   } catch {
     return;
   }

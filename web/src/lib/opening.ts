@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { MoveTree, NodeId } from '@shared/types';
+import { api } from '@/lib/api';
 
 /**
  * The name of the opening a line has reached.
@@ -60,15 +61,10 @@ function lookupMany(fens: string[]): Promise<void> {
     const chunk = fresh.slice(at, at + 500);
     const request = (async () => {
       try {
-        const res = await fetch('/api/opening/batch', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ fens: chunk }),
-        });
-        const body = (await res.json()) as {
+        const body = await api<{
           positions?: { fen: string; opening?: { eco: string; name: string } | null; book?: boolean }[];
-        };
-        if (!res.ok || !body?.positions) throw new Error('opening lookup failed');
+        }>('/api/opening/batch', { method: 'POST', json: { fens: chunk } });
+        if (!body?.positions) throw new Error('opening lookup failed');
         const answered = new Map(body.positions.map((p) => [p.fen, p]));
         for (const fen of chunk) {
           const hit = answered.get(fen);
