@@ -5,6 +5,7 @@ import { Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, Sav
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
+import { Field } from '@/ui/Field';
 import { ClearableInput, Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Select } from '@/ui/Select';
@@ -153,27 +154,20 @@ function Card({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-muted text-xs font-medium">{label}</span>
-      {children}
-    </label>
-  );
-}
-
 /**
  * A labelled GROUP of controls, which must not be a <label>.
  *
  * Clicking the dead space in a label activates its first labelable
  * descendant — so a row of theme swatches inside one meant that clicking
  * beside them silently pressed the first swatch and reset the colours to
- * default. A label points at one control; this points at several.
+ * default. A label points at one control; this points at several — which
+ * is also why it cannot be ui/Field, whose label wires itself to one
+ * child. The label voice matches ui/Field's so the two read as one form.
  */
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1" role="group" aria-label={label}>
-      <span className="text-muted text-xs font-medium">{label}</span>
+      <span className="text-subtle text-[0.6875rem] font-medium">{label}</span>
       {children}
     </div>
   );
@@ -206,14 +200,14 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
 
   return (
     <Card icon={User} title={t('Profile')}>
-      <Field label={t('Display name')}>
+      <Field label="Display name">
         <ClearableInput inputSize="lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('How the app greets you')} />
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t('chess.com username')}>
+        <Field label="chess.com username">
           <ClearableInput inputSize="lg" value={chesscom} onChange={(e) => setChesscom(e.target.value)} placeholder={t('your chess.com handle')} autoCapitalize="none" />
         </Field>
-        <Field label={t('Lichess username')}>
+        <Field label="Lichess username">
           <ClearableInput inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess handle')} autoCapitalize="none" />
         </Field>
       </div>
@@ -401,7 +395,7 @@ function AppearanceCard() {
     <Card icon={Palette} title={t('Appearance')}>
       {/* Language leads: it changes every other label on this page, so
           reading it first is what makes the rest of the card make sense. */}
-      <Field label={t('App language')}>
+      <Field label="App language">
         <Select
           value={getLang()}
           onChange={(v) => setLang(v as Lang)}
@@ -410,7 +404,7 @@ function AppearanceCard() {
         />
       </Field>
 
-      <Field label={t('App theme')}>
+      <Field label="App theme">
         <Select
           value={theme}
           onChange={(v) => setTheme(v as ThemePreference)}
@@ -460,7 +454,7 @@ function AppearanceCard() {
         </div>
       </FieldGroup>
 
-      <Field label={t('Board')}>
+      <Field label="Board">
         <div className="flex items-center gap-3">
           <BoardPreview theme={boardTheme} />
           <Select
@@ -473,7 +467,7 @@ function AppearanceCard() {
         </div>
       </Field>
 
-      <Field label={t('Castling')}>
+      <Field label="Castling">
         <Select
           value={castleStyle}
           onChange={(v) => setCastleStyle(v as CastleStyle)}
@@ -482,7 +476,7 @@ function AppearanceCard() {
         />
       </Field>
 
-      <Field label={t('Pieces')}>
+      <Field label="Pieces">
         <Select
           value={pieces}
           onChange={(v) => setPieces(v as PieceSet)}
@@ -614,7 +608,7 @@ function SoundCard() {
         />
       </label>
 
-      <Field label={t('Move sound')}>
+      <Field label="Move sound">
         <Select
           value={moveSound}
           onChange={(v) => {
@@ -626,7 +620,7 @@ function SoundCard() {
         />
       </Field>
 
-      <Field label={t('Capture sound')}>
+      <Field label="Capture sound">
         <Select
           value={captureSound}
           onChange={(v) => {
@@ -704,15 +698,15 @@ function PasswordBlock({ gate }: { gate: boolean }) {
         </p>
       )}
       {gate && (
-        <Field label={t('Current password')}>
+        <Field label="Current password">
           <Input inputSize="lg" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
         </Field>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t('New password')}>
+        <Field label="New password">
           <Input inputSize="lg" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
         </Field>
-        <Field label={t('Repeat new password')}>
+        <Field label="Repeat new password">
           <Input inputSize="lg" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
         </Field>
       </div>
