@@ -137,7 +137,7 @@ export function MoveTreePane({ className }: { className?: string }) {
         )}
       >
         {isEmpty ? (
-          <p className="text-subtle px-2 py-6 text-center text-xs">
+          <p className="text-subtle px-3 py-6 text-center text-xs">
             {t('Play a move on the board, or load a FEN or PGN.')}
           </p>
         ) : (

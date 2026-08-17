@@ -118,7 +118,7 @@ export function TagPicker({
               at 20rem would leave the bottom third of it empty. */}
           <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
             {rows[kind] === null ? null : list.length === 0 ? (
-              <p className="text-muted px-1 py-4 text-center text-xs">
+              <p className="text-muted px-2 py-4 text-center text-xs">
                 {t('Nothing here matches.')}
               </p>
             ) : (

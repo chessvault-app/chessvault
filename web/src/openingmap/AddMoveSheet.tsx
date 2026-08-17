@@ -157,7 +157,7 @@ export function AddMoveSheet({
           that the bands meet. The panel's table is the same. */}
       <div className={cn(LIST, 'min-h-0 grow content-start overflow-y-auto sm:max-h-72')}>
         {field === null ? null : rows.length === 0 ? (
-          <p className="text-muted col-span-3 px-1 py-3 text-center text-xs">
+          <p className="text-muted col-span-3 px-2 py-4 text-center text-xs">
             {t('Nothing to offer — type the move instead.')}
           </p>
         ) : (

@@ -419,7 +419,7 @@ export function PuzzleList({
         {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}
       </div>
       {visible.length === 0 && (
-        <p className="text-subtle p-4 text-center text-xs">{t('Nothing matches these filters.')}</p>
+        <p className="text-subtle px-3 py-6 text-center text-xs">{t('Nothing matches these filters.')}</p>
       )}
     </>
   );
