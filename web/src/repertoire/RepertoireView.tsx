@@ -23,7 +23,8 @@ import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/cn';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { Input } from '@/ui/Input';
+import { SearchInput } from '@/ui/Input';
+import { autoFocusField } from '@/lib/media';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Sheet } from '@/ui/Sheet';
@@ -368,9 +369,13 @@ function OpeningPicker({
       {open &&
         (() => {
           // One search box and one list, whichever container they open in.
+          // A real SearchInput: it filters the list live, so it gets the
+          // X and Cancel every other live filter carries. Desktop-only
+          // autofocus, per the search-field rule — on a phone the sheet
+          // opens to browse the list, not with a keyboard over it.
           const searchBox = (
-            <Input
-              autoFocus
+            <SearchInput
+              autoFocus={autoFocusField()}
               inputSize="sm"
               className="w-full"
               value={query}
