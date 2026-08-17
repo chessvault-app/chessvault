@@ -135,6 +135,7 @@ function PuzzleCard({
   side,
   title,
   detail,
+  compact,
   go,
 }: {
   /** The position the solver faces, ready to draw. */
@@ -142,6 +143,8 @@ function PuzzleCard({
   side: 'white' | 'black';
   title: string;
   detail?: string;
+  /** Smaller board, for a screen that cannot hold three full ones. */
+  compact?: boolean;
   go: () => void;
 }) {
   return (
@@ -159,7 +162,10 @@ function PuzzleCard({
         orientation={side}
         viewOnly
         coordinates={false}
-        className="w-32 shrink-0 rounded-md"
+        // Complete literals, both of them: the Tailwind scanner reads
+        // class names out of this file and would never emit one that was
+        // assembled from pieces.
+        className={cn('shrink-0 rounded-md', compact ? 'w-24' : 'w-32')}
       />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-fg text-sm font-medium">{title}</span>
@@ -392,6 +398,41 @@ function Hub() {
   // #/puzzles shows the setup gate when there is nothing to train on.
   const ready = meta?.ready !== false;
   const failed = meta?.failed ?? 0;
+  /**
+   * How much of this page there is room for.
+   *
+   * Both panels exist to use space the launcher does not need. On a
+   * screen with none to give they are not a short history and a squeezed
+   * book row — they are two blocks pushing the thing you came for off
+   * the bottom. So each has a height below which it simply is not there.
+   *
+   * The numbers are measured, not guessed (390px wide, this vault):
+   * header 28 + cards and tiles 514 + the shell's own 28 of padding =
+   * 578 for the launcher alone; the book row adds 98 to make 676; the
+   * history at its floor adds another 121 to make 797. Those are
+   * COLUMN heights — a phone also spends about 56 on the tab bar — so
+   * the viewport each needs is 634, 732 and 853.
+   *
+   * The thresholds clear those and fall BETWEEN real phones rather than
+   * through one, so nothing flickers as a toolbar retracts. Verified at
+   * each of these:
+   *
+   *   568 (SE 1)       launcher only          — 54px over, as close as it gets
+   *   667 (SE 2/8)     launcher only          — fits
+   *   736 (8 Plus)     + book row             — fits
+   *   812 (13 mini)    + book row             — fits
+   *   844+ (14/15/max) + book row and history — fits
+   */
+  // Below this even the three cards alone do not fit (they need 634 of
+  // viewport at full size), so the boards come down from 128px to 96 —
+  // which buys 96px across the three and lands a 320x568 phone inside
+  // its own screen. Nothing above this tier is touched.
+  const fullBoards = useMediaQuery('(min-height: 40rem)');
+  const roomForBooks = useMediaQuery('(min-height: 46rem)');
+  const roomForHistory = useMediaQuery('(min-height: 52rem)');
+  const showBooks = roomForBooks && books.length > 0;
+  const showHistory = roomForHistory && history.length > 0;
+
   // Read at render, not in state: the trainer writes this key and coming
   // back here re-mounts, so there is nothing to keep in step.
   const word = difficultyWord();
@@ -427,28 +468,31 @@ function Hub() {
           the order they are written in, so this is purely about reading
           order — and it puts the one fixed-size panel next to the cards
           it belongs with, rather than stranded above a panel that grows. */}
-      {history.length > 0 && <HistoryPanel attempts={history} />}
+      {showHistory && <HistoryPanel attempts={history} />}
       {/* The line between what you have DONE and what there is to do
           next — the book row belongs with the cards under it, not with
           the log above it. It sits in the column's own gap, so the small
           space either side of it comes for free and stays equal.
 
-          Only when both sides exist: a rule with nothing above it is a
-          line drawn under the page title. */}
-      {history.length > 0 && books.length > 0 && (
-        // `line-strong`, not `line`: at the panels' own border colour it
-        // was a third hairline sitting 8px from two others exactly like
-        // it, which reads as a smudge rather than as a division. A rule
-        // between bordered cards has to be MORE than they are or it
-        // should not be there at all — and it was the colour that fixed
-        // it, not extra air. Padding it out cost 8px the history has no
-        // room to give (it sits at its floor here) and tipped the page
-        // into scrolling by 13.
-        <div className="border-line-strong shrink-0 border-t" role="presentation" />
+          Inset, and quieter than the panels it divides — nearer the
+          page behind it than to their edges. Full width in their own
+          border colour it was a third hairline the same length as the
+          two 8px away, which reads as a smudge. Being SHORTER than what
+          it divides is what makes it legible as a rule, which is what
+          then lets the colour drop back rather than having to shout. */}
+      {showHistory && showBooks && (
+        <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />
       )}
-      {books.length > 0 && <BookShelfPanel books={books} />}
+      {showBooks && <BookShelfPanel books={books} />}
 
-      <div className="flex shrink-0 flex-col gap-2">
+      {/* `mt-auto` ONLY when there is no history.
+          An auto margin on the main axis takes all the free space BEFORE
+          flex-grow gets a look in, so applying it unconditionally left
+          the history pinned at its floor with the slack sitting above
+          this cluster — the exact dead band the stretch was for. Without
+          a history it is what keeps the launcher on the bottom edge
+          instead of floating up under the cards. */}
+      <div className={cn('flex shrink-0 flex-col gap-2', !showHistory && 'mt-auto')}>
         {solvedToday !== null && solvedToday > 0 && (
           <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
@@ -467,6 +511,7 @@ function Hub() {
             fen={positionAt(next, 1).fen}
             side={solverColor(next)}
             title={t('Next puzzle')}
+            compact={!fullBoards}
             go={() => {
               setPendingPuzzle('fresh', next);
               navigate('puzzles');
@@ -483,6 +528,7 @@ function Hub() {
             fen={positionAt(review, 1).fen}
             side={solverColor(review)}
             title={t('Missed puzzle')}
+            compact={!fullBoards}
             detail={t('{n} waiting to be reviewed', { n: failed })}
             go={() => {
               setPendingPuzzle('failed', review);
@@ -520,6 +566,7 @@ function Hub() {
                 : t('Book puzzle {n}', { n: bookNext.puzzle.number })
             }
             detail={bookNext.book.title}
+            compact={!fullBoards}
             go={() =>
               navigate('puzzles', 'books', bookNext.book.slug, bookNext.puzzle.id)
             }
