@@ -1,6 +1,4 @@
 import { create } from 'zustand';
-import { Chess } from 'chessops/chess';
-import { parseFen } from 'chessops/fen';
 import { getNode, mainlineFrom } from '@shared/tree';
 import {
   defaultFlavor,
@@ -9,6 +7,7 @@ import {
   type SearchUpdate,
 } from '@/engine/StockfishEngine';
 import { judgeLine, summarise, type Score, type SideSummary } from '@/engine/review';
+import { terminalScore } from '@/engine/terminal';
 import { toWhitePov, winningChances } from '@/engine/uci';
 import { isBookPosition, NAMED_PLIES } from '@/lib/opening';
 import { useAnalysis } from './analysis';
@@ -133,13 +132,10 @@ export const useReview = create<ReviewState>()((set, get) => ({
         if (top) {
           scores.push(toWhitePov({ cp: top.cp, mate: top.mate }, turn));
         } else {
-          // Terminal position: checkmate scores as mate AGAINST the side
-          // to move; stalemate (or any other dead end) is a draw. Without
-          // this, the mating move itself would read as a blunder.
-          const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
-          scores.push(
-            pos.isCheckmate() ? { mate: turn === 'white' ? -1 : 1 } : { cp: 0 },
-          );
+          // No line means the position is finished — score it by rule (see
+          // engine/terminal.ts), or the mating move itself reads as a
+          // blunder. A draw is the answer for anything else that got here.
+          scores.push(terminalScore(fen) ?? { cp: 0 });
         }
         set({ progress: (i + 1) / ids.length });
       }

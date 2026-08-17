@@ -1,7 +1,6 @@
-import { Chess } from 'chessops/chess';
-import { parseFen } from 'chessops/fen';
 import type { Color } from 'chessops/types';
 import { defaultFlavor, StockfishEngine, supportsThreads } from './StockfishEngine';
+import { terminalScore } from './terminal';
 import { toWhitePov } from './uci';
 
 /**
@@ -41,14 +40,10 @@ function ensureEngine(): StockfishEngine {
 }
 
 async function evaluate(fen: string): Promise<{ cp?: number; mate?: number }> {
-  // Terminal positions produce no engine lines at all — score them by
-  // rule (mate counts AGAINST the side to move; stalemate is a draw)
-  // before ever asking the engine.
-  const pos = Chess.fromSetup(parseFen(fen).unwrap()).unwrap();
-  if (pos.isEnd()) {
-    if (pos.isCheckmate()) return { mate: pos.turn === 'white' ? -1 : 1 };
-    return { cp: 0 };
-  }
+  // Terminal positions produce no engine lines at all — score them by rule
+  // before ever asking the engine (see engine/terminal.ts).
+  const settled = terminalScore(fen);
+  if (settled) return settled;
 
   const run = queue.then(
     () =>
