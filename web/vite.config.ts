@@ -72,6 +72,27 @@ export default defineConfig({
     // it too (25 MB of the package, most of it maps). Set CHESS_SOURCEMAPS=1
     // to get them back for a build you are actually debugging.
     sourcemap: process.env.CHESS_SOURCEMAPS === '1',
+    /**
+     * 700 kB, not the default 500.
+     *
+     * The default fired on exactly one chunk, every build: NoteView, at
+     * 644 kB minified (229 kB gzipped, which is the number that actually
+     * travels — the limit is compared against the pre-gzip size). It is
+     * the TipTap/ProseMirror editor stack plus markdown-it, and it is
+     * lazy TWICE over — App lazy-loads NotesView, which lazy-loads
+     * NoteView — so it is fetched only by someone opening a note, never
+     * at boot. The advice the warning gives is "code-split", which is
+     * already done; it simply cannot tell a leaf route from the entry.
+     *
+     * A warning that fires on every build for a known, deliberate chunk
+     * trains you to scroll past it, and the next one that means something
+     * scrolls past with it. 700 clears NoteView with ~9% headroom and
+     * still catches real growth. For scale, the entry chunk that gates
+     * first paint is 216 kB (68 kB gzipped) and the runner-up is pdfjs at
+     * 427 kB. If this needs raising again, that is the signal to split
+     * the editor rather than the number.
+     */
+    chunkSizeWarningLimit: 700,
   },
   worker: { format: 'es' },
   optimizeDeps: {
