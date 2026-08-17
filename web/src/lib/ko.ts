@@ -895,6 +895,9 @@ export const ko: Record<string, string> = {
   "Training attempts only — review sessions don't count here, which is why this can differ from the review pool":
     '훈련 시도만 셉니다 — 복습은 여기에 포함되지 않으므로 복습 대상 수와 다를 수 있습니다',
   "Browse this player's online archive": '이 선수의 온라인 기보 보기',
+  'Import only a book you own.': '직접 가진 책만 가져오세요.',
+  'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.':
+    '잘라낸 다이어그램, 페이지 이미지, 정답은 모두 보관함에만 남고 어디에도 공개되지 않습니다 — 그래도 저작권은 출판사에 있으며, 사는 곳에 따라 복제나 공유가 허용되지 않을 수 있습니다.',
   'Choose the book’s PDF': '책의 PDF 선택',
   'From this game ↗': '이 게임에서 ↗',
   'Set an app password first.': '먼저 앱 비밀번호를 설정하세요.',

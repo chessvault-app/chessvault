@@ -465,6 +465,22 @@ export function PdfImport({
           </label>
         )}
 
+        {/*
+          Copyright, said where the decision is actually made.
+          The reader only ever opens a file it was handed and nothing it
+          produces leaves the machine — but a scan of a book still in
+          copyright is a copy of it, and that belongs next to the picker
+          rather than only in a README nobody opens on the way here.
+        */}
+        {!mine && !saved && (
+          <p className="border-line bg-surface-2 text-subtle rounded-lg border p-3 text-xs">
+            <span className="text-muted font-medium">{t('Import only a book you own.')}</span>{' '}
+            {t(
+              'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
+            )}
+          </p>
+        )}
+
         {preparing && (
           <p className="text-muted flex items-center gap-2 text-sm">
             <Loader2 className="size-4 animate-spin" />

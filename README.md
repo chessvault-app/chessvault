@@ -69,7 +69,8 @@ is one connected body of work, and the links are what make it that.
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
   original page scan. No book is bundled: you supply the PDF of a book
-  you own, and the puzzles it yields stay in your vault.
+  you own, and the puzzles it yields stay in your vault — see [book
+  imports and copyright](#book-imports-and-copyright).
 
   ![Puzzle dashboard](docs/screenshots/dashboard.png)
 
@@ -483,6 +484,25 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
   readings.
 - [ML history](docs/ml-history.md) — how the book reader got good.
 - [Update log](docs/update-log.md) — what changed, newest first.
+
+## Book imports and copyright
+
+The book reader only ever opens a PDF you hand it. No book is bundled
+with the app, none is fetched by it, and nothing it reads is uploaded:
+the crops, the page images and the puzzles all land in your vault, on
+your own machine, and the vault is gitignored so none of it can be
+committed by accident.
+
+That is a privacy property, not a licence. A scan of a book still in
+copyright is a copy of that book, and whether you may make one, keep one
+or import one is between you and its publisher — it depends on the book
+and on where you live. So: import books you own, keep what comes out to
+yourself, and do not redistribute puzzles, crops, page images or parsed
+solutions taken from a commercial book, whether in a study you publish, a
+vault you share, or a pull request to this repository.
+
+None of this is legal advice, and the authors of this app are not
+responsible for what anyone imports with it.
 
 ## Licensing
 
