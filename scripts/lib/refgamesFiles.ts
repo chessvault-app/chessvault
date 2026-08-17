@@ -25,9 +25,9 @@ export function refgamesFiles(): string[] {
 
 /**
  * The biggest of them — the honest default input for curators that shrink
- * a full database into a small one, the same size-is-the-signal reasoning
- * build-demo-book.ts documents for books: a curated set also ends in
- * .sqlite, and curating a curation quietly produces less than was asked.
+ * a full database into a small one. Size is the signal: a curated set
+ * also ends in .sqlite, and curating a curation quietly produces less
+ * than was asked.
  */
 export function biggestRefgames(): string | null {
   const files = refgamesFiles();

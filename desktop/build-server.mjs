@@ -10,9 +10,9 @@ import pngToIco from 'png-to-ico';
  * binary (see package.json "build".extraResources):
  *
  *   release/server/index.mjs                 the whole Hono server, bundled
- *   release/server/build-book.mjs            the book builder the server spawns
- *   release/server/build-puzzles.mjs         the puzzle builder, likewise
- *   release/server/build-refgames.mjs        the reference-games indexer, likewise
+ *   release/server/build-puzzles.mjs         the puzzle builder the server spawns
+ *   release/server/build-refgames.mjs        the reference-games builder, likewise
+ *   release/server/index-refgames-positions.mjs   the position indexer, likewise
  *   release/server/node_modules/better-sqlite3   rebuilt for Electron's ABI
  *   desktop/icon.ico                         NSIS/installer icon
  *
