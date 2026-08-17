@@ -1,6 +1,6 @@
 import { AlertTriangle, Database, Settings2, Thermometer } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { getNode } from '@shared/tree';
+import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useExplain } from '@/store/explain';
@@ -10,6 +10,7 @@ import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
+import { figurine } from '@/analysis/notation';
 import { formatPv, type PvPly } from './pv.ts';
 import { PvMoves } from './PvMoves.tsx';
 import { PvPeek, usePvPeek } from './PvPeek.tsx';
@@ -24,7 +25,24 @@ import { t } from '@/lib/i18n';
  * call: "looks more natural"), which also means an idle engine costs one
  * row instead of a whole pane.
  */
-export function EngineBlock({ className }: { className?: string }) {
+export function EngineBlock({
+  standalone = false,
+  className,
+}: {
+  /**
+   * This block IS the pane, rather than being docked above a move list.
+   *
+   * Two things follow, and both are about the move list that is not
+   * there. It fills the pane and scrolls its own lines, instead of
+   * sizing to its content and being clipped by the panel around it — with
+   * the variations wrapping on a phone, three of them are taller than the
+   * pane and the third was simply unreachable. And it shows the line you
+   * are on underneath them, because the only other place to read that is
+   * a tab away.
+   */
+  standalone?: boolean;
+  className?: string;
+}) {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const playLine = useAnalysis((s) => s.playLine);
@@ -93,7 +111,12 @@ export function EngineBlock({ className }: { className?: string }) {
     // The identical header the standalone Engine panel had — the merge
     // must not change how the headers look (lanph3re's call), only remove the
     // extra panel chrome between engine and moves.
-    <div className={cn('shrink-0', className)}>
+    <div
+      className={cn(
+        standalone ? 'flex min-h-0 flex-1 flex-col' : 'shrink-0',
+        className,
+      )}
+    >
       <PanelHeader
         title={
           <span className="flex items-baseline gap-2">
@@ -201,7 +224,19 @@ export function EngineBlock({ className }: { className?: string }) {
               lists' stripe — as inset rounded pills the one tinted row
               read as a selection, not as zebra (lanph3re's report). On
               the li, not the button, so hover still paints over it. */}
-          <ul className="flex max-h-44 min-h-0 flex-col overflow-y-auto py-1 max-lg:max-h-none [&>li:nth-child(even)]:bg-fg/[0.035]">
+          <ul
+            className={cn(
+              'flex min-h-0 flex-col overflow-y-auto py-1 [&>li:nth-child(even)]:bg-fg/[0.035]',
+              // Docked, the lines are capped so the move list under them
+              // keeps a panel to live in. Standing alone they are capped by
+              // the pane instead: `min-h-0` in a flex column means the list
+              // takes its own height while it fits and gives way when it
+              // does not — so a short list keeps the current line directly
+              // underneath rather than stranding it at the bottom, and a
+              // long one scrolls with the line still on screen.
+              standalone ? 'min-h-0' : 'max-h-44 max-lg:max-h-none',
+            )}
+          >
             {visibleLines.length === 0 ? (
               <li className="text-subtle px-3 py-1 text-xs">{t('Thinking…')}</li>
             ) : (
@@ -220,11 +255,79 @@ export function EngineBlock({ className }: { className?: string }) {
           </ul>
         </>
       )}
+      {/* Where you actually are, under what the engine makes of it —
+          below lg only, which is exactly where this block is a TAB.
+          There the moves live behind a different tab, so reading a
+          variation meant leaving the engine to see what it was a
+          variation OF, and coming back. On a desktop the Moves panel is
+          already the next thing down this same column and a second copy
+          of the line would be a second copy of the line. */}
+      {enabled && !error && standalone && <CurrentLine />}
       {/* Closes the expanded engine body so the Moves header below reads
           as its own section; when the engine is off the header's own
           bottom border already does the job. */}
-      {enabled && <div className="border-line border-b" />}
+      {enabled && <div className="border-line shrink-0 border-b" />}
       <PvPeek peek={peek} orientation={orientation} />
+    </div>
+  );
+}
+
+/**
+ * The line up to the cursor, as one wrapped strip of SAN.
+ *
+ * Deliberately one LINE and not the tree: this answers "what am I looking
+ * at", which the Moves panel answers with columns, numbering, variations,
+ * comments and NAGs. Repeating any of that here would be building a second
+ * moves panel inside the engine — the point is a sentence you can read
+ * without leaving the tab you are in.
+ *
+ * The whole line, though, and not just what leads up to the cursor: a
+ * strip that shortened every time you stepped back would answer "how did
+ * I get here" when the question is "where am I". So it runs from the root
+ * through the cursor and on down the mainline, and moving about changes
+ * which move is lit rather than how many there are.
+ *
+ * Clickable all the same, because a strip of moves that cannot be stepped
+ * through is a picture of a list.
+ */
+function CurrentLine() {
+  const tree = useAnalysis((s) => s.tree);
+  const cursorId = useAnalysis((s) => s.cursorId);
+  const setCursor = useAnalysis((s) => s.setCursor);
+  // Drop the root: it carries no move, and `pathTo` starts there.
+  const path = [...pathTo(tree, cursorId).slice(1), ...mainlineFrom(tree, cursorId)];
+  const blackFirst = blackToMoveAtRoot(tree);
+  if (path.length === 0) return null;
+  return (
+    <div className="border-line shrink-0 border-t px-3 py-1.5">
+      <div className="flex flex-wrap items-baseline gap-x-0.5 gap-y-1">
+        {path.map((id) => {
+          const node = getNode(tree, id);
+          const numbered = (node.ply + (blackFirst ? 1 : 0)) % 2 === 1;
+          const on = id === cursorId;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setCursor(id)}
+              className={cn(
+                'rounded px-1 py-0.5 text-xs transition-colors duration-100',
+                // The one you are on carries the accent, the same way a
+                // hovered ply in a variation above does — one grammar for
+                // "this move" in the whole panel.
+                on ? 'text-primary font-semibold' : 'text-muted hover:text-fg hover:bg-surface-3',
+              )}
+            >
+              {numbered && (
+                <span className="text-subtle mr-0.5 font-mono">
+                  {moveNumberLabel(node.ply, blackFirst)}
+                </span>
+              )}
+              {figurine(node.san ?? '')}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -264,22 +367,9 @@ function PvRow({
       {/* No `title` any more. It existed because the row truncated and hid
           the rest of the line — which hovering now shows in full, and the
           global title tooltip would have opened over the preview board. */}
-      {/* Stacked, the score goes on its own line and the moves take the
-          whole panel under it.
-          Beside the score a phone left the line about 300px, which is
-          four or five plies of a twelve-ply variation — and the rest was
-          unreachable, because the row only opens up on hover and a touch
-          device has none. Every ply is a button and a handoff into the
-          position after it, so a line nobody can see is most of the
-          feature missing. Under the score they wrap instead, and the row
-          is as tall as its line needs.
-          Only when stacked: beside the board there is a column to fit,
-          three lines cost three rows, and hovering already opens the one
-          being read. */}
       <div
         className={cn(
           'group hover:bg-surface-2 flex w-full items-baseline gap-2 px-3 py-1 text-left',
-          'stacked:flex-col stacked:items-start stacked:gap-0.5',
           'transition-colors duration-100',
         )}
       >
@@ -304,10 +394,6 @@ function PvRow({
           onPeekEnd={onPeekEnd}
           className={cn(
             'min-w-0 flex-1 truncate',
-            // `truncate` is three declarations, and wrapping needs two of
-            // them undone: the clip as well as the nowrap, or the lines
-            // past the first are hidden rather than shown.
-            'stacked:w-full stacked:flex-none stacked:overflow-visible stacked:whitespace-normal',
             'group-focus-within:whitespace-normal pointer-fine:group-hover:whitespace-normal',
           )}
         />

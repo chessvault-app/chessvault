@@ -167,7 +167,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
         <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
-          <EngineBlock />
+          <EngineBlock standalone />
         </Panel>
         {/* The caps keep the explorer from squeezing the move list out of
             existence on short desktop viewports. */}

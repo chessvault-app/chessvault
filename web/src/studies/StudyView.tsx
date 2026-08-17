@@ -318,7 +318,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
         </Panel>
         <Panel flush className={cn('flex-1 min-h-0 lg:hidden', pane !== 'engine' && 'max-lg:hidden')}>
-          <EngineBlock />
+          <EngineBlock standalone />
         </Panel>
         <ExplorerPane
           resizeKey="study-explorer"
