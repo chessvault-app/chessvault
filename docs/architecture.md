@@ -19,12 +19,13 @@ vault/
     chesscom/<user>/  YYYY-MM.pgn  (archive cache)
     lichess/<user>/   YYYY-MM.pgn
   puzzlebooks/<slug>/
-    book.json  puzzles.json  drafts.json  progress.json
+    book.json  puzzles.json  drafts.json  progress.json  ocr.json
     diagrams/  *.jpg          (evidence scans, cover)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (drill history)
                       map.json       (the opening map, one tree per colour)
   sources/            reference PGN dumps (input to refgames index)
+  .welcomed           marker: the welcome study and note were seeded once, so deleting them sticks
   .history.git        auto-commit history repo (fine-grained undo; excludes config.json)
 ```
 
