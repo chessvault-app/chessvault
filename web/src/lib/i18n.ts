@@ -86,16 +86,22 @@ export function setLang(lang: Lang): void {
   if (lang === current) return;
   // The dictionary arrives before the language flips, so the shell's
   // keyed remount never paints a frame of untranslated UI.
-  void ensureDict(lang).then(() => {
-    current = lang;
-    try {
-      localStorage.setItem(STORAGE_KEY, lang);
-    } catch {
-      // Not persisting is survivable; refusing to switch is not.
-    }
-    document.documentElement.lang = lang;
-    for (const notify of listeners) notify();
-  });
+  void ensureDict(lang)
+    .then(() => {
+      current = lang;
+      try {
+        localStorage.setItem(STORAGE_KEY, lang);
+      } catch {
+        // Not persisting is survivable; refusing to switch is not.
+      }
+      document.documentElement.lang = lang;
+      for (const notify of listeners) notify();
+    })
+    .catch(() => {
+      // The dictionary chunk failed to load (offline, or a stale deploy
+      // serving old chunk names). Staying in the current language beats an
+      // untranslated flip; the switch works again once the chunk does.
+    });
 }
 
 function subscribe(listener: () => void): () => void {
@@ -157,6 +163,14 @@ export function useLang(): Lang {
 /** Load the saved language's dictionary and set `<html lang>`. Awaited
     before the first render, so a Korean session never flashes English. */
 export async function initLang(): Promise<void> {
-  await ensureDict(current);
+  try {
+    await ensureDict(current);
+  } catch {
+    // main.tsx awaits this before the first render: if the dictionary
+    // chunk is unreachable (stale deploy, flaky first load), rejecting
+    // here would leave the page blank forever. An English boot is the
+    // survivable failure.
+    current = 'en';
+  }
   document.documentElement.lang = current;
 }
