@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { navigate } from '@/lib/router';
@@ -62,9 +63,9 @@ function StudyList() {
   const [markedIds, setMarked] = useState<Set<string>>(new Set());
   const [markedOnly, setMarkedOnly] = useState(false);
   useEffect(() => {
-    void fetch('/api/studies/bookmarks')
-      .then((r) => (r.ok ? (r.json() as Promise<{ ids: string[] }>) : null))
+    void api<{ ids: string[] }>('/api/studies/bookmarks')
       .then((body) => setMarked(new Set(body?.ids ?? [])))
+      // No marks is a fine answer; a shelf with no stars needs no error.
       .catch(() => {});
   }, []);
   const toggleMark = async (id: string): Promise<void> => {
@@ -74,11 +75,9 @@ function StudyList() {
       else next.add(id);
       return next;
     });
-    await fetch('/api/studies/bookmarks/toggle', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
+    // Optimistic, and quietly so: the star has already flipped on screen,
+    // and a mark that failed to stick is rediscovered on the next load.
+    await api('/api/studies/bookmarks/toggle', { method: 'POST', json: { id } }).catch(() => {});
   };
   // Removal is immediate and undoable rather than confirmed — see
   // useUndoable. `hidden` is what the list pretends is already gone.
@@ -516,30 +515,37 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
 
-  // Prefill the username from the profile once.
+  // Prefill the username from the profile once. Best-effort: an empty
+  // field is the worst case, exactly as before.
   useEffect(() => {
-    void fetch('/api/settings')
-      .then((r) => (r.ok ? (r.json() as Promise<{ profile?: { lichess?: string } }>) : null))
+    void api<{ profile?: { lichess?: string } }>('/api/settings')
       .then((s) => {
         if (s?.profile?.lichess) setUser((u) => u || s.profile!.lichess!);
-      });
+      })
+      .catch(() => {});
   }, []);
 
   const load = async (): Promise<void> => {
     setBusy(true);
     setFailure(null);
-    const res = await fetch(`/api/lichess/studies?user=${encodeURIComponent(user.trim())}`);
-    const body = (await res.json().catch(() => null)) as
-      | { studies?: { id: string; name: string }[]; note?: string | null; error?: string }
-      | null;
-    setBusy(false);
-    if (!res.ok || !body?.studies) {
-      setFailure(t(body?.error ?? 'could not reach Lichess'));
-      return;
+    try {
+      const body = await api<{ studies?: { id: string; name: string }[]; note?: string | null }>(
+        `/api/lichess/studies?user=${encodeURIComponent(user.trim())}`,
+      );
+      if (!body?.studies) {
+        setFailure(t('could not reach Lichess'));
+        return;
+      }
+      setList(body.studies);
+      setNote(body.note ?? null);
+      setChecked(new Set());
+    } catch (e) {
+      // Through t(): the server's error strings are translation keys here,
+      // exactly as the pre-api() code treated them.
+      setFailure(t(apiErrorMessage(e)));
+    } finally {
+      setBusy(false);
     }
-    setList(body.studies);
-    setNote(body.note ?? null);
-    setChecked(new Set());
   };
 
   const importChecked = async (): Promise<void> => {
@@ -547,25 +553,26 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
     setBusy(true);
     setFailure(null);
     const studies = list.filter((s) => checked.has(s.id));
-    const res = await fetch('/api/lichess/studies/import', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ studies, ...(folder && { folder }) }),
-    });
-    const body = (await res.json().catch(() => null)) as
-      | { imported?: string[]; failed?: { name: string; reason: string }[]; error?: string }
-      | null;
-    setBusy(false);
-    if (!res.ok || !body?.imported) {
-      setFailure(t(body?.error ?? 'import failed'));
-      return;
+    try {
+      const body = await api<{ imported?: string[]; failed?: { name: string; reason: string }[] }>(
+        '/api/lichess/studies/import',
+        { method: 'POST', json: { studies, ...(folder && { folder }) } },
+      );
+      if (!body?.imported) {
+        setFailure(t('import failed'));
+        return;
+      }
+      await refresh();
+      if (body.failed?.length) {
+        setFailure(`imported ${body.imported.length}; failed: ${body.failed.map((f) => f.name).join(', ')}`);
+        return;
+      }
+      onClose();
+    } catch (e) {
+      setFailure(t(apiErrorMessage(e)));
+    } finally {
+      setBusy(false);
     }
-    await refresh();
-    if (body.failed?.length) {
-      setFailure(`imported ${body.imported.length}; failed: ${body.failed.map((f) => f.name).join(', ')}`);
-      return;
-    }
-    onClose();
   };
 
   return (

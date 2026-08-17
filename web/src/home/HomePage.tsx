@@ -122,10 +122,15 @@ export function HomePage() {
   const difficultyLabel = useDifficultyWord();
 
   useEffect(() => {
+    // Navigating away mid-flight: React 18 makes the setStates no-ops, but
+    // the echo and checklist-flag writes below are not React's to drop, so
+    // everything after the await is skipped once the page is gone.
+    let live = true;
     const grab = async (url: string): Promise<unknown> => {
       try {
-        const res = await fetch(url);
-        return res.ok ? res.json() : null;
+        // `?? null`: the null checks below (settings !== null) predate
+        // api(), which parses an empty body to undefined instead.
+        return (await api(url)) ?? null;
       } catch {
         return null;
       }
@@ -145,6 +150,7 @@ export function HomePage() {
         // no positions in it.
         grab('/api/openingmap'),
       ]);
+      if (!live) return;
       const docs = (v: unknown): number | undefined =>
         Array.isArray((v as { studies?: unknown[] })?.studies)
           ? (v as { studies: unknown[] }).studies.length
@@ -208,6 +214,9 @@ export function HomePage() {
           : false,
       });
     })();
+    return () => {
+      live = false;
+    };
   }, []);
 
   /**

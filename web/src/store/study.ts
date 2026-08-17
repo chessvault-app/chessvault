@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { useAnalysis } from './analysis';
 import { usePrefs } from './prefs';
 import { forgetCollection } from '@/games/collection';
@@ -248,8 +249,7 @@ export const useStudy = create<StudyState>()((set, get) => {
 
     refresh: async () => {
       try {
-        const res = await fetch('/api/studies');
-        const body = (await res.json()) as { studies: StudyMeta[]; folders?: string[] };
+        const body = await api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies');
         set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
       } catch {
         set({ listLoaded: true, error: 'vault server unreachable' });
@@ -257,25 +257,28 @@ export const useStudy = create<StudyState>()((set, get) => {
     },
 
     createFolder: async (name) => {
-      const res = await fetch('/api/studies/folders', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      // The refresh runs whether the write landed or not — a failure may
+      // still have changed the list (or proved it stale), and the returned
+      // string is the caller's to show.
+      let failure: string | null = null;
+      try {
+        await api('/api/studies/folders', { method: 'POST', json: { name } });
+      } catch (e) {
+        failure = apiErrorMessage(e);
+      }
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not create the collection');
+      return failure;
     },
 
     move: async (from, to) => {
-      const res = await fetch('/api/studies/move', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ from, to }),
-      });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      let failure: string | null = null;
+      try {
+        await api('/api/studies/move', { method: 'POST', json: { from, to } });
+      } catch (e) {
+        failure = apiErrorMessage(e);
+      }
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not move the study');
+      return failure;
     },
 
     renameOpen: async (newName) => {
@@ -297,13 +300,11 @@ export const useStudy = create<StudyState>()((set, get) => {
         saveTimer = null;
       }
       await saveChain;
-      const res = await fetch(`/api/${openBase}/move`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ from: openId, to }),
-      });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      if (!res.ok) return { error: body?.error ?? 'could not rename' };
+      try {
+        await api(`/api/${openBase}/move`, { method: 'POST', json: { from: openId, to } });
+      } catch (e) {
+        return { error: apiErrorMessage(e) };
+      }
       // The buffer follows the file: doSave builds its URL from openId
       // alone, so the pending changes now belong to the new name.
       set({ openId: to });
@@ -314,52 +315,53 @@ export const useStudy = create<StudyState>()((set, get) => {
     },
 
     moveFolder: async (from, to) => {
-      const res = await fetch('/api/studies/folders/move', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ from, to }),
-      });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      let failure: string | null = null;
+      try {
+        await api('/api/studies/folders/move', { method: 'POST', json: { from, to } });
+      } catch (e) {
+        failure = apiErrorMessage(e);
+      }
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not rename the collection');
+      return failure;
     },
 
     removeFolder: async (name) => {
-      const res = await fetch(`/api/studies/folders/${encodeURIComponent(name)}`, {
-        method: 'DELETE',
-      });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      let failure: string | null = null;
+      try {
+        await api(`/api/studies/folders/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      } catch (e) {
+        failure = apiErrorMessage(e);
+      }
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'could not delete the collection');
+      return failure;
     },
 
     create: async (name, pgn) => {
-      const res = await fetch('/api/studies', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, ...(pgn && { pgn }) }),
-      });
-      const body = (await res.json().catch(() => null)) as { id?: string; error?: string } | null;
-      if (!res.ok) return body?.error ?? 'could not create study';
+      try {
+        await api('/api/studies', { method: 'POST', json: { name, ...(pgn && { pgn }) } });
+      } catch (e) {
+        return apiErrorMessage(e);
+      }
       await get().refresh();
       return null;
     },
 
     remove: async (id) => {
-      const res = await fetch(`/api/studies/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      let failure: string | null = null;
+      try {
+        await api(`/api/studies/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      } catch (e) {
+        failure = apiErrorMessage(e);
+      }
       await get().refresh();
-      return res.ok ? null : (body?.error ?? 'delete failed');
+      return failure;
     },
 
     open: async (id, base = 'studies') => {
       try {
-        const res = await fetch(`/api/${base}/${encodeURIComponent(id)}`);
-        if (!res.ok) {
-          set({ error: `could not open “${id}”` });
-          return false;
-        }
-        const body = (await res.json()) as { pgn: string; draft?: string; draftAt?: string };
+        const body = await api<{ pgn: string; draft?: string; draftAt?: string }>(
+          `/api/${base}/${encodeURIComponent(id)}`,
+        );
         const chapters = pgnToChapters(body.pgn);
         if (chapters.length === 0) {
           chapters.push({
@@ -394,8 +396,15 @@ export const useStudy = create<StudyState>()((set, get) => {
         });
         loadIntoAnalysis(chapters[0]!);
         return true;
-      } catch {
-        set({ error: 'vault server unreachable' });
+      } catch (e) {
+        // A server that ANSWERED with an error is a document that would
+        // not open (deleted, renamed); anything else is the server away.
+        set({
+          error:
+            e instanceof ApiError && e.status !== 0
+              ? `could not open “${id}”`
+              : 'vault server unreachable',
+        });
         return false;
       }
     },
@@ -523,10 +532,9 @@ export const useStudy = create<StudyState>()((set, get) => {
       if (!openId || saveState === 'saved') return;
       const pgn = chaptersToPgn(stashCurrent());
       try {
-        await fetch(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, {
+        await api(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, {
           method: 'PUT',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ pgn }),
+          json: { pgn },
         });
       } catch {
         // A crash net that cannot reach the server is simply not there.
@@ -542,7 +550,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       const { openId, openBase } = get();
       cancelPark();
       if (!openId) return;
-      void fetch(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, {
+      void api(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, {
         method: 'DELETE',
       }).catch(() => {});
     },
@@ -570,7 +578,7 @@ export const useStudy = create<StudyState>()((set, get) => {
       // Deleted rather than left to rot: an unanswered question that keeps
       // being asked is worse than no question.
       try {
-        await fetch(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, { method: 'DELETE' });
+        await api(`/api/${openBase}/${encodeURIComponent(openId)}?draft=1`, { method: 'DELETE' });
       } catch {
         /* it will be offered again, or dropped on the next save */
       }
@@ -615,16 +623,10 @@ export const useStudy = create<StudyState>()((set, get) => {
     cancelPark();
     set({ chapters, saveState: 'saving' });
     try {
-      const res = await fetch(`/api/${openBase}/${encodeURIComponent(openId)}`, {
+      await api(`/api/${openBase}/${encodeURIComponent(openId)}`, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ pgn }),
+        json: { pgn },
       });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        set({ saveState: 'error', error: body?.error ?? `save failed (${res.status})` });
-        return;
-      }
       // Annotating a collected game changes what its row says about it
       // (its comments, its glyphs, its variations), so the cached
       // collection list is stale the moment the save lands.
@@ -637,8 +639,16 @@ export const useStudy = create<StudyState>()((set, get) => {
         savedPgn: pgn,
         error: null,
       }));
-    } catch {
-      set({ saveState: 'error', error: 'vault server unreachable — changes not saved' });
+    } catch (e) {
+      // The server refusing is worth its own words; the server being away
+      // must also say the changes are still only here.
+      set({
+        saveState: 'error',
+        error:
+          e instanceof ApiError && e.status !== 0
+            ? e.message
+            : 'vault server unreachable — changes not saved',
+      });
     }
   }
 });

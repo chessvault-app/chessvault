@@ -28,6 +28,10 @@ export function PasswordGate({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    // Raw fetch DELIBERATELY, here and in submit(): this component is the
+    // 401 handler api() reports to, so routing its own auth traffic
+    // through api() would re-trigger the relock it implements. Do not
+    // migrate these to api().
     void fetch('/api/auth/status')
       .then((r) => r.json())
       .then((d: { required: boolean; authed: boolean }) => {
@@ -53,6 +57,9 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     setError(null);
     let res: Response;
     try {
+      // Raw fetch on purpose — a wrong password answers 401, and through
+      // api() that 401 would invoke the very relock this screen exists to
+      // resolve (see the note on the status probe above).
       res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },

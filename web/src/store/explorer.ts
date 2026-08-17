@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { api, ApiError } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
 export interface ExplorerMove {
@@ -219,7 +220,10 @@ export const useExplorer = create<ExplorerState>()(
     (set, get) => {
       const doLookup = async (fen: string): Promise<void> => {
         controller?.abort();
-        controller = new AbortController();
+        // Kept in a local too: `controller` is module state a newer lookup
+        // reassigns, and the abort test below has to ask about THIS request.
+        const own = new AbortController();
+        controller = own;
         const book = activeBook(get());
         const url = isMyGames(book)
           ? `/api/mygames?${myGamesQuery(fen, get().myFilters)}`
@@ -227,19 +231,13 @@ export const useExplorer = create<ExplorerState>()(
             ? `/api/refgames/explore?db=${encodeURIComponent(refDbName(book!))}&fen=${encodeURIComponent(fen)}&${refFilterQuery(get().refFilters)}`
             : `/api/explorer/${book!.slice('lichess:'.length)}?fen=${encodeURIComponent(fen)}`;
         try {
-          const res = await fetch(url, { signal: controller.signal });
-          if (fen !== latestFen) return; // user has moved on
-          if (!res.ok) {
-            const body = (await res.json().catch(() => null)) as { error?: string } | null;
-            set({ loading: false, error: body?.error ?? t('explorer request failed ({status})', { status: res.status }) });
-            return;
-          }
-          const body = (await res.json()) as {
+          const body = await api<{
             opening?: Opening | null;
             moves?: ExplorerMove[];
             topGames?: TopGame[];
             indexed?: boolean;
-          };
+          }>(url, { signal: own.signal });
+          if (fen !== latestFen) return; // user has moved on
           set((s) => ({
             refIndexed: !isRefDb(book) || body.indexed !== false,
             resultFen: fen,
@@ -253,9 +251,18 @@ export const useExplorer = create<ExplorerState>()(
             error: null,
           }));
         } catch (error) {
-          if ((error as Error).name === 'AbortError') return;
+          // api() folds an abort into ApiError status 0, so the signal —
+          // not the error — is what says this request was superseded
+          // rather than failed. Superseded stays silent, as ever.
+          if (own.signal.aborted) return;
           if (fen !== latestFen) return;
-          set({ loading: false, error: t('explorer server unreachable') });
+          set({
+            loading: false,
+            error:
+              error instanceof ApiError && error.status !== 0
+                ? error.message
+                : t('explorer server unreachable'),
+          });
         }
       };
 
@@ -318,11 +325,11 @@ export const useExplorer = create<ExplorerState>()(
             // With the filters: the count in the filter window answers "how
             // many games are these chips letting through", which is the
             // question being asked while they are being tapped.
-            const res = await fetch(`/api/mygames/status?${myFilterQuery(get().myFilters)}`);
-            if (!res.ok || seq !== myStatsSeq) return;
-            set({
-              myStats: (await res.json()) as { games: number; positions: number; matching: number },
-            });
+            const stats = await api<{ games: number; positions: number; matching: number }>(
+              `/api/mygames/status?${myFilterQuery(get().myFilters)}`,
+            );
+            if (seq !== myStatsSeq) return;
+            set({ myStats: stats });
           } catch {
             // The footer line simply does not appear.
           }
@@ -330,10 +337,9 @@ export const useExplorer = create<ExplorerState>()(
 
         refreshDbs: async () => {
           try {
-            const res = await fetch('/api/refgames');
-            const body = (await res.json()) as {
+            const body = await api<{
               databases?: { name: string; games: number; indexed?: boolean; positions?: number }[];
-            };
+            }>('/api/refgames');
             set({
               refDbs: (body.databases ?? []).map((d) => ({
                 name: d.name,

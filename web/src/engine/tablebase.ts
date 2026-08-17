@@ -62,6 +62,11 @@ export function lookupTablebase(fen: string): Promise<TbResult | null> {
 
   const request = (async (): Promise<TbResult | null> => {
     try {
+      // Raw fetch on purpose, not api(): this proxied Lichess tablebase
+      // lookup is the silent enhancement described above — api()'s error
+      // copy and 401 relock belong to vault traffic someone is waiting
+      // on, and a background verdict row must never be what flips the
+      // app to the lock screen. The status codes are read directly below.
       const res = await fetch(`/api/tablebase?fen=${encodeURIComponent(fen)}`);
       if (res.status === 400) {
         cache.set(key, null);

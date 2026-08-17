@@ -29,13 +29,6 @@ interface Settings {
   version: string;
 }
 
-const json = (method: string, path: string, body?: unknown): Promise<Response> =>
-  fetch(path, {
-    method,
-    headers: { 'content-type': 'application/json' },
-    ...(body !== undefined && { body: JSON.stringify(body) }),
-  });
-
 /** A change that rotated the session secret: every cookie is dead, so the
     cleanest continuation is the lock screen with fresh state. */
 const reauth = (): void => {
@@ -193,9 +186,14 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
   const [note, setNote] = useState<Note>(null);
 
   const save = async (): Promise<void> => {
-    const res = await json('PUT', '/api/settings/profile', { name, chesscom, lichess });
-    setNote(res.ok ? { kind: 'ok', text: t('Saved.') } : { kind: 'error', text: t('Could not save.') });
-    if (res.ok) await onSaved();
+    try {
+      await api('/api/settings/profile', { method: 'PUT', json: { name, chesscom, lichess } });
+    } catch {
+      setNote({ kind: 'error', text: t('Could not save.') });
+      return;
+    }
+    setNote({ kind: 'ok', text: t('Saved.') });
+    await onSaved();
   };
 
   return (
@@ -245,11 +243,10 @@ function VersionCard() {
   const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
 
   useEffect(() => {
-    void fetch('/api/health', { cache: 'no-store' })
-      .then((r) => r.json())
-      .then((b: { version?: string; build?: string | null }) => {
-        setServer(b.version ?? null);
-        setBuild(b.build ?? null);
+    void api<{ version?: string; build?: string | null }>('/api/health', { cache: 'no-store' })
+      .then((b) => {
+        setServer(b?.version ?? null);
+        setBuild(b?.build ?? null);
       })
       .catch(() => setServer(null));
     void shell?.appInfo?.().then((info) => setApp(info?.version ?? null));
@@ -679,10 +676,12 @@ function PasswordBlock({ gate }: { gate: boolean }) {
       setNote({ kind: 'error', text: t('New passwords do not match.') });
       return;
     }
-    const res = await json('POST', '/api/settings/password', { current, next });
-    const body = (await res.json()) as { error?: string };
-    if (!res.ok) {
-      setNote({ kind: 'error', text: t(body.error ?? 'Could not change the password.') });
+    try {
+      await api('/api/settings/password', { method: 'POST', json: { current, next } });
+    } catch (e) {
+      // Through t(): the server's refusals ("wrong password") are
+      // translation keys, as they were before api() carried them.
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
     setNote({ kind: 'ok', text: t('Password changed — signing you out to the lock screen…') });
@@ -726,10 +725,17 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
   const [note, setNote] = useState<Note>(null);
 
   const start = async (): Promise<void> => {
-    const res = await json('POST', '/api/settings/2fa/start');
-    const body = (await res.json()) as { secret?: string; otpauth?: string; error?: string };
-    if (!res.ok || !body.secret || !body.otpauth) {
-      setNote({ kind: 'error', text: t(body.error ?? 'Could not start 2FA enrolment.') });
+    let body: { secret?: string; otpauth?: string } | undefined;
+    try {
+      body = await api<{ secret?: string; otpauth?: string }>('/api/settings/2fa/start', {
+        method: 'POST',
+      });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      return;
+    }
+    if (!body?.secret || !body.otpauth) {
+      setNote({ kind: 'error', text: t('Could not start 2FA enrolment.') });
       return;
     }
     const qr = await QRCode.toDataURL(body.otpauth, { margin: 1, width: 192 });
@@ -740,10 +746,10 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
 
   const enable = async (): Promise<void> => {
     if (!enroll) return;
-    const res = await json('POST', '/api/settings/2fa/enable', { secret: enroll.secret, code });
-    const body = (await res.json()) as { error?: string };
-    if (!res.ok) {
-      setNote({ kind: 'error', text: t(body.error ?? 'Could not enable 2FA.') });
+    try {
+      await api('/api/settings/2fa/enable', { method: 'POST', json: { secret: enroll.secret, code } });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
     setEnroll(null);
@@ -753,10 +759,10 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
   };
 
   const disable = async (): Promise<void> => {
-    const res = await json('POST', '/api/settings/2fa/disable', { code });
-    const body = (await res.json()) as { error?: string };
-    if (!res.ok) {
-      setNote({ kind: 'error', text: t(body.error ?? 'Could not turn 2FA off.') });
+    try {
+      await api('/api/settings/2fa/disable', { method: 'POST', json: { code } });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
     setNote({ kind: 'ok', text: t('2FA is off — signing you out to the lock screen…') });
@@ -844,10 +850,10 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
   const [note, setNote] = useState<Note>(null);
 
   const save = async (): Promise<void> => {
-    const res = await json('PUT', '/api/settings/lichess', { token });
-    const body = (await res.json()) as { error?: string };
-    if (!res.ok) {
-      setNote({ kind: 'error', text: t(body.error ?? 'Could not save the token.') });
+    try {
+      await api('/api/settings/lichess', { method: 'PUT', json: { token } });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       return;
     }
     setToken('');
@@ -856,7 +862,14 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
   };
 
   const clear = async (): Promise<void> => {
-    await json('DELETE', '/api/settings/lichess');
+    // Saying "removed" while the token survived was the old behaviour
+    // (the response went unchecked); a failed delete now says so.
+    try {
+      await api('/api/settings/lichess', { method: 'DELETE' });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      return;
+    }
     setNote({ kind: 'ok', text: t('Token removed.') });
     await onChanged();
   };
@@ -952,8 +965,12 @@ function BrowsedGamesCard() {
   const [busy, setBusy] = useState(false);
 
   const refresh = async (): Promise<void> => {
-    const res = await fetch('/api/games/cache');
-    if (res.ok) setPlayers(((await res.json()) as { users: CachedPlayer[] }).users);
+    try {
+      setPlayers((await api<{ users: CachedPlayer[] }>('/api/games/cache')).users);
+    } catch {
+      // The card stays on whatever it last knew — it is an inventory,
+      // not a health check.
+    }
   };
   useEffect(() => {
     void refresh();
@@ -964,7 +981,9 @@ function BrowsedGamesCard() {
   // a question nobody has about data that costs one fetch to get back.
   const clear = async (): Promise<void> => {
     setBusy(true);
-    await json('DELETE', '/api/games/cache');
+    // A failed delete needs no note of its own: the refresh right after
+    // shows what is (still) being held, which is the honest report.
+    await api('/api/games/cache', { method: 'DELETE' }).catch(() => {});
     await refresh();
     setBusy(false);
   };
@@ -1042,13 +1061,13 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
 
   const wipe = async (): Promise<void> => {
     setBusy(true);
-    const res = await json('POST', '/api/settings/wipe', {
-      confirm: WIPE_PHRASE,
-      ...(gate && { password }),
-    });
-    if (!res.ok) {
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
-      setNote({ kind: 'error', text: t(body.error ?? 'That did not match.') });
+    try {
+      await api('/api/settings/wipe', {
+        method: 'POST',
+        json: { confirm: WIPE_PHRASE, ...(gate && { password }) },
+      });
+    } catch (e) {
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
       setBusy(false);
       return;
     }
