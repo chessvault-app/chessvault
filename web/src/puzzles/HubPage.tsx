@@ -135,7 +135,7 @@ function PuzzleCard({
   side,
   title,
   detail,
-  compact,
+  fill,
   go,
 }: {
   /** The position the solver faces, ready to draw. */
@@ -143,8 +143,9 @@ function PuzzleCard({
   side: 'white' | 'black';
   title: string;
   detail?: string;
-  /** Smaller board, for a screen that cannot hold three full ones. */
-  compact?: boolean;
+  /** Stretch to share the page's spare height, and take the board's
+      size from the card's own height rather than a fixed width. */
+  fill?: boolean;
   go: () => void;
 }) {
   return (
@@ -155,19 +156,31 @@ function PuzzleCard({
       // sets this row's height on its own, so vertical padding here is
       // slack around a shape that already has its own margins, while the
       // horizontal padding is still holding the text off the edge.
-      className="bg-surface border-line hover:bg-surface-2 flex w-full items-center gap-3 rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100"
+      className={cn(
+        'bg-surface border-line hover:bg-surface-2 flex w-full items-stretch gap-3',
+        'rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100',
+        // Sharing the leftover height between the cards puts it into the
+        // BOARDS, where it is worth something, instead of into the gaps
+        // between them, where it is just distance.
+        fill && 'min-h-0 flex-1',
+      )}
     >
       <Board
         fen={fen}
         orientation={side}
         viewOnly
         coordinates={false}
-        // Complete literals, both of them: the Tailwind scanner reads
-        // class names out of this file and would never emit one that was
-        // assembled from pieces.
-        className={cn('shrink-0 rounded-md', compact ? 'w-24' : 'w-28')}
+        // Filling: the card has a definite height from the flex row it
+        // is in, so the board takes that and its own aspect-square gives
+        // the width — no size table, and it is always as big as the
+        // screen can afford. Otherwise a fixed width, because a card
+        // sized by its content has no height to read.
+        // max-h caps the runaway case: a tall phone whose vault has no
+        // history yet gives the three cards ~200px each, and a board
+        // that size leaves the book's title about 110px to wrap in.
+        className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
       />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
+      <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
         <span className="text-fg text-sm font-medium">{title}</span>
         {detail && <span className="text-subtle text-xs leading-snug">{detail}</span>}
         {/* Whose move — the one thing you cannot read off a thumbnail
@@ -182,7 +195,7 @@ function PuzzleCard({
           {side === 'white' ? t('White to play') : t('Black to play')}
         </span>
       </span>
-      <ChevronRight className="text-subtle size-4 shrink-0" />
+      <ChevronRight className="text-subtle size-4 shrink-0 self-center" />
     </button>
   );
 }
@@ -407,29 +420,28 @@ function Hub() {
    * the bottom. So each has a height below which it simply is not there,
    * and below both, the boards come down too.
    *
-   * The numbers are measured rather than guessed (this vault, 375-390
-   * wide): with 112px boards the launcher alone is a 530px column, the
-   * book row takes it to 628, and the history at its floor to 737. A
-   * phone spends about 56 more on the tab bar, so the viewports needed
-   * are 586, 684 and 793.
+   * The numbers are measured rather than guessed (this vault): the
+   * launcher alone needs a 530px column, the book row takes it to 628.
+   * A phone spends about 56 more on the tab bar, so the viewports
+   * needed are 586 and 684. The history's own threshold is higher
+   * again — it only earns a place once there is room for a caption and
+   * a few rows under it rather than a stub.
    *
-   * 112px rather than 128 for the boards is what buys the last one.
-   * At 128 the history needed 853 of viewport, which is past the 812 of
-   * a 13 mini and only just inside a 14 — so the phones that had it had
-   * it at the floor. Sixteen pixels off each board is 48 off the column,
-   * and it turns "only the big ones, barely" into "everything from 800
-   * up, with rows to spare": 2.7 rows at 812, 3.8 at 844 where there
-   * were 2.4, 6.8 at 932.
+   * There is deliberately no threshold for the BOARD size. Where there
+   * is no history the cards share the leftover height between them and
+   * each board is sized from its card, so it is always as large as that
+   * particular screen can afford — 106px on a 568, 139 on a 667 — with
+   * the gaps staying tight either way. Spare height is worth more as
+   * board than as distance between cards.
    *
    * Verified at each of these, all 0px overflow:
    *
-   *   568 (SE 1)      96px boards, launcher only
+   *   568 (SE 1)      launcher only
    *   667 (SE 2/8)    launcher only
    *   736 (8 Plus)    + book row
    *   800 / 812       + book row and history
    *   844 (14) / 932  + book row and history, more of it
    */
-  const fullBoards = useMediaQuery('(min-height: 40rem)');
   const roomForBooks = useMediaQuery('(min-height: 46rem)');
   const roomForHistory = useMediaQuery('(min-height: 50rem)');
   const showBooks = roomForBooks && books.length > 0;
@@ -498,7 +510,7 @@ function Hub() {
       <div
         className={cn(
           'flex flex-col gap-2',
-          showHistory ? 'shrink-0' : 'flex-1 justify-between',
+          showHistory ? 'shrink-0' : 'flex-1',
         )}
       >
         {solvedToday !== null && solvedToday > 0 && (
@@ -519,7 +531,7 @@ function Hub() {
             fen={positionAt(next, 1).fen}
             side={solverColor(next)}
             title={t('Next puzzle')}
-            compact={!fullBoards}
+            fill={!showHistory}
             go={() => {
               setPendingPuzzle('fresh', next);
               navigate('puzzles');
@@ -536,7 +548,7 @@ function Hub() {
             fen={positionAt(review, 1).fen}
             side={solverColor(review)}
             title={t('Missed puzzle')}
-            compact={!fullBoards}
+            fill={!showHistory}
             detail={t('{n} waiting to be reviewed', { n: failed })}
             go={() => {
               setPendingPuzzle('failed', review);
@@ -574,7 +586,7 @@ function Hub() {
                 : t('Book puzzle {n}', { n: bookNext.puzzle.number })
             }
             detail={bookNext.book.title}
-            compact={!fullBoards}
+            fill={!showHistory}
             go={() =>
               navigate('puzzles', 'books', bookNext.book.slug, bookNext.puzzle.id)
             }
