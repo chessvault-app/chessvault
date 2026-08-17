@@ -391,6 +391,41 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     });
   });
 
+  /**
+   * The next puzzle in this book you have not solved, on its own.
+   *
+   * The hub shows it on a board, and neither existing route can serve
+   * that: `/puzzlebooks/:slug` is every id and every progress entry, and
+   * `/solutions` is every position in the book — 1.7 MB on the biggest
+   * one, which is exactly the download those two were split up to keep
+   * off the path that merely OPENS a book. A launcher wants one puzzle.
+   *
+   * "Next unsolved" is the book's own rule (see BookTrainer): the first
+   * in printed order whose latest attempt was not a win, so a book you
+   * have never touched answers with its first puzzle. A finished book
+   * answers 404 and the hub simply shows no card.
+   *
+   * The solution is deliberately NOT included. This is a board to look
+   * at and a place to go; shipping the moves would hand over the answer
+   * to a puzzle nobody has attempted yet.
+   */
+  api.get('/puzzlebooks/:slug/next', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
+    const puzzle = readJson<BookPuzzle[]>(puzzlesPath(slug), []).find(
+      (p) => progress[p.id]?.last !== 'win',
+    );
+    if (!puzzle) return c.json({ error: 'nothing left unsolved in this book' }, 404);
+    return c.json({
+      puzzle: {
+        id: puzzle.id,
+        fen: puzzle.fen,
+        ...(puzzle.number === undefined ? {} : { number: puzzle.number }),
+      },
+    });
+  });
+
   api.post('/puzzlebooks/:slug/puzzles', async (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);

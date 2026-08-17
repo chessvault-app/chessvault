@@ -87,6 +87,27 @@ interface BookSummary {
   lastAt?: string | null;
 }
 
+/**
+ * Whose move it is, read off the FEN's own field.
+ *
+ * A string read rather than a parse: chessops' parseFen returns a Result
+ * whose unwrap() THROWS, and a malformed FEN reaching this launcher
+ * would blank the page rather than drop one card. Book positions are
+ * replay-verified at import so it should never happen — which is exactly
+ * the kind of "should never" worth not betting a page on.
+ */
+const turnOf = (fen: string): 'white' | 'black' =>
+  fen.split(' ')[1] === 'b' ? 'black' : 'white';
+
+/** The next unsolved puzzle in a book, from /puzzlebooks/:slug/next.
+    No solution in it, deliberately — this is a board to look at and a
+    place to go, not the answer to a puzzle nobody has attempted. */
+interface BookNext {
+  id: string;
+  fen: string;
+  number?: number;
+}
+
 /** Just the one you were last in. A launcher answers "carry on with
     what?", and the answer to that is singular — the shelf is one tap
     away and is where a list of books belongs. */
@@ -110,30 +131,23 @@ const HISTORY_ROWS = 30;
  * position offered is the position that opens.
  */
 function PuzzleCard({
-  puzzle,
-  mode,
+  fen,
+  side,
   title,
   detail,
   go,
 }: {
-  puzzle: ApiPuzzle;
-  mode: HandoffMode;
+  /** The position the solver faces, ready to draw. */
+  fen: string;
+  side: 'white' | 'black';
   title: string;
   detail?: string;
   go: () => void;
 }) {
-  // The position the solver actually faces: after the opponent's setup
-  // move, oriented to their side. Ply 1 — the same reading the dashboard
-  // preview takes.
-  const at = positionAt(puzzle, 1);
-  const side = solverColor(puzzle);
   return (
     <button
       type="button"
-      onClick={() => {
-        setPendingPuzzle(mode, puzzle);
-        go();
-      }}
+      onClick={go}
       // Tighter top and bottom than the sides: the board is square and
       // sets this row's height on its own, so vertical padding here is
       // slack around a shape that already has its own margins, while the
@@ -141,7 +155,7 @@ function PuzzleCard({
       className="bg-surface border-line hover:bg-surface-2 flex w-full items-center gap-3 rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100"
     >
       <Board
-        fen={at.fen}
+        fen={fen}
         orientation={side}
         viewOnly
         coordinates={false}
@@ -303,6 +317,7 @@ function Hub() {
   const [next, setNext] = useState<ApiPuzzle | null>(null);
   const [review, setReview] = useState<ApiPuzzle | null>(null);
   const [books, setBooks] = useState<BookSummary[]>([]);
+  const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
 
   useEffect(() => {
@@ -340,16 +355,23 @@ function Hub() {
         const { books: all } = (await res.json()) as { books: BookSummary[] };
         // Worked on most recently first; never-opened books keep the
         // server's alphabetical order behind them.
-        setBooks(
-          all
-            // An empty book is a shell waiting for an import, not
-            // something to carry on with. It belongs on the shelf, where
-            // it can be imported into; offering it here would be a row
-            // whose progress bar can never move.
-            .filter((b) => b.puzzles > 0)
-            .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''))
-            .slice(0, SHELF_ROWS),
-        );
+        const shelf = all
+          // An empty book is a shell waiting for an import, not
+          // something to carry on with. It belongs on the shelf, where
+          // it can be imported into; offering it here would be a row
+          // whose progress bar can never move.
+          .filter((b) => b.puzzles > 0)
+          .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''));
+        setBooks(shelf.slice(0, SHELF_ROWS));
+        // The board for the book at the top of that shelf. Chained off
+        // this answer rather than fired alongside it, because which book
+        // to ask about is the thing this request just decided.
+        const top = shelf[0];
+        if (!top) return;
+        const one = await fetch(`/api/puzzlebooks/${encodeURIComponent(top.slug)}/next`);
+        // 404 is a finished book, which is a card not to draw.
+        if (!one.ok) return;
+        setBookNext({ book: top, puzzle: ((await one.json()) as { puzzle: BookNext }).puzzle });
       } catch {
         // No panel. The Books tile below still reaches the shelf.
       }
@@ -411,10 +433,15 @@ function Hub() {
             being pressed. */}
         {ready && next && (
           <PuzzleCard
-            puzzle={next}
-            mode="fresh"
+            // Ply 1: after the opponent's setup move, which is the
+            // position the solver is actually handed.
+            fen={positionAt(next, 1).fen}
+            side={solverColor(next)}
             title={t('Next puzzle')}
-            go={() => navigate('puzzles')}
+            go={() => {
+              setPendingPuzzle('fresh', next);
+              navigate('puzzles');
+            }}
           />
         )}
 
@@ -424,11 +451,14 @@ function Hub() {
             have no way in from here at all. */}
         {review ? (
           <PuzzleCard
-            puzzle={review}
-            mode="failed"
+            fen={positionAt(review, 1).fen}
+            side={solverColor(review)}
             title={t('Missed puzzle')}
             detail={t('{n} waiting to be reviewed', { n: failed })}
-            go={() => navigate('puzzles', 'failed')}
+            go={() => {
+              setPendingPuzzle('failed', review);
+              navigate('puzzles', 'failed');
+            }}
           />
         ) : (
           failed > 0 && (
@@ -441,6 +471,30 @@ function Hub() {
               {t('Review failed puzzles')} · {failed}
             </Button>
           )
+        )}
+
+        {/* The book you were last in, as the position it left you on.
+            Book puzzles have no setup move — the solver plays the side
+            to move in the FEN — so this one is drawn straight rather
+            than at ply 1 like the two above it.
+
+            Its own endpoint, not the book: opening a book downloads
+            every id and every progress entry, and the solutions are 1.7
+            MB on the biggest one. A launcher wants one puzzle. */}
+        {bookNext && (
+          <PuzzleCard
+            fen={bookNext.puzzle.fen}
+            side={turnOf(bookNext.puzzle.fen)}
+            title={
+              bookNext.puzzle.number === undefined
+                ? t('Next in your book')
+                : t('Book puzzle {n}', { n: bookNext.puzzle.number })
+            }
+            detail={bookNext.book.title}
+            go={() =>
+              navigate('puzzles', 'books', bookNext.book.slug, bookNext.puzzle.id)
+            }
+          />
         )}
 
         {/* All four in one row, Train among them rather than a slab of

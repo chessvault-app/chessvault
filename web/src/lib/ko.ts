@@ -488,6 +488,8 @@ export const ko: Record<string, string> = {
   'No puzzle database yet': '아직 퍼즐 데이터베이스가 없습니다',
   'Set up the puzzle database': '퍼즐 데이터베이스 준비하기',
   'Missed puzzle': '놓친 퍼즐',
+  'Next in your book': '책의 다음 퍼즐',
+  'Book puzzle {n}': '책 퍼즐 {n}번',
   'Puzzle history': '퍼즐 기록',
   // The Train tile's label while there is no database to train on.
   'Set up': '준비하기',
