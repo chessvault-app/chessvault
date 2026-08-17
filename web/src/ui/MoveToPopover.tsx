@@ -44,7 +44,7 @@ export function MoveToPopover({
             type="button"
             onClick={() => onPick(target)}
             className={cn(
-              'hover:bg-surface-2 group flex w-full items-center gap-2 rounded-md px-2 py-2',
+              'hover:bg-surface-2 group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
               'text-left text-sm transition-colors duration-100',
             )}
           >

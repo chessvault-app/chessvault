@@ -662,7 +662,7 @@ function ChapterRow({
         </button>
       )}
       {renaming !== index && (
-        <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100">
           {!sub && (
             <Button
               variant="ghost"
