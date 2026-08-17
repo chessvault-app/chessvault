@@ -147,6 +147,30 @@ function NoteEditor({
    */
   const lastSaved = useRef(loaded);
   /**
+   * Whether that baseline is the editor's own serialisation yet, and the
+   * one-shot that makes it so.
+   *
+   * It used to be onCreate's job alone, and onCreate is too late. Tiptap
+   * emits `create` from a setTimeout — a whole macrotask after the editor
+   * exists — while the effect that applies `editable` runs synchronously
+   * on mount and emits `update`. So the first onUpdate compared against
+   * the raw FILE, and any note the serialiser normalises on the way in
+   * (a `-` bullet comes back as `*`, a trailing space goes) opened with
+   * Save lit over a note nobody had touched. Measured on this vault:
+   * seven of the first twelve notes.
+   *
+   * Whichever of the two arrives first is the right answer — the document
+   * cannot have been edited before either, since a note opens read-only —
+   * so the baseline is simply the first serialisation anyone offers.
+   */
+  const baselined = useRef(false);
+  const takeBaseline = (markdown: string): boolean => {
+    if (baselined.current) return false;
+    baselined.current = true;
+    lastSaved.current = markdown;
+    return true;
+  };
+  /**
    * The front matter every write has to put back, in a ref.
    *
    * As a prop it was captured by the leaving-the-note effect, whose deps
@@ -204,12 +228,17 @@ function NoteEditor({
     // a transaction, so onUpdate fired on a note nobody had touched and the
     // badge announced 저장 중… over an unedited note.
     onCreate: ({ editor }) => {
-      lastSaved.current = docToMarkdown(editor.state.doc, front.current);
+      takeBaseline(docToMarkdown(editor.state.doc, front.current));
     },
     onUpdate: ({ editor }) => {
       // Compare rather than trust the event: only a real difference is an
       // edit worth saving (and worth telling the reader about).
-      if (docToMarkdown(editor.state.doc, front.current) === lastSaved.current) return;
+      const now = docToMarkdown(editor.state.doc, front.current);
+      // No baseline yet, so this IS the baseline — see takeBaseline. It
+      // cannot be an edit: the note opens read-only and this fires before
+      // anyone has been offered a way to change anything.
+      if (takeBaseline(now)) return;
+      if (now === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
       // Pending is pending either way; the timer is only for anyone who
