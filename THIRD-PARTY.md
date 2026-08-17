@@ -65,9 +65,10 @@ Settings.
 
 **pirouetti is AGPL-3.0, and this app is served over a network.** AGPLv3 §13
 requires that users interacting with the software over a network be offered
-its source. The repository is public, which satisfies it. If the source were
-ever taken private while a public deployment stayed up, the set would have
-to be dropped.
+its source. The repository goes public at release, which satisfies it; while
+it is still private there is no deployment serving anyone else. If the source
+were ever taken private while a public deployment stayed up, the set would
+have to be dropped.
 
 ## Development only — never shipped
 

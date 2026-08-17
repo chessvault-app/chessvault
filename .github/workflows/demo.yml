@@ -14,9 +14,8 @@
 #
 # What lands in the target repository is build output only: minified
 # JavaScript, the synthetic seed vault, and the curated CC0 puzzle and game
-# subsets. No source maps, no vault data, no book puzzles, no tokens —
-# nothing a stranger should not see, whatever this repository's own
-# visibility (it is public now; the discipline predates that and stays).
+# subsets. No source, no source maps, no vault data, no book puzzles, no
+# tokens — so the demo can be public whether or not this repository is.
 #
 # Configured once:
 #   - environment `demo-site` with secret DEMO_DEPLOY_KEY: an SSH private
