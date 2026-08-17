@@ -294,8 +294,8 @@ tournament, result and rating in the Games tab (any of them openable on
 the board), and the position index is what the local explorer and the
 repertoire trainer answer from — filterable, because the games survive
 beside it. The bundled set keeps the strongest games of every opening
-from a recent Lichess Elite month: 38,977 games, CC0, indexed to move
-15. It is copied into `data/` the first time the app runs and is an
+from a recent Lichess Elite month: 38,977 games in 25 MB, CC0, indexed
+to move 15. It is copied into `data/` the first time the app runs and is an
 ordinary file after that: delete it, build over it. Deleting is final;
 it is not put back. (Earlier releases also bundled a summed-away
 "opening book"; the position index replaced it — one artifact answers
