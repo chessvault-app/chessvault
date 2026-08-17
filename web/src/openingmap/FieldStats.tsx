@@ -160,7 +160,7 @@ export function FieldStats({
               // the move to the share it belongs to.
               className={cn(
                 ROW,
-                'rounded-lg border px-2 py-1',
+                'rounded-lg border px-2 py-1.5',
                 isGap ? 'border-warn/40' : 'border-transparent',
                 at % 2 === 1 && 'bg-surface-2/50',
               )}
