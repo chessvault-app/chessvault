@@ -93,8 +93,9 @@ python scripts/ml/build_validated_npz.py <emit_dir:report.json>
 python scripts/ml/train.py --init cellnet-best.pt --epochs 4
 ```
 
-Outputs: `data/ml/cellnet-best.pt` (state dict). Export/browser format comes
-with the integration step.
+Outputs: `data/ml/cellnet-best.pt` (state dict). `export_weights.py` turns
+that into the browser format the app ships (`web/public/models/cellnet-v1.bin`)
+plus the golden parity vectors its inference tests check against.
 
 ## Licensing
 

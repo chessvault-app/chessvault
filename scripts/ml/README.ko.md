@@ -97,8 +97,9 @@ python scripts/ml/build_validated_npz.py <emit_dir:report.json>
 python scripts/ml/train.py --init cellnet-best.pt --epochs 4
 ```
 
-산출물: `data/ml/cellnet-best.pt`(state dict). 내보내기와 브라우저 형식은
-통합 단계에서 함께 나옵니다.
+산출물: `data/ml/cellnet-best.pt`(state dict). `export_weights.py`가 이것을
+앱이 싣고 나가는 브라우저 형식(`web/public/models/cellnet-v1.bin`)과, 추론
+테스트가 대조하는 기준 벡터로 바꿔 줍니다.
 
 ## 라이선스
 
