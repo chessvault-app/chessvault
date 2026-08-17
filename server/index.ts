@@ -8,7 +8,7 @@ import { createReadStream, existsSync, mkdirSync, readFileSync, statSync } from 
 import { networkInterfaces } from 'node:os';
 import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
-import { authApi, requireAuth } from './auth.ts';
+import { authApi, migratePlaintextPassword, requireAuth } from './auth.ts';
 import { crossSiteGuard } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
@@ -59,6 +59,11 @@ seedBundledRefgames();
 // A fresh vault opens with a welcome study and note — onboarding as
 // content, seeded once and never resurrected (see welcome.ts).
 seedWelcomeDocs();
+// A config still holding the app password verbatim is rewritten to its
+// scrypt form before the server answers anything (see auth.ts) — the same
+// rewrite a successful login performs, done here so the plaintext does
+// not have to wait on one.
+migratePlaintextPassword();
 
 const app = new Hono();
 app.use('*', logger());

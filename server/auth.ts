@@ -1,7 +1,9 @@
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { Hono, type MiddlewareHandler } from 'hono';
-import { VAULT_CONFIG } from './paths.ts';
+import { writeAtomic } from './atomic.ts';
+import { VAULT_CONFIG, VAULT_SESSIONS } from './paths.ts';
+import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { verifyTotp } from './totp.ts';
 
 /**
@@ -12,22 +14,38 @@ import { verifyTotp } from './totp.ts';
  * then requires the session cookie. The static shell stays ungated — it is
  * generic UI code; every byte of vault data flows through /api.
  *
- * The session token is deterministic — HMAC(sha256(password), fixed label)
- * — so sessions survive server restarts with no session store, and
- * changing the password invalidates every session at once. This gate is a
- * second layer: the deployment in front of it should already terminate
- * TLS and ideally add its own auth (Cloudflare Access / Caddy basic-auth).
+ * Each login mints a fresh random token; the cookie is that token, and the
+ * vault keeps only its sha256 in vault/sessions.json. The old scheme — one
+ * deterministic HMAC of the credentials — handed every device the SAME
+ * year-long bearer token, and a copy exfiltrated once could not be revoked
+ * short of changing the password. Random per-login tokens make
+ * /auth/logout a real revocation, and sessions still survive server
+ * restarts because the store is a vault file, not memory. Rotating a
+ * credential (password, 2FA) still signs everyone out at once: the
+ * settings routes clear the store (revokeAllSessions), where the old
+ * scheme got the same effect from re-derivation. This gate is a second
+ * layer: the deployment in front of it should already terminate TLS and
+ * ideally add its own auth (Cloudflare Access / Caddy basic-auth).
  */
 
 const COOKIE = 'vault_session';
 const ATTEMPT_LIMIT = 10;
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000;
+/** Cookie Max-Age and the store's own expiry — one number, so a cookie the
+    browser would still send is one the store still honours, and vice versa. */
+const SESSION_MAX_AGE_S = 365 * 24 * 60 * 60;
+const SESSION_MAX_AGE_MS = SESSION_MAX_AGE_S * 1000;
+/** More live sessions than one person's devices could need. The cap is what
+    keeps a login loop (or just a year of logins) from growing the file for
+    ever; past it, the oldest session is the one that dies. */
+const SESSION_CAP = 20;
 
 /**
- * A sentinel password that no user input can equal (safeEqual compares raw
- * bytes, and a real password is a plain string). Returned when config.json
- * exists but cannot be read or parsed: the gate then DENIES rather than
- * fails open. Only a genuinely absent file means "no gate" (local default).
+ * A sentinel password that no user input can equal (verifyPassword's plain
+ * branch compares raw bytes, and a real password is a plain string).
+ * Returned when config.json exists but cannot be read or parsed: the gate
+ * then DENIES rather than fails open. Only a genuinely absent file means
+ * "no gate" (local default).
  */
 const UNREADABLE = '\0unreadable\0';
 
@@ -88,6 +106,131 @@ function configTotp(): string | null {
 }
 
 /**
+ * The at-rest upgrade: a config still holding the password verbatim is
+ * rewritten to hold only its scrypt form (see password.ts). Run at boot
+ * and again after any successful login, so a config hand-edited back to
+ * plaintext — the documented way to recover a forgotten password — is
+ * re-hashed without waiting for a restart. Read-modify-write over the
+ * whole file, atomic rename, owner-only, like the settings routes, so no
+ * other key is disturbed. Best-effort: the plaintext form still verifies,
+ * so failing to migrate loses nothing but the hardening until the next
+ * chance.
+ */
+export function migratePlaintextPassword(configPath: string = VAULT_CONFIG): void {
+  try {
+    const config = JSON.parse(readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+    const plain = typeof config.appPassword === 'string' ? config.appPassword.trim() : '';
+    if (!plain || isHashedPassword(plain)) return;
+    config.appPassword = hashPassword(plain);
+    writeAtomic(configPath, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
+  } catch {
+    // Missing or unparseable config: nothing to migrate here (login's own
+    // UNREADABLE handling already refuses the corrupt case).
+  }
+}
+
+/**
+ * The session store: vault/sessions.json, one entry per login.
+ *
+ * Only the sha256 of each token is kept — the store must not itself be a
+ * list of usable cookies — plus when it was minted, so entries expire on
+ * the same clock as the cookie. It is read on every gated request, so it
+ * gets the same mtime cache as config.json, and written the same way the
+ * settings routes write config.json (atomic rename, owner-only). A file
+ * that is missing or damaged is an EMPTY store, not an error: unlike
+ * config.json, nothing in it is irreplaceable — every device just signs
+ * in again.
+ */
+interface SessionEntry {
+  hash: string;
+  createdAt: number;
+}
+
+let cachedSessions: { path: string; mtimeMs: number; value: SessionEntry[] } | null = null;
+
+function readSessions(path: string): SessionEntry[] {
+  let mtimeMs: number;
+  try {
+    mtimeMs = statSync(path).mtimeMs;
+  } catch {
+    cachedSessions = null;
+    return [];
+  }
+  if (cachedSessions && cachedSessions.path === path && cachedSessions.mtimeMs === mtimeMs) {
+    return cachedSessions.value;
+  }
+  let value: SessionEntry[] = [];
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf-8'));
+    if (Array.isArray(parsed)) {
+      // Entry by entry, not all-or-nothing: one hand-mangled line must not
+      // sign out the sessions beside it.
+      value = parsed.filter(
+        (e): e is SessionEntry =>
+          typeof e === 'object' &&
+          e !== null &&
+          typeof (e as SessionEntry).hash === 'string' &&
+          /^[0-9a-f]{64}$/.test((e as SessionEntry).hash) &&
+          typeof (e as SessionEntry).createdAt === 'number',
+      );
+    }
+  } catch {
+    value = [];
+  }
+  cachedSessions = { path, mtimeMs, value };
+  return value;
+}
+
+function writeSessions(path: string, entries: SessionEntry[]): void {
+  // 0600 like config.json: hashes are not tokens, but there is no reason
+  // to show every user of the host who is signed in and since when.
+  writeAtomic(path, `${JSON.stringify(entries, null, 2)}\n`, { mode: 0o600 });
+  cachedSessions = null; // the mtime moved; re-read on the next request
+}
+
+const tokenHash = (token: string): string => createHash('sha256').update(token).digest('hex');
+
+const isExpired = (e: SessionEntry, now: number): boolean => now - e.createdAt > SESSION_MAX_AGE_MS;
+
+/** Drop what the cookie clock has already dropped, then the oldest beyond
+    the cap — sorted oldest-first, so the slice keeps the newest logins. */
+function pruned(entries: SessionEntry[], now: number): SessionEntry[] {
+  const live = entries.filter((e) => !isExpired(e, now)).sort((a, b) => a.createdAt - b.createdAt);
+  return live.slice(Math.max(0, live.length - SESSION_CAP));
+}
+
+function sameHash(aHex: string, bHex: string): boolean {
+  const a = Buffer.from(aHex, 'hex');
+  const b = Buffer.from(bHex, 'hex');
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Is the presented cookie a live session? Hash it and look it up. Every
+    entry is compared timing-safely and none short-circuits, so the answer
+    costs the same whether (and where) it hits. */
+function sessionValid(sessionsPath: string, cookieHeader: string | undefined): boolean {
+  const token = cookieToken(cookieHeader);
+  if (token === null) return false;
+  const presented = tokenHash(token);
+  const now = Date.now();
+  let found = false;
+  for (const entry of readSessions(sessionsPath)) {
+    if (!isExpired(entry, now) && sameHash(entry.hash, presented)) found = true;
+  }
+  return found;
+}
+
+/**
+ * Forget every session — the server side of "change the password and
+ * everyone is signed out". The settings routes call this whenever a
+ * credential (password, 2FA) changes; the old derived-token scheme got
+ * that for free, and this one must do it explicitly.
+ */
+export function revokeAllSessions(sessionsPath: string = VAULT_SESSIONS): void {
+  writeSessions(sessionsPath, []);
+}
+
+/**
  * The rate-limit key. X-Forwarded-For is a comma list the client can prepend
  * to; behind exactly one trusted proxy (Caddy) the real client IP is the
  * LAST entry, which the proxy appends and the client cannot forge. No header
@@ -99,43 +242,27 @@ function clientIp(xff: string | undefined): string {
   return parts.at(-1) ?? 'local';
 }
 
-/** The token binds password AND totp secret: rotating either one (or
-    enabling/disabling 2FA) invalidates every session at once. */
-function sessionToken(password: string, totpSecret: string | null): string {
-  const key = createHash('sha256')
-    .update(password)
-    .update('\n')
-    .update(totpSecret ?? '')
-    .digest();
-  return createHmac('sha256', key).update('chess-vault-session-v1').digest('hex');
-}
-
-function safeEqual(a: string, b: string): boolean {
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ba.length === bb.length && timingSafeEqual(ba, bb);
-}
-
 function cookieToken(header: string | undefined): string | null {
   const match = header?.match(new RegExp(`(?:^|;\\s*)${COOKIE}=([^;]+)`));
   return match?.[1] ?? null;
 }
 
-function authed(cookieHeader: string | undefined, password: string, totpSecret: string | null): boolean {
-  const token = cookieToken(cookieHeader);
-  return token !== null && safeEqual(token, sessionToken(password, totpSecret));
-}
-
 /** Everything registered after this middleware requires the session. */
 export function requireAuth(
   passwordOverride?: () => string | null,
-  totpOverride?: () => string | null,
+  sessionsPathOverride?: string,
 ): MiddlewareHandler {
   const password = passwordOverride ?? configPassword;
-  const totp = totpOverride ?? configTotp;
+  const sessionsPath = sessionsPathOverride ?? VAULT_SESSIONS;
   return async (c, next) => {
     const configured = password();
-    if (!configured || authed(c.req.header('cookie'), configured, totp())) return next();
+    if (!configured) return next();
+    // Config present but unreadable: deny even a live session — this is
+    // readAuthConfig's fail-closed promise, and a stored session must not
+    // soften it.
+    if (configured !== UNREADABLE && sessionValid(sessionsPath, c.req.header('cookie'))) {
+      return next();
+    }
     return c.json({ error: 'authentication required' }, 401);
   };
 }
@@ -143,9 +270,11 @@ export function requireAuth(
 export function authApi(
   passwordOverride?: () => string | null,
   totpOverride?: () => string | null,
+  sessionsPathOverride?: string,
 ): Hono {
   const password = passwordOverride ?? configPassword;
   const totp = totpOverride ?? configTotp;
+  const sessionsPath = sessionsPathOverride ?? VAULT_SESSIONS;
   const api = new Hono();
 
   // Per-IP login throttle. In-memory is fine: a restart resetting the
@@ -169,7 +298,9 @@ export function authApi(
     const configured = password();
     return c.json({
       required: configured !== null,
-      authed: configured === null || authed(c.req.header('cookie'), configured, totp()),
+      authed:
+        configured === null ||
+        (configured !== UNREADABLE && sessionValid(sessionsPath, c.req.header('cookie'))),
       totp: configured !== null && totp() !== null,
     });
   });
@@ -185,7 +316,7 @@ export function authApi(
     if (isThrottled(ip)) return c.json({ error: 'too many attempts — try again later' }, 429);
 
     const body = (await c.req.json().catch(() => ({}))) as { password?: string; code?: string };
-    if (typeof body.password !== 'string' || !safeEqual(body.password, configured)) {
+    if (typeof body.password !== 'string' || !verifyPassword(body.password, configured)) {
       recordFailure(ip);
       return c.json({ error: 'wrong password' }, 401);
     }
@@ -204,15 +335,41 @@ export function authApi(
       }
     }
 
+    // A fresh random token for this login alone: the cookie is the only
+    // copy, the store keeps its hash. Login is also the moment the store
+    // is pruned — expired entries out, oldest-beyond-the-cap out.
+    const token = randomBytes(32).toString('hex');
+    const now = Date.now();
+    writeSessions(
+      sessionsPath,
+      pruned([...readSessions(sessionsPath), { hash: tokenHash(token), createdAt: now }], now),
+    );
+
+    // The stored password just proved out in its plaintext form — take the
+    // chance to leave only the hash on disk. Overrides are tests speaking
+    // for a config that does not exist; never rewrite the real one for them.
+    if (passwordOverride === undefined && !isHashedPassword(configured)) migratePlaintextPassword();
+
     const secure = c.req.header('x-forwarded-proto') === 'https' ? '; Secure' : '';
     c.header(
       'Set-Cookie',
-      `${COOKIE}=${sessionToken(configured, totpSecret)}; HttpOnly; Path=/; Max-Age=31536000; SameSite=Lax${secure}`,
+      `${COOKIE}=${token}; HttpOnly; Path=/; Max-Age=${SESSION_MAX_AGE_S}; SameSite=Lax${secure}`,
     );
     return c.json({ ok: true });
   });
 
   api.post('/auth/logout', (c) => {
+    // Revoke, don't just clear: deleting the store's entry is what makes a
+    // logged-out cookie worthless everywhere, stolen copies included.
+    const token = cookieToken(c.req.header('cookie'));
+    if (token !== null) {
+      const all = readSessions(sessionsPath);
+      const presented = tokenHash(token);
+      const remaining = pruned(all.filter((e) => !sameHash(e.hash, presented)), Date.now());
+      // Written only when something went: an ungated vault's logout must
+      // not conjure a sessions file into being.
+      if (remaining.length !== all.length) writeSessions(sessionsPath, remaining);
+    }
     c.header('Set-Cookie', `${COOKIE}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`);
     return c.json({ ok: true });
   });

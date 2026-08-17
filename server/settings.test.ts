@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
+import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { settingsApi } from './settings.ts';
 import { totpAt } from './totp.ts';
 
@@ -176,20 +177,38 @@ describe('training', () => {
 });
 
 describe('password change', () => {
-  it('requires the current password and a sane new one', async () => {
+  it('requires the current password and a sane new one, and stores only a hash', async () => {
     expect((await json('POST', '/api/settings/password', { current: 'nope', next: 'longenough' })).status).toBe(403);
     expect((await json('POST', '/api/settings/password', { current: 'hunter22', next: 'short' })).status).toBe(400);
     const ok = await json('POST', '/api/settings/password', { current: 'hunter22', next: 'a-better-password' });
     expect(ok.status).toBe(200);
     expect((await ok.json()).reauth).toBe(true);
-    expect(config().appPassword).toBe('a-better-password');
+    // At rest is the scrypt form, never the password itself.
+    const stored = config().appPassword as string;
+    expect(isHashedPassword(stored)).toBe(true);
+    expect(stored).not.toContain('a-better-password');
+    expect(verifyPassword('a-better-password', stored)).toBe(true);
+  });
+
+  it('verifies the current password in its hashed form too', async () => {
+    writeFileSync(join(vault, 'config.json'), JSON.stringify({ appPassword: hashPassword('hunter22') }));
+    expect((await json('POST', '/api/settings/password', { current: 'nope', next: 'longenough' })).status).toBe(403);
+    expect((await json('POST', '/api/settings/password', { current: 'hunter22', next: 'longenough' })).status).toBe(200);
   });
 
   it('lets an ungated vault set its first password without a current one', async () => {
     writeFileSync(join(vault, 'config.json'), JSON.stringify({}));
     const ok = await json('POST', '/api/settings/password', { next: 'first-password' });
     expect(ok.status).toBe(200);
-    expect(config().appPassword).toBe('first-password');
+    expect(isHashedPassword(config().appPassword as string)).toBe(true);
+    expect(verifyPassword('first-password', config().appPassword as string)).toBe(true);
+  });
+
+  it('revokes every stored session — reauth means reauth everywhere', async () => {
+    const sessions = join(vault, 'sessions.json');
+    writeFileSync(sessions, JSON.stringify([{ hash: 'a'.repeat(64), createdAt: Date.now() }]));
+    await json('POST', '/api/settings/password', { current: 'hunter22', next: 'a-better-password' });
+    expect(JSON.parse(readFileSync(sessions, 'utf-8'))).toEqual([]);
   });
 });
 
@@ -224,6 +243,24 @@ describe('2fa', () => {
     expect(config().totpSecret).toBeUndefined();
   });
 
+  it('evicts every session on enable and on disable — 2FA is a credential rotation', async () => {
+    const sessions = join(vault, 'sessions.json');
+    const seed = (): void =>
+      writeFileSync(sessions, JSON.stringify([{ hash: 'b'.repeat(64), createdAt: Date.now() }]));
+    const start = await (await json('POST', '/api/settings/2fa/start')).json();
+
+    seed();
+    await json('POST', '/api/settings/2fa/enable', {
+      secret: start.secret,
+      code: totpAt(start.secret, Date.now())!,
+    });
+    expect(JSON.parse(readFileSync(sessions, 'utf-8'))).toEqual([]);
+
+    seed();
+    await json('POST', '/api/settings/2fa/disable', { code: totpAt(start.secret, Date.now())! });
+    expect(JSON.parse(readFileSync(sessions, 'utf-8'))).toEqual([]);
+  });
+
   it('refuses enrolment when no password gate exists', async () => {
     writeFileSync(join(vault, 'config.json'), JSON.stringify({}));
     expect((await json('POST', '/api/settings/2fa/start')).status).toBe(400);
@@ -250,6 +287,21 @@ describe('wipe', () => {
     expect(existsSync(join(vault, 'puzzlebooks'))).toBe(false);
     expect(existsSync(join(vault, 'studies'))).toBe(true); // skeleton back
     expect(config().appPassword).toBe('hunter22');
+  });
+
+  it('checks the gate in its hashed form, and keeps the wiper signed in', async () => {
+    writeFileSync(join(vault, 'config.json'), JSON.stringify({ appPassword: hashPassword('hunter22') }));
+    // The wiper's own session must survive: sessions.json stays, like
+    // config.json, so wiping the data does not also lock the door.
+    writeFileSync(join(vault, 'sessions.json'), JSON.stringify([{ hash: 'c'.repeat(64), createdAt: Date.now() }]));
+    mkdirSync(join(vault, 'studies'), { recursive: true });
+    writeFileSync(join(vault, 'studies', 'a.pgn'), '*');
+
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' })).status).toBe(403);
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'hunter22' })).status).toBe(200);
+    expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(false);
+    expect(existsSync(join(vault, 'sessions.json'))).toBe(true);
+    expect(existsSync(join(vault, 'config.json'))).toBe(true);
   });
 
   it('skips the password check on an ungated vault', async () => {

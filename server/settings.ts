@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process';
 import { writeAtomic } from './atomic.ts';
-import { timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import {APP_VERSION, VAULT, VAULT_CONFIG} from './paths.ts';
+import { revokeAllSessions } from './auth.ts';
+import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseHomeLayout } from '../shared/homeLayout.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
@@ -47,6 +48,10 @@ export interface SettingsDeps {
 export function settingsApi(deps: SettingsDeps = {}): Hono {
   const configPath = deps.configPath ?? VAULT_CONFIG;
   const vaultDir = deps.vaultDir ?? VAULT;
+  // The session store lives beside config.json (see auth.ts). The routes
+  // that rotate a credential clear it, so "everyone is signed out now"
+  // stays true under random per-login tokens.
+  const sessionsPath = resolve(vaultDir, 'sessions.json');
 
   const readConfig = (): Config => {
     try {
@@ -63,13 +68,6 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // Windows EPERM retry: a settings save 500ed when Defender briefly
     // held the file the rename was replacing.
     writeAtomic(configPath, `${JSON.stringify(config, null, 2)}\n`, { mode: 0o600 });
-  };
-
-  /** Constant-time string compare — same reason auth.ts uses one. */
-  const secretEqual = (a: string, b: string): boolean => {
-    const ba = Buffer.from(a);
-    const bb = Buffer.from(b);
-    return ba.length === bb.length && timingSafeEqual(ba, bb);
   };
 
   const api = new Hono();
@@ -163,17 +161,22 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
   api.post('/settings/password', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { current?: string; next?: string };
     const config = readConfig();
+    // Either form verifies: the scrypt hash every write below leaves, or
+    // the plaintext of a config that predates hashing (see password.ts).
     const current = config.appPassword?.trim() || null;
-    if (current && !secretEqual(body.current ?? '', current)) {
+    if (current && !verifyPassword(body.current ?? '', current)) {
       return c.json({ error: 'current password is wrong' }, 403);
     }
     const next = body.next?.trim() ?? '';
     if (next.length < 8) return c.json({ error: 'new password must be at least 8 characters' }, 400);
     writeConfig((cfg) => {
-      cfg.appPassword = next;
+      cfg.appPassword = hashPassword(next);
     });
-    // The session token derives from the password, so every session —
-    // including this one — is invalid now. The client re-logs-in.
+    // Sessions are random per-login tokens, so a changed password does not
+    // strand them by itself — clear the store, so this means what it always
+    // has: every session, including this one, is invalid now. The client
+    // re-logs-in.
+    revokeAllSessions(sessionsPath);
     return c.json({ ok: true, reauth: true });
   });
 
@@ -230,6 +233,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     writeConfig((config) => {
       config.totpSecret = secret;
     });
+    // Enabling 2FA evicts every session — a device signed in before the
+    // authenticator existed has never passed it.
+    revokeAllSessions(sessionsPath);
     return c.json({ ok: true, reauth: true });
   });
 
@@ -244,6 +250,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     writeConfig((cfg) => {
       delete cfg.totpSecret;
     });
+    // Same eviction on the way off: 2FA changing in either direction is a
+    // credential rotation.
+    revokeAllSessions(sessionsPath);
     return c.json({ ok: true, reauth: true });
   });
 
@@ -258,14 +267,15 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // session or CSRF drive-by from destroying data, and is a deliberate
     // friction on an irreversible action. Ungated (local) vaults skip it.
     const gate = readConfig().appPassword?.trim();
-    if (gate && !secretEqual(body.password ?? '', gate)) {
+    if (gate && !verifyPassword(body.password ?? '', gate)) {
       return c.json({ error: 'password required to wipe' }, 403);
     }
     // Everything in the vault goes — games, studies, notes, puzzles, books,
     // sources, the fine-grained history repo — except config.json, which
-    // holds the password, 2FA and tokens that let the owner back in.
+    // holds the password, 2FA and tokens that let the owner back in, and
+    // sessions.json, so wiping the data does not also sign the wiper out.
     for (const entry of readdirSync(vaultDir)) {
-      if (entry === 'config.json' || entry === '.gitkeep') continue;
+      if (entry === 'config.json' || entry === 'sessions.json' || entry === '.gitkeep') continue;
       rmSync(resolve(vaultDir, entry), { recursive: true, force: true });
     }
     for (const d of ['studies', 'notes', 'games', 'sources']) {

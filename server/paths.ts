@@ -22,6 +22,9 @@ export const VAULT_GAMES = resolve(VAULT, 'games');
 /** PGN files the user drops in to be indexed into reference databases. */
 export const VAULT_SOURCES = resolve(VAULT, 'sources');
 export const VAULT_CONFIG = resolve(VAULT, 'config.json');
+/** Hashes of the live session tokens (see server/auth.ts). User state like
+    config.json: never committed, excluded from the history repo. */
+export const VAULT_SESSIONS = resolve(VAULT, 'sessions.json');
 
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');

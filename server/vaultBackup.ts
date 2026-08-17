@@ -85,17 +85,24 @@ export async function startVaultBackup(
   // exactly what this repo is not for), and — critically — config.json
   // holds the app password, TOTP secret and Lichess token, which must
   // never enter a repo that scripts/backup-vault.sh pulls off-box (git
-  // would retain every past value).
+  // would retain every past value). sessions.json sits under the same
+  // rule: live session hashes are secrets-adjacent, and it churns on
+  // every login, which is not a version of anything.
   if (existsSync(gitDir)) {
     writeFileSync(
       resolve(gitDir, 'info', 'exclude'),
-      `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\n*.swp\n`,
+      `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\nsessions.json\n*.swp\n`,
     );
-    // Untrack config.json if an earlier version committed it; --ignore-unmatch
-    // makes this a no-op once clean. Leaves the working file intact.
-    await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', 'config.json']).catch(
-      () => undefined,
-    );
+    // Untrack them if an earlier version committed either; --ignore-unmatch
+    // makes this a no-op once clean. Leaves the working files intact.
+    await git(gitDir, dir, [
+      'rm',
+      '--cached',
+      '--quiet',
+      '--ignore-unmatch',
+      'config.json',
+      'sessions.json',
+    ]).catch(() => undefined);
   }
 
   let timer: ReturnType<typeof setTimeout> | null = null;
