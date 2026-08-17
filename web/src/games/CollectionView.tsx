@@ -53,7 +53,7 @@ import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 
 import { t } from '@/lib/i18n';
-import { GamePreview, GameRow, docId, gameKey, type GameSummary, type Preview } from './shared';
+import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { EliteGames } from './EliteGames';
 
@@ -96,6 +96,9 @@ const CollectionRow = memo(function CollectionRow({
   onStartRename: (key: string) => void;
   onContext: (game: GameSummary, x: number, y: number) => void;
 }) {
+  // Through the scheme guard (see shared.tsx): a stored link that is not
+  // http(s) offers no View online at all rather than a live window.open.
+  const link = safeLink(game.link);
   return (
     <GameRow
       onSwipeAway={() => onDrop(game)}
@@ -140,12 +143,12 @@ const CollectionRow = memo(function CollectionRow({
           onSelect: () => onToggleBookmark(game),
         },
         { label: 'Rename', icon: Pencil, onSelect: () => onStartRename(gameKey(game)) },
-        ...(game.link
+        ...(link
           ? [
               {
                 label: 'View online',
                 icon: ExternalLink,
-                onSelect: () => window.open(game.link!, '_blank', 'noreferrer'),
+                onSelect: () => window.open(link, '_blank', 'noreferrer'),
               },
             ]
           : []),
@@ -221,20 +224,22 @@ export function CollectionView() {
         setLoaded(true);
       })
       .catch(() => setError(t('vault server unreachable')));
-    void fetch('/api/games/bookmarks')
-      .then((r) => r.json() as Promise<{ keys: string[] }>)
+    void api<{ keys: string[] }>('/api/games/bookmarks')
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
   }, [load]);
 
   const toggleBookmark = async (game: GameSummary): Promise<void> => {
-    const res = await fetch('/api/games/bookmarks/toggle', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ file: game.file, index: game.index }),
-    });
-    if (!res.ok) return;
-    const { key, bookmarked } = (await res.json()) as { key: string; bookmarked: boolean };
+    let key: string;
+    let bookmarked: boolean;
+    try {
+      ({ key, bookmarked } = await api<{ key: string; bookmarked: boolean }>(
+        '/api/games/bookmarks/toggle',
+        { method: 'POST', json: { file: game.file, index: game.index } },
+      ));
+    } catch {
+      return; // as before: a toggle that fails leaves the star as it was
+    }
     setBookmarks((prev) => {
       const next = new Set(prev);
       if (bookmarked) next.add(key);
@@ -267,22 +272,23 @@ export function CollectionView() {
     const from = docId(game);
     const next = to.trim();
     if (!next || next === from) return;
-    const res = await fetch('/api/games/docs/move', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ from, to: next }),
-    });
-    if (!res.ok) {
-      setError(
-        t(((await res.json().catch(() => null)) as { error?: string } | null)?.error ?? 'rename failed'),
-      );
+    try {
+      await api('/api/games/docs/move', { method: 'POST', json: { from, to: next } });
+    } catch (failure) {
+      setError(t(apiErrorMessage(failure)));
     }
     void load();
   };
 
   const removeGame = async (game: GameSummary): Promise<void> => {
     const id = docId(game);
-    await fetch(`/api/games/docs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    try {
+      await api(`/api/games/docs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    } catch {
+      // Caught so the undo path still unhides the row (see dropGame): a
+      // delete that never landed must not leave the game invisible. The
+      // reload below shows the truth either way.
+    }
     void load();
   };
 

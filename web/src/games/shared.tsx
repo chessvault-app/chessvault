@@ -48,6 +48,18 @@ export const docId = (g: Pick<GameSummary, 'file'>): string =>
 
 export const isCoarsePointer = (): boolean => window.matchMedia('(pointer: coarse)').matches;
 
+/**
+ * A game's link, only if it is safe to leave the app through.
+ *
+ * `link` arrives from server-side game summaries — provider URLs and
+ * stored PGN metadata — and an anchor or window.open will happily run a
+ * `javascript:` value. Anything that is not plain http(s) yields
+ * undefined, and the callers render no link at all rather than an inert
+ * one.
+ */
+export const safeLink = (link?: string | null): string | undefined =>
+  link && /^https?:\/\//i.test(link) ? link : undefined;
+
 /** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
 export const fmtResult = (result: string): string => result.replaceAll('1/2', '½');
 
@@ -222,6 +234,9 @@ export function GameRow({
   const openingLabel = game.opening
     ? `${game.opening.eco} ${game.opening.name}`
     : (game.eco ?? '');
+
+  // Through the scheme guard: a link that is not http(s) gets no anchor.
+  const link = safeLink(game.link);
 
   return (
     <li
@@ -451,12 +466,12 @@ export function GameRow({
       {/* Same container rule as the eye: in a narrow column this is 22px
           spent on a link out of the app, and the row it is taking them
           from is the reason anyone is looking. */}
-      {showLink && !game.link && (
+      {showLink && !link && (
         <span className="w-[1.375rem] shrink-0 @max-[21.5rem]/arc:hidden" aria-hidden />
       )}
-      {showLink && game.link && (
+      {showLink && link && (
         <a
-          href={game.link}
+          href={link}
           target="_blank"
           rel="noreferrer"
           title={t('View on chess.com (needs internet)')}

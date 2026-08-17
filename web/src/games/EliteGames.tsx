@@ -5,7 +5,7 @@ import { forgetCollection, loadCollection } from './collection';
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
 
-import { api } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -152,12 +152,18 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     }
   }, []);
 
+  // Meta can fail like any other request — a raw fetch here used to leave
+  // the pane wedged on nothing at all, with the rejection unhandled. The
+  // failure is shown in the same red line every other pane uses, with the
+  // retry the mount effect cannot offer.
+  const [metaError, setMetaError] = useState<string | null>(null);
   const loadMeta = useCallback(() => {
-    void fetch('/api/refgames')
-      .then((r) => r.json())
-      .then((d: { ready: boolean; games?: number; sources?: string; databases?: RefDb[] }) => {
-        setMeta(d);
-      });
+    setMetaError(null);
+    void api<{ ready: boolean; games?: number; sources?: string; databases?: RefDb[] }>(
+      '/api/refgames',
+    )
+      .then(setMeta)
+      .catch((failure) => setMetaError(t(apiErrorMessage(failure))));
   }, []);
   useEffect(() => {
     loadMeta();
@@ -222,9 +228,12 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   const refGameKey = (id: number): string => `${curDb ?? ''}:${id}`;
 
   const openGame = async (game: RefGame): Promise<void> => {
-    const res = await fetch(pgnUrl(game.id));
-    if (!res.ok) return;
-    const { pgn } = (await res.json()) as { pgn: string };
+    let pgn: string;
+    try {
+      ({ pgn } = await api<{ pgn: string }>(pgnUrl(game.id)));
+    } catch {
+      return; // as before: a row that cannot be fetched simply does not open
+    }
     if (useAnalysis.getState().loadPgn(pgn)) {
       useAnalysis.setState({ handoff: true });
       navigate('board');
@@ -245,17 +254,20 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
   const inCollection = (g: RefGame): boolean =>
     added.has(refGameKey(g.id)) || collectionKeys.has(`${g.white}|${g.black}|${g.date ?? ''}`);
   const collect = async (game: RefGame): Promise<void> => {
-    const res = await fetch(pgnUrl(game.id));
-    if (!res.ok) return;
-    const { pgn } = (await res.json()) as { pgn: string };
-    const posted = await fetch('/api/games/collect-pgn', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ pgn }),
-    });
-    // 409 = already there; either way this game is now in the collection.
-    if (posted.ok) forgetCollection();
-    if (posted.ok || posted.status === 409) setAdded((prev) => new Set(prev).add(refGameKey(game.id)));
+    let pgn: string;
+    try {
+      ({ pgn } = await api<{ pgn: string }>(pgnUrl(game.id)));
+    } catch {
+      return;
+    }
+    try {
+      await api('/api/games/collect-pgn', { method: 'POST', json: { pgn } });
+      forgetCollection();
+    } catch (failure) {
+      // 409 = already there; either way this game is now in the collection.
+      if (!(failure instanceof ApiError && failure.status === 409)) return;
+    }
+    setAdded((prev) => new Set(prev).add(refGameKey(game.id)));
   };
 
   // Preview eye, matching the collection rows: the DB stores movetext,
@@ -269,9 +281,12 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     const seq = ++previewSeq.current;
     let fen = fenCache.current.get(refGameKey(game.id));
     if (!fen) {
-      const res = await fetch(pgnUrl(game.id));
-      if (!res.ok) return;
-      const { pgn } = (await res.json()) as { pgn: string };
+      let pgn: string;
+      try {
+        ({ pgn } = await api<{ pgn: string }>(pgnUrl(game.id)));
+      } catch {
+        return; // a preview is a glance — nothing to report if it cannot load
+      }
       try {
         const first = pgnToChapters(pgn)[0];
         if (!first) return;
@@ -311,6 +326,22 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curDb]);
   const coarse = isCoarsePointer;
+
+  if (!meta && metaError) {
+    // The pane never learned what it holds, so there is nothing truthful
+    // to draw below — say why, and offer the retry (a mount-only load has
+    // no other way back short of reloading the app).
+    return (
+      <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
+        <div className="flex flex-col items-center gap-3">
+          <p className="text-bad text-center text-xs">{metaError}</p>
+          <Button variant="secondary" size="sm" onClick={loadMeta}>
+            {t('Try again')}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (meta && !meta.ready) {
     // The empty state used to BE the manager, inline. Managing lives on

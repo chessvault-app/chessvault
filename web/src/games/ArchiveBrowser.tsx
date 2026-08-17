@@ -6,9 +6,10 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
+import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -243,11 +244,13 @@ export function ArchiveBrowser({
   // First run on a device: fall back to the profile usernames from Settings.
   useEffect(() => {
     if (username.trim()) return;
-    void fetch('/api/settings')
-      .then((r) => (r.ok ? (r.json() as Promise<{ profile?: { chesscom?: string; lichess?: string } }>) : null))
+    void api<{ profile?: { chesscom?: string; lichess?: string } }>('/api/settings')
       .then((s) => {
         const fromProfile = provider === 'chesscom' ? s?.profile?.chesscom : s?.profile?.lichess;
         if (fromProfile) setUsername((current) => (current.trim() ? current : fromProfile));
+      })
+      .catch(() => {
+        /* a cosmetic prefill: the field simply stays empty */
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider]);
@@ -321,10 +324,9 @@ export function ArchiveBrowser({
     setMonth('');
     setMonthGames([]);
     try {
-      const res = await fetch(`${apiBase}/months?user=${encodeURIComponent(user)}`);
-      const body = (await res.json()) as
-        | { months: ArchiveMonth[]; offline: boolean; total?: number | null }
-        | { error: string };
+      const body = await api<
+        { months: ArchiveMonth[]; offline: boolean; total?: number | null } | { error: string }
+      >(`${apiBase}/months?user=${encodeURIComponent(user)}`);
       if ('error' in body) setError(body.error);
       else {
         setMonths(body.months);
@@ -335,8 +337,8 @@ export function ArchiveBrowser({
         // page of it. The rest arrives as it is scrolled to.
         if (body.months.length) await loadAllMonths(body.months, user);
       }
-    } catch {
-      setError(t('vault server unreachable'));
+    } catch (failure) {
+      setError(t(apiErrorMessage(failure)));
     } finally {
       setLoading(null);
     }
@@ -354,9 +356,9 @@ export function ArchiveBrowser({
     const hit = useArchiveBrowse.getState().cache[key];
     if (hit) return hit;
     try {
-      const res = await fetch(`${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`);
-      if (!res.ok) return [];
-      const body = (await res.json()) as { games?: GameSummary[] };
+      const body = await api<{ games?: GameSummary[] }>(
+        `${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`,
+      );
       const games = (body.games ?? []).slice().reverse();
       useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
       return games;
@@ -454,10 +456,9 @@ export function ArchiveBrowser({
   // committing it to the collection — Add is the explicit action.
   const openInAnalysis = async (game: GameSummary): Promise<void> => {
     try {
-      const res = await fetch(
+      const { pgn } = await api<{ pgn: string }>(
         `/api/games/pgn?file=${encodeURIComponent(game.file)}&index=${game.index}`,
       );
-      const { pgn } = (await res.json()) as { pgn: string };
       const { loadPgn } = useAnalysis.getState();
       if (loadPgn(pgn)) {
         if (game.userSide) useAnalysis.setState({ orientation: game.userSide });
@@ -485,11 +486,19 @@ export function ArchiveBrowser({
     side: 'any',
     result: 'any',
   });
-  const visibleMonthGames = monthGames.filter(
-    (g) =>
-      (sideFilter === 'any' || g.userSide === sideFilter) &&
-      (resultFilter === 'any' || g.result === resultFilter) &&
-      matchesStructured(structured, g),
+  // Memoised, both of them: "All dates" holds tens of thousands of rows,
+  // and recomputing two O(n) passes on every render meant every checkbox
+  // tick re-filtered a decade — in a list whose rows are memoised
+  // precisely so a tick touches two of them.
+  const visibleMonthGames = useMemo(
+    () =>
+      monthGames.filter(
+        (g) =>
+          (sideFilter === 'any' || g.userSide === sideFilter) &&
+          (resultFilter === 'any' || g.result === resultFilter) &&
+          matchesStructured(structured, g),
+      ),
+    [monthGames, sideFilter, resultFilter, structured],
   );
 
   /**
@@ -509,8 +518,12 @@ export function ArchiveBrowser({
    * a Select all that included everything already imported would re-add an
    * entire history as "(2)" files from a single press.
    */
-  const uncollected = visibleMonthGames.filter(
-    (g) => !added.has(gameKey(g)) && !collectionKeys.has(`${g.white}|${g.black}|${g.date}`),
+  const uncollected = useMemo(
+    () =>
+      visibleMonthGames.filter(
+        (g) => !added.has(gameKey(g)) && !collectionKeys.has(`${g.white}|${g.black}|${g.date}`),
+      ),
+    [visibleMonthGames, added, collectionKeys],
   );
 
   const switchProvider = (next: 'chesscom' | 'lichess'): void => {
@@ -548,15 +561,16 @@ export function ArchiveBrowser({
       // button counts them off rather than sitting on "Adding…" for a
       // minute with nothing to show it is alive.
       setAddProgress({ done: done.length, total: games.length });
-      const res = await fetch('/api/games/collect', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ file, indexes: group.map((g) => g.index) }),
-      });
-      if (res.ok) done.push(...group);
-      else {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        failure = body?.error ?? t('could not add those games');
+      try {
+        await api('/api/games/collect', {
+          method: 'POST',
+          json: { file, indexes: group.map((g) => g.index) },
+        });
+        done.push(...group);
+      } catch (err) {
+        // Caught per file, so one bad month does not abandon the rest of
+        // the batch (or strand the busy button mid-count).
+        failure = apiErrorMessage(err);
       }
     }
 
@@ -574,17 +588,15 @@ export function ArchiveBrowser({
   };
 
   const collect = async (game: GameSummary): Promise<void> => {
-    const res = await fetch('/api/games/collect', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ file: game.file, index: game.index }),
-    });
-    if (res.ok) {
+    try {
+      await api('/api/games/collect', {
+        method: 'POST',
+        json: { file: game.file, index: game.index },
+      });
       setAdded((prev) => new Set(prev).add(gameKey(game)));
       onCollected();
-    } else {
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      setError(t(body?.error ?? 'could not add that game'));
+    } catch (failure) {
+      setError(t(apiErrorMessage(failure)));
     }
   };
 

@@ -1,3 +1,4 @@
+import { api } from '@/lib/api';
 import type { GameSummary } from './shared';
 
 /**
@@ -25,8 +26,9 @@ export function forgetCollection(): void {
 
 export async function loadCollection(): Promise<GameSummary[]> {
   // One request even when both panes of the page ask at the same moment.
-  inFlight ??= fetch('/api/games')
-    .then((r) => r.json() as Promise<{ games: GameSummary[] }>)
+  // api() throws on failure, so the rejection reaches every caller's own
+  // catch instead of caching an undefined list.
+  inFlight ??= api<{ games: GameSummary[] }>('/api/games')
     .then(({ games }) => {
       cache = games;
       return games;
