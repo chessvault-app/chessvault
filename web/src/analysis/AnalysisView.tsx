@@ -530,7 +530,7 @@ export function StatusBar() {
   }, []);
 
   return (
-    <div className="border-line flex shrink-0 items-center gap-2 border-t px-2 py-1.5 max-md:hidden">
+    <div className="border-line flex shrink-0 items-center gap-2 border-t py-1.5 pl-3 pr-2 max-md:hidden">
       <code
         className="text-subtle min-w-0 flex-1 truncate font-mono text-[0.6875rem]"
         title={node.fen}
