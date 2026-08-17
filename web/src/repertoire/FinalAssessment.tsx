@@ -1,6 +1,7 @@
 import { Loader2, Microscope } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { EvalBar } from '@/engine/EvalBar';
+import { terminalScore } from '@/engine/terminal';
 import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
 import { Button } from '@/ui/Button';
@@ -51,15 +52,29 @@ export function FinalAssessment({
   // page reaching outside itself.
   const startedByUs = useRef(false);
 
+  /**
+   * A line that ended in mate is already answered, and asking the engine
+   * would never get an answer back.
+   *
+   * A terminal position produces no engine lines at all (see
+   * engine/terminal.ts), and everything below waits for `lines[0]` — so a
+   * drill or a spar that finished with checkmate sat on "Evaluating the
+   * position…" for ever, with the engine this panel started still
+   * running, and the only way out was to leave the page. Scored by rule
+   * instead, and the engine is never asked: nothing about a finished game
+   * needs searching.
+   */
+  const settled = useMemo(() => terminalScore(fen), [fen]);
+
   useEffect(() => {
-    if (verdict) return;
+    if (verdict || settled) return;
     if (!enabled) {
       startedByUs.current = true;
       setEnabled(true);
       return;
     }
     analyse(fen);
-  }, [enabled, fen, verdict, analyse, setEnabled]);
+  }, [enabled, fen, verdict, settled, analyse, setEnabled]);
 
   // One position, one search: take the answer at the end of it and stop.
   // It used to run on after the number appeared, which on a phone is a
@@ -89,7 +104,7 @@ export function FinalAssessment({
           fen.split(' ')[1] === 'b' ? 'black' : 'white',
         )
       : null;
-  const score = verdict ?? live;
+  const score = verdict ?? settled ?? live;
 
   return (
     <div className="flex flex-col gap-2">
@@ -113,7 +128,7 @@ export function FinalAssessment({
           <EvalBar score={score} orientation="horizontal" className="flex-1" />
         </div>
         <p className="text-subtle min-h-[0.875rem] text-[0.6875rem] leading-none">
-          {verdict ? '' : t('Evaluating the position…')}
+          {verdict || settled ? '' : t('Evaluating the position…')}
         </p>
       </div>
       {/* One row: analysing the line and whatever else this ending offers
