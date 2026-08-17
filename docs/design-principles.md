@@ -10,7 +10,7 @@ them. When in doubt, these win over novelty.
 - **Sentence case everywhere** ("Add puzzle", "Book solution"). No
   Title Case labels.
 - **Plain words over jargon**: fidelity tiers are "Book solution /
-  Engine + book / Engine solution / Engine guess", not
+  Engine + book / Engine solution / Engine guess / Draft", not
   "book-parsed/engine-corroborated". A stranger should understand a
   label without the tooltip; the tooltip carries the precision.
 - **No user-facing ratings.** Puzzle ratings exist only as curation

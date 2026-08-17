@@ -11,7 +11,7 @@
   대문자로 시작하는 라벨은 쓰지 않습니다.
 - **전문 용어보다 평범한 말**: 신뢰 등급은
   "book-parsed/engine-corroborated"가 아니라 "Book solution / Engine + book
-  / Engine solution / Engine guess"입니다. 처음 보는 사람도 툴팁 없이 라벨을
+  / Engine solution / Engine guess / Draft"입니다. 처음 보는 사람도 툴팁 없이 라벨을
   이해할 수 있어야 하고, 정확한 설명은 툴팁이 짊어집니다.
 - **사용자에게 레이팅을 보이지 않습니다.** 퍼즐 레이팅은 오직 문제를 고르는
   데이터로만 존재하고, UI는 구간(쉬움/보통/어려움/전문가)을 글자 라벨로 보여
