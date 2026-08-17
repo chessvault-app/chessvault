@@ -170,7 +170,7 @@ export function ThemesPage() {
           />
         </div>
 
-        <ChipRow className="mb-5" innerClassName="gap-2">
+        <ChipRow className="mb-4" innerClassName="gap-2">
           <ThemeCard
             className="w-full sm:w-auto"
             label={t('All themes')}
@@ -234,7 +234,7 @@ export function ThemesPage() {
 
 function ThemeGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-5">
+    <section className="mb-4">
       <h2 className="text-subtle mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
         {title}
       </h2>
