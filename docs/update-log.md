@@ -209,7 +209,7 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   sound like one sample repeating.
 - **Licences travel with the build.** `licenses/` reached nobody who never
   opened the repository. Every build now carries the texts and a page
-  listing all 931 things this app is built from — bundled assets, npm
+  listing all 937 things this app is built from — bundled assets, npm
   packages, and Electron's 773 Chromium components — each opening to its
   own licence text, with a link to its source. Generated from
   `node_modules` at build time, so it cannot go stale.

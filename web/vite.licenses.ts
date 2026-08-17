@@ -108,7 +108,8 @@ const ASSETS: { name: string; version: string; license: string; url: string; fil
  * Every production dependency, with its own licence text.
  *
  * MIT and ISC both require their notice "in all copies", and the fonts are
- * OFL, which has to travel with the font files. That is 130-odd notices,
+ * OFL, which has to travel with the font files. That is well over a hundred
+ * notices,
  * which nobody can maintain by hand and which go stale the first time a
  * dependency is added — so they are read from node_modules at build time
  * instead. The copyright lines are the part that matters, and they come
