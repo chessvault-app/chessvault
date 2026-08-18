@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Compass, Grid3x3, Library, ListTree, Loader2, NotebookPen, Orbit, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Compass, Crosshair, Grid3x3, Library, ListTree, Loader2, Maximize2, NotebookPen, Orbit, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -243,8 +243,41 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const [arrangement, setArrangement] = useState<'constellation' | 'tree'>(() =>
     localStorage.getItem(ARRANGEMENT_KEY) === 'tree' ? 'tree' : 'constellation',
   );
+  /**
+   * The one line on screen, when the whole graph has been put aside.
+   *
+   * Not remembered between visits, unlike the arrangement: hiding most of
+   * a map is something you do to answer a question, and coming back
+   * tomorrow to a map that is mostly missing — with no memory of asking —
+   * would read as a map that had lost its branches.
+   */
+  const [only, setOnly] = useState<string | null>(null);
+  // Bumped to ask the canvas to fit what it is drawing. A counter rather
+  // than a callback because the fitting belongs to the canvas, which is
+  // the only thing that knows how big its box is.
+  const [align, setAlign] = useState(0);
+  // A line put aside belongs to the arrangement that can show one.
+  useEffect(() => {
+    if (arrangement !== 'tree') setOnly(null);
+  }, [arrangement]);
 
   const mapActions: FabAction[] = [
+    {
+      // Fitting is the answer to "where has it gone" — after a pan into
+      // the distance, a zoom, or a line put aside and brought back.
+      label: 'Align the map',
+      icon: Maximize2,
+      onSelect: () => setAlign((n) => n + 1),
+    },
+    ...(only !== null
+      ? [
+          {
+            label: 'Restore the whole graph',
+            icon: Crosshair,
+            onSelect: () => setOnly(null),
+          },
+        ]
+      : []),
     {
       // Which arrangement of the same nodes is on screen. The tree is the
       // reading view — what follows what — and the constellation is the
@@ -303,6 +336,9 @@ export function OpeningMapView({ params }: { params: string[] }) {
         onAddMove={() => setAddTo(selected)}
         onGrow={() => setGrowFrom(selected)}
         onSelectChild={setSelectedId}
+        // Only the tree can show one line: the constellation is a picture
+        // of the whole shape, and one line of it is a row of dots.
+        onIsolate={arrangement === 'tree' ? () => setOnly(selected) : undefined}
         onDelete={() => setSelectedId(null)}
       />
     ) : null;
@@ -441,6 +477,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
           selectedId={selected}
           focus={focus}
           arrangement={arrangement}
+          only={only}
+          align={align}
           // Pressing the selected dot again lets it go. Selecting is what
           // opens the panel and lights the mainline, so it needs an undo
           // that is the same gesture — hunting for empty canvas to click
@@ -760,6 +798,7 @@ function NodePanel({
   onAddMove,
   onGrow,
   onSelectChild,
+  onIsolate,
   onDelete,
 }: {
   map: OpeningMap;
@@ -775,6 +814,8 @@ function NodePanel({
   onAddMove: () => void;
   onGrow: () => void;
   onSelectChild: (id: string) => void;
+  /** Absent where the arrangement cannot show one line on its own. */
+  onIsolate?: () => void;
   onDelete: () => void;
 }) {
   const { apply } = useOpeningMap();
@@ -1244,6 +1285,14 @@ function NodePanel({
             navigate('repertoire');
           }}
         />
+        {onIsolate && (
+          <PanelAction
+            icon={ListTree}
+            label="Show only this line"
+            title="Show only this line"
+            onSelect={onIsolate}
+          />
+        )}
         <PanelAction
           icon={Grid3x3}
           label="Analyse"

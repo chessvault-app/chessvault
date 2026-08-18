@@ -6,6 +6,8 @@ import {
   chartLine,
   deleteNode,
   emptyDoc,
+  lineOnly,
+  type MapNode,
   ensureMaps,
   normalizeSan,
   removeTag,
@@ -167,5 +169,49 @@ describe('edits', () => {
     const doc = sample();
     expect(addChild(doc, 'nope', 'e4', 'c6')).toBe(doc);
     expect(updateFields(doc, 'w1', 'nope', { name: 'x' })).toBe(doc);
+  });
+});
+
+describe('lineOnly', () => {
+  const tree = (): MapNode => ({
+    id: 'root',
+    children: [
+      {
+        id: 'e4',
+        san: 'e4',
+        children: [
+          { id: 'c5', san: 'c5', children: [{ id: 'nf3', san: 'Nf3', children: [] }] },
+          { id: 'e5', san: 'e5', children: [] },
+        ],
+      },
+      { id: 'd4', san: 'd4', children: [] },
+    ],
+  });
+
+  const ids = (node: MapNode): string[] => [
+    node.id,
+    ...node.children.flatMap((child) => ids(child)),
+  ];
+
+  it('keeps the moves that lead there and everything after', () => {
+    // The line to c5, its continuation, and neither sibling on the way.
+    expect(ids(lineOnly(tree(), 'c5'))).toEqual(['root', 'e4', 'c5', 'nf3']);
+  });
+
+  it('keeps the whole map when the line is the root', () => {
+    expect(ids(lineOnly(tree(), 'root'))).toEqual(ids(tree()));
+  });
+
+  it('gives the map back when it does not hold that node', () => {
+    // A node can be deleted while its line is the one on screen.
+    expect(ids(lineOnly(tree(), 'nope'))).toEqual(ids(tree()));
+  });
+
+  it('leaves the map it was given alone', () => {
+    const original = tree();
+    const before = ids(original);
+    lineOnly(original, 'c5');
+    expect(ids(original)).toEqual(before);
+    expect(original.children).toHaveLength(2);
   });
 });

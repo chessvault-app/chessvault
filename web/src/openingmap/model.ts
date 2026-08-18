@@ -42,6 +42,38 @@ export interface MapNode {
   children: MapNode[];
 }
 
+/**
+ * The map with everything but one line taken out: the moves that lead to
+ * `id`, and everything that follows it.
+ *
+ * What a wide map costs is legibility, and folding one node at a time
+ * does not buy it back — a repertoire becomes readable when you can say
+ * "this line, and never mind the rest", which is one press against the
+ * dozens it would otherwise take. Siblings along the way are dropped; the
+ * subtree under the node is kept, because the question "what follows
+ * this" is the one you asked it for.
+ *
+ * A tree of new objects, not a mutation: the map itself is untouched, so
+ * this is a way of LOOKING at it that ends the moment you stop.
+ *
+ * An id this map does not hold gives the map back unchanged — a node can
+ * be deleted while its line is the one on screen.
+ */
+export function lineOnly(root: MapNode, id: string): MapNode {
+  const path: MapNode[] = [];
+  const find = (node: MapNode): boolean => {
+    path.push(node);
+    if (node.id === id) return true;
+    for (const child of node.children) if (find(child)) return true;
+    path.pop();
+    return false;
+  };
+  if (!find(root)) return root;
+  let out = path[path.length - 1]!;
+  for (let at = path.length - 2; at >= 0; at -= 1) out = { ...path[at]!, children: [out] };
+  return out;
+}
+
 export interface OpeningMap {
   id: string;
   color: MapColor;

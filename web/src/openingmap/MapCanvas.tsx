@@ -7,7 +7,7 @@ import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
 import { createLiveSim, layoutGraph, layoutTree, type LiveSim } from './graph';
 import { favouriteChild } from './mainline';
-import type { OpeningMap, ResolvedMap } from './model';
+import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
 
 /**
  * The map as a graph view — dots, springs and labels, the way the
@@ -75,6 +75,8 @@ export function MapCanvas({
   selectedId,
   focus,
   arrangement = 'constellation',
+  only = null,
+  align = 0,
   onSelect,
 }: {
   map: OpeningMap;
@@ -84,6 +86,14 @@ export function MapCanvas({
    * a tidy tree of the same dots.
    */
   arrangement?: 'constellation' | 'tree';
+  /**
+   * Draw only the line to this node, and what follows it. Tree only: the
+   * constellation is a picture of the whole shape, and a constellation of
+   * one line is a row of dots.
+   */
+  only?: string | null;
+  /** Bumped to ask for a re-fit; see the fitting effect below. */
+  align?: number;
   coverage?: ReadonlyMap<string, NodeCoverage>;
   /** Field comparison per node id — set only while a source is chosen. */
   gaps?: ReadonlyMap<string, NodeGaps>;
@@ -119,9 +129,13 @@ export function MapCanvas({
   const stacked = useMediaQuery(
     '(max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem))',
   );
+  const root = useMemo(
+    () => (arrangement === 'tree' && only ? lineOnly(map.root, only) : map.root),
+    [map.root, arrangement, only],
+  );
   const graph = useMemo(
-    () => (arrangement === 'tree' ? layoutTree(map.root, { vertical: stacked }) : layoutGraph(map.root)),
-    [map.root, arrangement, stacked],
+    () => (arrangement === 'tree' ? layoutTree(root, { vertical: stacked }) : layoutGraph(root)),
+    [root, arrangement, stacked],
   );
   const at = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
 
@@ -454,9 +468,17 @@ export function MapCanvas({
   /** A drag that moved must not select on the trailing click. */
   const suppressClick = useRef(false);
 
-  // Fit the constellation on first light and when the map's node count
-  // changes shape enough to matter (a new node nudges, so refit only on
-  // count — a fit on every edit would yank the viewport while working).
+  /**
+   * Fit the picture on first light, and again whenever it becomes a
+   * different picture: a new node count, the other arrangement, or the
+   * Align button asking.
+   *
+   * Not on every edit — a fit while you are working yanks the viewport
+   * out from under you, which is why a single new node only nudges. But
+   * switching arrangements moves every dot at once, and the pan and zoom
+   * you had were answers to where things used to be: staying put left the
+   * tree half off-screen with the middle of nowhere centred.
+   */
   const nodeCount = graph.nodes.length;
   useEffect(() => {
     const box = host.current?.getBoundingClientRect();
@@ -470,7 +492,7 @@ export function MapCanvas({
       k,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeCount, map.id]);
+  }, [nodeCount, map.id, arrangement, align]);
 
   /**
    * Every pointer on the surface, wherever it landed — including on a
