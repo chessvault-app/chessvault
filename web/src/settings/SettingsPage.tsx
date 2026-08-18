@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { Eye, EyeOff, HardDrive, Info, KeyRound, MonitorSmartphone, Palette, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { Eye, EyeOff, HardDrive, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
@@ -115,6 +115,7 @@ export function SettingsPage() {
             <LichessCard settings={settings} onChanged={refresh} />
             <BrowsedGamesCard />
             <DangerCard gate={settings.gate} />
+            {typeof __LAG__ !== 'undefined' && __LAG__ && <LagCard />}
             <VersionCard />
           </>
         )}
@@ -236,6 +237,54 @@ interface UpdateResult {
  * the automatic check on launch reported to a console, so an update that
  * silently failed was indistinguishable from no update existing.
  */
+/**
+ * Artificial latency, for looking at the loading placeholders on a real
+ * device. The delay itself is in lib/api.ts; this is the only way to reach it.
+ *
+ * A control rather than a console line, because on the device this was added
+ * to test there is no console to type it into: a home-screen app has no
+ * address bar, and its storage is a container of its own, so setting the key
+ * in Safari never reaches the installed app. The switch would have been
+ * unusable on the one device that mattered.
+ *
+ * Wrapped in __LAG__, so it exists only in a build made with CHESS_LAG=1 and
+ * folds away with the delay it sets. A choice takes effect on the next
+ * request — lagMs() reads the key every call, so nothing needs reloading.
+ */
+function LagCard() {
+  const [lag, setLag] = useState(() => localStorage.getItem('lag') ?? '0');
+  const choose = (value: string): void => {
+    setLag(value);
+    if (value === '0') localStorage.removeItem('lag');
+    else localStorage.setItem('lag', value);
+  };
+  return (
+    <Card icon={Hourglass} title={t('Artificial latency')}>
+      <SettingRow
+        title={t('Delay every request')}
+        blurb={t('For looking at the loading placeholders. This device only.')}
+      >
+        <Select
+          value={lag}
+          onChange={choose}
+          ariaLabel={t('Artificial latency')}
+          steady
+          groups={[
+            {
+              options: [
+                { value: '0', label: t('Off') },
+                { value: '500', label: t('0.5 seconds') },
+                { value: '1500', label: t('1.5 seconds') },
+                { value: '3000', label: t('3 seconds') },
+              ],
+            },
+          ]}
+        />
+      </SettingRow>
+    </Card>
+  );
+}
+
 function VersionCard() {
   const [server, setServer] = useState<string | null>(null);
   const [build, setBuild] = useState<string | null>(null);
