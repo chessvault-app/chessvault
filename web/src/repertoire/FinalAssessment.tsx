@@ -138,7 +138,7 @@ export function FinalAssessment({
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="primary" size="sm" onClick={onAnalyse}>
           <Microscope className="size-3.5" />
-          {t('Analyse on the board')}
+          {t('Analyse')}
         </Button>
         {children}
       </div>

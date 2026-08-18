@@ -1,16 +1,16 @@
 import {
+  BarChart3,
   ChevronFirst,
   ChevronLast,
   ChevronLeft,
-  BarChart3,
   ChevronRight,
-  FlipVertical2,
-  Settings2,
   Eye,
+  FlipVertical2,
   LayoutGrid,
   Lightbulb,
+  Microscope,
   RotateCw,
-  Swords,
+  Settings2,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -856,8 +856,8 @@ function Trainer({
                     <RotateCw className="size-3.5" />
                     {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={analyse}>
-                    <Swords className="size-3.5" />
+                  <Button variant="primary" size="sm" onClick={analyse}>
+                    <Microscope className="size-3.5" />
                     {t('Analyse')}
                   </Button>
                 </>
