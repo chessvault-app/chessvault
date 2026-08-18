@@ -5,9 +5,36 @@ describe('normaliseHomeLayout', () => {
   it('accepts a layout and defaults its flags to on', () => {
     expect(normaliseHomeLayout({ tiles: ['games', 'studies'] })).toEqual({
       tiles: ['games', 'studies'],
+      hidden: [],
       continueCard: true,
       checklist: true,
     });
+  });
+
+  it('reads a layout stored before hiding existed as hiding nothing', () => {
+    // Absent is empty, not invalid: rejecting the field's absence would
+    // reset every page arranged before it shipped.
+    expect(normaliseHomeLayout({ tiles: ['games'] })?.hidden).toEqual([]);
+  });
+
+  it('keeps a hidden list, and holds it to the shape the tiles are held to', () => {
+    expect(normaliseHomeLayout({ tiles: [], hidden: ['games', 'notes'] })?.hidden).toEqual([
+      'games',
+      'notes',
+    ]);
+    expect(normaliseHomeLayout({ tiles: [], hidden: 'games' })).toBeNull();
+    expect(normaliseHomeLayout({ tiles: [], hidden: ['has space'] })).toBeNull();
+    expect(
+      normaliseHomeLayout({ tiles: [], hidden: Array.from({ length: 41 }, (_, i) => `t${i}`) }),
+    ).toBeNull();
+  });
+
+  it('lets a tile win over hiding the same id', () => {
+    // Both is a config somebody edited by hand, and a tile is the more
+    // visible of the two answers.
+    const l = normaliseHomeLayout({ tiles: ['games'], hidden: ['games', 'notes'] });
+    expect(l?.tiles).toEqual(['games']);
+    expect(l?.hidden).toEqual(['notes']);
   });
 
   it('keeps an empty tile list, which is not the same as never having chosen', () => {

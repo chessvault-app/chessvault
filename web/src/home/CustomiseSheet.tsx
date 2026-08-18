@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import type { HomeLayout } from '@shared/homeLayout';
 import { Button } from '@/ui/Button';
 import { SettingRow } from '@/ui/SettingRow';
@@ -17,10 +17,18 @@ import { resolveHomeLayout } from './layout';
  * ways out, and each press is already stored by the time you use one. The
  * one button here is a verb: reset.
  *
- * The two groups are the point of the design. Switching a destination off
- * does not hide it, it moves it to the row under the grid — so the list
- * shows where everything IS rather than describing where it would go, and
- * nothing on this page can be made unreachable.
+ * The groups are the point of the design: the list shows where everything
+ * IS rather than describing where it would go. Switching a destination off
+ * moves it to the row under the grid; hiding takes it off home altogether,
+ * into a third group it can be brought back from.
+ *
+ * Hiding used to be refused on the grounds that nothing here should become
+ * unreachable, which was the right worry aimed at the wrong page: home is
+ * not the only way anywhere. The sidebar reaches every section, More lists
+ * the rest, and a book is under Puzzles wherever home puts it. What hiding
+ * costs is a shortcut, and a shortcut nobody uses is clutter — so the
+ * third group is the honest place for it, listed by name and one press
+ * from coming back.
  *
  * Order is moved with buttons rather than by dragging. There is no
  * drag-and-drop anywhere in this app and nothing to copy, and two buttons
@@ -42,13 +50,33 @@ export function CustomiseSheet({
   onClose: () => void;
   error: string | null;
 }) {
-  const { tiles, launchers } = resolveHomeLayout(layout, HOME_DESTINATIONS);
+  const { tiles, launchers, hidden } = resolveHomeLayout(layout, HOME_DESTINATIONS);
 
+  // Promoting also un-hides: the grid is the most visible place there is,
+  // so asking for it cannot leave the entry listed as off the page.
   const promote = (entry: Destination): void =>
-    onChange({ ...layout, tiles: [...layout.tiles, entry.id] });
+    onChange({
+      ...layout,
+      tiles: [...layout.tiles, entry.id],
+      hidden: layout.hidden.filter((id) => id !== entry.id),
+    });
 
   const demote = (entry: Destination): void =>
     onChange({ ...layout, tiles: layout.tiles.filter((id) => id !== entry.id) });
+
+  // One press from wherever it stands, tile or button — hiding a tile via
+  // the row below would be two presses to say one thing.
+  const hide = (entry: Destination): void =>
+    onChange({
+      ...layout,
+      tiles: layout.tiles.filter((id) => id !== entry.id),
+      hidden: layout.hidden.includes(entry.id) ? layout.hidden : [...layout.hidden, entry.id],
+    });
+
+  // Back to the row under the grid, which is where anything not asked for
+  // as a tile lives.
+  const unhide = (entry: Destination): void =>
+    onChange({ ...layout, hidden: layout.hidden.filter((id) => id !== entry.id) });
 
   const move = (from: number, by: -1 | 1): void => {
     const to = from + by;
@@ -68,7 +96,7 @@ export function CustomiseSheet({
   return (
     <Sheet label={t('Customise home')} onClose={onClose}>
       <p className="text-muted text-xs leading-relaxed">
-        {t('Anything you switch off keeps a button in the row under the grid — nothing here goes away.')}
+        {t('Switch a destination off to keep it as a button under the grid, or hide it to take it off home altogether. The sidebar still reaches everything.')}
       </p>
 
       <ToggleRow
@@ -114,13 +142,38 @@ export function CustomiseSheet({
               >
                 <ChevronDown className="size-3.5" />
               </Button>
+              <HideButton entry={entry} onHide={() => hide(entry)} />
             </Row>
           ))}
         </Group>
 
         <Group label={t('In the row below')} empty={t('Nothing — every destination is a tile.')} count={launchers.length}>
           {launchers.map((entry) => (
-            <Row key={entry.id} entry={entry} checked={false} onToggle={() => promote(entry)} />
+            <Row key={entry.id} entry={entry} checked={false} onToggle={() => promote(entry)}>
+              <HideButton entry={entry} onHide={() => hide(entry)} />
+            </Row>
+          ))}
+        </Group>
+
+        <Group
+          label={t('Off the page')}
+          empty={t('Nothing — every destination is on home.')}
+          count={hidden.length}
+        >
+          {hidden.map((entry) => (
+            // No switch: a switch offers two states, and this row is in
+            // neither of them. One button, and it says where it goes.
+            <Row key={entry.id} entry={entry}>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Bring back')}
+                aria-label={t('Bring {name} back', { name: t(entry.label) })}
+                onClick={() => unhide(entry)}
+              >
+                <Eye className="size-3.5" />
+              </Button>
+            </Row>
           ))}
         </Group>
       </div>
@@ -182,6 +235,21 @@ function Group({
   );
 }
 
+/** Shared by all three groups; the hidden ones pass no toggle. */
+function HideButton({ entry, onHide }: { entry: Destination; onHide: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      title={t('Hide')}
+      aria-label={t('Hide {name}', { name: t(entry.label) })}
+      onClick={onHide}
+    >
+      <EyeOff className="size-3.5" />
+    </Button>
+  );
+}
+
 function Row({
   entry,
   checked,
@@ -189,8 +257,9 @@ function Row({
   children,
 }: {
   entry: Destination;
-  checked: boolean;
-  onToggle: () => void;
+  checked?: boolean;
+  /** Omitted for a row that is on neither the grid nor the row below. */
+  onToggle?: () => void;
   children?: React.ReactNode;
 }) {
   const { icon: Icon, label } = entry;
@@ -207,7 +276,7 @@ function Row({
       <Icon className="text-muted size-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate text-sm">{t(label)}</span>
       {children}
-      <Switch checked={checked} onToggle={onToggle} label={t(label)} />
+      {onToggle && <Switch checked={checked ?? false} onToggle={onToggle} label={t(label)} />}
     </div>
   );
 }

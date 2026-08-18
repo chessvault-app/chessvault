@@ -16,10 +16,20 @@
  */
 
 export interface HomeLayout {
-  /** Entry ids drawn as tiles, in order. Anything not listed is drawn as a
-      button in the row underneath, so a tile is a promotion and never the
-      only way to something. */
+  /** Entry ids drawn as tiles, in order. Anything listed in neither this
+      nor `hidden` is drawn as a button in the row underneath. */
   tiles: string[];
+  /** Entry ids drawn nowhere on home at all.
+   *
+   * Opt-in and listed one by one, never "everything unmentioned": a
+   * destination this build has not heard of is in neither list and must
+   * still appear, so a layout stored by an older client cannot hide a
+   * page it was never told about.
+   *
+   * Home is not the only way anywhere — the sidebar and More reach every
+   * destination — so an empty home is a preference rather than a way to
+   * strand a page. */
+  hidden: string[];
   /** The "Continue" card. */
   continueCard: boolean;
   /** The "Set up your vault" checklist. */
@@ -55,8 +65,28 @@ export function normaliseHomeLayout(input: unknown): HomeLayout | null {
     // and dropping it beats drawing the same tile twice.
     if (!tiles.includes(id)) tiles.push(id);
   }
+  // Absent is empty, not invalid: every layout stored before hiding
+  // existed has no such field, and rejecting those would reset a page
+  // somebody had already arranged. Present, it is held to the same shape
+  // as the tiles.
+  const hidden: string[] = [];
+  if (raw.hidden !== undefined) {
+    if (!Array.isArray(raw.hidden)) return null;
+    if (raw.hidden.length > MAX_HOME_TILES) return null;
+    for (const id of raw.hidden) {
+      if (typeof id !== 'string' || !ID.test(id)) return null;
+      // A tile wins: it is the more visible of the two, and a config
+      // saying both is one somebody edited by hand.
+      if (!hidden.includes(id) && !tiles.includes(id)) hidden.push(id);
+    }
+  }
   // The flags are on unless the stored value is exactly false, so a
   // truncated or hand-written config shows the page rather than hiding
   // half of it.
-  return { tiles, continueCard: raw.continueCard !== false, checklist: raw.checklist !== false };
+  return {
+    tiles,
+    hidden,
+    continueCard: raw.continueCard !== false,
+    checklist: raw.checklist !== false,
+  };
 }

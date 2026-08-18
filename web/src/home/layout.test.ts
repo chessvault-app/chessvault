@@ -13,8 +13,11 @@ import {
 const CATALOGUE = ['a', 'b', 'c', 'd'].map((id) => ({ id }));
 const ids = (entries: { id: string }[]): string[] => entries.map((e) => e.id);
 
-const layout = (tiles: string[]): NonNullable<ReturnType<typeof normaliseHomeLayout>> => {
-  const l = normaliseHomeLayout({ tiles });
+const layout = (
+  tiles: string[],
+  hidden: string[] = [],
+): NonNullable<ReturnType<typeof normaliseHomeLayout>> => {
+  const l = normaliseHomeLayout({ tiles, hidden });
   if (!l) throw new Error('fixture is not a layout');
   return l;
 };
@@ -67,6 +70,32 @@ describe('resolveHomeLayout', () => {
     const { tiles, launchers } = resolveHomeLayout(layout(['b', 'b', 'd']), CATALOGUE);
     expect(ids(tiles)).toEqual(['b', 'd']);
     expect(ids(launchers)).toEqual(['a', 'c']);
+  });
+
+  it('draws a hidden entry in neither row, and lists it as hidden', () => {
+    const { tiles, launchers, hidden } = resolveHomeLayout(layout(['b'], ['a']), CATALOGUE);
+    expect(ids(tiles)).toEqual(['b']);
+    expect(ids(launchers)).toEqual(['c', 'd']);
+    expect(ids(hidden)).toEqual(['a']);
+  });
+
+  it('hides only what was named, so a destination this layout predates still shows', () => {
+    // The property that makes hiding safe to ship: a page added later is
+    // in neither list, and lands in the launcher row rather than being
+    // swept up by an "everything unmentioned" rule.
+    const { launchers, hidden } = resolveHomeLayout(layout(['a'], ['b']), CATALOGUE);
+    expect(ids(launchers)).toEqual(['c', 'd']);
+    expect(ids(hidden)).toEqual(['b']);
+  });
+
+  it('puts every entry in exactly one of the three', () => {
+    const r = resolveHomeLayout(layout(['d', 'a'], ['c']), CATALOGUE);
+    expect([...ids(r.tiles), ...ids(r.launchers), ...ids(r.hidden)].sort()).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ]);
   });
 });
 

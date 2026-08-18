@@ -53,8 +53,11 @@ export const DEFAULT_TILES: readonly HomeEntryId[] = [
 export interface ResolvedHome<T extends { id: string }> {
   /** The grid, in the stored order. */
   tiles: T[];
-  /** The row underneath: everything else, in catalogue order. */
+  /** The row underneath: everything not a tile and not hidden. */
   launchers: T[];
+  /** Asked for by name to be on the page nowhere. Home draws none of
+      these; the customise sheet lists them so they can be brought back. */
+  hidden: T[];
 }
 
 /**
@@ -68,8 +71,9 @@ export interface ResolvedHome<T extends { id: string }> {
  *   tile it has no page for.
  * - An entry the stored layout never mentions lands in the launcher row.
  *   A destination added in a later version therefore appears on an old
- *   stored layout instead of vanishing, and nothing on home can become
- *   unreachable by editing the vault.
+ *   stored layout instead of vanishing. Hiding is opt-in and by name for
+ *   exactly this reason: "everything unmentioned" would have hidden each
+ *   new page as it shipped.
  * - `stored === null` (never customised) takes the defaults; `tiles: []`
  *   does not. Somebody who switched every tile off has said something.
  */
@@ -88,7 +92,13 @@ export function resolveHomeLayout<T extends { id: string }>(
     placed.add(id);
     tiles.push(entry);
   }
-  return { tiles, launchers: catalogue.filter((entry) => !placed.has(entry.id)) };
+  const hidden = new Set(stored?.hidden ?? []);
+  const rest = catalogue.filter((entry) => !placed.has(entry.id));
+  return {
+    tiles,
+    launchers: rest.filter((entry) => !hidden.has(entry.id)),
+    hidden: rest.filter((entry) => hidden.has(entry.id)),
+  };
 }
 
 /**

@@ -176,6 +176,7 @@ export function HomePage() {
         // lands, so a failed migration simply happens next launch.
         const migrated: HomeLayout = {
           tiles: resolveHomeLayout(null, HOME_DESTINATIONS).tiles.map((entry) => entry.id),
+          hidden: [],
           continueCard: true,
           checklist: false,
         };
@@ -250,13 +251,17 @@ export function HomePage() {
 
   const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 
-  // The grid and the row underneath it. Everything in the catalogue is in
-  // exactly one of them, so no destination can be lost.
-  const { tiles, launchers } = resolveHomeLayout(layout, HOME_DESTINATIONS);
+  // The grid, the row underneath it, and what has been asked off the page
+  // altogether. Everything in the catalogue is in exactly one of the
+  // three, and the third is drawn nowhere here — the sidebar and More
+  // still reach it, which is what makes hiding a preference rather than a
+  // way to lose a page.
+  const { tiles, launchers, hidden } = resolveHomeLayout(layout, HOME_DESTINATIONS);
   // The arrangement as an edit would have to state it: a vault that has
   // never been customised is its defaults, written down.
   const effective: HomeLayout = {
     tiles: tiles.map((entry) => entry.id),
+    hidden: hidden.map((entry) => entry.id),
     continueCard: layout?.continueCard !== false,
     checklist: layout?.checklist !== false,
   };

@@ -66,7 +66,12 @@ describe('home layout', () => {
     });
     expect(put.status).toBe(200);
     const body = await (await json('GET', '/api/settings')).json();
-    expect(body.home).toEqual({ tiles: ['games', 'studies'], continueCard: true, checklist: false });
+    expect(body.home).toEqual({
+      tiles: ['games', 'studies'],
+      hidden: [],
+      continueCard: true,
+      checklist: false,
+    });
     expect(config().keepMe).toBe(1);
     expect(config().appPassword).toBe('hunter22');
   });
@@ -80,7 +85,7 @@ describe('home layout', () => {
   it('keeps a layout that asked for no tiles at all', async () => {
     await json('PUT', '/api/settings/home', { tiles: [] });
     const body = await (await json('GET', '/api/settings')).json();
-    expect(body.home).toEqual({ tiles: [], continueCard: true, checklist: true });
+    expect(body.home).toEqual({ tiles: [], hidden: [], continueCard: true, checklist: true });
   });
 
   it('stores an id it has never heard of', async () => {
