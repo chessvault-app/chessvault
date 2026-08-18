@@ -24,6 +24,7 @@ import { navigate, up } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
+import { Segmented } from '@/ui/Segmented';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -292,20 +293,22 @@ export function EditorView({
             />
           )}
           <div className="grid gap-3 p-3">
+            {/* One of these, so it wears the control that says so. It was a
+                pair of buttons lit primary/secondary — the same question the
+                repertoire's New game panel asks, asked in a different shape,
+                and that panel's own comment already says which shape is
+                right: Segmented is the track for one-of-these, not two
+                actions sitting side by side. */}
             <Field label={t('Side to move')}>
-              <div className="flex gap-1">
-                {(['white', 'black'] as Color[]).map((color) => (
-                  <Button
-                    key={color}
-                    size="sm"
-                    variant={state.turn === color ? 'primary' : 'secondary'}
-                    onClick={() => patch({ turn: color })}
-                    className="flex-1"
-                  >
-                    {color === 'white' ? t('White') : t('Black')}
-                  </Button>
-                ))}
-              </div>
+              <Segmented
+                value={state.turn}
+                onChange={(turn: Color) => patch({ turn })}
+                ariaLabel={t('Side to move')}
+                segments={[
+                  { value: 'white' as Color, label: t('White') },
+                  { value: 'black' as Color, label: t('Black') },
+                ]}
+              />
             </Field>
 
             <Field label={t('Castling rights')}>
