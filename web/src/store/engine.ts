@@ -64,6 +64,32 @@ let pendingFen: string | null = null;
  */
 let requestedFen: string | null = null;
 
+/**
+ * How long a switched-off engine is kept before its worker is destroyed.
+ *
+ * Switching off used to terminate immediately, which is right for "off
+ * means off — free the worker's memory rather than idling it" and wrong
+ * for the thing people actually do, which is toggle. Every switch-on
+ * builds a new worker and a new Hash table — 128MB by default, on a phone
+ * as much as a desktop — so flicking the engine on and off N times asked
+ * for that allocation N times. Desktop Chrome reclaims it between clicks
+ * and never notices; a phone reclaims WASM memory lazily against a much
+ * lower ceiling, and lanph3re got it to throw OOM.
+ *
+ * A grace period costs one idle worker for ten seconds and collapses a
+ * burst of toggling onto ONE allocation. Off for real is still off, ten
+ * seconds later.
+ */
+const IDLE_TEARDOWN_MS = 10_000;
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+
+const holdIdleTeardown = (): void => {
+  if (idleTimer !== null) {
+    clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+};
+
 
 export const useEngine = create<EngineState>()(
   persist(
@@ -80,6 +106,7 @@ export const useEngine = create<EngineState>()(
 
       const onError = (message: string): void => {
         set({ error: message, enabled: false });
+        holdIdleTeardown();
         engine?.terminate();
         engine = null;
         requestedFen = null;
@@ -157,14 +184,21 @@ export const useEngine = create<EngineState>()(
 
         setEnabled: (on) => {
           if (!on) {
-            // Off means off: free the worker's memory rather than idling it.
-            engine?.terminate();
-            engine = null;
+            // Stop searching now; free the worker shortly (IDLE_TEARDOWN_MS).
+            holdIdleTeardown();
+            engine?.stop();
             pendingFen = null;
             requestedFen = null;
             set({ enabled: false, lines: [], resultFen: null, finished: false });
+            idleTimer = setTimeout(() => {
+              idleTimer = null;
+              engine?.terminate();
+              engine = null;
+            }, IDLE_TEARDOWN_MS);
             return;
           }
+          // Back on within the grace period: the worker is still here.
+          holdIdleTeardown();
           set({ enabled: true, error: null, threadsAvailable: supportsThreads() });
           if (pendingFen) {
             requestedFen = pendingFen;
