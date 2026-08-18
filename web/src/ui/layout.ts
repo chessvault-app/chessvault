@@ -43,10 +43,27 @@ export const BOARD_WIDE_SHELL =
   // was, above that it follows the window to a 96rem ceiling. The side
   // column keeps its fixed share (BOARD_WIDE_SIDE), so the extra is the
   // board's.
-  'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[min(96rem,max(76rem,90vw))]';
+  //
+  // The third term is the one that keeps the board and the panels TOUCHING.
+  // "The extra is the board's" was only true while the board was
+  // width-bound; its own cap is also `100dvh-10rem`, so on a wide, short
+  // window it cannot spend the extra — and the board column centres what
+  // it holds, so the surplus split either side and half of it landed
+  // BETWEEN the board and the side column. Measured at 1920x945: row
+  // 1536, board 785, 135px of nothing on each side of it.
+  //
+  // So the row is also capped at what the board can actually use plus the
+  // column beside it: 27rem of side, 1rem of gap, 2rem of padding. Now a
+  // height-bound board makes the row shrink to fit it and the leftover
+  // falls OUTSIDE the pair, where mx-auto centres it as margin.
+  //
+  // The row's own cap lives in index.css as `.board-row-cap`: it needs the
+  // side column's width, and a rule that has to agree with another file is
+  // better written where the number is than repeated as a constant here.
+  'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full board-row-cap';
 
 /** The side column next to the board: fixed share of the row at `wide`. */
-export const BOARD_WIDE_SIDE = 'wide:w-[min(27rem,38%)] wide:flex-none';
+export const BOARD_WIDE_SIDE = 'wide:w-[min(var(--board-side),38%)] wide:flex-none';
 
 /**
  * The whole shell — stacked and wide halves — for the board pages whose

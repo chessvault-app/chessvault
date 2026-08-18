@@ -107,6 +107,11 @@
    */
   --accent-tint: 1;
 
+  /* Width of the side column next to the board, and the only place it is
+     written down: ui/layout.ts spends it in BOARD_WIDE_SIDE, and the row's
+     own cap below has to know it too. */
+  --board-side: 27rem;
+
   --app-bg: oklch(98.4% calc(0.003 * var(--ui-tint)) var(--ui-hue));
   --app-bg-accent: oklch(96.5% calc(0.008 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(100% 0 0);
@@ -702,6 +707,28 @@ cg-board square.check {
 /* ---------------------------------------------------------------------------
    Note editor typography. Tiptap renders semantic HTML; these give it the
    reading rhythm of a document without pulling in a typography plugin. */
+/* The board row is never wider than the board it holds plus the column
+   beside it.
+   Capping it only at 96rem was right while the board was WIDTH-bound, and
+   wrong the moment it is height-bound: the board's own limit is also
+   `100dvh - 10rem`, so on a wide, short window it cannot spend the extra
+   width — and its column centres what it holds, so half the surplus landed
+   BETWEEN the board and the panels. Measured at 1920x945: row 1536, board
+   785, 135px of nothing on either side of it, where before 0.4.4 the two
+   had touched.
+   The last term is board + side column + the row's gap-4 and p-4. Written
+   as plain CSS because Tailwind strips the outer calc() from an arbitrary
+   value and emits `min(...) + 30rem`, which is invalid and dropped whole. */
+@media (min-width: 64rem), (orientation: landscape) and (min-width: 44rem) {
+  .board-row-cap {
+    max-width: min(
+      96rem,
+      max(76rem, 90vw),
+      calc(min(64rem, max(18rem, 100dvh - 10rem)) + var(--board-side) + 3rem)
+    );
+  }
+}
+
 .note-editor {
   font-size: 1rem;
   line-height: 1.7;
