@@ -84,19 +84,15 @@ const NAME_WIDTHS = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
  * Notes actually draw. They are not a divided list, and a skeleton shaped
  * like one made the page jump when the real cards arrived.
  */
-export function SkeletonCards({
-  cards = 5,
-  heading = true,
-  className,
-}: {
-  cards?: number;
-  /** Documents are grouped under a collection name; keep its place. */
-  heading?: boolean;
-  className?: string;
-}) {
+export function SkeletonCards({ cards = 5, className }: { cards?: number; className?: string }) {
   return (
     <Loading className={cn('flex flex-col gap-4', className)}>
-      {heading && <Skeleton className="ml-1 h-2.5 w-24" />}
+      {/* No heading bar. Documents ARE grouped under a collection name,
+          but only a named one draws a header — the root group, which is
+          where a shelf's documents sit unless somebody has filed them,
+          renders its cards with nothing above them. So the bar stood for
+          something that usually is not there, and the cards jumped up its
+          height as the shelf landed. */}
       <div className="flex flex-col gap-2">
         {Array.from({ length: cards }, (_, i) => (
           <div
