@@ -88,7 +88,15 @@ export function Segmented<T extends string>({
               // that broke "스터디" across two lines inside a 28px-tall
               // pill — a control taller than its track. It shrinks the
               // row's flexible neighbour instead now.
-              'flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap',
+              // flex-auto, not flex-1: both grow into a track that has been
+              // stretched (the archive's is w-full), but flex-1 starts every
+              // segment from a basis of ZERO, so they end up the same width
+              // whatever they say — and a pair like "Databases" and "PGN
+              // collections" then sets one word in a box built for two, with
+              // the short one adrift in its own padding. From a basis of
+              // auto each segment is as wide as its label first and shares
+              // what is left after.
+              'flex min-w-0 flex-auto items-center justify-center gap-1.5 whitespace-nowrap',
               'font-medium transition-colors duration-100',
               seg,
               on
