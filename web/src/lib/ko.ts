@@ -1106,8 +1106,6 @@ export const ko: Record<string, string> = {
     '아직 색인된 게임이 없습니다. 게임 페이지에서 온라인 아카이브나 PGN으로 게임을 모으면, 여기서 읽을 것이 생깁니다.',
   'None of your games reach this position.': '이 위치에 도달한 게임이 없습니다.',
   'From which games': '어떤 게임에서',
-  'Kept only': '보관한 것만',
-  'Only games you added to your collection': '컬렉션에 추가한 게임만',
   Prune: '가지치기',
   'Show only this line': '이 라인만 보기',
   'Restore the whole graph': '전체 그래프 복원',

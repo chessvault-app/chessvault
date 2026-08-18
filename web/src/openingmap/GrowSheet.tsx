@@ -169,7 +169,7 @@ export function GrowSheet({
           ))}
           <FilterChip
             label={t('Kept only')}
-            title="Only games you added to your collection"
+            title="Only the games in your collection, not every archived game"
             active={collectionOnly}
             onClick={() =>
               setCollectionOnly((on) => {
