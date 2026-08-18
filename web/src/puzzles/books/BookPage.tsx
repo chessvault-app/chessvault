@@ -1,7 +1,6 @@
 import {
   ChevronLeft,
   FileUp,
-  Pencil,
   ScanSearch,
   Loader2,
   Plus,
@@ -164,6 +163,9 @@ export function BookPage({ slug }: { slug: string }) {
   // key) stays put — a slug is an id, and ids do not follow names.
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
+  // Still worn by the placeholder name. The rename BUTTON that used to
+  // read this is gone; what is left of it is the importer's offer to name
+  // the book after the PDF, which only stands while nobody has named it.
   const untitled = book !== null && isUntitled(book.title, 'Untitled book');
   const rename = async (title: string): Promise<void> => {
     const next = title.trim();
@@ -294,23 +296,6 @@ export function BookPage({ slug }: { slug: string }) {
               >
                 {book?.title ?? slug}
               </h1>
-              {/* The naming moment nobody had: creation deliberately never
-                  asks (a zero-friction New button), but nothing asked
-                  AGAIN, so shelves filled with "Untitled book 3". A quiet
-                  offer, only while the placeholder is still worn. */}
-              {untitled && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    setTitleDraft(book?.title ?? '');
-                    setRenaming(true);
-                  }}
-                >
-                  <Pencil className="size-3.5" />
-                  {t('Name this book')}
-                </Button>
-              )}
             </>
           )}
           {/* No progress chip here. A scan used to announce itself in this
