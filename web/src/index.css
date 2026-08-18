@@ -716,7 +716,10 @@ cg-board square.check {
    BETWEEN the board and the panels. Measured at 1920x945: row 1536, board
    785, 135px of nothing on either side of it, where before 0.4.4 the two
    had touched.
-   The last term is board + side column + the row's gap-4 and p-4. Written
+   The last term is board + side column + the row's gap-4 and p-4. The eval
+   bar needs no allowance: BOARD_MAX_W caps the wrapper that HOLDS it, so
+   the bar comes out of the board's own width rather than the row's — adding
+   for it here only re-opens slack between the two columns. Written
    as plain CSS because Tailwind strips the outer calc() from an arbitrary
    value and emits `min(...) + 30rem`, which is invalid and dropped whole. */
 @media (min-width: 64rem), (orientation: landscape) and (min-width: 44rem) {
