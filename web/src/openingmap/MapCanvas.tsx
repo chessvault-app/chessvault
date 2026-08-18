@@ -456,6 +456,28 @@ export function MapCanvas({
     sim.current?.pin(id, null);
   };
 
+  /**
+   * How far out the map can be pulled.
+   *
+   * 0.2 was a constant, and a constant cannot know how big the map is. A
+   * wide tree on a phone fits at a scale well under it, so the pinch that
+   * would have shown the whole thing stopped short of it — and the FIT
+   * does not clamp at all, so Align could leave the map at a scale the
+   * fingers were not allowed to reach back to.
+   *
+   * Half the scale that fits, or 0.2, whichever is smaller: a map that
+   * comfortably fits keeps the floor it had, and a big one can always be
+   * pulled back past all of it. The 0.02 is only there so a degenerate
+   * box cannot hand out an infinite one.
+   */
+  const zoomFloor = (): number => {
+    const box = host.current?.getBoundingClientRect();
+    const w = graph.maxX - graph.minX;
+    const h = graph.maxY - graph.minY;
+    if (!box || box.width === 0 || w <= 0 || h <= 0) return 0.2;
+    return Math.max(0.02, Math.min(0.2, 0.5 * Math.min(box.width / w, box.height / h)));
+  };
+
   const nodeDrag = useRef<{
     id: string;
     pointerId: number;
@@ -601,7 +623,7 @@ export function MapCanvas({
       const mx = (now.x + anchor.x) / 2 - box.left;
       const my = (now.y + anchor.y) / 2 - box.top;
       const v = viewRef.current;
-      const k = Math.min(3, Math.max(0.2, (v.k * d1) / d0));
+      const k = Math.min(3, Math.max(zoomFloor(), (v.k * d1) / d0));
       const scale = k / v.k;
       commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
     }
@@ -620,7 +642,7 @@ export function MapCanvas({
     const mx = e.clientX - box.left;
     const my = e.clientY - box.top;
     const v = viewRef.current;
-    const k = Math.min(3, Math.max(0.2, v.k * Math.exp(-e.deltaY * 0.0016)));
+    const k = Math.min(3, Math.max(zoomFloor(), v.k * Math.exp(-e.deltaY * 0.0016)));
     const scale = k / v.k;
     commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
   };

@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Compass, Crosshair, Grid3x3, Library, ListTree, Loader2, Maximize2, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Grid3x3, Library, ListTree, Loader2, Maximize2, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -549,28 +549,46 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 already claims — a phone would otherwise reach it through
                 Details, which is a sheet over the map you are trying to
                 cut down. Tree only, like the panel's own. */}
+            {/* One strip of icons at one size, which is what every other
+                claimant of this row is (the trainer's, the board's). This
+                had an icon, then a worded button, then another icon —
+                three weights in three shapes, and the eye reads the odd
+                one out as the important one, which Details is not. The
+                name beside them is what makes this bar different, and it
+                is enough.
+
+                Details keeps a chevron rather than its word: the panel
+                rises from this row, and an arrow pointing the way it
+                comes is the same thing the word was saying. Tapping the
+                name still opens it, as it always did. */}
             {arrangement === 'tree' && (
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 title={t('Show only this line')}
                 aria-label={t('Show only this line')}
                 onClick={() => setOnly(selected)}
               >
-                <Scissors className="size-4" />
+                <Scissors className="size-[1.1rem]" />
               </Button>
             )}
-            <Button size="sm" onClick={() => setDetailsOpen(true)}>
-              {t('Details')}
+            <Button
+              variant="ghost"
+              size="icon"
+              title={t('Move details')}
+              aria-label={t('Move details')}
+              onClick={() => setDetailsOpen(true)}
+            >
+              <ChevronUp className="size-[1.1rem]" />
             </Button>
             <Button
               variant="ghost"
-              size="icon-sm"
+              size="icon"
               title={t('Clear selection')}
               aria-label={t('Clear selection')}
               onClick={() => setSelectedId(null)}
             >
-              <X className="size-4" />
+              <X className="size-[1.1rem]" />
             </Button>
           </div>
         </MobileActionBar>
@@ -1033,6 +1051,15 @@ function NodePanel({
         <TextArea
           rows={3}
           className="resize-none"
+          /* The panel's fallback field, not its purpose — see
+             soleTextField in ui/dialogFocus. Every other node's panel has
+             a name and a depth above this, so the sole-field rule never
+             looked at it; the START position has neither, which left the
+             note as the only input in the window and opened the details
+             under a keyboard nobody asked for. The marker only suppresses
+             that on a coarse pointer, so a desktop still puts the caret
+             where it always did. */
+          data-fallback-field=""
           defaultValue={node.note ?? ''}
           onBlur={(e) => {
             const note = e.target.value.trim();
