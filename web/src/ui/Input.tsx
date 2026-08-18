@@ -24,14 +24,21 @@ type InputSize = 'sm' | 'md' | 'lg';
  * that stayed h-7 there left the Games header with a search field visibly
  * shorter than the Import button beside it.
  *
- * Only the HEIGHT changes on a coarse pointer. A padding under a variant
- * lands in a media block, which outranks the plain `pl-7` SearchInput uses
- * to clear its magnifier however the classes are ordered — so the phone
- * drew the placeholder underneath the icon.
+ * Height and FONT change on a coarse pointer; padding must not. A padding
+ * under a variant lands in a media block, which outranks the plain `pl-7`
+ * SearchInput uses to clear its magnifier however the classes are ordered —
+ * so the phone drew the placeholder underneath the icon.
+ *
+ * The font is 16px there because iOS zooms the whole page when a focused
+ * field is smaller, and 16px is how you decline that — the convention, and
+ * what audits expect. The app used to decline it by capping maximum-scale
+ * in the viewport instead, which works and which axe and Lighthouse both
+ * report as disabling zoom, because they read the tag rather than iOS.
+ * Desktop keeps 14px: it has a mouse and wants the density.
  */
 const sizes: Record<InputSize, string> = {
-  sm: 'h-7 px-2 text-sm pointer-coarse:h-9',
-  md: 'h-8 px-2.5 text-sm',
+  sm: 'h-7 px-2 text-sm pointer-coarse:h-9 pointer-coarse:text-base',
+  md: 'h-8 px-2.5 text-sm pointer-coarse:text-base',
   lg: 'h-9 px-3 text-base',
 };
 
@@ -149,7 +156,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="none"
-      className={cn(base, 'px-2.5 py-2 text-sm', className)}
+      className={cn(base, 'px-2.5 py-2 text-sm pointer-coarse:text-base', className)}
       {...props}
     />
   );
