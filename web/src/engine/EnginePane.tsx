@@ -15,6 +15,7 @@ import { figurine } from '@/analysis/notation';
 import { formatPv, type PvPly } from './pv.ts';
 import { PvMoves } from './PvMoves.tsx';
 import { PvPeek, usePvPeek } from './PvPeek.tsx';
+import { terminalScore } from './terminal.ts';
 import { formatScore, toWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
 
@@ -63,6 +64,17 @@ export function EngineBlock({
 
   const node = getNode(tree, cursorId);
   const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  /**
+   * A finished position has no lines to wait for, and this pane was
+   * waiting anyway.
+   *
+   * Stockfish answers a mated board with `bestmove (none)` and one PV-less
+   * `info` line, which parseInfo drops for carrying no variation — so the
+   * search ENDS with zero lines, and an empty list that reads "Thinking…"
+   * reads it for ever. terminal.ts has said this in its own comment since
+   * it was written; only the eval bar was listening.
+   */
+  const terminal = useMemo(() => terminalScore(node.fen), [node.fen]);
 
   // Re-analyse whenever the position changes, or the engine is switched on.
   useEffect(() => {
@@ -210,7 +222,13 @@ export function EngineBlock({
               standalone ? 'min-h-0' : 'max-h-44 max-lg:max-h-none',
             )}
           >
-            {visibleLines.length === 0 ? (
+            {terminal ? (
+              <li className="text-muted px-3 py-1 text-sm">
+                {terminal.mate !== undefined
+                  ? t('Checkmate — there is nothing left to search.')
+                  : t('The game ends here — there is nothing left to search.')}
+              </li>
+            ) : visibleLines.length === 0 ? (
               <li className="text-subtle px-3 py-1 text-sm">{t('Thinking…')}</li>
             ) : (
               visibleLines.map((line) => (

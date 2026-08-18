@@ -430,6 +430,10 @@ export const ko: Record<string, string> = {
   'Back to puzzles': '퍼즐 목록으로',
   'Back to the puzzle': '퍼즐로',
   Analysing: '분석 중',
+  'Checkmate — there is nothing left to search.':
+    '체크메이트 — 더 탐색할 것이 없습니다.',
+  'The game ends here — there is nothing left to search.':
+    '여기서 대국이 끝납니다 — 더 탐색할 것이 없습니다.',
   'Back to the game': '게임으로 돌아가기',
   'Back to the book': '책으로',
   'Back to the position': '포지션으로',
