@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button';
 import { SearchInput } from '@/ui/Input';
 import { Segmented } from '@/ui/Segmented';
 import { Sheet } from '@/ui/Sheet';
+import { Skeleton, useSlowLoad } from '@/ui/Skeleton';
 import type { MapTag } from './model';
 
 /**
@@ -39,6 +40,14 @@ export function TagPicker({
   });
   /** A study whose chapter is being chosen, with its full chapter list. */
   const [scoping, setScoping] = useState<{ id: string; chapters: string[] } | null>(null);
+  /**
+   * Behind the threshold, unlike the placeholders that hold a block's
+   * PLACE: this list lives in a grown, scrolling box, so rows filling it
+   * move nothing around them. Nothing to shove means a wait too short to
+   * notice is best not mentioned — and against a local vault most of
+   * them are.
+   */
+  const listPending = useSlowLoad(rows[kind] === null);
 
   useEffect(() => {
     if (rows[kind] !== null) return;
@@ -117,7 +126,23 @@ export function TagPicker({
               made the card as tall as its parent, and a list that stopped
               at 20rem would leave the bottom third of it empty. */}
           <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
-            {rows[kind] === null ? null : list.length === 0 ? (
+            {rows[kind] === null ? (
+              // The shelf that is coming: an icon beside a name, on the
+              // same 36px row the real ones keep so the list does not
+              // re-space itself as it lands.
+              listPending ? (
+                <div role="status" aria-label={t('Loading')} aria-live="polite">
+                  {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => (
+                    <div key={i} className="flex min-h-9 items-center gap-1">
+                      <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
+                        <Skeleton className="size-4 shrink-0 rounded" />
+                        <Skeleton className={`h-3 ${w}`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null
+            ) : list.length === 0 ? (
               <p className="text-muted px-2 py-4 text-center text-xs">
                 {t('Nothing here matches.')}
               </p>
