@@ -112,10 +112,14 @@ export function CustomiseSheet({
         onToggle={() => onChange({ ...layout, checklist: !layout.checklist })}
       />
 
-      {/* overflow-x-hidden for the same reason home's page box has it: a
-          box that scrolls in one axis scrolls in both unless it says
-          otherwise, and this list has nothing to the side of it. */}
-      <div className="flex max-h-72 flex-col gap-1 overflow-y-auto overflow-x-hidden">
+      {/* No scroller of its own. Sheet's body already scrolls, so capping
+          this at max-h-72 made a second one inside the first — which held
+          the two card switches and the paragraph above them permanently on
+          screen while only the destinations moved. Nothing here is worth
+          pinning: the switches are two rows among fourteen, and a short
+          list in a tall sheet was scrolling in a box while the sheet
+          around it had room to spare. */}
+      <div className="flex flex-col gap-1">
         <Group label={t('On the grid')} empty={t('Nothing — every destination is a button below.')} count={tiles.length}>
           {tiles.map((entry, i) => (
             // Keyed by id, not position: React then MOVES the row that
