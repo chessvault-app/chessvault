@@ -192,6 +192,19 @@ function Trainer({
     if (n !== null) setSolvedToday(n);
   }, []);
 
+  /**
+   * Whether meta has answered at all, which is not the same as what it
+   * said.
+   *
+   * The setup gate below reads `meta && !meta.ready`, so a meta that has
+   * not arrived — or that failed and left this null — falls through to the
+   * TRAINER. The trainer then asks for a puzzle, is told there is no
+   * database, and offers "No puzzle database yet — build it from the
+   * Puzzles page" beside a Try again button: the setup screen's own
+   * message, in the one place that cannot act on it, on a page that was
+   * one answer away from showing the real thing.
+   */
+  const [metaAnswered, setMetaAnswered] = useState(false);
   const refreshMeta = useCallback(async () => {
     // Meta is decoration around the trainer (counts, the setup gate); if
     // the server is away, loadNext will say so where it can be acted on.
@@ -199,6 +212,8 @@ function Trainer({
       setMeta(await api<Meta>('/api/puzzles/meta'));
     } catch {
       /* the puzzle fetch reports the outage, with a retry */
+    } finally {
+      setMetaAnswered(true);
     }
   }, []);
 
@@ -616,7 +631,7 @@ function Trainer({
                 autoShapes={hintShapes}
                 onMove={onMove}
               />
-            ) : error ? (
+            ) : error && metaAnswered ? (
               // What happened, and a way to go again — a dead end here
               // used to need a full page reload to recover from.
               <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
