@@ -1,21 +1,27 @@
 import {
   BarChart3,
+  Check,
   ChevronFirst,
   ChevronLast,
   ChevronLeft,
   ChevronRight,
+  Eye,
   FlipVertical2,
   LayoutGrid,
-  Pencil,
-  Check,
-  Eye,
   Loader2,
+  Microscope,
+  Pencil,
   RotateCcw,
   RotateCw,
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
+import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
+import { EngineBlock } from '@/engine/EnginePane';
+import { useEngine } from '@/store/engine';
 
 import { parseFen } from 'chessops/fen';
 
@@ -96,6 +102,25 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // The puzzle grid reveals from the Puzzle panel header, like the lichess
   // trainer's difficulty row.
   const [showNav, setShowNav] = useState(false);
+  /**
+   * Analysing in place, the way the puzzle trainer already does it: the
+   * page stays, the board becomes the analysis board and the panel above
+   * the moves becomes the engine. Navigating to Board instead left the
+   * book behind — the way back was the browser's, and the puzzle you had
+   * just failed was three taps away.
+   *
+   * The engine is switched ON by the act of asking to analyse, and off
+   * again on the way out, including by unmount.
+   */
+  const [analysing, setAnalysing] = useState(false);
+  const analysingRef = useRef(false);
+  analysingRef.current = analysing;
+  useEffect(
+    () => () => {
+      if (analysingRef.current) useEngine.getState().setEnabled(false);
+    },
+    [],
+  );
   // The shared gate (board/usePromotion); the chosen piece re-enters the
   // ordinary free-entry path below.
   const promotion = usePromotion((orig, dest, role) => applyMove(orig, dest, roleToChar(role)));
@@ -330,10 +355,25 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   };
 
   const analyse = (): void => {
-    if (!node) return;
-    if (!useAnalysis.getState().loadFen(node.fen)) return;
-    useAnalysis.setState({ handoff: true });
-    navigate('board');
+    if (!node || !tree) return;
+    // The tree as played, not just the position: the solution's moves stay
+    // navigable behind the cursor, which is the whole point of analysing a
+    // puzzle you have just seen the answer to.
+    useAnalysis.setState({
+      tree,
+      cursorId,
+      orientation,
+      pendingPromotion: null,
+      loadError: null,
+      gameHeaders: null,
+    });
+    useEngine.getState().setEnabled(true);
+    setAnalysing(true);
+  };
+
+  const backToPuzzle = (): void => {
+    useEngine.getState().setEnabled(false);
+    setAnalysing(false);
   };
 
   const nextUnsolved = (): string | null => {
@@ -438,6 +478,63 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       </Button>
     </div>
   );
+
+  if (analysing) {
+    // Deliberately the puzzle trainer's analysing view, panel for panel:
+    // the two trainers are the same shape and a reader moving between them
+    // should not have to learn it twice.
+    return (
+      <div className={BOARD_SCROLL_SHELL}>
+        <AnalysisBoard />
+        <div
+          className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        >
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Back to the puzzle')}
+              onClick={backToPuzzle}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <span className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
+              {t('Analysing')}
+            </span>
+            {next && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => navigate('puzzles', 'books', slug, next)}
+              >
+                <RotateCw className="size-3.5" />
+                {t('Next unsolved')}
+              </Button>
+            )}
+          </div>
+          <Panel flush className="min-h-min flex-1">
+            <EngineBlock />
+            <PanelHeader
+              title={t('Moves')}
+              actions={
+                <>
+                  <SidelinesToggle />
+                  <MoveActions allowReset={false} />
+                </>
+              }
+            />
+            <MoveTreePane />
+            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+            <StatusBar />
+          </Panel>
+        </div>
+        {/* Phones: move nav in the bottom bar while analysing. */}
+        <MobileActionBar>
+          <BoardControls keyboard={false} className="py-1.5" />
+        </MobileActionBar>
+      </div>
+    );
+  }
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -587,7 +684,8 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                     <RotateCcw className="size-3.5" />
                     {t('Retry')}
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={analyse}>
+                  <Button variant="primary" size="sm" onClick={analyse}>
+                    <Microscope className="size-3.5" />
                     {t('Analyse')}
                   </Button>
                 </>

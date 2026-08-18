@@ -429,6 +429,8 @@ export const ko: Record<string, string> = {
   'Back to the dashboard': '대시보드로',
   'Back to puzzles': '퍼즐 목록으로',
   'Back to the puzzle': '퍼즐로',
+  Analysing: '분석 중',
+  'Back to the game': '게임으로 돌아가기',
   'Back to the book': '책으로',
   'Back to the position': '포지션으로',
   'Back to the board': '보드로',

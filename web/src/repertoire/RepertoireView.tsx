@@ -32,6 +32,11 @@ import { KingIcon } from '@/ui/KingIcon';
 import { Segmented } from '@/ui/Segmented';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
+import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
+import { EngineBlock } from '@/engine/EnginePane';
+import { useEngine } from '@/store/engine';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { Select } from '@/ui/Select';
 import { t } from '@/lib/i18n';
@@ -818,6 +823,31 @@ export function RepertoireView() {
     }
   };
 
+  /**
+   * Analysing in place, the way both trainers do it: the page stays, the
+   * board becomes the analysis board and the panel above the moves becomes
+   * the engine. Navigating to Board took the drill away with it — the line
+   * just rehearsed, the study it came from and the way to play another
+   * were all behind the browser's back button.
+   *
+   * The engine is switched ON by the act of asking to analyse, and off
+   * again on the way out, including by unmount.
+   */
+  const [analysing, setAnalysing] = useState(false);
+  const analysingRef = useRef(false);
+  analysingRef.current = analysing;
+  useEffect(
+    () => () => {
+      if (analysingRef.current) useEngine.getState().setEnabled(false);
+    },
+    [],
+  );
+
+  const backToGame = (): void => {
+    useEngine.getState().setEnabled(false);
+    setAnalysing(false);
+  };
+
   const newGame = (): void => {
     // Back to setup. The runId bump drops any in-flight reply; the idle
     // effect above reseeds the board to the chosen opening's preview.
@@ -940,6 +970,63 @@ export function RepertoireView() {
       </InfoTip>
     </>
   );
+
+  if (analysing) {
+    // Panel for panel the trainers' analysing view: the three surfaces that
+    // offer Analyse should not each have their own idea of what that means.
+    return (
+      <div className={BOARD_SCROLL_SHELL}>
+        <AnalysisBoard />
+        <div
+          className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        >
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Back to the game')}
+              onClick={backToGame}
+            >
+              <ChevronLeft className="size-3.5" />
+            </Button>
+            <span className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
+              {t('Analysing')}
+            </span>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                backToGame();
+                newGame();
+              }}
+            >
+              <RotateCcw className="size-3.5" />
+              {t('New game')}
+            </Button>
+          </div>
+          <Panel flush className="min-h-min flex-1">
+            <EngineBlock />
+            <PanelHeader
+              title={t('Moves')}
+              actions={
+                <>
+                  <SidelinesToggle />
+                  <MoveActions allowReset={false} />
+                </>
+              }
+            />
+            <MoveTreePane />
+            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+            <StatusBar />
+          </Panel>
+        </div>
+        {/* Phones: move nav in the bottom bar while analysing. */}
+        <MobileActionBar>
+          <BoardControls keyboard={false} className="py-1.5" />
+        </MobileActionBar>
+      </div>
+    );
+  }
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -1298,16 +1385,18 @@ export function RepertoireView() {
                     fen={getNode(tree, tipId).fen}
                     onAnalyse={() => {
                       // The tree itself, not a PGN round-trip: this is the
-                      // line as played, and the board should open on the
-                      // move it ended on, facing the way it was trained.
+                      // line as played, and it opens on the move it ended
+                      // on, facing the way it was trained.
                       useAnalysis.setState({
                         tree,
                         cursorId: tipId,
                         orientation: userColor,
+                        pendingPromotion: null,
+                        loadError: null,
                         gameHeaders: null,
-                        handoff: true,
                       });
-                      navigate('board');
+                      useEngine.getState().setEnabled(true);
+                      setAnalysing(true);
                     }}
                   >
                     {/* A drill has nowhere to save TO: the line came out of a
