@@ -1,6 +1,6 @@
 import { AlertTriangle, Database, Settings2, Thermometer } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel, pathTo } from '@shared/tree';
+import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, NodeId } from '@shared/types';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -353,13 +353,28 @@ function CurrentLine() {
     }
   };
 
-  // The line THROUGH the cursor: what led here, and where it goes on from
-  // here. Walked as one chain so a cursor sitting inside a variation reads
-  // that variation as the line, which is what it is — and each move on it
-  // carries what was played instead, in brackets, PGN's own shape. The
-  // order matters: the alternative belongs beside the move it replaces,
-  // not in front of it.
-  const chain = [...pathTo(tree, cursorId).slice(1), ...mainlineFrom(tree, cursorId)];
+  /**
+   * The document's own line: the mainline from the root, with what was
+   * played instead beside each move, in brackets — PGN's shape.
+   *
+   * It used to be walked THROUGH the cursor, root to cursor and on down
+   * from there. That made the sentence depend on where you were standing:
+   * step into a variation and the variation became the line while the
+   * mainline was bracketed beside it, as though the tree had been
+   * rearranged around the cursor. Which contradicted the promise right
+   * above — that moving about changes which move is LIT, not how many
+   * there are, or which ones.
+   *
+   * Reading it from the root fixes the order and leaves the cursor to do
+   * one job: mark where you are. The move you are on is still on the
+   * strip, since a sideline one level down is drawn in full.
+   *
+   * The cost is a cursor deeper than that — a variation of a variation —
+   * which has nothing on the strip to light. The alternative was a
+   * sentence that rewrites itself as you read it, and the Moves tab is
+   * where a tree is meant to be read.
+   */
+  const chain = mainlineFrom(tree, tree.rootId);
   if (chain.length === 0) return null;
   const out: ReactNode[] = [];
   let forced = false;
