@@ -5,6 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.3
+
+- **The macOS app icon is drawn at the size macOS wants.** It was 512×512
+  — the minimum the packager accepts, which had been read as the answer —
+  so the generated `.icns` had no slot for its largest size and every
+  Retina Finder was upscaling it. It looked like a broken thumbnail
+  because it was one. Rendered at 1024 now; Windows keeps its 256, which
+  is the most NSIS will take.
+
 ## 0.4.2
 
 - **The desktop app's own vault works again — it never had a database

@@ -12,11 +12,18 @@ const render = (size, path) => {
 render(512, 'web/public/icon-512.png');
 render(192, 'web/public/icon-192.png');
 render(180, 'web/public/apple-touch-icon.png');
-// Two sizes, because the platforms disagree and one file cannot satisfy
-// both. macOS refuses anything under 512 ("Icon must be at least 512x512
-// pixels, provided: 256x256"), while NSIS refuses anything over 256 —
-// desktop/build-server.mjs turns the 256 into icon.ico, and feeding it a
-// 512 produced "invalid icon file size" and no Windows installer.
+// Three sizes, because the platforms disagree and one file cannot satisfy
+// any two of them. NSIS refuses anything over 256 — desktop/build-server.mjs
+// turns the 256 into icon.ico, and feeding it a 512 produced "invalid icon
+// file size" and no Windows installer.
+//
+// macOS refuses anything UNDER 512 ("Icon must be at least 512x512 pixels,
+// provided: 256x256"), which is how it ended up on exactly 512 — the
+// minimum, read as the answer. A Mac icon wants 1024: the .icns generated
+// from a 512 has no @2x slot for its largest size, so every Retina display
+// in the Finder was upscaling a 512 and the result looked like a bad
+// thumbnail, because it was one.
+render(1024, 'desktop/icon-1024.png');
 render(512, 'desktop/icon.png');
 render(256, 'desktop/icon-256.png');
 
