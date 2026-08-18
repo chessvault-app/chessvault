@@ -248,15 +248,25 @@ export function SkeletonGameRows({ rows = 6, className }: { rows?: number; class
     <Loading className={cn('divide-line divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-3 py-2">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
-            {/* Two players, each behind their side's dot. */}
+          {/* The real row stacks three <p>s with no gap between them: two
+              players at text-sm, whose line box is 20px, and the opening
+              and date at text-xs, whose box is 16px. This was a gap-1
+              stack of bare bars — 40px of text against the row's 56, so a
+              list of eight stood about 128px short and everything below it
+              jumped when the games landed. The bars stay thin; each is
+              centred in a box of its line's real height.
+
+              Two players, each behind their side's dot. */}
+          <div className="flex min-w-0 flex-1 flex-col">
             {[0, 1].map((line) => (
-              <div key={line} className="flex items-center gap-1.5">
+              <div key={line} className="flex h-5 items-center gap-1.5">
                 <Skeleton className="size-2 shrink-0 rounded-full" />
                 <Skeleton className={cn('h-3', names[(i + line) % names.length])} />
               </div>
             ))}
-            <Skeleton className="h-2 w-1/3" />
+            <div className="flex h-4 items-center">
+              <Skeleton className="h-2 w-1/3" />
+            </div>
           </div>
           <Skeleton className="h-3 w-8 shrink-0" />
           <Skeleton className="size-7 shrink-0 rounded pointer-coarse:size-9" />
