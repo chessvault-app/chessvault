@@ -356,6 +356,44 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
   });
 
   /** Months available for a user: remote archive list merged with the cache. */
+  /**
+   * The newest month's games, alongside the list that names it.
+   *
+   * Browsing an archive was two round trips before a single game
+   * appeared: the list says which months exist, and only then can a month
+   * be asked for. The second request is not optional — it names a month
+   * only the first can supply — so the only place to remove it is here,
+   * where the two are one machine apart instead of a phone's link apart.
+   *
+   * Asked for through the app's own month route rather than by repeating
+   * it. That route is where the caching lives — a disk copy, chess.com's
+   * if-modified-since, lichess's incremental since-window, and the rule
+   * that the current month is never trusted as final — and a second
+   * implementation of any of that would be a second thing to keep true.
+   * A sub-request costs one Request object and cannot drift.
+   *
+   * Best-effort by construction: a month that fails to load answers null
+   * and the client asks for it the old way. Nothing here is allowed to
+   * cost the list itself.
+   */
+  const newestMonth = async (
+    base: 'archive' | 'lichess',
+    user: string,
+    month: string | undefined,
+  ): Promise<{ month: string; games: unknown[] } | null> => {
+    if (!month) return null;
+    try {
+      const res = await api.request(
+        `/games/${base}/month?user=${encodeURIComponent(user)}&month=${month}`,
+      );
+      if (!res.ok) return null;
+      const body = (await res.json()) as { games?: unknown[] };
+      return Array.isArray(body.games) ? { month, games: body.games } : null;
+    } catch {
+      return null;
+    }
+  };
+
   api.get('/games/archive/months', async (c) => {
     const user = c.req.query('user')?.trim();
     if (!user || !USER_RE.test(user)) return c.json({ error: 'invalid username' }, 400);
@@ -404,6 +442,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
     return c.json({
       offline,
       total,
+      newest: await newestMonth('archive', user, all[0]),
       months: all.map((month) => ({
         month,
         cached: cachedMonths.has(month),
@@ -594,13 +633,23 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
         }
       }
       // The profile already carries the lifetime figure — count.all.
-      return c.json({ offline: false, total: profile.count?.all ?? null, months });
+      return c.json({
+        offline: false,
+        total: profile.count?.all ?? null,
+        newest: await newestMonth('lichess', user, months[0]?.month),
+        months,
+      });
     } catch {
       if (cachedMonths.size === 0) return c.json({ error: 'lichess unreachable and nothing cached yet' }, 502);
       const months = [...cachedMonths.entries()]
         .sort((a, b) => b[0].localeCompare(a[0]))
         .map(([month, games]) => ({ month, cached: true, games }));
-      return c.json({ offline: true, total: null, months });
+      return c.json({
+        offline: true,
+        total: null,
+        newest: await newestMonth('lichess', user, months[0]?.month),
+        months,
+      });
     }
   });
 

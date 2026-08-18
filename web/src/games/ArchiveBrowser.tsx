@@ -348,13 +348,32 @@ export function ArchiveBrowser({
     setMonthGames([]);
     try {
       const body = await api<
-        { months: ArchiveMonth[]; offline: boolean; total?: number | null } | { error: string }
+        | {
+            months: ArchiveMonth[];
+            offline: boolean;
+            total?: number | null;
+            /** The newest month's games, sent with the list that names it. */
+            newest?: { month: string; games: GameSummary[] } | null;
+          }
+        | { error: string }
       >(`${apiBase}/months?user=${encodeURIComponent(user)}`);
       if ('error' in body) setError(body.error);
       else {
         setMonths(body.months);
         setOffline(body.offline);
         useArchiveBrowse.setState({ total: body.total ?? null });
+        // The newest month came with the list, so put it where fetchMonth
+        // looks before asking: browsing an archive used to be two round
+        // trips deep before a single game appeared, and the second one
+        // could not start until the first had named a month. Seeded here
+        // rather than rendered from here, so the paging below is one path
+        // whether the server sent it or not — an older server, or a month
+        // that failed to load, simply finds no hit and asks.
+        if (body.newest) {
+          const key = monthKey(provider, user, body.newest.month);
+          const games = body.newest.games;
+          useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
+        }
         // All dates rather than one month — the question people open this
         // page with is "have I played this before" — but only the newest
         // page of it. The rest arrives as it is scrolled to.

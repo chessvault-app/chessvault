@@ -259,6 +259,60 @@ describe('archive cache', () => {
     expect(body.bytes).toBe(MONTH_PGN.length * 2);
   });
 
+  it('sends the newest month with the list that names it', async () => {
+    // Two round trips before a single game appeared: the list says which
+    // months exist, and only then can a month be asked for. The second
+    // one is answered here instead, where the two ends are a machine
+    // apart rather than a phone's link apart.
+    const asked: string[] = [];
+    globalThis.fetch = ((url: string) => {
+      asked.push(String(url));
+      if (String(url).endsWith('/games/archives')) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              archives: [
+                'https://api.chess.com/pub/player/lanph3re/games/2026/06',
+                'https://api.chess.com/pub/player/lanph3re/games/2026/07',
+              ],
+            }),
+            { headers: { 'content-type': 'application/json' } },
+          ),
+        );
+      }
+      if (String(url).endsWith('/stats')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ chess_blitz: { record: { win: 2, loss: 1, draw: 0 } } }), {
+            headers: { 'content-type': 'application/json' },
+          }),
+        );
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify({ games: [{ pgn: MONTH_PGN }] }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    }) as typeof fetch;
+
+    const body = await (await app.request('/api/games/archive/months?user=lanph3re')).json();
+    // Newest first, and the games of that one came along with it.
+    expect(body.months[0].month).toBe('2026-07');
+    expect(body.newest.month).toBe('2026-07');
+    expect(body.newest.games.length).toBeGreaterThan(0);
+    // And they are the SAME games the month route serves, which is the
+    // whole claim: the client can stop asking for them separately. Equal
+    // by construction — the list answers by asking that very route — and
+    // this is what would catch it being answered some other way.
+    const direct = await (
+      await app.request('/api/games/archive/month?user=lanph3re&month=2026-07')
+    ).json();
+    expect(body.newest.games).toEqual(direct.games);
+    // Whether a fetch happened is not the point and depends on what is
+    // already on disk; that the caching was reused rather than reimplemented
+    // is, and it is why this asks through the route.
+    expect(asked.length).toBeGreaterThan(0);
+  });
+
   it('rechecks the month being played in, and keeps the cache when it has not changed', async () => {
     const now = new Date();
     const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
