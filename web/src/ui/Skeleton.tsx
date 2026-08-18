@@ -290,7 +290,21 @@ export function SkeletonDocument({ className }: { className?: string }) {
  * The board is a real square, so the column widths settle before the
  * position arrives instead of snapping when it does.
  */
-export function SkeletonBoard({ className }: { className?: string }) {
+export function SkeletonBoard({
+  players = false,
+  className,
+}: {
+  /**
+   * Reserve the two player bars a GAME wears, above and below its board.
+   *
+   * PlayerBar draws nothing until the headers are loaded, so a game's board
+   * used to sit where a study's does and then take on 24px above it, 24
+   * below and the gaps between — the board and everything under it moved
+   * once the game arrived. A study has no players and passes nothing.
+   */
+  players?: boolean;
+  className?: string;
+}) {
   return (
     <Loading className={cn('flex h-full flex-col gap-3 p-4', className)}>
       {/* The page's own header — a way back and a title — which the board
@@ -313,7 +327,32 @@ export function SkeletonBoard({ className }: { className?: string }) {
         <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-      <Skeleton className="aspect-square w-full max-w-[min(70vh,40rem)] shrink-0 rounded-xl" />
+      <div className="flex w-full max-w-[min(70vh,40rem)] shrink-0 flex-col gap-2">
+        {/* The strip over the board: 40px on a wide screen whatever it
+            holds, so the board top stays put, and on a phone only there
+            when there is a game to name. The same pair of conditions the
+            board itself uses. */}
+        <div
+          className={cn(
+            'w-full items-end wide:flex wide:h-10',
+            players ? 'flex' : 'hidden wide:flex',
+          )}
+        >
+          {players && (
+            <div className="flex h-6 w-full items-center gap-2 px-0.5">
+              <Skeleton className="size-2 shrink-0 rounded-full" />
+              <Skeleton className="h-3 w-32" />
+            </div>
+          )}
+        </div>
+        <Skeleton className="aspect-square w-full rounded-xl" />
+        {players && (
+          <div className="flex h-6 w-full items-center gap-2 px-0.5">
+            <Skeleton className="size-2 shrink-0 rounded-full" />
+            <Skeleton className="h-3 w-32" />
+          </div>
+        )}
+      </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         {/* The side column's own title and its line of detail, which a
             stacked layout does not draw here — it puts the title at the
