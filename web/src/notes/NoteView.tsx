@@ -360,7 +360,17 @@ function NoteEditor({
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it
           read as narrower than the text it formats. */}
-      <div className="border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 md:-mx-6 md:px-6 md:pt-6">
+      <div
+        className={cn(
+          'border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
+          // The palette is what the small bottom padding was for: it sits
+          // right above the rule and does not want a gap of its own. In
+          // reading mode it renders nothing, and the header was left with
+          // 16px above it and 6px below - the title looked pushed against
+          // the rule. Without the palette the block gets even padding.
+          editable ? 'pb-1.5' : 'pb-3',
+        )}
+      >
       <header className="flex shrink-0 items-center gap-2">
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="size-3.5" />
