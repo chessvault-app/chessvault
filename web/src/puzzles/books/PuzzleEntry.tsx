@@ -55,7 +55,7 @@ import {
   loadSolutions,
   usePuzzleEvidence,
 } from './data';
-import { useWideLayout } from './layout';
+import { useWideLayout } from '@/lib/media';
 import { SourceCrop, SourcePane, ZoomablePage, useElementWidth } from './evidence';
 
 /** Load the puzzle, then reuse the standard entry flow to replace it. */

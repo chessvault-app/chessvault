@@ -36,7 +36,7 @@ import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
-import { useMediaQuery } from '@/lib/media';
+import { useWideLayout } from '@/lib/media';
 import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
@@ -494,15 +494,7 @@ function Trainer({
     [],
   );
 
-  /**
-   * `wide` in JavaScript, because the two layouts differ in BEHAVIOUR and
-   * not only in what is drawn: a desktop turns the engine on by itself the
-   * moment a puzzle ends and never shows an Analyse button, while a phone
-   * waits to be asked. The query is the CSS variant's, spelled out —
-   * matchMedia takes the comma-separated list that Tailwind's shorthand
-   * cannot (see the note beside @custom-variant wide).
-   */
-  const wide = useMediaQuery('(min-width: 64rem), (orientation: landscape) and (min-width: 44rem)');
+  const wide = useWideLayout();
 
   const analyse = (): void => {
     if (!puzzle) return;

@@ -52,3 +52,18 @@ export function useMediaQuery(query: string, enabled = true): boolean {
   }, [query, enabled]);
   return matches;
 }
+
+/** JS mirror of the CSS `wide` variant (index.css): side-by-side layouts. */
+const WIDE_MQ = '(min-width: 64rem), (orientation: landscape) and (min-width: 44rem)';
+
+/**
+ * Whether the app is laid out side by side, in JavaScript.
+ *
+ * Wanted wherever the two layouts differ in BEHAVIOUR and not only in what
+ * is drawn — a trainer that analyses by itself on a desktop and waits to be
+ * asked on a phone. It lived in puzzles/books/layout.ts, which is where the
+ * second copy of the query got written rather than found.
+ */
+export function useWideLayout(): boolean {
+  return useMediaQuery(WIDE_MQ);
+}

@@ -1,10 +1,9 @@
-import { Loader2, Microscope } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { EvalBar } from '@/engine/EvalBar';
 import { terminalScore } from '@/engine/terminal';
 import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
-import { Button } from '@/ui/Button';
 import { t } from '@/lib/i18n';
 
 /**
@@ -23,11 +22,9 @@ import { t } from '@/lib/i18n';
  */
 export function FinalAssessment({
   fen,
-  onAnalyse,
   children,
 }: {
   fen: string;
-  onAnalyse: () => void;
   /** What else this ending offers, beside Analyse — one row of buttons. */
   children?: ReactNode;
 }) {
@@ -135,11 +132,10 @@ export function FinalAssessment({
           are the same kind of choice, and stacking them spent a whole row
           of a panel that is already tall on a phone. It wraps where the
           two do not fit side by side. */}
+      {/* No Analyse here any more: the line ending IS the handoff now, so
+          the engine is already on and the moves panel already showing it.
+          What is left is whatever the mode offers instead. */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={onAnalyse}>
-          <Microscope className="size-3.5" />
-          {t('Analyse')}
-        </Button>
         {children}
       </div>
     </div>

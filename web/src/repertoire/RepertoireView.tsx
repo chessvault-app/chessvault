@@ -1,5 +1,19 @@
 ﻿import { parseSquare } from 'chessops/util';
-import { BookmarkPlus, BookOpen, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Eraser, FlipVertical2, Play, RotateCcw } from 'lucide-react';
+import {
+  BookmarkPlus,
+  BookOpen,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  Cpu,
+  Eraser,
+  FlipVertical2,
+  Info,
+  ListOrdered,
+  Play,
+  RotateCcw,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
@@ -33,8 +47,11 @@ import { KingIcon } from '@/ui/KingIcon';
 import { Segmented } from '@/ui/Segmented';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
+import { EngineBlock } from '@/engine/EnginePane';
+import { PaneTabs } from '@/ui/PaneTabs';
+import { useWideLayout } from '@/lib/media';
 import { useEngine } from '@/store/engine';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { Select } from '@/ui/Select';
@@ -832,7 +849,10 @@ export function RepertoireView() {
    * The engine is switched ON by the act of asking to analyse, and off
    * again on the way out, including by unmount.
    */
+  const wide = useWideLayout();
   const [analysing, setAnalysing] = useState(false);
+  /** Which pane the phone shows. A desktop shows all of them. */
+  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
   const analysingRef = useRef(false);
   analysingRef.current = analysing;
   useEffect(
@@ -842,10 +862,33 @@ export function RepertoireView() {
     [],
   );
 
-  const backToGame = (): void => {
-    useEngine.getState().setEnabled(false);
-    setAnalysing(false);
-  };
+  /**
+   * A finished line analyses itself, on both layouts, so there is no
+   * Analyse button left to press. Starting another game undoes it, engine
+   * included — an evaluation still up while the next line is played is
+   * that line's answer.
+   */
+  useEffect(() => {
+    if (phase === 'ended' && !analysing) {
+      useAnalysis.setState({
+        tree,
+        cursorId: tipId,
+        orientation: userColor,
+        pendingPromotion: null,
+        loadError: null,
+        gameHeaders: null,
+      });
+      useEngine.getState().setEnabled(true);
+      setAnalysing(true);
+      setPane('engine');
+    }
+    if (phase !== 'ended' && analysing) {
+      setAnalysing(false);
+      setPane('info');
+      useEngine.getState().setEnabled(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, analysing]);
 
   const newGame = (): void => {
     // Back to setup. The runId bump drops any in-flight reply; the idle
@@ -970,48 +1013,114 @@ export function RepertoireView() {
     </>
   );
 
-  if (analysing) {
-    // Panel for panel the trainers' analysing view: the three surfaces that
-    // offer Analyse should not each have their own idea of what that means.
-    return (
-      <div className={BOARD_SCROLL_SHELL}>
-        <AnalysisBoard />
-        <div
-          className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+
+
+  // Game panel in the trainers' shape: status and the game's own actions
+  // live here; the moves panel is the one every other board page uses.
+  const gamePanel = (
+  <Panel flush className="shrink-0">
+    <PanelHeader
+      title={t('Game')}
+      actions={
+        <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
+          <RotateCcw className="size-3.5" />
+          {t('New game')}
+        </Button>
+      }
+    />
+    <div className="flex flex-col gap-3 p-3">
+      <p
+        className={cn(
+          'text-sm leading-relaxed',
+          (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
+            ? 'text-warn'
+            : 'text-muted',
+        )}
+      >
+        {phase === 'ended'
+          ? endKind === 'gap'
+            ? gapMsg
+            : endKind === 'line'
+              ? t('End of your prepared line — every move matched the study.')
+              : t('This line has run past the database — you are on your own now.')
+          : error
+            ? error
+            : drillNotice
+              ? drillNotice
+              : phase === 'thinking'
+                ? t('Your opponent is replying…')
+                : pos.turn === userColor && atTip
+                  ? t('Your move.')
+                  : t('Reviewing an earlier move — step to the end to keep playing.')}
+      </p>
+      {gapNote && phase !== 'ended' && (
+        <p className="text-subtle text-sm leading-relaxed">{gapNote}</p>
+      )}
+      {/* The dependency arrow, pointed back: Settings knows it
+          powers this, but this error never said Settings was
+          the fix. A tokenless user read "could not reach" as
+          the app being broken. */}
+      {error && source === ONLINE_SOURCE && (
+        <p className="text-muted text-sm leading-relaxed">
+          {t('The online database goes through your Lichess token.')}{' '}
+          <a href="#/settings" className="text-primary hover:underline">
+            {t('Add one in Settings')}
+          </a>
+        </p>
+      )}
+      {phase === 'ended' && (
+        <FinalAssessment
+          fen={getNode(tree, tipId).fen}
         >
-          <div className="flex shrink-0 items-center gap-2">
+          {/* A drill has nowhere to save TO: the line came out of a
+              study, and filing it back would write the same moves
+              into a second one. What is worth offering there is the
+              way back — to the study just rehearsed, where the gaps
+              and misses this session recorded are fixed. Sparring
+              keeps the save: that line exists nowhere else and used
+              to evaporate the moment you left. */}
+          {mode === 'drill' ? (
+            drillStudy && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
+              >
+                <BookOpen className="size-3.5" />
+                {t('Go to study')}
+              </Button>
+            )
+          ) : (
             <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('Back to the game')}
-              onClick={backToGame}
-            >
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <span className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
-              {t('Analysing')}
-            </span>
-            <Button
-              variant="primary"
+              variant="secondary"
               size="sm"
               onClick={() => {
-                backToGame();
-                newGame();
+                setSaveError(null);
+                setSaveOpen(true);
               }}
             >
-              <RotateCcw className="size-3.5" />
-              {t('New game')}
+              <BookmarkPlus className="size-3.5" />
+              {t('Save line to study')}
             </Button>
-          </div>
-          <AnalysisMovesPanel />
-        </div>
-        {/* Phones: move nav in the bottom bar while analysing. */}
-        <MobileActionBar>
-          <BoardControls keyboard={false} className="py-1.5" />
-        </MobileActionBar>
-      </div>
-    );
-  }
+          )}
+        </FinalAssessment>
+      )}
+    </div>
+  </Panel>
+  );
+  const movesPanel = analysing ? (
+    <AnalysisMovesPanel engine={wide} />
+  ) : (
+  <AnswerPanel
+    // Takes the column's spare height, so the panel under it sits on the
+    // board's bottom edge instead of floating above it.
+    className="min-h-0 flex-1 shrink"
+    tree={tree}
+    cursorId={cursorId}
+    onSelect={setCursorId}
+    emptyText="Make your first move on the board."
+  />
+  );
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -1028,33 +1137,39 @@ export function RepertoireView() {
         {header}
       </div>
 
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
-        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-          {/* wide:h-10 + the column's gap-2 equals the other board pages'
-              top strip, so this board's top edge sits level with theirs
-              (and with the side column's first panel: h-9 + gap-3).
+      {/* Once the line has ended the board becomes the analysis board, so
+          the pieces move freely and the eval bar is the shared one. */}
+      {analysing ? (
+        <AnalysisBoard />
+      ) : (
+        <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+            {/* wide:h-10 + the column's gap-2 equals the other board pages'
+                top strip, so this board's top edge sits level with theirs
+                (and with the side column's first panel: h-9 + gap-3).
 
-              The height belongs to this BOX, and the name row sits at the
-              bottom of it — AnalysisBoard's strip exactly. The two must be
-              built the same way, not merely add up to the same number: the
-              row is 24px inside a 40px strip, so where its contents end up
-              is the row's business, and a slot stretched to 40px itself put
-              them 7px lower than every other board page's. */}
-          <div className="flex w-full items-end wide:h-10">
-            <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
+                The height belongs to this BOX, and the name row sits at the
+                bottom of it — AnalysisBoard's strip exactly. The two must be
+                built the same way, not merely add up to the same number: the
+                row is 24px inside a 40px strip, so where its contents end up
+                is the row's business, and a slot stretched to 40px itself put
+                them 7px lower than every other board page's. */}
+            <div className="flex w-full items-end wide:h-10">
+              <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
+            </div>
+            <Board
+              apiRef={boardApi}
+              fen={node.fen}
+              orientation={orientation}
+              dests={dests}
+              lastMove={moveSquares(node)}
+              check={pos.isCheck()}
+              onMove={onMove}
+            />
+            <PlayerSlot side={orientation} fen={node.fen} />
           </div>
-          <Board
-            apiRef={boardApi}
-            fen={node.fen}
-            orientation={orientation}
-            dests={dests}
-            lastMove={moveSquares(node)}
-            check={pos.isCheck()}
-            onMove={onMove}
-          />
-          <PlayerSlot side={orientation} fen={node.fen} />
         </div>
-      </div>
+      )}
 
       {/* stacked:flex-none — the page column is what scrolls on a phone, so
           this one must take the height its content needs. As flex-1 with
@@ -1312,119 +1427,26 @@ export function RepertoireView() {
           </>
         ) : (
           <>
-            {/* Game panel in the trainers' shape: status and the game's own
-                actions live here; the moves panel below is the same one every
-                other board page uses. */}
-            <Panel flush className="shrink-0">
-              <PanelHeader
-                title={t('Game')}
-                actions={
-                  <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
-                    <RotateCcw className="size-3.5" />
-                    {t('New game')}
-                  </Button>
-                }
+            {/* Moves above the game on a desktop; one pane at a time on a
+                phone, the engine chosen for you when the line ends. */}
+            {!wide && (
+              <PaneTabs
+                value={pane}
+                onChange={setPane}
+                tabs={[
+                  { id: 'info', label: t('Game'), icon: Info },
+                  { id: 'moves', label: t('Moves'), icon: ListOrdered },
+                  { id: 'engine', label: 'Engine', icon: Cpu },
+                ]}
               />
-              <div className="flex flex-col gap-3 p-3">
-                <p
-                  className={cn(
-                    'text-sm leading-relaxed',
-                    (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
-                      ? 'text-warn'
-                      : 'text-muted',
-                  )}
-                >
-                  {phase === 'ended'
-                    ? endKind === 'gap'
-                      ? gapMsg
-                      : endKind === 'line'
-                        ? t('End of your prepared line — every move matched the study.')
-                        : t('This line has run past the database — you are on your own now.')
-                    : error
-                      ? error
-                      : drillNotice
-                        ? drillNotice
-                        : phase === 'thinking'
-                          ? t('Your opponent is replying…')
-                          : pos.turn === userColor && atTip
-                            ? t('Your move.')
-                            : t('Reviewing an earlier move — step to the end to keep playing.')}
-                </p>
-                {gapNote && phase !== 'ended' && (
-                  <p className="text-subtle text-sm leading-relaxed">{gapNote}</p>
-                )}
-                {/* The dependency arrow, pointed back: Settings knows it
-                    powers this, but this error never said Settings was
-                    the fix. A tokenless user read "could not reach" as
-                    the app being broken. */}
-                {error && source === ONLINE_SOURCE && (
-                  <p className="text-muted text-sm leading-relaxed">
-                    {t('The online database goes through your Lichess token.')}{' '}
-                    <a href="#/settings" className="text-primary hover:underline">
-                      {t('Add one in Settings')}
-                    </a>
-                  </p>
-                )}
-                {phase === 'ended' && (
-                  <FinalAssessment
-                    fen={getNode(tree, tipId).fen}
-                    onAnalyse={() => {
-                      // The tree itself, not a PGN round-trip: this is the
-                      // line as played, and it opens on the move it ended
-                      // on, facing the way it was trained.
-                      useAnalysis.setState({
-                        tree,
-                        cursorId: tipId,
-                        orientation: userColor,
-                        pendingPromotion: null,
-                        loadError: null,
-                        gameHeaders: null,
-                      });
-                      useEngine.getState().setEnabled(true);
-                      setAnalysing(true);
-                    }}
-                  >
-                    {/* A drill has nowhere to save TO: the line came out of a
-                        study, and filing it back would write the same moves
-                        into a second one. What is worth offering there is the
-                        way back — to the study just rehearsed, where the gaps
-                        and misses this session recorded are fixed. Sparring
-                        keeps the save: that line exists nowhere else and used
-                        to evaporate the moment you left. */}
-                    {mode === 'drill' ? (
-                      drillStudy && (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
-                        >
-                          <BookOpen className="size-3.5" />
-                          {t('Go to study')}
-                        </Button>
-                      )
-                    ) : (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setSaveError(null);
-                          setSaveOpen(true);
-                        }}
-                      >
-                        <BookmarkPlus className="size-3.5" />
-                        {t('Save line to study')}
-                      </Button>
-                    )}
-                  </FinalAssessment>
-                )}
-              </div>
-            </Panel>
-            <AnswerPanel
-              tree={tree}
-              cursorId={cursorId}
-              onSelect={setCursorId}
-              emptyText="Make your first move on the board."
-            />
+            )}
+            {(wide || pane === 'moves') && movesPanel}
+            {!wide && pane === 'engine' && (
+              <Panel flush className="min-h-0 flex-1">
+                <EngineBlock standalone />
+              </Panel>
+            )}
+            {(wide || pane === 'info') && gamePanel}
           </>
         )}
       </div>
