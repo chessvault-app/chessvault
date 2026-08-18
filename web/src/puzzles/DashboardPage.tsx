@@ -10,7 +10,7 @@ import { Select } from '@/ui/Select';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ProgressBar } from '@/ui/ProgressBar';
-import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
+import { Skeleton, SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { t } from '@/lib/i18n';
@@ -55,6 +55,10 @@ export function DashboardPage() {
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const pending = useSlowLoad(history === null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
+  // The books panel answers separately, and used to be absent until it
+  // did — so it arrived under the panels above it and pushed everything
+  // below it down by its whole height.
+  const booksPending = useSlowLoad(books === null);
 
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(() => {
@@ -179,7 +183,34 @@ export function DashboardPage() {
           </div>
         </Panel>
 
-        {books !== null && (
+        {books === null
+          ? booksPending && (
+              <Panel flush className="mb-4">
+                {/* The title is known before the answer is; only the
+                    shelf button and the rows are waited for. */}
+                <PanelHeader
+                  title={t('Books')}
+                  actions={<Skeleton className="h-6 w-16 rounded-md" />}
+                />
+                {Array.from({ length: 3 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="border-line flex items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
+                  >
+                    {/* A row of text-xs, whose line box is 16px. */}
+                    <div className="flex h-4 min-w-0 flex-1 items-center">
+                      <Skeleton className="h-2.5 w-2/5" />
+                    </div>
+                    <div className="flex h-4 shrink-0 items-center">
+                      <Skeleton className="h-2.5 w-10" />
+                    </div>
+                    <Skeleton className="h-1.5 w-24 shrink-0 rounded-full" />
+                    <Skeleton className="size-3.5 shrink-0 rounded" />
+                  </div>
+                ))}
+              </Panel>
+            )
+          : (
           <Panel flush className="mb-4">
             <PanelHeader
               title={t('Books')}
