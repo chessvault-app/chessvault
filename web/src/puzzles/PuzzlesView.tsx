@@ -7,10 +7,10 @@ import {
   Cpu,
   Eye,
   FlipVertical2,
+  Info,
   LayoutGrid,
   Lightbulb,
   ListOrdered,
-  Microscope,
   RotateCw,
   Settings2,
   X,
@@ -483,8 +483,8 @@ function Trainer({
   // the real analysis board + merged engine/moves panel. Entering is an
   // explicit "analyse" act, so the engine comes on; leaving turns it off.
   const [analysing, setAnalysing] = useState(false);
-  /** Which pane the phone is showing while analysing. Desktop shows both. */
-  const [pane, setPane] = useState<'moves' | 'engine'>('engine');
+  /** Which pane the phone is showing. A desktop shows all three at once. */
+  const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
   const analysingRef = useRef(false);
   analysingRef.current = analysing;
   useEffect(
@@ -529,21 +529,25 @@ function Trainer({
    * click — and the panel it would appear in is already on screen.
    */
   useEffect(() => {
-    if (wide && phase === 'done' && puzzle && !analysing) analyse();
-    // analyse() closes over the current puzzle; re-running it on every
-    // render is what the guard above is for.
+    if (phase === 'done' && puzzle && !analysing) {
+      analyse();
+      // The answer is what you came back for, so a phone is put on the
+      // engine pane rather than left on the puzzle's own text.
+      setPane('engine');
+    }
+    // A new puzzle un-does all of it, engine included: an evaluation on
+    // screen while the next one is being solved IS the next one's answer.
+    if (phase !== 'done' && analysing) {
+      setAnalysing(false);
+      setPane('info');
+      useEngine.getState().setEnabled(false);
+    }
+    // analyse() closes over the current puzzle; the guards above are what
+    // keep this from re-running on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wide, phase, puzzle, analysing]);
+  }, [phase, puzzle, analysing]);
 
-  const backToPuzzle = (): void => {
-    useEngine.getState().setEnabled(false);
-    setAnalysing(false);
-  };
 
-  const nextFromAnalysis = (): void => {
-    backToPuzzle();
-    void loadNext(theme, difficulty);
-  };
 
   const solverSide: Color = puzzle ? solverColor(puzzle) : 'white';
   const title =
@@ -582,66 +586,260 @@ function Trainer({
     );
   }
 
+
   /**
-   * The PHONE's analysing view. A desktop never gets here: it analyses in
-   * place, with the engine above the moves and the puzzle panel still
-   * under them (see the main return), because it has the column for it.
-   *
-   * Here there is room for one pane at a time, so this is the board-page
-   * shape — a switcher over a single panel — rather than a column of
-   * panels nobody can see the bottom of.
+   * The panels this page is made of, named rather than written inline.
+   * A desktop stacks all three down the column; a phone shows one at a
+   * time behind a switcher. Writing them twice is how the two layouts
+   * would drift apart, which is the whole reason they are values here.
    */
-  if (analysing && puzzle && !wide) {
-    return (
-      <div className={BOARD_SCROLL_SHELL}>
-        <AnalysisBoard />
-        <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button variant="ghost" size="icon-sm" title={t('Back to the puzzle')} onClick={backToPuzzle}>
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <span className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
-              Analysing #{puzzle.id}
-            </span>
-            <Button variant="primary" size="sm" onClick={nextFromAnalysis}>
-              <RotateCw className="size-3.5" />
-              {t('Next puzzle')}
-            </Button>
-          </div>
-          <PaneTabs
-            value={pane}
-            onChange={setPane}
-            tabs={[
-              { id: 'moves', label: t('Moves'), icon: ListOrdered },
-              { id: 'engine', label: 'Engine', icon: Cpu },
-            ]}
-          />
-          <Panel flush className={cn('min-h-0 flex-1', pane !== 'moves' && 'hidden')}>
-            <PanelHeader
-              title={t('Moves')}
-              actions={
-                <>
-                  <SidelinesToggle />
-                  <MoveActions allowReset={false} />
-                </>
-              }
-            />
-            <MoveTreePane />
-            <StatusBar />
-          </Panel>
-          {/* Kept mounted, so the engine keeps following the board while
-              the moves tab is the one on screen. */}
-          <Panel flush className={cn('min-h-0 flex-1', pane !== 'engine' && 'hidden')}>
-            <EngineBlock standalone />
-          </Panel>
+  const dockEngine = wide && analysing;
+  const movesPanel = analysing ? (
+    <Panel flush className="min-h-min flex-1">
+      {/* Docked above the moves on a desktop. A phone gives the engine a
+          pane of its own, so docking it here too would show it twice. */}
+      {dockEngine && <EngineBlock />}
+      <PanelHeader
+        title={t('Moves')}
+        actions={
+          <>
+            <SidelinesToggle />
+            <MoveActions allowReset={false} />
+          </>
+        }
+      />
+      <MoveTreePane />
+      <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+      <StatusBar />
+    </Panel>
+  ) : answerTree ? (
+    <AnswerPanel
+      tree={answerTree}
+      cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
+      onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
+    />
+  ) : (
+    <Panel flush className="shrink-0">
+      <PanelHeader title={t('Moves')} />
+      <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
+    </Panel>
+  );
+  const trainingPanel =
+    mode !== 'fresh' ? (
+  <Panel flush className="shrink-0">
+    <PanelHeader
+      title={t('Training')}
+      actions={
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('Dashboard')}
+          onClick={() => navigate('puzzles', 'dashboard')}
+        >
+          <BarChart3 className="size-3.5" />
+        </Button>
+      }
+    />
+    {mode === 'single' ? (
+      <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
+        Replaying puzzle #{puzzleId} — not counted; a clean solve still retires it from the
+        review list.
+      </p>
+    ) : mode === 'failed' ? (
+      <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
+        {t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')}
+      </p>
+    ) : null}
+  </Panel>
+    ) : null;
+  const puzzlePanel = (
+  <Panel flush className="shrink-0">
+    <PanelHeader
+      title={t('Puzzle')}
+      actions={
+        <>
+          {puzzle && phase === 'done' && (
+            <span className="text-subtle font-mono text-xs">#{puzzle.id}</span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Dashboard')}
+            onClick={() => navigate('puzzles', 'dashboard')}
+          >
+            <BarChart3 className="size-3.5" />
+          </Button>
+        </>
+      }
+    />
+    {/* A window, not a drawer above the board's own panel: opened in
+        place it pushed the puzzle down the screen, which is the one
+        thing a trainer must not do to the position being solved. On
+        a phone it is a bottom sheet. */}
+    {showDifficulty && mode === 'fresh' && (
+      <Modal
+        title="Puzzle settings"
+        icon={Settings2}
+        onClose={() => setShowDifficulty(false)}
+      >
+        <DifficultyRow active={difficulty} onPick={pickDifficulty} />
+        {/* Theme picker folded in beside difficulty — both answer
+            "which puzzles", so they share the one window. */}
+        <button
+          type="button"
+          onClick={() => navigate('puzzles', 'themes')}
+          className={cn(
+            'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+            'border-line border px-3 py-2.5 text-left transition-colors duration-100',
+          )}
+        >
+          <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+          <span className="text-subtle shrink-0 text-xs font-semibold uppercase tracking-[0.08em]">
+            {t('Theme')}
+          </span>
+          <span className="text-fg ml-auto truncate text-sm font-medium">
+            {theme ? themeLabel(theme) : t('All themes')}
+          </span>
+          <ChevronRight className="text-subtle size-3.5 shrink-0" />
+        </button>
+      </Modal>
+    )}
+    <div className="flex flex-col gap-3 p-3">
+      {phase === 'done' && puzzle ? (
+        <>
+          <p
+            className={cn(
+              'text-base font-semibold',
+              // Green for a clean solve, amber for one that took a
+              // second go — it was still found — and red only where
+              // the answer was handed over.
+              revealed ? 'text-bad' : failed ? 'text-warn' : 'text-good',
+            )}
+          >
+            {revealed
+              ? t('Solution shown.')
+              : failed
+                ? t('Solved after a wrong try.')
+                : t('Solved!')}
+          </p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+            {/* The band, not the number: a rating is how the trainer
+                picks puzzles, not a verdict to hand back to whoever
+                just solved one. The dashboard has always shown it
+                this way; this panel had not. */}
+            <dt className="text-subtle">{t('Difficulty')}</dt>
+            <dd className="text-fg">{t(bandOf(puzzle.rating))}</dd>
+            <dt className="text-subtle">{t('Played')}</dt>
+            <dd className="text-fg font-mono">{puzzle.plays.toLocaleString()}</dd>
+            <dt className="text-subtle">{t('Themes')}</dt>
+            <dd className="flex flex-wrap gap-1">
+              {puzzle.themes.split(' ').map((t) => (
+                <span
+                  key={t}
+                  className="bg-surface-2 text-muted rounded px-1.5 py-0.5 text-xs"
+                >
+                  {themeLabel(t)}
+                </span>
+              ))}
+            </dd>
+          </dl>
+          {puzzle.game_url && (
+            <a
+              href={puzzle.game_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary text-sm hover:underline"
+            >
+              {t('From this game ↗')}
+            </a>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-col gap-0.5">
+          {puzzle && phase !== 'loading' && (
+            <p className="text-fg text-2xl font-bold tracking-tight">
+              {solverSide === 'white' ? t('White to play') : t('Black to play')}
+            </p>
+          )}
+          <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
+            {phase === 'wrong'
+              ? t('That is not it — it rolls back, try again.')
+              : phase === 'setup' || phase === 'opponent'
+              ? t('Opponent is moving…')
+              : phase === 'loading'
+              ? t('Finding a puzzle…')
+              : failed
+                ? t('Keep looking — find the best move.')
+                : t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)))}
+          </p>
         </div>
-        {/* Phones: move nav in the bottom bar while analysing. */}
-        <MobileActionBar>
-          <BoardControls keyboard={false} className="py-1.5" />
-        </MobileActionBar>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {phase === 'done' ? (
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
+              }
+            >
+              <RotateCw className="size-3.5" />
+              {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={phase !== 'solving'}
+              onClick={() => setHint((h) => Math.min(h + 1, 2))}
+              title={t('First press marks the piece, second the move (not counted as a fail)')}
+            >
+              <Lightbulb className="size-3.5" />
+              {t('Hint')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={phase !== 'solving'}
+              onClick={viewSolution}
+              title={t('Counts as a failed attempt')}
+            >
+              <Eye className="size-3.5" />
+              {t('Solution')}
+            </Button>
+            {mode !== 'single' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void loadNext(theme, difficulty)}
+              >
+                <X className="size-3.5" />
+                {t('Skip')}
+              </Button>
+            )}
+          </>
+        )}
       </div>
-    );
-  }
+
+      {/* What is being trained — difficulty and theme — as the
+          panel's own last row, and the way into the window that
+          changes it. It sat on the header for a while, where a
+          labelled control among icon buttons read as chrome
+          (lanph3re's call: into the body). */}
+      {mode === 'fresh' && (
+        <DifficultyChip
+          difficulty={difficulty}
+          theme={theme}
+          onOpen={() => setShowDifficulty(true)}
+        />
+      )}
+    </div>
+  </Panel>
+  );
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
@@ -673,7 +871,14 @@ function Trainer({
         <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
           <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
             <div className="hidden w-full items-end wide:flex wide:h-10" />
-            <div className="relative w-full">
+          {/* The eval bar's width, held open before there is an eval bar.
+              When the puzzle ends this board is replaced by AnalysisBoard,
+              which draws one — and without the same reservation here the
+              board narrowed by 20px and stepped right at the exact moment
+              the answer appeared (lanph3re's two screenshots). */}
+          <div className="flex w-full items-stretch gap-2">
+            <div className="w-3 shrink-0" aria-hidden />
+            <div className="relative min-w-0 flex-1">
               {displayed ? (
                 <Board
                   fen={displayed.fen}
@@ -725,6 +930,7 @@ function Trainer({
               )}
             </div>
           </div>
+          </div>
         </div>
       )}
 
@@ -747,265 +953,30 @@ function Trainer({
         {/* Fresh training folds this panel into two icons on the Puzzle
             panel header (lanph3re: same treatment on desktop as mobile); it only
             renders for the modes that need their explanatory text. */}
-        {/* The moves sit ABOVE the puzzle panel, not below it: they are
-            what you read while solving, and the moment the puzzle ends a
-            desktop docks the engine on top of them — which is then the
-            same panel Games, Studies and Board all use.
-
-            A phone gets no moves panel until then. One screen has room
-            for the puzzle or for the moves, not both, and there the moves
-            arrive with Analyse (see the analysing return above). */}
-        {analysing ? (
-          <Panel flush className="min-h-min flex-1">
-            <EngineBlock />
-            <PanelHeader
-              title={t('Moves')}
-              actions={
-                <>
-                  <SidelinesToggle />
-                  <MoveActions allowReset={false} />
-                </>
-              }
-            />
-            <MoveTreePane />
-            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
-            <StatusBar />
-          </Panel>
-        ) : wide ? (
-          answerTree ? (
-            <AnswerPanel
-              tree={answerTree}
-              cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
-              onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
-            />
-          ) : (
-            <Panel flush className="shrink-0">
-              <PanelHeader title={t('Moves')} />
-              <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
-            </Panel>
-          )
-        ) : null}
-        {mode !== 'fresh' && (
-        <Panel flush className="shrink-0">
-          <PanelHeader
-            title={t('Training')}
-            actions={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t('Dashboard')}
-                onClick={() => navigate('puzzles', 'dashboard')}
-              >
-                <BarChart3 className="size-3.5" />
-              </Button>
-            }
+        {/* One at a time on a phone, all three down the column on a
+            desktop. The switcher is the phone's whole navigation here:
+            analysing used to replace the page, and going back for the
+            puzzle's own text meant leaving the analysis. */}
+        {!wide && (
+          <PaneTabs
+            value={pane}
+            onChange={setPane}
+            tabs={[
+              { id: 'info', label: t('Puzzle'), icon: Info },
+              { id: 'moves', label: t('Moves'), icon: ListOrdered },
+              { id: 'engine', label: 'Engine', icon: Cpu },
+            ]}
           />
-          {mode === 'single' ? (
-            <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
-              Replaying puzzle #{puzzleId} — not counted; a clean solve still retires it from the
-              review list.
-            </p>
-          ) : mode === 'failed' ? (
-            <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
-              {t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')}
-            </p>
-          ) : null}
-        </Panel>
         )}
+        {(wide || pane === 'moves') && movesPanel}
+        {!wide && pane === 'engine' && (
+          <Panel flush className="min-h-0 flex-1">
+            <EngineBlock standalone />
+          </Panel>
+        )}
+        {(wide || pane === 'info') && trainingPanel}
+        {(wide || pane === 'info') && puzzlePanel}
 
-        <Panel flush className="shrink-0">
-          <PanelHeader
-            title={t('Puzzle')}
-            actions={
-              <>
-                {puzzle && phase === 'done' && (
-                  <span className="text-subtle font-mono text-xs">#{puzzle.id}</span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  title={t('Dashboard')}
-                  onClick={() => navigate('puzzles', 'dashboard')}
-                >
-                  <BarChart3 className="size-3.5" />
-                </Button>
-              </>
-            }
-          />
-          {/* A window, not a drawer above the board's own panel: opened in
-              place it pushed the puzzle down the screen, which is the one
-              thing a trainer must not do to the position being solved. On
-              a phone it is a bottom sheet. */}
-          {showDifficulty && mode === 'fresh' && (
-            <Modal
-              title="Puzzle settings"
-              icon={Settings2}
-              onClose={() => setShowDifficulty(false)}
-            >
-              <DifficultyRow active={difficulty} onPick={pickDifficulty} />
-              {/* Theme picker folded in beside difficulty — both answer
-                  "which puzzles", so they share the one window. */}
-              <button
-                type="button"
-                onClick={() => navigate('puzzles', 'themes')}
-                className={cn(
-                  'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-                  'border-line border px-3 py-2.5 text-left transition-colors duration-100',
-                )}
-              >
-                <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-                <span className="text-subtle shrink-0 text-xs font-semibold uppercase tracking-[0.08em]">
-                  {t('Theme')}
-                </span>
-                <span className="text-fg ml-auto truncate text-sm font-medium">
-                  {theme ? themeLabel(theme) : t('All themes')}
-                </span>
-                <ChevronRight className="text-subtle size-3.5 shrink-0" />
-              </button>
-            </Modal>
-          )}
-          <div className="flex flex-col gap-3 p-3">
-            {phase === 'done' && puzzle ? (
-              <>
-                <p
-                  className={cn(
-                    'text-base font-semibold',
-                    // Green for a clean solve, amber for one that took a
-                    // second go — it was still found — and red only where
-                    // the answer was handed over.
-                    revealed ? 'text-bad' : failed ? 'text-warn' : 'text-good',
-                  )}
-                >
-                  {revealed
-                    ? t('Solution shown.')
-                    : failed
-                      ? t('Solved after a wrong try.')
-                      : t('Solved!')}
-                </p>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                  {/* The band, not the number: a rating is how the trainer
-                      picks puzzles, not a verdict to hand back to whoever
-                      just solved one. The dashboard has always shown it
-                      this way; this panel had not. */}
-                  <dt className="text-subtle">{t('Difficulty')}</dt>
-                  <dd className="text-fg">{t(bandOf(puzzle.rating))}</dd>
-                  <dt className="text-subtle">{t('Played')}</dt>
-                  <dd className="text-fg font-mono">{puzzle.plays.toLocaleString()}</dd>
-                  <dt className="text-subtle">{t('Themes')}</dt>
-                  <dd className="flex flex-wrap gap-1">
-                    {puzzle.themes.split(' ').map((t) => (
-                      <span
-                        key={t}
-                        className="bg-surface-2 text-muted rounded px-1.5 py-0.5 text-xs"
-                      >
-                        {themeLabel(t)}
-                      </span>
-                    ))}
-                  </dd>
-                </dl>
-                {puzzle.game_url && (
-                  <a
-                    href={puzzle.game_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-primary text-sm hover:underline"
-                  >
-                    {t('From this game ↗')}
-                  </a>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col gap-0.5">
-                {puzzle && phase !== 'loading' && (
-                  <p className="text-fg text-2xl font-bold tracking-tight">
-                    {solverSide === 'white' ? t('White to play') : t('Black to play')}
-                  </p>
-                )}
-                <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
-                  {phase === 'wrong'
-                    ? t('That is not it — it rolls back, try again.')
-                    : phase === 'setup' || phase === 'opponent'
-                    ? t('Opponent is moving…')
-                    : phase === 'loading'
-                    ? t('Finding a puzzle…')
-                    : failed
-                      ? t('Keep looking — find the best move.')
-                      : t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)))}
-                </p>
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              {phase === 'done' ? (
-                <>
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() =>
-                      mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
-                    }
-                  >
-                    <RotateCw className="size-3.5" />
-                    {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
-                  </Button>
-                  {/* Phones only: a desktop is already analysing by now. */}
-                  {!wide && (
-                    <Button variant="secondary" size="sm" onClick={analyse}>
-                      <Microscope className="size-3.5" />
-                      {t('Analyse')}
-                    </Button>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={phase !== 'solving'}
-                    onClick={() => setHint((h) => Math.min(h + 1, 2))}
-                    title={t('First press marks the piece, second the move (not counted as a fail)')}
-                  >
-                    <Lightbulb className="size-3.5" />
-                    {t('Hint')}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={phase !== 'solving'}
-                    onClick={viewSolution}
-                    title={t('Counts as a failed attempt')}
-                  >
-                    <Eye className="size-3.5" />
-                    {t('Solution')}
-                  </Button>
-                  {mode !== 'single' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => void loadNext(theme, difficulty)}
-                    >
-                      <X className="size-3.5" />
-                      {t('Skip')}
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* What is being trained — difficulty and theme — as the
-                panel's own last row, and the way into the window that
-                changes it. It sat on the header for a while, where a
-                labelled control among icon buttons read as chrome
-                (lanph3re's call: into the body). */}
-            {mode === 'fresh' && (
-              <DifficultyChip
-                difficulty={difficulty}
-                theme={theme}
-                onOpen={() => setShowDifficulty(true)}
-              />
-            )}
-          </div>
-        </Panel>
 
 
 
