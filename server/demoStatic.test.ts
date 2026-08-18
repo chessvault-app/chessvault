@@ -44,8 +44,6 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
   puzzleBooksApi: 'book puzzles come from commercial PDFs and are not ours to publish',
   lichessExplorerApi: 'proxying the explorer needs the deployment\'s Lichess token',
   lichessStudiesApi: 'importing a study needs that same token',
-  tablebaseApi:
-    'the proxy is a permanent disk cache and the demo has no disk; the engine pane just shows no verdict row',
 };
 
 describe('the static demo keeps up with the app', () => {

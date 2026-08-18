@@ -16,7 +16,6 @@ import { puzzleBooksApi } from './puzzlebooks.ts';
 import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
 import { settingsApi } from './settings.ts';
-import { tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { seedWelcomeDocs } from './welcome.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
@@ -182,7 +181,6 @@ app.route('/api', lichessExplorerApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', settingsApi());
 app.route('/api', lichessStudiesApi());
-app.route('/api', tablebaseApi());
 
 /**
  * Desktop update feed. Deliberately OUTSIDE /api and outside the password

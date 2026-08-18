@@ -8,7 +8,6 @@ import {
   type SearchUpdate,
 } from '@/engine/StockfishEngine';
 import type { PvLine } from '@/engine/uci';
-import { lookupTablebaseLines, tablebaseEligible } from '@/engine/tablebase';
 
 /** Sensible default: leave a couple of cores for the UI. */
 const defaultThreads = (): number => {
@@ -65,14 +64,6 @@ let pendingFen: string | null = null;
  */
 let requestedFen: string | null = null;
 
-/**
- * The fen whose lines are a PROOF rather than a search.
- *
- * While it is set, the engine's own frames for that position are dropped:
- * the search is being stopped, and its last message would land after the
- * proof and overwrite it with an estimate of the thing already known.
- */
-let provenFen: string | null = null;
 
 export const useEngine = create<EngineState>()(
   persist(
@@ -80,8 +71,6 @@ export const useEngine = create<EngineState>()(
       const onUpdate = (update: SearchUpdate): void => {
         // Drop results for a position we have already navigated away from.
         if (pendingFen && update.fen !== pendingFen) return;
-        // And for one the tablebase has settled, for the reason above.
-        if (provenFen === update.fen) return;
         set({
           resultFen: update.fen,
           lines: update.lines,
@@ -107,34 +96,6 @@ export const useEngine = create<EngineState>()(
           );
         }
         return engine;
-      };
-
-      /**
-       * Replace the estimate with the proof, where there is one.
-       *
-       * Deliberately alongside the engine rather than instead of it. The
-       * engine answers first and its lines are drawn; the proof arrives a
-       * moment later and takes their place, which reads as the search
-       * getting deeper rather than as a different feature appearing. It
-       * lands in the STORE, not in the pane, so the eval bar and the
-       * best-move arrow stop showing an estimate of a solved position too.
-       *
-       * Nothing happens at all when the tablebase cannot answer — offline,
-       * throttled, more than seven men, or a position with no DTM to
-       * quote. The engine's own lines are the fallback, and they are
-       * already on screen.
-       */
-      const prove = async (fen: string): Promise<void> => {
-        if (!tablebaseEligible(fen)) return;
-        const lines = await lookupTablebaseLines(fen, get().multiPv);
-        if (!lines || lines.length === 0) return;
-        // The reader may have moved on, or switched the engine off, while
-        // the proof was being walked.
-        if (pendingFen !== fen || !get().enabled) return;
-        provenFen = fen;
-        // Nothing left to search: this position is answered.
-        engine?.stop();
-        set({ lines, resultFen: fen, finished: true });
       };
 
       return {
@@ -201,7 +162,6 @@ export const useEngine = create<EngineState>()(
             engine = null;
             pendingFen = null;
             requestedFen = null;
-            provenFen = null;
             set({ enabled: false, lines: [], resultFen: null, finished: false });
             return;
           }
@@ -220,12 +180,8 @@ export const useEngine = create<EngineState>()(
           engine?.setOptions({ threads, hashMb, multiPv });
           // Re-run so the change is visible immediately rather than next move.
           if (get().enabled && pendingFen) {
-            provenFen = null;
             set({ lines: [], finished: false });
             void engine?.analyse(pendingFen, get().depth, get().moveSeconds * 1000);
-            // MultiPV is one of these: the proof is asked for again because
-            // the number of lines wanted may be what just changed.
-            void prove(pendingFen);
           }
         },
 
@@ -234,11 +190,9 @@ export const useEngine = create<EngineState>()(
           pendingFen = fen;
           if (!get().enabled) return;
           requestedFen = fen;
-          provenFen = null;
           // Clear straight away so the pane never shows another position's eval.
           set({ lines: [], finished: false, resultFen: null });
           void ensureEngine().analyse(fen, get().depth, get().moveSeconds * 1000);
-          void prove(fen);
         },
 
         stop: () => {

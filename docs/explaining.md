@@ -10,9 +10,9 @@ NNUE replaced the handcrafted evaluation there is no material/king-safety/
 mobility breakdown left to read out of it, so "why" cannot be paraphrased
 out of the engine at all.
 
-What survives that constraint is the pair of answers that are **proven**
-rather than inferred: a tablebase verdict, and the network's own
-per-piece values. Everything softer — heuristic readings of lines,
+What survives that constraint is the one answer that is **read out of
+the engine** rather than inferred: the network's own per-piece values.
+Everything softer — heuristic readings of lines,
 counter-factual probes — was tried and removed: however carefully gated,
 a heuristic explanation is sometimes wrong, and a wrong explanation
 under an engine line is worse than none. No feature here guesses, and
@@ -22,28 +22,10 @@ none uses a language model.
 
 | Surface | What it says |
 |---|---|
-| Above the lines | The tablebase verdict, in small endgames |
 | Header thermometer | Toggles the piece-value overlay |
 | The board | Piece values, when the overlay is on |
 
-## The features
-
-### Tablebase verdicts (above the lines)
-
-In a 7-man ending the engine's `+2.1` can be a proven draw, and no depth
-setting fixes that — the eval is an estimate and the tablebase is a
-proof. With 7 men or fewer and no castling rights (Syzygy does not model
-castling), the pane asks the server, which proxies
-`tablebase.lichess.ovh` and caches every answer **forever** — verdicts
-cannot go stale. The row reads like `Tablebase: White wins, mate in 8`
-(DTM plies halved into moves); cursed wins and blessed losses read as
-the 50-move draws they are; `maybe-*` rounding collapses to its base
-category with the nuance left to the tooltip.
-
-Failures are silent by design: offline, the row is simply absent (and
-any position ever seen keeps answering from the cache). The static demo
-declares this route deliberately absent — the proxy is a disk cache and
-the demo has no disk.
+## The feature
 
 ### The piece-value overlay (thermometer in the header)
 
@@ -79,10 +61,9 @@ overlay is off.
 
 ## Determinism, said precisely
 
-Both features are in the strongest tier there is: **proofs and single
-evaluations**. A tablebase verdict is exact and eternal, and cached
-accordingly. An `eval` trace is one forward pass — same position, same
-build, same numbers.
+This is in the strongest tier there is: a **single evaluation**. An
+`eval` trace is one forward pass — same position, same build, same
+numbers.
 
 What deliberately does not exist: any model-generated prose, anything
 trained, anything heuristic, anything that could assert a chess claim no
@@ -94,10 +75,9 @@ nothing else.
 
 - `web/src/engine/evalTrace.test.ts` — the parser against the shipped
   build's verbatim trace output.
-- `web/src/engine/tablebase.test.ts` — verdict wording and eligibility.
 - Verified against the shipped WASM binary by running it under Node:
   the `eval` command answers with the piece grid.
-- Verified live in the app: the overlay and the tablebase proxy, on the
-  dev server through the real UI.
+- Verified live in the app: the overlay, on the dev server through the
+  real UI.
 
 Every user-facing string goes through `t()`.
