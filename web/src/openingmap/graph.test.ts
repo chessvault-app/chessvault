@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createLayout, createLiveSim, layoutGraph } from './graph';
+import { createLayout, createLiveSim, layoutGraph, layoutTree } from './graph';
 import type { MapNode } from './model';
 
 const leaf = (id: string): MapNode => ({ id, san: 'x', children: [] });
@@ -215,5 +215,81 @@ describe('createLiveSim', () => {
     const after = spread(untouched, sim.positions());
     expect(after).toBeGreaterThan(before * 0.85);
     expect(after).toBeLessThan(before * 1.15);
+  });
+});
+
+describe('layoutTree', () => {
+  const byId = (root: MapNode = sample()) => {
+    const g = layoutTree(root);
+    return { g, at: new Map(g.nodes.map((n) => [n.id, n])) };
+  };
+
+  it('places every node once, and every edge with it', () => {
+    const { g } = byId();
+    expect(g.nodes).toHaveLength(9);
+    expect(new Set(g.nodes.map((n) => n.id)).size).toBe(9);
+    // A tree of n nodes has n-1 edges, and this one is a tree.
+    expect(g.edges).toHaveLength(8);
+  });
+
+  it('puts depth along one axis and siblings along the other', () => {
+    const { at } = byId();
+    // Laterally by default: depth is x, and every node at one depth
+    // shares it exactly.
+    expect(at.get('root')!.x).toBe(0);
+    expect(at.get('e4')!.x).toBe(at.get('d4r')!.x);
+    expect(at.get('e4')!.x).toBeGreaterThan(at.get('root')!.x);
+    expect(at.get('c5')!.x).toBeGreaterThan(at.get('e4')!.x);
+    // Siblings differ across, and do not overlap: the gap between two
+    // centres clears both radii.
+    const [a, b] = [at.get('c5')!, at.get('e5')!];
+    expect(Math.abs(a.y - b.y)).toBeGreaterThan(a.r + b.r);
+  });
+
+  it('centres a parent over the children it owns', () => {
+    const { at } = byId();
+    const kids = ['c5', 'e5', 'e6'].map((id) => at.get(id)!.y);
+    expect(at.get('e4')!.y).toBeCloseTo((Math.min(...kids) + Math.max(...kids)) / 2, 6);
+    // And the root over its own two, which is not the mean of every leaf.
+    expect(at.get('root')!.y).toBeCloseTo((at.get('e4')!.y + at.get('d4r')!.y) / 2, 6);
+  });
+
+  it('grows downward when told to, with the axes swapped over', () => {
+    const at = new Map(layoutTree(sample(), { vertical: true }).nodes.map((n) => [n.id, n]));
+    // Depth is y now, and one depth still shares it exactly.
+    expect(at.get('root')!.y).toBe(0);
+    expect(at.get('e4')!.y).toBe(at.get('d4r')!.y);
+    expect(at.get('e4')!.y).toBeGreaterThan(at.get('root')!.y);
+    expect(at.get('e4')!.x).not.toBe(at.get('d4r')!.x);
+  });
+
+  it('leaves side-by-side siblings room for a label, not just a dot', () => {
+    // The label is 99px wide and 23px tall, so the axis siblings spread
+    // along decides how far apart they have to be. Stacked, they clear a
+    // height; side by side, a width — and drawing the second at the first
+    // one's spacing is what would print two names on top of each other.
+    const gapOf = (g: ReturnType<typeof layoutTree>, axis: 'x' | 'y') => {
+      const at = new Map(g.nodes.map((n) => [n.id, n]));
+      return Math.abs(at.get('c5')![axis] - at.get('e5')![axis]);
+    };
+    expect(gapOf(layoutTree(sample(), { vertical: true }), 'x')).toBeGreaterThan(99);
+    expect(gapOf(layoutTree(sample()), 'y')).toBeGreaterThan(23);
+    expect(gapOf(layoutTree(sample(), { vertical: true }), 'x')).toBeGreaterThan(
+      gapOf(layoutTree(sample()), 'y'),
+    );
+  });
+
+  it('draws the same dots as the constellation', () => {
+    // The two views are one map rearranged, so the circles must agree —
+    // a node that changed size on the way over would read as a different
+    // picture rather than the same one moving.
+    const tree = new Map(layoutTree(sample()).nodes.map((n) => [n.id, n.r]));
+    for (const n of layoutGraph(sample()).nodes) expect(tree.get(n.id)).toBe(n.r);
+  });
+
+  it('is the same layout every time', () => {
+    const a = layoutTree(sample());
+    const b = layoutTree(sample());
+    expect(b.nodes).toEqual(a.nodes);
   });
 });

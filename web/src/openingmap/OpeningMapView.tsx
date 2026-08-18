@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Compass, Grid3x3, Library, Loader2, NotebookPen, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Compass, Grid3x3, Library, ListTree, Loader2, NotebookPen, Orbit, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -61,6 +61,8 @@ import { useGaps } from './useGaps';
  * per-visit one. '' is off — the default, because gap checking costs
  * requests and the map must be useful before any source is configured.
  */
+/** Which arrangement the map was last left in, on this device. */
+const ARRANGEMENT_KEY = 'vault:openingmap-arrangement';
 const FIELD_KEY = 'vault:openingmap-field';
 
 const readFieldPick = (): { source: string; ratings: string } => {
@@ -238,7 +240,25 @@ export function OpeningMapView({ params }: { params: string[] }) {
   // The page's own controls, written once. The Fab fans them out as
   // labelled pills on a phone; the top-right corner draws them as icons
   // on anything with a pointer.
+  const [arrangement, setArrangement] = useState<'constellation' | 'tree'>(() =>
+    localStorage.getItem(ARRANGEMENT_KEY) === 'tree' ? 'tree' : 'constellation',
+  );
+
   const mapActions: FabAction[] = [
+    {
+      // Which arrangement of the same nodes is on screen. The tree is the
+      // reading view — what follows what — and the constellation is the
+      // shape-of-the-whole one, so this is a preference somebody holds
+      // rather than a mode a task puts them in: the device remembers it.
+      label: arrangement === 'tree' ? 'Show the constellation' : 'Show the tree',
+      icon: arrangement === 'tree' ? Orbit : ListTree,
+      onSelect: () =>
+        setArrangement((prev) => {
+          const next = prev === 'tree' ? 'constellation' : 'tree';
+          localStorage.setItem(ARRANGEMENT_KEY, next);
+          return next;
+        }),
+    },
     {
       label: color === 'white' ? 'Switch to the black map' : 'Switch to the white map',
       icon: Repeat,
@@ -420,6 +440,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           matches={matches}
           selectedId={selected}
           focus={focus}
+          arrangement={arrangement}
           // Pressing the selected dot again lets it go. Selecting is what
           // opens the panel and lights the mainline, so it needs an undo
           // that is the same gesture — hunting for empty canvas to click

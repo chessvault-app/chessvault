@@ -35,6 +35,104 @@ const RING = 120;
 const ITERATIONS = 220;
 
 /**
+ * How big a node's dot is: 5px, plus a term in the square root of what
+ * hangs beneath it.
+ *
+ * Lifted out because BOTH views draw it. The tree is the same map with
+ * the same dots in a different arrangement — if the circles disagreed
+ * between the two, switching would not read as the same map rearranging
+ * itself, which is the whole idea.
+ */
+function radiusOf(node: MapNode): number {
+  const descendants = (n: MapNode): number =>
+    n.children.reduce((sum, child) => sum + 1 + descendants(child), 0);
+  return 5 + 2.5 * Math.sqrt(descendants(node) + 1);
+}
+
+/** How far one depth sits from the next. */
+const TREE_LEVEL = 132;
+/**
+ * Clear space between two sibling circles, before their radii.
+ *
+ * Per axis, because the LABEL is. A node wears its move over its opening
+ * name in a column measured at 99px wide and 23px tall, centred under the
+ * dot. Siblings stacked one above the other only have to clear that
+ * height; siblings side by side have to clear its width, which is four
+ * times as much — at the lateral gap they would print on top of each
+ * other. 104 leaves two of the widest labels about 20px apart at the
+ * smallest radius.
+ */
+const TREE_GAP = { lateral: 34, vertical: 104 };
+/** The breathing room a layout leaves around its content. */
+const PAD = 40;
+
+/**
+ * The same map as a tidy tree: depth along one axis, siblings along the
+ * other, every parent centred over the children it owns.
+ *
+ * Not a second design — the same dots, the same sizes, the same edges,
+ * put somewhere else. The constellation answers "what is big and what is
+ * near what"; this answers "what follows what", which is the question a
+ * repertoire is actually shaped by, and it is the one a force layout can
+ * never quite hold still enough to answer.
+ *
+ * Grows LATERALLY by default and downward when `vertical`. A tree wants
+ * its depth along the axis with room to spare: that is the long axis of a
+ * desktop window and the short one of a phone held upright, so the caller
+ * passes what the viewport is rather than this guessing.
+ *
+ * Leaves are laid out in order, each clearing the last by its own radius
+ * plus a gap, and a parent takes the midpoint of its first and last child.
+ * That is the classic tidy-tree rule, and with variable radii it is the
+ * part that keeps big dots from sitting on their neighbours.
+ */
+export function layoutTree(
+  root: MapNode,
+  { vertical = false }: { vertical?: boolean } = {},
+): MapGraph {
+  const nodes: GraphNode[] = [];
+  const edges: MapGraph['edges'] = [];
+  const gap = vertical ? TREE_GAP.vertical : TREE_GAP.lateral;
+  // Where the last leaf was placed, and how big it was.
+  let cursor = 0;
+  let last: number | null = null;
+
+  const place = (node: MapNode, depth: number): number => {
+    const r = radiusOf(node);
+    let across: number;
+    if (node.children.length === 0) {
+      across = last === null ? r : cursor + last + gap + r;
+      cursor = across;
+      last = r;
+    } else {
+      const kids = node.children.map((child) => {
+        edges.push({ from: node.id, to: child.id });
+        return place(child, depth + 1);
+      });
+      across = (kids[0]! + kids[kids.length - 1]!) / 2;
+    }
+    const along = depth * TREE_LEVEL;
+    nodes.push({
+      id: node.id,
+      x: vertical ? across : along,
+      y: vertical ? along : across,
+      r,
+    });
+    return across;
+  };
+  place(root, 0);
+
+  return {
+    nodes,
+    edges,
+    minX: Math.min(...nodes.map((n) => n.x - n.r)) - PAD,
+    minY: Math.min(...nodes.map((n) => n.y - n.r)) - PAD,
+    maxX: Math.max(...nodes.map((n) => n.x + n.r)) + PAD,
+    maxY: Math.max(...nodes.map((n) => n.y + n.r)) + PAD,
+  };
+}
+
+/**
  * The simulation behind layoutGraph, exposed a step at a time so the
  * canvas can PLAY the settling as its load animation — the constellation
  * blooming out of the radial seed is the layout being computed, not a
@@ -67,9 +165,6 @@ export function createLayout(root: MapNode): LayoutSim {
     return n;
   };
   countLeaves(root);
-  const descendants = (node: MapNode): number =>
-    node.children.reduce((sum, child) => sum + 1 + descendants(child), 0);
-
   // Radial seed: each node gets a slice of its parent's sector, wide in
   // proportion to the leaves it must eventually fan out into.
   const seed = (node: MapNode, depth: number, from: number, to: number, parent: number | null): void => {
@@ -79,7 +174,7 @@ export function createLayout(root: MapNode): LayoutSim {
       id: node.id,
       x: depth === 0 ? 0 : Math.cos(angle) * depth * RING,
       y: depth === 0 ? 0 : Math.sin(angle) * depth * RING,
-      r: 5 + 2.5 * Math.sqrt(descendants(node) + 1),
+      r: radiusOf(node),
       parent,
     });
     let cursor = from;
@@ -153,8 +248,6 @@ export function createLayout(root: MapNode): LayoutSim {
   for (const body of bodies) {
     if (body.parent !== null) edges.push({ from: bodies[body.parent]!.id, to: body.id });
   }
-  const PAD = 40;
-
   return {
     step: (iterations: number) => {
       for (let n = 0; n < iterations && at0 < ITERATIONS; n += 1) {

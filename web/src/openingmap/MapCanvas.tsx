@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
+import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { openingFamily } from '@/repertoire/drill';
 import { reachedMove, type NodeCoverage } from './coverage';
 import type { NodeGaps } from './gaps';
-import { createLiveSim, layoutGraph, type LiveSim } from './graph';
+import { createLiveSim, layoutGraph, layoutTree, type LiveSim } from './graph';
 import { favouriteChild } from './mainline';
 import type { OpeningMap, ResolvedMap } from './model';
 
@@ -73,10 +74,16 @@ export function MapCanvas({
   matches,
   selectedId,
   focus,
+  arrangement = 'constellation',
   onSelect,
 }: {
   map: OpeningMap;
   resolved: ResolvedMap;
+  /**
+   * How the same nodes are arranged: the force-relaxed constellation, or
+   * a tidy tree of the same dots.
+   */
+  arrangement?: 'constellation' | 'tree';
   coverage?: ReadonlyMap<string, NodeCoverage>;
   /** Field comparison per node id — set only while a source is chosen. */
   gaps?: ReadonlyMap<string, NodeGaps>;
@@ -103,7 +110,19 @@ export function MapCanvas({
   /** A node id, or null for the ground — a press on dead space clears. */
   onSelect: (id: string | null) => void;
 }) {
-  const graph = useMemo(() => layoutGraph(map.root), [map.root]);
+  /**
+   * A tree wants its depth along the axis with room to spare: sideways on
+   * a desktop window, downward on a phone held upright. The app's own
+   * `stacked` rule decides which one this is, so the map agrees with every
+   * other page about what a narrow screen is.
+   */
+  const stacked = useMediaQuery(
+    '(max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem))',
+  );
+  const graph = useMemo(
+    () => (arrangement === 'tree' ? layoutTree(map.root, { vertical: stacked }) : layoutGraph(map.root)),
+    [map.root, arrangement, stacked],
+  );
   const at = useMemo(() => new Map(graph.nodes.map((n) => [n.id, n])), [graph]);
 
   const host = useRef<HTMLDivElement | null>(null);
@@ -369,7 +388,11 @@ export function MapCanvas({
    */
   const calm = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const grab = (id: string, at0: { x: number; y: number }): void => {
-    if (calm()) return;
+    // A tree is an arrangement with an answer, so there is nothing for a
+    // drag to settle into: towing a dot would leave the picture wrong
+    // until the next relayout rather than finding a new resting place the
+    // way the constellation does. The map still pans and zooms.
+    if (arrangement === 'tree' || calm()) return;
     const from = new Map(graph.nodes.map((n) => [n.id, posNow(n.id)]));
     from.set(id, at0);
     const running = createLiveSim(graph.nodes, graph.edges, from);
