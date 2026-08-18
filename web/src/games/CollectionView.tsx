@@ -467,7 +467,7 @@ export function CollectionView() {
         />
       )}
 
-      {error && <p className="text-bad text-xs">{error}</p>}
+      {error && <p className="text-bad text-sm">{error}</p>}
 
       {/* Two columns on a desktop: the collection is the page and takes the
           full height (it showed four rows when the archive browser sat
@@ -733,10 +733,10 @@ export function CollectionView() {
                   // No icon, and not the header's uppercase micro-caps:
                   // measured, the pair came to 256px that way and this
                   // column is 210px wide at the narrowest lg. Plain text
-                  // at text-xs is 178. min-w-0 so a longer translation
+                  // at text-sm is 178. min-w-0 so a longer translation
                   // truncates rather than pushing the second tab out.
                   className={cn(
-                    'relative flex h-10 min-w-0 items-center px-1.5 text-xs font-semibold',
+                    'relative flex h-10 min-w-0 items-center px-1.5 text-sm font-semibold',
                     'transition-colors duration-100',
                     on
                       ? 'text-fg after:bg-primary after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full'
@@ -979,7 +979,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         type="button"
         onClick={() => setDetailsOpen((v) => !v)}
         aria-expanded={detailsOpen}
-        className="text-subtle hover:text-fg flex items-center gap-1.5 self-start text-xs transition-colors duration-100"
+        className="text-subtle hover:text-fg flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
       >
         <ChevronRight
           className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}
@@ -1065,7 +1065,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         </div>
       )}
 
-      {failure && <p className="text-bad text-xs">{failure}</p>}
+      {failure && <p className="text-bad text-sm">{failure}</p>}
 
       {/* Sticky, so the only way to submit is never scrolled away — this
           form is long enough with Advanced open that it now scrolls, and

@@ -376,7 +376,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     return (
       <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
         <div className="flex flex-col items-center gap-3">
-          <p className="text-bad text-center text-xs">{metaError}</p>
+          <p className="text-bad text-center text-sm">{metaError}</p>
           <Button variant="secondary" size="sm" onClick={loadMeta}>
             {t('Try again')}
           </Button>
@@ -393,12 +393,12 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     return (
       <div className={cn('grid place-items-center p-6', page && 'h-full overflow-y-auto')}>
         <div className="w-full max-w-md">
-          <p className="text-fg mb-1 text-center text-sm font-semibold">
+          <p className="text-fg mb-1 text-center text-base font-semibold">
             {t('No reference games yet')}
           </p>
           {meta.databases ? (
             <>
-              <p className="text-muted mb-3 text-center text-xs leading-relaxed">
+              <p className="text-muted mb-3 text-center text-sm leading-relaxed">
                 {t('Upload PGN collections and index them into searchable databases of whole games.')}
               </p>
               <div className="flex justify-center">
@@ -409,7 +409,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
               </div>
             </>
           ) : (
-            <p className="text-muted text-center text-xs leading-relaxed">
+            <p className="text-muted text-center text-sm leading-relaxed">
               {t('This server has no reference games database.')}
             </p>
           )}
@@ -530,17 +530,17 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-3 text-left"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="text-fg block truncate text-sm">
+                  <span className="text-fg block truncate text-base">
                     <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
                     <span className="font-semibold">{g.white}</span>{' '}
-                    <span className="text-subtle text-xs">{g.white_elo}</span>
+                    <span className="text-subtle text-sm">{g.white_elo}</span>
                   </span>
-                  <span className="text-fg block truncate text-sm">
+                  <span className="text-fg block truncate text-base">
                     <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
                     <span className="font-semibold">{g.black}</span>{' '}
-                    <span className="text-subtle text-xs">{g.black_elo}</span>
+                    <span className="text-subtle text-sm">{g.black_elo}</span>
                   </span>
-                  <span className="text-subtle block truncate text-xs">
+                  <span className="text-subtle block truncate text-sm">
                     {g.eco ? <OpeningTag eco={g.eco} name={g.opening} /> : g.opening}
                     {(g.eco || g.opening) && g.date ? ' · ' : ''}
                     {g.date ?? ''}
@@ -610,7 +610,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           {rows.length < total && (
             <li ref={sentinel} className="flex items-center justify-center gap-2 p-3">
               <Loader2 className="text-subtle size-4 animate-spin" />
-              <span className="text-subtle text-xs">{t('Loading older games…')}</span>
+              <span className="text-subtle text-sm">{t('Loading older games…')}</span>
             </li>
           )}
       </ul>
@@ -636,7 +636,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         {filterRow('border-t')}
         <div className="border-line shrink-0 border-t px-3 py-1 pr-1.5">
           <div className="flex min-h-6 items-center gap-2">
-            <span className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+            <span className="text-subtle min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-[0.08em]">
               {count}
             </span>
             {dbControls}
@@ -689,7 +689,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         <Button variant="ghost" size="icon-sm" title={t('Back to games')} onClick={() => navigate('games')}>
           <ChevronLeft className="size-3.5" />
         </Button>
-        <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+        <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
           {(() => {
             // Dir mounts count across every database; a single mount says
             // its own meta. Either way the title is the whole shelf, while

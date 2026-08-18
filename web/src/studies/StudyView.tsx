@@ -165,7 +165,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted text-sm">{error ?? `Could not open “${id}”.`}</p>
+          <p className="text-muted text-base">{error ?? `Could not open “${id}”.`}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
             <ChevronLeft className="mr-1 size-3.5" />
             {t(kind === 'game' ? 'All games' : 'All studies')}
@@ -405,7 +405,7 @@ function TitleEditor({
           if (e.key === 'Escape') setEditing(false);
         }}
         className="flex-1"
-        inputClassName="text-sm font-semibold"
+        inputClassName="text-base font-semibold"
       />
     );
   }
@@ -422,7 +422,7 @@ function TitleEditor({
           setEditing(true);
         }}
         title={failure ?? id}
-        className={cn('min-w-0 flex-1 truncate text-sm font-semibold', failure ? 'text-bad' : 'text-fg')}
+        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-bad' : 'text-fg')}
       >
         {folder && <span className="text-subtle">{folder} / </span>}
         {name}
@@ -580,7 +580,7 @@ function ChapterRow({
         // Touch: the inline input sits where the keyboard lands — rename in
         // a top-pinned sheet instead (the annotation/opening-search idiom).
         <>
-          <span className="text-muted flex h-8 min-w-0 flex-1 items-center truncate px-1.5 text-xs">
+          <span className="text-muted flex h-8 min-w-0 flex-1 items-center truncate px-1.5 text-sm">
             {ownName}
           </span>
           <PromptSheet
@@ -614,7 +614,7 @@ function ChapterRow({
           onDoubleClick={startRename}
           title={t('Double-click to rename')}
           className={cn(
-            'flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-xs',
+            'flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-sm',
             'transition-colors duration-100',
             index === chapterIndex
               ? 'bg-primary-soft text-primary font-semibold'
@@ -643,12 +643,12 @@ function ChapterRow({
           ) : (
             <span className="size-3 shrink-0" />
           )}
-          <span className="text-subtle w-4 shrink-0 text-right font-mono text-[0.6875rem]">
+          <span className="text-subtle w-4 shrink-0 text-right font-mono text-xs">
             {index + 1}
           </span>
           <span className="truncate">{ownName}</span>
           {isFolded && childCount > 0 && (
-            <span className="text-subtle shrink-0 font-mono text-[0.6875rem]">+{childCount}</span>
+            <span className="text-subtle shrink-0 font-mono text-xs">+{childCount}</span>
           )}
         </button>
       )}

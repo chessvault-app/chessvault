@@ -362,8 +362,8 @@ export function HomePage() {
             <KnightIcon className="size-9" />
           </div>
           <div>
-            <h1 className="text-fg text-xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
-            <p className="text-subtle text-sm">{t('Your chess, in plain files.')}</p>
+            <h1 className="text-fg text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+            <p className="text-subtle text-base">{t('Your chess, in plain files.')}</p>
           </div>
         </div>
 
@@ -373,13 +373,13 @@ export function HomePage() {
             skeleton rows, so the page does not jump when it fills in. */}
         {effective.continueCard && data === null && expectedRows > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
               {t('Continue')}
             </p>
             {Array.from({ length: expectedRows }, (_, i) => (
               <div
                 key={i}
-                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-xs last:border-b-0"
+                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-sm last:border-b-0"
               >
                 <Skeleton className="size-3.5 shrink-0 rounded" />
                 {/* The row's height comes from an INVISIBLE real text line,
@@ -398,7 +398,7 @@ export function HomePage() {
         )}
         {effective.continueCard && continueRows.length > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
               {t('Continue')}
             </p>
             {continueRows.map(({ icon: Icon, label, detail, go }) => (
@@ -406,7 +406,7 @@ export function HomePage() {
                 key={label + detail}
                 type="button"
                 onClick={go}
-                className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left text-xs transition-colors duration-100 last:border-b-0"
+                className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left text-sm transition-colors duration-100 last:border-b-0"
               >
                 <Icon className="text-subtle size-3.5 shrink-0" />
                 <span className="text-fg min-w-0 flex-1 truncate font-medium">{label}</span>
@@ -420,7 +420,7 @@ export function HomePage() {
         {showChecklist && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
             <div className="border-line flex items-center border-b px-3 pb-1.5 pt-2">
-              <p className="text-subtle flex-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+              <p className="text-subtle flex-1 text-xs font-semibold uppercase tracking-[0.08em]">
                 {t('Set up your vault')}
               </p>
               <Button
@@ -442,7 +442,7 @@ export function HomePage() {
                 type="button"
                 onClick={step.go}
                 disabled={step.done}
-                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left text-xs transition-colors duration-100 last:border-b-0 enabled:hover:bg-surface-2 disabled:opacity-60"
+                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left text-sm transition-colors duration-100 last:border-b-0 enabled:hover:bg-surface-2 disabled:opacity-60"
               >
                 {step.done ? (
                   <Check className="text-good size-3.5 shrink-0" />
@@ -466,7 +466,7 @@ export function HomePage() {
             the sheet. Outside the grid deliberately: with every tile
             switched off there would otherwise be nothing left to press. */}
         <div className="mb-2 flex items-center px-1">
-          <p className="text-subtle flex-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          <p className="text-subtle flex-1 text-xs font-semibold uppercase tracking-[0.08em]">
             {t('Shortcuts')}
           </p>
           <Button
@@ -493,10 +493,10 @@ export function HomePage() {
             >
               <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
               <span>
-                <span className="text-fg block text-sm font-medium">
+                <span className="text-fg block text-base font-medium">
                   {t(label)}
                   {count !== undefined && data?.counts[count] !== undefined ? (
-                    <span className="text-subtle font-mono text-xs font-normal">
+                    <span className="text-subtle font-mono text-sm font-normal">
                       {' '}
                       · {compact.format(data.counts[count]!)}
                     </span>
@@ -509,7 +509,7 @@ export function HomePage() {
                     )
                   )}
                 </span>
-                <span className="text-subtle block text-xs leading-snug">{t(blurb)}</span>
+                <span className="text-subtle block text-sm leading-snug">{t(blurb)}</span>
               </span>
             </button>
           ))}
@@ -542,7 +542,7 @@ export function HomePage() {
               className={cn(
                 'max-sm:h-auto max-sm:flex-col max-sm:gap-1.5 max-sm:whitespace-normal',
                 'max-sm:rounded-lg max-sm:px-1 max-sm:py-2',
-                'max-sm:text-center max-sm:text-[0.6875rem] max-sm:leading-tight',
+                'max-sm:text-center max-sm:text-xs max-sm:leading-tight',
                 // The size's own coarse-pointer overrides would win the
                 // cascade back without coarse-specific counters.
                 'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',

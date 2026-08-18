@@ -136,7 +136,7 @@ export function ShelfCard({
             <p
               className={cn(
                 'text-fg truncate font-semibold',
-                layout === 'grid' ? 'text-[0.9375rem] leading-5' : 'text-sm',
+                layout === 'grid' ? 'text-base leading-6' : 'text-base',
                 onToggleMark ? 'pr-14 pointer-coarse:pr-9' : 'pr-7 pointer-coarse:pr-9',
               )}
             >
@@ -145,13 +145,13 @@ export function ShelfCard({
             {/* Three steps, not two: the name is the brightest thing on the
                 card, the stat line is the quietest, and the note's own
                 words sit between them. */}
-            <p className="text-subtle text-[0.6875rem] leading-4">{meta}</p>
+            <p className="text-subtle text-xs leading-4">{meta}</p>
             {preview && layout === 'grid' && (
-              <p className="text-muted mt-1 line-clamp-2 text-xs leading-[1.35rem] opacity-90">
+              <p className="text-muted mt-1 line-clamp-2 text-sm leading-[1.35rem] opacity-90">
                 {preview}
               </p>
             )}
-            {error && <p className="text-bad text-xs">{error}</p>}
+            {error && <p className="text-bad text-sm">{error}</p>}
           </div>
         </div>
 

@@ -342,23 +342,23 @@ export function RefDbManager({
             thing here that takes minutes, so it says so from the top
             rather than from under whichever tab started it. */}
         {running && (
-          <p className="border-line text-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-[0.6875rem]">
+          <p className="border-line text-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
             <Loader2 className="size-3.5 shrink-0 animate-spin" />
             <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
           </p>
         )}
         {failed && (
-          <p className="border-line text-bad shrink-0 border-b px-3 py-2 font-mono text-[0.6875rem]">
+          <p className="border-line text-bad shrink-0 border-b px-3 py-2 font-mono text-xs">
             {status?.log?.at(-1) ?? t('The build failed.')}
           </p>
         )}
-        {error && <p className="border-line text-bad shrink-0 border-b px-3 py-2 text-xs">{error}</p>}
+        {error && <p className="border-line text-bad shrink-0 border-b px-3 py-2 text-sm">{error}</p>}
 
         {/* The list scrolls, the panel does not grow: one list at a time,
             capped, is what keeps the Build bar below in view. */}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {shownCount === 0 ? (
-            empty && <p className="text-subtle px-3 py-6 text-center text-xs leading-relaxed">{empty}</p>
+            empty && <p className="text-subtle px-3 py-6 text-center text-sm leading-relaxed">{empty}</p>
           ) : (
             list
           )}
@@ -369,7 +369,7 @@ export function RefDbManager({
             to index. */}
         {tab === 'sources' && pickedCount > 0 && (
           <div className="border-line flex shrink-0 items-center gap-2 border-t px-3 py-2">
-            <span className="text-subtle min-w-0 flex-1 truncate text-xs">
+            <span className="text-subtle min-w-0 flex-1 truncate text-sm">
               {t('{n} selected', { n: pickedCount })}
             </span>
             <Button
@@ -480,7 +480,7 @@ function DbList({
         // scale's neighbours are 16 and 20, and lanph3re asked for this
         // one, so it is written as itself rather than rounded to look
         // principled.
-        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5 text-xs">
+        <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5 text-sm">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
@@ -526,7 +526,7 @@ function SourceList({
   return (
     <ul className="divide-line divide-y">
       {sources.map((s) => (
-        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-xs">
+        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-sm">
           {/* The label covers the tick, the name and the size, and
               nothing else: a button inside it would toggle the tick on
               its way to being pressed. */}
@@ -595,7 +595,7 @@ function UploadWindow({
         {...drop.handlers}
         className={cn(
           'text-muted flex min-h-40 cursor-pointer flex-col items-center justify-center',
-          'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-xs',
+          'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-sm',
           'transition-colors duration-100',
           drop.dragging
             ? 'border-primary bg-primary-soft text-primary'
@@ -623,14 +623,14 @@ function UploadWindow({
         ) : (
           <>
             <Upload className="size-6" />
-            <span className="text-fg text-sm font-medium">{t('Choose .pgn files')}</span>
+            <span className="text-fg text-base font-medium">{t('Choose .pgn files')}</span>
             <span className="text-subtle leading-relaxed">
               {t('Or drop them anywhere in this box')}
             </span>
           </>
         )}
       </label>
-      <p className="text-subtle text-xs leading-relaxed">
+      <p className="text-subtle text-sm leading-relaxed">
         {t(
           'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.',
         )}
@@ -664,7 +664,7 @@ function BuildWindow({
 
   return (
     <Modal title="Build a database" icon={Database} onClose={onClose}>
-      <p className="text-muted text-xs leading-relaxed">
+      <p className="text-muted text-sm leading-relaxed">
         {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
       </p>
       <ClearableInput
@@ -675,7 +675,7 @@ function BuildWindow({
         onKeyDown={(e) => e.key === 'Enter' && onBuild(name)}
         placeholder={t('Name — “{name}” if blank', { name: derived })}
       />
-      <p className="text-subtle text-xs leading-relaxed">
+      <p className="text-subtle text-sm leading-relaxed">
         {t(
           'Building keeps going if you leave the page. A build under an existing name replaces that database.',
         )}

@@ -143,7 +143,7 @@ export function AddMoveSheet({
             className="border-line shrink-0 overflow-hidden rounded-md border"
           />
         )}
-        <p className="text-muted text-xs leading-relaxed">
+        <p className="text-muted text-sm leading-relaxed">
           {source
             ? t('Every reply the field plays here — tap one to chart it.')
             : t('What the studies prepare here — pick a field source to see statistics.')}
@@ -157,7 +157,7 @@ export function AddMoveSheet({
           that the bands meet. The panel's table is the same. */}
       <div className={cn(LIST, 'min-h-0 grow content-start overflow-y-auto sm:max-h-72')}>
         {field === null ? null : rows.length === 0 ? (
-          <p className="text-muted col-span-3 px-2 py-4 text-center text-xs">
+          <p className="text-muted col-span-3 px-2 py-4 text-center text-sm">
             {t('Nothing to offer — type the move instead.')}
           </p>
         ) : (
@@ -249,7 +249,7 @@ export function AddMoveSheet({
           <Plus className="size-3.5" /> {t('Add')}
         </Button>
       </form>
-      {error && <p className="text-bad px-1 text-xs">{error}</p>}
+      {error && <p className="text-bad px-1 text-sm">{error}</p>}
     </Sheet>
   );
 }

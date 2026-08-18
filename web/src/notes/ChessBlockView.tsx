@@ -314,7 +314,7 @@ function MoveStrip({
           type="button"
           onClick={() => onSelect(id)}
           className={cn(
-            'rounded px-1 py-0.5 font-mono text-xs transition-colors duration-100',
+            'rounded px-1 py-0.5 font-mono text-sm transition-colors duration-100',
             id === cursorId
               ? 'bg-primary text-primary-fg'
               : path.has(id)
@@ -332,13 +332,13 @@ function MoveStrip({
       const [main, ...variations] = node.children;
       for (const variation of variations) {
         chips.push(
-          <span key={`${variation}-open`} className="text-subtle text-xs">
+          <span key={`${variation}-open`} className="text-subtle text-sm">
             (
           </span>,
         );
         renderLine(variation);
         chips.push(
-          <span key={`${variation}-close`} className="text-subtle text-xs">
+          <span key={`${variation}-close`} className="text-subtle text-sm">
             )
           </span>,
         );
@@ -350,7 +350,7 @@ function MoveStrip({
 
   const root = getNode(tree, tree.rootId);
   if (root.children.length === 0) {
-    return <p className="text-subtle px-1 text-xs">{t('Play moves on the board, or paste a FEN/PGN.')}</p>;
+    return <p className="text-subtle px-1 text-sm">{t('Play moves on the board, or paste a FEN/PGN.')}</p>;
   }
   renderLine(root.children[0]!);
   // Variations off the root come after the mainline rendering handles them —
@@ -358,13 +358,13 @@ function MoveStrip({
   const rootAlternatives = root.children.slice(1);
   for (const alt of rootAlternatives) {
     chips.push(
-      <span key={`${alt}-open`} className="text-subtle text-xs">
+      <span key={`${alt}-open`} className="text-subtle text-sm">
         (
       </span>,
     );
     renderLine(alt);
     chips.push(
-      <span key={`${alt}-close`} className="text-subtle text-xs">
+      <span key={`${alt}-close`} className="text-subtle text-sm">
         )
       </span>,
     );

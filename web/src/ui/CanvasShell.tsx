@@ -25,7 +25,7 @@ import { Sheet } from './Sheet';
  * overlay instead of re-deriving them.
  *
  * The title sits small and quiet in a corner, not at `PageHeader`'s
- * `text-lg`: a heading that competes with the canvas is a heading in the
+ * `text-xl`: a heading that competes with the canvas is a heading in the
  * way. The back chevron is still phone-only and still `md:hidden`, because
  * where a page is reached through More is a fact about the page, not about
  * which family it belongs to.
@@ -77,7 +77,7 @@ export function CanvasShell({
           floating over it.
 
           It is `PageHeader` on `PageShell`'s own gutters, not a smaller
-          thing of its own. A canvas page briefly had a `text-sm` title in
+          thing of its own. A canvas page briefly had a `text-base` title in
           the corner, on the theory that a heading competing with the
           canvas is a heading in the way; what it actually did was make
           this page's name a different size and a different distance from
@@ -167,7 +167,7 @@ export function CanvasShell({
                   Named as well as marked, because a panel filling the
                   height no longer sits obviously beside its selection. */}
               <div className="border-line flex shrink-0 items-center gap-2 border-b px-4 py-2">
-                <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(panel.label)}</p>
+                <p className="text-subtle min-w-0 flex-1 truncate text-sm">{t(panel.label)}</p>
                 <Button
                   variant="ghost"
                   size="icon-sm"

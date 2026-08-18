@@ -143,7 +143,7 @@ export function TagPicker({
                 </div>
               ) : null
             ) : list.length === 0 ? (
-              <p className="text-muted px-2 py-4 text-center text-xs">
+              <p className="text-muted px-2 py-4 text-center text-sm">
                 {t('Nothing here matches.')}
               </p>
             ) : (
@@ -163,9 +163,9 @@ export function TagPicker({
                       className="hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
                     >
                       <Icon className="text-muted size-4 shrink-0" />
-                      <span className="text-fg min-w-0 flex-1 truncate text-sm">{row.id}</span>
+                      <span className="text-fg min-w-0 flex-1 truncate text-base">{row.id}</span>
                       {tagged(wholeTag) && (
-                        <span className="text-subtle shrink-0 text-xs">{t('Linked')}</span>
+                        <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>
                       )}
                     </button>
                     {kind === 'study' && (row.chapters ?? 1) > 1 && (
@@ -190,7 +190,7 @@ export function TagPicker({
             <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={() => setScoping(null)}>
               <ChevronLeft className="size-3.5" />
             </Button>
-            <p className="text-fg min-w-0 truncate text-sm font-medium">{scoping.id}</p>
+            <p className="text-fg min-w-0 truncate text-base font-medium">{scoping.id}</p>
           </div>
           <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
             {scoping.chapters.map((name) => {
@@ -204,8 +204,8 @@ export function TagPicker({
                   className="hover:bg-surface-2 flex items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
                 >
                   <BookOpen className="text-muted size-4 shrink-0" />
-                  <span className="text-fg min-w-0 flex-1 truncate text-sm">{name}</span>
-                  {tagged(tag) && <span className="text-subtle shrink-0 text-xs">{t('Linked')}</span>}
+                  <span className="text-fg min-w-0 flex-1 truncate text-base">{name}</span>
+                  {tagged(tag) && <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>}
                 </button>
               );
             })}

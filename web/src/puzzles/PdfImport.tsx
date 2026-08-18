@@ -358,7 +358,7 @@ export function PdfImport({
         */}
         {!mine && saved && (
           <div className="border-primary/40 bg-primary-soft flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-fg text-xs font-medium">
+            <p className="text-fg text-sm font-medium">
               {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
                 page: saved.page,
                 pages: saved.pages,
@@ -389,7 +389,7 @@ export function PdfImport({
 
         {!mine && !saved && existing > 0 && (
           <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-fg text-xs font-medium">
+            <p className="text-fg text-sm font-medium">
               {t('This book already holds {n} puzzles. What should the import do with them?', {
                 n: existing,
               })}
@@ -408,9 +408,9 @@ export function PdfImport({
                   onChange={() => setMode(value)}
                   className="mt-0.5"
                 />
-                <span className="text-sm">
+                <span className="text-base">
                   {t(label)}
-                  <span className="text-subtle block text-xs">{t(blurb)}</span>
+                  <span className="text-subtle block text-sm">{t(blurb)}</span>
                 </span>
               </label>
             ))}
@@ -418,7 +418,7 @@ export function PdfImport({
         )}
 
         {!mine && (
-          <label className="text-muted flex cursor-pointer items-start gap-2 text-xs">
+          <label className="text-muted flex cursor-pointer items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={repair}
@@ -456,9 +456,9 @@ export function PdfImport({
                 if (file) void begin(file);
               }}
             />
-            <span className="text-muted text-sm">
+            <span className="text-muted text-base">
               {t('Choose the book’s PDF')}
-            <span className="text-subtle block text-xs">
+            <span className="text-subtle block text-sm">
                 {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
               </span>
             </span>
@@ -473,7 +473,7 @@ export function PdfImport({
           rather than only in a README nobody opens on the way here.
         */}
         {!mine && !saved && (
-          <p className="border-line bg-surface-2 text-subtle rounded-lg border p-3 text-xs">
+          <p className="border-line bg-surface-2 text-subtle rounded-lg border p-3 text-sm">
             <span className="text-muted font-medium">{t('Import only a book you own.')}</span>{' '}
             {t(
               'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
@@ -482,7 +482,7 @@ export function PdfImport({
         )}
 
         {preparing && (
-          <p className="text-muted flex items-center gap-2 text-sm">
+          <p className="text-muted flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
             {/* Covers both halves of the preparation: the readability
                 probe every path runs, and the clear a rebuild adds. */}
@@ -491,7 +491,7 @@ export function PdfImport({
         )}
         {scanning && (
           <div className="flex items-center gap-2">
-            <p className="text-muted flex min-w-0 flex-1 items-center gap-2 text-sm">
+            <p className="text-muted flex min-w-0 flex-1 items-center gap-2 text-base">
               <Loader2 className="size-4 shrink-0 animate-spin" />
               <span className="truncate">
                 {t('page {page}/{pages} — {n} diagrams so far', {
@@ -512,7 +512,7 @@ export function PdfImport({
         )}
         {paused && (
           <div className="border-warn/40 bg-warn/5 flex flex-wrap items-center gap-2 rounded-lg border p-3">
-            <p className="text-fg min-w-0 flex-1 text-xs">
+            <p className="text-fg min-w-0 flex-1 text-sm">
               {t('Paused at page {page} of {pages}. Nothing is lost.', {
                 page: job.page,
                 pages: job.pages,
@@ -529,7 +529,7 @@ export function PdfImport({
           </div>
         )}
         {reading && (
-          <p className="text-muted flex items-center gap-2 text-sm">
+          <p className="text-muted flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
             {t("reading the book’s solutions")}
           </p>
@@ -537,11 +537,11 @@ export function PdfImport({
         {solve && (
           <div
             className={cn(
-              'rounded-lg border p-3 text-xs',
+              'rounded-lg border p-3 text-sm',
               solve.confident ? 'border-good/40 bg-good/5' : 'border-warn/40 bg-warn/5',
             )}
           >
-            <p className="text-fg text-sm font-medium">
+            <p className="text-fg text-base font-medium">
               {t('{n} puzzles imported with their solutions', { n: solve.solved })}
             </p>
             <p className="text-muted pt-1">
@@ -569,12 +569,12 @@ export function PdfImport({
             </p>
           </div>
         )}
-        {mine && job.error && <p className="text-bad text-xs">{job.error}</p>}
-        {saveError && <p className="text-bad text-xs">{saveError}</p>}
+        {mine && job.error && <p className="text-bad text-sm">{job.error}</p>}
+        {saveError && <p className="text-bad text-sm">{saveError}</p>}
 
         {found.length > 0 && (
           <>
-            <p className="text-subtle text-xs">
+            <p className="text-subtle text-sm">
               {t('{n} diagrams found — untick any false positives, then add the rest as drafts.', {
                 n: found.length,
               })}
@@ -645,7 +645,7 @@ export function PdfImport({
                     <div
                       data-row={i}
                       className={cn(
-                        'flex items-center gap-2 py-1.5 pl-2 text-xs transition-colors duration-100',
+                        'flex items-center gap-2 py-1.5 pl-2 text-sm transition-colors duration-100',
                         // pr-4, not pr-2: the mark sat against the
                         // scrollbar, which on Windows is a solid gutter
                         // rather than an overlay, and "3개 불확실" read as
@@ -661,7 +661,7 @@ export function PdfImport({
                         aria-label={t('Keep this diagram')}
                         className="accent-primary shrink-0"
                       />
-                      <span className="w-24 shrink-0 font-mono text-[0.6875rem]">
+                      <span className="w-24 shrink-0 font-mono text-xs">
                         <span className="text-fg">
                           {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
                         </span>
@@ -699,7 +699,7 @@ export function PdfImport({
                       >
                         <Eye className="size-3.5" />
                       </Button>
-                      <span className={cn('ml-auto shrink-0 text-[0.6875rem]', mark.cls)}>
+                      <span className={cn('ml-auto shrink-0 text-xs', mark.cls)}>
                         {t(mark.label)}
                       </span>
                     </div>
@@ -739,7 +739,7 @@ export function PdfImport({
             always here; Add appears once there is something to add. */}
         <div className="mt-1 flex items-center justify-end gap-2">
           {found.length > 0 && (
-            <span className="text-subtle mr-auto text-xs">
+            <span className="text-subtle mr-auto text-sm">
               {t('{n} selected', { n: selectedCount })}
               {scanning ? t(' — still scanning') : ''}
             </span>

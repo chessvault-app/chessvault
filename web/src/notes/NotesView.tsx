@@ -207,7 +207,7 @@ function NoteList() {
         create={<CreateMenu notes={notes} onDone={refresh} />}
       />
 
-      {error && <p className="text-bad text-xs">{error}</p>}
+      {error && <p className="text-bad text-sm">{error}</p>}
 
       {!loaded ? (
         pending ? (
@@ -429,7 +429,7 @@ function GroupedNotes({
             />
           )}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
+            <p className="text-subtle px-1 text-sm">{t('Empty collection.')}</p>
           ) : (
             <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 lg:grid-cols-2' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((note) => (

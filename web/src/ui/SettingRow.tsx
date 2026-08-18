@@ -19,8 +19,8 @@ export function SettingRow({
   return (
     <div className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
       <div className="min-w-0">
-        <div className="text-sm font-medium">{title}</div>
-        <div className="text-subtle text-xs">{blurb}</div>
+        <div className="text-base font-medium">{title}</div>
+        <div className="text-subtle text-sm">{blurb}</div>
       </div>
       {children}
     </div>

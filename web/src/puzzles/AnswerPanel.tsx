@@ -49,9 +49,9 @@ export function AnswerPanel({
     <Panel flush className="min-h-[10rem] shrink-0">
       <PanelHeader title={title} />
       {isEmpty ? (
-        <p className="text-subtle px-3 py-6 text-center text-xs">{emptyText}</p>
+        <p className="text-subtle px-3 py-6 text-center text-sm">{emptyText}</p>
       ) : (
-        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed">
+        <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto text-base leading-relaxed">
           <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} />
         </div>
       )}

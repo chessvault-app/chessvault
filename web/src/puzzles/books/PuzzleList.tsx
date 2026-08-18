@@ -70,7 +70,7 @@ export function PuzzleGrid({
                   .filter(Boolean)
                   .join('\n')}
                 className={cn(
-                  'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-[0.6875rem] font-semibold transition-colors duration-100 [content-visibility:auto]',
+                  'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs font-semibold transition-colors duration-100 [content-visibility:auto]',
                   current && 'ring-primary/60 ring-2',
                   last === 'win'
                     ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
@@ -391,7 +391,7 @@ export function PuzzleList({
               className={cn(
                 // content-visibility: ~1,000 offscreen tiles skip render
                 // work entirely — phones feel it.
-                'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-sm font-semibold transition-colors duration-100 [content-visibility:auto]',
+                'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-base font-semibold transition-colors duration-100 [content-visibility:auto]',
                 state === 'solved'
                   ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
                   : state === 'failed'
@@ -419,7 +419,7 @@ export function PuzzleList({
         {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}
       </div>
       {visible.length === 0 && (
-        <p className="text-subtle px-3 py-6 text-center text-xs">{t('Nothing matches these filters.')}</p>
+        <p className="text-subtle px-3 py-6 text-center text-sm">{t('Nothing matches these filters.')}</p>
       )}
     </>
   );

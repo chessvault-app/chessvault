@@ -87,11 +87,11 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
       <div className="flex w-full max-w-md flex-col gap-3 text-center">
-        <p className="text-fg text-sm font-semibold">{t('No puzzle database yet')}</p>
+        <p className="text-fg text-base font-semibold">{t('No puzzle database yet')}</p>
 
         {running ? (
           <>
-            <p className="text-muted text-xs leading-relaxed">
+            <p className="text-muted text-sm leading-relaxed">
               {phase === 'downloading'
                 ? t('Downloading the puzzle dump')
                 : phase === 'indexing'
@@ -112,7 +112,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
               />
             </span>
 
-            <p className="text-subtle font-mono text-[0.6875rem]">
+            <p className="text-subtle font-mono text-xs">
               {phase === 'downloading'
                 ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
                 : phase === 'indexing'
@@ -120,20 +120,20 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                   : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })}
             </p>
 
-            <p className="text-subtle text-xs leading-relaxed">
+            <p className="text-subtle text-sm leading-relaxed">
               {t('This keeps running if you leave the page. It takes a few minutes.')}
             </p>
           </>
         ) : (
           <>
-            <p className="text-muted text-xs leading-relaxed">
+            <p className="text-muted text-sm leading-relaxed">
               {t(
                 'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.',
               )}
             </p>
 
             {failed && (
-              <p className="text-warn flex items-start gap-2 text-left text-xs leading-relaxed">
+              <p className="text-warn flex items-start gap-2 text-left text-sm leading-relaxed">
                 <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
                 <span>{failed}</span>
               </p>

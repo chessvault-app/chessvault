@@ -134,9 +134,9 @@ export function SkeletonCards({
               className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded')}
             />
             <div className="min-w-0 flex-1">
-              {/* Title on a 20px line, then the quiet stat line on 16. */}
-              <div className="flex h-5 items-center">
-                <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+              {/* Title on a 24px line, then the quiet stat line on 16. */}
+              <div className="flex h-6 items-center">
+                <Skeleton className={cn('h-3.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
               </div>
               <div className="flex h-4 items-center">
                 <Skeleton className="h-2 w-1/5" />
@@ -145,7 +145,7 @@ export function SkeletonCards({
                 // ONE line of excerpt, though the card clamps at two.
                 // Measured on a real shelf, a grid card is 88-90px: the
                 // 64px board governs where there is one, and where there
-                // is not the text does — 20 + 16 + 4 + 22. Two lines put
+                // is not the text does — 24 + 16 + 4 + 22. Two lines put
                 // the text at 83 and the card at 109, which is why the
                 // placeholder stood a fifth taller than what replaced it.
                 <div className="mt-1 flex h-[1.35rem] items-center">
@@ -225,8 +225,8 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
     >
       <Skeleton className="size-4 shrink-0 rounded" />
       <div className="min-w-0 flex-1">
-        {/* A name at text-xs over a count, both 16px lines. */}
-        <div className="flex h-4 items-center">
+        {/* A name at text-sm on a 20px line, over a count on 16. */}
+        <div className="flex h-5 items-center">
           <Skeleton className="h-2.5 w-2/3" />
         </div>
         <div className="flex h-4 items-center">
@@ -277,20 +277,22 @@ export function SkeletonThemeGroups({
  */
 export function SkeletonDocument({ className }: { className?: string }) {
   /**
-   * The note editor's own vertical rhythm, measured off a real document:
-   * a heading sits on a 38.25px line with 22.5px of margin above it, body
-   * text on 25.5px lines with 9px above the block, a sub-heading on
-   * 31.875px with 18.75px above.
+   * The note editor's own vertical rhythm, expressed in em against the
+   * editor's font size rather than in the px it used to resolve to. The
+   * numbers are .note-editor's own: blocks 0.6em apart, body on a 1.7
+   * line, h1 at 1.5em and h2 at 1.25em each with a 1em margin of their
+   * own. In px they had to be recomputed by hand every time the type
+   * scale moved, and the move that just happened proved they would not be.
    *
    * The bars used to be evenly spaced from the very top of the box, so the
    * prose arrived about a line below where the placeholder had drawn it —
    * the first block's own margin is what the box does not have.
    */
   const para = (lines: string[], key: string) => (
-    <div key={key} className="mt-[9px]">
+    <div key={key} className="mt-[0.6em]">
       {lines.map((w, i) => (
-        <div key={i} className="flex h-[25.5px] items-center">
-          <Skeleton className={cn('h-2.5', w)} />
+        <div key={i} className="flex h-[1.7em] items-center">
+          <Skeleton className={cn('h-3', w)} />
         </div>
       ))}
     </div>
@@ -312,13 +314,13 @@ export function SkeletonDocument({ className }: { className?: string }) {
           <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
         </div>
       </div>
-      <div className="min-h-0 flex-1">
-        <div className="mt-[22.5px] flex h-[38.25px] items-center">
-          <Skeleton className="h-4 w-2/5" />
+      <div className="text-base min-h-0 flex-1">
+        <div className="mt-[1.5em] flex h-[2.55em] items-center">
+          <Skeleton className="h-5 w-2/5" />
         </div>
         {para(['w-full', 'w-11/12', 'w-4/5'], 'a')}
-        <div className="mt-[18.75px] flex h-[31.875px] items-center">
-          <Skeleton className="h-3.5 w-1/3" />
+        <div className="mt-[1.25em] flex h-[2.125em] items-center">
+          <Skeleton className="h-4 w-1/3" />
         </div>
         {para(['w-full', 'w-full', 'w-3/5'], 'b')}
         {para(['w-10/12', 'w-full', 'w-2/3'], 'c')}
@@ -458,8 +460,8 @@ export function SkeletonBoard({
  * Labelled controls stacked in cards — the settings shape.
  *
  * Shaped against what Settings actually draws, which it was not: a card is
- * ui/SettingRow strips, each a bordered box holding a title at text-sm
- * over a blurb at text-xs, and this drew two bare bars in the open. The
+ * ui/SettingRow strips, each a bordered box holding a title at text-base
+ * over a blurb at text-sm, and this drew two bare bars in the open. The
  * card came out around 118px against the real 194, so the page grew by
  * about half a card each as the settings landed.
  *
@@ -471,14 +473,14 @@ export function SkeletonBoard({
 export function SkeletonForm({ groups = 3, className }: { groups?: number; className?: string }) {
   return (
     <Loading className={cn('flex flex-col gap-4', className)}>
-      {/* The page title is text-lg, whose line box is 28px. */}
+      {/* The page title is text-xl, whose line box is 28px. */}
       <div className="flex h-7 items-center">
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (
         <div key={g} className="border-line bg-surface rounded-xl border p-4">
-          {/* The card's heading: an icon beside a title, on a 20px line. */}
-          <div className="mb-3 flex h-5 items-center gap-2">
+          {/* The card's heading: an icon beside a title, on a 24px line. */}
+          <div className="mb-3 flex h-6 items-center gap-2">
             <Skeleton className="size-4 shrink-0 rounded" />
             <Skeleton className="h-3 w-28" />
           </div>
@@ -489,10 +491,10 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
                 className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
               >
                 <div className="min-w-0">
-                  <div className="flex h-5 items-center">
-                    <Skeleton className="h-3 w-32" />
+                  <div className="flex h-6 items-center">
+                    <Skeleton className="h-3.5 w-32" />
                   </div>
-                  <div className="flex h-4 items-center">
+                  <div className="flex h-5 items-center">
                     <Skeleton className="h-2 w-44" />
                   </div>
                 </div>
@@ -547,8 +549,8 @@ export function SkeletonGameRows({ rows = 6, className }: { rows?: number; class
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-3 py-2">
           {/* The real row stacks three <p>s with no gap between them: two
-              players at text-sm, whose line box is 20px, and the opening
-              and date at text-xs, whose box is 16px. This was a gap-1
+              players at text-base, whose line box is 20px, and the opening
+              and date at text-sm, whose box is 16px. This was a gap-1
               stack of bare bars — 40px of text against the row's 56, so a
               list of eight stood about 128px short and everything below it
               jumped when the games landed. The bars stay thin; each is
@@ -557,12 +559,12 @@ export function SkeletonGameRows({ rows = 6, className }: { rows?: number; class
               Two players, each behind their side's dot. */}
           <div className="flex min-w-0 flex-1 flex-col">
             {[0, 1].map((line) => (
-              <div key={line} className="flex h-5 items-center gap-1.5">
+              <div key={line} className="flex h-6 items-center gap-1.5">
                 <Skeleton className="size-2 shrink-0 rounded-full" />
-                <Skeleton className={cn('h-3', names[(i + line) % names.length])} />
+                <Skeleton className={cn('h-3.5', names[(i + line) % names.length])} />
               </div>
             ))}
-            <div className="flex h-4 items-center">
+            <div className="flex h-5 items-center">
               <Skeleton className="h-2 w-1/3" />
             </div>
           </div>

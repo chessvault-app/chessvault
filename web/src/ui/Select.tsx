@@ -54,8 +54,8 @@ export interface SelectGroup {
  * is what makes it look wrong.
  */
 const triggerSizes = {
-  sm: 'h-7 px-2 text-xs pointer-coarse:h-9',
-  md: 'h-8 px-2.5 text-xs pointer-coarse:h-9',
+  sm: 'h-7 px-2 text-sm pointer-coarse:h-9',
+  md: 'h-8 px-2.5 text-sm pointer-coarse:h-9',
 } as const;
 
 /**
@@ -404,7 +404,7 @@ export function Select({
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-xs font-semibold uppercase tracking-[0.08em]">
                   {t(group.label)}
                 </p>
               )}
@@ -445,7 +445,7 @@ export function Select({
                       }
                     }}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
                       // A 28px row is a menu item for a mouse and a
                       // misfire for a thumb.
                       'pointer-coarse:py-2.5',
@@ -476,7 +476,7 @@ export function Select({
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <p className="text-subtle px-2 pb-1 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-2 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
                   {t(group.label)}
                 </p>
               )}
@@ -495,7 +495,7 @@ export function Select({
                   }}
                   onClick={() => pick(option.value)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-sm',
+                    'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-base',
                     'hover:bg-surface-2 transition-colors duration-100',
                     option.value === value ? 'text-primary font-medium' : 'text-fg',
                     mono && 'font-mono',

@@ -155,7 +155,7 @@ export function SwipeTrack({ dx, bookmarked = false }: { dx: number; bookmarked?
           sliding out of their own panel. */}
       <span className="flex shrink-0 items-center gap-2 px-4">
         <Icon className="size-4" />
-        <span className="whitespace-nowrap text-xs font-semibold">{label}</span>
+        <span className="whitespace-nowrap text-sm font-semibold">{label}</span>
       </span>
     </div>
   );

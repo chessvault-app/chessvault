@@ -138,7 +138,7 @@ function StudyList() {
         create={<CreateMenu />}
       />
 
-      {error && <p className="text-bad text-xs">{error}</p>}
+      {error && <p className="text-bad text-sm">{error}</p>}
 
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
@@ -456,7 +456,7 @@ function CreateMenu() {
             label="PGN"
             hint={
               pgnText.trim() ? (
-                <span className={cn('text-xs', chapterCount > 0 ? 'text-good' : 'text-bad')}>
+                <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-bad')}>
                   {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
                 </span>
               ) : null
@@ -492,7 +492,7 @@ function CreateMenu() {
             className="hidden"
             onChange={(e) => void pickFile(e.target.files?.[0])}
           />
-          {failure && <p className="text-bad text-xs">{failure}</p>}
+          {failure && <p className="text-bad text-sm">{failure}</p>}
           {/* mt-1 on top of the window's own gap-3: the fields are a group,
               and what commits them should not look like another one. */}
           <div className="mt-1 flex justify-end gap-2">
@@ -616,8 +616,8 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           </Button>
         </div>
       </Field>
-      {note && <p className="text-subtle text-xs">{note}</p>}
-      {list && list.length === 0 && <p className="text-subtle text-xs">{t('No studies found.')}</p>}
+      {note && <p className="text-subtle text-sm">{note}</p>}
+      {list && list.length === 0 && <p className="text-subtle text-sm">{t('No studies found.')}</p>}
       {list && list.length > 0 && (
         <>
           {/* The count is on the label line rather than in the list, so the
@@ -626,7 +626,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           <Field
             label="Studies to import"
             hint={
-              <span className="text-subtle text-xs">
+              <span className="text-subtle text-sm">
                 {t('{n} of {total} selected', { n: checked.size, total: list.length })}
               </span>
             }
@@ -635,7 +635,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               {list.map(({ id, name }) => (
                 <label
                   key={id}
-                  className="hover:bg-surface-2 flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm"
+                  className="hover:bg-surface-2 flex cursor-pointer items-center gap-2 px-2 py-1.5 text-base"
                 >
                   <input
                     type="checkbox"
@@ -671,7 +671,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           )}
         </>
       )}
-      {failure && <p className="text-bad text-xs">{failure}</p>}
+      {failure && <p className="text-bad text-sm">{failure}</p>}
       <div className="mt-1 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}
@@ -731,7 +731,7 @@ function GroupedStudies({
         <section key={folder || '(root)'} className="flex flex-col gap-2">
           {folder && <FolderHeader folder={folder} empty={groups.get(folder)!.length === 0} />}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-subtle px-1 text-xs">{t('Empty collection.')}</p>
+            <p className="text-subtle px-1 text-sm">{t('Empty collection.')}</p>
           ) : (
             // Up to three abreast: two from sm, three from xl, one on a
             // phone. The cards are a fixed height and read left to right,

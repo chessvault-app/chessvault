@@ -45,7 +45,7 @@ export function MoveToPopover({
             onClick={() => onPick(target)}
             className={cn(
               'hover:bg-surface-2 group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
-              'text-left text-sm transition-colors duration-100',
+              'text-left text-base transition-colors duration-100',
             )}
           >
             <FolderIcon className="text-subtle size-3.5 shrink-0" />

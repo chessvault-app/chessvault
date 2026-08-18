@@ -19,8 +19,8 @@ const variants: Record<Variant, string> = {
 // Coarse pointers get bigger hit areas: 28px icon buttons are fine under a
 // mouse and hostile under a thumb.
 const sizes: Record<Size, string> = {
-  sm: 'h-7 px-2.5 text-xs gap-1.5 rounded-md pointer-coarse:h-9 pointer-coarse:px-3',
-  md: 'h-9 px-3.5 text-sm gap-2 rounded-lg',
+  sm: 'h-7 px-2.5 text-sm gap-1.5 rounded-md pointer-coarse:h-9 pointer-coarse:px-3',
+  md: 'h-9 px-3.5 text-base gap-2 rounded-lg',
   icon: 'size-9 rounded-lg pointer-coarse:size-11',
   'icon-sm': 'size-7 rounded-md pointer-coarse:size-9',
 };

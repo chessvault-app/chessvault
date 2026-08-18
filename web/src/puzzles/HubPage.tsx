@@ -211,8 +211,8 @@ function PuzzleCard({
         className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        <span className="text-fg text-sm font-medium">{title}</span>
-        {detail && <span className="text-subtle text-xs leading-snug">{detail}</span>}
+        <span className="text-fg text-base font-medium">{title}</span>
+        {detail && <span className="text-subtle text-sm leading-snug">{detail}</span>}
         {/* Whose move — the one thing you cannot read off a thumbnail
             fast, and the thing lichess puts under every one of these.
             Deliberately NOT a flex row: `items-center` would centre the
@@ -220,7 +220,7 @@ function PuzzleCard({
             descender space that the letters beside it do not use, so a
             box-centred glyph sits visibly low. Left as ordinary inline
             text, the king takes the baseline like a letter does. */}
-        <span className="text-muted text-xs">
+        <span className="text-muted text-sm">
           <KingIcon side={side} className="mr-1.5" />
           {side === 'white' ? t('White to play') : t('Black to play')}
         </span>
@@ -266,7 +266,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
   return (
     <p
       className={cn(
-        'text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]',
+        'text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]',
         className,
       )}
     >
@@ -302,7 +302,7 @@ function HubSkeletonBookRow() {
       <div className="flex w-full items-center gap-2.5 px-3 py-2">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* The title sits on a text-xs line; the bar under it is its own
+          {/* The title sits on a text-sm line; the bar under it is its own
               height, the same 6px ProgressBar draws. */}
           <div className="flex h-4 items-center">
             <Skeleton className="h-2.5 w-2/3" />
@@ -402,8 +402,8 @@ function EmptySlot({
         className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        <span className="text-muted text-sm font-medium">{title}</span>
-        {detail && <span className="text-subtle text-xs leading-snug">{detail}</span>}
+        <span className="text-muted text-base font-medium">{title}</span>
+        {detail && <span className="text-subtle text-sm leading-snug">{detail}</span>}
       </span>
       {go && <ChevronRight className="text-subtle size-4 shrink-0 self-center" />}
     </>
@@ -454,7 +454,7 @@ function EmptySlot({
 function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   return (
     <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
         {t('Worth practising')}
       </p>
       <button
@@ -466,7 +466,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
           <Puzzle className="size-3.5" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-fg truncate text-xs font-medium">{themeLabel(weak.theme)}</span>
+          <span className="text-fg truncate text-sm font-medium">{themeLabel(weak.theme)}</span>
           {/* Solved against failed, the same bar a book wears. No rate and
               no rating — the bar says how it has gone and the page does
               not hand back a verdict. */}
@@ -477,7 +477,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
             showEmpty
           />
         </span>
-        <span className="text-subtle shrink-0 font-mono text-[0.6875rem] tabular-nums">
+        <span className="text-subtle shrink-0 font-mono text-xs tabular-nums">
           {weak.wins}/{weak.attempts}
         </span>
         <ChevronRight className="text-subtle size-3.5 shrink-0" />
@@ -489,7 +489,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
     <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
         {t('Recently read')}
       </p>
       {books.map((b) => (
@@ -513,10 +513,10 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
             </span>
           )}
           <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="text-fg truncate text-xs font-medium">{b.title}</span>
+            <span className="text-fg truncate text-sm font-medium">{b.title}</span>
             <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty />
           </span>
-          <span className="text-subtle shrink-0 font-mono text-[0.6875rem] tabular-nums">
+          <span className="text-subtle shrink-0 font-mono text-xs tabular-nums">
             {b.solved}/{b.puzzles}
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />
@@ -559,12 +559,12 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // every target in the same place. A section that appears only once it
     // has content also teaches nobody that it is there.
     <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
         {t('Puzzle history')}
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
       {attempts.length === 0 && (
-        <p className="text-subtle px-3 py-2.5 text-xs">
+        <p className="text-subtle px-3 py-2.5 text-sm">
           {t('Nothing solved yet — the puzzles you attempt turn up here.')}
         </p>
       )}
@@ -574,7 +574,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
           type="button"
           onClick={() => navigate('puzzles', 'id', h.id)}
           title={t('Replay puzzle #{id}', { id: h.id })}
-          className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-1.5 text-left text-xs transition-colors duration-100 last:border-b-0"
+          className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-1.5 text-left text-sm transition-colors duration-100 last:border-b-0"
         >
           {h.win ? (
             <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
@@ -1002,7 +1002,7 @@ function Hub() {
         {skeleton && <HubSkeletonCards fill={!historyBlock} />}
 
         {settled && solvedToday !== null && solvedToday > 0 && (
-          <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
             {t('Solved today: {n}', { n: solvedToday })}
           </p>
         )}
@@ -1159,7 +1159,7 @@ function Hub() {
                 onClick={go}
                 className={cn(
                   'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
-                  'px-1 text-center text-xs font-medium leading-tight transition-colors',
+                  'px-1 text-center text-sm font-medium leading-tight transition-colors',
                   primary
                     ? 'bg-primary text-primary-fg border-primary hover:bg-primary-hover'
                     : 'bg-surface border-line hover:bg-surface-2',
@@ -1172,7 +1172,7 @@ function Hub() {
                     choosing, and naming it qualifies the button with the
                     absence of a qualifier. */}
                 {primary && ready && word !== 'Any' && (
-                  <span className="text-[0.625rem] font-normal opacity-75">{t(word)}</span>
+                  <span className="text-xs font-normal opacity-75">{t(word)}</span>
                 )}
               </button>
               ))}

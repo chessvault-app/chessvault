@@ -12,8 +12,8 @@ import { ResultBar } from '@/ui/ResultBar';
  *
  * They were written separately and drifted, which is what a reader sees
  * as chaos rather than as two views: the same eight moves in the same
- * order, one list in `text-sm` with move numbers and a share bar, the
- * other in `text-xs` without numbers and a result bar. The parts are
+ * order, one list in `text-base` with move numbers and a share bar, the
+ * other in `text-sm` without numbers and a result bar. The parts are
  * shared now — the label, the marks, the bar and the widths they all
  * stand on — so the two lists differ only where they genuinely do: what
  * a tap on a row DOES, which is jump on one and chart on the other.
@@ -67,7 +67,7 @@ export function MoveCell({
           // panel this sits inside the button that jumps to the node,
           // where it is not a flex item and an inline box ignores a
           // width outright.
-          'truncate text-xs font-semibold',
+          'truncate text-sm font-semibold',
           // The app's link colour, because the row IS a link when the
           // move is charted — pressing it goes to that node. It said so
           // in a tooltip and nowhere else, which is a thing you find by
@@ -149,7 +149,7 @@ export function MoveResult({ move }: { move: Pick<FieldMove, 'w' | 'd' | 'b'> | 
 export function RowTail({ share, children }: { share: number | null; children?: ReactNode }) {
   return (
     <span className="flex shrink-0 items-center gap-1.5">
-      <span className="text-muted w-8 text-right text-xs">
+      <span className="text-muted w-8 text-right text-sm">
         {share === null ? '' : share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
       </span>
       <span className="flex w-3.5 justify-center">{children}</span>

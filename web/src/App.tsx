@@ -122,7 +122,7 @@ function DemoBanner() {
       // by matching its own sentence, which meant the images depended on
       // a string nobody would think to check when editing it.
       data-demo-banner
-      className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-xs"
+      className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-sm"
     >
       {t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
     </div>
@@ -269,7 +269,7 @@ function ConnectionLabel() {
   const host = location.hostname;
   const local = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
   return (
-    <span className="text-subtle hidden truncate text-xs lg:block" title={location.origin}>
+    <span className="text-subtle hidden truncate text-sm lg:block" title={location.origin}>
       {!online ? t('Offline') : local ? t('This machine') : host}
     </span>
   );
@@ -319,7 +319,7 @@ function SubNavItem({
       title={t(label)}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex h-8 items-center gap-2.5 rounded-lg text-xs font-medium transition-colors duration-150',
+        'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
         'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
         active ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-surface-2 hover:text-fg',
       )}
@@ -348,7 +348,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           {/* The cburnett knight — the same knight as on the board. */}
           <KnightIcon className="size-5" />
         </div>
-        <span className="hidden truncate text-sm font-semibold tracking-tight lg:block">
+        <span className="hidden truncate text-base font-semibold tracking-tight lg:block">
           {t('Chess Vault')}
         </span>
       </button>
@@ -368,7 +368,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               aria-label={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
+                'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
                 'transition-colors duration-150',
                 'justify-center lg:justify-start',
                 isActive
@@ -412,7 +412,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           title={t('Tools')}
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
-            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
+            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
             inTools(active) ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
           )}
@@ -438,7 +438,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           title={t('Databases')}
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
-            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium',
+            'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
             active === 'databases' ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
           )}
@@ -505,10 +505,10 @@ function MorePage() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto flex max-w-md flex-col gap-4 p-4">
-        <h1 className="px-1 text-lg font-semibold tracking-tight">{t('More')}</h1>
+        <h1 className="px-1 text-xl font-semibold tracking-tight">{t('More')}</h1>
         {MORE_GROUPS.map(({ heading, items }) => (
           <div key={heading} className="flex flex-col gap-2">
-            <h2 className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
+            <h2 className="text-subtle px-1 text-sm font-semibold uppercase tracking-[0.08em]">
               {t(heading)}
             </h2>
             {items.map(({ section, param, label, icon: Icon, blurb }) => (
@@ -525,8 +525,8 @@ function MorePage() {
                   <Icon className="size-5" strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">{t(label)}</div>
-                  <div className="text-subtle text-xs">{t(blurb)}</div>
+                  <div className="text-base font-medium">{t(label)}</div>
+                  <div className="text-subtle text-sm">{t(blurb)}</div>
                 </div>
               </button>
             ))}
@@ -575,7 +575,7 @@ function MobileNav({ active }: { active: Section }) {
             onClick={() => (section === 'puzzles' ? navigate('puzzles', 'hub') : navigate(section))}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium',
+              'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
               'transition-colors duration-150',
               isActive ? 'text-primary' : 'text-subtle',
             )}
@@ -590,7 +590,7 @@ function MobileNav({ active }: { active: Section }) {
         onClick={() => navigate('more')}
         aria-current={inMore ? 'page' : undefined}
         className={cn(
-          'flex flex-1 flex-col items-center gap-1 py-2 text-[0.6875rem] font-medium',
+          'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
           'transition-colors duration-150',
           inMore ? 'text-primary' : 'text-subtle',
         )}
@@ -627,8 +627,8 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
           <div className="bg-surface-2 text-subtle grid size-14 place-items-center rounded-2xl">
             <Wrench className="size-6" strokeWidth={1.75} />
           </div>
-          <h1 className="text-lg font-semibold tracking-tight">{t('Something went wrong')}</h1>
-          <p className="text-muted text-sm leading-relaxed">
+          <h1 className="text-xl font-semibold tracking-tight">{t('Something went wrong')}</h1>
+          <p className="text-muted text-base leading-relaxed">
             {t('This page hit an error it could not recover from. Reloading usually clears it — nothing in your vault is affected.')}
           </p>
           <div className="mt-1 flex gap-2">
@@ -653,8 +653,8 @@ function Placeholder({ section }: { section: Section }) {
         <div className="bg-surface-2 text-subtle grid size-14 place-items-center rounded-2xl">
           <Swords className="size-6" strokeWidth={1.75} />
         </div>
-        <h1 className="text-lg font-semibold tracking-tight capitalize">{section}</h1>
-        <p className="text-muted text-sm leading-relaxed">{t("This page isn't available.")}</p>
+        <h1 className="text-xl font-semibold tracking-tight capitalize">{section}</h1>
+        <p className="text-muted text-base leading-relaxed">{t("This page isn't available.")}</p>
       </div>
     </div>
   );

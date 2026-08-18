@@ -95,7 +95,7 @@ export function CustomiseSheet({
 
   return (
     <Sheet label={t('Customise home')} onClose={onClose}>
-      <p className="text-muted text-xs leading-relaxed">
+      <p className="text-muted text-sm leading-relaxed">
         {t('Switch a destination off to keep it as a button under the grid, or hide it to take it off home altogether. The sidebar still reaches everything.')}
       </p>
 
@@ -183,7 +183,7 @@ export function CustomiseSheet({
       </div>
 
       {error !== null && (
-        <p className="text-bad text-xs" role="status">
+        <p className="text-bad text-sm" role="status">
           {error}
         </p>
       )}
@@ -229,12 +229,12 @@ function Group({
 }) {
   return (
     <div className="flex flex-col gap-1" role="group" aria-label={label}>
-      <p className="text-subtle px-1 pt-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle px-1 pt-1 text-xs font-semibold uppercase tracking-[0.08em]">
         {label}
       </p>
       {/* A group that has emptied says so. A heading over nothing reads as
           a page that failed to draw. */}
-      {count === 0 ? <p className="text-subtle px-1 pb-1 text-xs">{empty}</p> : children}
+      {count === 0 ? <p className="text-subtle px-1 pb-1 text-sm">{empty}</p> : children}
     </div>
   );
 }
@@ -278,7 +278,7 @@ function Row({
     // it exactly, so the whole touch target survives.
     <div className="border-line bg-surface-inset flex items-center gap-2 rounded-md border px-3 py-1.5">
       <Icon className="text-muted size-4 shrink-0" />
-      <span className="min-w-0 flex-1 truncate text-sm">{t(label)}</span>
+      <span className="min-w-0 flex-1 truncate text-base">{t(label)}</span>
       {children}
       {onToggle && <Switch checked={checked ?? false} onToggle={onToggle} label={t(label)} />}
     </div>

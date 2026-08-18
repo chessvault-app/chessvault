@@ -764,7 +764,7 @@ export function ArchiveBrowser({
             to drop one that had been mistyped. */}
         {months.length === 0 && recents.length > 0 && (
           <div className="mt-1 flex flex-col gap-1.5">
-            <p className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+            <p className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
               {t('Recent searches')}
             </p>
             <div className="flex flex-wrap items-center gap-1">
@@ -779,7 +779,7 @@ export function ArchiveBrowser({
                       setUsername(who);
                       void loadMonths(who);
                     }}
-                    className="max-w-[9rem] truncate py-1 font-mono text-xs"
+                    className="max-w-[9rem] truncate py-1 font-mono text-sm"
                   >
                     {who}
                   </button>
@@ -919,9 +919,9 @@ export function ArchiveBrowser({
       {((offline && months.length > 0) || error) && (
         <div className="flex flex-wrap items-center gap-2 px-3 py-2">
           {offline && months.length > 0 && (
-            <span className="text-warn text-xs">{t('offline — cached months only')}</span>
+            <span className="text-warn text-sm">{t('offline — cached months only')}</span>
           )}
-          {error && <span className="text-bad text-xs">{error}</span>}
+          {error && <span className="text-bad text-sm">{error}</span>}
         </div>
       )}
 
@@ -930,14 +930,14 @@ export function ArchiveBrowser({
         // small-caps label voice, the mode switch sits with the controls
         // on the right — the two lists take turns in one column and
         // their furniture should read as one design (lanph3re's call).
-        <div className="border-line flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-xs">
+        <div className="border-line flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-sm">
           {!selecting ? (
             <>
               {/* How much of the archive is in hand. It used to be all of
                   it, so there was nothing to say; now the list grows as it
                   is scrolled and the count is the only thing that tells
                   you Select all does not mean the whole decade. */}
-              <span className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em] tabular-nums">
+              <span className="text-subtle min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-[0.08em] tabular-nums">
                 {month === ALL_MONTHS
                   ? cursor >= months.length
                     ? t('{n} games · all {total} months', {
@@ -987,7 +987,7 @@ export function ArchiveBrowser({
                   that changes as you tick rows. */}
               <span
                 className={cn(
-                  'shrink-0 rounded-full px-1.5 py-0.5 text-[0.6875rem] font-semibold tabular-nums',
+                  'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
                   picked.size > 0 ? 'bg-primary-soft text-primary' : 'bg-surface-3 text-subtle',
                 )}
               >
@@ -1060,7 +1060,7 @@ export function ArchiveBrowser({
           {month === ALL_MONTHS && cursor < months.length && (
             <li ref={moreSentinel} className="flex items-center justify-center gap-2 p-3">
               <Loader2 className="text-subtle size-4 animate-spin" />
-              <span className="text-subtle text-xs">
+              <span className="text-subtle text-sm">
                 {t('Loading older games…')}
               </span>
             </li>
@@ -1075,7 +1075,7 @@ export function ArchiveBrowser({
         // longer than its box — and the reassuring half ("Select all new
         // still takes every one") was the half nobody finished reading.
         <p
-          className="text-subtle border-line flex items-center gap-1.5 border-t px-3 py-2 text-[0.6875rem]"
+          className="text-subtle border-line flex items-center gap-1.5 border-t px-3 py-2 text-xs"
           title={t('Showing the first {shown} of {total}. Select all new still takes every one.', {
             shown: MAX_ROWS,
             total: visibleMonthGames.length,
@@ -1114,7 +1114,7 @@ export function ArchiveBrowser({
               is the first thing to go when there is no room. There is
               room: the window scrolls. */}
           <CloudBoardArt className="w-20 shrink-0" />
-          <p className="text-muted max-w-xs text-sm leading-relaxed">
+          <p className="text-muted max-w-xs text-base leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
               { site: provider === 'chesscom' ? 'chess.com' : 'Lichess' },

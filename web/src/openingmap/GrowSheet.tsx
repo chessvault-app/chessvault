@@ -141,7 +141,7 @@ export function GrowSheet({
   return (
     <Sheet label={t('Grow from my games')} onClose={onClose}>
       <div className="flex items-center gap-2">
-        <span className="text-muted text-xs">{t('Chart moves seen in at least')}</span>
+        <span className="text-muted text-sm">{t('Chart moves seen in at least')}</span>
         <Segmented
           value={floor}
           onChange={setFloor}
@@ -152,10 +152,10 @@ export function GrowSheet({
           ]}
           ariaLabel="Games floor"
         />
-        <span className="text-muted text-xs">{t('games')}</span>
+        <span className="text-muted text-sm">{t('games')}</span>
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        <span className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
           {t('From which games')}
         </span>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -186,7 +186,7 @@ export function GrowSheet({
           <Skeleton className="h-4" />
         </div>
       ) : lines.length === 0 ? (
-        <p className="text-muted text-xs leading-relaxed">
+        <p className="text-muted text-sm leading-relaxed">
           {reach === 0
             ? facts.parentId === null
               ? t(
@@ -197,17 +197,17 @@ export function GrowSheet({
         </p>
       ) : (
         <>
-          <p className="text-fg text-xs font-medium">
+          <p className="text-fg text-sm font-medium">
             {t('{n} moves to chart, ending in {k} lines', { n: lines.length, k: tips.length })}
           </p>
           <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
             {tips.slice(0, 8).map((l) => (
-              <p key={l.join(' ')} className="text-muted truncate text-xs">
+              <p key={l.join(' ')} className="text-muted truncate text-sm">
                 {line(l)}
               </p>
             ))}
             {tips.length > 8 && (
-              <p className="text-subtle text-xs">{t('and {n} more', { n: tips.length - 8 })}</p>
+              <p className="text-subtle text-sm">{t('and {n} more', { n: tips.length - 8 })}</p>
             )}
           </div>
         </>

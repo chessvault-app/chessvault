@@ -74,7 +74,7 @@ export function NoteView({ id }: { id: string }) {
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted text-sm">{failed}</p>
+          <p className="text-muted text-base">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
             <ChevronLeft className="mr-1 size-3.5" />
             {t('All notes')}
@@ -462,7 +462,7 @@ function NoteTitle({ id }: { id: string }) {
           if (e.key === 'Escape') setEditing(false);
         }}
         className="flex-1"
-        inputClassName="text-sm font-semibold"
+        inputClassName="text-base font-semibold"
       />
     );
   }
@@ -478,7 +478,7 @@ function NoteTitle({ id }: { id: string }) {
           setEditing(true);
         }}
         title={failure ?? id}
-        className={cn('min-w-0 flex-1 truncate text-sm font-semibold', failure ? 'text-bad' : 'text-fg')}
+        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-bad' : 'text-fg')}
       >
         {folder && <span className="text-subtle">{folder} / </span>}
         {name}

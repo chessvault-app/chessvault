@@ -289,7 +289,7 @@ export function GameRow({
           {customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
-            <p className="text-fg truncate text-sm font-semibold">
+            <p className="text-fg truncate text-base font-semibold">
               {customName}
               {game.annotated && (
                 <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
@@ -304,7 +304,7 @@ export function GameRow({
                   came last — so an archive of long handles showed two
                   names and no ratings at all. The name is the only part
                   that gives way. */}
-              <p className="text-fg flex items-baseline gap-1.5 text-sm">
+              <p className="text-fg flex items-baseline gap-1.5 text-base">
                 <SideDot side="white" className="shrink-0 translate-y-[-1px]" />
                 <span
                   className={cn(
@@ -315,13 +315,13 @@ export function GameRow({
                   {game.white}
                 </span>
                 {game.whiteElo ? (
-                  <span className="text-subtle shrink-0 text-xs tabular-nums">{game.whiteElo}</span>
+                  <span className="text-subtle shrink-0 text-sm tabular-nums">{game.whiteElo}</span>
                 ) : null}
                 {game.annotated && (
                   <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
                 )}
               </p>
-              <p className="text-fg flex items-baseline gap-1.5 text-sm">
+              <p className="text-fg flex items-baseline gap-1.5 text-base">
                 <SideDot side="black" className="shrink-0 translate-y-[-1px]" />
                 <span
                   className={cn(
@@ -332,7 +332,7 @@ export function GameRow({
                   {game.black}
                 </span>
                 {game.blackElo ? (
-                  <span className="text-subtle shrink-0 text-xs tabular-nums">{game.blackElo}</span>
+                  <span className="text-subtle shrink-0 text-sm tabular-nums">{game.blackElo}</span>
                 ) : null}
               </p>
             </>
@@ -343,7 +343,7 @@ export function GameRow({
           {/* Opening first, date, then who played — the order every plain
               row leads with (players are its title lines), so a renamed
               game's detail reads the same left to right. */}
-          <p className="text-subtle truncate text-xs" title={openingLabel}>
+          <p className="text-subtle truncate text-sm" title={openingLabel}>
             {game.opening ? (
               <OpeningTag eco={game.opening.eco} name={game.opening.name} />
             ) : game.eco ? (
@@ -519,7 +519,7 @@ export function ResultScore({
     <span
       title={fmtResult(result)}
       className={cn(
-        'w-11 shrink-0 rounded px-1 py-0.5 text-center font-mono text-[0.6875rem] font-semibold',
+        'w-11 shrink-0 rounded px-1 py-0.5 text-center font-mono text-xs font-semibold',
         'tabular-nums leading-4',
         tone,
       )}
@@ -545,7 +545,7 @@ export function OpeningTag({ eco, name }: { eco: string; name?: string | null })
   return (
     <>
       <span
-        className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-[0.6875rem] font-semibold leading-4"
+        className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
         // Lightness and chroma from the theme (index.css), hue from the
         // ECO letter: the same tag was written once for the dark page and
         // was a pale wash on the light one.

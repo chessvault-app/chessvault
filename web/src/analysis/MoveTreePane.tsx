@@ -107,12 +107,12 @@ export function MoveTreePane({ className }: { className?: string }) {
           // its overflow, so a floor here pushed the editor out of the panel
           // entirely — visible on game pages, which spend ~56px more than a
           // study on the two player bars.
-          'min-h-0 flex-1 overflow-y-auto text-sm leading-relaxed lg:min-h-24',
+          'min-h-0 flex-1 overflow-y-auto text-base leading-relaxed lg:min-h-24',
           className,
         )}
       >
         {isEmpty ? (
-          <p className="text-subtle px-3 py-6 text-center text-xs">
+          <p className="text-subtle px-3 py-6 text-center text-sm">
             {t('Play a move on the board, or load a FEN or PGN.')}
           </p>
         ) : (
@@ -176,7 +176,7 @@ export function MainlineTable({
         key={`row-${number}-${typeof white === 'object' && white ? white.id : 'w'}-${typeof black === 'object' && black ? black.id : 'b'}`}
         className="border-line/60 grid grid-cols-[2rem_1fr_1fr] border-b"
       >
-        <span className="bg-surface-inset/60 border-line/60 text-subtle flex items-center justify-center border-r font-mono text-[0.6875rem]">
+        <span className="bg-surface-inset/60 border-line/60 text-subtle flex items-center justify-center border-r font-mono text-xs">
           {number}
         </span>
         <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
@@ -229,7 +229,7 @@ export function MainlineTable({
         out.push(
           <p
             key={`${mainChildId}-comment`}
-            className="border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5 text-xs leading-relaxed"
+            className="border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5 text-sm leading-relaxed"
           >
             {child.comment}
           </p>,
@@ -239,7 +239,7 @@ export function MainlineTable({
         out.push(
           <div
             key={`var-${variationId}`}
-            className="border-line/60 text-muted flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-[0.8125rem]"
+            className="border-line/60 text-muted flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-sm"
           >
             <VariationBranch
               tree={tree}
@@ -339,7 +339,7 @@ export function PromoteStrip({
     <button
       type="button"
       onClick={() => onPromote(cursorId)}
-      className="bg-primary/10 text-primary hover:bg-primary/20 border-line flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-xs font-medium transition-colors duration-100"
+      className="bg-primary/10 text-primary hover:bg-primary/20 border-line flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-sm font-medium transition-colors duration-100"
     >
       <ArrowUpToLine className="size-3.5" />
       {t('Make mainline')}
@@ -389,7 +389,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
       items.push(
         <p
           key={`${mainChildId}-comment`}
-          className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-[0.6875rem] italic"
+          className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-xs italic"
         >
           {child.comment}
         </p>,
@@ -405,7 +405,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
             'my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5',
             'border-line/70 border-l-2 pl-2',
             // Deeper variations dim further so the parent line stays readable.
-            'text-subtle text-[0.8125rem]',
+            'text-subtle text-sm',
           )}
         >
           <VariationBranch
@@ -458,7 +458,7 @@ function VariationBranch({
       {/* The variation's own first move is rendered here rather than by `Line`,
           so its comment has to be emitted here too or it would be dropped. */}
       {node.comment && (
-        <p className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-[0.6875rem] italic">
+        <p className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-xs italic">
           {node.comment}
         </p>
       )}
@@ -488,7 +488,7 @@ interface MoveChipProps {
 function MoveChip({ label, number, nags, hasComment, active, book = false, onClick }: MoveChipProps) {
   return (
     <span className="inline-flex items-baseline gap-1">
-      {number && <span className="text-subtle font-mono text-[0.6875rem]">{number}</span>}
+      {number && <span className="text-subtle font-mono text-xs">{number}</span>}
       <button
         type="button"
         onClick={onClick}

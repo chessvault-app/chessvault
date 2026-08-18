@@ -41,7 +41,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
           role="tooltip"
           className={
             'bg-surface border-line text-muted absolute left-0 top-full z-40 mt-1.5 w-64 ' +
-            'rounded-lg border p-3 text-xs font-normal normal-case leading-relaxed tracking-normal ' +
+            'rounded-lg border p-3 text-sm font-normal normal-case leading-relaxed tracking-normal ' +
             'shadow-[var(--shadow-pop)]'
           }
         >
@@ -51,7 +51,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
 
       {sheet && (
         <Sheet label={t(label)} onClose={() => setSheet(false)}>
-          <p className="text-muted text-xs leading-relaxed">{children}</p>
+          <p className="text-muted text-sm leading-relaxed">{children}</p>
         </Sheet>
       )}
     </span>

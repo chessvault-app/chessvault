@@ -323,7 +323,7 @@ export function Modal({
               </Button>
             )}
             {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
-            <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(title)}</p>
+            <p className="text-subtle min-w-0 flex-1 truncate text-sm">{t(title)}</p>
             {actions}
             {/* A way out for the mouse, and only for the mouse.
                 A phone has three already — drag the sheet down, tap the

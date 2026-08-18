@@ -158,7 +158,7 @@ export function ThemesPage() {
           <PageHeader
             title={t('Puzzle themes')}
             back={() => navigate('puzzles', 'hub')}
-            actions={error && <span className="text-bad text-xs">{error}</span>}
+            actions={error && <span className="text-bad text-sm">{error}</span>}
           />
           <SearchInput
             inputSize="sm"
@@ -234,7 +234,7 @@ export function ThemesPage() {
               leftovers.length === 0 &&
               GROUPS.every(
                 (g) => g.themes.filter((th) => byName.has(th) && matches(th)).length === 0,
-              ) && <p className="text-subtle text-xs">{t('No theme matches it.')}</p>}
+              ) && <p className="text-subtle text-sm">{t('No theme matches it.')}</p>}
           </>
         )}
     </PageShell>
@@ -244,7 +244,7 @@ export function ThemesPage() {
 function ThemeGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-4">
-      <h2 className="text-subtle mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <h2 className="text-subtle mb-2 text-xs font-semibold uppercase tracking-[0.08em]">
         {title}
       </h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{children}</div>
@@ -290,10 +290,10 @@ function ThemeCard({
         )}
       />
       <span className="min-w-0 flex-1">
-        <span className={cn('block truncate text-xs font-medium', highlight ? 'text-primary' : 'text-fg')}>
+        <span className={cn('block truncate text-sm font-medium', highlight ? 'text-primary' : 'text-fg')}>
           {label}
         </span>
-        <span className="text-subtle block font-mono text-[0.6875rem]">
+        <span className="text-subtle block font-mono text-xs">
           {pending ? (
             // A zero that becomes six million is a number the page stated
             // and then took back; the placeholder says nothing instead.

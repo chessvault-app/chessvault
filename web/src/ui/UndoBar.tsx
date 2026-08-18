@@ -77,7 +77,7 @@ export function UndoBar({
           leaving ? 'animate-sink' : 'animate-rise pointer-events-auto',
         )}
       >
-        <span className="min-w-0 flex-1 truncate text-sm">
+        <span className="min-w-0 flex-1 truncate text-base">
           {message ?? t('Removed “{name}”', { name: label })}
         </span>
         {/* The ghost button's own colours are page colours — muted grey on

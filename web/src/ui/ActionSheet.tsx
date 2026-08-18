@@ -152,7 +152,7 @@ export function ActionSheet({
             with the scrim and Escape besides — and a close button on top
             of three other ways out is one more thing to read past. */}
         {popover ? (
-          <p className="text-subtle truncate px-3 pb-2 text-xs">{t(title)}</p>
+          <p className="text-subtle truncate px-3 pb-2 text-sm">{t(title)}</p>
         ) : (
           <div
             // The MOUSE grabs by the header only; a finger may start
@@ -162,7 +162,7 @@ export function ActionSheet({
             className="-mt-1 cursor-grab touch-none select-none pt-1 active:cursor-grabbing"
           >
             <div className="bg-line mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
-            <p className="text-subtle truncate px-3 pb-1 text-xs">{t(title)}</p>
+            <p className="text-subtle truncate px-3 pb-1 text-sm">{t(title)}</p>
           </div>
         )}
         {children}
@@ -177,7 +177,7 @@ export function ActionSheet({
             className={cn(
               'flex w-full items-center gap-3 rounded-lg text-left transition-colors duration-100',
               // A popover row is a menu item; a sheet row is a touch target.
-              popover ? 'px-3 py-1.5 text-xs' : 'px-3 py-3 text-sm',
+              popover ? 'px-3 py-1.5 text-sm' : 'px-3 py-3 text-base',
               danger ? 'text-bad hover:bg-bad/10' : 'text-fg hover:bg-surface-2',
               className,
             )}

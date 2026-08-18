@@ -311,7 +311,7 @@ export function PhotoImport({
     >
       {dragOver && (
         <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
-          <p className="text-primary text-sm font-semibold">{t('Drop the image')}</p>
+          <p className="text-primary text-base font-semibold">{t('Drop the image')}</p>
         </div>
       )}
 
@@ -327,9 +327,9 @@ export function PhotoImport({
                 if (file) pick(file);
               }}
             />
-            <span className="text-muted text-sm">
+            <span className="text-muted text-base">
               Choose an image of the diagram
-              <span className="text-subtle block text-xs">{t('a screenshot or scan works best')}</span>
+              <span className="text-subtle block text-sm">{t('a screenshot or scan works best')}</span>
             </span>
           </label>
           <div className="flex items-center gap-2">
@@ -337,13 +337,13 @@ export function PhotoImport({
               <ClipboardPaste className="size-3.5" />
               {t('Paste image')}
             </Button>
-            <span className="text-subtle text-xs">{t('or press Ctrl+V — dropping a file here works too')}</span>
+            <span className="text-subtle text-sm">{t('or press Ctrl+V — dropping a file here works too')}</span>
           </div>
-          {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
+          {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
         </>
       ) : (
         <>
-          <p className="text-subtle text-xs">
+          <p className="text-subtle text-sm">
             {t('Drag the four handles onto the corners of the diagram.')}
           </p>
           <canvas
@@ -356,7 +356,7 @@ export function PhotoImport({
           {/* The one thing here that is a setting rather than a verb, so
               it stays by the board it describes; the verbs are together
               in the corner. */}
-          <label className="text-muted flex items-center gap-1.5 text-xs">
+          <label className="text-muted flex items-center gap-1.5 text-sm">
             <input
               type="checkbox"
               checked={blackAtBottom}
@@ -367,14 +367,14 @@ export function PhotoImport({
             />
             {t('Black at the bottom')}
           </label>
-          {pasteHint && <p className="text-nag-dubious text-xs">{pasteHint}</p>}
+          {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
         </>
       )}
 
       {reading && (
         <div
           className={cn(
-            'rounded-lg border p-3 text-xs leading-relaxed',
+            'rounded-lg border p-3 text-sm leading-relaxed',
             reading.fen ? 'border-line bg-surface-inset/50' : 'border-info/40 bg-info/10',
           )}
         >
@@ -386,7 +386,7 @@ export function PhotoImport({
             </p>
           ) : (
             <>
-              <p className="text-fg font-mono text-[0.6875rem]">{reading.fen.split(' ')[0]}</p>
+              <p className="text-fg font-mono text-xs">{reading.fen.split(' ')[0]}</p>
               {reading.uncertain.length > 0 && (
                 <p className="text-nag-dubious mt-1">
                   Check by eye: {reading.uncertain.join(', ')}

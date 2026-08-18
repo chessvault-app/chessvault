@@ -155,7 +155,7 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
           fine in English and ships. Doing it once means it cannot be
           forgotten; a caller that already translated passes Korean, and
           t() on a string with no entry returns it unchanged. */}
-      <h2 className="text-subtle min-w-0 flex-1 truncate text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <h2 className="text-subtle min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-[0.08em]">
         {typeof title === 'string' ? t(title) : title}
       </h2>
       {/* The actions take exactly their own width and the title takes the

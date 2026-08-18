@@ -255,7 +255,7 @@ export function Sheet({
                 <ChevronLeft className="size-3.5" />
               </Button>
             )}
-            <p className="text-subtle min-w-0 flex-1 truncate text-xs">{t(label)}</p>
+            <p className="text-subtle min-w-0 flex-1 truncate text-sm">{t(label)}</p>
             {/* The desktop's way out, named: the scrim and Escape both
                 close, but neither LOOKS like a control. Phones keep the
                 grabber and swipe instead of a third glyph in the strip. */}

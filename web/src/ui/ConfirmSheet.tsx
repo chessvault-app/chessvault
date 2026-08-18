@@ -86,7 +86,7 @@ export function ConfirmSheet({
           uses, which is not where a question you must answer belongs. */}
       {open && (
         <Sheet label={t(confirmLabel)} onClose={() => setOpen(false)} className="gap-3">
-          <p className="text-fg text-sm">{t(question)}</p>
+          <p className="text-fg text-base">{t(question)}</p>
           {/*
             Stacked, not a row, and the destructive one on top.
             A row of two puts them a thumb's width apart on a phone, which

@@ -210,7 +210,7 @@ export function OpeningPicker({
         }}
         className={cn(
           'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border',
-          'px-2.5 text-left text-xs transition-colors duration-100',
+          'px-2.5 text-left text-sm transition-colors duration-100',
           'hover:border-primary/40',
         )}
       >
@@ -244,7 +244,7 @@ export function OpeningPicker({
           const list = (
             <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {matches.length === 0 ? (
-                <li className="text-subtle px-2 py-1.5 text-xs">
+                <li className="text-subtle px-2 py-1.5 text-sm">
                   {all === null ? t('Reading the catalogue…') : t('No opening matches that.')}
                 </li>
               ) : (
@@ -254,7 +254,7 @@ export function OpeningPicker({
                       type="button"
                       onClick={() => pick(o)}
                       className={cn(
-                        'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-xs',
+                        'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-sm',
                         'hover:bg-surface-2 transition-colors duration-100 pointer-coarse:py-2.5',
                         o.name === value.name && o.eco === value.eco
                           ? 'text-primary font-medium'
@@ -262,7 +262,7 @@ export function OpeningPicker({
                       )}
                     >
                       {o.eco && (
-                        <span className="text-subtle w-7 shrink-0 font-mono text-[0.6875rem]">
+                        <span className="text-subtle w-7 shrink-0 font-mono text-xs">
                           {o.eco}
                         </span>
                       )}
@@ -272,7 +272,7 @@ export function OpeningPicker({
                 ))
               )}
               {hidden > 0 && (
-                <li className="text-subtle px-2 py-1.5 text-[0.6875rem]">
+                <li className="text-subtle px-2 py-1.5 text-xs">
                   {t('{count} more — type to narrow.', { count: hidden.toLocaleString() })}
                 </li>
               )}

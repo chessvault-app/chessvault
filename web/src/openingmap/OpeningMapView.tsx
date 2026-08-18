@@ -392,8 +392,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
       back={() => up('more')}
       meta={
         <>
-          <span className="text-muted text-xs">{color === 'white' ? t('White') : t('Black')}</span>
-          <span className="text-subtle text-xs">
+          <span className="text-muted text-sm">{color === 'white' ? t('White') : t('Black')}</span>
+          <span className="text-subtle text-sm">
             {saveState === 'saving'
               ? t('Saving…')
               : saveState === 'dirty'
@@ -462,7 +462,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       {/* The universe itself — no box, no border, edge to edge. */}
       {loaded && map && resolved && !empty && !revealed && (
         <CanvasOverlay>
-          <div className="text-muted flex items-center gap-2 text-sm">
+          <div className="text-muted flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
             {t('Preparing the map…')}
           </div>
@@ -493,8 +493,8 @@ export function OpeningMapView({ params }: { params: string[] }) {
       {loadError && (
         <CanvasOverlay>
           <div className="border-line bg-surface max-w-md rounded-xl border p-6">
-            <p className="text-bad text-sm font-medium">{t('The opening map could not be read')}</p>
-            <p className="text-muted mt-1 text-xs leading-relaxed">{loadError}</p>
+            <p className="text-bad text-base font-medium">{t('The opening map could not be read')}</p>
+            <p className="text-muted mt-1 text-sm leading-relaxed">{loadError}</p>
           </div>
         </CanvasOverlay>
       )}
@@ -535,12 +535,12 @@ export function OpeningMapView({ params }: { params: string[] }) {
               className="min-w-0 flex-1 text-left"
               onClick={() => setDetailsOpen(true)}
             >
-              <span className="text-fg block truncate text-sm font-medium">
+              <span className="text-fg block truncate text-base font-medium">
                 {selectedFacts.parentId === null
                   ? t('Start position')
                   : `${moveNumberLabel(selectedFacts.ply)} ${selectedFacts.mapNode.san ?? ''}`}
               </span>
-              <span className="text-subtle block truncate text-xs">
+              <span className="text-subtle block truncate text-sm">
                 {labels.get(selected) ?? t('Tap for details')}
               </span>
             </button>
@@ -609,7 +609,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
       {optionsOpen && (
         <Sheet label={t('Check coverage against')} onClose={() => setOptionsOpen(false)}>
-          <p className="text-muted text-xs leading-relaxed">
+          <p className="text-muted text-sm leading-relaxed">
             {t('The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.')}
           </p>
           {/* The kinds of field, laid out: there are two or three of
@@ -641,7 +641,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           ].map((group, at) => (
             <div key={group.label ?? `group-${at}`} className="flex flex-col gap-1">
               {group.label && (
-                <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
                   {group.label}
                 </p>
               )}
@@ -658,7 +658,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
           {databases.length > 0 && (
             <div className="flex flex-col gap-1">
-              <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+              <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
                 {databases.length === 1 ? t('Reference database') : t('Reference databases')}
               </p>
               {/* A list of one is not a list. Most vaults mount a single
@@ -701,7 +701,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
               it was built, so the choice of database IS the field. */}
           {field.source === ONLINE_SOURCE && (
             <div className="flex flex-col gap-1">
-              <p className="text-subtle px-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+              <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
                 {t('Opponent strength')}
               </p>
               <Select
@@ -731,7 +731,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
  */
 const ADD_ROW =
   'border-line text-muted hover:border-primary/40 hover:text-fg flex items-center gap-2 ' +
-  'rounded-lg border border-dashed px-2 py-1.5 text-left text-xs transition-colors duration-100 ' +
+  'rounded-lg border border-dashed px-2 py-1.5 text-left text-sm transition-colors duration-100 ' +
   'disabled:pointer-events-none disabled:opacity-45';
 
 /**
@@ -755,7 +755,7 @@ const ADD_ROW =
  * `shrink-0` keeps any of them from being squeezed again.
  */
 const PANEL_ACTION =
-  'h-auto min-w-0 shrink flex-1 flex-col gap-1 rounded-lg px-1 py-1.5 text-[0.6875rem] ' +
+  'h-auto min-w-0 shrink flex-1 flex-col gap-1 rounded-lg px-1 py-1.5 text-xs ' +
   'pointer-coarse:h-auto pointer-coarse:px-1 [&_svg]:size-4 [&_svg]:shrink-0';
 
 function PanelAction({
@@ -809,7 +809,7 @@ function PickRow({
       onClick={onPick}
       aria-pressed={picked}
       className={cn(
-        'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors duration-100',
+        'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-base transition-colors duration-100',
         picked
           ? 'border-primary/40 bg-primary-soft text-primary font-medium'
           : 'border-line text-fg hover:bg-surface-2',
@@ -977,10 +977,10 @@ function NodePanel({
           />
         )}
         <div className="min-w-0">
-          <p className="text-fg text-sm font-semibold">{title}</p>
-          {lineName && !isRoot && <p className="text-subtle truncate text-xs">{lineName}</p>}
+          <p className="text-fg text-base font-semibold">{title}</p>
+          {lineName && !isRoot && <p className="text-subtle truncate text-sm">{lineName}</p>}
           {coverage?.covered && (
-            <p className="text-muted text-xs">
+            <p className="text-muted text-sm">
               {t('Prepared {plies} plies deep, {lines} lines', {
                 plies: coverage.preparedPlies,
                 lines: coverage.lineCount,
@@ -991,8 +991,8 @@ function NodePanel({
             <p
               className={
                 reachedMove(facts.ply, coverage.preparedPlies) < node.depth
-                  ? 'text-warn text-xs'
-                  : 'text-muted text-xs'
+                  ? 'text-warn text-sm'
+                  : 'text-muted text-sm'
               }
             >
               {t('Prepared to move {reached} — target {target}', {
@@ -1002,17 +1002,17 @@ function NodePanel({
             </p>
           )}
           {(coverage?.reviewCount ?? 0) > 0 && (
-            <p className="text-warn text-xs">
+            <p className="text-warn text-sm">
               {t('{n} fumbled in drills — drill from here', { n: coverage!.reviewCount })}
             </p>
           )}
           {(coverage?.gapCount ?? 0) > 0 && (
-            <p className="text-bad text-xs">
+            <p className="text-bad text-sm">
               {t('{n} drill gaps — the studies lack an answer', { n: coverage!.gapCount })}
             </p>
           )}
           {facts.fen === null && !isRoot && (
-            <p className="text-bad text-xs">{t('Not a legal move here')}</p>
+            <p className="text-bad text-sm">{t('Not a legal move here')}</p>
           )}
         </div>
       </div>
@@ -1031,7 +1031,7 @@ function NodePanel({
           </Field>
           <Field
             label="Intended depth"
-            hint={<span className="text-subtle text-[0.6875rem]">{t('full moves')}</span>}
+            hint={<span className="text-subtle text-xs">{t('full moves')}</span>}
           >
             <Input
               type="number"
@@ -1081,7 +1081,7 @@ function NodePanel({
                 <Icon className={broken ? 'text-bad size-4 shrink-0' : 'text-muted size-4 shrink-0'} />
                 <button
                   type="button"
-                  className="text-fg hover:text-primary min-w-0 flex-1 truncate text-left text-xs"
+                  className="text-fg hover:text-primary min-w-0 flex-1 truncate text-left text-sm"
                   title={tag.id}
                   onClick={() => {
                     // A study opens ON this node's position, not at its
@@ -1096,7 +1096,7 @@ function NodePanel({
                   {tag.id.split('/').pop()}
                   {tag.chapter ? ` · ${tag.chapter}` : ''}
                 </button>
-                {broken && <span className="text-bad shrink-0 text-xs">{t('Missing')}</span>}
+                {broken && <span className="text-bad shrink-0 text-sm">{t('Missing')}</span>}
                 <button
                   type="button"
                   title={t('Remove link')}
@@ -1141,7 +1141,7 @@ function NodePanel({
               {making ? t('Making the study…') : t('New study from this line')}
             </span>
           </button>
-          {makeError && <p className="text-bad px-1 text-xs">{makeError}</p>}
+          {makeError && <p className="text-bad px-1 text-sm">{makeError}</p>}
         </div>
       </Field>
 
@@ -1161,7 +1161,7 @@ function NodePanel({
         <Field
           label="Games that left here"
           hint={
-            <span className="text-subtle text-[0.6875rem]">
+            <span className="text-subtle text-xs">
               {t('{n} games', { n: deviations.length })}
             </span>
           }
@@ -1172,12 +1172,12 @@ function NodePanel({
               const charted = node.children.some((c) => c.san === san);
               return (
                 <div key={`${d.file}#${d.idx}`} className="flex items-center gap-2 px-1">
-                  <span className="text-fg min-w-0 flex-1 truncate text-xs">
+                  <span className="text-fg min-w-0 flex-1 truncate text-sm">
                     {d.white} – {d.black}
                   </span>
-                  <span className="text-subtle shrink-0 text-xs">{d.result}</span>
+                  <span className="text-subtle shrink-0 text-sm">{d.result}</span>
                   <span
-                    className={d.userDeviated ? 'text-warn shrink-0 text-xs font-medium' : 'text-muted shrink-0 text-xs font-medium'}
+                    className={d.userDeviated ? 'text-warn shrink-0 text-sm font-medium' : 'text-muted shrink-0 text-sm font-medium'}
                     title={d.userDeviated ? t('You left the book with this move') : t('They left the book with this move')}
                   >
                     {san}
@@ -1221,7 +1221,7 @@ function NodePanel({
               );
             })}
             {deviations.length > 4 && (
-              <p className="text-subtle px-1 text-xs">{t('and {n} more', { n: deviations.length - 4 })}</p>
+              <p className="text-subtle px-1 text-sm">{t('and {n} more', { n: deviations.length - 4 })}</p>
             )}
           </div>
         </Field>
@@ -1230,7 +1230,7 @@ function NodePanel({
       {chartable.length > 0 && (
         <Field
           label="Prepared, not on the map"
-          hint={<span className="text-subtle text-[0.6875rem]">{t('tap to add')}</span>}
+          hint={<span className="text-subtle text-xs">{t('tap to add')}</span>}
         >
           <div className="flex flex-wrap gap-1.5">
             {chartable.map((san) => (

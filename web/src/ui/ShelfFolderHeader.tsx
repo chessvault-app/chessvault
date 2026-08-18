@@ -41,7 +41,7 @@ export function ShelfFolderHeader({
         type="button"
         onDoubleClick={() => setRenaming(true)}
         title={t('Double-click to rename')}
-        className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]"
+        className="text-subtle text-sm font-semibold uppercase tracking-[0.08em]"
       >
         {folder}
       </button>
@@ -94,14 +94,14 @@ export function ShelfFolderHeader({
           ]}
         >
           {!empty && (
-            <p className="text-subtle px-3 pb-2 text-xs">
+            <p className="text-subtle px-3 pb-2 text-sm">
               {t('Only empty collections can be deleted')}
             </p>
           )}
         </ActionSheet>
       )}
 
-      {failure && <span className="text-bad text-xs">{failure}</span>}
+      {failure && <span className="text-bad text-sm">{failure}</span>}
     </div>
   );
 }

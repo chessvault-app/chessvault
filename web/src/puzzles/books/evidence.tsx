@@ -70,7 +70,7 @@ export function SourcePane({
       {tab === 'diagram' && evidence.page ? (
         <>
           <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={shown - 32} />
-          <p className="text-subtle text-xs leading-relaxed">
+          <p className="text-subtle text-sm leading-relaxed">
             {t('The book’s own scan — make the board match it.')}
           </p>
         </>

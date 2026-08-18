@@ -41,7 +41,7 @@ export function Field({
   return (
     <div className={cn('flex min-w-0 flex-col gap-1', className)}>
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={target} className="text-subtle text-[0.6875rem] font-medium">
+        <label htmlFor={target} className="text-subtle text-xs font-medium">
           {t(label)}
         </label>
         {hint}

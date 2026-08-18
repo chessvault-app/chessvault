@@ -35,7 +35,7 @@ export function FilterChip({
         // scroller, where shrinking is exactly wrong — collapse to "X…" on
         // the puzzles dashboard. A row that cannot fit its chips scrolls or
         // wraps; the chip itself never shortens.
-        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-sm font-medium transition-colors',
         // The same growth every small Button gets under a thumb.
         'pointer-coarse:min-h-9 pointer-coarse:px-3',
         active

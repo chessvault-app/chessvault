@@ -42,7 +42,7 @@ export function ShortcutsHelp() {
   if (!open) return null;
   return (
     <Modal title="Keyboard shortcuts" icon={Keyboard} onClose={() => setOpen(false)}>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
         {SHORTCUTS.map(({ keys, what }) => (
           <span key={keys} className="contents">
             <dt className="bg-surface-2 border-line justify-self-start rounded border px-1.5 py-0.5 font-mono">

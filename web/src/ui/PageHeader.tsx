@@ -48,7 +48,7 @@ export function PageHeader({
           <ChevronLeft className="size-3.5" />
         </Button>
       )}
-      <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
       {meta}
       {actions && (
         <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>
@@ -59,7 +59,7 @@ export function PageHeader({
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       {header}
-      <p className="text-muted text-xs leading-relaxed">{description}</p>
+      <p className="text-muted text-sm leading-relaxed">{description}</p>
     </div>
   );
 }

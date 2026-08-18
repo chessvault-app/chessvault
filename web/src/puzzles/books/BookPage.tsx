@@ -195,7 +195,7 @@ export function BookPage({ slug }: { slug: string }) {
   if (missing) {
     return (
       <div className="grid h-full place-items-center">
-        <p className="text-muted text-sm">{t('That book does not exist.')}</p>
+        <p className="text-muted text-base">{t('That book does not exist.')}</p>
       </div>
     );
   }
@@ -282,7 +282,7 @@ export function BookPage({ slug }: { slug: string }) {
                 if (e.key === 'Escape') setRenaming(false);
               }}
               className="min-w-0 flex-1"
-              inputClassName="text-lg font-semibold tracking-tight"
+              inputClassName="text-xl font-semibold tracking-tight"
             />
           ) : (
             <>
@@ -292,7 +292,7 @@ export function BookPage({ slug }: { slug: string }) {
                   setRenaming(true);
                 }}
                 title={t('Double-click to rename')}
-                className="text-fg min-w-0 flex-1 truncate text-lg font-semibold tracking-tight"
+                className="text-fg min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
               >
                 {book?.title ?? slug}
               </h1>
@@ -398,8 +398,8 @@ export function BookPage({ slug }: { slug: string }) {
               pages. Both are offered here rather than described, because
               this is the page where you would do either.
             */}
-            <p className="text-fg text-sm font-medium">{t('Nothing in this book yet.')}</p>
-            <p className="text-muted mx-auto mt-1 max-w-md text-xs leading-relaxed">
+            <p className="text-fg text-base font-medium">{t('Nothing in this book yet.')}</p>
+            <p className="text-muted mx-auto mt-1 max-w-md text-sm leading-relaxed">
               {t('Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.')}
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
@@ -468,7 +468,7 @@ function ScanPanel({
     >
       <p
         className={cn(
-          'flex items-center justify-center gap-2 text-sm font-medium',
+          'flex items-center justify-center gap-2 text-base font-medium',
           live ? 'text-primary' : 'text-warn',
         )}
       >
@@ -483,7 +483,7 @@ function ScanPanel({
             ? t('Reading the book')
             : t('Import unfinished')}
       </p>
-      <p className="text-muted mt-1 text-xs">
+      <p className="text-muted mt-1 text-sm">
         {phase === 'reading'
           ? t('{found} diagrams read', { found })
           : t('page {page} of {pages} · {found} diagrams', {
@@ -498,7 +498,7 @@ function ScanPanel({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-subtle mt-3 text-xs">
+      <p className="text-subtle mt-3 text-sm">
         {live ? t('Press to watch it, or to pause.') : t('Press to carry on from page {page}.', { page: page + 1 })}
       </p>
     </button>

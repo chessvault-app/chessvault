@@ -75,7 +75,7 @@ export function ReviewStrip() {
     if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
     return (
       <div className="border-line flex shrink-0 items-center gap-2 border-t px-3 py-2">
-        <p className="text-muted min-w-0 flex-1 truncate text-xs">
+        <p className="text-muted min-w-0 flex-1 truncate text-sm">
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
         <Button variant="secondary" size="sm" onClick={() => void run()}>
@@ -98,7 +98,7 @@ export function ReviewStrip() {
     <div className="border-line shrink-0 border-t">
       {status === 'running' ? (
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          <span className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
             {t('Reviewing')}
           </span>
           <div className="bg-surface-inset h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
@@ -107,13 +107,13 @@ export function ReviewStrip() {
               style={{ width: `${Math.round(progress * 100)}%` }}
             />
           </div>
-          <span className="text-subtle w-9 text-right font-mono text-[0.6875rem] tabular-nums">
+          <span className="text-subtle w-9 text-right font-mono text-xs tabular-nums">
             {Math.round(progress * 100)}%
           </span>
         </div>
       ) : status === 'error' ? (
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="text-bad min-w-0 flex-1 truncate text-xs">{error}</span>
+          <span className="text-bad min-w-0 flex-1 truncate text-sm">{error}</span>
           <Button variant="ghost" size="icon-sm" title={t('Dismiss')} onClick={clear}>
             <X className="size-3" />
           </Button>
@@ -273,15 +273,15 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
 
 function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideSummary }) {
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex items-center gap-2 text-sm">
       <SideDot side={side} />
       <span className="text-fg w-12 font-mono font-semibold tabular-nums">
         {summary.accuracy.toFixed(1)}%
       </span>
-      <span className="text-subtle font-mono text-[0.6875rem] tabular-nums">
+      <span className="text-subtle font-mono text-xs tabular-nums">
         {summary.acpl} acpl
       </span>
-      <span className="text-subtle ml-auto flex gap-2 font-mono text-[0.6875rem] tabular-nums">
+      <span className="text-subtle ml-auto flex gap-2 font-mono text-xs tabular-nums">
         <span
           title={t('Book moves — known opening theory, not judged')}
           className={cn(

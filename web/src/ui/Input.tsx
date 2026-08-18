@@ -30,9 +30,9 @@ type InputSize = 'sm' | 'md' | 'lg';
  * drew the placeholder underneath the icon.
  */
 const sizes: Record<InputSize, string> = {
-  sm: 'h-7 px-2 text-xs pointer-coarse:h-9',
-  md: 'h-8 px-2.5 text-xs',
-  lg: 'h-9 px-3 text-sm',
+  sm: 'h-7 px-2 text-sm pointer-coarse:h-9',
+  md: 'h-8 px-2.5 text-sm',
+  lg: 'h-9 px-3 text-base',
 };
 
 const base =
@@ -149,7 +149,7 @@ export const TextArea = forwardRef<HTMLTextAreaElement, TextAreaProps>(function 
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="none"
-      className={cn(base, 'px-2.5 py-2 text-xs', className)}
+      className={cn(base, 'px-2.5 py-2 text-sm', className)}
       {...props}
     />
   );
@@ -376,7 +376,7 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
         onClick={() => empty('leave')}
         className={cn(
           'pointer-fine:hidden text-muted hover:text-fg grid shrink-0 place-items-center overflow-hidden',
-          'whitespace-nowrap rounded-full text-xs font-medium',
+          'whitespace-nowrap rounded-full text-sm font-medium',
           // The same glass the sheets close with: a translucent disc that
           // takes its colour from whatever it sits on, with a hairline of
           // light along the edge. backdrop-blur is what makes it read as

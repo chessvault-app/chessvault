@@ -127,7 +127,7 @@ export function FieldStats({
        */
       hint={
         <span
-          className="text-subtle text-[0.6875rem]"
+          className="text-subtle text-xs"
           title={
             gaps
               ? t('Games whose reply your map charts or a linked study prepares.')
@@ -215,12 +215,12 @@ export function FieldStats({
             — it was setting that column's width for the whole table and
             pushing every bar an inch to the right. */}
         {rows.length > SHOWN && (
-          <p className="text-subtle col-span-3 px-2 pt-1 text-xs">
+          <p className="text-subtle col-span-3 px-2 pt-1 text-sm">
             {t('and {n} rarer moves', { n: rows.length - SHOWN })}
           </p>
         )}
         {gaps && gaps.gaps.length === 0 && (
-          <p className="text-muted col-span-3 px-2 pt-1 text-xs leading-relaxed">
+          <p className="text-muted col-span-3 px-2 pt-1 text-sm leading-relaxed">
             {t('Every reply over {pct}% runs into your preparation.', {
               pct: Math.round(GAP_SHARE * 100),
             })}

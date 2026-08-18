@@ -253,18 +253,18 @@ export function ExplorerPane({
           <div className="border-line flex h-8 shrink-0 items-center gap-2 border-b px-3">
             {lineOpening ? (
               <>
-                <span className="text-subtle shrink-0 font-mono text-[0.6875rem] font-semibold">
+                <span className="text-subtle shrink-0 font-mono text-xs font-semibold">
                   {lineOpening.eco}
                 </span>
                 <span
-                  className="text-fg min-w-0 truncate text-xs font-medium"
+                  className="text-fg min-w-0 truncate text-sm font-medium"
                   title={`${lineOpening.eco} ${lineOpening.name}`}
                 >
                   {lineOpening.name}
                 </span>
               </>
             ) : (
-              <span className="text-subtle text-xs">
+              <span className="text-subtle text-sm">
                 {node.ply === 0 ? t('Starting position') : t('Out of book')}
               </span>
             )}
@@ -277,11 +277,11 @@ export function ExplorerPane({
             // until the position changed. Say what happened, offer to go
             // again in place.
             <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-              <p className="text-bad text-xs">{error}</p>
+              <p className="text-bad text-sm">{error}</p>
               {/* The online databases go through the server's Lichess
                   token; when they fail, the fix has an address. */}
               {isRemoteDb(book) && (
-                <a href="#/settings" className="text-primary text-xs hover:underline">
+                <a href="#/settings" className="text-primary text-sm hover:underline">
                   {t('Add a Lichess token in Settings')}
                 </a>
               )}
@@ -308,7 +308,7 @@ export function ExplorerPane({
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
               {moves.length === 0 && fresh ? (
-                <p className="text-subtle px-3 py-3 text-xs">
+                <p className="text-subtle px-3 py-3 text-sm">
                   {mine
                     ? filtered
                       ? t('None of your games reached this position under these filters.')
@@ -328,7 +328,7 @@ export function ExplorerPane({
                 </p>
               ) : (
                 <>
-                  <table className="w-full text-xs">
+                  <table className="w-full text-sm">
                     <tbody>
                       {(allMoves ? moves : moves.slice(0, MOVE_LIMIT)).map((m, at) => (
                         <MoveRow
@@ -344,7 +344,7 @@ export function ExplorerPane({
                     <button
                       type="button"
                       onClick={() => setAllMoves((v) => !v)}
-                      className="text-subtle hover:text-fg w-full px-3 py-1 text-left text-[0.6875rem] transition-colors duration-100"
+                      className="text-subtle hover:text-fg w-full px-3 py-1 text-left text-xs transition-colors duration-100"
                     >
                       {allMoves ? 'Show fewer moves' : `Show all ${moves.length} moves`}
                     </button>
@@ -429,7 +429,7 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
         />
       </FilterGroup>
 
-      <div className="mt-1 flex items-center justify-end gap-2 text-xs">
+      <div className="mt-1 flex items-center justify-end gap-2 text-sm">
         {hasRefFilters(filters) && (
           <Button
             variant="ghost"
@@ -504,14 +504,14 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
 
   return (
     <div className="flex flex-col gap-2 px-3 py-3">
-      <p className="text-muted text-xs leading-relaxed">
+      <p className="text-muted text-sm leading-relaxed">
         {t(
           '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.',
           { name: bookLabel(name) },
         )}
       </p>
       {state === 'running' ? (
-        <p className="text-subtle flex items-center gap-2 font-mono text-[0.6875rem]">
+        <p className="text-subtle flex items-center gap-2 font-mono text-xs">
           <Loader2 className="size-3.5 shrink-0 animate-spin" />
           <span className="min-w-0 truncate">{line ?? '…'}</span>
         </p>
@@ -522,7 +522,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
             {t('Index positions')}
           </Button>
           {state === 'failed' && (
-            <span className="text-bad text-xs">{t('indexing failed — see the Databases page')}</span>
+            <span className="text-bad text-sm">{t('indexing failed — see the Databases page')}</span>
           )}
         </div>
       )}
@@ -585,7 +585,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
           on screen admitted it (lanph3re's report). This window is where
           the corpus gets interrogated, so this is where it introduces
           itself. */}
-      <p className="text-muted text-xs leading-relaxed">
+      <p className="text-muted text-sm leading-relaxed">
         {t(
           'Answers come from your collection plus every chess.com and Lichess month you have browsed — a month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
         )}
@@ -652,7 +652,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 
       {/* The count is what makes the filters legible: it says what the row
           above just did to the corpus the explorer is answering from. */}
-      <div className="text-subtle mt-1 flex items-center gap-2 text-xs">
+      <div className="text-subtle mt-1 flex items-center gap-2 text-sm">
         {stats && (
           <span className="mr-auto tabular-nums">
             {hasMyFilters(filters)
@@ -696,7 +696,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <span className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
         {t(label)}
       </span>
       {/* Wrapping, not scrolling sideways: the window has the width now, and
@@ -824,7 +824,7 @@ function TopGamesList({
 
   return (
     <div className="border-line border-t px-1.5 pb-2">
-      <p className="text-subtle px-1.5 pb-1 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle px-1.5 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
@@ -846,17 +846,17 @@ function TopGamesList({
                 title={t('Open this game')}
                 className={cn(
                   'hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1',
-                  'text-left text-xs transition-colors duration-100',
+                  'text-left text-sm transition-colors duration-100',
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">
                   <SideDot side="white" className="mr-1 inline-block size-2 align-[-1px]" />
                   <span className="text-fg">{g.white}</span>
-                  <span className="text-subtle font-mono text-[0.6875rem]"> {g.whiteElo || ''} </span>
+                  <span className="text-subtle font-mono text-xs"> {g.whiteElo || ''} </span>
                   <span className="text-subtle">v</span>
                   <SideDot side="black" className="mx-1 inline-block size-2 align-[-1px]" />
                   <span className="text-fg">{g.black}</span>
-                  <span className="text-subtle font-mono text-[0.6875rem]"> {g.blackElo || ''}</span>
+                  <span className="text-subtle font-mono text-xs"> {g.blackElo || ''}</span>
                 </span>
                 <ResultBadge result={g.result} />
               </button>
@@ -879,7 +879,7 @@ function TopGamesList({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-subtle hover:text-fg w-full px-1.5 pt-1 text-left text-[0.6875rem]"
+          className="text-subtle hover:text-fg w-full px-1.5 pt-1 text-left text-xs"
         >
           {expanded ? t('Show fewer') : t('Show all {n}', { n: games.length })}
         </button>
@@ -893,7 +893,7 @@ function ResultBadge({ result }: { result: string }) {
   return (
     <span
       className={cn(
-        'shrink-0 rounded px-1 py-px font-mono text-[0.6875rem] font-semibold',
+        'shrink-0 rounded px-1 py-px font-mono text-xs font-semibold',
         result === '1-0' && 'bg-eval-white text-on-eval-white',
         result === '0-1' && 'bg-eval-black text-on-eval-black',
         result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted',

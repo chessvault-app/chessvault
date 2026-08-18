@@ -257,7 +257,7 @@ function NagBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-fg text-sm font-bold shadow-md',
+        'text-nag-fg text-base font-bold shadow-md',
         badge.className,
       )}
     >
@@ -315,7 +315,7 @@ function NameField({
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
         }}
         className={cn(
-          'text-fg placeholder:text-subtle w-full min-w-0 truncate bg-transparent text-sm font-medium outline-none',
+          'text-fg placeholder:text-subtle w-full min-w-0 truncate bg-transparent text-base font-medium outline-none',
           showClear && 'pr-6',
           noAutofillClass,
         )}
@@ -392,13 +392,13 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
           onCommit={setName}
         />
       ) : (
-        <span className="text-fg min-w-0 truncate text-sm font-medium">{name}</span>
+        <span className="text-fg min-w-0 truncate text-base font-medium">{name}</span>
       )}
-      {elo && <span className="text-subtle text-xs">{elo}</span>}
+      {elo && <span className="text-subtle text-sm">{elo}</span>}
       {clock !== undefined && (
         <span
           className={cn(
-            'ml-auto rounded px-1.5 py-0.5 font-mono text-xs tabular-nums',
+            'ml-auto rounded px-1.5 py-0.5 font-mono text-sm tabular-nums',
             toMove ? 'bg-primary-soft text-primary font-semibold' : 'text-muted',
           )}
         >

@@ -114,8 +114,8 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         <div className="bg-primary text-primary-fg mb-5 grid size-14 place-items-center rounded-2xl shadow-[var(--shadow-panel)]">
           <KnightIcon className="size-8" />
         </div>
-        <h1 className="text-fg text-xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
-        <p className="text-subtle mb-6 mt-1 text-sm">{t('Your chess, in plain files.')}</p>
+        <h1 className="text-fg text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+        <p className="text-subtle mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 
         <form
           className="bg-surface border-line w-full rounded-2xl border p-6 shadow-[var(--shadow-panel)]"
@@ -128,7 +128,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label
                 htmlFor="gate-password"
-                className="text-subtle mb-1.5 flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
+                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
               >
                 <Lock className="size-3" />
                 {t('Password')}
@@ -149,7 +149,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label
                 htmlFor="gate-code"
-                className="text-subtle mb-1.5 flex items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]"
+                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
               >
                 <ShieldCheck className="size-3" />
                 {t('Authenticator code')}
@@ -168,7 +168,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             </>
           )}
           {error && (
-            <p className="text-bad mb-3 text-xs" role="alert">
+            <p className="text-bad mb-3 text-sm" role="alert">
               {error}
             </p>
           )}
@@ -185,14 +185,14 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={backToPassword}
-              className="text-subtle hover:text-fg mx-auto mt-3 flex items-center gap-1 text-xs"
+              className="text-subtle hover:text-fg mx-auto mt-3 flex items-center gap-1 text-sm"
             >
               <ChevronLeft className="size-3" />
               {t('Use a different password')}
             </button>
           )}
         </form>
-        <p className="text-subtle mt-6 text-center text-xs">
+        <p className="text-subtle mt-6 text-center text-sm">
           {t('Private instance — every game, study and puzzle here lives in plain files on its owner’s server.')}
         </p>
       </div>

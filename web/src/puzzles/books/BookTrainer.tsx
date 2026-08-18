@@ -375,7 +375,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     const missing = book !== null && solutions !== null && (index < 0 || !answer);
     if (missing) {
       return (
-        <div className="text-subtle grid h-full place-items-center text-sm">
+        <div className="text-subtle grid h-full place-items-center text-base">
           {t('That puzzle does not exist.')}
         </div>
       );
@@ -410,7 +410,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       {/* The puzzle number IS the title; the tier collapses to its icon
           (tooltip explains). */}
       <span className="flex min-w-0 items-center gap-2">
-        <span className="text-fg font-mono text-sm font-semibold">
+        <span className="text-fg font-mono text-base font-semibold">
           #{puzzle.number ?? index + 1}
         </span>
         {puzzle.provenance &&
@@ -541,15 +541,15 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           <div className="flex flex-col gap-3 p-3">
             <div className="flex flex-col gap-0.5">
               {phase === 'done' ? (
-                <p className={cn('text-sm font-semibold', won ? 'text-good' : 'text-bad')}>
+                <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-bad')}>
                   {won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.')}
                 </p>
               ) : (
-                <p className="text-fg text-xl font-bold tracking-tight">
+                <p className="text-fg text-2xl font-bold tracking-tight">
                   {solverSide === 'white' ? t('White to play') : t('Black to play')}
                 </p>
               )}
-              <p className="text-muted text-xs leading-relaxed">
+              <p className="text-muted text-sm leading-relaxed">
                 {phase === 'checking'
                   ? t('Checking your answer…')
                   : phase === 'done'

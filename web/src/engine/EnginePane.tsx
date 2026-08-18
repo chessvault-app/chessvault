@@ -131,7 +131,7 @@ export function EngineBlock({
               <>
                 <span
                   className={cn(
-                    'font-mono text-xs font-semibold normal-case tabular-nums tracking-normal',
+                    'font-mono text-sm font-semibold normal-case tabular-nums tracking-normal',
                     (score.mate ?? score.cp ?? 0) >= 0 ? 'text-good' : 'text-bad',
                   )}
                 >
@@ -203,7 +203,7 @@ export function EngineBlock({
           on and back off by itself. The error is cleared by the next
           successful start, so it cannot outlive the thing it describes. */}
       {error && (
-        <p className="text-bad flex items-start gap-1.5 px-3 py-2 text-xs">
+        <p className="text-bad flex items-start gap-1.5 px-3 py-2 text-sm">
           <AlertTriangle className="mt-px size-3.5 shrink-0" />
           {error}
         </p>
@@ -214,7 +214,7 @@ export function EngineBlock({
           {/* A proof outranks an estimate, so it stands above the lines. */}
           {tablebaseText && (
             <p
-              className="text-muted flex items-center gap-1.5 px-3 pt-1.5 text-xs"
+              className="text-muted flex items-center gap-1.5 px-3 pt-1.5 text-sm"
               title={t('Exact endgame verdict from the Syzygy tablebases — proven, not evaluated.')}
             >
               <Database className="text-primary size-3.5 shrink-0" />
@@ -239,7 +239,7 @@ export function EngineBlock({
             )}
           >
             {visibleLines.length === 0 ? (
-              <li className="text-subtle px-3 py-1 text-xs">{t('Thinking…')}</li>
+              <li className="text-subtle px-3 py-1 text-sm">{t('Thinking…')}</li>
             ) : (
               visibleLines.map((line) => (
                 <PvRow
@@ -312,7 +312,7 @@ function CurrentLine() {
         type="button"
         onClick={() => setCursor(id)}
         className={cn(
-          'rounded px-1 py-0.5 text-xs transition-colors duration-100',
+          'rounded px-1 py-0.5 text-sm transition-colors duration-100',
           // The one you are on carries the accent, the same way a hovered
           // ply in a variation above does — one grammar for "this move" in
           // the whole panel.
@@ -387,13 +387,13 @@ function CurrentLine() {
       // Negative margins because the chips carry their own padding: the
       // bracket has to sit against the move, not a gap away from it.
       out.push(
-        <span key={`${alt}-(`} className="text-subtle -mr-1 text-xs">
+        <span key={`${alt}-(`} className="text-subtle -mr-1 text-sm">
           (
         </span>,
       );
       emit(out, alt);
       out.push(
-        <span key={`${alt}-)`} className="text-subtle -ml-1 text-xs">
+        <span key={`${alt}-)`} className="text-subtle -ml-1 text-sm">
           )
         </span>,
       );
@@ -453,7 +453,7 @@ function PvRow({
       >
         <span
           className={cn(
-            'w-[3.25rem] shrink-0 font-mono text-xs font-semibold tabular-nums',
+            'w-[3.25rem] shrink-0 font-mono text-sm font-semibold tabular-nums',
             advantage >= 0 ? 'text-good' : 'text-bad',
           )}
         >
@@ -565,7 +565,7 @@ function Slider({
 }) {
   return (
     <label className={cn('grid gap-1', disabled && 'opacity-50')}>
-      <span className="flex items-baseline justify-between text-xs">
+      <span className="flex items-baseline justify-between text-sm">
         <span className="text-muted">{label}</span>
         <span className="text-fg font-mono tabular-nums">
           {format ? format(value) : value}

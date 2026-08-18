@@ -63,7 +63,7 @@ export function PromptSheet({
           if (e.key === 'Escape') onClose();
         }}
       />
-      {error && <p className="text-bad text-xs">{error}</p>}
+      {error && <p className="text-bad text-sm">{error}</p>}
       <div className="flex justify-end gap-2">
         {/* A way out that is not the scrim. Tapping outside works, but a
             dialog asking for one value should say so rather than expect

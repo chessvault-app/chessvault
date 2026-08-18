@@ -166,7 +166,7 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
     // top edge against 20px).
     <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
-      <span className={cn('min-w-0 flex-1 truncate text-sm', toMove ? 'text-fg font-medium' : 'text-subtle')}>
+      <span className={cn('min-w-0 flex-1 truncate text-base', toMove ? 'text-fg font-medium' : 'text-subtle')}>
         {side === 'white' ? t('White') : t('Black')}
       </span>
     </div>
@@ -927,7 +927,7 @@ export function RepertoireView() {
 
   const header = (
     <>
-      <h1 className="text-fg text-sm font-semibold">{t('Repertoire')}</h1>
+      <h1 className="text-fg text-base font-semibold">{t('Repertoire')}</h1>
       {/* What sparring is, behind a ? instead of a paragraph the idle
           panel made every visit re-read (lanph3re's call). */}
       <InfoTip label="Repertoire">
@@ -1099,9 +1099,9 @@ export function RepertoireView() {
                 // Sent over by the opening map: the whole repertoire as one
                 // scope. Letting it go returns the ordinary study picker.
                 <div className="border-line flex flex-col gap-1 rounded-lg border p-2">
-                  <span className="text-muted text-xs font-medium">{t('From the opening map')}</span>
-                  <p className="text-fg text-xs">{mapDrill.label}</p>
-                  <p className="text-subtle text-xs">
+                  <span className="text-muted text-sm font-medium">{t('From the opening map')}</span>
+                  <p className="text-fg text-sm">{mapDrill.label}</p>
+                  <p className="text-subtle text-sm">
                     {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
                   </p>
                   <Button
@@ -1115,7 +1115,7 @@ export function RepertoireView() {
                 </div>
               ) : mode === 'drill' ? (
                 studyList !== null && studyList.length === 0 ? (
-                  <p className="text-muted text-xs leading-relaxed">
+                  <p className="text-muted text-sm leading-relaxed">
                     {t('No studies yet — create one in Studies, or save a line you played first.')}
                   </p>
                 ) : (
@@ -1171,14 +1171,14 @@ export function RepertoireView() {
               {/* A disabled Start with no word is a riddle; the reason
                   is one line. */}
               {needsToken && (
-                <p className="text-subtle text-xs leading-relaxed">
+                <p className="text-subtle text-sm leading-relaxed">
                   {t(
                     'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.',
                   )}
                 </p>
               )}
               {mode === 'drill' && drillChapter && !drillReady && (
-                <p className="text-subtle text-xs leading-relaxed">
+                <p className="text-subtle text-sm leading-relaxed">
                   {wholeStudy
                     ? t('This study has no moves yet — nothing to drill.')
                     : t('This chapter has no moves yet — nothing to drill.')}
@@ -1190,7 +1190,7 @@ export function RepertoireView() {
                   record can still be wiped. */}
               {mode === 'drill' && summary && summary.attempted > 0 && (
                 <div className="flex items-center gap-2">
-                  <p className="text-subtle min-w-0 flex-1 text-xs leading-relaxed">
+                  <p className="text-subtle min-w-0 flex-1 text-sm leading-relaxed">
                     {summary.review.length > 0 &&
                       t('{n} positions to review', { n: summary.review.length })}
                     {summary.review.length > 0 && summary.gaps > 0 && ' · '}
@@ -1256,7 +1256,7 @@ export function RepertoireView() {
               <div className="flex flex-col gap-3 p-3">
                 <p
                   className={cn(
-                    'text-xs leading-relaxed',
+                    'text-sm leading-relaxed',
                     (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
                       ? 'text-warn'
                       : 'text-muted',
@@ -1279,14 +1279,14 @@ export function RepertoireView() {
                             : t('Reviewing an earlier move — step to the end to keep playing.')}
                 </p>
                 {gapNote && phase !== 'ended' && (
-                  <p className="text-subtle text-xs leading-relaxed">{gapNote}</p>
+                  <p className="text-subtle text-sm leading-relaxed">{gapNote}</p>
                 )}
                 {/* The dependency arrow, pointed back: Settings knows it
                     powers this, but this error never said Settings was
                     the fix. A tokenless user read "could not reach" as
                     the app being broken. */}
                 {error && source === ONLINE_SOURCE && (
-                  <p className="text-muted text-xs leading-relaxed">
+                  <p className="text-muted text-sm leading-relaxed">
                     {t('The online database goes through your Lichess token.')}{' '}
                     <a href="#/settings" className="text-primary hover:underline">
                       {t('Add one in Settings')}

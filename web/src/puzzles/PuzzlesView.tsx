@@ -563,7 +563,7 @@ function Trainer({
             <Button variant="ghost" size="icon-sm" title={t('Back to the puzzle')} onClick={backToPuzzle}>
               <ChevronLeft className="size-3.5" />
             </Button>
-            <span className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+            <span className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
               Analysing #{puzzle.id}
             </span>
             <Button variant="primary" size="sm" onClick={nextFromAnalysis}>
@@ -612,7 +612,7 @@ function Trainer({
         >
           <ChevronLeft className="size-3.5" />
         </Button>
-        <h1 className="text-fg text-sm font-semibold">{title}
+        <h1 className="text-fg text-base font-semibold">{title}
         </h1>
       </div>
       {/* Board column, matching the shared budget so the board sits where
@@ -636,7 +636,7 @@ function Trainer({
               // used to need a full page reload to recover from.
               <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
                 <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                  <p className="text-muted text-xs">{error}</p>
+                  <p className="text-muted text-sm">{error}</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -679,12 +679,12 @@ function Trainer({
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
-            <h1 className="text-fg text-sm font-semibold">{title}
+            <h1 className="text-fg text-base font-semibold">{title}
           </h1>
           <span className="min-w-0 flex-1" />
           {/* How the session is going — words and counts, never a rating. */}
           {mode === 'fresh' && solvedToday !== null && (
-            <span className="text-subtle shrink-0 text-xs tabular-nums">
+            <span className="text-subtle shrink-0 text-sm tabular-nums">
               {t('Solved today: {n}', { n: solvedToday })}
               {(meta?.user.streak ?? 0) > 1 && ` · ${t('Run: {n}', { n: meta!.user.streak })}`}
             </span>
@@ -709,12 +709,12 @@ function Trainer({
             }
           />
           {mode === 'single' ? (
-            <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">
+            <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
               Replaying puzzle #{puzzleId} — not counted; a clean solve still retires it from the
               review list.
             </p>
           ) : mode === 'failed' ? (
-            <p className="text-muted px-3 py-2.5 text-xs leading-relaxed">
+            <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
               {t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')}
             </p>
           ) : null}
@@ -727,7 +727,7 @@ function Trainer({
             actions={
               <>
                 {puzzle && phase === 'done' && (
-                  <span className="text-subtle font-mono text-[0.6875rem]">#{puzzle.id}</span>
+                  <span className="text-subtle font-mono text-xs">#{puzzle.id}</span>
                 )}
                 <Button
                   variant="ghost"
@@ -762,10 +762,10 @@ function Trainer({
                 )}
               >
                 <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-                <span className="text-subtle shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+                <span className="text-subtle shrink-0 text-xs font-semibold uppercase tracking-[0.08em]">
                   {t('Theme')}
                 </span>
-                <span className="text-fg ml-auto truncate text-xs font-medium">
+                <span className="text-fg ml-auto truncate text-sm font-medium">
                   {theme ? themeLabel(theme) : t('All themes')}
                 </span>
                 <ChevronRight className="text-subtle size-3.5 shrink-0" />
@@ -777,7 +777,7 @@ function Trainer({
               <>
                 <p
                   className={cn(
-                    'text-sm font-semibold',
+                    'text-base font-semibold',
                     // Green for a clean solve, amber for one that took a
                     // second go — it was still found — and red only where
                     // the answer was handed over.
@@ -790,7 +790,7 @@ function Trainer({
                       ? t('Solved after a wrong try.')
                       : t('Solved!')}
                 </p>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
                   {/* The band, not the number: a rating is how the trainer
                       picks puzzles, not a verdict to hand back to whoever
                       just solved one. The dashboard has always shown it
@@ -804,7 +804,7 @@ function Trainer({
                     {puzzle.themes.split(' ').map((t) => (
                       <span
                         key={t}
-                        className="bg-surface-2 text-muted rounded px-1.5 py-0.5 text-[0.6875rem]"
+                        className="bg-surface-2 text-muted rounded px-1.5 py-0.5 text-xs"
                       >
                         {themeLabel(t)}
                       </span>
@@ -816,7 +816,7 @@ function Trainer({
                     href={puzzle.game_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-primary text-xs hover:underline"
+                    className="text-primary text-sm hover:underline"
                   >
                     {t('From this game ↗')}
                   </a>
@@ -825,11 +825,11 @@ function Trainer({
             ) : (
               <div className="flex flex-col gap-0.5">
                 {puzzle && phase !== 'loading' && (
-                  <p className="text-fg text-xl font-bold tracking-tight">
+                  <p className="text-fg text-2xl font-bold tracking-tight">
                     {solverSide === 'white' ? t('White to play') : t('Black to play')}
                   </p>
                 )}
-                <p className={cn('text-xs leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
+                <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
                   {phase === 'wrong'
                     ? t('That is not it — it rolls back, try again.')
                     : phase === 'setup' || phase === 'opponent'
@@ -922,7 +922,7 @@ function Trainer({
         ) : (
           <Panel flush className="shrink-0">
             <PanelHeader title={t('Moves')} />
-            <p className="text-subtle px-3 py-2.5 text-xs">{t('Finding a puzzle…')}</p>
+            <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
           </Panel>
         )}
 
@@ -1047,7 +1047,7 @@ function MoveBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-fg text-sm font-bold shadow-md',
+        'text-nag-fg text-base font-bold shadow-md',
         kind === 'good' ? 'bg-nag-good' : 'bg-nag-blunder',
       )}
     >

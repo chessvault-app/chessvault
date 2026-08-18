@@ -370,14 +370,14 @@ export function Shelf() {
           </div>
         </div>
 
-        {error && <p className="text-bad mb-3 text-xs">{error}</p>}
+        {error && <p className="text-bad mb-3 text-sm">{error}</p>}
 
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
         ) : visibleBooks.length === 0 ? (
           <div className="bg-surface border-line flex flex-col items-center gap-3 rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle size-6" />
-            <p className="text-muted text-sm">
+            <p className="text-muted text-base">
               No puzzle books yet. Create one per paper book, then enter its
               puzzles from the board or import the book's own PDF — solutions
               and progress live here, not in the back of the book.
@@ -499,8 +499,8 @@ function BookCard({
           <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
             {/* pr keeps a long title clear of the corner control */}
             <span className="min-w-0 pr-7">
-              <span className="text-fg block truncate text-sm font-medium">{book.title}</span>
-              <span className="text-subtle block text-xs">
+              <span className="text-fg block truncate text-base font-medium">{book.title}</span>
+              <span className="text-subtle block text-sm">
                 {t('{n} puzzles', { n: book.puzzles })}
               </span>
             </span>
@@ -519,7 +519,7 @@ function BookCard({
                 ) : (
                   <FileUp className="text-warn size-3 shrink-0" />
                 )}
-                <span className={cn('truncate text-xs', scan.live ? 'text-primary' : 'text-warn')}>
+                <span className={cn('truncate text-sm', scan.live ? 'text-primary' : 'text-warn')}>
                   {scan.live
                     ? t('reading — page {page} of {pages}', { page: scan.page, pages: scan.pages })
                     : t('unfinished — {page} of {pages} pages, tap to carry on', {

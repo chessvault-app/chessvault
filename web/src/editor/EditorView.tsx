@@ -352,7 +352,7 @@ export function EditorView({
               back or loading a new one is occasional, editing is constant
               (lanph3re's call, same as the analysis Load panel). */}
           {!validity.legal && (
-            <p className="text-warn flex items-start gap-1.5 px-3 pb-1.5 text-xs">
+            <p className="text-warn flex items-start gap-1.5 px-3 pb-1.5 text-sm">
               <AlertCircle className="mt-px size-3.5 shrink-0" />
               {validity.reason}
             </p>
@@ -362,7 +362,7 @@ export function EditorView({
               <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
             )}
             <code
-              className="text-subtle min-w-0 flex-1 truncate font-mono text-[0.6875rem]"
+              className="text-subtle min-w-0 flex-1 truncate font-mono text-xs"
               title={fen}
             >
               {fen}
@@ -407,7 +407,7 @@ export function EditorView({
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
+          <h1 className="text-fg text-base font-semibold">{t('Editor')}</h1>
         </div>
       )}
 
@@ -566,7 +566,7 @@ export function EditorView({
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="flex h-9 shrink-0 items-center gap-2">
-          <h1 className="text-fg text-sm font-semibold">{t('Editor')}</h1>
+          <h1 className="text-fg text-base font-semibold">{t('Editor')}</h1>
         </div>
         {positionPanels('column')}
       </div>
@@ -637,7 +637,7 @@ export function EditorView({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.06em]">
+      <span className="text-subtle text-xs font-semibold uppercase tracking-[0.06em]">
         {label}
       </span>
       {children}

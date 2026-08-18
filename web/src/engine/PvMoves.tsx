@@ -42,7 +42,7 @@ export function PvMoves({
   if (plies.length === 0) {
     // Nothing to click: the position wouldn't parse, so there are no
     // moves, only the engine's raw output.
-    return <span className={cn('text-muted text-xs', className)}>{text}</span>;
+    return <span className={cn('text-muted text-sm', className)}>{text}</span>;
   }
 
   /**
@@ -74,7 +74,7 @@ export function PvMoves({
 
   return (
     <span
-      className={cn('text-muted text-xs', className)}
+      className={cn('text-muted text-sm', className)}
       onMouseOver={onPeek && peekFrom}
       onMouseLeave={onPeekEnd}
       // Focus works on any device — a keyboard has no pointer to hover

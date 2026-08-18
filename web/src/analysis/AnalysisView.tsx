@@ -105,7 +105,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
-          <h1 className="text-fg text-sm font-semibold">
+          <h1 className="text-fg text-base font-semibold">
             {wantExplorer ? t('Explorer') : t('Board')}
           </h1>
         </div>
@@ -262,7 +262,7 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
       >
         <ChevronLeft className="size-3.5" />
       </Button>
-      <h1 className="text-fg min-w-0 truncate text-sm font-semibold">{title}</h1>
+      <h1 className="text-fg min-w-0 truncate text-base font-semibold">{title}</h1>
     </div>
   );
 }
@@ -537,7 +537,7 @@ export function StatusBar() {
   return (
     <div className="border-line flex shrink-0 items-center gap-2 border-t py-1.5 pl-3 pr-2 max-md:hidden">
       <code
-        className="text-subtle min-w-0 flex-1 truncate font-mono text-[0.6875rem]"
+        className="text-subtle min-w-0 flex-1 truncate font-mono text-xs"
         title={node.fen}
       >
         {node.fen}

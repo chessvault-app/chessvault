@@ -71,7 +71,7 @@ export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: st
     return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
   if (!puzzle) {
-    return <div className="text-muted grid h-full place-items-center text-sm">{t('Puzzle not found.')}</div>;
+    return <div className="text-muted grid h-full place-items-center text-base">{t('Puzzle not found.')}</div>;
   }
   return (
     <PuzzleEntry
@@ -210,7 +210,7 @@ export function PuzzleEntry({
         <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
           <ChevronLeft className="size-3.5" />
         </Button>
-        <h1 className="text-fg min-w-0 flex-1 truncate text-sm font-semibold">
+        <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
           {t(replace ? 'Fix' : 'Add')} <span className="font-mono">#{number}</span>
         </h1>
       </div>
@@ -226,7 +226,7 @@ export function PuzzleEntry({
           ) : draft ? (
             <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
               <img src={draft.imageUrl} alt={t('book diagram')} className="border-line rounded-md border" />
-              <p className="text-subtle text-xs leading-relaxed">
+              <p className="text-subtle text-sm leading-relaxed">
                 {t('The diagram from the book — make the board match it, then record the solution.')}
               </p>
             </aside>
@@ -427,7 +427,7 @@ function SolutionRecorder({
               />
             )}
           </div>
-          <div className="flex h-6 w-full items-center gap-2 px-0.5 text-xs">
+          <div className="flex h-6 w-full items-center gap-2 px-0.5 text-sm">
             <SideDot side={turn} />
             <span className="text-muted">{t('Play the solution — every move, both sides.')}</span>
           </div>
@@ -439,7 +439,7 @@ function SolutionRecorder({
           <Button variant="ghost" size="icon-sm" title={t('Back to the position')} onClick={onBack}>
             <ChevronLeft className="size-3.5" />
           </Button>
-          <span className="text-muted min-w-0 flex-1 truncate text-sm">
+          <span className="text-muted min-w-0 flex-1 truncate text-base">
             {t('Record the solution — every move, both sides.')}
           </span>
         </div>
@@ -459,9 +459,9 @@ function SolutionRecorder({
               </Button>
             }
           />
-          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-sm">
+          <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-base">
             {line.length === 0 ? (
-              <p className="text-subtle text-xs">
+              <p className="text-subtle text-sm">
                 {t("No moves yet. The first move you play is the puzzle's first move to find.")}
               </p>
             ) : (
@@ -470,7 +470,7 @@ function SolutionRecorder({
                 // be marked "any move" — the ~ books use.
                 const isDefender = i % 2 === 1;
                 return (
-                  <span key={i} className="flex items-baseline gap-0.5 font-mono text-[0.8125rem]">
+                  <span key={i} className="flex items-baseline gap-0.5 font-mono text-sm">
                     {i % 2 === 0 ? (
                       <span className="text-subtle">
                         {Math.floor(i / 2) + 1}
@@ -504,14 +504,14 @@ function SolutionRecorder({
             )}
           </div>
           {line.length > 1 && (
-            <p className="text-subtle border-line border-t px-3 py-1.5 text-[0.6875rem]">
+            <p className="text-subtle border-line border-t px-3 py-1.5 text-xs">
               {t('Tip: click an opponent move to mark it “any move” (the book’s ~).')}
             </p>
           )}
         </Panel>
 
         {verdicts && (
-          <div className="bg-surface border-line shrink-0 rounded-xl border p-3 text-xs">
+          <div className="bg-surface border-line shrink-0 rounded-xl border p-3 text-sm">
             {verdicts.map((note, i) => (
               <p key={i} className={note.startsWith('Engine agrees') ? 'text-good' : 'text-warn'}>
                 {note}
@@ -519,7 +519,7 @@ function SolutionRecorder({
             ))}
           </div>
         )}
-        {error && <p className="text-bad text-xs">{error}</p>}
+        {error && <p className="text-bad text-sm">{error}</p>}
 
         <div className="flex shrink-0 flex-wrap gap-2">
           <Button

@@ -113,7 +113,7 @@ export function DashboardPage() {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-        {error && <p className="text-bad mb-3 text-xs">{error}</p>}
+        {error && <p className="text-bad mb-3 text-sm">{error}</p>}
         {/* This page carried a phone-only row of Train/Books/Themes
             buttons, from when the Puzzles tab landed here and it had to
             double as the hub. It is a launcher now (#/puzzles/hub), where
@@ -176,9 +176,9 @@ export function DashboardPage() {
               const losses = inBand.length - wins;
               return (
                 <div key={band.label} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
-                  <span className="text-muted text-xs">{t(band.label)}</span>
+                  <span className="text-muted text-sm">{t(band.label)}</span>
                   <ProgressBar total={inBand.length} solved={wins} failed={losses} showEmpty />
-                  <span className="text-subtle w-16 text-right font-mono text-[0.6875rem] tabular-nums">
+                  <span className="text-subtle w-16 text-right font-mono text-xs tabular-nums">
                     {inBand.length > 0 ? `${wins}/${inBand.length}` : '—'}
                   </span>
                 </div>
@@ -211,7 +211,7 @@ export function DashboardPage() {
                     key={i}
                     className="border-line flex items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
                   >
-                    {/* A row of text-xs, whose line box is 16px. */}
+                    {/* A row of text-sm, whose line box is 16px. */}
                     <div className="flex h-4 min-w-0 flex-1 items-center">
                       <Skeleton className="h-2.5 w-2/5" />
                     </div>
@@ -243,7 +243,7 @@ export function DashboardPage() {
             {books.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
                 <BookMarked className="text-subtle size-6" strokeWidth={1.5} />
-                <p className="text-muted max-w-xs text-xs leading-relaxed">
+                <p className="text-muted max-w-xs text-sm leading-relaxed">
                   No puzzle books yet. Import a scanned tactics book and its diagrams become a
                   solvable, progress-tracked set.
                 </p>
@@ -259,7 +259,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => navigate('puzzles', 'books', b.slug)}
-                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs transition-colors duration-100"
+                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors duration-100"
                   >
                     <span className="text-fg min-w-0 flex-1 truncate font-medium">{b.title}</span>
                     <span className="text-subtle shrink-0 font-mono tabular-nums">
@@ -337,7 +337,7 @@ export function DashboardPage() {
           {history === null ? (
             <SkeletonRows rows={5} />
           ) : puzzles.length === 0 ? (
-            <p className="text-subtle px-3 py-3 text-xs">
+            <p className="text-subtle px-3 py-3 text-sm">
               {t(
                 history.length === 0
                   ? 'No attempts yet — go solve something.'
@@ -352,7 +352,7 @@ export function DashboardPage() {
                     type="button"
                     onClick={() => navigate('puzzles', 'id', h.id)}
                     title={t('Replay puzzle #{id}', { id: h.id })}
-                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-xs transition-colors duration-100"
+                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm transition-colors duration-100"
                   >
                     {h.win ? (
                       <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
@@ -420,10 +420,10 @@ function StatCard({
   return (
     <div title={title} className="bg-surface border-line flex items-center justify-between rounded-xl border px-3 py-2.5">
       <div>
-        <div className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        <div className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
           {label}
         </div>
-        <div className="text-fg font-mono text-xl font-bold tabular-nums">{value}</div>
+        <div className="text-fg font-mono text-2xl font-bold tabular-nums">{value}</div>
       </div>
       {action}
     </div>

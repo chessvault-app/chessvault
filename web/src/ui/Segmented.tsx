@@ -61,8 +61,8 @@ export function Segmented<T extends string>({
       : 'rounded-xl border p-1 pointer-coarse:h-9';
   const seg =
     size === 'sm'
-      ? 'h-6 pointer-coarse:h-full rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-xs'
-      : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-xs';
+      ? 'h-6 pointer-coarse:h-full rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-sm'
+      : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-sm';
 
   return (
     <div
