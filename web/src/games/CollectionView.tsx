@@ -51,7 +51,7 @@ import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { ActionSheet } from '@/ui/ActionSheet';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
-import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
+import { SkeletonFilterRow, SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
 
 import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
@@ -588,7 +588,15 @@ export function CollectionView() {
               with nothing under it, which is what an emptied collection
               looks like. */}
           {!loaded ? (
-            listPending ? <SkeletonGameRows rows={6} /> : null
+            // The filter row above is drawn only once there are games to
+            // filter, so the wait had rows but no strip and everything
+            // dropped 45px when the collection landed.
+            listPending ? (
+              <>
+                <SkeletonFilterRow />
+                <SkeletonGameRows rows={6} />
+              </>
+            ) : null
           ) : /* Nothing to show and nothing narrowing the list. Two ways to get
               here: the collection really is empty, or its last rows were just
               removed and the undo is still running — `hidden` is inside

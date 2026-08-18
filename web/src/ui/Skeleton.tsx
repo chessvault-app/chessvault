@@ -268,6 +268,31 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
 }
 
 /**
+ * The filter strip a list of games wears above its rows: three narrow
+ * selects and a button, on the same 28px trigger height (36 under a
+ * coarse pointer) inside the same px-3 py-2 as GameFilters' FilterRow.
+ *
+ * It exists because that row is drawn only once there are games to
+ * filter, so a list that is still loading has nothing there and every row
+ * below moves down by its 45px the moment the games arrive.
+ */
+export function SkeletonFilterRow({ className }: { className?: string }) {
+  return (
+    <Loading
+      className={cn(
+        'border-line flex flex-wrap items-center gap-1.5 border-b px-3 py-2',
+        className,
+      )}
+    >
+      {[0, 1, 2].map((i) => (
+        <Skeleton key={i} className="h-7 min-w-0 flex-1 rounded-md pointer-coarse:h-9" />
+      ))}
+      <Skeleton className="h-7 w-14 shrink-0 rounded-md pointer-coarse:h-9" />
+    </Loading>
+  );
+}
+
+/**
  * A game row: two players over a line of date and opening, a result, the
  * peek eye and the collect button.
  *
