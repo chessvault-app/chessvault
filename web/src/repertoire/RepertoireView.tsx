@@ -1181,7 +1181,19 @@ export function RepertoireView() {
                   />
                 </div>
               )}
-              <div className="flex flex-wrap gap-2">
+              {/* The row that starts it, laid out the way every dialog in
+                  the app lays its actions out: justify-end, gap-2, and the
+                  primary one LAST so it sits at the end of the line the eye
+                  finishes on (ui/PromptSheet). This is a panel rather than
+                  a dialog, but it is the same thing — a block of choices
+                  with one action at the bottom — and it was the only one
+                  starting from the left. */}
+              <div className="flex flex-wrap justify-end gap-2">
+                {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
+                  <Button variant="secondary" size="sm" disabled={!drillReady} onClick={startFromMiss}>
+                    {t('Drill a missed position')}
+                  </Button>
+                )}
                 <Button
                   variant="primary"
                   size="sm"
@@ -1191,11 +1203,6 @@ export function RepertoireView() {
                   <Play className="size-3.5" />
                   {t('Start')}
                 </Button>
-                {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
-                  <Button variant="secondary" size="sm" disabled={!drillReady} onClick={startFromMiss}>
-                    {t('Drill a missed position')}
-                  </Button>
-                )}
               </div>
             </div>
           </Panel>
