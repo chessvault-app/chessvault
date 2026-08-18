@@ -24,6 +24,7 @@ import { SearchInput } from '@/ui/Input';
 import { Field } from '@/ui/Field';
 
 import { SkeletonFilterRow, SkeletonGameRows } from '@/ui/Skeleton';
+import { forgetMyGames } from '@/openingmap/useGaps';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 import { t } from '@/lib/i18n';
@@ -625,6 +626,9 @@ export function ArchiveBrowser({
     });
     setPicked(new Set());
     setSelecting(false);
+    // The own-games index has just grown; what the map and the Grow
+    // sheet learned about it a moment ago is now out of date.
+    forgetMyGames();
     onCollected();
     if (failure) setError(failure);
   };
@@ -636,6 +640,9 @@ export function ArchiveBrowser({
         json: { file: game.file, index: game.index },
       });
       setAdded((prev) => new Set(prev).add(gameKey(game)));
+      // The own-games index has just grown; what the map and the Grow
+      // sheet learned about it a moment ago is now out of date.
+      forgetMyGames();
       onCollected();
     } catch (failure) {
       setError(t(apiErrorMessage(failure)));

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fenKey } from '@/lib/fen';
-import { fetchField, fetchFieldBatch, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
+import { fetchField, fetchFieldBatch, MY_GAMES_SOURCE, ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
 import type { NodeCoverage } from './coverage';
 import { computeGaps, type NodeGaps } from './gaps';
 import { chaseFrontier } from './mainline';
@@ -38,6 +38,24 @@ const RETRY_MS = 30_000;
  * without this every position still in flight would be asked again.
  */
 const inflight = new Map<string, Promise<FieldMove[]>>();
+
+/**
+ * Forget what the own-games index said.
+ *
+ * Called when games are collected: the answer to "what do my games play
+ * here" has just changed, and waiting out RETRY_MS to discover that is a
+ * page telling you it has never heard of the games you just added.
+ */
+export function forgetMyGames(): void {
+  for (const key of [...cache.keys()]) {
+    if (key.startsWith(`${MY_GAMES_SOURCE}
+`)) cache.delete(key);
+  }
+  for (const key of [...failedAt.keys()]) {
+    if (key.startsWith(`${MY_GAMES_SOURCE}
+`)) failedAt.delete(key);
+  }
+}
 
 /** The cache key: source, band, which side's games, and the position. */
 const keyFor = (
@@ -88,8 +106,20 @@ export async function fieldMovesFor(
   const answer = (async (): Promise<FieldMove[]> => {
     try {
       const moves = await fetchField(source, ratings, fen, side, filters);
-      cache.set(key, moves);
-      failedAt.delete(key);
+      // An EMPTY answer is not kept. "Nothing here" is a statement about
+      // the games that exist right now, and the ones that exist can be
+      // added to while the page is open: collect a month, then ask the map
+      // to grow, and the session's cache answered with the emptiness it
+      // had learned before you had any games at all — for the rest of the
+      // session, since nothing invalidated it. Empty is provisional and
+      // re-asked after RETRY_MS, which is the same window a failure gets
+      // and for the same reason.
+      if (moves.length > 0) {
+        cache.set(key, moves);
+        failedAt.delete(key);
+      } else {
+        failedAt.set(key, Date.now());
+      }
       return moves;
     } catch {
       failedAt.set(key, Date.now());

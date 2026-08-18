@@ -1112,7 +1112,26 @@ function Hub() {
             Now the page goes from empty to whole, once: below the
             threshold the answers are in before anything is drawn, and
             above it the buttons rise with the skeleton and stay put. */}
-        {(settled || skeleton) && (
+        {/* Placeholders while the rest of the page is placeholders. Live
+            buttons over a skeleton page are an offer to press something on
+            a page that is still deciding what it says — Train in
+            particular, whose word underneath ("adaptive", a difficulty)
+            arrives with the answers. The row is the same four 64px tiles
+            either way, so nothing moves when they become real. */}
+        {skeleton && (
+          <div className="grid grid-cols-4 gap-2">
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="border-line bg-surface flex h-16 flex-col items-center justify-center gap-1 rounded-xl border"
+              >
+                <Skeleton className="size-5 rounded" />
+                <Skeleton className="h-2.5 w-12" />
+              </div>
+            ))}
+          </div>
+        )}
+        {settled && (
           <div className="grid grid-cols-4 gap-2">
             {(
               [
