@@ -5,6 +5,26 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.2
+
+- **The desktop app's own vault works again — it never had a database
+  driver.** Choosing a local folder failed with "The local server did not
+  start", and the server it could not start was dying on "Cannot find
+  package 'better-sqlite3'". The dependency was built and copied
+  correctly and then dropped on the way into the app: app-builder-lib's
+  copy filter opens with `if (relative === "node_modules") return false`,
+  so a directory named exactly that, at the root of an extraResources
+  source, is silently discarded whatever filter you pass it. Every
+  platform, not just macOS. It is copied in an afterPack hook now, which
+  throws if it does not land — so the next time this breaks, the build
+  breaks instead of the app.
+
+- **And the failure says where to look.** The screen said "check the
+  terminal output" while the packaged app spawned its server with
+  `stdio: 'ignore'`, discarding the only account of what went wrong. Both
+  streams are kept now, in `server.log` beside the vault, and the screen
+  names the file.
+
 ## 0.4.1
 
 - **The macOS build is ad-hoc signed.** It carried no signature at all,

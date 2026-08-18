@@ -65,6 +65,17 @@ and delete the ad-hoc hook.
 3. `electron-builder`: ships `desktop/` in the asar; the server bundle
    and `dist/` ride as extraResources, so the server's `./dist` static
    root and `REPO_ROOT` both resolve to `resources/`.
+4. `desktop/after-pack.mjs`: copies `release/server/node_modules` into the
+   packaged `resources/server/`, then ad-hoc signs the app on macOS.
+
+   The copy is there because extraResources will not carry it.
+   app-builder-lib's copy filter opens with `if (relative ===
+   "node_modules") return false`, so a directory named exactly that, at
+   the root of an extraResources source, is dropped whatever `filter`
+   says — silently. Until 0.4.2 the app shipped without its database
+   driver and every local vault died on launch with "Cannot find package
+   'better-sqlite3'". The hook throws if the copy does not land, so the
+   next time it breaks it breaks the build rather than the app.
 
 The packaged local mode runs the bundled server on Electron's own Node
 (`ELECTRON_RUN_AS_NODE`), with `CHESS_VAULT_DIR`/`CHESS_VAULT_DATA`
