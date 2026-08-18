@@ -26,6 +26,16 @@ const SCRIPTS: Record<EngineFlavor, string> = {
 const scriptUrl = (flavor: EngineFlavor): string =>
   new URL(SCRIPTS[flavor], document.baseURI).href;
 
+/**
+ * How long a `stop` may go unanswered before the worker is presumed dead.
+ * Stockfish checks for `stop` between nodes and normally answers in single
+ * digit milliseconds; the search has its own 10s backstop, but that bounds
+ * the SEARCH, not the acknowledgement. So this is a fault detector rather
+ * than a budget — and what it does first is rebuild in silence, so a false
+ * positive on a throttled device costs a restart, not an error message.
+ */
+const STOP_TIMEOUT_MS = 5_000;
+
 export interface EngineOptions {
   threads: number;
   hashMb: number;
@@ -73,6 +83,19 @@ export class StockfishEngine {
   /** Set while waiting for `bestmove` after a `stop`, so we don't overlap searches. */
   private pendingStop = false;
   private queued: { fen: string; depth: number; moveMs: number } | null = null;
+  /** Depth and cap of the search in flight, so a rebuild can resume it. */
+  private currentDepth = 22;
+  private currentMoveMs = 0;
+  private stopTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * One silent rebuild per instance. Deliberately NOT reset by terminate(),
+   * which is what the rebuild itself calls — clearing it there would make
+   * "once" mean "every time" and hide a worker that wedges on every search.
+   * Switching the engine off and on builds a new instance, so the allowance
+   * comes back with it, which is the one case where trying again is a
+   * person deciding to rather than us looping.
+   */
+  private stallRecovered = false;
 
   /**
    * While set, every engine line is diverted here instead of the UCI
@@ -90,9 +113,38 @@ export class StockfishEngine {
     private readonly onError: (message: string) => void,
   ) {}
 
-  /** Boot the worker and complete the UCI handshake. */
+  /**
+   * Boot the worker and complete the UCI handshake.
+   *
+   * Everyone awaits the SAME boot. The old guard was `if (this.worker)
+   * return`, and start() assigns the worker synchronously while the
+   * handshake finishes later — so a second analyse() during boot saw a
+   * worker, concluded the engine was up, and walked straight past the
+   * "am I already searching" guard. Both searches then ran: `position`
+   * and `go` were sent before `uciok`, the options were applied AFTER
+   * that `go`, and the engine finished on the position the reader had
+   * already left, whose results the store correctly discards. What was
+   * left on screen was a finished eval with no lines in it — the engine
+   * saying nothing, on the starting position, which is the only position
+   * whose analysis has to wait for a boot.
+   */
   async start(): Promise<void> {
-    if (this.worker) return;
+    if (this.ready) return;
+    this.booting ??= this.boot().finally(() => {
+      this.booting = null;
+    });
+    await this.booting;
+  }
+
+  private booting: Promise<void> | null = null;
+
+  private async boot(): Promise<void> {
+    if (this.worker) {
+      // Worker up, handshake still outstanding: wait for it, do not start a second one.
+      await this.waitForReady();
+      if (this.ready) this.applyOptions();
+      return;
+    }
 
     try {
       this.worker = new Worker(scriptUrl(this.flavor));
@@ -114,7 +166,9 @@ export class StockfishEngine {
 
     this.send('uci');
     await this.waitForReady();
-    this.applyOptions();
+    // Not if the handshake timed out: setoption to a dead engine is noise,
+    // and the error has already gone out.
+    if (this.ready) this.applyOptions();
   }
 
   private handleLine(line: string): void {
@@ -146,6 +200,7 @@ export class StockfishEngine {
     }
 
     if (line.startsWith('bestmove')) {
+      this.clearStopWatchdog();
       this.searching = false;
       const best = parseBestMove(line);
       this.emit(true, best);
@@ -249,14 +304,15 @@ export class StockfishEngine {
    * classic way to desynchronise a UCI engine, so it is avoided.
    */
   async analyse(fen: string, depth = 22, moveMs = 0): Promise<void> {
-    if (!this.worker) await this.start();
-    if (!this.worker) return;
+    if (!this.ready) await this.start();
+    if (!this.worker || !this.ready) return;
 
     if (this.searching || this.pendingStop) {
       this.queued = { fen, depth, moveMs };
       if (!this.pendingStop) {
         this.pendingStop = true;
         this.send('stop');
+        this.armStopWatchdog();
       }
       return;
     }
@@ -269,6 +325,8 @@ export class StockfishEngine {
     }
     this.lines.clear();
     this.currentFen = fen;
+    this.currentDepth = depth;
+    this.currentMoveMs = moveMs;
     this.searching = true;
     this.send(`position fen ${fen}`);
     // Both limits at once, which UCI allows and Stockfish honours: it stops
@@ -321,7 +379,50 @@ export class StockfishEngine {
     if (this.searching && !this.pendingStop) {
       this.pendingStop = true;
       this.send('stop');
+      this.armStopWatchdog();
     }
+  }
+
+  private clearStopWatchdog(): void {
+    if (this.stopTimer !== null) {
+      clearTimeout(this.stopTimer);
+      this.stopTimer = null;
+    }
+  }
+
+  private armStopWatchdog(): void {
+    this.clearStopWatchdog();
+    this.stopTimer = setTimeout(() => {
+      this.stopTimer = null;
+      this.handleStall();
+    }, STOP_TIMEOUT_MS);
+  }
+
+  /**
+   * A `stop` went unanswered, which nothing else can notice: the worker is
+   * alive, so it fires no error event, and `pendingStop` is cleared only by
+   * the `bestmove` that is not coming. Every later request would be parked
+   * in `queued` and never drained — an engine pane that stays empty for as
+   * long as the page is open, saying nothing.
+   */
+  private handleStall(): void {
+    // Where to pick up: where the reader has got to, or failing that the
+    // position that was being searched. Captured before terminate() clears both.
+    const next =
+      this.queued ??
+      (this.currentFen
+        ? { fen: this.currentFen, depth: this.currentDepth, moveMs: this.currentMoveMs }
+        : null);
+
+    if (this.stallRecovered) {
+      // Twice is not a hiccup. The store terminates and switches off from here.
+      this.onError('The engine stopped responding. Switch it back on to try again.');
+      return;
+    }
+
+    this.stallRecovered = true;
+    this.terminate();
+    if (next) void this.analyse(next.fen, next.depth, next.moveMs);
   }
 
   /** Shut the engine down completely and release its memory. */
@@ -331,6 +432,7 @@ export class StockfishEngine {
       this.emitTimer = null;
     }
     this.clearHandshakeTimer();
+    this.clearStopWatchdog();
     // A start() awaiting the handshake must not hang on a dead worker.
     for (const waiter of this.readyWaiters.splice(0)) waiter();
     this.queued = null;
