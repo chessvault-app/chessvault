@@ -35,9 +35,27 @@ const MONTH_RE = /^\d{4}-\d{2}$/;
 // chess.com asks bots to identify themselves; a UA with contact beats a 403.
 const FETCH_HEADERS = { 'User-Agent': 'chess-vault (personal offline study app)' };
 
+/**
+ * An upstream that answered, and said no.
+ *
+ * The status matters to the caller: a 404 from a player endpoint means
+ * there is no such player, which is a fact worth passing on, while
+ * anything else — a timeout, a refusal, a rewrite — means the network and
+ * the cached months still browse. A plain Error made those the same
+ * thing, and "no such player" came out as "offline".
+ */
+class UpstreamError extends Error {
+  constructor(
+    readonly status: number,
+    host: string,
+  ) {
+    super(`${host} replied ${status}`);
+  }
+}
+
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(20_000) });
-  if (!res.ok) throw new Error(`chess.com replied ${res.status}`);
+  if (!res.ok) throw new UpstreamError(res.status, new URL(url).host);
   return (await res.json()) as T;
 }
 
@@ -409,13 +427,23 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
 
     let remote: string[] = [];
     let offline = false;
+    let noSuchPlayer = false;
     try {
       const body = await fetchJson<{ archives: string[] }>(
         `https://api.chess.com/pub/player/${encodeURIComponent(user.toLowerCase())}/games/archives`,
       );
       remote = body.archives.map((url) => url.split('/').slice(-2).join('-'));
-    } catch {
-      offline = true; // cached months still browse fine
+    } catch (error) {
+      // A 404 is an answer, not a failure to get one. Folding it into
+      // "offline" is what made a misspelt handle look like a working
+      // search of an empty archive: no error, no months, and a panel
+      // showing the same "nothing browsed yet" prompt it shows before you
+      // have typed anything.
+      if (error instanceof UpstreamError && error.status === 404) noSuchPlayer = true;
+      else offline = true; // cached months still browse fine
+    }
+    if (noSuchPlayer && cachedMonths.size === 0) {
+      return c.json({ error: `chess.com has no player called "${user}"` }, 404);
     }
 
     // How many games this player has EVER played — the archive list says
@@ -639,7 +667,12 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
         newest: await newestMonth('lichess', user, months[0]?.month),
         months,
       });
-    } catch {
+    } catch (error) {
+      // Same distinction as the chess.com side: lichess answering 404 is
+      // lichess telling you the handle does not exist.
+      if (error instanceof UpstreamError && error.status === 404 && cachedMonths.size === 0) {
+        return c.json({ error: `lichess has no player called "${user}"` }, 404);
+      }
       if (cachedMonths.size === 0) return c.json({ error: 'lichess unreachable and nothing cached yet' }, 502);
       const months = [...cachedMonths.entries()]
         .sort((a, b) => b[0].localeCompare(a[0]))

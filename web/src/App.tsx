@@ -53,6 +53,7 @@ const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => 
 // the board and the parsers stay behind the lazy routes here.
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })));
 const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
 const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
@@ -214,7 +215,14 @@ function Shell() {
         ) : section === 'databases' ? (
           <DatabasesPage />
         ) : section === 'settings' ? (
-          <SettingsPage />
+          // A sub-route rather than a section of its own: the licences are
+          // read from Settings and belong under it, and the sidebar has no
+          // business growing an entry for a footnote.
+          params[0] === 'licenses' ? (
+            <LicensesPage />
+          ) : (
+            <SettingsPage />
+          )
         ) : section === 'more' ? (
           <MorePage />
         ) : (

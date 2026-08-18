@@ -30,7 +30,20 @@
  * would never be emitted.
  */
 export const BOARD_WIDE_SHELL =
-  'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[76rem]';
+  // 76rem is the reading width, and it was also the ceiling: the row
+  // stopped there, so the board stopped at the 736px left over after the
+  // side column however much glass was going spare — a 27" monitor drew a
+  // 13" laptop's board.
+  //
+  // One expression rather than a 2xl: override, because the override lost.
+  // `wide` is a custom variant and its rules are emitted after the core
+  // breakpoints, so at 1920 both matched and the LATER one won — the cap
+  // stayed 76rem and the change did nothing. min/max inside the value
+  // cannot be out-ordered: below about 1350px it is the 76rem it always
+  // was, above that it follows the window to a 96rem ceiling. The side
+  // column keeps its fixed share (BOARD_WIDE_SIDE), so the extra is the
+  // board's.
+  'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:max-w-[min(96rem,max(76rem,90vw))]';
 
 /** The side column next to the board: fixed share of the row at `wide`. */
 export const BOARD_WIDE_SIDE = 'wide:w-[min(27rem,38%)] wide:flex-none';

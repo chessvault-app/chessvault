@@ -14,7 +14,7 @@ import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { up } from '@/lib/router';
+import { navigate, up } from '@/lib/router';
 import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
@@ -394,14 +394,16 @@ function VersionCard() {
           {t('Source code')}
         </a>
         {' · '}
-        <a
+        {/* A route, not a target="_blank". In a browser that was a tab and
+            in the desktop shell a whole second app window, neither of
+            which has a way back to the settings you were reading. */}
+        <button
+          type="button"
           className="text-primary underline underline-offset-2"
-          href={`${import.meta.env.BASE_URL}licenses/index.html`}
-          target="_blank"
-          rel="noreferrer"
+          onClick={() => navigate('settings', 'licenses')}
         >
           {t('Licences')}
-        </a>
+        </button>
       </p>
     </Card>
   );

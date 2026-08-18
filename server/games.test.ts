@@ -259,6 +259,29 @@ describe('archive cache', () => {
     expect(body.bytes).toBe(MONTH_PGN.length * 2);
   });
 
+  it('says a player does not exist rather than calling it offline', async () => {
+    // chess.com answering 404 is chess.com telling you the handle is wrong.
+    // Folded into "offline" it came back as an empty archive with no error
+    // at all, and the panel showed the same prompt it shows before you
+    // have typed anything.
+    globalThis.fetch = (() =>
+      Promise.resolve(new Response('not found', { status: 404 }))) as typeof fetch;
+
+    const res = await app.request('/api/games/archive/months?user=nobodyhere');
+    expect(res.status).toBe(404);
+    expect((await res.json()).error).toMatch(/no player called/i);
+  });
+
+  it('still calls a network failure offline, and keeps the cached months', async () => {
+    // The other half of the same distinction: anything that is not the
+    // upstream saying "no such player" leaves the cache browsable.
+    globalThis.fetch = (() => Promise.reject(new Error('ENOTFOUND'))) as unknown as typeof fetch;
+
+    const body = await (await app.request('/api/games/archive/months?user=lanph3re')).json();
+    expect(body.offline).toBe(true);
+    expect(body.months.length).toBeGreaterThan(0);
+  });
+
   it('sends the newest month with the list that names it', async () => {
     // Two round trips before a single game appeared: the list says which
     // months exist, and only then can a month be asked for. The second

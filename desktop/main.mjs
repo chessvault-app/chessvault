@@ -197,11 +197,17 @@ function createWindow() {
   // but only http(s), so a hostile page can't hand the OS an arbitrary URI
   // scheme (file:, smb:, ms-msdt:, …) to launch.
   win.webContents.setWindowOpenHandler(({ url }) => {
-    // Pages served by our OWN vault — the licences page is the one that
-    // matters — open in a window of this app rather than being handed to
-    // the browser. It is our content; sending it out of the app to read it
-    // is the wrong answer. No preload and no node integration, so the new
-    // window is an ordinary page with none of the shell bridge.
+    // Pages served by our OWN vault open in a window of this app rather
+    // than being handed to the browser: it is our content, and sending it
+    // out of the app to read it is the wrong answer. No preload and no
+    // node integration, so the new window is an ordinary page with none of
+    // the shell bridge.
+    //
+    // The licences page used to be the one that took this path, and a
+    // second app window turned out to be the wrong answer too — nothing in
+    // it said what it was or how to get back. It is a route now
+    // (#/settings/licenses), read in place. This stays for anything else
+    // our own origin might open.
     if (isOwnOrigin(url)) {
       return {
         action: 'allow',

@@ -251,7 +251,7 @@ const applyScheme = ({ hue, tint, accent, accentTint = 1 }: Scheme): void => {
 export const usePrefs = create<PrefsState>()(
   persist(
     (set, get) => ({
-      boardTheme: 'default',
+      boardTheme: 'blue',
       pieces: 'cburnett',
       sound: true,
       soundVolume: 0.7,
