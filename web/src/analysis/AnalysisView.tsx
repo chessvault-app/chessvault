@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Compass, Copy, Cpu, Eraser, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
@@ -162,7 +162,6 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
           <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
-          <StatusBar />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
@@ -363,7 +362,10 @@ export function MoveActions({
           }}
           title={t('Clear all moves')}
         >
-          <Eraser className="size-3.5" />
+          {/* The same arrow the Board has always used for its own clear.
+              Games and Studies drew an eraser for what a reader takes to
+              be one action, so it is one icon now (lanph3re's call). */}
+          <RotateCcw className="size-3.5" />
         </Button>
       )}
       {allowReset && (
@@ -460,7 +462,7 @@ export function MovesOverflow({
       ? [
           {
             label: 'Clear all moves',
-            icon: Eraser,
+            icon: RotateCcw,
             danger: true,
             onSelect: () => {
               capture(t('all moves'));
@@ -493,7 +495,8 @@ export function MovesOverflow({
         ref={trigger}
         variant="ghost"
         size="icon-sm"
-        className="md:hidden"
+        // Not a phone-only control any more: FEN and PGN live in here
+        // since the row that used to hold them went away.
         title={t('More')}
         active={open}
         onClick={() => setOpen(true)}
