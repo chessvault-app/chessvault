@@ -84,25 +84,72 @@ const NAME_WIDTHS = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
  * Notes actually draw. They are not a divided list, and a skeleton shaped
  * like one made the page jump when the real cards arrived.
  */
-export function SkeletonCards({ cards = 5, className }: { cards?: number; className?: string }) {
+export function SkeletonCards({
+  cards = 5,
+  layout = 'list',
+  gridClassName = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3',
+  className,
+}: {
+  cards?: number;
+  /**
+   * The shelf's own arrangement, which it knows before the documents
+   * arrive — it is a stored preference, not something the answer decides.
+   *
+   * It has to be here because the two are not the same card. A grid card
+   * carries the document's first board at 64px and two lines of its
+   * words; a list row carries neither. Drawn as a list either way, the
+   * placeholder stood 52px against the grid card's 109 and in one column
+   * against two or three, so a grid shelf rearranged completely as it
+   * landed.
+   */
+  layout?: 'grid' | 'list';
+  /** The grid's columns, which the studies and notes shelves differ on. */
+  gridClassName?: string;
+  className?: string;
+}) {
+  const grid = layout === 'grid';
   return (
-    <Loading className={cn('flex flex-col gap-4', className)}>
+    <Loading className={className}>
       {/* No heading bar. Documents ARE grouped under a collection name,
           but only a named one draws a header — the root group, which is
           where a shelf's documents sit unless somebody has filed them,
           renders its cards with nothing above them. So the bar stood for
           something that usually is not there, and the cards jumped up its
           height as the shelf landed. */}
-      <div className="flex flex-col gap-2">
+      <div className={grid ? gridClassName : 'flex flex-col gap-1.5'}>
         {Array.from({ length: cards }, (_, i) => (
           <div
             key={i}
-            className="bg-surface border-line flex items-center gap-3 rounded-xl border px-4 py-3 shadow-[var(--shadow-panel)]"
+            className={cn(
+              'bg-surface border-line flex gap-3 rounded-xl border shadow-[var(--shadow-panel)]',
+              grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
+            )}
           >
-            <Skeleton className="size-4 shrink-0 rounded" />
-            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
-              <Skeleton className="h-2 w-1/5" />
+            {/* The first board, where the document has one. Its 64px is
+                shorter than the text beside it, so a document without one
+                makes no difference to the height. */}
+            <Skeleton
+              className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded')}
+            />
+            <div className="min-w-0 flex-1">
+              {/* Title on a 20px line, then the quiet stat line on 16. */}
+              <div className="flex h-5 items-center">
+                <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+              </div>
+              <div className="flex h-4 items-center">
+                <Skeleton className="h-2 w-1/5" />
+              </div>
+              {grid && (
+                // The excerpt: two clamped lines of text-xs on a 1.35rem
+                // line, which is most of what makes a grid card tall.
+                <div className="mt-1">
+                  {[0, 1].map((line) => (
+                    <div key={line} className="flex h-[1.35rem] items-center">
+                      <Skeleton className={cn('h-2', line ? 'w-3/5' : 'w-full')} />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -158,6 +205,56 @@ export function SkeletonTiles({ tiles = 48, className }: { tiles?: number; class
   );
 }
 
+/**
+ * Themes: titled groups, each a responsive grid of small labelled cards.
+ *
+ * Not SkeletonRows, which is what this page used to draw — a stack of
+ * full-width bars for a page whose content is a 2-to-4 column grid of
+ * 54px cards. The bars were both the wrong shape and the wrong height,
+ * so the page rearranged completely as the themes landed.
+ */
+export function SkeletonThemeGroups({
+  groups = 3,
+  cards = 6,
+  className,
+}: {
+  groups?: number;
+  cards?: number;
+  className?: string;
+}) {
+  return (
+    <Loading className={className}>
+      {Array.from({ length: groups }, (_, g) => (
+        <section key={g} className="mb-4">
+          {/* The group heading, on its own uppercase 16px line. */}
+          <div className="mb-2 flex h-4 items-center">
+            <Skeleton className="h-2.5 w-28" />
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: cards }, (_, i) => (
+              <div
+                key={i}
+                className="bg-surface border-line flex items-center gap-2.5 rounded-xl border px-3 py-2.5"
+              >
+                <Skeleton className="size-4 shrink-0 rounded" />
+                <div className="min-w-0 flex-1">
+                  {/* A name at text-xs over a count, both 16px lines. */}
+                  <div className="flex h-4 items-center">
+                    <Skeleton className="h-2.5 w-2/3" />
+                  </div>
+                  <div className="flex h-4 items-center">
+                    <Skeleton className="h-2 w-8" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </Loading>
+  );
+}
+
 /** A written document: a heading, then paragraphs of ragged lines. */
 export function SkeletonDocument({ className }: { className?: string }) {
   const paragraphs = [
@@ -197,8 +294,22 @@ export function SkeletonBoard({ className }: { className?: string }) {
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
       <Skeleton className="aspect-square w-full max-w-[min(70vh,40rem)] shrink-0 rounded-xl" />
       <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <Skeleton className="h-4 w-1/3" />
-        <Skeleton className="h-2.5 w-2/3" />
+        {/* The side column's own title and its line of detail, which a
+            stacked layout does not draw here — it puts the title at the
+            top of the page instead, where this skeleton's header already
+            stands in for it. Drawn on a phone as well, they were two bars
+            standing for nothing. */}
+        <div className="stacked:hidden">
+          <Skeleton className="h-4 w-1/3" />
+          <Skeleton className="mt-3 h-2.5 w-2/3" />
+        </div>
+        {/* What a phone has there instead: the pane switcher, one panel at
+            a time behind a segmented track of icon tabs (ui/PaneTabs). */}
+        <div className="bg-surface-2 border-line flex shrink-0 gap-0.5 rounded-lg border p-px lg:hidden">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-6 flex-1 rounded-md" />
+          ))}
+        </div>
         <div className="border-line mt-2 flex flex-col gap-2 rounded-lg border p-3">
           {Array.from({ length: 6 }, (_, i) => (
             <Skeleton key={i} className={cn('h-2.5', i % 2 ? 'w-3/5' : 'w-4/5')} />

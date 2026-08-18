@@ -210,7 +210,13 @@ function NoteList() {
       {error && <p className="text-bad text-xs">{error}</p>}
 
       {!loaded ? (
-        pending ? <SkeletonCards cards={5} /> : null
+        pending ? (
+          <SkeletonCards
+            cards={5}
+            layout={view.layout}
+            gridClassName="grid grid-cols-1 gap-3 lg:grid-cols-2"
+          />
+        ) : null
       ) : /* Nothing in the vault at all — no note at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
              only empty collections is NOT this: it has something to show,

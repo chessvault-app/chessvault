@@ -143,7 +143,7 @@ function StudyList() {
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
         // that fills in — but only once the wait is long enough to notice.
-        pending ? <SkeletonCards cards={5} /> : null
+        pending ? <SkeletonCards cards={5} layout={view.layout} /> : null
       ) : /* Nothing in the vault at all — no study at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
              only empty collections is NOT this: it has something to show,

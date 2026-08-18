@@ -7,7 +7,7 @@ import { PageShell } from '@/ui/PageShell';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
 import { SearchInput } from '@/ui/Input';
-import { SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
+import { SkeletonThemeGroups, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 
 /**
@@ -190,7 +190,7 @@ export function ThemesPage() {
         </ChipRow>
 
         {themes === null ? (
-          pending ? <SkeletonRows rows={6} className="p-0" /> : null
+          pending ? <SkeletonThemeGroups /> : null
         ) : (
           <>
             {GROUPS.map((group) => {
