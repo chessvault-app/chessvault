@@ -8,7 +8,7 @@ import {
   Puzzle,
   X,
 } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/cn';
@@ -249,10 +249,18 @@ function HubSkeletonPanels({ history, books }: { history: boolean; books: boolea
 }
 
 /** The card cluster's own placeholders; see HubSkeletonPanels. */
-function HubSkeletonCards({ fill }: { fill: boolean }) {
-  const card = (i: number): ReactNode => (
+/**
+ * One card's slot, with nothing in it yet.
+ *
+ * Used both for the whole cluster before the page is drawn and for a
+ * single block whose answer has not landed: the cards share the column's
+ * spare height, so a card that appears later takes it off the ones
+ * already there — and off the history panel under them. A slot held open
+ * at the size the card will be is what stops that.
+ */
+function HubSkeletonCard({ fill }: { fill: boolean }) {
+  return (
     <div
-      key={i}
       className={cn(
         'bg-surface border-line flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
         fill && 'min-h-0 flex-1',
@@ -267,7 +275,17 @@ function HubSkeletonCards({ fill }: { fill: boolean }) {
       </div>
     </div>
   );
-  return <>{[0, 1, 2].map(card)}</>;
+}
+
+/** The three slots the cluster holds before any of them has answered. */
+function HubSkeletonCards({ fill }: { fill: boolean }) {
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <HubSkeletonCard key={i} fill={fill} />
+      ))}
+    </>
+  );
 }
 
 /**
@@ -532,6 +550,18 @@ function Hub() {
   const [bookNext, setBookNext] = useState<{ book: BookSummary; puzzle: BookNext } | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [settled, setSettled] = useState(false);
+  /**
+   * Whether each card's own answer is in.
+   *
+   * `settled` says the page may be drawn; these say whether a given card
+   * is missing because there is nothing to show or merely because nobody
+   * has said yet. Without the difference a card that answered late was
+   * drawn as absent and then appeared — which is the resize — and the
+   * review slot claimed "no puzzle to review" before the draw had run.
+   */
+  const [nextIn, setNextIn] = useState(false);
+  const [reviewIn, setReviewIn] = useState(false);
+  const [bookIn, setBookIn] = useState(false);
 
   useEffect(() => {
     /**
@@ -553,46 +583,17 @@ function Hub() {
      */
     let live = true;
     let left = ANSWERS;
-    /**
-     * Whether the deadline drew the page before the answers were in, and
-     * what the answers that missed it are waiting in.
-     *
-     * The gate below settles on six answers, but the deadline settles on
-     * time — and everything that arrived afterwards used to be stored the
-     * moment it landed, which put a card on a settled page on its own.
-     * Each one re-shares the column's height with the others, so the
-     * boards and the history panel shrank once per late answer: the exact
-     * jump this gate exists to stop, arriving through the escape hatch.
-     *
-     * So after the deadline the answers wait for each other and go up in
-     * one move. They are never dropped — a slow link would lose the board
-     * this page is for — and the wait ends when the last one lands, which
-     * every path reaches: each has a finally, and api() always settles.
-     */
-    let capped = false;
-    const late: (() => void)[] = [];
-    const store = (apply: () => void): void => {
-      if (!live) return;
-      if (capped) late.push(apply);
-      else apply();
-    };
     // Called in a `finally`, always after the state it gates: the page is
     // drawn on the render that settles it, so an answer that reported
     // itself before storing its result would be drawn missing.
     const done = (): void => {
       if (!live) return;
       left -= 1;
-      if (left > 0) return;
-      // One render for all of them: React batches what a single tick
-      // stores, so the stragglers arrive as one change of layout.
-      for (const apply of late) apply();
-      late.length = 0;
-      setSettled(true);
+      if (left <= 0) setSettled(true);
     };
     void (async () => {
       try {
-        const answer = await api<Meta>('/api/puzzles/meta');
-        store(() => setMeta(answer));
+        setMeta(await api<Meta>('/api/puzzles/meta'));
       } catch {
         // Every button still works; only the review row and the tally
         // are missing, and both are decoration on a page of links.
@@ -602,7 +603,7 @@ function Hub() {
     })();
     void fetchSolvedToday()
       .then((n) => {
-        if (n !== null) store(() => setSolvedToday(n));
+        if (n !== null) setSolvedToday(n);
       })
       .finally(done);
     void (async () => {
@@ -612,7 +613,7 @@ function Hub() {
         const body = await api<{ attempts: HistoryEntry[] }>(
           `/api/puzzles/history?limit=${HISTORY_ROWS}`,
         );
-        store(() => setHistory(body.attempts));
+        setHistory(body.attempts);
       } catch {
         // No panel; the dashboard tile still reaches the full log.
       } finally {
@@ -622,11 +623,17 @@ function Hub() {
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
     void draw('fresh')
-      .then((puzzle) => store(() => setNext(puzzle)))
-      .finally(done);
+      .then(setNext)
+      .finally(() => {
+        if (live) setNextIn(true);
+        done();
+      });
     void draw('failed')
-      .then((puzzle) => store(() => setReview(puzzle)))
-      .finally(done);
+      .then(setReview)
+      .finally(() => {
+        if (live) setReviewIn(true);
+        done();
+      });
     void (async () => {
       try {
         const { books: all } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
@@ -639,8 +646,7 @@ function Hub() {
           // whose progress bar can never move.
           .filter((b) => b.puzzles > 0)
           .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''));
-        const rows = shelf.slice(0, SHELF_ROWS);
-        store(() => setBooks(rows));
+        setBooks(shelf.slice(0, SHELF_ROWS));
         // The board for the book at the top of that shelf. Chained off
         // this answer rather than fired alongside it, because which book
         // to ask about is the thing this request just decided.
@@ -651,17 +657,16 @@ function Hub() {
         const one = await api<{ puzzle: BookNext }>(
           `/api/puzzlebooks/${encodeURIComponent(top.slug)}/next`,
         );
-        store(() => setBookNext({ book: top, puzzle: one.puzzle }));
+        setBookNext({ book: top, puzzle: one.puzzle });
       } catch {
         // No panel. The Books tile below still reaches the shelf.
       } finally {
+        if (live) setBookIn(true);
         done();
       }
     })();
     const deadline = setTimeout(() => {
-      if (!live) return;
-      capped = true;
-      setSettled(true);
+      if (live) setSettled(true);
     }, DEADLINE_MS);
     return () => {
       live = false;
@@ -812,7 +817,9 @@ function Hub() {
             below it would shove the button up mid-reach. Growing upward
             into the empty band costs nothing, because nothing up there is
             being pressed. */}
-        {settled && ready && next && (
+        {settled && !nextIn ? (
+          <HubSkeletonCard fill={!historyBlock} />
+        ) : settled && ready && next ? (
           <PuzzleCard
             // Ply 1: after the opponent's setup move, which is the
             // position the solver is actually handed.
@@ -825,7 +832,7 @@ function Hub() {
               navigate('puzzles');
             }}
           />
-        )}
+        ) : null}
 
         {/* The review queue, as the position you actually got wrong — and
             an empty slot of the same size when there is nothing to review,
@@ -837,7 +844,9 @@ function Hub() {
             Three cases, one shape. The middle one — a pool the count says
             is non-empty but a draw that failed anyway — keeps review
             reachable from here, which it would not otherwise be. */}
-        {!settled ? null : review ? (
+        {!settled ? null : !reviewIn ? (
+          <HubSkeletonCard fill={!historyBlock} />
+        ) : review ? (
           <PuzzleCard
             fen={positionAt(review, 1).fen}
             side={solverColor(review)}
@@ -872,6 +881,12 @@ function Hub() {
             Its own endpoint, not the book: opening a book downloads
             every id and every progress entry, and the solutions are 1.7
             MB on the biggest one. A launcher wants one puzzle. */}
+        {settled && !bookNext && !bookIn && books.length > 0 ? (
+          // The shelf answered and named a book; its position is a second
+          // request behind that. Hold the card's place rather than adding
+          // one when it lands.
+          <HubSkeletonCard fill={!historyBlock} />
+        ) : null}
         {settled && bookNext && (
           <PuzzleCard
             fen={bookNext.puzzle.fen}
