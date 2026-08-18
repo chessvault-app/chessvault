@@ -54,11 +54,18 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
     // bottom, and a column aligned to the wrapper is aligned to nothing you
     // can see. Published as an inset the column pads itself by, which keeps
     // the number where it is measured rather than hard-coded as a 3.
-    const drawn = el.querySelector('cg-container') ?? square;
-    const box = (drawn ?? el).getBoundingClientRect();
-    const inset = drawn && square ? square.getBoundingClientRect().top - box.top : 0;
+    const drawn = el.querySelector('cg-container');
+    const box = (drawn ?? square ?? el).getBoundingClientRect();
+    // Measured against the board's OWN wrapper, not against whichever
+    // `.aspect-square` matches first inside the block. The remainder
+    // chessground leaves is a pixel or three; a large value here would
+    // shove the whole column down the page, so anything absurd is refused
+    // rather than trusted.
+    const wrap = drawn?.parentElement;
+    const raw = drawn && wrap ? Math.abs(box.top - wrap.getBoundingClientRect().top) : 0;
+    const inset = raw <= 8 ? raw : 0;
     owner.set(row, el);
-    row.style.setProperty('--board-inset', `${Math.round(Math.abs(inset))}px`);
+    row.style.setProperty('--board-inset', `${Math.round(inset)}px`);
     row.style.setProperty('--board-col-h', `${Math.round(box.bottom - top)}px`);
   };
   publish();
