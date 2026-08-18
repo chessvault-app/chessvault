@@ -706,7 +706,16 @@ cg-board square.check {
   font-size: 1rem;
   line-height: 1.7;
   color: var(--text);
+  /* Room to scroll past the last line. Without it a note ends exactly
+     where the page does, so the line being written sits pinned to the
+     bottom edge. The padding is INSIDE the editable box, so clicking
+     the empty space below the text still puts the caret at the end of
+     the document - a spacer element under the editor would not.
+     Box-sizing is border-box, so a short note is still 60vh in total
+     and keeps the click target it already had; only a note long enough
+     to scroll gains the trailing room. */
   min-height: 60vh;
+  padding-bottom: 40vh;
 }
 .note-editor > * + * {
   margin-top: 0.6em;
