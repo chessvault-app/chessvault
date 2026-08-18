@@ -40,6 +40,19 @@ const WIDTHS: Record<PageWidth, string> = {
  *
  * The bottom inset includes `--safe-b` so the last row clears the iOS
  * home indicator; on anything without safe areas it is plain 2rem.
+ *
+ * The scrollbar's room is reserved whether or not there is a scrollbar,
+ * on both edges, so the column sits in the same place on every page. The
+ * bar is 10px (index.css asks for a thin one), it comes out of the
+ * scroller's content box, and `mx-auto` then centres the column inside
+ * whatever is left — so a page whose content fits drew its column 5px to
+ * the right of one whose content does not. Measured on the puzzle pages
+ * at 1920: the shelf's column started at 680 and the dashboard's, which
+ * scrolls, at 675, off the same max-w-3xl. Two pages of the same family
+ * that do not line up read as two different templates, which is what
+ * lanph3re saw. `both-edges` rather than plain `stable` because the
+ * column is centred: reserving only the end edge keeps it still but
+ * leaves it permanently 5px off the middle.
  */
 export function PageShell({
   width,
@@ -53,7 +66,12 @@ export function PageShell({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('h-full min-h-0', scroll && 'overflow-y-auto')}>
+    <div
+      className={cn(
+        'h-full min-h-0',
+        scroll && 'overflow-y-auto [scrollbar-gutter:stable_both-edges]',
+      )}
+    >
       <div
         className={cn(
           'mx-auto flex w-full flex-col gap-4 px-4 pt-4 pb-[calc(2rem+var(--safe-b))] md:px-6 md:pt-6',
