@@ -71,8 +71,12 @@ export function SettingsPage() {
           </div>
         </PageShell>
       );
-    // SkeletonForm centers and pads itself, so it keeps the bare wrapper.
-    return <div className="h-full overflow-y-auto">{pending && <SkeletonForm groups={3} />}</div>;
+    // The shell the settled page uses, not a bare scroller. This drew its
+    // own column and its own padding, so the gutters moved when the
+    // settings landed and the page header — which the skeleton did not
+    // stand in for at all — appeared from nowhere and pushed every card
+    // down the height of a title.
+    return <PageShell width="narrow">{pending && <SkeletonForm groups={3} />}</PageShell>;
   }
 
   // Nothing here knows about the keyboard any more. This box used to pad

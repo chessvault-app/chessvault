@@ -214,20 +214,53 @@ export function SkeletonBoard({ className }: { className?: string }) {
   );
 }
 
-/** Labelled controls stacked in cards — the settings shape. */
+/**
+ * Labelled controls stacked in cards — the settings shape.
+ *
+ * Shaped against what Settings actually draws, which it was not: a card is
+ * ui/SettingRow strips, each a bordered box holding a title at text-sm
+ * over a blurb at text-xs, and this drew two bare bars in the open. The
+ * card came out around 118px against the real 194, so the page grew by
+ * about half a card each as the settings landed.
+ *
+ * It owns no width or padding of its own any more — the caller puts it in
+ * the same PageShell the settled page uses, so the column and the gutters
+ * cannot disagree, and the leading box stands in for the page header
+ * rather than for nothing.
+ */
 export function SkeletonForm({ groups = 3, className }: { groups?: number; className?: string }) {
   return (
-    <Loading className={cn('mx-auto flex w-full max-w-2xl flex-col gap-4 p-4 md:p-6', className)}>
-      <Skeleton className="h-5 w-40" />
+    <Loading className={cn('flex flex-col gap-4', className)}>
+      {/* The page title is text-lg, whose line box is 28px. */}
+      <div className="flex h-7 items-center">
+        <Skeleton className="h-4 w-28" />
+      </div>
       {Array.from({ length: groups }, (_, g) => (
-        <div key={g} className="border-line bg-surface flex flex-col gap-3 rounded-xl border p-4">
-          <Skeleton className="h-3 w-1/4" />
-          {Array.from({ length: 2 }, (_, i) => (
-            <div key={i} className="flex items-center justify-between gap-4">
-              <Skeleton className="h-2.5 w-1/3" />
-              <Skeleton className="h-6 w-20 shrink-0" />
-            </div>
-          ))}
+        <div key={g} className="border-line bg-surface rounded-xl border p-4">
+          {/* The card's heading: an icon beside a title, on a 20px line. */}
+          <div className="mb-3 flex h-5 items-center gap-2">
+            <Skeleton className="size-4 shrink-0 rounded" />
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <div className="flex flex-col gap-3">
+            {Array.from({ length: 2 }, (_, i) => (
+              <div
+                key={i}
+                className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <div className="flex h-5 items-center">
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <div className="flex h-4 items-center">
+                    <Skeleton className="h-2 w-44" />
+                  </div>
+                </div>
+                {/* Where a Switch stands: h-5 w-9, its own size. */}
+                <Skeleton className="h-5 w-9 shrink-0 rounded-full" />
+              </div>
+            ))}
+          </div>
         </div>
       ))}
     </Loading>
