@@ -140,14 +140,14 @@ export function SkeletonCards({
                 <Skeleton className="h-2 w-1/5" />
               </div>
               {grid && (
-                // The excerpt: two clamped lines of text-xs on a 1.35rem
-                // line, which is most of what makes a grid card tall.
-                <div className="mt-1">
-                  {[0, 1].map((line) => (
-                    <div key={line} className="flex h-[1.35rem] items-center">
-                      <Skeleton className={cn('h-2', line ? 'w-3/5' : 'w-full')} />
-                    </div>
-                  ))}
+                // ONE line of excerpt, though the card clamps at two.
+                // Measured on a real shelf, a grid card is 88-90px: the
+                // 64px board governs where there is one, and where there
+                // is not the text does — 20 + 16 + 4 + 22. Two lines put
+                // the text at 83 and the card at 109, which is why the
+                // placeholder stood a fifth taller than what replaced it.
+                <div className="mt-1 flex h-[1.35rem] items-center">
+                  <Skeleton className="h-2 w-full" />
                 </div>
               )}
             </div>
@@ -294,8 +294,14 @@ export function SkeletonBoard({ className }: { className?: string }) {
   return (
     <Loading className={cn('flex h-full flex-col gap-3 p-4', className)}>
       {/* The page's own header — a way back and a title — which the board
-          skeleton used to drop, leaving a study loading with no way out. */}
-      <div className="flex shrink-0 items-center gap-2">
+          skeleton used to drop, leaving a study loading with no way out.
+
+          wide:hidden, because that is where the page it stands in for
+          puts it: a study's title row is drawn at the top of the page on
+          a phone and moved into the side column on a wide screen. Drawn
+          at every width, it was a row the wide layout does not have, and
+          the whole page rose by its height when the study arrived. */}
+      <div className="flex shrink-0 items-center gap-2 wide:hidden">
         <Skeleton className="size-7 shrink-0 rounded-md" />
         <Skeleton className="h-3.5 w-40" />
       </div>
