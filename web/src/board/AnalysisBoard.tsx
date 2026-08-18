@@ -12,6 +12,7 @@ import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
 import { noAutofill, noAutofillClass } from '@/ui/Input';
@@ -166,7 +167,7 @@ export function AnalysisBoard({
     >
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}
-      <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+      <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
         {/* Fixed-height strip, matching the editor's palette strip: the board
             top stays put whether or not a player bar is shown. On phones the
             strip only exists when there is a player bar to show. */}

@@ -40,6 +40,7 @@ import {
 } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { publishBoardHeight } from '@/board/boardBlock';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -542,7 +543,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           above the board (lanph3re's spec) — wide keeps it in the side column. */}
       {!wide && header}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
-        <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
           <div className="relative w-full">
             <Board

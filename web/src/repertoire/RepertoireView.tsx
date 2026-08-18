@@ -13,6 +13,7 @@ import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker'
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { publishBoardHeight } from '@/board/boardBlock';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
 import { useAnalysis } from '@/store/analysis';
@@ -1044,7 +1045,7 @@ export function RepertoireView() {
       </div>
 
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
-        <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           {/* wide:h-10 + the column's gap-2 equals the other board pages'
               top strip, so this board's top edge sits level with theirs
               (and with the side column's first panel: h-9 + gap-3).

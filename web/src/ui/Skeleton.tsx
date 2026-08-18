@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { publishBoardHeight } from '@/board/boardBlock';
 import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { t } from '@/lib/i18n';
 
@@ -393,7 +394,7 @@ export function SkeletonBoard({
       {/* The board's column, and inside it the one width budget every view
           that shows a board shares. */}
       <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
-        <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           {/* 40px on a wide screen whatever it holds, so the board top
               stays put; on a phone only there when there is a game. */}
           <div

@@ -20,6 +20,7 @@ import type { Color } from 'chessops/types';
 import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { publishBoardHeight } from '@/board/boardBlock';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
@@ -869,7 +870,7 @@ function Trainer({
         <AnalysisBoard />
       ) : (
         <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
-          <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+          <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
             <div className="hidden w-full items-end wide:flex wide:h-10" />
           {/* The eval bar's width, held open before there is an eval bar.
               When the puzzle ends this board is replaced by AnalysisBoard,

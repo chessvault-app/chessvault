@@ -730,6 +730,16 @@ cg-board square.check {
       calc(min(64rem, max(18rem, 100dvh - 10rem)) + var(--board-side) + 3rem)
     );
   }
+
+  /* And the column beside it stops where the board stops. --board-col-h is
+     published by the board block itself (board/boardBlock.ts): the height
+     is the end of a min/max chain no sibling selector can read, and the
+     strips around the board differ per page, so it is measured rather than
+     repeated here. Without a value the column is uncapped, which is what it
+     was before — a page with no board block loses nothing. */
+  .board-side-cap {
+    max-height: var(--board-col-h, none);
+  }
 }
 
 .note-editor {

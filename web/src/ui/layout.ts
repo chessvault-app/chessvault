@@ -63,7 +63,8 @@ export const BOARD_WIDE_SHELL =
   'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full board-row-cap';
 
 /** The side column next to the board: fixed share of the row at `wide`. */
-export const BOARD_WIDE_SIDE = 'wide:w-[min(var(--board-side),38%)] wide:flex-none';
+export const BOARD_WIDE_SIDE =
+  'wide:w-[min(var(--board-side),38%)] wide:flex-none board-side-cap';
 
 /**
  * The whole shell — stacked and wide halves — for the board pages whose
