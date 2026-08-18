@@ -522,7 +522,21 @@ function Trainer({
       : [];
 
   if (meta && !meta.ready) {
-    return <PuzzleDbSetup onReady={() => void refreshMeta()} />;
+    return (
+      <PuzzleDbSetup
+        onReady={() => {
+          // Both, and the second one is the point. Arriving here means the
+          // boot already tried to load a puzzle and failed — there was no
+          // database to load one from — so the error state is set and no puzzle is
+          // in hand. Refreshing the meta alone flipped ready to true and
+          // handed the trainer straight back that stale failure, under a
+          // Try again button that worked: the build had succeeded and the
+          // page was reporting the last thing that went wrong before it.
+          void refreshMeta();
+          void loadNext(theme, difficulty);
+        }}
+      />
+    );
   }
 
   if (analysing && puzzle) {

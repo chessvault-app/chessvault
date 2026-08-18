@@ -599,6 +599,13 @@ export function puzzlesApi(
       closeDb();
       const building = `${dbPath}.building`;
       if (existsSync(building)) {
+        // Before the rename, not after. The handle is opened once and kept
+        // for the life of the process, so a rebuild left it serving the
+        // file that had just been replaced — and on Windows an open file
+        // cannot be renamed over at all, which turned the swap itself into
+        // the error below. Closed here, reopened by the next request that
+        // wants it, which is what the line after this always claimed.
+        closeDb();
         try {
           renameSync(building, dbPath);
         } catch (error) {

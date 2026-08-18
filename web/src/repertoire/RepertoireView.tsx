@@ -251,6 +251,30 @@ export function RepertoireView() {
       });
   }, []);
 
+  /**
+   * Whether this vault has a Lichess token, which the online source needs.
+   *
+   * Asked before anything starts, because the alternative is what used to
+   * happen: pick the Lichess database, press Start, watch the board set
+   * itself up, and only then be told that the field cannot be consulted
+   * without a token. The check is one field of the settings this page
+   * could always have asked for.
+   *
+   * Undefined until the answer is in — the difference between "no token"
+   * and "nobody has said yet" is the difference between a reason and a
+   * false accusation, and Start stays available while it is unknown.
+   */
+  const [hasToken, setHasToken] = useState<boolean | undefined>(undefined);
+  useEffect(() => {
+    if (isDemo()) return;
+    void api<{ lichess?: { configured?: boolean } }>('/api/settings')
+      .then((body) => setHasToken(body?.lichess?.configured === true))
+      // Unreachable settings are not a missing token; leave it unknown and
+      // let the run report whatever actually goes wrong.
+      .catch(() => setHasToken(undefined));
+  }, []);
+  const needsToken = source === ONLINE_SOURCE && hasToken === false;
+
   const [tree, setTree] = useState<MoveTree>(() => createTree());
   const [tipId, setTipId] = useState<NodeId>(tree.rootId);
   const [cursorId, setCursorId] = useState<NodeId>(tree.rootId);
@@ -1146,6 +1170,13 @@ export function RepertoireView() {
               )}
               {/* A disabled Start with no word is a riddle; the reason
                   is one line. */}
+              {needsToken && (
+                <p className="text-subtle text-xs leading-relaxed">
+                  {t(
+                    'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.',
+                  )}
+                </p>
+              )}
               {mode === 'drill' && drillChapter && !drillReady && (
                 <p className="text-subtle text-xs leading-relaxed">
                   {wholeStudy
@@ -1197,7 +1228,7 @@ export function RepertoireView() {
                 <Button
                   variant="primary"
                   size="sm"
-                  disabled={mode === 'drill' && !drillReady}
+                  disabled={needsToken || (mode === 'drill' && !drillReady)}
                   onClick={startGame}
                 >
                   <Play className="size-3.5" />

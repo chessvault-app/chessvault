@@ -1100,6 +1100,8 @@ export const ko: Record<string, string> = {
   'Remove this note': '이 노트 삭제',
   'Remove this book and its progress': '이 책과 진행 상황 삭제',
   'New note': '새 노트',
+  'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.':
+    'Lichess 데이터베이스에는 API 토큰이 필요합니다. 설정에서 등록하거나, 참조 데이터베이스를 선택하세요.',
   Prune: '가지치기',
   'Show only this line': '이 라인만 보기',
   'Restore the whole graph': '전체 그래프 복원',
