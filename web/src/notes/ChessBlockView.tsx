@@ -188,9 +188,11 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
         // The box wraps the board, not the page: on a phone the block is a
         // board with its moves under it, and a border stretched to the
         // note's full width around a much narrower board read as an empty
-        // frame. From sm up the board and moves sit side by side and the
-        // box takes whatever that needs.
-        'mx-auto w-3/4 max-w-full sm:mx-0 sm:w-auto',
+        // frame. It was 3/4 of the column for that reason and is 95% now
+        // (lanph3re's call) — the frame still stops short of the text's
+        // own edge, and the board is worth reading at. From sm up the
+        // board and moves sit side by side and the box takes what it needs.
+        'mx-auto w-[95%] max-w-full sm:mx-0 sm:w-auto',
         selected && 'ring-primary/60 ring-2',
       )}
       data-chess-block
