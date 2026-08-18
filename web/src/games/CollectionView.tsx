@@ -51,7 +51,7 @@ import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { ActionSheet } from '@/ui/ActionSheet';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
-import { SkeletonFilterRow, SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
+import { SkeletonFilterRow, SkeletonGameRows } from '@/ui/Skeleton';
 
 import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
@@ -167,7 +167,6 @@ const CollectionRow = memo(function CollectionRow({
 export function CollectionView() {
   const [games, setGames] = useState<GameSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const listPending = useSlowLoad(!loaded);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
@@ -591,12 +590,13 @@ export function CollectionView() {
             // The filter row above is drawn only once there are games to
             // filter, so the wait had rows but no strip and everything
             // dropped 45px when the collection landed.
-            listPending ? (
-              <>
-                <SkeletonFilterRow />
-                <SkeletonGameRows rows={6} />
-              </>
-            ) : null
+            // Drawn at once rather than behind useSlowLoad: these rows
+            // are the panel's height, so held back they left a header
+            // over nothing that grew a fifth of a second later.
+            <>
+              <SkeletonFilterRow />
+              <SkeletonGameRows rows={6} />
+            </>
           ) : /* Nothing to show and nothing narrowing the list. Two ways to get
               here: the collection really is empty, or its last rows were just
               removed and the undo is still running — `hidden` is inside

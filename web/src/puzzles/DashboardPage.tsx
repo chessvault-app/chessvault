@@ -145,7 +145,15 @@ export function DashboardPage() {
         {/* The review queue, promoted: it was a 14px icon inside the
             Failed card — the one training action this page should be
             offering, hidden in the one place nobody pressed. */}
-        {failed > 0 && (
+        {/* The count comes from /api/puzzles/meta, so before it answers
+            this page cannot know whether the button belongs here — and it
+            used to resolve that by drawing nothing, then pushing every
+            panel below it down by 36px and a margin when the answer came.
+            Its place is held instead. A vault with nothing failed gives
+            the place up, which is the one case nothing can predict. */}
+        {user === null ? (
+          <Skeleton className="mb-4 h-9 w-full rounded-lg" />
+        ) : failed > 0 ? (
           <Button
             variant="secondary"
             size="md"
@@ -155,7 +163,7 @@ export function DashboardPage() {
             <RotateCcw className="size-3.5" />
             {t('Review failed puzzles')} · {failed}
           </Button>
-        )}
+        ) : null}
 
         <Panel flush className="mb-4">
           <PanelHeader title={t('By difficulty')} />

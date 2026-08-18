@@ -23,7 +23,7 @@ import { Select } from '@/ui/Select';
 import { SearchInput } from '@/ui/Input';
 import { Field } from '@/ui/Field';
 
-import { SkeletonGameRows } from '@/ui/Skeleton';
+import { SkeletonFilterRow, SkeletonGameRows } from '@/ui/Skeleton';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
 import { t } from '@/lib/i18n';
@@ -758,6 +758,10 @@ export function ArchiveBrowser({
    */
   const rows = (
     <>
+      {/* While the months are coming, the row they will fill. It is drawn
+          only once they are known, so without this the rows below it
+          dropped a whole filter strip when the archive answered. */}
+      {months.length === 0 && loading === 'months' && <SkeletonFilterRow className="border-t" />}
       {/* Second row, only once an archive is loaded: month + quick filters. */}
       {months.length > 0 && (
         <div ref={archiveTop}>
