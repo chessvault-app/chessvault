@@ -553,17 +553,46 @@ function Hub() {
      */
     let live = true;
     let left = ANSWERS;
+    /**
+     * Whether the deadline drew the page before the answers were in, and
+     * what the answers that missed it are waiting in.
+     *
+     * The gate below settles on six answers, but the deadline settles on
+     * time — and everything that arrived afterwards used to be stored the
+     * moment it landed, which put a card on a settled page on its own.
+     * Each one re-shares the column's height with the others, so the
+     * boards and the history panel shrank once per late answer: the exact
+     * jump this gate exists to stop, arriving through the escape hatch.
+     *
+     * So after the deadline the answers wait for each other and go up in
+     * one move. They are never dropped — a slow link would lose the board
+     * this page is for — and the wait ends when the last one lands, which
+     * every path reaches: each has a finally, and api() always settles.
+     */
+    let capped = false;
+    const late: (() => void)[] = [];
+    const store = (apply: () => void): void => {
+      if (!live) return;
+      if (capped) late.push(apply);
+      else apply();
+    };
     // Called in a `finally`, always after the state it gates: the page is
     // drawn on the render that settles it, so an answer that reported
     // itself before storing its result would be drawn missing.
     const done = (): void => {
       if (!live) return;
       left -= 1;
-      if (left <= 0) setSettled(true);
+      if (left > 0) return;
+      // One render for all of them: React batches what a single tick
+      // stores, so the stragglers arrive as one change of layout.
+      for (const apply of late) apply();
+      late.length = 0;
+      setSettled(true);
     };
     void (async () => {
       try {
-        setMeta(await api<Meta>('/api/puzzles/meta'));
+        const answer = await api<Meta>('/api/puzzles/meta');
+        store(() => setMeta(answer));
       } catch {
         // Every button still works; only the review row and the tally
         // are missing, and both are decoration on a page of links.
@@ -573,7 +602,7 @@ function Hub() {
     })();
     void fetchSolvedToday()
       .then((n) => {
-        if (n !== null) setSolvedToday(n);
+        if (n !== null) store(() => setSolvedToday(n));
       })
       .finally(done);
     void (async () => {
@@ -583,7 +612,7 @@ function Hub() {
         const body = await api<{ attempts: HistoryEntry[] }>(
           `/api/puzzles/history?limit=${HISTORY_ROWS}`,
         );
-        setHistory(body.attempts);
+        store(() => setHistory(body.attempts));
       } catch {
         // No panel; the dashboard tile still reaches the full log.
       } finally {
@@ -592,8 +621,12 @@ function Hub() {
     })();
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
-    void draw('fresh').then(setNext).finally(done);
-    void draw('failed').then(setReview).finally(done);
+    void draw('fresh')
+      .then((puzzle) => store(() => setNext(puzzle)))
+      .finally(done);
+    void draw('failed')
+      .then((puzzle) => store(() => setReview(puzzle)))
+      .finally(done);
     void (async () => {
       try {
         const { books: all } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
@@ -606,7 +639,8 @@ function Hub() {
           // whose progress bar can never move.
           .filter((b) => b.puzzles > 0)
           .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''));
-        setBooks(shelf.slice(0, SHELF_ROWS));
+        const rows = shelf.slice(0, SHELF_ROWS);
+        store(() => setBooks(rows));
         // The board for the book at the top of that shelf. Chained off
         // this answer rather than fired alongside it, because which book
         // to ask about is the thing this request just decided.
@@ -617,7 +651,7 @@ function Hub() {
         const one = await api<{ puzzle: BookNext }>(
           `/api/puzzlebooks/${encodeURIComponent(top.slug)}/next`,
         );
-        setBookNext({ book: top, puzzle: one.puzzle });
+        store(() => setBookNext({ book: top, puzzle: one.puzzle }));
       } catch {
         // No panel. The Books tile below still reaches the shelf.
       } finally {
@@ -625,7 +659,9 @@ function Hub() {
       }
     })();
     const deadline = setTimeout(() => {
-      if (live) setSettled(true);
+      if (!live) return;
+      capped = true;
+      setSettled(true);
     }, DEADLINE_MS);
     return () => {
       live = false;
