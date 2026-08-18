@@ -3,6 +3,36 @@ import { useSyncExternalStore } from 'react';
 /** Under this much, it is browser chrome moving, not a keyboard. */
 const KEYBOARD_MIN = 120;
 
+/** A line of breathing room, so the caret never sits on the very edge. */
+const CARET_MARGIN = 8;
+
+/**
+ * The box a field scrolls inside — the sheet, or the note's own column —
+ * rather than the page.
+ */
+function scrollerOf(el: HTMLElement): HTMLElement | null {
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    const overflowY = getComputedStyle(p).overflowY;
+    if ((overflowY === 'auto' || overflowY === 'scroll') && p.scrollHeight > p.clientHeight) {
+      return p;
+    }
+  }
+  return null;
+}
+
+/** Where the caret is, or null if there is no selection to ask about. */
+function caretRect(): DOMRect | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return null;
+  const range = selection.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+  if (rect.height > 0 || rect.width > 0) return rect;
+  // A collapsed range at the start of a line measures zero in WebKit; its
+  // client rects still carry the line box it sits on.
+  const rects = range.getClientRects();
+  return rects.length > 0 ? (rects[0] ?? null) : null;
+}
+
 let inset = 0;
 const subscribers = new Set<() => void>();
 
@@ -102,10 +132,38 @@ export function startKeyboardTracking(): void {
         return;
       }
       const el = document.activeElement;
-      if (el instanceof HTMLElement && el.matches('input, textarea, [contenteditable="true"]')) {
+      if (!(el instanceof HTMLElement)) return;
+
+      /**
+       * A contenteditable is not a field, it is a DOCUMENT, and
+       * document.activeElement is the whole of it. scrollIntoView on a box
+       * TALLER than the scrollport does not decline to move: `nearest`
+       * aligns the box's end edge with the scrollport's end edge, so
+       * focusing the FIRST line of a note scrolled to the bottom of the
+       * note and you had to come back up by hand. It never needed a long
+       * note either — .note-editor is 60vh before it holds anything, which
+       * already exceeds what is left above the keyboard.
+       *
+       * So scroll to the CARET, which is what "put the field on screen"
+       * means for an editor, and by the least that works.
+       */
+      if (el.isContentEditable) {
+        const caret = caretRect();
+        const scroller = scrollerOf(el);
+        if (!caret || !scroller) return;
+        const box = scroller.getBoundingClientRect();
+        const above = box.top - caret.top;
+        const below = caret.bottom - box.bottom;
+        if (above > 0) scroller.scrollTop -= above + CARET_MARGIN;
+        else if (below > 0) scroller.scrollTop += below + CARET_MARGIN;
+        return;
+      }
+
+      if (el.matches('input, textarea')) {
         // `nearest` is the least scrolling that puts it on screen, and it
         // acts on the field's own scroller — the sheet it is in — rather
-        // than on the page.
+        // than on the page. Sound here because the element IS the field:
+        // it is one line tall and never exceeds the scrollport.
         el.scrollIntoView({ block: 'nearest' });
       }
     });
