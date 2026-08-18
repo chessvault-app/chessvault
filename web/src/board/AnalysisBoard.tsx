@@ -177,7 +177,15 @@ export function AnalysisBoard({
           {/* The eval bar sits beside the board in every layout (lanph3re's
               call): on phones it costs a sliver of board width but stays a
               persistent eval readout even when the Engine tab isn't open. */}
-          {engineOn && <EvalBar score={evalScore} className="shrink-0" />}
+          {engineOn ? (
+            <EvalBar score={evalScore} className="shrink-0" />
+          ) : (
+            // The bar's own width, held open while it is not drawn. Rendered
+            // conditionally, it took the row's gap-2 with it when it went, so
+            // switching the engine on stole 20px from the board and stepped
+            // the whole thing sideways under the thumb.
+            <div className="w-3 shrink-0" aria-hidden />
+          )}
           <div className="relative min-w-0 flex-1">
             <Board
               fen={node.fen}
