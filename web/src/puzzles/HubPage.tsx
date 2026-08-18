@@ -893,52 +893,62 @@ function Hub() {
             its own. It keeps the primary fill, because being the thing
             you came here to press is a fact about it that survives being
             the same size as its neighbours — and the board card above is
-            still the larger invitation. */}
-        <div className="grid grid-cols-4 gap-2">
-          {(
-            [
-              ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
-              ['Books', BookMarked, false, () => navigate('puzzles', 'books')],
-              ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
+            still the larger invitation.
+
+            The buttons wait for the same threshold everything else waits
+            for. They used to draw immediately, so a slow vault showed a
+            row of four on an otherwise bare page, and the placeholders
+            arrived under them a fifth of a second later and moved them.
+            Now the page goes from empty to whole, once: below the
+            threshold the answers are in before anything is drawn, and
+            above it the buttons rise with the skeleton and stay put. */}
+        {(settled || skeleton) && (
+          <div className="grid grid-cols-4 gap-2">
+            {(
               [
-                ready ? 'Train' : 'Set up',
-                ready ? Puzzle : Database,
-                true,
-                // The same action as the board above, deliberately: the
-                // card is the invitation and this is the thumb target,
-                // and they must open the SAME puzzle or the board is
-                // advertising a position this quietly swaps out.
-                () => {
-                  if (next) setPendingPuzzle('fresh', next);
-                  navigate('puzzles');
-                },
-              ],
-            ] as const
-          ).map(([label, Icon, primary, go]) => (
-            <button
-              key={label}
-              type="button"
-              onClick={go}
-              className={cn(
-                'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
-                'px-1 text-center text-xs font-medium leading-tight transition-colors',
-                primary
-                  ? 'bg-primary text-primary-fg border-primary hover:bg-primary-hover'
-                  : 'bg-surface border-line hover:bg-surface-2',
-              )}
-            >
-              <Icon className={cn('size-5', primary ? '' : 'text-primary')} />
-              {t(label)}
-              {/* What pressing Train will actually do, as a word. Nothing
-                  when it is Any: that is the setting you get without
-                  choosing, and naming it qualifies the button with the
-                  absence of a qualifier. */}
-              {primary && ready && word !== 'Any' && (
-                <span className="text-[0.625rem] font-normal opacity-75">{t(word)}</span>
-              )}
-            </button>
-          ))}
-        </div>
+                ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
+                ['Books', BookMarked, false, () => navigate('puzzles', 'books')],
+                ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
+                [
+                  ready ? 'Train' : 'Set up',
+                  ready ? Puzzle : Database,
+                  true,
+                  // The same action as the board above, deliberately: the
+                  // card is the invitation and this is the thumb target,
+                  // and they must open the SAME puzzle or the board is
+                  // advertising a position this quietly swaps out.
+                  () => {
+                    if (next) setPendingPuzzle('fresh', next);
+                    navigate('puzzles');
+                  },
+                ],
+              ] as const
+            ).map(([label, Icon, primary, go]) => (
+              <button
+                key={label}
+                type="button"
+                onClick={go}
+                className={cn(
+                  'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
+                  'px-1 text-center text-xs font-medium leading-tight transition-colors',
+                  primary
+                    ? 'bg-primary text-primary-fg border-primary hover:bg-primary-hover'
+                    : 'bg-surface border-line hover:bg-surface-2',
+                )}
+              >
+                <Icon className={cn('size-5', primary ? '' : 'text-primary')} />
+                {t(label)}
+                {/* What pressing Train will actually do, as a word. Nothing
+                    when it is Any: that is the setting you get without
+                    choosing, and naming it qualifies the button with the
+                    absence of a qualifier. */}
+                {primary && ready && word !== 'Any' && (
+                  <span className="text-[0.625rem] font-normal opacity-75">{t(word)}</span>
+                )}
+              </button>
+              ))}
+          </div>
+        )}
       </div>
     </PageShell>
   );
