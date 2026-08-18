@@ -34,6 +34,9 @@ interface PanelProps {
 
 const storageKey = (key: string): string => `vault:panel-h:${key}`;
 
+/** The smallest height the grip will drag a panel to — a header and a row. */
+const DRAG_MIN_H = 100;
+
 /** Tailwind's lg breakpoint — resizing only makes sense when every panel is
     on screen at once; below that the layouts flex a single visible pane.
     A grip-less panel passes enabled=false and never subscribes. */
@@ -70,13 +73,33 @@ export function Panel({
   // screens keep their flex behaviour untouched. A user-dragged height is
   // exact; the default is only a CAP, so sparse content isn't padded out
   // to an empty box.
+  //
+  // Shrinkable in both cases (`0 1 auto`, not `none`), because these panels
+  // live in a column whose height is the board's and cannot grow: a panel
+  // that refuses to shrink does not push the column out, it is CLIPPED by
+  // it, and the column's scrollbar is hidden on desktop — so the explorer's
+  // last row simply vanished under the board's bottom edge on any window
+  // short enough. Measured at 1549x776: column 640px against 712px of
+  // panels, 72px of explorer cut off with nothing to say so.
+  //
+  // Where the shrinking stops is the call site's `min-h`, which is why the
+  // default case no longer states `minHeight: 0` — that zero was quietly
+  // cancelling the floor ExplorerPane sets for exactly this reason. A
+  // dragged height keeps its own zero (the user's chosen size is allowed to
+  // be smaller than the floor) but keeps the drag's own 100px minimum, so a
+  // squeezed column cannot make the panel disappear altogether.
   const style =
     !lg || resizeKey === undefined
       ? undefined
       : height !== null
-        ? { height, minHeight: 0, maxHeight: height, flex: 'none' as const }
+        ? {
+            height,
+            minHeight: Math.min(height, DRAG_MIN_H),
+            maxHeight: height,
+            flex: '0 1 auto' as const,
+          }
         : defaultHeight !== undefined
-          ? { minHeight: 0, maxHeight: defaultHeight, flex: 'none' as const }
+          ? { maxHeight: defaultHeight, flex: '0 1 auto' as const }
           : undefined;
 
   return (
@@ -110,7 +133,7 @@ export function Panel({
             // resurrect the height a reset just cleared.
             if (!drag.current || (e.buttons & 1) === 0) return;
             const next = drag.current.h + e.clientY - drag.current.y;
-            setHeight(Math.min(Math.max(next, 100), window.innerHeight * 0.8));
+            setHeight(Math.min(Math.max(next, DRAG_MIN_H), window.innerHeight * 0.8));
           }}
           onPointerUp={() => {
             drag.current = null;

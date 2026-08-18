@@ -119,14 +119,19 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             { id: 'explorer', label: 'Explorer', icon: Compass },
           ]}
         />
-        {/* Desktop keeps an explicit floor (the column scrolls when the
-            viewport can't fit it); phones drop the floor so the panel
-            shrinks into the slot and the move table scrolls inside. */}
+        {/* Desktop keeps an explicit floor; phones drop it so the panel
+            shrinks into the slot and the move table scrolls inside.
+            The floor is a share of the column as well as a size: the column
+            is the board's height and cannot grow, so a floor stated only in
+            rem stops fitting on a short window and the panel under it is
+            clipped away rather than shrunk — which is how the explorer lost
+            its bottom rows. min() keeps the old number wherever there is
+            room for it. */}
         <Panel
           flush
           className={cn(
             'flex-1 max-lg:min-h-0',
-            engineOn ? 'lg:min-h-[28rem]' : 'lg:min-h-[22rem]',
+            engineOn ? 'lg:min-h-[min(28rem,55%)]' : 'lg:min-h-[min(22rem,45%)]',
             pane !== 'moves' && 'max-lg:hidden',
           )}
         >

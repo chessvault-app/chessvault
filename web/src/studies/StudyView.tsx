@@ -264,7 +264,12 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Panel
           flush
           className={cn(
-            'flex-1 max-lg:min-h-0 lg:min-h-[22rem]',
+            // The floor is a share of the column as well as a size — see
+            // AnalysisView, same panel, same reason: on a short window a
+            // rem-only floor is bigger than the column can spend, and what
+            // it costs comes out of the panels below, which are clipped
+            // rather than shrunk.
+            'flex-1 max-lg:min-h-0 lg:min-h-[min(22rem,45%)]',
             // Every child of this panel except the move table is shrink-0 —
             // engine block, header, review strip, board controls, editor —
             // so once they add up to more than the panel is tall, Panel's
@@ -489,9 +494,14 @@ function ChaptersPanel() {
   return (
     // Desktop: a compact, resizable 12rem list. Phones: the Chapters tab
     // owns the column, so fill it and scroll rather than leaving dead space.
+    //
+    // It shrinks (no `shrink-0`) down to a floor of its own: the column is
+    // the board's height, and a study with a dozen chapters would otherwise
+    // spend 12rem of it on the list and clip whatever the explorer had
+    // below. The list scrolls inside either way.
     <Panel
       flush
-      className="lg:max-h-48 lg:shrink-0 max-lg:flex-1 max-lg:min-h-0"
+      className="lg:max-h-48 lg:min-h-[min(6rem,15%)] max-lg:flex-1 max-lg:min-h-0"
       resizeKey="study-chapters"
     >
       <PanelHeader

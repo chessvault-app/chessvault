@@ -153,7 +153,13 @@ export function ExplorerPane({
       // move table to nothing; closed, it collapses to its header — a floor
       // applied either way drew a 12rem empty box under a switched-off
       // explorer, which is what lanph3re spotted in my own screenshot.
-      className={cn(className, enabled ? 'lg:min-h-[12rem]' : 'lg:min-h-0')}
+      //
+      // The floor is where the panel STOPS shrinking, and it only started
+      // doing that when Panel's default height became a cap it can yield
+      // (ui/Panel) — before, the inline `min-height: 0` that came with the
+      // default height cancelled this line outright. A share as well as a
+      // size, so that the floor itself always fits in the column.
+      className={cn(className, enabled ? 'lg:min-h-[min(12rem,20%)]' : 'lg:min-h-0')}
       resizeKey={enabled ? resizeKey : undefined}
       defaultHeight={enabled ? 300 : undefined}
     >
