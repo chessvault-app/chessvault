@@ -767,9 +767,20 @@ export function CollectionView() {
           leave its scrim behind, dimming the page with nothing on it and
           nothing to press. The menu item is what disappears at lg — see
           below — so this can only be opened where it belongs, and a
-          window left open across a resize stays usable. */}
+          window left open across a resize stays usable.
+
+          And a HEIGHT on a phone, for the reason the elite window below
+          has one: this opens empty, the months and then the first page of
+          games land a moment later, and a content-sized sheet grew under
+          the reader's thumb as they did. Given the height it ends up at,
+          it opens at it. */}
       {browsing && (
-        <Modal title="Online archives" onClose={() => setBrowsing(false)} full>
+        <Modal
+          title="Online archives"
+          onClose={() => setBrowsing(false)}
+          full
+          className="max-sm:h-[88%]"
+        >
           {/* Unframed here too: the window's own title bar already says
               Online archives, and the panel said it again directly under
               it. A window that names itself twice is a window with a

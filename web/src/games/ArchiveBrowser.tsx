@@ -81,6 +81,37 @@ interface ArchiveBrowseState {
 // so nobody loses their prefill and this only has to know about one
 // shape — see lib/storageSweep.
 const userKey = (provider: string): string => `chess-vault:archive-user:${provider}`;
+
+/** Handles looked up before, on either site. */
+const RECENTS_KEY = 'chess-vault:recent';
+/** What the two per-site lists were called, before they became one. */
+const LEGACY_RECENTS = ['chess-vault:recent-chesscom', 'chess-vault:recent-lichess'];
+
+const readList = (key: string): string[] => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(key) ?? '[]') as unknown;
+    return Array.isArray(stored) ? stored.filter((s): s is string => typeof s === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * The shared list, or the two old ones folded into it.
+ *
+ * Somebody who has been using this has a history under each site; making
+ * the list shared must not read as having lost it. The fold happens on
+ * the first read and is written back by the first search after it.
+ */
+const readRecents = (): string[] => {
+  const shared = readList(RECENTS_KEY);
+  if (shared.length > 0) return shared.slice(0, 4);
+  const merged: string[] = [];
+  for (const who of LEGACY_RECENTS.flatMap(readList)) {
+    if (!merged.some((seen) => seen.toLowerCase() === who.toLowerCase())) merged.push(who);
+  }
+  return merged.slice(0, 4);
+};
 const savedUser = (provider: string): string => localStorage.getItem(userKey(provider)) ?? '';
 
 const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
@@ -256,31 +287,23 @@ export function ArchiveBrowser({
   }, [provider]);
   const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
   /**
-   * The handles looked up before, on THIS provider, kept on the device.
+   * The handles looked up before, kept on the device and shared by both
+   * providers.
+   *
+   * One list, not one per site: it is the same person being looked up,
+   * usually under the same handle, and a list that emptied itself when
+   * you switched tab made you type a name you had just typed. Tapping one
+   * looks it up wherever you are now — which is the point, since "have I
+   * played this person" is a question about a player and not about a site.
+   *
    * Typing a username is the one thing this panel asks for over and over,
    * and until an archive is loaded the space below it does nothing.
    */
-  const recentsKey = `chess-vault:recent-${provider}`;
-  const [recents, setRecents] = useState<string[]>(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(recentsKey) ?? '[]') as unknown;
-      return Array.isArray(stored) ? (stored as string[]).slice(0, 4) : [];
-    } catch {
-      return [];
-    }
-  });
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(recentsKey) ?? '[]') as unknown;
-      setRecents(Array.isArray(stored) ? (stored as string[]).slice(0, 4) : []);
-    } catch {
-      setRecents([]);
-    }
-  }, [recentsKey]);
+  const [recents, setRecents] = useState<string[]>(() => readRecents());
   const rememberRecent = (who: string): void => {
     setRecents((prev) => {
       const next = [who, ...prev.filter((p) => p.toLowerCase() !== who.toLowerCase())].slice(0, 4);
-      localStorage.setItem(recentsKey, JSON.stringify(next));
+      localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
       return next;
     });
   };
@@ -288,7 +311,7 @@ export function ArchiveBrowser({
   const forgetRecent = (who: string): void => {
     setRecents((prev) => {
       const next = prev.filter((p) => p !== who);
-      localStorage.setItem(recentsKey, JSON.stringify(next));
+      localStorage.setItem(RECENTS_KEY, JSON.stringify(next));
       return next;
     });
   };
