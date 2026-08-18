@@ -65,17 +65,31 @@ jobs:
       - name: Find the newest published Lichess Elite month
         id: month
         run: |
-          for back in 1 2 3; do
+          # Two things this used to get wrong, both of which stopped a
+          # release cold.
+          #
+          # A status code is not an answer: the mirror serves an HTML page
+          # with 200 for a month it does not have, so the HEAD check passed
+          # on the first candidate every time and the download then handed
+          # unzip a web page. Ask for the first two bytes and insist on a
+          # zip's own magic instead.
+          #
+          # And three months back is not far enough. Publishing pauses: at
+          # the time of writing the newest month on the mirror is nine
+          # months old, so a window that only ever looked at the last three
+          # could not have found anything at all.
+          for back in $(seq 1 24); do
             month=$(date -u -d "$back month ago" +%Y-%m)
             url="https://database.nikonoel.fr/lichess_elite_${month}.zip"
-            if curl -sfIL "$url" -o /dev/null; then
+            magic=$(curl -sL --max-time 60 -r 0-1 "$url" | head -c 2 || true)
+            if [ "$magic" = "PK" ]; then
               echo "month=$month" >> "$GITHUB_OUTPUT"
               echo "url=$url" >> "$GITHUB_OUTPUT"
               echo "using $month"
               exit 0
             fi
           done
-          echo "no Lichess Elite month found in the last three" >&2
+          echo "no Lichess Elite zip found in the last two years" >&2
           exit 1
 
       # Keyed by the month, so a second release in the same month reuses it
@@ -90,7 +104,9 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           set -euo pipefail
-          curl -sSL -o elite.zip "${{ steps.month.outputs.url }}"
+          # -f so an error page is an error here rather than a puzzle for
+          # unzip two lines down.
+          curl -fsSL -o elite.zip "${{ steps.month.outputs.url }}"
           unzip -o -q elite.zip -d elite
           pgn=$(find elite -name '*.pgn' | head -1)
           # Index every game, then keep the strongest of each ECO code. The
