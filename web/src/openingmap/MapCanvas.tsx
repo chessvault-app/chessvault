@@ -282,6 +282,9 @@ export function MapCanvas({
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let frame = 0;
+    // Set on the frame that has nothing left to animate, so the loop can
+    // stop instead of running forever over a picture that is not moving.
+    let still = false;
     // Read once, here: the ref holds the same Map for the component's life
     // (it is never reassigned), and the cleanup below must clear THAT Map
     // rather than whatever the ref happens to point at when it runs.
@@ -336,6 +339,27 @@ export function MapCanvas({
           setLive(sim.current.positions());
           sim.current = null;
         }
+      } else if (arrangement === 'tree') {
+        /**
+         * A tree does not breathe.
+         *
+         * The constellation drifts because it is a picture of a shape,
+         * and a shape reads the same whichever few units a dot happens to
+         * be at. A tree is a statement about ORDER: the eye runs down the
+         * line from a parent to its children, and rows that wander make a
+         * straight line wander with them — the one property the
+         * arrangement exists to show.
+         *
+         * This is also the last frame. Nothing here moves, so the loop
+         * stops rather than repainting a still picture sixty times a
+         * second; it starts again from the top whenever the graph
+         * changes, which is what switching back does.
+         */
+        for (const node of graph.nodes) {
+          const base = liveRef.current?.get(node.id) ?? at.get(node.id)!;
+          pos.set(node.id, { x: base.x, y: base.y });
+        }
+        still = true;
       } else {
         for (const node of graph.nodes) {
           const base = liveRef.current?.get(node.id) ?? at.get(node.id)!;
@@ -366,6 +390,7 @@ export function MapCanvas({
         el.setAttribute('x2', String(b.x));
         el.setAttribute('y2', String(b.y));
       }
+      if (still) cancelAnimationFrame(frame);
     };
     frame = requestAnimationFrame(step);
     return () => {
