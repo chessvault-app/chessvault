@@ -3,7 +3,7 @@
   "private": true,
   "license": "GPL-3.0-only",
   "author": "the Chess Vault authors",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "engines": {
     "node": ">=22.12"
@@ -179,7 +179,8 @@
           "StartupWMClass": "Chess Vault"
         }
       }
-    }
+    },
+    "afterPack": "desktop/adhoc-sign.mjs"
   },
   "main": "desktop/main.mjs"
 }

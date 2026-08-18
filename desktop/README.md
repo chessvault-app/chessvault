@@ -22,6 +22,33 @@ exposes APIs to the app (the chooser's IPC is shell config, not app
 surface). This keeps the desktop build droppable and the web deployment
 canonical.
 
+## Installing on macOS
+
+The app is not signed with an Apple Developer ID and is not notarised, so
+macOS will not simply open it. What you see depends on what the build
+carries:
+
+- **"Chess Vault is damaged and can't be opened."** No signature at all,
+  which is what `mac.identity: null` produced before 0.4.1. It is not
+  damaged; arm64 macOS refuses to load unsigned code, and Gatekeeper
+  reports that as damage. Fix it once, after dragging the app to
+  Applications:
+
+  ```
+  xattr -dr com.apple.quarantine "/Applications/Chess Vault.app"
+  ```
+
+  Right-click → Open does *not* clear this one.
+
+- **"…is from an unidentified developer."** The ad-hoc signature added in
+  0.4.1 (`desktop/adhoc-sign.mjs`). Right-click the app → **Open** →
+  **Open**, once. The `xattr` line above works here too.
+
+Neither is a warning about the download. Both are macOS saying it cannot
+tell who built the app, which is true and stays true until somebody pays
+for a Developer ID and notarisation — at which point set `mac.identity`
+and delete the ad-hoc hook.
+
 ## Packaging
 
 `npm run desktop:package` → `release/installer/Chess Vault Setup <v>.exe`

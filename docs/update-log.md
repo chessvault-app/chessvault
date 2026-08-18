@@ -5,6 +5,17 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.1
+
+- **The macOS build is ad-hoc signed.** It carried no signature at all,
+  and arm64 macOS will not load unsigned code — so a downloaded dmg was
+  refused with "Chess Vault is damaged and can't be opened", which is a
+  lie about a perfectly good download and sends people to the Trash with
+  it. An ad-hoc signature costs nothing and needs no Apple account. The
+  app is still not notarised, so the first open is right-click → Open, or
+  one `xattr -dr com.apple.quarantine`; both are written down in
+  `desktop/README.md` now, which said nothing about any of this before.
+
 ## 0.4.0
 
 - **The opening map can be read as a tree.** The same nodes, the same
