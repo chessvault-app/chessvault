@@ -28,7 +28,7 @@ import { Segmented } from '@/ui/Segmented';
 import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
@@ -443,7 +443,7 @@ export function EditorView({
       {/* Board + palette. One combined palette row keeps the vertical chrome
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 stacked:my-auto wide:flex-1 wide:justify-start">
+      <div className={`${BOARD_WIDE_COLUMN} stacked:my-auto`}>
         {/* Desktop: one fixed-height combined row above the board (board
             alignment across views). Phones: the opponent's pieces above the
             board and the player's below, lichess-editor style. */}

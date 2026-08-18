@@ -53,7 +53,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { useWideLayout } from '@/lib/media';
 import { useEngine } from '@/store/engine';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { Select } from '@/ui/Select';
 import { t } from '@/lib/i18n';
 
@@ -1142,7 +1142,7 @@ export function RepertoireView() {
       {analysing ? (
         <AnalysisBoard />
       ) : (
-        <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+        <div className={BOARD_WIDE_COLUMN}>
           <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
             {/* wide:h-10 + the column's gap-2 equals the other board pages'
                 top strip, so this board's top edge sits level with theirs

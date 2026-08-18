@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -692,7 +692,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       {analysing ? (
         <AnalysisBoard />
       ) : (
-        <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+        <div className={BOARD_WIDE_COLUMN}>
           <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
             <div className="hidden w-full items-end wide:flex wide:h-10" />
             <div className="relative w-full">

@@ -29,7 +29,7 @@ import { navigate } from '@/lib/router';
 import { Button } from '@/ui/Button';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { SideDot } from '@/ui/SideDot';
 
 import {
@@ -406,7 +406,7 @@ function SolutionRecorder({
 
   return (
     <div className={BOARD_SCROLL_SHELL}>
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+      <div className={BOARD_WIDE_COLUMN}>
         <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
           <div className="relative w-full">

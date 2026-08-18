@@ -62,6 +62,29 @@ export const BOARD_WIDE_SHELL =
   // better written where the number is than repeated as a constant here.
   'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full board-row-cap';
 
+/**
+ * The board's own column in that row.
+ *
+ * `flex-1` for the width and `justify-start` for the height — the board sits
+ * at the same y in every view, whatever each stacks below it — and
+ * `board-col-cap` (index.css) is the ceiling: the column takes what the
+ * board can actually use and no more.
+ *
+ * That ceiling is why the gap beside the board is a gap and not a slider.
+ * A flex-1 column collects every pixel the row has spare, and `items-center`
+ * then splits it either side of the board — so half of it sat between the
+ * board and the panels and MOVED as the window was resized, because the
+ * surplus is a function of the height the row's cap is computed from.
+ * Measured on the board page at 1920 wide: 16px of gap at a 945px-tall
+ * window, 27px at 800, 44px at 700, 65px at 600.
+ *
+ * One literal, and not seven: this string was pasted into every board page
+ * and the skeleton, which is how the trainers and the analysis board would
+ * come to disagree about it.
+ */
+export const BOARD_WIDE_COLUMN =
+  'flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start board-col-cap';
+
 /** The side column next to the board: fixed share of the row at `wide`. */
 export const BOARD_WIDE_SIDE =
   'wide:w-[min(var(--board-side),38%)] wide:flex-none board-side-cap';

@@ -12,6 +12,7 @@ import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { BOARD_WIDE_COLUMN } from '@/ui/layout';
 import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
@@ -163,7 +164,7 @@ export function AnalysisBoard({
     // view regardless of what each stacks below it.
     <div
       ref={boardColumn}
-      className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start"
+      className={BOARD_WIDE_COLUMN}
     >
       {/* Bounded by the shared budget so the board is the same size in every
           view — see boardSize.ts. */}

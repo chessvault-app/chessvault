@@ -765,6 +765,28 @@ cg-board square.check {
       max(76rem, 90vw),
       calc(min(64rem, max(18rem, 100dvh - 10rem)) + var(--board-side) + 3rem)
     );
+    /* Whatever the pair cannot spend is margin on BOTH sides of it, not a
+       hole between the two columns. The cap above is what usually leaves
+       nothing over — but it assumes the side column is a whole
+       --board-side, and the side column is min(--board-side, 38%). Once
+       that 38% bites, the row is wider than the pair needs, the board
+       column (flex-1) collects the difference and centres it, and half of
+       it lands in the gap. Measured on the board page at 1920 wide: the
+       gap grew from 16px at a 945px-tall window to 65px at 600px, moving
+       continuously as the window was resized, because the surplus is a
+       function of the height the cap is computed from. */
+    justify-content: center;
+  }
+
+  /* The board's column takes what the board can use and no more.
+     Same expression as the board's own max-width (BOARD_MAX_W in
+     board/boardSize.ts) and as the last term of the cap above — the three
+     have to agree, so two of them are written here, together, where the
+     disagreement would be visible. Without this the column is flex-1 and
+     takes the whole surplus; with it the surplus never enters the pair and
+     justify-content above puts it outside. */
+  .board-col-cap {
+    max-width: min(64rem, max(18rem, 100dvh - 10rem));
   }
 
   /* And the column beside it stops where the board stops. --board-col-h is
