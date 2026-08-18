@@ -52,7 +52,41 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
 
   const observer = new ResizeObserver(publish);
   observer.observe(el);
+
+  /**
+   * And on the drawn board itself, once chessground has made it.
+   *
+   * Observing the block alone was not enough and failed in a way that hid:
+   * cg-container does not exist at first publish, so the measurement fell
+   * back to the block — 28px taller, being the player strip — and the
+   * block's own size, which comes from CSS, never changes again, so the
+   * observer never fired a second time and the wrong number stood. A hard
+   * reload happened to be slow enough that the board existed by the first
+   * measurement, which is why it looked fine exactly when you bypassed the
+   * cache and broken every other time.
+   *
+   * The mutation watch stops as soon as it has found the board: from then
+   * on the ResizeObserver sees every size change, and leaving it running
+   * would call publish on every piece that moves.
+   */
+  let drawn: Element | null = null;
+  const watchDrawn = (): void => {
+    const found = el.querySelector('cg-container');
+    if (found && found !== drawn) {
+      drawn = found;
+      observer.observe(found);
+      publish();
+    }
+  };
+  watchDrawn();
+  const mutations = new MutationObserver(() => {
+    watchDrawn();
+    if (drawn) mutations.disconnect();
+  });
+  if (!drawn) mutations.observe(el, { childList: true, subtree: true });
+
   return () => {
+    mutations.disconnect();
     observer.disconnect();
     // Left set, the last board's height would cap the next page's column
     // before its own block has had a chance to measure.
