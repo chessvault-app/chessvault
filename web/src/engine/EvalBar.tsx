@@ -31,10 +31,13 @@ interface EvalBarProps {
  * shared budget in board/boardSize.ts.
  *
  * A component rather than a copied `w-3`, because it is the same 12px as
- * the bar above and the two have to agree.
+ * the bar above and the two have to agree. The className is for the one
+ * caller that reserves the room only where it is needed — the editor, which
+ * indents its whole board stack at `wide` and runs the board full-width on
+ * a phone, where nothing beside it exists to line up with.
  */
-export function EvalBarSlot() {
-  return <div className="w-3 shrink-0" aria-hidden />;
+export function EvalBarSlot({ className }: { className?: string }) {
+  return <div className={cn('w-3 shrink-0', className)} aria-hidden />;
 }
 
 export function EvalBar({ score, orientation = 'vertical', className }: EvalBarProps) {

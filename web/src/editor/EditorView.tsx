@@ -29,6 +29,7 @@ import { Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/cn';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
@@ -444,147 +445,161 @@ export function EditorView({
           small, which is what lets every view share a large board budget.
           Top-anchored like AnalysisBoard: same board y in every view. */}
       <div className={`${BOARD_WIDE_COLUMN} stacked:my-auto`}>
-        {/* Desktop: one fixed-height combined row above the board (board
-            alignment across views). Phones: the opponent's pieces above the
-            board and the player's below, lichess-editor style. */}
-        <div className={cn('flex w-full items-end justify-center wide:h-10', EDITOR_BOARD_MAX_W)}>
-          <div className="hidden w-full wide:block">
-            <PiecePalette
-              colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
-              tool={tool}
-              onPick={setTool}
-              onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
-            />
-          </div>
-          <div className="w-full wide:hidden">
-            <PiecePalette
-              colors={[orientation === 'white' ? 'black' : 'white']}
-              tool={tool}
-              onPick={setTool}
-              onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
-            />
-          </div>
-        </div>
+        {/* The eval bar's width, kept open beside the whole stack rather
+            than beside the board alone: the palettes and the toolbar align
+            to the board's edges, so they are indented by exactly what the
+            board is. The editor never draws a bar — it reserves the room so
+            that its board is the same board as every other page's, which is
+            what stops the size changing on the way to and from analysis.
+            Not on a phone: nothing sits beside the board there, and the
+            stacked editor's board is deliberately as wide as the screen
+            (EDITOR_BOARD_MAX_W). */}
+        <div className={cn('flex w-full items-stretch gap-2', EDITOR_BOARD_MAX_W)}>
+          <EvalBarSlot className="stacked:hidden" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            {/* Desktop: one fixed-height combined row above the board (board
+                alignment across views). Phones: the opponent's pieces above the
+                board and the player's below, lichess-editor style. */}
+            <div className="flex w-full items-end justify-center wide:h-10">
+              <div className="hidden w-full wide:block">
+                <PiecePalette
+                  colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
+                  tool={tool}
+                  onPick={setTool}
+                  onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
+                />
+              </div>
+              <div className="w-full wide:hidden">
+                <PiecePalette
+                  colors={[orientation === 'white' ? 'black' : 'white']}
+                  tool={tool}
+                  onPick={setTool}
+                  onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
+                />
+              </div>
+            </div>
 
-        <div className={cn('w-full', EDITOR_BOARD_MAX_W)}>
-          <Board
-            fen={fen}
-            orientation={orientation}
-            // Dragging is only enabled in move mode, so a drag can never race
-            // with the tool being applied on mousedown.
-            free={tool.kind === 'move'}
-            deleteOnDropOff
-            onSelect={applyTool}
-            onMove={movePiece}
-            onDropNewPiece={dropNewPiece}
-            onBoardChange={syncFromBoard}
-            apiRef={boardApi}
-          />
-        </div>
+            <div className="w-full">
+              <Board
+                fen={fen}
+                orientation={orientation}
+                // Dragging is only enabled in move mode, so a drag can never race
+                // with the tool being applied on mousedown.
+                free={tool.kind === 'move'}
+                deleteOnDropOff
+                onSelect={applyTool}
+                onMove={movePiece}
+                onDropNewPiece={dropNewPiece}
+                onBoardChange={syncFromBoard}
+                apiRef={boardApi}
+              />
+            </div>
 
-        <div className={cn('w-full wide:hidden', EDITOR_BOARD_MAX_W)}>
-          <PiecePalette
-            colors={[orientation === 'white' ? 'white' : 'black']}
-            tool={tool}
-            onPick={setTool}
-            onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
-          />
-        </div>
+            <div className="w-full wide:hidden">
+              <PiecePalette
+                colors={[orientation === 'white' ? 'white' : 'black']}
+                tool={tool}
+                onPick={setTool}
+                onDragStart={(color, role, e) => boardApi.current?.dragNewPiece({ role, color }, e, true)}
+              />
+            </div>
 
-        {/* Phones (< sm): the row follows the board width but sits inset
-            from its edges — the pill flexes and spaces its six square tools
-            evenly, Analyse squares up at the end — without stretching any
-            button. Wider screens keep content-sized, centred buttons with
-            labels. */}
-        {/* One height for the row, and everything in it fills that. The
-            tool pill wraps its buttons in a border and padding, so buttons
-            of the same class inside and outside it came out six pixels
-            apart — the pill's chrome. Sizing to the row instead of to the
-            buttons makes the difference the pill's problem, not the eye's. */}
-        <div className={cn('flex h-9 w-full items-center justify-center gap-2', EDITOR_BOARD_MAX_W)}>
-          {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
-              so the active tool's highlight sits concentric in its corner. */}
-          <div className="bg-surface-2/60 border-line flex h-full items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
-          <Button
-            variant={tool.kind === 'move' ? 'primary' : 'ghost'}
-            size="sm"
-            className="h-full max-sm:w-10 max-sm:px-0"
-            onClick={() => setTool({ kind: 'move' })}
-            title={t('Move: drag pieces around the board')}
-          >
-            <MousePointer2 className="size-3.5" />
-            <span className="hidden sm:inline">{t('Move')}</span>
-          </Button>
-          <Button
-            variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
-            size="sm"
-            className="h-full max-sm:w-10 max-sm:px-0"
-            onClick={() => setTool({ kind: 'erase' })}
-            title={t('Erase: click a square to remove its piece')}
-          >
-            <Eraser className="size-3.5" />
-            <span className="hidden sm:inline">{t('Erase')}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="h-full w-8"
-            onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
-            title={t('Flip board')}
-          >
-            <FlipVertical2 className="size-3.5" />
-          </Button>
-          {/* Both of these destroy the position on the board, and as two
-              adjacent anonymous icons they were a coin-flip. Named where
-              there is room, like Move and Erase beside them. */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-full max-sm:w-10 max-sm:px-0"
-            onClick={() => setState(defaultEditorState())}
-            title={t('Reset to the starting position')}
-          >
-            <RotateCcw className="size-3.5" />
-            <span className="hidden sm:inline">{t('Reset')}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-full max-sm:w-10 max-sm:px-0"
-            onClick={() => setState(emptyEditorState())}
-            title={t('Clear the board')}
-          >
-            <Trash2 className="size-3.5" />
-            <span className="hidden sm:inline">{t('Clear')}</span>
-          </Button>
+            {/* Phones (< sm): the row follows the board width but sits inset
+                from its edges — the pill flexes and spaces its six square tools
+                evenly, Analyse squares up at the end — without stretching any
+                button. Wider screens keep content-sized, centred buttons with
+                labels. */}
+            {/* One height for the row, and everything in it fills that. The
+                tool pill wraps its buttons in a border and padding, so buttons
+                of the same class inside and outside it came out six pixels
+                apart — the pill's chrome. Sizing to the row instead of to the
+                buttons makes the difference the pill's problem, not the eye's. */}
+            <div className="flex h-9 w-full items-center justify-center gap-2">
+              {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
+                  so the active tool's highlight sits concentric in its corner. */}
+              <div className="bg-surface-2/60 border-line flex h-full items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
+              <Button
+                variant={tool.kind === 'move' ? 'primary' : 'ghost'}
+                size="sm"
+                className="h-full max-sm:w-10 max-sm:px-0"
+                onClick={() => setTool({ kind: 'move' })}
+                title={t('Move: drag pieces around the board')}
+              >
+                <MousePointer2 className="size-3.5" />
+                <span className="hidden sm:inline">{t('Move')}</span>
+              </Button>
+              <Button
+                variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
+                size="sm"
+                className="h-full max-sm:w-10 max-sm:px-0"
+                onClick={() => setTool({ kind: 'erase' })}
+                title={t('Erase: click a square to remove its piece')}
+              >
+                <Eraser className="size-3.5" />
+                <span className="hidden sm:inline">{t('Erase')}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="h-full w-8"
+                onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
+                title={t('Flip board')}
+              >
+                <FlipVertical2 className="size-3.5" />
+              </Button>
+              {/* Both of these destroy the position on the board, and as two
+                  adjacent anonymous icons they were a coin-flip. Named where
+                  there is room, like Move and Erase beside them. */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-full max-sm:w-10 max-sm:px-0"
+                onClick={() => setState(defaultEditorState())}
+                title={t('Reset to the starting position')}
+              >
+                <RotateCcw className="size-3.5" />
+                <span className="hidden sm:inline">{t('Reset')}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-full max-sm:w-10 max-sm:px-0"
+                onClick={() => setState(emptyEditorState())}
+                title={t('Clear the board')}
+              >
+                <Trash2 className="size-3.5" />
+                <span className="hidden sm:inline">{t('Clear')}</span>
+              </Button>
+              </div>
+              {/* Position details (side to move, castling, FEN) — a LABELLED
+                  button on phones, where the side column is hidden, so the FEN
+                  is never buried behind an anonymous gear. */}
+              <Button
+                variant="secondary"
+                size="sm"
+                active={sheetOpen}
+                className="h-full wide:hidden"
+                onClick={() => setSheetOpen((v) => !v)}
+                title={t('Position details (side to move, castling, FEN)')}
+              >
+                <Settings2 className="size-3.5" />
+                <span>{t('Position')}</span>
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                className="h-full max-sm:w-10 max-sm:px-0"
+                disabled={!validity.legal}
+                onClick={analyse}
+                title={validity.legal ? (onUse ? useLabel : t('Analyse this position')) : validity.reason}
+              >
+                {/* Analysis = the game-review microscope; embedded mode records
+                    a move list, so the glyph says "list", not "go". */}
+                {onUse ? <ListPlus className="size-3.5" /> : <Microscope className="size-3.5" />}
+                <span className="hidden sm:inline">{onUse ? useLabel : t('Analyse')}</span>
+              </Button>
+            </div>
           </div>
-          {/* Position details (side to move, castling, FEN) — a LABELLED
-              button on phones, where the side column is hidden, so the FEN
-              is never buried behind an anonymous gear. */}
-          <Button
-            variant="secondary"
-            size="sm"
-            active={sheetOpen}
-            className="h-full wide:hidden"
-            onClick={() => setSheetOpen((v) => !v)}
-            title={t('Position details (side to move, castling, FEN)')}
-          >
-            <Settings2 className="size-3.5" />
-            <span>{t('Position')}</span>
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            className="h-full max-sm:w-10 max-sm:px-0"
-            disabled={!validity.legal}
-            onClick={analyse}
-            title={validity.legal ? (onUse ? useLabel : t('Analyse this position')) : validity.reason}
-          >
-            {/* Analysis = the game-review microscope; embedded mode records
-                a move list, so the glyph says "list", not "go". */}
-            {onUse ? <ListPlus className="size-3.5" /> : <Microscope className="size-3.5" />}
-            <span className="hidden sm:inline">{onUse ? useLabel : t('Analyse')}</span>
-          </Button>
         </div>
       </div>
 
