@@ -169,17 +169,59 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
     loadMeta();
   }, [loadMeta]);
 
+  /**
+   * Which database the rows on screen answer for: a name, `null` for "the
+   * server's default, whatever that is", or undefined for nothing yet.
+   *
+   * A fact rather than a has-this-happened flag, because the effect below
+   * re-runs — twice on mount under StrictMode alone — and a flag read once
+   * is false by the second pass, which sent it off to fetch the rows it
+   * already had.
+   */
+  const rowsFor = useRef<string | null | undefined>(undefined);
+
+  /**
+   * The first page of games is asked for WITH the database list, not after
+   * it.
+   *
+   * A search naming no ?db= is answered from the first database there is
+   * (`fromQuery` in server/refgames.ts, over a sorted `names()`), and the
+   * list hands that same one back first — so the eager answer IS the
+   * answer to the search this pane was going to run. It used to wait for
+   * meta to name a database, which made one screen of rows two round trips
+   * deep: nothing was even asked for until the list came back.
+   */
+  useEffect(() => {
+    rowsFor.current = null;
+    void search('', 0, null);
+  }, [search]);
+
   // Reconcile the picked database against the list (a delete may have
   // taken it), then run its first search. Two passes when the pick moves:
   // the state change re-enters with the settled name.
   useEffect(() => {
-    if (!meta?.ready) return;
+    // Not answered yet. Distinct from an answer of no databases, and the
+    // difference matters: this effect runs on mount too, before the list
+    // exists, and clearing the marker here threw away what the eager
+    // search had asked for — so the list arrived and asked for it again.
+    if (!meta) return;
+    if (!meta.ready) {
+      // No databases: the eager search was answered with an error, so the
+      // rows stand for nothing and a later list must still be searched.
+      rowsFor.current = undefined;
+      return;
+    }
     const dbs = meta.databases ?? null;
     const next = dbs ? (dbs.some((d) => d.name === curDb) ? curDb : (dbs[0]?.name ?? null)) : null;
     if (next !== curDb) {
       setCurDb(next);
       return;
     }
+    // Already answered — either this exact database, or the eager search,
+    // whose missing ?db= the server read as the first one in the list.
+    if (rowsFor.current === next || (rowsFor.current === null && next === (dbs?.[0]?.name ?? null)))
+      return;
+    rowsFor.current = next;
     setRows([]);
     setQuery('');
     void search('', 0, next);
