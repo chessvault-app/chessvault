@@ -55,10 +55,7 @@ export function DashboardPage() {
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const pending = useSlowLoad(history === null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
-  // The books panel answers separately, and used to be absent until it
-  // did — so it arrived under the panels above it and pushed everything
-  // below it down by its whole height.
-  const booksPending = useSlowLoad(books === null);
+
 
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(() => {
@@ -183,8 +180,18 @@ export function DashboardPage() {
           </div>
         </Panel>
 
+        {/* Drawn from the first paint rather than behind useSlowLoad.
+            The threshold is right for content APPEARING INSIDE a block
+            that is already on the page — nothing moves, so a wait too
+            short to notice is best not mentioned. This is a whole panel,
+            and once the shelf answers it is always there in one form or
+            another, so the choice is not flash-or-nothing but flash-or-
+            SHOVE: held back, its place did not exist and everything below
+            it jumped when it took one. A placeholder that is replaced in
+            30ms moves nothing, and this panel answers separately from the
+            page around it, which renders at once. */}
         {books === null
-          ? booksPending && (
+          ? (
               <Panel flush className="mb-4">
                 {/* The title is known before the answer is; only the
                     shelf button and the rows are waited for. */}
