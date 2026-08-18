@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import { spawn } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { createWriteStream, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -91,6 +91,19 @@ function updateFailure(err) {
   return text.split(/\r?\n/)[0].slice(0, 120);
 }
 
+/**
+ * Where the bundled server's own words go.
+ *
+ * A packaged app has no terminal. The failure screen said "check the
+ * terminal output" while the spawn discarded both streams, so the one
+ * thing that knew why the server had not started was thrown away and the
+ * reader was sent to look at nothing. Everything it says now lands in a
+ * file beside the vault, and the screen names the file.
+ */
+function serverLogPath() {
+  return join(app.getPath('userData'), 'server.log');
+}
+
 function startLocalServer() {
   if (serverProc) return;
   // An explicitly opened vault folder (Obsidian-style) wins everywhere;
@@ -118,8 +131,16 @@ function startLocalServer() {
         CHESS_VAULT_DATA: join(app.getPath('userData'), 'data'),
         ...vaultEnv,
       },
-      stdio: 'ignore',
+      // Kept, not discarded: this is the only account of a server that
+      // refused to start, and on a packaged app nobody is watching a
+      // console for it.
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
+    const log = createWriteStream(serverLogPath(), { flags: 'w' });
+    log.write(`[desktop] ${new Date().toISOString()} starting ${serverEntry}
+`);
+    serverProc.stdout?.pipe(log);
+    serverProc.stderr?.pipe(log);
   } else {
     // Dev shape: the repo's server on the system Node, exactly like
     // `npm start` — repo vault, no Electron-ABI native rebuilds.
@@ -238,7 +259,11 @@ async function openApp(win) {
     startLocalServer();
     const base = `http://127.0.0.1:${LOCAL_PORT}`;
     if (await waitForServer(base)) await win.loadURL(base);
-    else await win.loadFile(join(here, 'chooser.html'), { query: { error: 'server' } });
+    else {
+      await win.loadFile(join(here, 'chooser.html'), {
+        query: { error: 'server', log: app.isPackaged ? serverLogPath() : '' },
+      });
+    }
     return;
   }
   await win.loadFile(join(here, 'chooser.html'));

@@ -263,9 +263,15 @@
       </button>
     </div>
     <script>
-      if (new URLSearchParams(location.search).get('error') === 'server') {
-        document.getElementById('error').textContent =
-          'The local server did not start — check the terminal output.';
+      // A packaged app has no terminal, so naming one was sending the
+      // reader nowhere. Everything the server said is in a file now, and
+      // this says which.
+      const params = new URLSearchParams(location.search);
+      if (params.get('error') === 'server') {
+        const log = params.get('log');
+        document.getElementById('error').textContent = log
+          ? `The local server did not start. What it said is in ${log}`
+          : 'The local server did not start — check the terminal output.';
       }
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
