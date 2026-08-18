@@ -1102,6 +1102,9 @@ export const ko: Record<string, string> = {
   'New note': '새 노트',
   'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.':
     'Lichess 데이터베이스에는 API 토큰이 필요합니다. 설정에서 등록하거나, 참조 데이터베이스를 선택하세요.',
+  'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.':
+    '아직 색인된 게임이 없습니다. 게임 페이지에서 온라인 아카이브나 PGN으로 게임을 모으면, 여기서 읽을 것이 생깁니다.',
+  'None of your games reach this position.': '이 위치에 도달한 게임이 없습니다.',
   Prune: '가지치기',
   'Show only this line': '이 라인만 보기',
   'Restore the whole graph': '전체 그래프 복원',

@@ -34,6 +34,30 @@ export function GrowSheet({
 }) {
   const [floor, setFloor] = useState<'2' | '5' | '10'>('5');
   const [lines, setLines] = useState<string[][] | null>(null);
+  /**
+   * How many of your games reach this position at all, which is a
+   * different question from how many reach it often enough.
+   *
+   * Finding nothing has two causes and they need different answers. The
+   * floor was too high, or there is nothing to read: a vault whose games
+   * have never been indexed — a fresh one, most obviously — answers every
+   * position with silence, and being told that YOUR GAMES do not reach the
+   * starting position often enough is both false and unactionable, since
+   * every game ever played reaches it.
+   *
+   * The same cached call the walk makes, so it costs no extra request.
+   */
+  const [reach, setReach] = useState<number | null>(null);
+  useEffect(() => {
+    if (!facts.fen) return;
+    let live = true;
+    void fieldMovesFor(MY_GAMES_SOURCE, '', facts.fen, map.color).then((moves) => {
+      if (live) setReach(moves.reduce((sum, m) => sum + m.total, 0));
+    });
+    return () => {
+      live = false;
+    };
+  }, [facts.fen, map.color]);
 
   useEffect(() => {
     let live = true;
@@ -81,7 +105,13 @@ export function GrowSheet({
         </div>
       ) : lines.length === 0 ? (
         <p className="text-muted text-xs leading-relaxed">
-          {t('Your games do not reach this position often enough — lower the floor, or play more.')}
+          {reach === 0
+            ? facts.parentId === null
+              ? t(
+                  'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.',
+                )
+              : t('None of your games reach this position.')
+            : t('Your games do not reach this position often enough — lower the floor, or play more.')}
         </p>
       ) : (
         <>
