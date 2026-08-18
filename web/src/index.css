@@ -745,6 +745,20 @@ cg-board square.check {
        content still scrolls; the column has always had overflow-y-auto. */
     height: var(--board-col-h, auto);
   }
+
+  /* Everything under the header band drops by however far the drawn board
+     sits inside its own box, so the first panel's top edge meets the
+     board's rather than the box's.
+     Said as the BAND's bottom margin. Not the column's padding, which
+     would take the band down with it and the header is not supposed to
+     move; and not the panel's own top margin, because ":nth-child(2)" is
+     whichever element is second whether or not it is displayed — on the
+     Games page that is the phone's pane switcher, display:none on a
+     desktop, and the margin landed on nothing. A margin here changes
+     neither the band's box nor the position of its title. */
+  .board-side-cap > :first-child {
+    margin-bottom: var(--board-inset, 0);
+  }
 }
 
 .note-editor {

@@ -34,9 +34,19 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
     // line. Measuring the whole block put the panels 34px below the board
     // on a page with players, which is the offness lanph3re saw.
     const top = el.getBoundingClientRect().top;
-    const board = el.querySelector('.aspect-square');
-    const bottom = (board ?? el).getBoundingClientRect().bottom;
-    row.style.setProperty('--board-col-h', `${Math.round(bottom - top)}px`);
+    const square = el.querySelector('.aspect-square');
+    // The DRAWN board, which is not the box it is drawn in: chessground
+    // floors the board to a whole number of pixels per square — 704 = 88x8
+    // inside a 709 box — and centres what is left over. So the visible edge
+    // sits a pixel or three inside its own wrapper, at the top and at the
+    // bottom, and a column aligned to the wrapper is aligned to nothing you
+    // can see. Published as an inset the column pads itself by, which keeps
+    // the number where it is measured rather than hard-coded as a 3.
+    const drawn = el.querySelector('cg-container') ?? square;
+    const box = (drawn ?? el).getBoundingClientRect();
+    const inset = drawn && square ? square.getBoundingClientRect().top - box.top : 0;
+    row.style.setProperty('--board-inset', `${Math.round(Math.abs(inset))}px`);
+    row.style.setProperty('--board-col-h', `${Math.round(box.bottom - top)}px`);
   };
   publish();
 
@@ -47,5 +57,6 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
     // Left set, the last board's height would cap the next page's column
     // before its own block has had a chance to measure.
     row.style.removeProperty('--board-col-h');
+    row.style.removeProperty('--board-inset');
   };
 }
