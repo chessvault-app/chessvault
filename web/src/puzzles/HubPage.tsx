@@ -223,27 +223,37 @@ function PuzzleCard({
  * The launcher is not in here. It never waits, it is already drawn, and
  * it does not move when this is replaced.
  */
+/** The log's own shape, held while the attempts are still coming. */
+function HubSkeletonHistoryPanel() {
+  return (
+    <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
+      <Skeleton className="m-3 mb-2 h-2.5 w-24 rounded" />
+      <div className="min-h-0 flex-1">
+        <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
+      </div>
+    </div>
+  );
+}
+
+/** The book row's shape: a cover, a title and the bar under it. */
+function HubSkeletonBookRow() {
+  return (
+    <div className="bg-surface border-line flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2">
+      <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <Skeleton className="h-2.5 w-2/3" />
+        <Skeleton className="h-1.5 w-full rounded-full" />
+      </div>
+    </div>
+  );
+}
+
 function HubSkeletonPanels({ history, books }: { history: boolean; books: boolean }) {
   return (
     <>
-      {history && (
-        <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
-          <Skeleton className="m-3 mb-2 h-2.5 w-24 rounded" />
-          <div className="min-h-0 flex-1">
-            <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
-          </div>
-        </div>
-      )}
+      {history && <HubSkeletonHistoryPanel />}
       {history && books && <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />}
-      {books && (
-        <div className="bg-surface border-line flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2">
-          <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <Skeleton className="h-2.5 w-2/3" />
-            <Skeleton className="h-1.5 w-full rounded-full" />
-          </div>
-        </div>
-      )}
+      {books && <HubSkeletonBookRow />}
     </>
   );
 }
@@ -539,7 +549,22 @@ const ANSWERS = 6;
  * the slowest of them is two chained requests, so a server that is merely
  * slow still gets to answer first.
  */
-const DEADLINE_MS = 2000;
+/**
+ * How long a gap with nothing in it is allowed to last before the page is
+ * drawn with whatever has arrived.
+ *
+ * Idle, not total, and that is the whole point: it restarts every time an
+ * answer lands, so a load whose answers keep coming waits for all of them
+ * however slow the link, and the page goes up in one piece. A total
+ * deadline could not tell a slow link from a stuck request, so it cut in
+ * at two seconds on any phone having a bad minute and drew the page in
+ * instalments as the rest caught up.
+ *
+ * Four seconds because it is now only reached by a request that has
+ * genuinely stopped answering, and the placeholders it interrupts are
+ * honest in the meantime.
+ */
+const IDLE_MS = 4000;
 
 function Hub() {
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -562,6 +587,8 @@ function Hub() {
   const [nextIn, setNextIn] = useState(false);
   const [reviewIn, setReviewIn] = useState(false);
   const [bookIn, setBookIn] = useState(false);
+  const [historyIn, setHistoryIn] = useState(false);
+  const [booksIn, setBooksIn] = useState(false);
 
   useEffect(() => {
     /**
@@ -583,13 +610,27 @@ function Hub() {
      */
     let live = true;
     let left = ANSWERS;
+    let idle: ReturnType<typeof setTimeout>;
+    const arm = (): void => {
+      clearTimeout(idle);
+      idle = setTimeout(() => {
+        if (live) setSettled(true);
+      }, IDLE_MS);
+    };
+    arm();
     // Called in a `finally`, always after the state it gates: the page is
     // drawn on the render that settles it, so an answer that reported
     // itself before storing its result would be drawn missing.
     const done = (): void => {
       if (!live) return;
       left -= 1;
-      if (left <= 0) setSettled(true);
+      if (left <= 0) {
+        clearTimeout(idle);
+        setSettled(true);
+        return;
+      }
+      // Something arrived, so the wait is progressing rather than stuck.
+      arm();
     };
     void (async () => {
       try {
@@ -614,6 +655,7 @@ function Hub() {
           `/api/puzzles/history?limit=${HISTORY_ROWS}`,
         );
         setHistory(body.attempts);
+        if (live) setHistoryIn(true);
       } catch {
         // No panel; the dashboard tile still reaches the full log.
       } finally {
@@ -647,6 +689,9 @@ function Hub() {
           .filter((b) => b.puzzles > 0)
           .sort((a, b) => (b.lastAt ?? '').localeCompare(a.lastAt ?? ''));
         setBooks(shelf.slice(0, SHELF_ROWS));
+        // The shelf has answered; the board for its top book is a second
+        // request behind this one and has its own flag.
+        if (live) setBooksIn(true);
         // The board for the book at the top of that shelf. Chained off
         // this answer rather than fired alongside it, because which book
         // to ask about is the thing this request just decided.
@@ -661,16 +706,17 @@ function Hub() {
       } catch {
         // No panel. The Books tile below still reaches the shelf.
       } finally {
-        if (live) setBookIn(true);
+        if (live) {
+          // Covers a failure before the shelf answered at all.
+          setBooksIn(true);
+          setBookIn(true);
+        }
         done();
       }
     })();
-    const deadline = setTimeout(() => {
-      if (live) setSettled(true);
-    }, DEADLINE_MS);
     return () => {
       live = false;
-      clearTimeout(deadline);
+      clearTimeout(idle);
     };
   }, []);
 
@@ -717,7 +763,11 @@ function Hub() {
   // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
-  const showBooks = settled && roomForBooks && books.length > 0;
+  // Room for it, and either a book to show or nobody has said yet. Keyed
+  // on the answer and not on `books.length`, which is empty both when
+  // there are no books and when the shelf has not answered — so the row
+  // used to be absent during the wait and then appear.
+  const showBooks = settled && roomForBooks && (booksIn ? books.length > 0 : true);
   // The history panel is shown wherever there is ROOM for it, whether or
   // not there is anything in it — a section that appears only once it has
   // content teaches nobody that it exists (lanph3re's call).
@@ -773,7 +823,8 @@ function Hub() {
           order — and it puts the one fixed-size panel next to the cards
           it belongs with, rather than stranded above a panel that grows. */}
       {skeleton && <HubSkeletonPanels history={roomForHistory} books={roomForBooks} />}
-      {showHistory && <HistoryPanel attempts={history} />}
+      {showHistory &&
+        (historyIn ? <HistoryPanel attempts={history} /> : <HubSkeletonHistoryPanel />)}
       {/* The line between what you have DONE and what there is to do
           next — the book row belongs with the cards under it, not with
           the log above it. It sits in the column's own gap, so the small
@@ -788,7 +839,7 @@ function Hub() {
       {showHistory && showBooks && (
         <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />
       )}
-      {showBooks && <BookShelfPanel books={books} />}
+      {showBooks && (booksIn ? <BookShelfPanel books={books} /> : <HubSkeletonBookRow />)}
 
       {/* Whichever block is going to absorb the page's slack.
           With a history, that is the history — this cluster keeps its
