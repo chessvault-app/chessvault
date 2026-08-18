@@ -329,7 +329,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <ExplorerPane
           resizeKey="study-explorer"
           className={cn(
-            'max-lg:min-h-0 max-lg:flex-1 lg:min-h-min lg:max-h-[35%]',
+            'max-lg:min-h-0 max-lg:flex-1 lg:max-h-[35%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />

@@ -6,6 +6,7 @@ import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
+import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 
 /**
@@ -21,6 +22,7 @@ export function AnswerPanel({
   onPromote,
   title = t('Moves'),
   emptyText = t('Play a move on the board.'),
+  className,
 }: {
   tree: MoveTree;
   cursorId: NodeId;
@@ -29,6 +31,8 @@ export function AnswerPanel({
   onPromote?: (id: NodeId) => void;
   title?: string;
   emptyText?: string;
+  /** Lets a caller make this the panel that fills the column's spare height. */
+  className?: string;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
   // Panel-only: in a mobile browser the first move of a puzzle used to
@@ -46,7 +50,7 @@ export function AnswerPanel({
   const lineEnd = mainlineFrom(tree, cursorId).at(-1);
 
   return (
-    <Panel flush className="min-h-[10rem] shrink-0">
+    <Panel flush className={cn('min-h-[10rem] shrink-0', className)}>
       <PanelHeader title={title} />
       {isEmpty ? (
         <p className="text-subtle px-3 py-6 text-center text-sm">{emptyText}</p>

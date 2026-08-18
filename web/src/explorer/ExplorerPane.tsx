@@ -147,7 +147,13 @@ export function ExplorerPane({
     // default (when on) shows the top handful of moves; drag for more.
     <Panel
       flush
-      className={className}
+      // Exactly one min-height, chosen here because only this component
+      // knows whether there is anything to be tall FOR. Open, it keeps a
+      // floor so the column capping itself to the board cannot squeeze the
+      // move table to nothing; closed, it collapses to its header — a floor
+      // applied either way drew a 12rem empty box under a switched-off
+      // explorer, which is what lanph3re spotted in my own screenshot.
+      className={cn(className, enabled ? 'lg:min-h-[12rem]' : 'lg:min-h-0')}
       resizeKey={enabled ? resizeKey : undefined}
       defaultHeight={enabled ? 300 : undefined}
     >

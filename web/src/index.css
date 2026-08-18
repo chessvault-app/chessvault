@@ -738,7 +738,12 @@ cg-board square.check {
      repeated here. Without a value the column is uncapped, which is what it
      was before — a page with no board block loses nothing. */
   .board-side-cap {
-    max-height: var(--board-col-h, none);
+    /* height, not max-height: the column has to FILL the board's height as
+       well as stop at it. Capped only, a page whose panels are shorter than
+       the board left them floating with the board running on below — which
+       is half the misalignment and the half a maximum cannot fix. Taller
+       content still scrolls; the column has always had overflow-y-auto. */
+    height: var(--board-col-h, auto);
   }
 }
 

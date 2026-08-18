@@ -173,7 +173,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
         <ExplorerPane
           resizeKey="analysis-explorer"
           className={cn(
-            'max-lg:min-h-0 max-lg:flex-1 lg:min-h-min lg:max-h-[45%]',
+            'max-lg:min-h-0 max-lg:flex-1 lg:max-h-[45%]',
             pane !== 'explorer' && 'max-lg:hidden',
           )}
         />

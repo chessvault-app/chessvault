@@ -27,7 +27,16 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
   if (!(row instanceof HTMLElement)) return;
 
   const publish = (): void => {
-    row.style.setProperty('--board-col-h', `${Math.round(el.getBoundingClientRect().height)}px`);
+    // To the BOARD's bottom edge, not the block's. The block also holds the
+    // player strips, and the one UNDER the board has no counterpart in the
+    // side column — the strip above it is answered by the column's own h-9
+    // band, which is why the board and the first panel start on the same
+    // line. Measuring the whole block put the panels 34px below the board
+    // on a page with players, which is the offness lanph3re saw.
+    const top = el.getBoundingClientRect().top;
+    const board = el.querySelector('.aspect-square');
+    const bottom = (board ?? el).getBoundingClientRect().bottom;
+    row.style.setProperty('--board-col-h', `${Math.round(bottom - top)}px`);
   };
   publish();
 
