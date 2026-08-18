@@ -435,6 +435,12 @@ function SolutionRecorder({
       </div>
 
       <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+        {/* Keeps this column's first panel level with the board's top edge:
+            h-9 plus the column's gap-3 equals the board's h-10 strip plus
+            its gap-2, the same sum every other board page uses. The header
+            row used to occupy this space, and taking it away dropped the
+            board 48px below the panel beside it. */}
+        <div className="hidden h-9 shrink-0 wide:block" />
         <Panel flush className="min-h-[10rem] shrink-0">
           <PanelHeader
             title={`Solution · ${line.length} plies`}
