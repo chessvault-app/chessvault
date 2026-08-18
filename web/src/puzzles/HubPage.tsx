@@ -232,11 +232,34 @@ function PuzzleCard({
  * The launcher is not in here. It never waits, it is already drawn, and
  * it does not move when this is replaced.
  */
+/**
+ * The heading strip every panel on this page wears, with a bar where the
+ * word goes.
+ *
+ * The real heading's OWN classes, not a guess at its height: the strip is
+ * an uppercase line at 0.6875rem, and its height comes from that line box
+ * plus pt-2, pb-1.5 and the rule under it. Copying the padding but not
+ * the type would leave the two a few pixels apart, which is the whole
+ * defect this stands in for.
+ */
+function SkeletonPanelHeading({ width, className }: { width: string; className?: string }) {
+  return (
+    <p
+      className={cn(
+        'text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]',
+        className,
+      )}
+    >
+      <Skeleton className={cn('inline-block h-2 align-middle', width)} />
+    </p>
+  );
+}
+
 /** The log's own shape, held while the attempts are still coming. */
 function HubSkeletonHistoryPanel() {
   return (
     <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
-      <Skeleton className="m-3 mb-2 h-2.5 w-24 rounded" />
+      <SkeletonPanelHeading width="w-24" className="shrink-0" />
       <div className="min-h-0 flex-1">
         <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
       </div>
@@ -244,14 +267,30 @@ function HubSkeletonHistoryPanel() {
   );
 }
 
-/** The book row's shape: a cover, a title and the bar under it. */
+/**
+ * The slot under the log, whichever panel ends up in it: a heading strip
+ * over one row of cover, title, bar, count and chevron.
+ *
+ * It was the row alone. Both panels that can land here put a heading over
+ * it, so the placeholder stood about 31px short and the cards above it
+ * took the difference when the answer arrived.
+ */
 function HubSkeletonBookRow() {
   return (
-    <div className="bg-surface border-line flex shrink-0 items-center gap-2.5 rounded-xl border px-3 py-2">
-      <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
-      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <Skeleton className="h-2.5 w-2/3" />
-        <Skeleton className="h-1.5 w-full rounded-full" />
+    <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
+      <SkeletonPanelHeading width="w-20" />
+      <div className="flex w-full items-center gap-2.5 px-3 py-2">
+        <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {/* The title sits on a text-xs line; the bar under it is its own
+              height, the same 6px ProgressBar draws. */}
+          <div className="flex h-4 items-center">
+            <Skeleton className="h-2.5 w-2/3" />
+          </div>
+          <Skeleton className="h-1.5 w-full rounded-full" />
+        </div>
+        <Skeleton className="h-2.5 w-8 shrink-0" />
+        <Skeleton className="size-3.5 shrink-0 rounded" />
       </div>
     </div>
   );
