@@ -37,6 +37,49 @@ shape-coded icons for this reason), and the difficulty ramp
 in the same rows. Signals should never be color-only — the winning
 digit is also bold, tier marks also differ by icon shape.
 
+
+Contrast is measured against every background a token can land on —
+`--app-bg`, `--surface`, `--surface-2`, `--surface-3` — and not against
+the page and the white surface alone. The quiet tiers passed on those
+two and failed on the raised and inset panels, which is where the gap
+is smallest: `--text-subtle` was 4.12:1 in light and 3.16:1 in dark
+before anyone measured the third and fourth. Small text needs 4.5:1 on
+all of them. When a tier darkens to reach it, the tier above darkens
+too — two quiet greys that meet at the same lightness are one grey.
+
+## The type scale
+
+Tailwind supplies the rungs. Which rung carries body text is this app's
+decision, and for a long time it was the wrong one: body copy sat on
+`text-xs` at 284 call sites — 12px, the size Material, Fluent and GitHub
+all reserve for captions — with an unnamed 11px tier below it. On a
+phone that is 70% of the size every other app on the device uses.
+
+The scale itself was never at fault, so the fix was not to redefine
+`--text-xs`. A token whose name means one thing here and another
+everywhere else buys a one-file diff and keeps a permanent lie. The
+usage moved up a rung instead:
+
+| Tier | Class | Size |
+| --- | --- | --- |
+| captions, small-caps labels | `text-xs` | 12px |
+| body, list rows, panel text | `text-sm` | 14px |
+| titles, setting rows | `text-base` | 16px |
+| page titles (`PageHeader`) | `text-xl` | 20px |
+| the one display figure | `text-2xl` | 24px |
+
+A magic `text-[…]` literal means a tier exists that nobody named: 81 of
+the 89 in the app were the same value, retyped at every call site. The
+two that remain are tile-corner glyphs, sized to a board square and not
+to type, which is the only excuse a literal has.
+
+Placeholders are what a scale change breaks. A skeleton line box must
+equal the real line-height, and line-heights do not all move together —
+an explicit `leading-` pins one where the token would have moved it. Re-
+derive each box from the component it stands in; never shift them along
+with the text. Rhythm copied out of the note editor belongs in `em`
+against the editor's own font size, not in the px it resolved to once.
+
 ## Layout rules
 
 - **A page belongs to one of three families**, listed in `ui/layout.ts`.
@@ -73,12 +116,12 @@ digit is also bold, tier marks also differ by icon shape.
   names the PAGE does not. A canvas still cannot be a fourth width: a
   width answers how long a line of text should be, and a canvas wants
   every pixel it is given at any size.
-- **One page title**: `PageHeader` — `text-lg font-semibold
+- **One page title**: `PageHeader` — `text-xl font-semibold
   tracking-tight`, actions pushed right, the phone-only back chevron
   where a page is reached through More. `ShelfToolbar` is built on it.
   (Four title sizes had accumulated; a page's name is one voice.)
   A canvas page uses it too, on the same gutters, with its surface
-  starting below. It briefly had a `text-sm` title of its own, on the
+  starting below. It briefly had a `text-base` title of its own, on the
   theory that a heading competing with the canvas is a heading in the
   way; what that actually produced was one page whose name was a
   different size at a different distance from the edge than every other
@@ -91,7 +134,7 @@ digit is also bold, tier marks also differ by icon shape.
   striping: with few rows, one tinted pill reads as a selection, not
   as alternation (the engine PVs learned this).
 - A list's **count row** leads with the tally in the small-caps label
-  voice (`text-[0.6875rem] font-semibold uppercase tracking-[0.08em]`)
+  voice (`text-xs font-semibold uppercase tracking-[0.08em]`)
   and keeps its controls on the right — the elite and archive panels
   share this shape because they take turns in one column.
 - Column header bands are `h-9`; with the column's `gap-3` this equals

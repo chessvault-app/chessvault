@@ -5,6 +5,76 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.4
+
+- **Text is the size other apps use.** Body copy had been sitting on the
+  12px rung that Material, Fluent and GitHub all reserve for captions,
+  with an unnamed 11px tier below it — on a phone, 70% of the size every
+  other app on the device is read at. Body is 14px now, titles 16, page
+  headings 20, captions 12. Lists and panels fit fewer rows per screen as
+  a result; that is the trade, and it was worth it.
+
+- **And a colour you can read it in.** Six tokens were under the 4.5:1
+  small text needs, measured against every surface they actually land on
+  rather than the two they were first checked against: the quiet label
+  grey reached 3.16:1 in dark mode, and amber warnings 2.61:1 on a
+  near-white page. All of them clear it now. The accent is a visibly
+  deeper blue in light mode, which is what that cost, and white text on
+  primary buttons went from failing to comfortable.
+
+- **A note has room under its last line.** The document ended exactly
+  where the page ended, so the line you were writing sat pinned to the
+  bottom edge. There is room to scroll past it now, and clicking that
+  space puts the caret at the end of the note. In reading mode the title
+  is no longer pressed against the rule beneath it.
+
+- **The opening map sees games you just added.** Add games and Grow found
+  nothing; open My games first and the same Grow worked. The server was
+  never the problem — a successful *empty* answer was cached for the life
+  of the page, so "you have no games", learned once before you had any,
+  stayed the answer. Empty is provisional now, and collecting games
+  clears it outright.
+
+- **The puzzle hub stops waiting on itself.** One request took 2.7
+  seconds while every other one the hub makes took two to five
+  milliseconds, and the page waits for all six. The weakest-theme tally
+  was reading a table whose only index is the wrong one, scanning 27.6
+  million rows per chunk. Off the primary key instead: 2.72s → 0.004s,
+  same answer. The hub's four buttons also stay placeholders until the
+  page has decided what they say.
+
+- **The trainer sends you to the setup screen, not an error about it.** A
+  vault with no puzzle database showed the trainer printing the setup
+  screen's own advice in the one place that cannot act on it. Finishing a
+  build had the matching bug in reverse — the page kept the last failure
+  from before the database existed. A rebuilt database also swaps in
+  properly now; the old handle was still open on the file being replaced,
+  which on Windows made the swap fail outright.
+
+- **Grow says what it did not find, and what it grew from.** "Nothing
+  indexed" and "below the floor" are different answers and now read as
+  different answers, and Grow can be pointed at a subset of your games
+  rather than all of them.
+
+- **The licences are a page of the app.** The link used to open a browser
+  tab — in the desktop shell, a second window with no way back to the
+  settings you were reading. It is a sub-route under the app's own header
+  now, with a back chevron.
+
+- **A misspelt handle says so.** Searching the online archive for a
+  player who does not exist showed the same prompt as having typed
+  nothing at all. A 404 from a player endpoint is an answer, and is
+  passed on as one; anything else is still the network.
+
+- **The board grows on a big screen.** It stopped at 736px on any
+  display, because the row holding it was capped — a 27" monitor drew a
+  13" laptop's board. Measured at 1920×945: 736 to 785, and bounded by
+  the window's height now rather than by a number, so a taller screen
+  gets more.
+
+- **Ocean is the default board.** New vaults only; the choice is stored
+  per device, so anyone who has already opened this keeps what they had.
+
 ## 0.4.3
 
 - **The macOS app icon is drawn at the size macOS wants.** It was 512×512
