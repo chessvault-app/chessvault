@@ -1229,11 +1229,31 @@ function NodePanel({
           title="Analyse"
           disabled={facts.treeId === null}
           onSelect={() => {
-            // The map's own scratch tree, the drill's handoff pattern: the
-            // board opens on this node, facing the map's colour.
+            /**
+             * The moves that lead HERE, and nothing else.
+             *
+             * This used to hand over the map's whole resolved tree with the
+             * cursor parked on the node, so analysing one line arrived on
+             * the board carrying every other line in the map — every
+             * sibling, and everything charted below the node as variations
+             * of a position you had asked a question about. On a map of any
+             * size the move list was the map rather than the line.
+             *
+             * The same line newStudy writes to a study, built the same way:
+             * replay this node's path into a fresh tree. Facing the map's
+             * colour, opening at the tip.
+             */
+            let tree = createTree();
+            let tip = tree.rootId;
+            for (const san of facts.path) {
+              const added = addSan(tree, tip, san);
+              if (!added) break;
+              tree = added.tree;
+              tip = added.nodeId;
+            }
             useAnalysis.setState({
-              tree: resolved.tree,
-              cursorId: facts.treeId ?? resolved.tree.rootId,
+              tree,
+              cursorId: tip,
               orientation: map.color,
               gameHeaders: null,
               handoff: true,
