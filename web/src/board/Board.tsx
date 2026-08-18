@@ -3,7 +3,7 @@ import type { Api as CgApi } from '@lichess-org/chessground/api';
 import type { Config as CgConfig } from '@lichess-org/chessground/config';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/types';
-import { useEffect, useRef, type MutableRefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react';
 import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/cn';
@@ -152,8 +152,25 @@ export function Board({
   onBoardChangeRef.current = onBoardChange;
   freeRef.current = free;
 
-  // Mount once.
-  useEffect(() => {
+  // Mount once, and BEFORE the browser paints.
+  //
+  // A passive effect runs after the frame it was scheduled in, so a board
+  // that had just been mounted spent one painted frame as an empty box.
+  // Nobody noticed while boards only appeared with the page around them —
+  // but the puzzle trainer swaps its board for the analysis board the
+  // moment a puzzle ends, and there the old chessground is torn down and
+  // the new one built in a LATER task than the commit that swapped them.
+  // Measured on the solution of a lichess puzzle: the panel swap landed in
+  // one observer batch and cg-container's rebuild in the next, 8ms later,
+  // with nothing in the board's box in between. That gap is the flicker
+  // lanph3re saw at the end of a solution.
+  //
+  // A layout effect closes it by definition: it runs in the same task as
+  // the commit, so the board is in the DOM before anything can be painted.
+  // The cost is that the paint waits for chessground to build its 40-odd
+  // nodes, which is the same work either way — it is only being done on
+  // the near side of the frame.
+  useLayoutEffect(() => {
     if (!host.current) return;
     const config: CgConfig = {
       fen,
