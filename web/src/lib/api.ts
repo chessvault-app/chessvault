@@ -37,11 +37,33 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
   onUnauthorized = handler;
 }
 
+/**
+ * Artificial latency, in milliseconds, for looking at the loading states.
+ *
+ * Skeletons are the one part of the UI that is invisible when everything
+ * works: useSlowLoad draws nothing for the first 180 ms, and most calls
+ * through here finish inside that. So a build made with CHESS_LAG=1 carries
+ * this switch, and `localStorage.lag = 1500` in the console turns it on for
+ * one browser — a phone against the deployed server included.
+ *
+ * Build-time rather than import.meta.env.DEV, because the app worth looking
+ * at is the deployed one and DEV is false there. __LAG__ is stated false in
+ * every normal build, so this folds away exactly as __DEMO__ does; the
+ * typeof guard is for the demo config, which defines its own set.
+ */
+function lagMs(): number {
+  if (typeof __LAG__ === 'undefined' || !__LAG__) return 0;
+  const ms = Number(localStorage.getItem('lag'));
+  return Number.isFinite(ms) && ms > 0 ? ms : 0;
+}
+
 export async function api<T = unknown>(
   url: string,
   init?: RequestInit & { json?: unknown },
 ): Promise<T> {
   const { json, ...rest } = init ?? {};
+  const lag = lagMs();
+  if (lag > 0) await new Promise((resolve) => setTimeout(resolve, lag));
   let res: Response;
   try {
     res = await fetch(

@@ -33,7 +33,11 @@ export default defineConfig({
   // server and its seed vault as a 229 KB chunk no real user ever fetches.
   // Defining it lets the branch fold away, which is what web/src/lib/demo.ts
   // has always claimed happens.
-  define: { __DEMO__: 'false' },
+  // __LAG__ carries the artificial-latency switch (lagMs() in lib/api.ts)
+  // into a build, so the loading states can be looked at on a real device
+  // against the real server. Stated false the same way __DEMO__ is, so an
+  // ordinary build folds the whole thing out.
+  define: { __DEMO__: 'false', __LAG__: process.env.CHESS_LAG === '1' ? 'true' : 'false' },
   resolve: {
     alias: {
       '@shared': `${repo}shared`,
