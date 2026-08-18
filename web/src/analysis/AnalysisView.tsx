@@ -1,5 +1,5 @@
 import { ChevronLeft, Check, Compass, Copy, Cpu, FolderInput, FolderPlus, ListOrdered, Loader2, Microscope, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getNode, INITIAL_FEN, pathTo } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -524,33 +524,3 @@ export function MovesOverflow({
   );
 }
 
-export function StatusBar() {
-  const tree = useAnalysis((s) => s.tree);
-  const cursorId = useAnalysis((s) => s.cursorId);
-  const exportPgn = useAnalysis((s) => s.exportPgn);
-  const [copied, setCopied] = useState<'fen' | 'pgn' | 'failed' | null>(null);
-
-  const node = getNode(tree, cursorId);
-
-  const copy = useCallback(async (kind: 'fen' | 'pgn', value: string) => {
-    setCopied((await copyText(value)) ? kind : 'failed');
-    setTimeout(() => setCopied(null), 1400);
-  }, []);
-
-  return (
-    <div className="border-line flex shrink-0 items-center gap-2 border-t py-1.5 pl-3 pr-2 max-md:hidden">
-      <code
-        className="text-subtle min-w-0 flex-1 truncate font-mono text-xs"
-        title={node.fen}
-      >
-        {node.fen}
-      </code>
-      <Button variant="ghost" size="sm" onClick={() => void copy('fen', node.fen)}>
-        {copied === 'fen' ? t('Copied') : copied === 'failed' ? t('Failed') : 'FEN'}
-      </Button>
-      <Button variant="ghost" size="sm" onClick={() => void copy('pgn', exportPgn())}>
-        {copied === 'pgn' ? t('Copied') : copied === 'failed' ? t('Failed') : 'PGN'}
-      </Button>
-    </div>
-  );
-}

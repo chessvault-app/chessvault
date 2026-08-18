@@ -21,16 +21,15 @@ import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
-import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
-import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
-import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
+import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
@@ -596,23 +595,7 @@ function Trainer({
    */
   const dockEngine = wide && analysing;
   const movesPanel = analysing ? (
-    <Panel flush className="min-h-min flex-1">
-      {/* Docked above the moves on a desktop. A phone gives the engine a
-          pane of its own, so docking it here too would show it twice. */}
-      {dockEngine && <EngineBlock />}
-      <PanelHeader
-        title={t('Moves')}
-        actions={
-          <>
-            <SidelinesToggle />
-            <MoveActions allowReset={false} />
-          </>
-        }
-      />
-      <MoveTreePane />
-      <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
-      <StatusBar />
-    </Panel>
+    <AnalysisMovesPanel engine={dockEngine} />
   ) : answerTree ? (
     <AnswerPanel
       // The panel that takes the column's spare height, so the puzzle panel

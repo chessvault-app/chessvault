@@ -34,9 +34,7 @@ import { Segmented } from '@/ui/Segmented';
 import { SideDot } from '@/ui/SideDot';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
-import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
-import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
-import { EngineBlock } from '@/engine/EnginePane';
+import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { useEngine } from '@/store/engine';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { Select } from '@/ui/Select';
@@ -1005,21 +1003,7 @@ export function RepertoireView() {
               {t('New game')}
             </Button>
           </div>
-          <Panel flush className="min-h-min flex-1">
-            <EngineBlock />
-            <PanelHeader
-              title={t('Moves')}
-              actions={
-                <>
-                  <SidelinesToggle />
-                  <MoveActions allowReset={false} />
-                </>
-              }
-            />
-            <MoveTreePane />
-            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
-            <StatusBar />
-          </Panel>
+          <AnalysisMovesPanel />
         </div>
         {/* Phones: move nav in the bottom bar while analysing. */}
         <MobileActionBar>
