@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Compass, Crosshair, Grid3x3, Library, ListTree, Loader2, Maximize2, NotebookPen, Orbit, Plus, Repeat, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Check, Compass, Crosshair, Grid3x3, Library, ListTree, Loader2, Maximize2, NotebookPen, Orbit, Plus, Repeat, Scissors, Sparkles, Swords, Target, Trash2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
@@ -283,6 +283,9 @@ export function OpeningMapView({ params }: { params: string[] }) {
       // reading view — what follows what — and the constellation is the
       // shape-of-the-whole one, so this is a preference somebody holds
       // rather than a mode a task puts them in: the device remembers it.
+      // ListTree means the ARRANGEMENT, and nothing else on this page:
+      // pruning wears scissors, which is what it does, and leaves the
+      // tree icon to mean the tree.
       label: arrangement === 'tree' ? 'Show the constellation' : 'Show the tree',
       icon: arrangement === 'tree' ? Orbit : ListTree,
       onSelect: () =>
@@ -541,6 +544,22 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 {labels.get(selected) ?? t('Tap for details')}
               </span>
             </button>
+            {/* Pruning is the one thing you do to the map's SHAPE rather
+                than to a node, so it belongs on the row the selection
+                already claims — a phone would otherwise reach it through
+                Details, which is a sheet over the map you are trying to
+                cut down. Tree only, like the panel's own. */}
+            {arrangement === 'tree' && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Show only this line')}
+                aria-label={t('Show only this line')}
+                onClick={() => setOnly(selected)}
+              >
+                <Scissors className="size-4" />
+              </Button>
+            )}
             <Button size="sm" onClick={() => setDetailsOpen(true)}>
               {t('Details')}
             </Button>
@@ -1287,8 +1306,8 @@ function NodePanel({
         />
         {onIsolate && (
           <PanelAction
-            icon={ListTree}
-            label="Show only this line"
+            icon={Scissors}
+            label="Prune"
             title="Show only this line"
             onSelect={onIsolate}
           />
