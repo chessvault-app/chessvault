@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
+import { Skeleton, SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
 import { Eye, EyeOff, HardDrive, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
@@ -327,12 +327,23 @@ function VersionCard() {
             release, so between releases it cannot tell a just-deployed app
             from one the phone has been holding in a cache — the question
             that comes up every time a fix will not reproduce. */}
-        {build && (
+        {/* Held open while the answer is out, rather than added when it
+            lands: /api/health carries a build every time, so this row is
+            all but certain and the card grew by it a moment after the
+            page had settled. */}
+        {build === null && server === null ? (
+          <>
+            <dt className="text-subtle">{t('Built')}</dt>
+            <dd className="flex h-4 items-center">
+              <Skeleton className="h-2.5 w-32" />
+            </dd>
+          </>
+        ) : build ? (
           <>
             <dt className="text-subtle">{t('Built')}</dt>
             <dd className="text-fg font-mono">{build}</dd>
           </>
-        )}
+        ) : null}
         {app && (
           <>
             <dt className="text-subtle">{t('Desktop app')}</dt>
@@ -1105,6 +1116,32 @@ function BrowsedGamesCard() {
           'Months you have browsed are kept so they open again instantly and work offline. Nothing here is in your collection — a game you kept was copied — so clearing this only means downloading a month again next time you look at it.',
         )}
       </p>
+      {players === null && (
+        /* The list and its footer come from /api/games/cache, a different
+           answer from the one that drew this page — so the card stood at
+           its paragraph's height and then grew by a row and a total,
+           pushing the danger zone and the version under it down. One
+           cached player is what a personal vault almost always holds, so
+           that is the shape held open. Drawn at once and not behind
+           useSlowLoad: the choice here is not flash-or-nothing, it is
+           flash-or-shove. */
+        <>
+          <div className="divide-line border-line divide-y rounded-lg border">
+            <div className="flex items-center gap-2 px-3 py-2">
+              <div className="flex h-5 min-w-0 flex-1 items-center">
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="flex h-5 shrink-0 items-center">
+                <Skeleton className="h-2.5 w-40" />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <Skeleton className="h-2.5 w-24" />
+            <Skeleton className="h-9 w-20 rounded-lg" />
+          </div>
+        </>
+      )}
       {players !== null && players.length === 0 && (
         <p className="text-subtle text-xs">{t('Nothing cached yet.')}</p>
       )}
