@@ -29,6 +29,7 @@ import { usePromotion } from '@/board/usePromotion';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
+import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -857,7 +858,7 @@ function Trainer({
               board narrowed by 20px and stepped right at the exact moment
               the answer appeared (lanph3re's two screenshots). */}
           <div className="flex w-full items-stretch gap-2">
-            <div className="w-3 shrink-0" aria-hidden />
+            <EvalBarSlot />
             <div className="relative min-w-0 flex-1">
               {displayed ? (
                 <Board

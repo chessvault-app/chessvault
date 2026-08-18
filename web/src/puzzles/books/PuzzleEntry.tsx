@@ -17,6 +17,7 @@ import { moveSquares } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { Board } from '@/board/Board';
+import { EvalBarSlot } from '@/engine/EvalBar';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
@@ -409,24 +410,32 @@ function SolutionRecorder({
       <div className={BOARD_WIDE_COLUMN}>
         <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
           <div className="hidden w-full items-end wide:flex wide:h-10" />
-          <div className="relative w-full">
-            <Board
-              fen={currentFen}
-              orientation={solverSide}
-              dests={dests}
-              lastMove={line.at(-1) ? moveSquares(line.at(-1)!) : undefined}
-              check={pos.isCheck()}
-              onMove={onMove}
-            />
-            {promotion.pending && (
-              <PromotionPicker
-                color={promotion.pending.color}
-                dest={promotion.pending.dest}
+          {/* The eval bar's width, held open on a board that never draws
+              one. This board has no analysis board to hand over to, but it
+              is the same board as the trainer's — a book puzzle is solved
+              on one page and recorded on the other — and 20px of eval bar
+              is what tells the two apart if only one of them reserves it. */}
+          <div className="flex w-full items-stretch gap-2">
+            <EvalBarSlot />
+            <div className="relative min-w-0 flex-1">
+              <Board
+                fen={currentFen}
                 orientation={solverSide}
-                onSelect={promotion.complete}
-                onCancel={promotion.cancel}
+                dests={dests}
+                lastMove={line.at(-1) ? moveSquares(line.at(-1)!) : undefined}
+                check={pos.isCheck()}
+                onMove={onMove}
               />
-            )}
+              {promotion.pending && (
+                <PromotionPicker
+                  color={promotion.pending.color}
+                  dest={promotion.pending.dest}
+                  orientation={solverSide}
+                  onSelect={promotion.complete}
+                  onCancel={promotion.cancel}
+                />
+              )}
+            </div>
           </div>
           <div className="flex h-6 w-full items-center gap-2 px-0.5 text-sm">
             <SideDot side={turn} />

@@ -21,7 +21,7 @@ import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
-import { EvalBar } from '@/engine/EvalBar';
+import { EvalBar, EvalBarSlot } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -186,7 +186,7 @@ export function AnalysisBoard({
             // conditionally, it took the row's gap-2 with it when it went, so
             // switching the engine on stole 20px from the board and stepped
             // the whole thing sideways under the thumb.
-            <div className="w-3 shrink-0" aria-hidden />
+            <EvalBarSlot />
           )}
           <div className="relative min-w-0 flex-1">
             <Board

@@ -27,6 +27,7 @@ import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker'
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
+import { EvalBarSlot } from '@/engine/EvalBar';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
@@ -1157,15 +1158,24 @@ export function RepertoireView() {
             <div className="flex w-full items-end wide:h-10">
               <PlayerSlot side={orientation === 'white' ? 'black' : 'white'} fen={node.fen} />
             </div>
-            <Board
-              apiRef={boardApi}
-              fen={node.fen}
-              orientation={orientation}
-              dests={dests}
-              lastMove={moveSquares(node)}
-              check={pos.isCheck()}
-              onMove={onMove}
-            />
+            {/* The eval bar's width, held open before there is an eval bar:
+                when the line ends this board is replaced by AnalysisBoard,
+                which draws one, and without the same reservation here the
+                board lost 24px and stepped right at exactly that moment. */}
+            <div className="flex w-full items-stretch gap-2">
+              <EvalBarSlot />
+              <div className="min-w-0 flex-1">
+                <Board
+                  apiRef={boardApi}
+                  fen={node.fen}
+                  orientation={orientation}
+                  dests={dests}
+                  lastMove={moveSquares(node)}
+                  check={pos.isCheck()}
+                  onMove={onMove}
+                />
+              </div>
+            </div>
             <PlayerSlot side={orientation} fen={node.fen} />
           </div>
         </div>

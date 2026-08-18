@@ -44,6 +44,7 @@ import type { MoveTree, NodeId } from '@shared/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { Board } from '@/board/Board';
+import { EvalBarSlot } from '@/engine/EvalBar';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
@@ -695,24 +696,31 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         <div className={BOARD_WIDE_COLUMN}>
           <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
             <div className="hidden w-full items-end wide:flex wide:h-10" />
-            <div className="relative w-full">
-              <Board
-                fen={node.fen}
-                orientation={orientation}
-                dests={dests}
-                lastMove={moveSquares(node)}
-                check={pos.isCheck()}
-                onMove={onMove}
-              />
-              {promotion.pending && (
-                <PromotionPicker
-                  color={promotion.pending.color}
-                  dest={promotion.pending.dest}
+            {/* The eval bar's width, held open before there is an eval bar:
+                when the puzzle ends this board is replaced by AnalysisBoard,
+                which draws one, and without the same reservation here the
+                board lost 24px and stepped right at exactly that moment. */}
+            <div className="flex w-full items-stretch gap-2">
+              <EvalBarSlot />
+              <div className="relative min-w-0 flex-1">
+                <Board
+                  fen={node.fen}
                   orientation={orientation}
-                  onSelect={promotion.complete}
-                  onCancel={promotion.cancel}
+                  dests={dests}
+                  lastMove={moveSquares(node)}
+                  check={pos.isCheck()}
+                  onMove={onMove}
                 />
-              )}
+                {promotion.pending && (
+                  <PromotionPicker
+                    color={promotion.pending.color}
+                    dest={promotion.pending.dest}
+                    orientation={orientation}
+                    onSelect={promotion.complete}
+                    onCancel={promotion.cancel}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

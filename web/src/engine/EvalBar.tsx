@@ -17,6 +17,26 @@ interface EvalBarProps {
  * is the convention every chess site uses — flipping it with the board would
  * make the same position appear to change evaluation.
  */
+/**
+ * The eval bar's width, held open on a board that has no bar to draw.
+ *
+ * The bar shares the board's row rather than floating over it, so its
+ * 12px and the row's gap-2 come out of the board — and a board drawn
+ * WITHOUT the reservation is 20px wider than the same board drawn with
+ * it. That is a difference you can only see when the two are the same
+ * board a moment apart: the trainers and the repertoire hand their board
+ * over to AnalysisBoard when the line or the puzzle ends, and it shrank
+ * and stepped right at exactly that moment. It is also what makes the
+ * board the same size on every page, which is the whole point of the
+ * shared budget in board/boardSize.ts.
+ *
+ * A component rather than a copied `w-3`, because it is the same 12px as
+ * the bar above and the two have to agree.
+ */
+export function EvalBarSlot() {
+  return <div className="w-3 shrink-0" aria-hidden />;
+}
+
 export function EvalBar({ score, orientation = 'vertical', className }: EvalBarProps) {
   const fraction = score ? winningChances(score) : 0.5;
   const percent = `${(fraction * 100).toFixed(1)}%`;
