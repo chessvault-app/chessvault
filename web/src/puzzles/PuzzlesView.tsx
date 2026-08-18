@@ -856,7 +856,7 @@ function Trainer({
                     <RotateCw className="size-3.5" />
                     {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
                   </Button>
-                  <Button variant="primary" size="sm" onClick={analyse}>
+                  <Button variant="secondary" size="sm" onClick={analyse}>
                     <Microscope className="size-3.5" />
                     {t('Analyse')}
                   </Button>

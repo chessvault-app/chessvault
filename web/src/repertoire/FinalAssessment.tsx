@@ -136,7 +136,7 @@ export function FinalAssessment({
           of a panel that is already tall on a phone. It wraps where the
           two do not fit side by side. */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" size="sm" onClick={onAnalyse}>
+        <Button variant="secondary" size="sm" onClick={onAnalyse}>
           <Microscope className="size-3.5" />
           {t('Analyse')}
         </Button>

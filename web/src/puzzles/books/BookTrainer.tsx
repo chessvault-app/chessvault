@@ -684,7 +684,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                     <RotateCcw className="size-3.5" />
                     {t('Retry')}
                   </Button>
-                  <Button variant="primary" size="sm" onClick={analyse}>
+                  <Button variant="secondary" size="sm" onClick={analyse}>
                     <Microscope className="size-3.5" />
                     {t('Analyse')}
                   </Button>
