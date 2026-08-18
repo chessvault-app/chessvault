@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -88,6 +88,24 @@ type Tool =
   | { kind: 'erase' }
   | { kind: 'piece'; role: Role; color: Color };
 
+/**
+ * The position the standalone editor was last showing.
+ *
+ * Analyse navigates to the board, and coming back goes through history,
+ * which REMOUNTS this component — so the position just built was replaced
+ * by the starting one, and the way back to it was to build it again.
+ *
+ * Session-scoped rather than persisted, deliberately: a position abandoned
+ * an hour ago is not what the editor should offer on a fresh visit. This
+ * only has to survive stepping out to the board and straight back.
+ *
+ * Embedded editors (the puzzle entry's) neither read nor write it. Their
+ * position belongs to the thing embedding them, and letting a puzzle's
+ * diagram leak into the standalone editor would be a bug in the other
+ * direction.
+ */
+let lastStandaloneFen: string | null = null;
+
 export function EditorView({
   onUse,
   useLabel = t('Analyse'),
@@ -99,9 +117,12 @@ export function EditorView({
   /** Prefill (e.g. a diagram read from a photo); falls back to the start. */
   initialFen?: string;
 }) {
-  const [state, setState] = useState<EditorState>(
-    () => (initialFen ? fromFen(initialFen) : undefined) ?? defaultEditorState(),
-  );
+  /** Embedded: someone else owns the position, by prop or by callback. */
+  const embedded = onUse !== undefined || initialFen !== undefined;
+  const [state, setState] = useState<EditorState>(() => {
+    const restore = initialFen ?? (embedded ? null : lastStandaloneFen);
+    return (restore ? fromFen(restore) : undefined) ?? defaultEditorState();
+  });
   const [tool, setTool] = useState<Tool>({ kind: 'move' });
   const [orientation, setOrientation] = useState<Color>('white');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -152,6 +173,11 @@ export function EditorView({
   const [copied, setCopied] = useState<'ok' | 'failed' | null>(null);
 
   const fen = useMemo(() => toFen(state), [state]);
+  // Remembered as it changes rather than on the way out: Analyse is not
+  // the only way to leave, and any of them can be followed by a Back.
+  useEffect(() => {
+    if (!embedded) lastStandaloneFen = fen;
+  }, [embedded, fen]);
   // Reuses the fen memo above — validate would otherwise serialize again.
   const validity = useMemo(() => validate(state, fen), [state, fen]);
   const epOptions = useMemo(() => epCandidates(state), [state]);
