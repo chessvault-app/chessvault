@@ -10,7 +10,7 @@ import { Select } from '@/ui/Select';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ProgressBar } from '@/ui/ProgressBar';
-import { Skeleton, SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
+import { Skeleton, SkeletonRows } from '@/ui/Skeleton';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { t } from '@/lib/i18n';
@@ -53,7 +53,6 @@ export function DashboardPage() {
   const [user, setUser] = useState<MetaUser | null>(null);
   const [failed, setFailed] = useState(0);
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
-  const pending = useSlowLoad(history === null);
   const [books, setBooks] = useState<BookSummary[] | null>(null);
 
 
@@ -322,8 +321,13 @@ export function DashboardPage() {
               ]}
             />
           </div>
+          {/* Drawn at once, not behind useSlowLoad: these rows ARE the
+              panel's height, so holding them back left a panel of a
+              header and a filter row that grew a fifth of a second later.
+              The threshold is for content that can appear without moving
+              anything, which this is not. */}
           {history === null ? (
-            pending ? <SkeletonRows rows={5} /> : null
+            <SkeletonRows rows={5} />
           ) : puzzles.length === 0 ? (
             <p className="text-subtle px-3 py-3 text-xs">
               {t(

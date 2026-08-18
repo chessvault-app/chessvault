@@ -302,8 +302,15 @@ export function SkeletonBoard({ className }: { className?: string }) {
           at every width, it was a row the wide layout does not have, and
           the whole page rose by its height when the study arrived. */}
       <div className="flex shrink-0 items-center gap-2 wide:hidden">
+        {/* The row a study actually wears on a phone, all four of it: the
+            way back, the name, the edit toggle and the save state. It was
+            a chevron and one bar, so the two controls on the right
+            arrived with the document and the name resized under them —
+            the header was there but only half of it. */}
         <Skeleton className="size-7 shrink-0 rounded-md" />
-        <Skeleton className="h-3.5 w-40" />
+        <Skeleton className="h-3.5 min-w-0 flex-1" />
+        <Skeleton className="size-7 shrink-0 rounded-md" />
+        <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
       <Skeleton className="aspect-square w-full max-w-[min(70vh,40rem)] shrink-0 rounded-xl" />
