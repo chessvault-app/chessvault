@@ -21,6 +21,18 @@
  * called from there would be a hook called conditionally. React 19 runs the
  * returned function as the cleanup.
  */
+/**
+ * Which block last spoke for a row.
+ *
+ * Two of them overlap on every load: the skeleton's board block and the
+ * real one. React mounts the replacement before unmounting what it
+ * replaces, so the skeleton's cleanup runs LAST and used to remove the
+ * variable the real block had just set — leaving the column uncapped with
+ * nothing left to re-publish, because a block only re-publishes when it
+ * resizes. Cleanup now only clears the row it still owns.
+ */
+const owner = new WeakMap<HTMLElement, Element>();
+
 export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | void {
   if (!el) return;
   const row = el.closest('.board-row-cap');
@@ -45,6 +57,7 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
     const drawn = el.querySelector('cg-container') ?? square;
     const box = (drawn ?? el).getBoundingClientRect();
     const inset = drawn && square ? square.getBoundingClientRect().top - box.top : 0;
+    owner.set(row, el);
     row.style.setProperty('--board-inset', `${Math.round(Math.abs(inset))}px`);
     row.style.setProperty('--board-col-h', `${Math.round(box.bottom - top)}px`);
   };
@@ -89,7 +102,10 @@ export function publishBoardHeight(el: HTMLDivElement | null): (() => void) | vo
     mutations.disconnect();
     observer.disconnect();
     // Left set, the last board's height would cap the next page's column
-    // before its own block has had a chance to measure.
+    // before its own block has had a chance to measure — but only clear it
+    // if this block is still the one that set it. See `owner`.
+    if (owner.get(row) !== el) return;
+    owner.delete(row);
     row.style.removeProperty('--board-col-h');
     row.style.removeProperty('--board-inset');
   };
