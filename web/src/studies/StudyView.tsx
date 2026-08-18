@@ -179,7 +179,13 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     // A study is a board beside its moves, so the wait is that shape —
     // the columns settle before the position arrives instead of snapping
     // into place when it does.
-    return <div className="h-full">{pending && <SkeletonBoard players={kind === 'game'} />}</div>;
+    return (
+      <div className="h-full">
+        {pending && (
+          <SkeletonBoard players={kind === 'game'} chapters={kind === 'study'} explorer />
+        )}
+      </div>
+    );
   }
 
   // Rendered twice — at the page top on stacked layouts, in the side column

@@ -276,11 +276,25 @@ export function SkeletonThemeGroups({
  * than where they had been drawn.
  */
 export function SkeletonDocument({ className }: { className?: string }) {
-  const paragraphs = [
-    ['w-full', 'w-11/12', 'w-4/5'],
-    ['w-full', 'w-full', 'w-3/5'],
-    ['w-10/12', 'w-full', 'w-2/3'],
-  ];
+  /**
+   * The note editor's own vertical rhythm, measured off a real document:
+   * a heading sits on a 38.25px line with 22.5px of margin above it, body
+   * text on 25.5px lines with 9px above the block, a sub-heading on
+   * 31.875px with 18.75px above.
+   *
+   * The bars used to be evenly spaced from the very top of the box, so the
+   * prose arrived about a line below where the placeholder had drawn it —
+   * the first block's own margin is what the box does not have.
+   */
+  const para = (lines: string[], key: string) => (
+    <div key={key} className="mt-[9px]">
+      {lines.map((w, i) => (
+        <div key={i} className="flex h-[25.5px] items-center">
+          <Skeleton className={cn('h-2.5', w)} />
+        </div>
+      ))}
+    </div>
+  );
   return (
     <Loading
       className={cn(
@@ -298,14 +312,16 @@ export function SkeletonDocument({ className }: { className?: string }) {
           <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-6">
-        {paragraphs.map((lines, p) => (
-          <div key={p} className="flex flex-col gap-2.5">
-            {lines.map((w, i) => (
-              <Skeleton key={i} className={cn('h-2.5', w)} />
-            ))}
-          </div>
-        ))}
+      <div className="min-h-0 flex-1">
+        <div className="mt-[22.5px] flex h-[38.25px] items-center">
+          <Skeleton className="h-4 w-2/5" />
+        </div>
+        {para(['w-full', 'w-11/12', 'w-4/5'], 'a')}
+        <div className="mt-[18.75px] flex h-[31.875px] items-center">
+          <Skeleton className="h-3.5 w-1/3" />
+        </div>
+        {para(['w-full', 'w-full', 'w-3/5'], 'b')}
+        {para(['w-10/12', 'w-full', 'w-2/3'], 'c')}
       </div>
     </Loading>
   );
@@ -327,6 +343,8 @@ export function SkeletonDocument({ className }: { className?: string }) {
  */
 export function SkeletonBoard({
   players = false,
+  chapters = false,
+  explorer = false,
   className,
 }: {
   /**
@@ -337,6 +355,10 @@ export function SkeletonBoard({
    * below and the gaps between. A study has no players and passes nothing.
    */
   players?: boolean;
+  /** A study's chapter list, which a game and a trainer do not have. */
+  chapters?: boolean;
+  /** The explorer, docked at the foot of the column on a wide screen. */
+  explorer?: boolean;
   className?: string;
 }) {
   const titleRow = (
@@ -394,6 +416,24 @@ export function SkeletonBoard({
             <Skeleton key={i} className="h-6 flex-1 rounded-md" />
           ))}
         </div>
+        {/* The panels below are the wide layout's: a phone shows one pane
+            at a time behind the tabs above, and that one is the panel that
+            fills the column. Measured on a study at 1920 — chapters 92px
+            (a 40px header, its rows, and the 10px grip that resizes it),
+            explorer 42px collapsed to its header — because the column
+            without them started its main panel 104px too high and ended
+            it 42px too low. */}
+        {chapters && (
+          <div className="bg-surface border-line flex shrink-0 flex-col overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] max-lg:hidden">
+            <div className="border-line flex h-10 shrink-0 items-center border-b px-3">
+              <Skeleton className="h-2.5 w-20" />
+            </div>
+            <div className="flex h-10 items-center px-2">
+              <Skeleton className="h-3 w-2/3" />
+            </div>
+            <div className="bg-surface-2 h-2.5 shrink-0" />
+          </div>
+        )}
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
@@ -402,6 +442,13 @@ export function SkeletonBoard({
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
+        {explorer && (
+          <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] max-lg:hidden">
+            <div className="flex h-10 items-center px-3">
+              <Skeleton className="h-2.5 w-16" />
+            </div>
+          </div>
+        )}
       </div>
     </Loading>
   );
