@@ -160,6 +160,36 @@ the map colouring in patches as answers land; a source too slow to wait
 for (the online database warming its cache, a dead link) falls back to
 colouring in place after a moment.
 
+### Two arrangements
+
+The same nodes, put in two places. The constellation answers *what is big
+and what is near what*; the tree answers *what follows what*, which is
+the question a repertoire is mostly read for and the one a force layout
+can never hold still enough to answer. Switching keeps the dots, their
+sizes and their edges — it is one map rearranging itself, not a second
+picture — and the device remembers which you were last in.
+
+The tree grows sideways on a desktop and downward on a phone: a tree
+wants its depth along the axis with room to spare, which is the long axis
+of a window and the short one of a phone held upright. Siblings clear
+each other by their labels, so the gap differs per axis — stacked, a
+label's height; side by side, its width, which is four times as much.
+
+A tree does not breathe and its dots cannot be dragged. The drift and the
+web are the constellation's, where a picture of a shape reads the same
+whichever few units a dot has wandered; a tree is a statement about
+order, and rows that wander make a straight line wander with them.
+
+**Prune** (the scissors, in a node's panel and in a phone's bottom bar)
+draws the moves that lead to that node and everything that follows it,
+and drops the siblings on the way — the way a wide map becomes readable
+is not folding one node at a time but saying "this line, never mind the
+rest". **Restore the whole graph** ends it, switching arrangements ends
+it, and it is not remembered between visits: coming back to a map that is
+mostly missing, with no memory of asking, reads as a map that has lost
+its branches. **Align** fits what is drawn, which is also what switching
+arrangements does for you.
+
 The layout is a deterministic force relaxation, so the same map always
 settles into the same shape and an edit nudges the picture instead of
 reshuffling it — and the page load opens with an overture: the dots
@@ -174,7 +204,8 @@ Wheel zooms to the cursor, dragging the ground pans, two fingers pinch
 — from anywhere, including from two dots, because on a dense map there
 is barely any bare canvas to find and "don't touch the dots" is not an
 instruction anybody can follow. Pressing a dot selects it and pressing
-it again lets it go, and dragging a dot pulls the web — mouse or touch.
+it again lets it go, and dragging a dot pulls the web — mouse or touch,
+in the constellation.
 The held dot follows the finger, its neighbours follow their springs,
 crowding pushes back, and the whole thing coasts to a stop after the
 release instead of freezing mid-swing. Where you leave things is where

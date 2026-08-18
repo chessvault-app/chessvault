@@ -5,6 +5,72 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.0
+
+- **The opening map can be read as a tree.** The same nodes, the same
+  sizes, the same edges, put in order instead of in a constellation:
+  depth along one axis, siblings along the other, every parent centred
+  over the children it owns. It grows sideways on a desktop and downward
+  on a phone, and the device remembers which arrangement you were last
+  in. A tree does not drift and its dots cannot be towed — that is the
+  constellation's, where wandering a few pixels costs nothing; here it
+  would make a straight line wander.
+
+- **Prune, for a map too wide to read.** Scissors on a node draws the
+  moves that lead there and everything that follows, and drops the
+  siblings on the way — one press against the dozens that folding one
+  node at a time would take. Restore the whole graph brings it back, and
+  so does switching arrangements. Align fits what is drawn, which is also
+  what switching now does for you: the pan and zoom you had were answers
+  to where things used to be.
+
+- **Home can drop a destination altogether.** Switching a tile off used
+  to move it to the row under the grid and no further, so a destination
+  you never use kept a button there for ever. There is a third place now
+  — off the page — listed by name in the customise sheet and one press
+  from coming back. Nothing is stranded: the sidebar and More reach every
+  section whatever home shows.
+
+- **The puzzle hub offers a theme worth practising.** Where a vault with
+  no imported books had an empty slot, it now names the theme that loses
+  most often — judged only once a theme has five counted attempts behind
+  it, and only when it is doing worse than the vault's own average.
+  Either way it says nothing rather than guessing, and no rate or rating
+  is shown.
+
+- **Waiting looks like what is coming, at the size it is coming.**
+  Placeholders across the app were the wrong shape or the wrong height,
+  so pages rearranged as they filled: shelf cards stood 20 px short of
+  the real ones, a game row 16 px, the settings page drew its own column
+  and then jumped into the page's. Board and note placeholders are now
+  built from the pages' own layout constants rather than from something
+  that resembles them, and each block holds its own place until its own
+  answer lands — a panel that says "nothing here yet" before anybody has
+  answered is worse than one that waits.
+
+- **Two lists stopped taking two round trips.** The elite list asked for
+  its databases and only then for its games; the online archive asked for
+  its months and only then for a month. The first was the client's to
+  fix, the second the server's — /months now carries the newest month's
+  games with the list that names it.
+
+- **The engine tab's line reads from the root.** It used to be walked
+  through the cursor, so stepping into a variation made the variation the
+  line and bracketed the mainline beside it, as if the tree rearranged
+  itself around you. The cursor marks where you are; it no longer decides
+  what the sentence is.
+
+- **Analysing from a map node opens the line, not the map.** It handed
+  the board the whole resolved tree with the cursor parked on your node,
+  so one question arrived carrying every other line in the map.
+
+- Smaller things: recent archive searches are one list rather than one
+  per site; the archive window opens at the height it ends up at instead
+  of growing under your thumb; the "Name this…" buttons are gone from
+  studies, notes and books, where double-clicking the title already did
+  it; a segmented control's parts are as wide as their labels; the start
+  position's details no longer open under a keyboard on a phone.
+
 ## 0.3.0
 
 - **The repertoire's new-game panel reads as a form.** Its four

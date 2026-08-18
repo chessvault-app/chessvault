@@ -82,7 +82,8 @@ is one connected body of work, and the links are what make it that.
   seamless hand-off to the engine when the line leaves book) — or drills
   one of your studies against that same field, remembering what you
   fumble ([how it works](docs/repertoire.md)).
-- **Opening map** — your preparation as a constellation: you place the
+- **Opening map** — your preparation as a constellation, or as a tree
+  when you would rather read it in order: you place the
   moves that define your repertoire, one map per colour, and link the
   studies and notes that cover them. Everything below a linked study is
   derived live from that study rather than stored, so coverage, depth

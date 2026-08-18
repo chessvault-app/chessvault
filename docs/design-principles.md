@@ -146,6 +146,27 @@ digit is also bold, tier marks also differ by icon shape.
   skeleton back 180 ms and then keeps it for 400 ms once shown. A
   placeholder that appears and vanishes reads as a glitch, and it makes a
   fast load feel slower than showing nothing would.
+- **Unless holding it back is what moves the page.** That threshold is
+  for content appearing INSIDE a block already on screen: nothing moves,
+  so a wait too short to notice is best not mentioned. Where the
+  placeholder IS the block — a whole panel, or a list that decides its
+  panel's height — the choice is not flash-or-nothing, it is
+  flash-or-shove, and those draw immediately. A placeholder replaced in
+  30 ms moves nothing; a panel that appears after 180 ms pushes
+  everything under it down.
+- **A placeholder is the size of what replaces it, and the size is
+  measured.** Not guessed from the class names: a shelf card is 88–90 px
+  because the excerpt is one line and the 64 px board is what governs, a
+  game row is 72 px because its three lines are 20 + 20 + 16. Compose the
+  real thing's own layout constants where they exist — `SkeletonBoard`
+  builds from `BOARD_WIDE_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
+  rather than from something that looks like them, because a copy drifts
+  the first time one of them moves.
+- **A block with nothing in it yet is not a block with nothing to show.**
+  An empty array reads the same whether the answer said "none" or has not
+  arrived, and a panel that announces "nothing solved yet" to somebody
+  with a hundred solves is worse than one that waits. Track the ANSWER
+  arriving, per block, and hold each one's own placeholder until it does.
 - **Cover the wait that actually exists.** Data arriving is not the same
   as content appearing: a big book's list answers in 48 ms and then takes
   most of a second to build, so the skeleton is keyed on the grid being on
