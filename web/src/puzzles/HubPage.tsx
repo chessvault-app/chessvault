@@ -123,6 +123,26 @@ interface BookNext {
     away and is where a list of books belongs. */
 const SHELF_ROWS = 1;
 
+/**
+ * Whether the slot under the log had anything in it last time, on THIS
+ * device.
+ *
+ * Reserving that slot is what stopped the book row appearing late, but a
+ * vault with no book and no theme worth practising ends with nothing to
+ * put there — so the placeholder was drawn and then taken away, which is
+ * the same jump pointing the other way. Nothing in either answer can be
+ * known before it arrives, so the page remembers what it found last time
+ * and reserves the place only for a vault that has been filling it.
+ *
+ * A device-local layout hint, not vault data: it decides what to draw for
+ * half a second and is corrected by the answer either way, so it belongs
+ * next to the other things this device remembers about how the page
+ * looked. Unknown reads as EMPTY — a first run is the one case with
+ * nothing to remember, and a placeholder that vanishes is worse there
+ * than a row that arrives.
+ */
+const SLOT_FILLED_KEY = 'vault:puzzle-hub-slot';
+
 /** How much history to fetch. More than fits, deliberately: the panel
     stretches to whatever the page has spare and scrolls its own rows, so
     the number that fits is a property of the phone, not of this file. */
@@ -687,6 +707,7 @@ function Hub() {
   const [historyIn, setHistoryIn] = useState(false);
   const [booksIn, setBooksIn] = useState(false);
   const [metaIn, setMetaIn] = useState(false);
+  const [slotWasFilled] = useState(() => localStorage.getItem(SLOT_FILLED_KEY) === '1');
 
   useEffect(() => {
     /**
@@ -874,7 +895,10 @@ function Hub() {
   const weak = meta?.weakTheme ?? null;
   const slot: 'pending' | 'books' | 'weak' | 'none' =
     !booksIn || !metaIn ? 'pending' : books.length > 0 ? 'books' : weak ? 'weak' : 'none';
-  const showBooks = settled && roomForBooks && slot !== 'none';
+  // Before the answers, what this device found last time; after them, what
+  // they actually say.
+  const showBooks =
+    settled && roomForBooks && (slot === 'pending' ? slotWasFilled : slot !== 'none');
   // The history panel is shown wherever there is ROOM for it, whether or
   // not there is anything in it — a section that appears only once it has
   // content teaches nobody that it exists (lanph3re's call).
@@ -891,6 +915,12 @@ function Hub() {
   // threshold), and a skeleton that flashes reads as a fault.
   const pending = useSlowLoad(!settled);
   const skeleton = !settled && pending;
+
+  // Remembered once the answers are in, for the next visit to draw from.
+  useEffect(() => {
+    if (slot === 'pending') return;
+    localStorage.setItem(SLOT_FILLED_KEY, slot === 'none' ? '0' : '1');
+  }, [slot]);
 
   // Subscribed rather than read once: the trainer writes it and coming back
   // here re-mounts, which used to be the whole story — but the vault owns
