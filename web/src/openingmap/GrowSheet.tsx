@@ -2,6 +2,9 @@ import { Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
 import { MY_GAMES_SOURCE } from '@/repertoire/field';
+import { myFilterQuery } from '@/store/explorer';
+import { FilterChip } from '@/ui/FilterChip';
+import type { Speed } from '@shared/gameIndex';
 import { Button } from '@/ui/Button';
 import { Segmented } from '@/ui/Segmented';
 import { Sheet } from '@/ui/Sheet';
@@ -21,6 +24,43 @@ import { fieldMovesFor } from './useGaps';
 const line = (sans: string[]): string =>
   sans.map((san, at) => (at % 2 === 0 ? `${at / 2 + 1}. ${san}` : san)).join(' ');
 
+/**
+ * Which of your games Grow reads.
+ *
+ * Not every game is repertoire evidence: a bullet scramble is what you
+ * had time for rather than what you have prepared, and a map grown from
+ * everything charts the panic as though it were the plan. The two that
+ * change the answer most are the clock and whether you kept the game.
+ *
+ * Side is not offered — the map's colour already decides it — and neither
+ * is the result: you play the same first ten moves whether you went on to
+ * win or lose, so filtering by outcome would narrow the evidence without
+ * sharpening it. The explorer's bar asks both, because it is answering a
+ * different question about the same games.
+ *
+ * Remembered per device, like the arrangement: which games count is a
+ * standing opinion about your own play, not a per-visit decision.
+ */
+const SPEEDS: { id: Speed; label: string }[] = [
+  { id: 'bullet', label: 'Bullet' },
+  { id: 'blitz', label: 'Blitz' },
+  { id: 'rapid', label: 'Rapid' },
+  { id: 'classical', label: 'Classical' },
+];
+const SPEEDS_KEY = 'vault:openingmap-grow-speeds';
+const COLLECTION_KEY = 'vault:openingmap-grow-collection';
+
+const storedSpeeds = (): Speed[] => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SPEEDS_KEY) ?? '[]') as unknown;
+    return Array.isArray(raw)
+      ? raw.filter((s): s is Speed => SPEEDS.some((known) => known.id === s))
+      : [];
+  } catch {
+    return [];
+  }
+};
+
 export function GrowSheet({
   map,
   facts,
@@ -34,6 +74,22 @@ export function GrowSheet({
 }) {
   const [floor, setFloor] = useState<'2' | '5' | '10'>('5');
   const [lines, setLines] = useState<string[][] | null>(null);
+  const [speeds, setSpeeds] = useState<Speed[]>(storedSpeeds);
+  const [collectionOnly, setCollectionOnly] = useState(
+    () => localStorage.getItem(COLLECTION_KEY) === '1',
+  );
+  // Empty means every game — myFilterQuery leaves out what is not set, and
+  // the server reads a missing filter as no filter.
+  const filters = useMemo(
+    () => myFilterQuery({ speeds: speeds.length > 0 ? speeds : undefined, collectionOnly }),
+    [speeds, collectionOnly],
+  );
+  const toggleSpeed = (id: Speed): void =>
+    setSpeeds((prev) => {
+      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
+      localStorage.setItem(SPEEDS_KEY, JSON.stringify(next));
+      return next;
+    });
   /**
    * How many of your games reach this position at all, which is a
    * different question from how many reach it often enough.
@@ -51,13 +107,13 @@ export function GrowSheet({
   useEffect(() => {
     if (!facts.fen) return;
     let live = true;
-    void fieldMovesFor(MY_GAMES_SOURCE, '', facts.fen, map.color).then((moves) => {
+    void fieldMovesFor(MY_GAMES_SOURCE, '', facts.fen, map.color, filters).then((moves) => {
       if (live) setReach(moves.reduce((sum, m) => sum + m.total, 0));
     });
     return () => {
       live = false;
     };
-  }, [facts.fen, map.color]);
+  }, [facts.fen, map.color, filters]);
 
   useEffect(() => {
     let live = true;
@@ -66,14 +122,14 @@ export function GrowSheet({
       color: map.color,
       startPath: facts.path,
       minGames: Number(floor),
-      moves: (fen) => fieldMovesFor(MY_GAMES_SOURCE, '', fen, map.color),
+      moves: (fen) => fieldMovesFor(MY_GAMES_SOURCE, '', fen, map.color, filters),
     }).then((found) => {
       if (live) setLines(found);
     });
     return () => {
       live = false;
     };
-  }, [map.color, facts.path, floor]);
+  }, [map.color, facts.path, floor, filters]);
 
   // The tips alone — a charted prefix is implied by its continuation.
   const tips = useMemo(() => {
@@ -97,6 +153,32 @@ export function GrowSheet({
           ariaLabel="Games floor"
         />
         <span className="text-muted text-xs">{t('games')}</span>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <span className="text-subtle text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          {t('From which games')}
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {SPEEDS.map(({ id, label }) => (
+            <FilterChip
+              key={id}
+              label={t(label)}
+              active={speeds.includes(id)}
+              onClick={() => toggleSpeed(id)}
+            />
+          ))}
+          <FilterChip
+            label={t('Kept only')}
+            title="Only games you added to your collection"
+            active={collectionOnly}
+            onClick={() =>
+              setCollectionOnly((on) => {
+                localStorage.setItem(COLLECTION_KEY, on ? '0' : '1');
+                return !on;
+              })
+            }
+          />
+        </div>
       </div>
       {lines === null ? (
         <div className="flex flex-col gap-2">

@@ -148,12 +148,18 @@ export async function fetchField(
   ratings: string,
   fen: string,
   side?: 'white' | 'black',
+  /**
+   * Extra query for the own-games source: which of your games count.
+   * Built by myFilterQuery, so the shape is the explorer's and there is
+   * one place that knows it.
+   */
+  filters?: string,
 ): Promise<FieldMove[]> {
   const url =
     source === ONLINE_SOURCE
       ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
       : source === MY_GAMES_SOURCE
-        ? `/api/mygames?fen=${encodeURIComponent(fen)}${side ? `&side=${side}` : ''}`
+        ? `/api/mygames?fen=${encodeURIComponent(fen)}${side ? `&side=${side}` : ''}${filters ? `&${filters}` : ''}`
         : `/api/refgames/explore?db=${encodeURIComponent(source)}&fen=${encodeURIComponent(fen)}`;
   const body = await api<{ moves?: FieldMove[] } | null>(url);
   if (!body?.moves) throw new Error('field unavailable');

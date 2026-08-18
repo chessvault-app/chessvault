@@ -75,8 +75,11 @@ export async function fieldMovesFor(
   ratings: string,
   fen: string,
   side?: 'white' | 'black',
+  /** Own-games filters, from myFilterQuery. Part of the key below: a
+      different set of games is a different answer, not a cache hit. */
+  filters?: string,
 ): Promise<FieldMove[]> {
-  const key = `${source}\n${ratings}\n${side ?? ''}\n${fenKey(fen)}`;
+  const key = `${source}\n${ratings}\n${side ?? ''}\n${filters ?? ''}\n${fenKey(fen)}`;
   const hit = cache.get(key);
   if (hit) return hit;
   if (Date.now() - (failedAt.get(key) ?? 0) < RETRY_MS) return [];
@@ -84,7 +87,7 @@ export async function fieldMovesFor(
   if (running) return running;
   const answer = (async (): Promise<FieldMove[]> => {
     try {
-      const moves = await fetchField(source, ratings, fen, side);
+      const moves = await fetchField(source, ratings, fen, side, filters);
       cache.set(key, moves);
       failedAt.delete(key);
       return moves;

@@ -179,8 +179,14 @@ function myGamesQuery(fen: string, f: MyGamesFilters): string {
   return new URLSearchParams({ fen, ...Object.fromEntries(new URLSearchParams(myFilterQuery(f))) }).toString();
 }
 
-/** The filter half of that query, for the endpoints that take no position. */
-function myFilterQuery(f: MyGamesFilters): string {
+/**
+ * The filter half of that query, for the endpoints that take no position.
+ *
+ * Exported because the opening map's Grow sheet asks the same index the
+ * same way. One builder, so a filter added here reaches both rather than
+ * quietly applying in one place and not the other.
+ */
+export function myFilterQuery(f: MyGamesFilters): string {
   const query = new URLSearchParams();
   if (f.side) query.set('side', f.side);
   if (f.outcome) query.set('outcome', f.outcome);
