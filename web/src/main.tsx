@@ -5,6 +5,7 @@ import { initTheme, watchSystemTheme } from './store/theme';
 import { initPrefs } from './store/prefs';
 import { installTooltips } from './ui/tooltip';
 import { startKeyboardTracking } from './lib/keyboardInset';
+import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
 import { sweepStorage } from './lib/storageSweep';
 import { hydrateTraining } from './lib/training';
@@ -51,6 +52,12 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 // The keyboard is measured on every platform that has one, and the app
 // shell ends where it begins — see startKeyboardTracking.
 startKeyboardTracking();
+
+// And the board's box is measured in whole squares, so that it is the board
+// you can see and the panels beside it can line up with it — see
+// board/pixelGrid. Before the first render: the value is a fallback away
+// from correct, but a board drawn without it would resize on the next frame.
+startPixelGridTracking();
 
 const container = document.getElementById('root');
 if (!container) throw new Error('#root missing from index.html');

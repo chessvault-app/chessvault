@@ -700,6 +700,42 @@ cg-board square.check {
   translate: -50% -50%;
 }
 
+/* The board's own box, rounded DOWN to a whole number of squares.
+
+   Chessground floors the board it draws to a whole number of DEVICE
+   pixels per square and we centre the remainder (the two rules above),
+   so the drawn board sat up to 8 device px inside its box — and the side
+   column, which aligns to the BOX because that is the only thing it can
+   measure from the first render, started that far above the board's
+   visible top edge. Two or three pixels at 1x, and lanph3re could see
+   them.
+
+   Rounding the box to the same grid leaves chessground nothing to floor:
+   the box becomes the board you can see, top and bottom, and the panels
+   line up with it. The drawn board does not lose a pixel — it was
+   already floored to exactly this width; what goes is the empty margin
+   that was around it. --cg-quantum is one square's worth of device
+   pixels in CSS px, published by board/pixelGrid.ts, and 8px is the
+   right answer at the 1x and 2x displays where a missing value is most
+   likely.
+
+   This is the cheap half of the alignment: the alternative, publishing
+   the remainder for the column to shift itself down by, was tried twice
+   and reverted, because a wrong measurement there moved the whole column
+   instead of three pixels of it. A wrong quantum here costs at most 8px
+   of board.
+
+   margin-inline keeps the visible board exactly where it has always
+   been: the box is up to a square-quantum narrower than the cell it sits
+   in, and centring it puts back the centring the container was doing.
+   The plain `width` first is the fallback for anything without round(),
+   which then behaves exactly as this app did before. */
+.board-box {
+  width: 100%;
+  width: round(down, 100%, var(--cg-quantum, 8px));
+  margin-inline: auto;
+}
+
 .cg-wrap cg-board {
   border-radius: inherit;
 }

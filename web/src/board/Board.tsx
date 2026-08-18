@@ -288,7 +288,9 @@ export function Board({
       className={cn(
         // Square, capped by whichever axis is scarcer — this is what makes the
         // board behave on a phone in landscape as well as a wide desktop.
-        'aspect-square w-full',
+        // `board-box` (index.css) is the width: the box rounds itself down to
+        // a whole number of squares so that it IS the board you can see.
+        'aspect-square board-box',
         className,
       )}
     >
