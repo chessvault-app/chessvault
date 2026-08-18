@@ -27,6 +27,7 @@ import { bandOf, difficultyQuery, storedDifficulty, useDifficultyWord } from './
 import { setPendingPuzzle, type HandoffMode } from './handoff';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
+import { themeLabel } from './ThemesPage';
 import { fetchSolvedToday } from './today';
 
 /**
@@ -67,6 +68,14 @@ export function HubPage() {
 interface Meta {
   ready: boolean;
   failed?: number;
+  /** The theme this vault loses most often — see weakestTheme(), server. */
+  weakTheme?: WeakTheme | null;
+}
+
+interface WeakTheme {
+  theme: string;
+  attempts: number;
+  wins: number;
 }
 
 interface HistoryEntry {
@@ -369,6 +378,55 @@ function EmptySlot({
  * when the file changed), so the moment there IS a history this orders
  * itself by it and the top row is genuinely where you left off.
  */
+/**
+ * The theme this vault is worst at, offered as somewhere to go.
+ *
+ * It lives in the book row's slot and takes the book row's shape — same
+ * box, same heading strip, same 40px left block, same progress bar and
+ * count — because it is what that slot holds for a vault with no books.
+ * A page whose height depends on whether you have ever imported a PDF is
+ * a page with two layouts to keep honest.
+ *
+ * Earns the place rather than filling it: it names one thing to practise
+ * and goes straight there. The server only offers a theme with enough
+ * attempts behind it to mean something, and only one this vault does
+ * WORSE at than its own average.
+ */
+function WeakThemePanel({ weak }: { weak: WeakTheme }) {
+  return (
+    <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        {t('Worth practising')}
+      </p>
+      <button
+        type="button"
+        onClick={() => navigate('puzzles', 'theme', weak.theme)}
+        className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100"
+      >
+        <span className="bg-surface-2 text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+          <Puzzle className="size-3.5" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className="text-fg truncate text-xs font-medium">{themeLabel(weak.theme)}</span>
+          {/* Solved against failed, the same bar a book wears. No rate and
+              no rating — the bar says how it has gone and the page does
+              not hand back a verdict. */}
+          <ProgressBar
+            total={weak.attempts}
+            solved={weak.wins}
+            failed={weak.attempts - weak.wins}
+            showEmpty
+          />
+        </span>
+        <span className="text-subtle shrink-0 font-mono text-[0.6875rem] tabular-nums">
+          {weak.wins}/{weak.attempts}
+        </span>
+        <ChevronRight className="text-subtle size-3.5 shrink-0" />
+      </button>
+    </div>
+  );
+}
+
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
     <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
@@ -589,6 +647,7 @@ function Hub() {
   const [bookIn, setBookIn] = useState(false);
   const [historyIn, setHistoryIn] = useState(false);
   const [booksIn, setBooksIn] = useState(false);
+  const [metaIn, setMetaIn] = useState(false);
 
   useEffect(() => {
     /**
@@ -639,6 +698,7 @@ function Hub() {
         // Every button still works; only the review row and the tally
         // are missing, and both are decoration on a page of links.
       } finally {
+        if (live) setMetaIn(true);
         done();
       }
     })();
@@ -763,11 +823,19 @@ function Hub() {
   // `settled` on all three, and on every card below: the blocks share one
   // column of height, so each of them is part of how the others are sized
   // (see ANSWERS). They go up together or not at all.
-  // Room for it, and either a book to show or nobody has said yet. Keyed
-  // on the answer and not on `books.length`, which is empty both when
-  // there are no books and when the shelf has not answered — so the row
-  // used to be absent during the wait and then appear.
-  const showBooks = settled && roomForBooks && (booksIn ? books.length > 0 : true);
+  /**
+   * What the slot under the history holds: the book you were last in, or
+   * — for a vault that has never imported one — the theme it is worst at.
+   *
+   * 'pending' until BOTH answers are in, because either could fill it and
+   * an empty slot is not a fact until both have spoken. Keyed on arrival
+   * and not on `books.length`, which reads the same whether the shelf is
+   * empty or merely unanswered.
+   */
+  const weak = meta?.weakTheme ?? null;
+  const slot: 'pending' | 'books' | 'weak' | 'none' =
+    !booksIn || !metaIn ? 'pending' : books.length > 0 ? 'books' : weak ? 'weak' : 'none';
+  const showBooks = settled && roomForBooks && slot !== 'none';
   // The history panel is shown wherever there is ROOM for it, whether or
   // not there is anything in it — a section that appears only once it has
   // content teaches nobody that it exists (lanph3re's call).
@@ -839,7 +907,14 @@ function Hub() {
       {showHistory && showBooks && (
         <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />
       )}
-      {showBooks && (booksIn ? <BookShelfPanel books={books} /> : <HubSkeletonBookRow />)}
+      {showBooks &&
+        (slot === 'books' ? (
+          <BookShelfPanel books={books} />
+        ) : slot === 'weak' ? (
+          <WeakThemePanel weak={weak!} />
+        ) : (
+          <HubSkeletonBookRow />
+        ))}
 
       {/* Whichever block is going to absorb the page's slack.
           With a history, that is the history — this cluster keeps its

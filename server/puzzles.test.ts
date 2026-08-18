@@ -475,3 +475,94 @@ describe('sweepUnfinishedPuzzleBuild', () => {
     expect(existsSync(dbPath)).toBe(false);
   });
 });
+
+/**
+ * The weakest theme is the one thing on the hub that names a judgement
+ * about the solver, so the two rules that keep it honest are worth
+ * pinning: enough attempts to mean anything, and worse than this vault's
+ * own average rather than merely imperfect.
+ */
+describe('puzzles api (weakest theme)', () => {
+  let dir: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzles-weak-'));
+    const dbPath = join(dir, 'puzzles.sqlite');
+    const db = new Database(dbPath);
+    db.exec(`
+      CREATE TABLE puzzles (
+        id TEXT PRIMARY KEY, fen TEXT NOT NULL, moves TEXT NOT NULL,
+        rating INTEGER NOT NULL, rd INTEGER NOT NULL, popularity INTEGER NOT NULL,
+        plays INTEGER NOT NULL, themes TEXT NOT NULL, game_url TEXT, opening_tags TEXT
+      );
+      CREATE TABLE themes (theme TEXT NOT NULL, rating INTEGER NOT NULL, id TEXT NOT NULL);
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('puzzles', '2');
+      INSERT INTO puzzles VALUES
+        ('aaa', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1500, 80, 90, 10, 'endgame short', NULL, NULL),
+        ('bbb', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', 1520, 80, 90, 10, 'fork short', NULL, NULL);
+      INSERT INTO themes VALUES
+        ('endgame', 1500, 'aaa'), ('short', 1500, 'aaa'),
+        ('fork', 1520, 'bbb'), ('short', 1520, 'bbb');
+    `);
+    db.close();
+    puzzles = puzzlesApi(dbPath, join(dir, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterEach(() => {
+    puzzles.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const log = (id: string, win: boolean, times: number): void => {
+    mkdirSync(join(dir, 'state'), { recursive: true });
+    for (let i = 0; i < times; i++) {
+      appendFileSync(
+        join(dir, 'state', 'history.jsonl'),
+        `${JSON.stringify({ id, win, at: '2026-01-01T00:00:00Z' })}
+`,
+      );
+    }
+  };
+
+  const weak = async (): Promise<{ theme: string; attempts: number; wins: number } | null> =>
+    (await (await app.request('/api/puzzles/meta')).json()).weakTheme;
+
+  it('names the theme that loses most, against the vault-wide rate', async () => {
+    // fork 1/6; endgame 6/6; short 7/12, which is exactly the overall rate
+    // and therefore not a weakness.
+    log('bbb', true, 1);
+    log('bbb', false, 5);
+    log('aaa', true, 6);
+    expect(await weak()).toEqual({ theme: 'fork', attempts: 6, wins: 1 });
+  });
+
+  it('says nothing about a theme with too little behind it', async () => {
+    // Four losses is a bad afternoon, not a weakness.
+    log('bbb', false, 4);
+    log('aaa', true, 6);
+    expect(await weak()).toBeNull();
+  });
+
+  it('says nothing when nothing is worse than average', async () => {
+    log('aaa', true, 6);
+    log('bbb', true, 6);
+    expect(await weak()).toBeNull();
+  });
+
+  it('ignores attempts that were not counted', async () => {
+    mkdirSync(join(dir, 'state'), { recursive: true });
+    for (let i = 0; i < 6; i++) {
+      appendFileSync(
+        join(dir, 'state', 'history.jsonl'),
+        `${JSON.stringify({ id: 'bbb', win: false, counted: false })}
+`,
+      );
+    }
+    log('aaa', true, 6);
+    expect(await weak()).toBeNull();
+  });
+});

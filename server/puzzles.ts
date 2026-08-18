@@ -93,6 +93,12 @@ export function sweepUnfinishedPuzzleBuild(dbPath: string = DATA_PUZZLES): void 
   console.log('puzzles: discarded a part-built database — the build that wrote it never finished');
 }
 
+/**
+ * How many counted attempts a theme needs before this vault is willing to
+ * call it a weakness. Under five, one unlucky pin is a 0% record.
+ */
+const WEAK_THEME_MIN = 5;
+
 /** One history.jsonl line; attempts carry more fields than the two rules read. */
 type Attempt = { id: string; win: boolean; counted?: boolean } & Record<string, unknown>;
 
@@ -389,6 +395,64 @@ export function puzzlesApi(
   const attemptedIds = (): Set<string> => new Set(historyEntries().map((e) => e.id));
 
   /**
+   * The theme this vault is worst at, or null when there is nothing
+   * honest to say about it yet.
+   *
+   * Two rules keep it from being noise. A theme is only judged once it
+   * has WEAK_THEME_MIN counted attempts, and it is only reported when it
+   * is losing MORE often than the vault does overall — a theme you are
+   * better at than your own average is not a weakness whatever its rate,
+   * and naming one would send you to practise your best tactic.
+   *
+   * Attempts carry no themes of their own (history.jsonl is a log of ids
+   * and outcomes), so the themes come from the puzzle database by id. One
+   * query per 500 ids rather than one per attempt: SQLite's parameter
+   * limit is what the chunk is for, and it is the same walk the review
+   * pool already does over this file.
+   */
+  const weakestTheme = (
+    db: InstanceType<typeof Database>,
+  ): { theme: string; attempts: number; wins: number } | null => {
+    const attempts = historyEntries().filter((e) => e.counted !== false);
+    if (attempts.length === 0) return null;
+    const ids = [...new Set(attempts.map((e) => e.id))];
+    const themesById = new Map<string, string[]>();
+    for (let i = 0; i < ids.length; i += 500) {
+      const slice = ids.slice(i, i + 500);
+      const rows = db
+        .prepare(
+          `SELECT id, theme FROM themes WHERE id IN (${slice.map(() => '?').join(',')})`,
+        )
+        .all(...slice) as { id: string; theme: string }[];
+      for (const row of rows) {
+        const found = themesById.get(row.id);
+        if (found) found.push(row.theme);
+        else themesById.set(row.id, [row.theme]);
+      }
+    }
+    const tally = new Map<string, { attempts: number; wins: number }>();
+    let wins = 0;
+    for (const entry of attempts) {
+      if (entry.win) wins += 1;
+      for (const theme of themesById.get(entry.id) ?? []) {
+        const seen = tally.get(theme) ?? { attempts: 0, wins: 0 };
+        seen.attempts += 1;
+        if (entry.win) seen.wins += 1;
+        tally.set(theme, seen);
+      }
+    }
+    const overall = wins / attempts.length;
+    let worst: { theme: string; attempts: number; wins: number } | null = null;
+    for (const [theme, seen] of tally) {
+      if (seen.attempts < WEAK_THEME_MIN) continue;
+      const rate = seen.wins / seen.attempts;
+      if (rate >= overall) continue;
+      if (!worst || rate < worst.wins / worst.attempts) worst = { theme, ...seen };
+    }
+    return worst;
+  };
+
+  /**
    * Puzzles whose LATEST attempt was a loss: solving one cleanly (in any
    * mode) removes it from the pool, failing re-adds it. Only puzzles with
    * at least one COUNTED attempt are eligible — an uncounted replay can
@@ -602,6 +666,7 @@ export function puzzlesApi(
       puzzles: Number(meta.puzzles ?? 0),
       themes: themeCounts(db),
       failed: failedPool().length,
+      weakTheme: weakestTheme(db),
       user: publicState(user),
     });
   });
