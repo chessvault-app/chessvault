@@ -409,6 +409,15 @@ export function puzzlesApi(
    * query per 500 ids rather than one per attempt: SQLite's parameter
    * limit is what the chunk is for, and it is the same walk the review
    * pool already does over this file.
+   *
+   * Read from `puzzles`, whose id is the primary key, and NOT from the
+   * `themes` table, which looks like the natural place and is a trap:
+   * its only index is (theme, rating), so a lookup BY ID scans all 27.6
+   * million rows of it. That is what the first cut of this did, and it
+   * put 2.7 seconds into /api/puzzles/meta — a request the hub, the
+   * dashboard and the themes page all wait on. The same answer off the
+   * primary key is a few milliseconds; puzzles.themes is the same list,
+   * space-separated.
    */
   const weakestTheme = (
     db: InstanceType<typeof Database>,
@@ -421,13 +430,11 @@ export function puzzlesApi(
       const slice = ids.slice(i, i + 500);
       const rows = db
         .prepare(
-          `SELECT id, theme FROM themes WHERE id IN (${slice.map(() => '?').join(',')})`,
+          `SELECT id, themes FROM puzzles WHERE id IN (${slice.map(() => '?').join(',')})`,
         )
-        .all(...slice) as { id: string; theme: string }[];
+        .all(...slice) as { id: string; themes: string }[];
       for (const row of rows) {
-        const found = themesById.get(row.id);
-        if (found) found.push(row.theme);
-        else themesById.set(row.id, [row.theme]);
+        themesById.set(row.id, row.themes.split(' ').filter(Boolean));
       }
     }
     const tally = new Map<string, { attempts: number; wins: number }>();
