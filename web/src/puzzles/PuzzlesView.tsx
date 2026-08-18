@@ -4,10 +4,12 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
+  Cpu,
   Eye,
   FlipVertical2,
   LayoutGrid,
   Lightbulb,
+  ListOrdered,
   Microscope,
   RotateCw,
   Settings2,
@@ -25,6 +27,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { MoveActions, StatusBar } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
+import { PaneTabs } from '@/ui/PaneTabs';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -33,6 +36,7 @@ import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
+import { useMediaQuery } from '@/lib/media';
 import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
@@ -479,6 +483,8 @@ function Trainer({
   // the real analysis board + merged engine/moves panel. Entering is an
   // explicit "analyse" act, so the engine comes on; leaving turns it off.
   const [analysing, setAnalysing] = useState(false);
+  /** Which pane the phone is showing while analysing. Desktop shows both. */
+  const [pane, setPane] = useState<'moves' | 'engine'>('engine');
   const analysingRef = useRef(false);
   analysingRef.current = analysing;
   useEffect(
@@ -487,6 +493,16 @@ function Trainer({
     },
     [],
   );
+
+  /**
+   * `wide` in JavaScript, because the two layouts differ in BEHAVIOUR and
+   * not only in what is drawn: a desktop turns the engine on by itself the
+   * moment a puzzle ends and never shows an Analyse button, while a phone
+   * waits to be asked. The query is the CSS variant's, spelled out —
+   * matchMedia takes the comma-separated list that Tailwind's shorthand
+   * cannot (see the note beside @custom-variant wide).
+   */
+  const wide = useMediaQuery('(min-width: 64rem), (orientation: landscape) and (min-width: 44rem)');
 
   const analyse = (): void => {
     if (!puzzle) return;
@@ -506,6 +522,18 @@ function Trainer({
     useEngine.getState().setEnabled(true);
     setAnalysing(true);
   };
+
+  /**
+   * A finished puzzle on a desktop analyses itself. There is room for the
+   * engine beside the board there, so waiting to be asked only costs a
+   * click — and the panel it would appear in is already on screen.
+   */
+  useEffect(() => {
+    if (wide && phase === 'done' && puzzle && !analysing) analyse();
+    // analyse() closes over the current puzzle; re-running it on every
+    // render is what the guard above is for.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wide, phase, puzzle, analysing]);
 
   const backToPuzzle = (): void => {
     useEngine.getState().setEnabled(false);
@@ -554,7 +582,16 @@ function Trainer({
     );
   }
 
-  if (analysing && puzzle) {
+  /**
+   * The PHONE's analysing view. A desktop never gets here: it analyses in
+   * place, with the engine above the moves and the puzzle panel still
+   * under them (see the main return), because it has the column for it.
+   *
+   * Here there is room for one pane at a time, so this is the board-page
+   * shape — a switcher over a single panel — rather than a column of
+   * panels nobody can see the bottom of.
+   */
+  if (analysing && puzzle && !wide) {
     return (
       <div className={BOARD_SCROLL_SHELL}>
         <AnalysisBoard />
@@ -571,8 +608,15 @@ function Trainer({
               {t('Next puzzle')}
             </Button>
           </div>
-          <Panel flush className="min-h-min flex-1">
-            <EngineBlock />
+          <PaneTabs
+            value={pane}
+            onChange={setPane}
+            tabs={[
+              { id: 'moves', label: t('Moves'), icon: ListOrdered },
+              { id: 'engine', label: 'Engine', icon: Cpu },
+            ]}
+          />
+          <Panel flush className={cn('min-h-0 flex-1', pane !== 'moves' && 'hidden')}>
             <PanelHeader
               title={t('Moves')}
               actions={
@@ -583,8 +627,12 @@ function Trainer({
               }
             />
             <MoveTreePane />
-            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
             <StatusBar />
+          </Panel>
+          {/* Kept mounted, so the engine keeps following the board while
+              the moves tab is the one on screen. */}
+          <Panel flush className={cn('min-h-0 flex-1', pane !== 'engine' && 'hidden')}>
+            <EngineBlock standalone />
           </Panel>
         </div>
         {/* Phones: move nav in the bottom bar while analysing. */}
@@ -616,63 +664,69 @@ function Trainer({
         </h1>
       </div>
       {/* Board column, matching the shared budget so the board sits where
-          every other view puts it. */}
-      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
-        <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
-          <div className="hidden w-full items-end wide:flex wide:h-10" />
-          <div className="relative w-full">
-            {displayed ? (
-              <Board
-                fen={displayed.fen}
-                orientation={orientation}
-                dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
-                lastMove={displayed.lastMove}
-                check={displayed.check}
-                autoShapes={hintShapes}
-                onMove={onMove}
-              />
-            ) : error && metaAnswered ? (
-              // What happened, and a way to go again — a dead end here
-              // used to need a full page reload to recover from.
-              <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
-                <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                  <p className="text-muted text-sm">{error}</p>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => void loadNext(theme, difficulty)}
-                  >
-                    <RotateCw className="size-3.5" />
-                    {t('Try again')}
-                  </Button>
+          every other view puts it. Once the puzzle is over it becomes the
+          analysis board itself, so the pieces move freely and the eval bar
+          is the one every other board page draws. */}
+      {analysing ? (
+        <AnalysisBoard />
+      ) : (
+        <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+          <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+            <div className="hidden w-full items-end wide:flex wide:h-10" />
+            <div className="relative w-full">
+              {displayed ? (
+                <Board
+                  fen={displayed.fen}
+                  orientation={orientation}
+                  dests={phase === 'solving' && !reviewing ? displayed.dests : new Map()}
+                  lastMove={displayed.lastMove}
+                  check={displayed.check}
+                  autoShapes={hintShapes}
+                  onMove={onMove}
+                />
+              ) : error && metaAnswered ? (
+                // What happened, and a way to go again — a dead end here
+                // used to need a full page reload to recover from.
+                <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
+                  <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
+                    <p className="text-muted text-sm">{error}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void loadNext(theme, difficulty)}
+                    >
+                      <RotateCw className="size-3.5" />
+                      {t('Try again')}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              // The bare Skeleton and not SkeletonBoard: the page around
-              // this is already drawn — its header, its panel, its bottom
-              // band — and only the board itself is still missing. A whole
-              // page's skeleton dropped into a board's slot would draw a
-              // second header inside the first.
-              <Skeleton className="aspect-square w-full rounded-xl" />
-            )}
-            {promotion.pending && (
-              <PromotionPicker
-                color={promotion.pending.color}
-                dest={promotion.pending.dest}
-                orientation={orientation}
-                onSelect={promotion.complete}
-                onCancel={promotion.cancel}
-              />
-            )}
-            {!reviewing && phase === 'wrong' && (
-              <MoveBadge kind="bad" view={view} orientation={orientation} />
-            )}
-            {!reviewing && phase === 'done' && !failed && (
-              <MoveBadge kind="good" view={view} orientation={orientation} />
-            )}
+              ) : (
+                // The bare Skeleton and not SkeletonBoard: the page around
+                // this is already drawn — its header, its panel, its bottom
+                // band — and only the board itself is still missing. A whole
+                // page's skeleton dropped into a board's slot would draw a
+                // second header inside the first.
+                <Skeleton className="aspect-square w-full rounded-xl" />
+              )}
+              {promotion.pending && (
+                <PromotionPicker
+                  color={promotion.pending.color}
+                  dest={promotion.pending.dest}
+                  orientation={orientation}
+                  onSelect={promotion.complete}
+                  onCancel={promotion.cancel}
+                />
+              )}
+              {!reviewing && phase === 'wrong' && (
+                <MoveBadge kind="bad" view={view} orientation={orientation} />
+              )}
+              {!reviewing && phase === 'done' && !failed && (
+                <MoveBadge kind="good" view={view} orientation={orientation} />
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         {/* The column header band: h-9 + the column's gap-3 equals the
@@ -693,6 +747,44 @@ function Trainer({
         {/* Fresh training folds this panel into two icons on the Puzzle
             panel header (lanph3re: same treatment on desktop as mobile); it only
             renders for the modes that need their explanatory text. */}
+        {/* The moves sit ABOVE the puzzle panel, not below it: they are
+            what you read while solving, and the moment the puzzle ends a
+            desktop docks the engine on top of them — which is then the
+            same panel Games, Studies and Board all use.
+
+            A phone gets no moves panel until then. One screen has room
+            for the puzzle or for the moves, not both, and there the moves
+            arrive with Analyse (see the analysing return above). */}
+        {analysing ? (
+          <Panel flush className="min-h-min flex-1">
+            <EngineBlock />
+            <PanelHeader
+              title={t('Moves')}
+              actions={
+                <>
+                  <SidelinesToggle />
+                  <MoveActions allowReset={false} />
+                </>
+              }
+            />
+            <MoveTreePane />
+            <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+            <StatusBar />
+          </Panel>
+        ) : wide ? (
+          answerTree ? (
+            <AnswerPanel
+              tree={answerTree}
+              cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
+              onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
+            />
+          ) : (
+            <Panel flush className="shrink-0">
+              <PanelHeader title={t('Moves')} />
+              <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
+            </Panel>
+          )
+        ) : null}
         {mode !== 'fresh' && (
         <Panel flush className="shrink-0">
           <PanelHeader
@@ -856,10 +948,13 @@ function Trainer({
                     <RotateCw className="size-3.5" />
                     {t(mode === 'single' ? 'Back to dashboard' : 'Next puzzle')}
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={analyse}>
-                    <Microscope className="size-3.5" />
-                    {t('Analyse')}
-                  </Button>
+                  {/* Phones only: a desktop is already analysing by now. */}
+                  {!wide && (
+                    <Button variant="secondary" size="sm" onClick={analyse}>
+                      <Microscope className="size-3.5" />
+                      {t('Analyse')}
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
@@ -913,18 +1008,6 @@ function Trainer({
         </Panel>
 
 
-        {answerTree ? (
-          <AnswerPanel
-            tree={answerTree}
-            cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
-            onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
-          />
-        ) : (
-          <Panel flush className="shrink-0">
-            <PanelHeader title={t('Moves')} />
-            <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
-          </Panel>
-        )}
 
       </div>
 
