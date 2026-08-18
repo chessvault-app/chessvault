@@ -7,7 +7,7 @@ import { PageShell } from '@/ui/PageShell';
 import { navigate } from '@/lib/router';
 import { ChipRow } from '@/ui/ChipRow';
 import { SearchInput } from '@/ui/Input';
-import { SkeletonThemeGroups, useSlowLoad } from '@/ui/Skeleton';
+import { Skeleton, SkeletonThemeCard, SkeletonThemeGroups, useSlowLoad } from '@/ui/Skeleton';
 import { t } from '@/lib/i18n';
 
 /**
@@ -175,10 +175,19 @@ export function ThemesPage() {
             className="w-full sm:w-auto"
             label={t('All themes')}
             count={total}
+            pending={themes === null}
             highlight
             onClick={() => navigate('puzzles')}
           />
-          {failed > 0 && (
+          {/* The review chip and the counts come from the same answer as
+              the themes, so it used to arrive with them — turning a row of
+              one into a row of two under a search box that had not moved.
+              Its place is held instead. A vault with nothing failed gives
+              the place up when the answer says so, which is the one case
+              that cannot be known in advance. */}
+          {themes === null ? (
+            <SkeletonThemeCard className="w-full sm:w-auto" />
+          ) : failed > 0 ? (
             <ThemeCard
               className="w-full sm:w-auto"
               label={t('Review failed puzzles')}
@@ -186,7 +195,7 @@ export function ThemesPage() {
               icon={RotateCcw}
               onClick={() => navigate('puzzles', 'failed')}
             />
-          )}
+          ) : null}
         </ChipRow>
 
         {themes === null ? (
@@ -250,6 +259,7 @@ function ThemeCard({
   highlight = false,
   className,
   icon: Icon = Puzzle,
+  pending,
 }: {
   label: string;
   count: number;
@@ -257,6 +267,8 @@ function ThemeCard({
   highlight?: boolean;
   className?: string;
   icon?: typeof Puzzle;
+  /** The count is not known yet, so it is a bar rather than a 0. */
+  pending?: boolean;
 }) {
   return (
     <button
@@ -282,7 +294,13 @@ function ThemeCard({
           {label}
         </span>
         <span className="text-subtle block font-mono text-[0.6875rem]">
-          {compact.format(count)}
+          {pending ? (
+            // A zero that becomes six million is a number the page stated
+            // and then took back; the placeholder says nothing instead.
+            <Skeleton className="my-[0.1875rem] block h-2 w-10" />
+          ) : (
+            compact.format(count)
+          )}
         </span>
       </span>
     </button>

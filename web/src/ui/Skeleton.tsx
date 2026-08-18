@@ -213,6 +213,28 @@ export function SkeletonTiles({ tiles = 48, className }: { tiles?: number; class
  * 54px cards. The bars were both the wrong shape and the wrong height,
  * so the page rearranged completely as the themes landed.
  */
+export function SkeletonThemeCard({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        'bg-surface border-line flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
+        className,
+      )}
+    >
+      <Skeleton className="size-4 shrink-0 rounded" />
+      <div className="min-w-0 flex-1">
+        {/* A name at text-xs over a count, both 16px lines. */}
+        <div className="flex h-4 items-center">
+          <Skeleton className="h-2.5 w-2/3" />
+        </div>
+        <div className="flex h-4 items-center">
+          <Skeleton className="h-2 w-8" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SkeletonThemeGroups({
   groups = 3,
   cards = 6,
@@ -232,21 +254,7 @@ export function SkeletonThemeGroups({
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {Array.from({ length: cards }, (_, i) => (
-              <div
-                key={i}
-                className="bg-surface border-line flex items-center gap-2.5 rounded-xl border px-3 py-2.5"
-              >
-                <Skeleton className="size-4 shrink-0 rounded" />
-                <div className="min-w-0 flex-1">
-                  {/* A name at text-xs over a count, both 16px lines. */}
-                  <div className="flex h-4 items-center">
-                    <Skeleton className="h-2.5 w-2/3" />
-                  </div>
-                  <div className="flex h-4 items-center">
-                    <Skeleton className="h-2 w-8" />
-                  </div>
-                </div>
-              </div>
+              <SkeletonThemeCard key={i} />
             ))}
           </div>
         </section>
