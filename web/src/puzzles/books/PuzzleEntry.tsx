@@ -435,15 +435,6 @@ function SolutionRecorder({
       </div>
 
       <div className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button variant="ghost" size="icon-sm" title={t('Back to the position')} onClick={onBack}>
-            <ChevronLeft className="size-3.5" />
-          </Button>
-          <span className="text-muted min-w-0 flex-1 truncate text-base">
-            {t('Record the solution — every move, both sides.')}
-          </span>
-        </div>
-
         <Panel flush className="min-h-[10rem] shrink-0">
           <PanelHeader
             title={`Solution · ${line.length} plies`}
@@ -459,6 +450,13 @@ function SolutionRecorder({
               </Button>
             }
           />
+          {/* What the panel is for, in the panel rather than in a header
+              above it: a title bar with a back arrow made this read as its
+              own page, which it is not — it is one step of the entry that
+              the board beside it belongs to. */}
+          <p className="text-muted px-3 pt-2.5 text-sm">
+            {t('Record the solution — every move, both sides.')}
+          </p>
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-base">
             {line.length === 0 ? (
               <p className="text-subtle text-sm">
@@ -521,15 +519,23 @@ function SolutionRecorder({
         )}
         {error && <p className="text-bad text-sm">{error}</p>}
 
-        <div className="flex shrink-0 flex-wrap gap-2">
+        {/* Primary last, and Cancel beside it — the same order every
+            button row in the app uses (PromptSheet is the reference).
+            Start over and Verify come first because they act on the line
+            in the panel above; the last two are the ways out of it. */}
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           <Button
-            variant="primary"
+            variant="ghost"
             size="sm"
-            disabled={line.length === 0 || saving}
-            onClick={() => void save()}
+            disabled={line.length === 0}
+            onClick={() => {
+              setLine([]);
+              setWildcards(new Set());
+              setVerdicts(null);
+            }}
           >
-            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-            Save puzzle
+            <RotateCcw className="size-3.5" />
+            {t('Start over')}
           </Button>
           <Button
             variant="secondary"
@@ -539,11 +545,20 @@ function SolutionRecorder({
             onClick={() => void verify()}
           >
             {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
-            Verify
+            {t('Verify')}
           </Button>
-          <Button variant="ghost" size="sm" disabled={line.length === 0} onClick={() => { setLine([]); setWildcards(new Set()); setVerdicts(null); }}>
-            <RotateCcw className="size-3.5" />
-            {t('Start over')}
+          {/* What the back chevron in the removed header used to do. */}
+          <Button variant="secondary" size="sm" onClick={onBack}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={line.length === 0 || saving}
+            onClick={() => void save()}
+          >
+            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+            {t('Save puzzle')}
           </Button>
         </div>
       </div>

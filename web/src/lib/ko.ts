@@ -463,6 +463,8 @@ export const ko: Record<string, string> = {
   'Next puzzle': '다음 퍼즐',
   'Next unsolved': '다음 미해결',
   'Start over': '처음부터',
+  'Save puzzle': '퍼즐 저장',
+  Verify: '검증',
   'Grade the mainline — this is the only judged moment':
     '메인 라인을 채점합니다 — 평가되는 순간은 여기뿐입니다',
   'Counts as a failed attempt': '실패한 시도로 기록됩니다',
