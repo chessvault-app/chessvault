@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { BOARD_MAX_W } from '@/board/boardSize';
+import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { t } from '@/lib/i18n';
 
 /**
@@ -263,7 +265,16 @@ export function SkeletonThemeGroups({
   );
 }
 
-/** A written document: a heading, then paragraphs of ragged lines. */
+/**
+ * A written document: the note's sticky header, then paragraphs of ragged
+ * lines where its prose goes.
+ *
+ * The column and the header carry the note page's own classes rather than
+ * an approximation of them. It used to be p-6 and gap-6 with a single bar
+ * for a title, against a page whose header is a 59px block over a rule
+ * with the document under it — so the words landed roughly a header lower
+ * than where they had been drawn.
+ */
 export function SkeletonDocument({ className }: { className?: string }) {
   const paragraphs = [
     ['w-full', 'w-11/12', 'w-4/5'],
@@ -271,15 +282,31 @@ export function SkeletonDocument({ className }: { className?: string }) {
     ['w-10/12', 'w-full', 'w-2/3'],
   ];
   return (
-    <Loading className={cn('mx-auto flex w-full max-w-3xl flex-col gap-6 p-6', className)}>
-      <Skeleton className="h-5 w-1/3" />
-      {paragraphs.map((lines, p) => (
-        <div key={p} className="flex flex-col gap-2.5">
-          {lines.map((w, i) => (
-            <Skeleton key={i} className={cn('h-2.5', w)} />
-          ))}
+    <Loading
+      className={cn(
+        'mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6',
+        className,
+      )}
+    >
+      {/* The header the note keeps at the top of its column: a 28px row of
+          back, name, edit and save, over the rule under it. */}
+      <div className="border-line -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 md:-mx-6 md:px-6 md:pt-6">
+        <div className="flex h-7 shrink-0 items-center gap-2">
+          <Skeleton className="size-7 shrink-0 rounded-md" />
+          <Skeleton className="h-3.5 min-w-0 flex-1" />
+          <Skeleton className="size-7 shrink-0 rounded-md" />
+          <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
         </div>
-      ))}
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-6">
+        {paragraphs.map((lines, p) => (
+          <div key={p} className="flex flex-col gap-2.5">
+            {lines.map((w, i) => (
+              <Skeleton key={i} className={cn('h-2.5', w)} />
+            ))}
+          </div>
+        ))}
+      </div>
     </Loading>
   );
 }
@@ -287,8 +314,16 @@ export function SkeletonDocument({ className }: { className?: string }) {
 /**
  * A board beside its panel — the shape every playing surface takes.
  *
- * The board is a real square, so the column widths settle before the
- * position arrives instead of snapping when it does.
+ * Built from the board pages' OWN layout constants rather than from
+ * something that looks like them. It carried p-4 against their p-3, no
+ * wide-screen shell at all, and a board capped at min(70vh,40rem) — which
+ * on a 1920 desktop drew a 540px board where the page draws 736, in a
+ * column that is not where the page puts one. Every element on it moved
+ * when the document arrived.
+ *
+ * BOARD_WIDE_SHELL, BOARD_MAX_W and BOARD_WIDE_SIDE are the three rules
+ * the real pages compose, so sharing them is what keeps the two in the
+ * same places. A copy would drift the first time one of them moved.
  */
 export function SkeletonBoard({
   players = false,
@@ -299,83 +334,74 @@ export function SkeletonBoard({
    *
    * PlayerBar draws nothing until the headers are loaded, so a game's board
    * used to sit where a study's does and then take on 24px above it, 24
-   * below and the gaps between — the board and everything under it moved
-   * once the game arrived. A study has no players and passes nothing.
+   * below and the gaps between. A study has no players and passes nothing.
    */
   players?: boolean;
   className?: string;
 }) {
+  const titleRow = (
+    // A way back, the name, the edit toggle and the save state. Drawn at
+    // the top of the page on a phone and in the side column on a wide
+    // screen, which is why it is written once and placed twice.
+    <>
+      <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Skeleton className="h-3.5 min-w-0 flex-1" />
+      <Skeleton className="size-7 shrink-0 rounded-md" />
+      <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
+    </>
+  );
+  const playerBar = (
+    <div className="flex h-6 w-full items-center gap-2 px-0.5">
+      <Skeleton className="size-2 shrink-0 rounded-full" />
+      <Skeleton className="h-3 w-32" />
+    </div>
+  );
   return (
-    <Loading className={cn('flex h-full flex-col gap-3 p-4', className)}>
-      {/* The page's own header — a way back and a title — which the board
-          skeleton used to drop, leaving a study loading with no way out.
+    <Loading
+      className={cn(
+        'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden',
+        BOARD_WIDE_SHELL,
+        className,
+      )}
+    >
+      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:hidden">{titleRow}</div>
 
-          wide:hidden, because that is where the page it stands in for
-          puts it: a study's title row is drawn at the top of the page on
-          a phone and moved into the side column on a wide screen. Drawn
-          at every width, it was a row the wide layout does not have, and
-          the whole page rose by its height when the study arrived. */}
-      <div className="flex shrink-0 items-center gap-2 wide:hidden">
-        {/* The row a study actually wears on a phone, all four of it: the
-            way back, the name, the edit toggle and the save state. It was
-            a chevron and one bar, so the two controls on the right
-            arrived with the document and the name resized under them —
-            the header was there but only half of it. */}
-        <Skeleton className="size-7 shrink-0 rounded-md" />
-        <Skeleton className="h-3.5 min-w-0 flex-1" />
-        <Skeleton className="size-7 shrink-0 rounded-md" />
-        <Skeleton className="h-6 w-16 shrink-0 rounded-md" />
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-      <div className="flex w-full max-w-[min(70vh,40rem)] shrink-0 flex-col gap-2">
-        {/* The strip over the board: 40px on a wide screen whatever it
-            holds, so the board top stays put, and on a phone only there
-            when there is a game to name. The same pair of conditions the
-            board itself uses. */}
-        <div
-          className={cn(
-            'w-full items-end wide:flex wide:h-10',
-            players ? 'flex' : 'hidden wide:flex',
-          )}
-        >
-          {players && (
-            <div className="flex h-6 w-full items-center gap-2 px-0.5">
-              <Skeleton className="size-2 shrink-0 rounded-full" />
-              <Skeleton className="h-3 w-32" />
-            </div>
-          )}
-        </div>
-        <Skeleton className="aspect-square w-full rounded-xl" />
-        {players && (
-          <div className="flex h-6 w-full items-center gap-2 px-0.5">
-            <Skeleton className="size-2 shrink-0 rounded-full" />
-            <Skeleton className="h-3 w-32" />
+      {/* The board's column, and inside it the one width budget every view
+          that shows a board shares. */}
+      <div className="flex min-h-0 shrink-0 flex-col items-center gap-2 wide:flex-1 wide:justify-start">
+        <div className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+          {/* 40px on a wide screen whatever it holds, so the board top
+              stays put; on a phone only there when there is a game. */}
+          <div
+            className={cn(
+              'w-full items-end wide:flex wide:h-10',
+              players ? 'flex' : 'hidden wide:flex',
+            )}
+          >
+            {players && playerBar}
           </div>
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {/* The side column's own title and its line of detail, which a
-            stacked layout does not draw here — it puts the title at the
-            top of the page instead, where this skeleton's header already
-            stands in for it. Drawn on a phone as well, they were two bars
-            standing for nothing. */}
-        <div className="stacked:hidden">
-          <Skeleton className="h-4 w-1/3" />
-          <Skeleton className="mt-3 h-2.5 w-2/3" />
+          <Skeleton className="aspect-square w-full rounded-xl" />
+          {players && playerBar}
         </div>
-        {/* What a phone has there instead: the pane switcher, one panel at
-            a time behind a segmented track of icon tabs (ui/PaneTabs). */}
+      </div>
+
+      {/* The side column, at the share of the row the real one takes. */}
+      <div className={cn('flex min-h-0 flex-1 flex-col gap-3', BOARD_WIDE_SIDE)}>
+        <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden">{titleRow}</div>
+        {/* What a phone has instead of the panels: the pane switcher. */}
         <div className="bg-surface-2 border-line flex shrink-0 gap-0.5 rounded-lg border p-px lg:hidden">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-6 flex-1 rounded-md" />
           ))}
         </div>
-        <div className="border-line mt-2 flex flex-col gap-2 rounded-lg border p-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className={cn('h-2.5', i % 2 ? 'w-3/5' : 'w-4/5')} />
+        {/* A panel's own box, filling the column the way the real one
+            does — it was a bordered strip that stopped wherever its rows
+            ran out, in a column the page fills to the bottom. */}
+        <div className="bg-surface border-line flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border p-3 shadow-[var(--shadow-panel)]">
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
-      </div>
       </div>
     </Loading>
   );

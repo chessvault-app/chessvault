@@ -87,7 +87,10 @@ export function NoteView({ id }: { id: string }) {
   if (!initialDoc) {
     // A note is prose, so the wait looks like prose rather than a spinner
     // parked in the middle of an empty page.
-    return <div className="h-full overflow-y-auto">{pending && <SkeletonDocument />}</div>;
+    // SkeletonDocument is the note's own column, scrolling and all, so it
+    // needs no wrapper of its own — one used to add a second scroller
+    // around a box that already had one.
+    return <div className="h-full">{pending && <SkeletonDocument />}</div>;
   }
 
   return (
