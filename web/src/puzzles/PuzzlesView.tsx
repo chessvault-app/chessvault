@@ -642,38 +642,29 @@ function Trainer({
       <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
     </Panel>
   );
-  const trainingPanel =
-    mode !== 'fresh' ? (
-  <Panel flush className="shrink-0">
-    <PanelHeader
-      title={t('Training')}
-      actions={
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('Dashboard')}
-          onClick={() => navigate('puzzles', 'dashboard')}
-        >
-          <BarChart3 className="size-3.5" />
-        </Button>
-      }
-    />
-    {mode === 'single' ? (
-      <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
-        Replaying puzzle #{puzzleId} — not counted; a clean solve still retires it from the
-        review list.
-      </p>
-    ) : mode === 'failed' ? (
-      <p className="text-muted px-3 py-2.5 text-sm leading-relaxed">
-        {t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')}
-      </p>
-    ) : null}
-  </Panel>
-    ) : null;
+  /**
+   * What THIS session is, where it is not the ordinary one.
+   *
+   * It had a panel of its own — Training, above the puzzle's — which spent
+   * a header, a border and a dashboard button on one sentence, and put it
+   * a panel away from the line it qualifies (lanph3re). It is the same
+   * kind of sentence as "Find the best move…": what you are looking at and
+   * what to do about it. So it stands in that line's place, and in review
+   * or a replay it is the more useful of the two — a hidden difficulty is
+   * a detail, being told the attempt is not counted is not.
+   */
+  const modeNote =
+    mode === 'failed'
+      ? t('Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.')
+      : mode === 'single'
+        ? t('Replaying puzzle #{id} — not counted; a clean solve still retires it from the review list.', {
+            id: puzzleId ?? '',
+          })
+        : null;
   const puzzlePanel = (
-  // `grow` on a phone: the info pane is this panel (and, off fresh
-  // training, the Training one), neither of which is tall enough to reach
-  // the bottom bar — so the column ended in a band of page background.
+  // `grow` on a phone: the info pane is this panel, which is not tall
+  // enough to reach the bottom bar on its own — so the column ended in a
+  // band of page background.
   // It SHRINKS as well, which it did not use to: a solved puzzle's text
   // (verdict, difficulty, plays, a wrapped row of themes, the game link)
   // is taller than the band a 375x812 phone has left under the board, and
@@ -795,7 +786,8 @@ function Trainer({
               ? t('Finding a puzzle…')
               : failed
                 ? t('Keep looking — find the best move.')
-                : t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)))}
+                : (modeNote ??
+                  t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme))))}
           </p>
         </div>
       )}
@@ -1048,7 +1040,6 @@ function Trainer({
             <EngineBlock standalone />
           </Panel>
         )}
-        {(wide || shownPane === 'info') && trainingPanel}
         {(wide || shownPane === 'info') && puzzlePanel}
 
 

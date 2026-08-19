@@ -884,6 +884,8 @@ export const ko: Record<string, string> = {
   'Verify & enable': '확인하고 켜기',
   'Reviewing puzzles you failed before — not counted, and a clean solve retires the puzzle from this list.':
     '전에 틀린 퍼즐을 복습하는 중입니다 — 기록에 세지 않으며, 깔끔하게 풀면 이 목록에서 빠집니다.',
+  'Replaying puzzle #{id} — not counted; a clean solve still retires it from the review list.':
+    '#{id} 퍼즐을 다시 푸는 중입니다 — 기록에 세지 않으며, 깔끔하게 풀면 복습 목록에서 빠집니다.',
   "No moves yet. The first move you play is the puzzle's first move to find.":
     '아직 수가 없습니다. 처음 두는 수가 이 퍼즐에서 찾아야 할 첫 수가 됩니다.',
   'The diagram from the book — make the board match it, then record the solution.':
