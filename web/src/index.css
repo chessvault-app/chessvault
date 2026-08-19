@@ -729,11 +729,22 @@ cg-board square.check {
    been: the box is up to a square-quantum narrower than the cell it sits
    in, and centring it puts back the centring the container was doing.
    The plain `width` first is the fallback for anything without round(),
-   which then behaves exactly as this app did before. */
-.board-box {
-  width: 100%;
-  width: round(down, 100%, var(--cg-quantum, 8px));
-  margin-inline: auto;
+   which then behaves exactly as this app did before.
+
+   In `components`, NOT unlayered like the .cg-wrap rules above it: those
+   have to beat chessground's own unlayered CSS, this one only has to
+   beat nothing. Left unlayered it beat the Tailwind `utilities` layer as
+   well, and a board sized by a width class — the hub's `w-28` thumbnails
+   — silently became `width: 100%` of the card it sits in, which with
+   `shrink-0` beside it pushed the text off the screen. A board is
+   width: 100% of whatever holds it UNLESS its caller says otherwise, and
+   the caller says so with a utility class, so the utility has to win. */
+@layer components {
+  .board-box {
+    width: 100%;
+    width: round(down, 100%, var(--cg-quantum, 8px));
+    margin-inline: auto;
+  }
 }
 
 .cg-wrap cg-board {
