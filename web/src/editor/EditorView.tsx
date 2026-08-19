@@ -575,15 +575,28 @@ export function EditorView({
                 evenly, Analyse squares up at the end — without stretching any
                 button. Wider screens keep content-sized, centred buttons with
                 labels. */}
-            {/* One height for the row, and everything in it fills that. The
+            {/* One height for each GROUP, and everything in it fills that. The
                 tool pill wraps its buttons in a border and padding, so buttons
                 of the same class inside and outside it came out six pixels
-                apart — the pill's chrome. Sizing to the row instead of to the
-                buttons makes the difference the pill's problem, not the eye's. */}
-            <div className="flex h-9 w-full items-center justify-center gap-2">
+                apart — the pill's chrome. Sizing to the group instead of to the
+                buttons makes the difference the pill's problem, not the eye's.
+
+                Two groups and `flex-wrap`, where this was one `h-9` row: the
+                row's parts are content-sized and add up to more than a phone's
+                board column, and a `justify-center` row that overflows spills
+                over BOTH edges, where the left half cannot be scrolled back
+                to. Measured at 375x812 in English: 363px of buttons in a 347px
+                row, the pill starting 7px left of it and Analyse ending 20px
+                past the right; at 320 the first tool sat at -13 and was cut by
+                the shell. It is width and language both — the same row in
+                Korean is 348px and fits by a pixel — so it wraps when it does
+                not fit rather than at a breakpoint guessed from one locale.
+                The height goes on the groups because `h-full` inside a wrapped
+                row would be the height of every line at once. */}
+            <div className="flex w-full flex-wrap items-center justify-center gap-2">
               {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
                   so the active tool's highlight sits concentric in its corner. */}
-              <div className="bg-surface-2/60 border-line flex h-full items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
+              <div className="bg-surface-2/60 border-line flex h-9 items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
                 variant={tool.kind === 'move' ? 'primary' : 'ghost'}
                 size="sm"
@@ -637,6 +650,7 @@ export function EditorView({
                 <span className="hidden sm:inline">{t('Clear')}</span>
               </Button>
               </div>
+              <div className="flex h-9 items-center gap-2">
               {/* Position details (side to move, castling, FEN) — a LABELLED
                   button on phones, where the side column is hidden, so the FEN
                   is never buried behind an anonymous gear. */}
@@ -671,6 +685,7 @@ export function EditorView({
                 {onUse ? <ListPlus className="size-3.5" /> : <Microscope className="size-3.5" />}
                 <span className="hidden sm:inline">{onUse ? useLabel : t('Analyse')}</span>
               </Button>
+              </div>
             </div>
           </div>
         </div>
