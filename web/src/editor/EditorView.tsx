@@ -130,6 +130,19 @@ export function EditorView({
   const [orientation, setOrientation] = useState<Color>('white');
   const [sheetOpen, setSheetOpen] = useState(false);
   /**
+   * The position as it stood when the Position sheet was opened.
+   *
+   * The sheet's fields write STRAIGHT THROUGH — the board behind them
+   * turns black to move, loses a castling right, takes a new en passant
+   * square as each control is touched, which is the whole point of an
+   * editor. So Apply has nothing to apply; it is Cancel that does the
+   * work, by putting back what was there when the sheet opened. Same
+   * bargain the repertoire's New game sheet makes, and for the same
+   * reason: a window with no way back is a window you cannot experiment
+   * in, and a phone's sheet covers the board it is editing.
+   */
+  const sheetSnapshot = useRef<EditorState | null>(null);
+  /**
    * Whether the sheet is showing its Load page.
    *
    * A Modal written inside another Modal IS that window's second page —
@@ -438,6 +451,30 @@ export function EditorView({
             )}
           </div>
         </Panel>
+
+        {/* The row every window in this app ends on (ui/PromptSheet):
+            justify-end, gap-2, the primary one LAST. Only in the sheet —
+            the wide layout's column is not a window and has nothing to
+            close or take back. Apply only closes: the fields have been
+            writing through to the board all along. */}
+        {place === 'sheet' && (
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                if (sheetSnapshot.current) setState(sheetSnapshot.current);
+                setSheetOpen(false);
+                setLoadPage(false);
+              }}
+            >
+              {t('Cancel')}
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setSheetOpen(false)}>
+              {t('Apply')}
+            </Button>
+          </div>
+        )}
     </>
   );
 
@@ -600,7 +637,10 @@ export function EditorView({
                 size="sm"
                 active={sheetOpen}
                 className="h-full wide:hidden"
-                onClick={() => setSheetOpen((v) => !v)}
+                onClick={() => {
+                  if (!sheetOpen) sheetSnapshot.current = state;
+                  setSheetOpen((v) => !v);
+                }}
                 title={t('Position details (side to move, castling, FEN)')}
               >
                 <Settings2 className="size-3.5" />
