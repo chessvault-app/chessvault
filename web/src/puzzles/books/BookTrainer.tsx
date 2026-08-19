@@ -44,7 +44,7 @@ import type { MoveTree, NodeId } from '@shared/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { Board } from '@/board/Board';
-import { EvalBarSlot, EvalBarStrip } from '@/engine/EvalBar';
+import { EvalBarSlot } from '@/engine/EvalBar';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
@@ -722,10 +722,6 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                 )}
               </div>
             </div>
-            {/* The strip AnalysisBoard draws its bar in when stacked, held
-                open here too — otherwise everything under the board jumped
-                20px at the moment the puzzle ended. */}
-            <EvalBarStrip />
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
-import { formatScore, winningChances } from './uci.ts';
+import { useEngine } from '@/store/engine';
+import { formatScore, toWhitePov, winningChances } from './uci.ts';
 
 interface EvalBarProps {
   /** Score from White's point of view, or null when there is no evaluation. */
@@ -15,8 +15,9 @@ interface EvalBarProps {
  * The room the bar takes, kept open whether or not there is a bar in it —
  * one of these per axis, because the bar changes sides with the layout.
  *
- * `EvalBarSlot` is its WIDTH, beside the board, and exists only at `wide`.
- * `EvalBarStrip` is its HEIGHT, under the board, and only when stacked.
+ * `EvalBarSlot` is its WIDTH, beside the board, and exists only at `wide`;
+ * stacked, the bar takes the player's row instead (EvalBarRow below), so
+ * there is nothing to reserve.
  *
  * Both exist because the bar shares the board's box rather than floating
  * over it: 12px of bar and 8px of gap come out of whatever axis it sits on,
@@ -25,21 +26,62 @@ interface EvalBarProps {
  * same board — the engine being switched on, or a trainer handing its board
  * to AnalysisBoard when the puzzle ends. Reserved, nothing moves either way.
  *
- * Which side it sits on is a layout question, not a taste one. Beside the
- * board it costs WIDTH, and on a phone the board has none to spare: the
- * board is the page there, and 20px off its width is 20px off all eight
- * files (lanph3re: the reservation made the board look pushed off-centre).
- * Under the board it costs HEIGHT, which the stacked layouts already spend
- * on strips and controls.
+ * The reservation is a `wide` idea for the same reason the bar is: it buys
+ * a board that does not resize when the engine is switched, and it costs
+ * 20px of width, which only the wide layout has to spend.
  */
 export function EvalBarSlot() {
   return <div className="hidden w-3 shrink-0 wide:block" aria-hidden />;
 }
 
-export function EvalBarStrip({ children }: { children?: ReactNode }) {
-  // Fixed height, always rendered: the switch turning the bar on must not
-  // move the pane switcher and the panels under it by 12px.
-  return <div className="h-3 w-full wide:hidden">{children}</div>;
+/**
+ * The engine's evaluation of the position on the board, from White's point
+ * of view, or null when the engine is off or is still answering about the
+ * position before this one. One rule, because a bar showing the last
+ * position's score is worse than a bar showing nothing.
+ */
+export function useEvalScore(fen: string): { cp?: number; mate?: number } | null {
+  const enabled = useEngine((s) => s.enabled);
+  const lines = useEngine((s) => s.lines);
+  const resultFen = useEngine((s) => s.resultFen);
+  const top = enabled && resultFen === fen ? lines[0] : undefined;
+  const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  return top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : null;
+}
+
+/**
+ * Where the bar goes when the board is stacked: along the top edge, in the
+ * row the player's name occupies, and only while the engine is on.
+ *
+ * Beside the board is a `wide` idea — there the column has width to spare.
+ * On a phone the board IS the page, and 20px off its width is 20px off all
+ * eight files. Under the board was the first answer to that and it was
+ * worse: the row had to be held open whether or not the engine was on, or
+ * the panels moved when it was switched, and a permanently empty strip
+ * between the board and the name under it is exactly the space a phone has
+ * least of (lanph3re).
+ *
+ * So it takes a row that already exists instead of adding one. h-6 is the
+ * player row's own height — the board does not move when the engine comes
+ * on, because what appears is the same size as what goes away — and the
+ * caller hides the names while this is showing. The row costs nothing when
+ * the engine is off: it is not rendered, and the panels have the space.
+ *
+ * AnalysisBoard is the only caller, and that is not an oversight. The
+ * engine follows the ANALYSIS store's position (engine/EnginePane), so it
+ * is the only board whose position the bar can be speaking about; a
+ * trainer's own board would show an even bar for a position nothing had
+ * evaluated. The trainers get one the moment they hand their board over.
+ */
+export function EvalBarRow({ fen }: { fen: string }) {
+  const enabled = useEngine((s) => s.enabled);
+  const score = useEvalScore(fen);
+  if (!enabled) return null;
+  return (
+    <div className="flex h-6 w-full items-center wide:hidden">
+      <EvalBar score={score} orientation="horizontal" />
+    </div>
+  );
 }
 
 /**

@@ -21,7 +21,7 @@ import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
-import { EvalBar, EvalBarSlot, EvalBarStrip } from '@/engine/EvalBar';
+import { EvalBar, EvalBarRow, EvalBarSlot } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -172,7 +172,16 @@ export function AnalysisBoard({
         {/* Fixed-height strip, matching the editor's palette strip: the board
             top stays put whether or not a player bar is shown. On phones the
             strip only exists when there is a player bar to show. */}
-        <div className={cn('w-full items-end wide:flex wide:h-10', hasGame || editablePlayers ? 'flex' : 'hidden wide:flex')}>
+        {/* Stacked, the bar goes here — in the row the name above the board
+            occupies, and instead of it. See EvalBarRow. */}
+        <EvalBarRow fen={node.fen} />
+        <div
+          className={cn(
+            'w-full items-end wide:flex wide:h-10',
+            hasGame || editablePlayers ? 'flex' : 'hidden wide:flex',
+            engineOn && 'stacked:hidden',
+          )}
+        >
           <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
         </div>
         <div className="flex w-full items-stretch gap-2">
@@ -214,14 +223,14 @@ export function AnalysisBoard({
             <NagBadge node={node} orientation={orientation} book={bookMove} />
           </div>
         </div>
-        {/* And under the board when stacked, where the board is the page and
-            has no width to lend: the bar lies along its bottom edge instead.
-            The strip is there whether or not the bar is, so the pane
-            switcher and the panels below it stay put across the toggle. */}
-        <EvalBarStrip>
-          {engineOn && <EvalBar score={evalScore} orientation="horizontal" />}
-        </EvalBarStrip>
-        <PlayerBar side={orientation} editable={editablePlayers} />
+        {/* The name under the board goes when the one above it does, and the
+            panels below get the row back — a phone has better uses for it
+            than two placeholders either side of an engine's opinion. */}
+        <PlayerBar
+          side={orientation}
+          editable={editablePlayers}
+          className={engineOn ? 'stacked:hidden' : undefined}
+        />
       </div>
       {/* Navigation under the board — but on phones it moves to the
           contextual bottom bar (MobileActionBar), so hide it below md to
@@ -362,7 +371,15 @@ function NameField({
  * it stood at the current move (from the [%clk] comments chess.com and
  * lichess write). Renders nothing for scratch analysis.
  */
-function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editable?: boolean }) {
+function PlayerBar({
+  side,
+  editable = false,
+  className,
+}: {
+  side: 'white' | 'black';
+  editable?: boolean;
+  className?: string;
+}) {
   const headers = useAnalysis((s) => s.gameHeaders);
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
@@ -400,7 +417,7 @@ function PlayerBar({ side, editable = false }: { side: 'white' | 'black'; editab
   const toMove = turn === side;
 
   return (
-    <div className="flex h-6 w-full items-center gap-2 px-0.5">
+    <div className={cn('flex h-6 w-full items-center gap-2 px-0.5', className)}>
       <SideDot side={side} />
       {editable ? (
         <NameField
