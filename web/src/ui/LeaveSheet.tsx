@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Loader2, Save, Trash2 } from 'lucide-react';
+import { Loader2, Save, Trash2, X } from 'lucide-react';
 import {
   cancelLeave,
   currentLeaveGuard,
@@ -29,7 +29,9 @@ import { t } from '@/lib/i18n';
  * the answer that loses nothing — Sheet gives all four for free. The
  * button that means the same thing is labelled "Cancel" to match them;
  * "Stay here" described the outcome but did not read as the escape hatch
- * those four gestures already are.
+ * those four gestures already are. Its icon is the same X the sheet's own
+ * close control draws, which is what those gestures do: without one it was
+ * the bare button between two that had icons.
  */
 export function LeaveSheet() {
   const name = useLeaveAsk((s) => s.name);
@@ -109,6 +111,7 @@ export function LeaveSheet() {
           className="w-full justify-center"
           onClick={cancelLeave}
         >
+          <X className="size-3.5" />
           {t('Cancel')}
         </Button>
         {/* Red text on no panel at all — quieter than every `danger`
