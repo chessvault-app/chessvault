@@ -26,6 +26,7 @@ import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
 import { Segmented } from '@/ui/Segmented';
 import { Input } from '@/ui/Input';
+import { KingIcon } from '@/ui/KingIcon';
 import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
@@ -305,10 +306,18 @@ export function EditorView({
                 value={state.turn}
                 onChange={(turn: Color) => patch({ turn })}
                 ariaLabel={t('Side to move')}
-                segments={[
-                  { value: 'white' as Color, label: t('White') },
-                  { value: 'black' as Color, label: t('Black') },
-                ]}
+                // The king, as the repertoire's own "Play as" track does
+                // it: a side is a piece before it is a word, and the two
+                // controls now read the same way in both places.
+                segments={(['white', 'black'] as Color[]).map((side) => ({
+                  value: side,
+                  label: (
+                    <>
+                      <KingIcon side={side} />
+                      {side === 'white' ? t('White') : t('Black')}
+                    </>
+                  ),
+                }))}
               />
             </Field>
 
