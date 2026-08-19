@@ -336,6 +336,31 @@ describe('archive cache', () => {
     expect(asked.length).toBeGreaterThan(0);
   });
 
+  it('serves a month newest game first, whichever site it came from', async () => {
+    // The browser showed the archive oldest game first. Both sites feed
+    // one list, and they do not agree on order — chess.com sends a month
+    // oldest first, lichess newest first — so flipping in the client was
+    // right for one and backwards for the other, and skipped entirely for
+    // the month that arrives prefetched with the list. The route is where
+    // the two are made to agree. `index` still points into the file, so
+    // adding a game is unaffected by the order it is shown in.
+    const chesscom = await (
+      await app.request('/api/games/archive/month?user=lanph3re&month=2026-07')
+    ).json();
+    expect(chesscom.games.map((g: { date: string }) => g.date)).toEqual([
+      '2026.07.09',
+      '2026.07.03',
+    ]);
+    expect(chesscom.games[0].index).toBe(1);
+
+    // Lichess writes its file newest first already, so this one is proof
+    // that the route does NOT flip a second time.
+    const lichess = await (
+      await app.request('/api/games/lichess/month?user=someone&month=2026-06')
+    ).json();
+    expect(lichess.games.map((g: { index: number }) => g.index)).toEqual([0, 1]);
+  });
+
   it('rechecks the month being played in, and keeps the cache when it has not changed', async () => {
     const now = new Date();
     const month = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;

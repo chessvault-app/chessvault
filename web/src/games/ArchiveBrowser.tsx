@@ -390,9 +390,10 @@ export function ArchiveBrowser({
   /**
    * One month, from the session cache if it has been seen before.
    *
-   * Newest game first, which is the order every list here is in. A month
-   * that cannot be reached yields nothing rather than throwing: one bad
-   * month must not lose the rest of a decade.
+   * Newest game first, which is the order every list here is in — the
+   * route answers in that order for both sites, so nothing is reordered
+   * here. A month that cannot be reached yields nothing rather than
+   * throwing: one bad month must not lose the rest of a decade.
    */
   const fetchMonth = async (user: string, m: string): Promise<GameSummary[]> => {
     const key = monthKey(provider, user, m);
@@ -402,7 +403,7 @@ export function ArchiveBrowser({
       const body = await api<{ games?: GameSummary[] }>(
         `${apiBase}/month?user=${encodeURIComponent(user)}&month=${m}`,
       );
-      const games = (body.games ?? []).slice().reverse();
+      const games = body.games ?? [];
       useArchiveBrowse.setState((s) => ({ cache: { ...s.cache, [key]: games } }));
       return games;
     } catch {
