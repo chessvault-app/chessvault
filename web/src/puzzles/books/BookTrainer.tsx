@@ -630,7 +630,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         this app ends on (ui/PromptSheet), and what the other trainer's
         floor does. The primary used to LEAD and stretch across the row
         (lanph3re: a left-biased cluster looks unbalanced, centring is
-        worse), which put Submit and Next unsolved at the opposite edge
+        worse), which put Submit and Next puzzle at the opposite edge
         from the puzzle trainer's Next puzzle — two screens maintained as
         siblings, disagreeing about where the button you press is. Ending
         the line is what fixes the imbalance the stretch was for.
@@ -654,7 +654,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
                 onClick={() => navigate('puzzles', 'books', slug, next)}
               >
                 <RotateCw className="size-3.5" />
-                {t('Next unsolved')}
+                {t('Next puzzle')}
               </Button>
             )}
           </>

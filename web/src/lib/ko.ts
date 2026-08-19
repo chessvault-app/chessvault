@@ -467,7 +467,6 @@ export const ko: Record<string, string> = {
   'Correct this puzzle against the book scan': '책 스캔과 대조해 이 퍼즐 바로잡기',
   'Previous puzzle': '이전 퍼즐',
   'Next puzzle': '다음 퍼즐',
-  'Next unsolved': '다음 미해결',
   'Start over': '처음부터',
   'Save puzzle': '퍼즐 저장',
   Verify: '검증',
