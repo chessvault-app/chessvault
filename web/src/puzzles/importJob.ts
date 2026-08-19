@@ -107,86 +107,120 @@ interface ImportJobState {
   clear: () => void;
 }
 
-/** One classification worker, shared across scans; lazy so the chunk only
-    loads when a scan actually starts. */
-let worker: Worker | null = null;
-let nextId = 0;
-const pending = new Map<number, (r: CellReading[] | null) => void>();
-const detailPending = new Map<
-  number,
-  (r: { cells: CellCandidates[]; labels: string[] } | null) => void
->();
+/**
+ * The classification pool.
+ *
+ * Reading one board is ~950 ms of CellNet inference and nothing else:
+ * measured over 212 boards of '1001 Chess Exercises', classifyBoardNet is
+ * 948 ms of a 1014 ms board, against 62 ms to warp it, 5 ms to find its
+ * corners and 8 ms to detect a whole page's diagrams. A book is a thousand
+ * boards, so on ONE worker a scan is twenty minutes with every other core
+ * idle — the offline pipeline gets 4.3x out of the same work simply by
+ * sharding it across six processes.
+ *
+ * Boards are independent, so they go out to a pool instead. One core is
+ * left alone: the main thread still has to render pages, cut crops and
+ * keep the app usable while this runs in the background.
+ */
+const POOL_SIZE = Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1));
 
-function ensureWorker(): Worker {
-  worker ??= (() => {
-    const w = new Worker(new URL('./ocr/cellnet.worker.ts', import.meta.url), {
-      type: 'module',
-    });
-    w.onmessage = (e: MessageEvent) => {
-      const { id, readings, cells, labels } = e.data as {
-        id: number;
-        readings?: CellReading[] | null;
-        cells?: { probs: number[]; top: number; votes: [number, number][] }[] | null;
-        labels?: string[];
-      };
-      const waitingForDetail = detailPending.get(id);
-      if (waitingForDetail) {
-        detailPending.delete(id);
-        waitingForDetail(
-          cells && labels
-            ? { cells: cells.map((c) => ({ ...c, votes: new Map(c.votes) })), labels }
-            : null,
-        );
-        return;
-      }
-      pending.get(id)?.(readings ?? null);
-      pending.delete(id);
-    };
-    // A crashed worker must not strand its callers: every waiting promise
-    // resolves to "unread" (which degrades to a draft), and the worker is
-    // dropped so the next board boots a fresh one.
-    w.onerror = () => {
-      for (const resolve of pending.values()) resolve(null);
-      for (const resolve of detailPending.values()) resolve(null);
-      pending.clear();
-      detailPending.clear();
-      w.terminate();
-      if (worker === w) worker = null;
-    };
-    return w;
-  })();
-  return worker;
+/** What the worker sends back, before it is turned into either answer. */
+interface WorkerReply {
+  readings?: CellReading[] | null;
+  cells?: { probs: number[]; top: number; votes: [number, number][] }[] | null;
+  labels?: string[];
+}
+
+interface Job {
+  id: number;
+  detail: boolean;
+  w: number;
+  h: number;
+  data: ArrayBuffer;
+  /** null = the worker died holding this board; the caller degrades. */
+  settle: (reply: WorkerReply | null) => void;
+}
+
+interface PoolWorker {
+  w: Worker;
+  /** The one board it is reading, or null when it is free. */
+  job: Job | null;
+}
+
+const pool: PoolWorker[] = [];
+const queue: Job[] = [];
+let nextId = 0;
+
+/** Boot a worker. Lazy, so the chunk only loads when a scan starts. */
+function spawn(): PoolWorker {
+  const entry: PoolWorker = {
+    w: new Worker(new URL('./ocr/cellnet.worker.ts', import.meta.url), { type: 'module' }),
+    job: null,
+  };
+  entry.w.onmessage = (e: MessageEvent) => {
+    const job = entry.job;
+    entry.job = null;
+    job?.settle(e.data as WorkerReply);
+    pump();
+  };
+  // A crashed worker must not strand its caller: the board it was holding
+  // resolves to "unread" (which degrades to a draft), and the worker is
+  // dropped so the next board boots a fresh one in its place.
+  entry.w.onerror = () => {
+    const job = entry.job;
+    entry.job = null;
+    job?.settle(null);
+    entry.w.terminate();
+    const at = pool.indexOf(entry);
+    if (at >= 0) pool.splice(at, 1);
+    pump();
+  };
+  pool.push(entry);
+  return entry;
+}
+
+/** Hand queued boards to free workers, growing the pool up to its size. */
+function pump(): void {
+  while (queue.length > 0) {
+    const free = pool.find((p) => p.job === null) ?? (pool.length < POOL_SIZE ? spawn() : null);
+    if (!free) return;
+    const job = queue.shift()!;
+    free.job = job;
+    free.w.postMessage({ id: job.id, w: job.w, h: job.h, data: job.data, detail: job.detail }, [
+      job.data,
+    ]);
+  }
+}
+
+function submit(board: Gray, detail: boolean, settle: Job['settle']): void {
+  // Copied out of the page's gray, not sliced off its buffer: the copy is
+  // what gets transferred, so the caller keeps its own pixels intact.
+  const data = new Uint8ClampedArray(board.data).buffer;
+  queue.push({ id: ++nextId, detail, w: board.w, h: board.h, data, settle });
+  pump();
 }
 
 function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
-  const w = ensureWorker();
-  const id = ++nextId;
-  const buffer = board.data.buffer.slice(
-    board.data.byteOffset,
-    board.data.byteOffset + board.data.byteLength,
-  );
   return new Promise((resolve) => {
-    pending.set(id, resolve);
-    w.postMessage({ id, w: board.w, h: board.h, data: buffer }, [buffer]);
+    submit(board, false, (reply) => resolve(reply?.readings ?? null));
   });
 }
 
-/** The same worker, asked for every cell's distribution — repair only. */
+/** The same pool, asked for every cell's distribution — repair only. */
 function classifyDetailInWorker(
   board: Gray,
 ): Promise<{ cells: CellCandidates[]; labels: string[] } | null> {
-  // ensureWorker, not worker!: a resumed import whose checkpoint was
-  // written after the final page never runs the page loop, so the repair
-  // pass used to be the first caller — and dereferenced null.
-  const w = ensureWorker();
-  const id = ++nextId;
-  const buffer = board.data.buffer.slice(
-    board.data.byteOffset,
-    board.data.byteOffset + board.data.byteLength,
-  );
   return new Promise((resolve) => {
-    detailPending.set(id, resolve);
-    w.postMessage({ id, w: board.w, h: board.h, data: buffer, detail: true }, [buffer]);
+    submit(board, true, (reply) =>
+      resolve(
+        reply?.cells && reply.labels
+          ? {
+              cells: reply.cells.map((c) => ({ ...c, votes: new Map(c.votes) })),
+              labels: reply.labels,
+            }
+          : null,
+      ),
+    );
   });
 }
 
@@ -376,10 +410,20 @@ async function scan(
       }
 
       const rects = detectDiagrams(grayFromCanvas(canvas));
-      const placements: (string | null)[] = [];
+      // Cut the page up first and hand each board to the pool as it is
+      // cut, so the workers are reading board one while board two is
+      // still being warped. Yielding between cuts keeps the app usable:
+      // a crop is ~60 ms of main thread and a page holds eight of them.
+      const cutting: { dataUrl: string; features: Uint8Array[]; cells: Promise<CellReading[] | null> }[] = [];
       for (const rect of rects) {
         const { dataUrl, board, features } = cropDiagram(canvas, rect);
-        let cells = await classifyInWorker(board);
+        cutting.push({ dataUrl, features, cells: classifyInWorker(board) });
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      const placements: (string | null)[] = [];
+      for (const [at, rect] of rects.entries()) {
+        const { dataUrl, features, cells: reading } = cutting[at]!;
+        let cells = await reading;
         if (!cells && templates.length > 0) cells = classifyBoard(features, templates);
         let fen: string | null = null;
         let uncertain = 0;
