@@ -1246,10 +1246,29 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
         </label>
       )}
       <Feedback note={note} />
-      <div className="mt-1 flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onClose}>{t('Cancel')}</Button>
-        <Button variant="danger" size="sm" disabled={busy || (gate && password === '')} onClick={() => void wipe()}>
+      {/* ConfirmSheet's row, to the letter, because this is the same
+          question and the most serious instance of it: stacked and not a
+          row (a row puts them a thumb's width apart on a phone, which is
+          the wrong geometry for a pair where one is irreversible and the
+          other is the way out), full width each with a real gap between
+          them, the destructive one on TOP and FILLED — the tinted danger
+          style belongs to the trigger that opens this question, which is
+          Wipe all data on the card behind — and Cancel plainly secondary
+          under it. Not justify-end: that is the row a WINDOW ends on, and
+          it is right for Save and Apply, not for this. */}
+      <div className="mt-1 flex flex-col gap-2">
+        <Button
+          variant="danger-solid"
+          size="md"
+          className="w-full justify-center"
+          disabled={busy || (gate && password === '')}
+          onClick={() => void wipe()}
+        >
+          <Trash2 className="size-3.5" />
           {busy ? t('Wiping…') : t('Wipe everything')}
+        </Button>
+        <Button variant="secondary" size="md" className="w-full justify-center" onClick={onClose}>
+          {t('Cancel')}
         </Button>
       </div>
     </Modal>
