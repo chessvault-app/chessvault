@@ -131,13 +131,14 @@ export function FinalAssessment({
       {/* One row: analysing the line and whatever else this ending offers
           are the same kind of choice, and stacking them spent a whole row
           of a panel that is already tall on a phone. It wraps where the
-          two do not fit side by side. */}
-      {/* No Analyse here any more: the line ending IS the handoff now, so
+          two do not fit side by side.
+
+          No Analyse here any more: the line ending IS the handoff now, so
           the engine is already on and the moves panel already showing it.
-          What is left is whatever the mode offers instead. */}
-      <div className="flex flex-wrap items-center gap-2">
-        {children}
-      </div>
+          And with no children the row is not drawn at all — the
+          repertoire now stands its ending's buttons on the panel's floor,
+          and an empty flex row still spends one of the column's gaps. */}
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
   );
 }

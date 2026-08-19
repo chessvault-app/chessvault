@@ -1398,6 +1398,42 @@ export function RepertoireView() {
     </button>
   );
 
+  /**
+   * What a finished line offers besides starting another.
+   *
+   * A drill has nowhere to save TO: the line came out of a study, and
+   * filing it back would write the same moves into a second one. What is
+   * worth offering there is the way back — to the study just rehearsed,
+   * where the gaps and misses this session recorded are fixed. Sparring
+   * keeps the save: that line exists nowhere else and used to evaporate
+   * the moment you left.
+   */
+  const endAction =
+    mode === 'drill' ? (
+      drillStudy && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
+        >
+          <BookOpen className="size-3.5" />
+          {t('Go to study')}
+        </Button>
+      )
+    ) : (
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={() => {
+          setSaveError(null);
+          setSaveOpen(true);
+        }}
+      >
+        <BookmarkPlus className="size-3.5" />
+        {t('Save line to study')}
+      </Button>
+    );
+
   // Game panel in the trainers' shape: status and the game's own actions
   // live here; the moves panel is the one every other board page uses.
   const gamePanel = (
@@ -1436,11 +1472,17 @@ export function RepertoireView() {
     {/* `grow` so the body owns the panel's height rather than stopping at
         its text, `overflow-y-auto` so that height is a ceiling and not a
         promise, and `min-h-0` because a flex item will not shrink below
-        its content without it. Idle keeps its own bottom padding: Start
-        and the settings row stay in here, directly under the line that
-        says what they would start (they are read top down — see
-        startBlock), rather than being pushed to the panel's floor. */}
-    <div className={cn('flex min-h-0 grow flex-col gap-3 p-3 overflow-y-auto', phase !== 'idle' && 'pb-0')}>
+        its content without it. What can run long lives here — the status
+        line, a gap note, the database error, the final score — and what
+        there is to press lives on the floor below. */}
+    <div
+      className={cn(
+        'flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3',
+        // The floor carries its own p-3; without this the two would read
+        // as 24px of gap between the text and the buttons.
+        (phase === 'idle' || phase === 'ended') && 'pb-0',
+      )}
+    >
       {/* Idle, the panel is what the page opens on: what the next game
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
@@ -1490,43 +1532,11 @@ export function RepertoireView() {
           </a>
         </p>
       )}
-      {phase === 'ended' && (
-        <FinalAssessment
-          fen={getNode(tree, tipId).fen}
-        >
-          {/* A drill has nowhere to save TO: the line came out of a
-              study, and filing it back would write the same moves
-              into a second one. What is worth offering there is the
-              way back — to the study just rehearsed, where the gaps
-              and misses this session recorded are fixed. Sparring
-              keeps the save: that line exists nowhere else and used
-              to evaporate the moment you left. */}
-          {mode === 'drill' ? (
-            drillStudy && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => navigate('studies', encodeURIComponent(drillStudy))}
-              >
-                <BookOpen className="size-3.5" />
-                {t('Go to study')}
-              </Button>
-            )
-          ) : (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                setSaveError(null);
-                setSaveOpen(true);
-              }}
-            >
-              <BookmarkPlus className="size-3.5" />
-              {t('Save line to study')}
-            </Button>
-          )}
-        </FinalAssessment>
-      )}
+      {/* The score and its bar only: what this ending OFFERS is on the
+          panel's floor with New game, so the two things you might press
+          next stand in one row rather than one of them sitting up in the
+          middle of the panel. */}
+      {phase === 'ended' && <FinalAssessment fen={getNode(tree, tipId).fen} />}
       {/* What the page IS, in the words home and More already use for it
           — one line, under what it would play and above the button that
           plays it. The long version stays behind the ? in the header: a
@@ -1541,22 +1551,33 @@ export function RepertoireView() {
           this panel is not on screen at all until a game is. Start
           leads; the row that would change what it starts comes after
           it. */}
-      {phase === 'idle' && startBlock}
-      {phase === 'idle' && setupRow}
     </div>
 
-    {/* Mid-game the panel ends on its action, the way the trainers' panels
-        do: the floor, outside the scrolling body and `shrink-0`, so the
-        squeeze is always taken by the status text; justify-end, and
-        PRIMARY — starting the next game is the thing to press once this
-        one is over, and it was a ghost button in the header, which is
-        where this app puts chrome. */}
-    {phase !== 'idle' && (
-      <div className="flex shrink-0 flex-wrap justify-end gap-2 p-3">
-        <Button variant="primary" size="sm" onClick={newGame} title={t('Set up a new game')}>
-          <RotateCcw className="size-3.5" />
-          {t('New game')}
-        </Button>
+    {/* The panel's floor: outside the scrolling body and `shrink-0`, so a
+        thumb finds it in the same place and the squeeze is always taken
+        by the text above it. What stands on it is what there is to do
+        NEXT, which is a different set before a game and after one — and
+        nothing at all during, because a game in progress has no next step
+        that is not a move on the board.
+
+        Idle: Start, and under it the row that says what Start would play
+        and opens the settings (lanph3re's call — they belong on the floor
+        rather than trailing the description). Ended: what the mode offers
+        for the line just played, then New game, primary and last, the way
+        every row in this app ends. */}
+    {(phase === 'idle' || phase === 'ended') && (
+      <div className="flex shrink-0 flex-col gap-3 p-3">
+        {phase === 'idle' && startBlock}
+        {phase === 'idle' && setupRow}
+        {phase === 'ended' && (
+          <div className="flex flex-wrap justify-end gap-2">
+            {endAction}
+            <Button variant="primary" size="sm" onClick={newGame} title={t('Set up a new game')}>
+              <RotateCcw className="size-3.5" />
+              {t('New game')}
+            </Button>
+          </div>
+        )}
       </div>
     )}
   </Panel>
