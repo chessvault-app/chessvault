@@ -237,7 +237,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
 
       {/* Desktop scrolls the column; phones show one pane that fills the
           height under the board and scrolls internally (see AnalysisView). */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         {titleRow('stacked:hidden')}
 
         <PaneTabs

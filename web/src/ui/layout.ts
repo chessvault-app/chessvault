@@ -129,19 +129,30 @@ export const BOARD_SCROLL_SHELL =
  * The same shell for the board pages that do NOT scroll when stacked:
  * analysis, study and both puzzle trainers. Their side column is a
  * `min-h-0 flex-1` box with its own `overflow-y-auto`, so the shell around
- * it always fits the screen exactly and its scrollbar can never appear.
+ * it fits the screen exactly and does not scroll — on any window where the
+ * column can be squeezed as far as it needs to go.
  *
- * Which is why it takes none of BOARD_SCROLL_SHELL's allowances. A phone
- * ends flush against the bottom bar here BY DESIGN: the column has already
- * given the last panel a hard bottom edge to sit on, and 32px of padding
- * for a panel border that is not being cut is 32px of dead page between
- * the panel and the navigation you are reaching past it for. `pr-4` and
- * the stable gutter go with it — reserving a lane for a scrollbar that
- * cannot be drawn only pushed the column 4px off centre.
+ * `stacked:overflow-y-auto` is for the windows where it cannot. The column
+ * now keeps a floor (AnalysisView, StudyView), because a column squeezed
+ * without one stopped being a pane: measured at 667x375, a phone in
+ * landscape narrow enough to stay stacked, the board page's column was 54px
+ * and the moves panel inside it 18px around 40px of content. A floor is
+ * only worth stating if something gives when it binds, and the shell is
+ * what gives. It stays `hidden` in effect wherever the column fits, since
+ * `auto` draws nothing until there is something to scroll.
+ *
+ * Which is why it still takes none of BOARD_SCROLL_SHELL's allowances. A
+ * phone ends flush against the bottom bar here BY DESIGN: the column has
+ * already given the last panel a hard bottom edge to sit on, and 32px of
+ * padding for a panel border that is not being cut is 32px of dead page
+ * between the panel and the navigation you are reaching past it for. `pr-4`
+ * and the stable gutter go with it — reserving a lane for a scrollbar that
+ * is drawn on the rare window that overflows only pushed the column 4px
+ * off centre on every window that does not.
  *
  * Analysis and study wrote this string out by hand, twice, which is the
  * drift BOARD_SCROLL_SHELL exists to prevent; the trainers moving here
  * made it a fourth copy, so it is a constant like its sibling.
  */
 export const BOARD_HELD_SHELL =
-  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ' + BOARD_WIDE_SHELL;
+  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ' + BOARD_WIDE_SHELL;

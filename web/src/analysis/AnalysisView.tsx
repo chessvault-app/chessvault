@@ -99,8 +99,13 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
       {/* Side column. Desktop shows every pane and scrolls the column; on
           phones exactly one pane shows, fills the height left under the
           board, and scrolls INTERNALLY (its move table / list own the
-          scroll, with a visible scrollbar) — the page itself never scrolls. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+          scroll, with a visible scrollbar) — the page itself does not.
+          `stacked:min-h-40` is where that stops being worth it: a column
+          is only a pane while it can hold a tab strip and a panel, and at
+          667x375 (a phone in landscape narrow enough to stay stacked) it
+          was 54px with an 18px panel in it. Below the floor the shell
+          scrolls instead — see BOARD_HELD_SHELL. */}
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 lg:overflow-y-auto lg:scrollbar-hidden max-lg:overflow-y-auto max-lg:scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
