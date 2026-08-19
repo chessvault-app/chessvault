@@ -644,11 +644,14 @@ function Trainer({
   // `grow` on a phone: the info pane is this panel (and, off fresh
   // training, the Training one), neither of which is tall enough to reach
   // the bottom bar — so the column ended in a band of page background.
-  // Growing without shrinking (`shrink-0`, basis auto) fills that band
-  // and still cannot squeeze the panel's own content, which `overflow-
-  // hidden` would clip rather than scroll. A desktop keeps `shrink-0`
+  // It SHRINKS as well, which it did not use to: a solved puzzle's text
+  // (verdict, difficulty, plays, a wrapped row of themes, the game link)
+  // is taller than the band a 375x812 phone has left under the board, and
+  // a panel that could not shrink simply ran past the column's edge with
+  // its actions cut in half. It fits the column now and its BODY scrolls;
+  // the actions below the body never do. A desktop keeps `shrink-0`
   // alone: there the moves panel above already takes the spare height.
-  <Panel flush className={wide ? 'shrink-0' : 'shrink-0 grow'}>
+  <Panel flush className={wide ? 'shrink-0' : 'grow'}>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -700,9 +703,13 @@ function Trainer({
       </Modal>
     )}
     {/* `grow` so the body owns the panel's full height rather than
-        stopping at its text: the actions below hang off `mt-auto`,
-        which has nothing to push against in a box sized to content. */}
-    <div className="flex grow flex-col gap-3 p-3">
+        stopping at its text, and `overflow-y-auto` so that the height is
+        a ceiling and not a promise: this is the one part of the panel
+        that can be arbitrarily tall (a puzzle with eight themes), and it
+        is also the part you can afford to scroll, because the buttons are
+        not in it. `min-h-0` because a flex item will not shrink below its
+        content without it, which is exactly the overflow being fixed. */}
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3 pb-0">
       {phase === 'done' && puzzle ? (
         <>
           <p
@@ -772,12 +779,16 @@ function Trainer({
           </p>
         </div>
       )}
+    </div>
 
-      {/* mt-auto: on a phone the panel stretches to the bottom bar, so
-          this row and the settings row under it settle on its bottom
-          edge instead of stranding empty surface below them. Desktop
-          panels are content-sized, so nothing moves there. */}
-      <div className="mt-auto flex flex-wrap gap-2">
+    {/* The actions and the settings row are the panel's floor: outside
+        the scrolling body, so a thumb finds them in the same place
+        whatever the puzzle's text ran to, and `shrink-0` so the squeeze
+        is always taken by the text above them. It carries its own `p-3`
+        because the body's gap ends at the body's edge. Where the panel
+        is content-sized (desktop) this changes nothing. */}
+    <div className="flex shrink-0 flex-col gap-3 p-3">
+      <div className="flex flex-wrap gap-2">
         {phase === 'done' ? (
           <>
             <Button
