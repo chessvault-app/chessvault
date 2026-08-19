@@ -500,7 +500,15 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
         // offline with a stale cache — serve what we have
       }
     }
-    return c.json({ month, games: parseFileSummaries(dir, path) });
+    // Newest first, which is what every list in the app is in. chess.com
+    // sends a month oldest first and the file keeps that order, so the
+    // flip belongs here rather than in the browser: the /months prefetch
+    // below comes through this same route, and doing it client-side left
+    // the one month that arrived prefetched running backwards.
+    // Copied before flipping: parseFileSummaries hands back the array it
+    // keeps in listCache, and reversing that in place flips it again on
+    // the next request.
+    return c.json({ month, games: parseFileSummaries(dir, path).slice().reverse() });
   });
 
   /** Promote one archived game into the collection. */
@@ -745,6 +753,9 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
         if (!cached) return c.json({ error: 'lichess unreachable' }, 502);
       }
     }
+    // Already newest first: lichess sends them that way and the file is
+    // written and prepended to in that order. Same contract as the
+    // chess.com route above.
     return c.json({ games: parseFileSummaries(dir, path) });
   });
 
