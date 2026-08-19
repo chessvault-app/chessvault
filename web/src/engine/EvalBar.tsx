@@ -78,7 +78,13 @@ export function EvalBarRow({ fen }: { fen: string }) {
   const score = useEvalScore(fen);
   if (!enabled) return null;
   return (
-    <div className="flex h-6 w-full items-center wide:hidden">
+    // items-end, not items-center: the row is the name's, but the bar is
+    // the BOARD's, and it reads as the board's edge rather than as a line
+    // floating between the two. Sat in the middle it was 14px off the board
+    // (6px of row plus the block's gap-2); against the bottom it is the
+    // gap-2 alone. The row keeps its height, so nothing else moves —
+    // lanph3re asked for the gap under the bar, not the one over it.
+    <div className="flex h-6 w-full items-end wide:hidden">
       <EvalBar score={score} orientation="horizontal" />
     </div>
   );

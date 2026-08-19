@@ -854,6 +854,13 @@ export function RepertoireView() {
   const [analysing, setAnalysing] = useState(false);
   /** Which pane the phone shows. A desktop shows all of them. */
   const [pane, setPane] = useState<'info' | 'moves' | 'engine'>('info');
+  /**
+   * And which one it can actually show. The engine pane exists only once
+   * the answer is in, so a phone left on it when the next one starts falls
+   * back rather than facing an empty column — the effect above resets the
+   * choice, and this is what makes the render between the two harmless.
+   */
+  const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
   const analysingRef = useRef(false);
   analysingRef.current = analysing;
   useEffect(
@@ -1441,22 +1448,24 @@ export function RepertoireView() {
                 phone, the engine chosen for you when the line ends. */}
             {!wide && (
               <PaneTabs
-                value={pane}
+                value={shownPane}
                 onChange={setPane}
                 tabs={[
                   { id: 'info', label: t('Game'), icon: Info },
                   { id: 'moves', label: t('Moves'), icon: ListOrdered },
-                  { id: 'engine', label: 'Engine', icon: Cpu },
+                  // The engine is what a line is FOR — offered when the
+                  // answer is in, not while it is being looked for.
+                  ...(analysing ? [{ id: 'engine' as const, label: 'Engine', icon: Cpu }] : []),
                 ]}
               />
             )}
-            {(wide || pane === 'moves') && movesPanel}
-            {!wide && pane === 'engine' && (
+            {(wide || shownPane === 'moves') && movesPanel}
+            {!wide && analysing && shownPane === 'engine' && (
               <Panel flush className="min-h-0 flex-1">
                 <EngineBlock standalone />
               </Panel>
             )}
-            {(wide || pane === 'info') && gamePanel}
+            {(wide || shownPane === 'info') && gamePanel}
           </>
         )}
       </div>
