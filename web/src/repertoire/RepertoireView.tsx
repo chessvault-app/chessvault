@@ -1440,16 +1440,15 @@ export function RepertoireView() {
   // Game panel in the trainers' shape: status and the game's own actions
   // live here; the moves panel is the one every other board page uses.
   const gamePanel = (
-  // `grow` on a phone, as both trainers' info panels do: this panel is
-  // the whole info pane there, and mid-game it is three lines of status —
-  // so the column ended at the text and left a band of page between the
-  // panel and the bottom bar (measured at 375x812: the panel stopped at
-  // 639 with the bar at 757, 104px of nothing). It shrinks as well as
-  // grows, which is safe because the BODY scrolls; a panel that could not
-  // shrink would run past the column with Panel's overflow-hidden cutting
-  // whatever hung off the end. A desktop keeps `shrink-0`: the moves panel
-  // above already takes the column's spare height there.
-  <Panel flush className={wide ? 'shrink-0' : 'grow'}>
+  // The height of what it says, on either layout. A phone had it grown to
+  // the bottom bar (aa41f4f) so the column would not end in a band of page
+  // background — but mid-game this panel is three lines of status, and
+  // three lines drawn a screen tall reads worse than the band did
+  // (lanph3re). Space the panel does not need is the page's.
+  //
+  // The body still scrolls (see below), so the panel is capped rather than
+  // clipped wherever the column has a floor to cap it against.
+  <Panel flush className="shrink-0">
     <PanelHeader
       title={t('Game')}
       actions={
@@ -1657,18 +1656,15 @@ export function RepertoireView() {
         </div>
       )}
 
-      {/* stacked:min-h-max — the page column is what scrolls on a phone, so
-          this one must take at least the height its content needs. As
-          flex-1 with min-h-0 it shrank under that content instead, and the
-          bottom of the New game panel was cut off.
-
-          At LEAST, though, and not exactly: it was flex-none too, which
-          pinned it to its content in both directions, and mid-game its
-          content is three lines of status — so the panel stopped 104px
-          above the bottom bar with page showing under it (measured at
-          375x812: panel to 639, bar at 757). flex-1 against a max-content
-          floor grows into that band and still cannot be squeezed below
-          what it holds. */}
+      {/* stacked:flex-none with min-h-max — the page column is what scrolls
+          on a phone, so this one takes the height its content needs and no
+          other. As flex-1 with min-h-0 it shrank under that content
+          instead, and the bottom of the New game panel was cut off; as
+          flex-1 against the max-content floor (aa41f4f) it grew the other
+          way, stretching a three-line status panel down to the bottom bar
+          to close a 104px band of page. The band is the better of the two:
+          it is page background where there is nothing to say, not an empty
+          panel pretending there is. */}
       {/* Scrolls exactly when it is a side column — `wide`, which is what
           makes it one. Keyed on `lg` before, it did not scroll on a phone
           held sideways (wide starts at 44rem, lg at 64rem) and the New game
@@ -1686,7 +1682,7 @@ export function RepertoireView() {
           flush against the column's own bottom edge; padding inside the
           scroll area gives it somewhere to finish, as stacked:pb-8 does
           for the page column on a phone. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {phase === 'idle' ? (
