@@ -945,7 +945,12 @@ export function RepertoireView() {
         loadError: null,
         gameHeaders: null,
       });
-      useEngine.getState().setEnabled(true);
+      // Wide only: a phone was starting Stockfish for a line it had just
+      // finished, on a pane it stays off (see below) — a worker and a
+      // battery spent on a question nobody asked (lanph3re). The Engine
+      // tab is still there, with its own switch, and the ending's score
+      // appears if it is turned on.
+      if (wide) useEngine.getState().setEnabled(true);
       setAnalysing(true);
       // The phone STAYS on the Game pane: that is where the line's own
       // ending is written, with the score, Save line to study and New
