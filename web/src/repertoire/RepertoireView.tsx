@@ -1311,35 +1311,35 @@ export function RepertoireView() {
           />
         </div>
       )}
-      {/* The row that starts it, laid out the way every dialog in
-          the app lays its actions out: justify-end, gap-2, and the
-          primary one LAST so it sits at the end of the line the eye
-          finishes on (ui/PromptSheet). This is a panel rather than
-          a dialog, but it is the same thing — a block of choices
-          with one action at the bottom — and it was the only one
-          starting from the left. */}
-      <div className="flex flex-col gap-2 wide:flex-row wide:flex-wrap wide:justify-end">
-        {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full wide:w-auto"
-            disabled={!drillReady}
-            onClick={startFromMiss}
-          >
-            {t('Drill a missed position')}
-          </Button>
-        )}
+      {/* The starts, as a column of full-width buttons on BOTH layouts.
+          Each is as wide as whatever holds it — the settings row's width
+          on a phone, the side column's on a desktop.
+
+          Not the row every dialog in this app ends on (justify-end,
+          gap-2, the primary one LAST — ui/PromptSheet), which is what
+          this was. A dialog's row is read along a line and finishes on
+          the action; a panel that exists to be started is read top down,
+          and the thing to press should be the first thing under what it
+          would play rather than the last thing after an alternative to
+          it. So Start leads, and the drill's second start — the same
+          verb aimed at a position the record says was fumbled — sits
+          under it as the alternative it is. */}
+      <div className="flex flex-col gap-2">
         <Button
           variant="primary"
           size="sm"
-          className="w-full wide:w-auto"
+          className="w-full"
           disabled={needsToken || (mode === 'drill' && !drillReady)}
           onClick={startGame}
         >
           <Play className="size-3.5" />
           {t('Start')}
         </Button>
+        {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
+          <Button variant="secondary" size="sm" className="w-full" disabled={!drillReady} onClick={startFromMiss}>
+            {t('Drill a missed position')}
+          </Button>
+        )}
       </div>
     </>
   );
