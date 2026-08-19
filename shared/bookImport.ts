@@ -512,6 +512,59 @@ export function solutionEntries(pages: TextPage[], book: BookText): Map<number, 
   return out;
 }
 
+/**
+ * Which answers page each puzzle number is printed on.
+ *
+ * Evidence a book puzzle must carry is the page it was printed on, where
+ * on that page it sat, and the page its answer is on — the last of those
+ * because a solution is entered, or checked, while looking at what the
+ * book actually printed.
+ *
+ * Numbers are anchored where the answers pages print them. A scan mangles
+ * plenty of them, so anything unanchored falls back to the page whose run
+ * of numbers covers it: answers run in printed order, so the page that
+ * starts below a number and nearest to it is the page it is on.
+ *
+ * Mirrors scripts/ml/enrich_solution_pages.py, which does this offline.
+ * Returns a lookup that answers undefined when the book has no answers
+ * pages to point at.
+ */
+export function answerPageIndex(
+  pages: TextPage[],
+  ranges: [number, number][],
+  maxNumber: number,
+): (number: number) => number | undefined {
+  const byPage = new Map(pages.map((p) => [p.page, p]));
+  const anchors = new Map<number, number>();
+  for (const [from, to] of ranges) {
+    for (let page = from; page <= to; page++) {
+      const text = byPage.get(page);
+      if (!text) continue;
+      for (const match of text.text.matchAll(/(\d{1,4})/g)) {
+        const value = Number(match[1]);
+        if (value >= 1 && value <= maxNumber && !anchors.has(value)) anchors.set(value, page);
+      }
+    }
+  }
+  const runs = [...new Set(anchors.values())]
+    .map((page) => ({
+      page,
+      first: Math.min(...[...anchors].filter(([, p]) => p === page).map(([n]) => n)),
+    }))
+    .sort((a, b) => a.first - b.first);
+  return (number) => {
+    if (runs.length === 0) return undefined;
+    const anchored = anchors.get(number);
+    if (anchored !== undefined) return anchored;
+    let chosen = runs[0]!.page;
+    for (const run of runs) {
+      if (run.first <= number) chosen = run.page;
+      else break;
+    }
+    return chosen;
+  };
+}
+
 // --- move resolution ----------------------------------------------------------
 
 export interface Resolution {

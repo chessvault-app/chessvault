@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import {
+  answerPageIndex,
   assignLabels,
   deriveNumbering,
   isMoveish,
@@ -550,6 +551,30 @@ export interface PageGeometry {
   h: number;
 }
 
+/**
+ * What an evidence page is called on the server.
+ *
+ * The server writes `page033.jpg` (see the evidence route), a puzzle's
+ * evidence points at that name, and a draft's evidence points at it too.
+ * Three places agreeing by hand is three places to get it wrong, so they
+ * all ask here instead.
+ */
+export function evidencePage(page: number): string {
+  return `page${String(page).padStart(3, '0')}.jpg`;
+}
+
+/** One page of the PDF at the size the whole importer assumes. */
+async function renderPage(pdf: PDFDocumentProxy, pageNo: number): Promise<HTMLCanvasElement> {
+  const page = await pdf.getPage(pageNo);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+  return canvas;
+}
+
 /** The source page, sized like the offline pipeline's evidence images. */
 function pageJpeg(canvas: HTMLCanvasElement): string {
   const w = 1100;
@@ -644,6 +669,17 @@ async function readSolutions(
   const solved = [...result.puzzles, ...repaired];
   solved.sort((a, b) => a.number - b.number);
 
+  // The answers page each number is printed on, settled BEFORE the upload
+  // because those pages are evidence as much as the diagram's own page is.
+  const answerPageFor = answerPageIndex(texts, result.answerRanges, numbering.maxNumber);
+  const answerPages = new Set<number>();
+  for (const diagram of found) {
+    const page = diagram.number === undefined ? undefined : answerPageFor(diagram.number);
+    if (page === undefined) continue;
+    answerPages.add(page);
+    diagram.solutionPage = evidencePage(page);
+  }
+
   // Evidence first: a puzzle must never reference a page image that is not
   // there, so the pages go up before anything that points at them.
   //
@@ -652,9 +688,19 @@ async function readSolutions(
   // printed page — so the page it came off is precisely what it needs.
   // Sending only the solved pages left drafts with a crop and nothing to
   // read, which is the one thing they cannot be corrected without.
+  //
+  // And the answers pages. An answers chapter prints no diagrams, so the
+  // scan kept none of its pixels and nothing here ever asked for them —
+  // which is why every Solutions tab, on drafts and puzzles alike, pointed
+  // at a file that had never been uploaded. They are rendered now, once,
+  // and only the ones something actually points at.
   const wanted = new Set<number>(
     geometry.filter((g) => g.rects.length > 0).map((g) => g.page),
   );
+  for (const page of answerPages) wanted.add(page);
+  for (const page of [...wanted].sort((a, b) => a - b)) {
+    if (!pageImages.has(page)) pageImages.set(page, pageJpeg(await renderPage(pdf, page)));
+  }
   const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
   for (let i = 0; i < pages.length; i += 12) {
     const chunk = pages.slice(i, i + 12).filter((p) => p.image);
@@ -670,47 +716,6 @@ async function readSolutions(
     });
   }
 
-  /**
-   * The answers page a number is printed on.
-   *
-   * Mirrors what scripts/ml/enrich_solution_pages.py does offline, and for
-   * the same stated reason: a person enters a draft's solution while
-   * looking at it. Numbers are anchored where the answer pages print them;
-   * anything the scan mangled falls back to the page whose run of numbers
-   * covers it.
-   */
-  const anchors = new Map<number, number>();
-  for (const [from, to] of result.answerRanges) {
-    for (let page = from; page <= to; page++) {
-      const text = byPage.get(page);
-      if (!text) continue;
-      for (const match of text.text.matchAll(/(\d{1,4})/g)) {
-        const value = Number(match[1]);
-        if (value >= 1 && value <= numbering.maxNumber && !anchors.has(value)) {
-          anchors.set(value, page);
-        }
-      }
-    }
-  }
-  const runs = [...new Set(anchors.values())]
-    .map((page) => ({ page, first: Math.min(...[...anchors].filter(([, p]) => p === page).map(([n]) => n)) }))
-    .sort((a, b) => a.first - b.first);
-  const solutionPageFor = (number: number | undefined): string | undefined => {
-    if (number === undefined || runs.length === 0) return undefined;
-    const anchored = anchors.get(number);
-    if (anchored !== undefined) return `page${String(anchored).padStart(3, '0')}.jpg`;
-    let chosen = runs[0]!.page;
-    for (const run of runs) {
-      if (run.first <= number) chosen = run.page;
-      else break;
-    }
-    return `page${String(chosen).padStart(3, '0')}.jpg`;
-  };
-  for (const diagram of found) {
-    const page = solutionPageFor(diagram.number);
-    if (page) diagram.solutionPage = page;
-  }
-
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));
   let saveFailed = 0;
   for (const puzzle of solved) {
@@ -718,6 +723,7 @@ async function readSolutions(
     const size = where ? sizes.get(where.page) : undefined;
     if (!where || !size) continue;
     const rect = where.rect;
+    const answers = answerPageFor(puzzle.number);
     // The rect is stored as fractions of the page, so it survives whatever
     // size the evidence image happens to be.
     try {
@@ -730,13 +736,18 @@ async function readSolutions(
           san: puzzle.san,
           provenance: puzzle.provenance,
           evidence: {
-            page: `page${String(where.page).padStart(3, '0')}.jpg`,
+            page: evidencePage(where.page),
             rect: {
               x: rect.x / size.w,
               y: rect.y / size.h,
               w: rect.w / size.w,
               h: rect.h / size.h,
             },
+            // A verified puzzle carries the page its answer is on exactly
+            // as a draft does. It went out without one until now, so the
+            // one tier that HAS a printed solution to check against was
+            // the one tier you could not check it against.
+            ...(answers === undefined ? {} : { solutionPage: evidencePage(answers) }),
           },
         },
       });

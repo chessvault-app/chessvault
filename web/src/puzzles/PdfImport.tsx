@@ -8,7 +8,7 @@ import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { Skeleton } from '@/ui/Skeleton';
-import { canReadPdf, useImportJob, type FoundDiagram } from './importJob';
+import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
@@ -318,7 +318,7 @@ export function PdfImport({
               fen: f.fen,
               ...(f.number === undefined ? {} : { number: f.number }),
               evidence: {
-                page: `page${String(f.page).padStart(3, '0')}.jpg`,
+                page: evidencePage(f.page),
                 ...(f.rect ? { rect: f.rect } : {}),
                 ...(f.solutionPage ? { solutionPage: f.solutionPage } : {}),
               },
