@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   FlipVertical2,
-  X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
@@ -16,6 +15,7 @@ import { BOARD_WIDE_COLUMN } from '@/ui/layout';
 import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/cn';
+import { ClearButton } from '@/ui/ClearButton';
 import { noAutofill, noAutofillClass } from '@/ui/Input';
 import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
@@ -347,21 +347,7 @@ function NameField({
           noAutofillClass,
         )}
       />
-      {showClear && (
-        <button
-          type="button"
-          title={t('Clear')}
-          aria-label={t('Clear')}
-          onPointerDown={(e) => e.preventDefault()}
-          onClick={() => setDraft('')}
-          className={cn(
-            'text-subtle hover:text-fg hover:bg-fg/10 absolute right-0 top-1/2 grid -translate-y-1/2',
-            'size-5 place-items-center rounded-full transition-colors duration-100',
-          )}
-        >
-          <X className="size-3.5 shrink-0" />
-        </button>
-      )}
+      {showClear && <ClearButton className="right-0" onClear={() => setDraft('')} />}
     </span>
   );
 }

@@ -5,8 +5,9 @@ import {
   type InputHTMLAttributes,
   type TextareaHTMLAttributes,
 } from 'react';
-import { CalendarDays, Search, X } from 'lucide-react';
+import { CalendarDays, Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { ClearButton } from '@/ui/ClearButton';
 import { t } from '@/lib/i18n';
 
 /**
@@ -250,19 +251,10 @@ export const ClearableInput = forwardRef<HTMLInputElement, ClearableInputProps>(
           {...props}
         />
         {showClear && (
-          <button
-            type="button"
-            title={t('Clear')}
-            aria-label={t('Clear')}
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={() => self.current && emptyField(self.current, 'stay')}
-            className={cn(
-              'text-subtle hover:text-fg hover:bg-fg/10 absolute right-1.5 top-1/2 grid -translate-y-1/2',
-              'size-5 place-items-center rounded-full transition-colors duration-100',
-            )}
-          >
-            <X className="size-3.5 shrink-0" />
-          </button>
+          <ClearButton
+            className="right-1.5"
+            onClear={() => self.current && emptyField(self.current, 'stay')}
+          />
         )}
       </span>
     );
@@ -349,23 +341,11 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
         />
         {/* Inside the field, because it is about the field's contents. It
             appears with the text and leaves with it — an X over an empty
-            box is a button that does nothing. preventDefault on the press
-            keeps the focus, so clearing costs neither the caret nor, on a
-            phone, the keyboard. */}
+            box is a button that does nothing. The press keeps the focus
+            (see ClearButton), so clearing costs neither the caret nor, on
+            a phone, the keyboard. */}
         {text && (
-          <button
-            type="button"
-            title={t('Clear search')}
-            aria-label={t('Clear search')}
-            onPointerDown={(e) => e.preventDefault()}
-            onClick={() => empty('stay')}
-            className={cn(
-              'text-subtle hover:text-fg hover:bg-fg/10 absolute right-1.5 top-1/2 grid -translate-y-1/2',
-              'size-5 place-items-center rounded-full transition-colors duration-100',
-            )}
-          >
-            <X className="size-3.5 shrink-0" />
-          </button>
+          <ClearButton className="right-1.5" label="Clear search" onClear={() => empty('stay')} />
         )}
       </span>
       {/* Touch only. Cancel exists to put a keyboard away and give the
