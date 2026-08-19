@@ -11,6 +11,7 @@ import {
   FlipVertical2,
   Info,
   ListOrdered,
+  Network,
   Play,
   RotateCcw,
   Settings2,
@@ -1316,13 +1317,19 @@ export function RepertoireView() {
     <PanelHeader
       title={t('Game')}
       actions={
-        /* Idle, it opens the choices; mid-game it drops them and comes
-           back here. The same control at two moments — the way to what
-           the next game will be — so it is one slot, not two. */
+        /* Idle, the way OUT: the opening map, which is where a
+           repertoire is looked at rather than played, and which sends
+           drills back here. The choices are no longer in this corner —
+           the row that names them opens them, below. Mid-game the slot
+           is New game, which drops the line and returns to that row. */
         phase === 'idle' ? (
-          <Button variant="ghost" size="sm" onClick={() => setSetupOpen(true)} title={t('Set up a new game')}>
-            <Settings2 className="size-3.5" />
-            {t('Settings')}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Opening map')}
+            onClick={() => navigate('openingmap')}
+          >
+            <Network className="size-3.5" />
           </Button>
         ) : (
           <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
@@ -1337,10 +1344,32 @@ export function RepertoireView() {
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
       {phase === 'idle' ? (
-        <div className="flex flex-col gap-1">
-          <p className="text-fg text-sm leading-relaxed">{setupLine}</p>
-          <p className="text-subtle text-sm leading-relaxed">{setupTerms}</p>
-        </div>
+        <>
+          {/* The trainers' own headline size — the puzzle panel sets its
+              verdict in text-base font-semibold, and this is the same
+              line at the same moment: what the board in front of you
+              is. */}
+          <p className="text-fg text-base font-semibold leading-snug">{setupLine}</p>
+          {/* The settings as the way INTO the settings, which is the
+              puzzle trainer's theme row exactly: the chosen value IS
+              the control, so nothing has to be labelled twice and the
+              header keeps no button for it. Not truncated — the source
+              and the band are the half that would be cut, and they are
+              the half that changes. */}
+          <button
+            type="button"
+            onClick={() => setSetupOpen(true)}
+            title={t('Set up a new game')}
+            className={cn(
+              'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+              'border-line border px-3 py-2.5 text-left transition-colors duration-100',
+            )}
+          >
+            <Settings2 className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+            <span className="text-fg min-w-0 flex-1 text-sm">{setupTerms}</span>
+            <ChevronRight className="text-subtle size-3.5 shrink-0" />
+          </button>
+        </>
       ) : (
         <p
           className={cn(
