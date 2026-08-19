@@ -1,0 +1,10 @@
+# demo-seed/ is sample vault data that gets packed verbatim into the demo
+# bundle, so it must read back the same on every checkout. Keep it LF on
+# disk rather than letting core.autocrlf hand Windows a CRLF copy.
+# scripts/build-demo-seed.ts normalises anyway — this stops the CRLF from
+# existing in the first place.
+demo-seed/** text eol=lf
+
+# The generated module is always written with \n, so check it out that way
+# too; otherwise every Windows build leaves it looking modified.
+web/src/demo/seed.ts text eol=lf

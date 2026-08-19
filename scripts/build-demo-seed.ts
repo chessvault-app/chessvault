@@ -18,7 +18,11 @@ const files: Record<string, string> = {};
 for (const entry of readdirSync(SEED_DIR, { recursive: true, encoding: 'utf-8' })) {
   const full = resolve(SEED_DIR, entry);
   if (!statSync(full).isFile()) continue;
-  files[entry.split(sep).join('/')] = readFileSync(full, 'utf-8');
+  // Normalise line endings. On a Windows checkout git hands these files over
+  // with CRLF, which would otherwise be embedded verbatim: the module would
+  // differ from the committed one and the demo's vault would start life full
+  // of stray carriage returns. The seed is the same on every checkout.
+  files[entry.split(sep).join('/')] = readFileSync(full, 'utf-8').replace(/\r\n/g, '\n');
 }
 
 const names = Object.keys(files).sort();
