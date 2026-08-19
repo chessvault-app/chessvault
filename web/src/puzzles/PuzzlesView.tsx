@@ -10,7 +10,9 @@ import {
   Info,
   LayoutGrid,
   Lightbulb,
+  ExternalLink,
   ListOrdered,
+  RotateCcw,
   RotateCw,
   Settings2,
   X,
@@ -39,7 +41,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/ui/announce';
-import { Button } from '@/ui/Button';
+import { Button, ButtonLink } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -479,6 +481,31 @@ function Trainer({
     step();
   };
 
+  /**
+   * The same puzzle again, from the top.
+   *
+   * Practice, not a second attempt: `reported.current` is left alone, so
+   * nothing is sent. The attempt that counts was decided the first time
+   * through — a win reported after the solution has been seen would put a
+   * clean solve in the history for a puzzle that was given away, and add
+   * to a streak the same way.
+   *
+   * `show` takes a fresh sequence number and the timers are cleared, for
+   * the same reason loadNext does it: a retry pressed while the scripted
+   * reply is still stepping must own the board from here on.
+   */
+  const retry = (): void => {
+    if (!puzzle) return;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setFailed(false);
+    setRevealed(false);
+    setHint(0);
+    setError(null);
+    promotion.cancel();
+    show(puzzle, ++loadSeq.current);
+  };
+
   // In-place analysis (lanph3re's call: no jump to the Analysis tab): the final
   // position loads into the shared analysis store and the trainer swaps to
   // the real analysis board + merged engine/moves panel. Entering is an
@@ -748,16 +775,6 @@ function Trainer({
               ))}
             </dd>
           </dl>
-          {puzzle.game_url && (
-            <a
-              href={puzzle.game_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary text-sm hover:underline"
-            >
-              {t('From this game ↗')}
-            </a>
-          )}
         </>
       ) : (
         <div className="flex flex-col gap-0.5">
@@ -788,9 +805,37 @@ function Trainer({
         because the body's gap ends at the body's edge. Where the panel
         is content-sized (desktop) this changes nothing. */}
     <div className="flex shrink-0 flex-col gap-3 p-3">
-      <div className="flex flex-wrap gap-2">
+      {/* justify-end, gap-2, the primary one LAST — the row every window
+          in this app ends on (ui/PromptSheet, and the repertoire's New
+          game). A finished puzzle's row is read along a line and finishes
+          on the action, which is why the link out to the game it came
+          from leads and Next closes. The row while SOLVING is a different
+          shape and stays left: Hint and Solution are things you may reach
+          for at any moment, not the end of a sentence. */}
+      <div className={cn('flex flex-wrap gap-2', phase === 'done' && 'justify-end')}>
         {phase === 'done' ? (
           <>
+            {/* An anchor, not a button that navigates: it goes out of the
+                app, to lichess, and middle click and the context menu are
+                how a link is used. */}
+            {puzzle?.game_url && (
+              <ButtonLink
+                variant="ghost"
+                size="sm"
+                href={puzzle.game_url}
+                target="_blank"
+                rel="noreferrer"
+                title={t('Opens lichess (needs internet)')}
+              >
+                <ExternalLink className="size-3.5" />
+                {t('From this game')}
+              </ButtonLink>
+            )}
+            {/* Practice, not a second attempt — see retry(). */}
+            <Button variant="secondary" size="sm" onClick={retry}>
+              <RotateCcw className="size-3.5" />
+              {t('Retry')}
+            </Button>
             <Button
               variant="primary"
               size="sm"

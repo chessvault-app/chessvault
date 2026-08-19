@@ -909,7 +909,8 @@ export const ko: Record<string, string> = {
   'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.':
     '잘라낸 다이어그램, 페이지 이미지, 정답은 모두 보관함에만 남고 어디에도 공개되지 않습니다 — 그래도 저작권은 출판사에 있으며, 사는 곳에 따라 복제나 공유가 허용되지 않을 수 있습니다.',
   'Choose the book’s PDF': '책의 PDF 선택',
-  'From this game ↗': '이 게임에서 ↗',
+  'From this game': '이 게임에서',
+  'Opens lichess (needs internet)': 'lichess에서 열림 (인터넷 필요)',
   'Set an app password first.': '먼저 앱 비밀번호를 설정하세요.',
   Offline: '오프라인',
   'This machine': '이 기기',
