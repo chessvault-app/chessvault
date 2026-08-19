@@ -415,6 +415,9 @@ function NoteEditor({
             dropPark();
             onRecoveryAnswered();
           }}
+          // Closes the question without answering it: the park is left
+          // alone, so the next open asks again.
+          onDefer={onRecoveryAnswered}
         />
       )}
 

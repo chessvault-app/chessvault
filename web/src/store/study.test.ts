@@ -48,7 +48,14 @@ function mockServer(): void {
         return Promise.resolve(new Response('{}', { status: 200 }));
       }
       if (method === 'DELETE') {
-        if (isPark(url)) parkDeletes.push(url);
+        if (isPark(url)) {
+          parkDeletes.push(url);
+          // The vault really loses it, so a later GET stops offering it.
+          // Without this the mock could not tell deleting the swap from
+          // leaving it parked, and a test for the difference passed either
+          // way.
+          serverDraft = null;
+        }
         return Promise.resolve(new Response('{}', { status: 200 }));
       }
       if (method === 'POST') {
@@ -277,6 +284,22 @@ describe('recovery', () => {
     await useStudy.getState().dismissRecovery();
     expect(useStudy.getState().recovery).toBeNull();
     expect(parkDeletes).toHaveLength(1);
+  });
+
+  it('keeps the swap when the offer is closed rather than answered', async () => {
+    // Escape, the X, the scrim and the drag all land here. Closing a
+    // window is not an answer, and this is the one window whose
+    // destructive answer cannot be undone.
+    useStudy.getState().deferRecovery();
+    expect(useStudy.getState().recovery).toBeNull();
+    expect(parkDeletes).toEqual([]);
+  });
+
+  it('offers the swap again after it was closed unanswered', async () => {
+    useStudy.getState().deferRecovery();
+    await useStudy.getState().close();
+    await useStudy.getState().open('t');
+    expect(useStudy.getState().recovery?.pgn).toContain('Nf3');
   });
 
   it('asks nothing when the vault holds no swap', async () => {

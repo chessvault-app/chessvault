@@ -62,6 +62,17 @@ interface StudyState {
   recover: () => void;
   /** Leave it: the swap is deleted and the saved document stands. */
   dismissRecovery: () => Promise<void>;
+  /**
+   * Close the offer without answering it: the swap stays parked and is
+   * offered again next time the document is opened.
+   *
+   * The question is worth re-asking. dismissRecovery deletes rather than
+   * letting a swap rot, and that is right for an ANSWER — but closing a
+   * window is not one, and the cost of the two mistakes is not
+   * symmetrical: being asked twice costs a press, and being wrong the
+   * other way costs work that exists nowhere else.
+   */
+  deferRecovery: () => void;
   /** Park the pending copy in the vault, against a crash. */
   park: () => Promise<void>;
   /** Drop whatever is parked — the pending copy is resolved. */
@@ -570,6 +581,8 @@ export const useStudy = create<StudyState>()((set, get) => {
       set({ chapters, chapterIndex: index, saveState: 'dirty', recovery: null });
       loadIntoAnalysis(chapters[index]!);
     },
+
+    deferRecovery: () => set({ recovery: null }),
 
     dismissRecovery: async () => {
       const { openId, openBase } = get();

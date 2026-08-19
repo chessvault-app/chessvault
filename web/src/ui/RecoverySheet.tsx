@@ -26,12 +26,24 @@ export function RecoverySheet({
   at,
   onRecover,
   onDismiss,
+  onDefer,
 }: {
   name: string;
   /** When the copy was parked, ISO. Shown as a local date and time. */
   at: string;
   onRecover: () => void;
+  /** Answered: the swap is deleted and the saved document stands. */
   onDismiss: () => void;
+  /**
+   * Not answered: close, and leave the swap parked to be offered again.
+   *
+   * Separate from onDismiss because closing is not an answer. Escape, the
+   * X, the scrim and the drag all arrive here, and every one of them means
+   * "not now" in every other window in this app — routing them into the
+   * destructive answer made the one sheet holding unrecoverable work the
+   * one sheet where a reflex destroyed it.
+   */
+  onDefer: () => void;
 }) {
   // The one fact that decides the answer. Someone who left a document
   // mid-thought half an hour ago wants it back; a draft from three weeks
@@ -44,7 +56,7 @@ export function RecoverySheet({
   return (
     // Dismissing by Escape, Back or the scrim leaves the swap where it is
     // — the answer that loses nothing, and the offer comes back next time.
-    <Sheet label={t('Unsaved changes were found')} onClose={onDismiss} className="gap-3">
+    <Sheet label={t('Unsaved changes were found')} onClose={onDefer} className="gap-3">
       <p className="text-fg text-base">
         {stamp
           ? t('“{name}” has changes from {when} that were never saved.', { name, when: stamp })

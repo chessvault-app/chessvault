@@ -346,6 +346,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           at={recovery.at}
           onRecover={() => useStudy.getState().recover()}
           onDismiss={() => void useStudy.getState().dismissRecovery()}
+          onDefer={() => useStudy.getState().deferRecovery()}
         />
       )}
 
