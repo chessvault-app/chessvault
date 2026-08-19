@@ -1097,14 +1097,18 @@ function NodePanel({
                   {tag.chapter ? ` · ${tag.chapter}` : ''}
                 </button>
                 {broken && <span className="text-bad shrink-0 text-sm">{t('Missing')}</span>}
-                <button
-                  type="button"
+                {/* Was a bare 14px glyph — the row has room, so this is
+                    the app's own icon button rather than a hand-rolled
+                    one, and comes with the 28px box (36px under a thumb)
+                    that every other icon button here already has. */}
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
                   title={t('Remove link')}
                   onClick={() => apply((d) => removeTag(d, map.id, node.id, tag))}
-                  className="text-subtle hover:text-fg shrink-0"
                 >
                   <X className="size-3.5" />
-                </button>
+                </Button>
               </div>
             );
           })}
@@ -1183,14 +1187,14 @@ function NodePanel({
                     {san}
                   </span>
                   {!charted && (
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       title={t('Chart it on the map')}
                       onClick={() => apply((doc) => addChild(doc, map.id, node.id, san))}
-                      className="text-subtle hover:text-fg shrink-0"
                     >
                       <Plus className="size-3.5" />
-                    </button>
+                    </Button>
                   )}
                   <Button
                     variant="ghost"

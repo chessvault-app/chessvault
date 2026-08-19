@@ -201,7 +201,17 @@ export function FieldStats({
                     type="button"
                     title={t('Chart it on the map')}
                     onClick={() => onAdd(move.san)}
-                    className="text-subtle hover:text-fg shrink-0"
+                    // The glyph was the whole target: 14px, which a thumb
+                    // misses. RowTail's slot is w-3.5 and has to stay that
+                    // width — it is what stops the percentage column
+                    // zigzagging — so the mark keeps its size and the
+                    // FINGER gets a bigger one, the way Switch does it. An
+                    // invisible inset takes the target to 38px on a coarse
+                    // pointer and moves nothing.
+                    className={cn(
+                      'text-subtle hover:text-fg relative shrink-0',
+                      'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
+                    )}
                   >
                     <Plus className="size-3.5" />
                   </button>
