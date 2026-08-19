@@ -546,13 +546,7 @@ function Trainer({
       loadError: null,
       gameHeaders: null,
     });
-    // The engine comes on WIDE only. A phone finishing a puzzle used to
-    // start Stockfish for a pane it was not even showing any more (see the
-    // note on the pane), which is a worker, a fan and a battery spent on a
-    // question nobody asked (lanph3re). The analysis is still set up — the
-    // board, the move tree, the Engine tab — and the tab's own switch
-    // turns the engine on for anyone who wants it.
-    if (wide) useEngine.getState().setEnabled(true);
+    useEngine.getState().setEnabled(true);
     setAnalysing(true);
   };
 

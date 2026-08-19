@@ -108,15 +108,6 @@ export function FinalAssessment({
       : null;
   const score = verdict ?? settled ?? live;
 
-  // Nothing to say, and nobody coming to say it: the page starts the engine
-  // on a desktop only, so on a phone this would otherwise hold an empty
-  // number, an empty bar and "Evaluating the position…" for ever over a
-  // search that was never going to run. Turning the engine on from the
-  // Engine tab brings the assessment with it, since that is the state this
-  // reads. A position settled by the rules (mate, stalemate) still scores:
-  // it never needed the engine.
-  if (!score && !enabled) return null;
-
   return (
     <div className="flex flex-col gap-2">
       {/* The verdict is ONE block — the number, the bar and the line that
