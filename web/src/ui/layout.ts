@@ -95,20 +95,24 @@ export const BOARD_WIDE_SIDE =
  * the editor. One string, because these shells were pasted literals and
  * drifted exactly as pasted literals do.
  *
- * stacked:pb-8 — this column is what scrolls on a phone, and its last
- * panel used to end flush against the bottom navigation with its own
+ * The bottom padding — this column is what scrolls on a phone, and its
+ * last panel used to end flush against the bottom navigation with its own
  * border cut off. Padding inside the scroll area gives it somewhere to
- * finish. pr-4 and the stable gutter are the same idea sideways: the
+ * finish. It is the shell's own p-3 and no more: pb-8 was 32px, and what
+ * a scrolled-to-the-end column looked like was a panel floating a third
+ * of an inch above the navigation with page behind it. The panels that
+ * hold still (BOARD_HELD_SHELL) end 12px above the bar, so these do too.
+ * pr-4 and the stable gutter are the same idea sideways: the
  * scrollbar is drawn OUTSIDE the padding (measured: 12px of padding,
  * then a 10px scrollbar), so p-3 alone left the panels almost touching
  * the thumb while the whole column sat 10px left of centre.
  *
  * The pages whose panels own their scrolling take BOARD_HELD_SHELL
- * instead — see below. Neither rule above earns its keep there, and both
- * cost: padding for a scrollbar that cannot appear.
+ * instead — see below. The gutter earns nothing there: it reserves a lane
+ * for a scrollbar that cannot appear.
  */
 export const BOARD_SCROLL_SHELL =
-  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ' +
+  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ' +
   BOARD_WIDE_SHELL;
 
 /**
