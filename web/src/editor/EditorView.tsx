@@ -325,7 +325,18 @@ export function EditorView({
                   <Button
                     key={flag}
                     size="sm"
-                    variant={state.castling.has(flag) ? 'primary' : 'secondary'}
+                    variant="secondary"
+                    // The `active` tint and not the filled primary: these
+                    // four are a state, and primary is the colour of the
+                    // thing to PRESS on a screen — a board full of pieces
+                    // and one Save. Two castling rights lit up in it read
+                    // as the editor's two main actions (lanph3re). Active
+                    // is what every other toggle in the app wears.
+                    active={state.castling.has(flag)}
+                    // The colour said which were on and nothing else did:
+                    // `active` renders as data-active, which no screen
+                    // reader announces. A toggle has a pressed state.
+                    aria-pressed={state.castling.has(flag)}
                     title={t(title)}
                     onClick={() => {
                       const castling = new Set(state.castling);
