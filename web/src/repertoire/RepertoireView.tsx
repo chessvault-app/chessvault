@@ -1401,15 +1401,26 @@ export function RepertoireView() {
   // Game panel in the trainers' shape: status and the game's own actions
   // live here; the moves panel is the one every other board page uses.
   const gamePanel = (
-  <Panel flush className="shrink-0">
+  // `grow` on a phone, as both trainers' info panels do: this panel is
+  // the whole info pane there, and mid-game it is three lines of status —
+  // so the column ended at the text and left a band of page between the
+  // panel and the bottom bar (measured at 375x812: the panel stopped at
+  // 639 with the bar at 757, 104px of nothing). It shrinks as well as
+  // grows, which is safe because the BODY scrolls; a panel that could not
+  // shrink would run past the column with Panel's overflow-hidden cutting
+  // whatever hung off the end. A desktop keeps `shrink-0`: the moves panel
+  // above already takes the column's spare height there.
+  <Panel flush className={wide ? 'shrink-0' : 'grow'}>
     <PanelHeader
       title={t('Game')}
       actions={
         /* Idle, the way OUT: the opening map, which is where a
            repertoire is looked at rather than played, and which sends
            drills back here. The choices are no longer in this corner —
-           the row that names them opens them, below. Mid-game the slot
-           is New game, which drops the line and returns to that row. */
+           the row that names them opens them, below. Mid-game the header
+           carries nothing: New game is the panel's own action and sits in
+           the body with the others (lanph3re's call), where a ghost
+           button in the corner had it looking like chrome. */
         phase === 'idle' ? (
           <Button
             variant="ghost"
@@ -1419,15 +1430,17 @@ export function RepertoireView() {
           >
             <Network className="size-3.5" />
           </Button>
-        ) : (
-          <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
-            <RotateCcw className="size-3.5" />
-            {t('New game')}
-          </Button>
-        )
+        ) : undefined
       }
     />
-    <div className="flex flex-col gap-3 p-3">
+    {/* `grow` so the body owns the panel's height rather than stopping at
+        its text, `overflow-y-auto` so that height is a ceiling and not a
+        promise, and `min-h-0` because a flex item will not shrink below
+        its content without it. Idle keeps its own bottom padding: Start
+        and the settings row stay in here, directly under the line that
+        says what they would start (they are read top down — see
+        startBlock), rather than being pushed to the panel's floor. */}
+    <div className={cn('flex min-h-0 grow flex-col gap-3 p-3 overflow-y-auto', phase !== 'idle' && 'pb-0')}>
       {/* Idle, the panel is what the page opens on: what the next game
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
@@ -1531,6 +1544,21 @@ export function RepertoireView() {
       {phase === 'idle' && startBlock}
       {phase === 'idle' && setupRow}
     </div>
+
+    {/* Mid-game the panel ends on its action, the way the trainers' panels
+        do: the floor, outside the scrolling body and `shrink-0`, so the
+        squeeze is always taken by the status text; justify-end, and
+        PRIMARY — starting the next game is the thing to press once this
+        one is over, and it was a ghost button in the header, which is
+        where this app puts chrome. */}
+    {phase !== 'idle' && (
+      <div className="flex shrink-0 flex-wrap justify-end gap-2 p-3">
+        <Button variant="primary" size="sm" onClick={newGame} title={t('Set up a new game')}>
+          <RotateCcw className="size-3.5" />
+          {t('New game')}
+        </Button>
+      </div>
+    )}
   </Panel>
   );
   const movesPanel = analysing ? (
@@ -1605,10 +1633,18 @@ export function RepertoireView() {
         </div>
       )}
 
-      {/* stacked:flex-none — the page column is what scrolls on a phone, so
-          this one must take the height its content needs. As flex-1 with
-          min-h-0 it shrank under that content instead, and the bottom of
-          the New game panel was cut off. */}
+      {/* stacked:min-h-max — the page column is what scrolls on a phone, so
+          this one must take at least the height its content needs. As
+          flex-1 with min-h-0 it shrank under that content instead, and the
+          bottom of the New game panel was cut off.
+
+          At LEAST, though, and not exactly: it was flex-none too, which
+          pinned it to its content in both directions, and mid-game its
+          content is three lines of status — so the panel stopped 104px
+          above the bottom bar with page showing under it (measured at
+          375x812: panel to 639, bar at 757). flex-1 against a max-content
+          floor grows into that band and still cannot be squeezed below
+          what it holds. */}
       {/* Scrolls exactly when it is a side column — `wide`, which is what
           makes it one. Keyed on `lg` before, it did not scroll on a phone
           held sideways (wide starts at 44rem, lg at 64rem) and the New game
@@ -1626,7 +1662,7 @@ export function RepertoireView() {
           flush against the column's own bottom edge; padding inside the
           scroll area gives it somewhere to finish, as stacked:pb-8 does
           for the page column on a phone. */}
-      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
+      <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
         {phase === 'idle' ? (
