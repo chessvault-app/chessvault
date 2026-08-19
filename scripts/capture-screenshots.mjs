@@ -209,7 +209,35 @@ app.whenReady().then(async () => {
        ${Object.entries(prefs)
          .map(([k, v]) => `localStorage.setItem(${JSON.stringify(k)}, ${JSON.stringify(v)});`)
          .join('\n       ')}
-       location.hash = ${JSON.stringify(hash.slice(1))}; true`,
+       true`,
+    );
+    // Write the settings, then boot again ON TOP of them, and only THEN
+    // route. Three steps, and the order of the last two is not tidiness.
+    //
+    // The reload is because the language is read once, at startup, and
+    // falls back to navigator.language when nothing is stored
+    // (lib/i18n.ts): writing it into a page that has already started only
+    // changes what the NEXT boot reads. On an English machine that is
+    // invisible, since the fallback agrees with the pref — on a Korean one
+    // every shot came out in Korean, which is how it was found. These
+    // images are English wherever they are shown, so the language cannot
+    // be a property of whoever ran the script.
+    //
+    // The route goes on AFTER the reload, not into the hash before it, so
+    // that the app still comes up on its default route and is routed to
+    // the target once it is warm. Booting straight into a hash costs the
+    // opening map its layout: the map fits itself to its canvas, and
+    // mounting it into a page that is still starting fits it to a canvas
+    // that has not been sized yet, which the simulation never recovers
+    // from. Measured — a tree with clean edges either side of this change,
+    // and a hairball of crossing edges and overlapping labels when the
+    // hash was set before the reload, at both 7s and 22s of settling.
+    await new Promise((done) => {
+      win.webContents.once('did-finish-load', done);
+      win.webContents.reload();
+    });
+    await win.webContents.executeJavaScript(
+      `location.hash = ${JSON.stringify(hash.slice(1))}; true`,
     );
     // BEFORE the waits, not after them. A rule in the document applies to
     // whatever appears later, so hiding first means no frame ever contains
