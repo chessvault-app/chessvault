@@ -625,7 +625,16 @@ function Trainer({
    */
   const dockEngine = wide && analysing;
   const movesPanel = analysing ? (
-    <AnalysisMovesPanel engine={dockEngine} />
+    // min-h-32 overrides the panel's own `min-h-min`, which is what cut the
+    // Puzzle panel off below a short window: min-content there is the
+    // engine's three lines plus the move list plus the board controls —
+    // some 360px that would not give any of it back — so everything the
+    // column was short by came out of the panel underneath, and on a
+    // 1042x630 window 258px of it hung past the column's edge behind a
+    // hidden scrollbar. A move list is the one thing here built to
+    // scroll: it shrinks to 8rem and scrolls, and the puzzle's own panel
+    // keeps the height its text needs.
+    <AnalysisMovesPanel engine={dockEngine} className="min-h-32 flex-auto" />
   ) : answerTree ? (
     <AnswerPanel
       // The panel that takes the column's spare height, so the puzzle panel
@@ -672,7 +681,7 @@ function Trainer({
   // its actions cut in half. It fits the column now and its BODY scrolls;
   // the actions below the body never do. A desktop keeps `shrink-0`
   // alone: there the moves panel above already takes the spare height.
-  <Panel flush className={wide ? 'shrink-0' : 'grow'}>
+  <Panel flush className={wide ? '' : 'grow'}>
     <PanelHeader
       title={t('Puzzle')}
       actions={

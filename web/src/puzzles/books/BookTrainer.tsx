@@ -530,7 +530,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // in half. It fits the column now and its BODY scrolls; the actions
   // below the body never do. A desktop keeps `shrink-0` alone: there the
   // moves panel above already takes the spare height.
-  <Panel flush className={wide ? 'shrink-0' : 'grow'}>
+  <Panel flush className={wide ? '' : 'grow'}>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -700,7 +700,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   </Panel>
   );
   const movesPanel = analysing ? (
-    <AnalysisMovesPanel engine={wide} />
+    // min-h-32 over the panel's own `min-h-min` — see the note on the
+    // puzzle trainer's, which is the same panel in the same column.
+    <AnalysisMovesPanel engine={wide} className="min-h-32 flex-auto" />
   ) : (
   <AnswerPanel
     // Takes the column's spare height, so the panel under it sits on the
