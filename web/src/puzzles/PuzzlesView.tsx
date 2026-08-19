@@ -35,7 +35,7 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -904,7 +904,14 @@ function Trainer({
   );
 
   return (
-    <div className={BOARD_SCROLL_SHELL}>
+    // BOARD_HELD_SHELL, not BOARD_SCROLL_SHELL: the side column below owns
+    // the scrolling, so this shell has always fitted the screen exactly
+    // and its own scrollbar could never appear. What it kept were that
+    // scrollbar's allowances — 32px of bottom padding so a scrolled last
+    // panel could finish clear of the bottom bar, and a reserved gutter at
+    // the right. Neither was doing anything but holding the panel 32px off
+    // the navigation and the column 4px left of centre.
+    <div className={BOARD_HELD_SHELL}>
       {/* Stacked layouts lead with the header, convention-style; on wide
           the band lives in the side column so it aligns with the board. */}
       <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">

@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
@@ -710,7 +710,14 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   );
 
   return (
-    <div className={BOARD_SCROLL_SHELL}>
+    // BOARD_HELD_SHELL, not BOARD_SCROLL_SHELL: the side column below owns
+    // the scrolling, so this shell has always fitted the screen exactly
+    // and its own scrollbar could never appear. What it kept were that
+    // scrollbar's allowances — 32px of bottom padding so a scrolled last
+    // panel could finish clear of the bottom bar, and a reserved gutter at
+    // the right. Neither was doing anything but holding the panel 32px off
+    // the navigation and the column 4px left of centre.
+    <div className={BOARD_HELD_SHELL}>
       {/* Stacked: the identity bar stays glued to the top of the page,
           above the board (lanph3re's spec) — wide keeps it in the side column. */}
       {!wide && header}
