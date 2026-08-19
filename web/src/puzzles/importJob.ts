@@ -5,6 +5,7 @@ import {
   assignLabels,
   deriveNumbering,
   isMoveish,
+  pageMateGoal,
   tokenPrefix,
   letterSides,
   pageNumbers,
@@ -14,6 +15,8 @@ import {
   type TextPage,
 } from '@shared/bookImport';
 import { solveBook, type SolveResult, type VerifiedPuzzle } from '@shared/bookSolve';
+import { engineTier, type EnginePuzzle } from '@shared/bookEngine';
+import { releaseBookEngine, searchPosition } from '@/engine/bookSearch';
 import { repairBoard } from '@shared/bookRepair';
 import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs';
 import type { CellCandidates } from '@shared/bookRepair';
@@ -67,6 +70,13 @@ export interface ImportOptions {
    * minutes, so it is worth offering and not worth imposing.
    */
   repair?: boolean;
+  /**
+   * Ask the engine about the boards whose printed solution would not
+   * replay. On by default: without it an import of a book whose answers
+   * scanned badly is puzzles-with-solutions plus a pile of drafts, which
+   * is the whole reason the offline pipeline grew these tiers.
+   */
+  engine?: boolean;
 }
 
 /** What the solve stage concluded, for the dialog to show. */
@@ -77,6 +87,11 @@ export interface SolveSummary {
   unresolved: number;
   /** Solved, but the server refused the save — left selected as drafts. */
   saveFailed: number;
+  /**
+   * What the engine settled, of the boards the book's own answers could
+   * not. Absent when the engine pass was switched off.
+   */
+  engine?: { corroborated: number; only: number; unverified: number };
   confident: boolean;
   /** How the book turned out to write its answers — worked out, not set. */
   settings: SolveResult['settings'];
@@ -98,6 +113,8 @@ interface ImportJobState {
   found: FoundDiagram[];
   /** Null until the text half has run; null after it finds nothing. */
   solve: SolveSummary | null;
+  /** How far the engine pass has got, while it is running. */
+  engineAt: { done: number; total: number } | null;
   error: string | null;
   start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
   /** Continue a scan a reload, a crash, or a pause interrupted. */
@@ -283,6 +300,7 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   pages: 0,
   found: [],
   solve: null,
+  engineAt: null,
   error: null,
 
   // 'reading' is as live as 'scanning': the text half runs for minutes
@@ -293,7 +311,16 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   start: (slug, file, templates, options) => {
     const { status } = get();
     if (status === 'scanning' || status === 'reading') return;
-    set({ slug, status: 'scanning', page: 0, pages: 0, found: [], solve: null, error: null });
+    set({
+      slug,
+      status: 'scanning',
+      page: 0,
+      pages: 0,
+      found: [],
+      solve: null,
+      engineAt: null,
+      error: null,
+    });
     void scan(file, templates, options ?? {}, set, get, null);
   },
 
@@ -310,6 +337,7 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
         pages: saved.pages,
         found: saved.results,
         solve: null,
+        engineAt: null,
         error: null,
       });
       void scan(saved.file, templates, options ?? {}, set, get, saved);
@@ -326,7 +354,16 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
     })),
 
   clear: () =>
-    set({ slug: null, status: 'idle', page: 0, pages: 0, found: [], solve: null, error: null }),
+    set({
+      slug: null,
+      status: 'idle',
+      page: 0,
+      pages: 0,
+      found: [],
+      solve: null,
+      engineAt: null,
+      error: null,
+    }),
 }));
 
 /** Downscale the first-page canvas to a shelf-sized JPEG and save it as the
@@ -718,10 +755,18 @@ async function readSolutions(
 
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));
   let saveFailed = 0;
-  for (const puzzle of solved) {
+
+  /**
+   * Save one puzzle with its evidence. True when the book now holds it.
+   *
+   * Every tier goes through here, so a puzzle the engine settled carries
+   * exactly the evidence a book-parsed one does — the page, the place on
+   * it, and the page its answer is on.
+   */
+  const save = async (puzzle: VerifiedPuzzle | EnginePuzzle): Promise<boolean> => {
     const where = labelled.get(puzzle.number);
     const size = where ? sizes.get(where.page) : undefined;
-    if (!where || !size) continue;
+    if (!where || !size) return false;
     const rect = where.rect;
     const answers = answerPageFor(puzzle.number);
     // The rect is stored as fractions of the page, so it survives whatever
@@ -734,6 +779,7 @@ async function readSolutions(
           fen: puzzle.fen,
           uci: puzzle.uci,
           san: puzzle.san,
+          ...('wildcards' in puzzle && puzzle.wildcards ? { wildcards: puzzle.wildcards } : {}),
           provenance: puzzle.provenance,
           evidence: {
             page: evidencePage(where.page),
@@ -760,24 +806,75 @@ async function readSolutions(
       // the outage into a draft.
       if (e instanceof ApiError && e.status !== 0) {
         saveFailed += 1;
-        continue;
+        return false;
       }
       throw e;
     }
     const index = foundAt.get(`${where.page}:${rect.x}:${rect.y}`);
     if (index !== undefined) {
       found[index]!.solved = true;
-      // A solved puzzle is already saved; it must not be saved again as a
-      // draft when the user accepts what is left.
+      // A saved puzzle must not be saved again as a draft when the user
+      // accepts what is left.
       found[index]!.selected = false;
     }
-  }
+    return true;
+  };
 
+  for (const puzzle of solved) await save(puzzle);
+
+  /**
+   * What the book itself could not answer for, the engine is asked about.
+   *
+   * Only the boards that were READ and NUMBERED: a diagram with no number
+   * has no printed answer to have failed, and one that never resolved into
+   * a position has nothing to search. The tiers, and the rule for telling
+   * them apart, are shared/bookEngine.ts — the same decision the offline
+   * pipeline makes, on the same evidence.
+   */
+  let engine: SolveSummary['engine'];
+  if (options.engine !== false && result.unresolved.length > 0) {
+    const candidates = result.unresolved.filter((n) => boards.has(n) && labelled.has(n));
+    const counts = { corroborated: 0, only: 0, unverified: 0 };
+    useImportJob.setState({ engineAt: { done: 0, total: candidates.length } });
+    let done = 0;
+    for (const number of candidates) {
+      // The job was cleared out from under us; stop rather than keep
+      // saving into a book nobody is importing any more.
+      if (useImportJob.getState().status !== 'reading') break;
+      const board = boards.get(number)!;
+      const hints = result.unresolvedHints.get(number);
+      const goal = pageMateGoal(byPage.get(labelled.get(number)!.page)?.text ?? '');
+      const side = hints?.side ?? board.sideStated;
+      const puzzle = await engineTier(
+        {
+          number,
+          placement: board.placement,
+          ...(side ? { side } : {}),
+          squares: hints?.squares ?? [],
+          ...(goal > 0 ? { mateIn: goal } : {}),
+        },
+        searchPosition,
+      );
+      done += 1;
+      useImportJob.setState({ engineAt: { done, total: candidates.length } });
+      if (!puzzle || !(await save(puzzle))) continue;
+      if (puzzle.provenance === 'engine-corroborated') counts.corroborated += 1;
+      else if (puzzle.provenance === 'engine-only') counts.only += 1;
+      else counts.unverified += 1;
+    }
+    releaseBookEngine();
+    useImportJob.setState({ engineAt: null });
+    engine = counts;
+  }
+  const settled = engine ? engine.corroborated + engine.only + engine.unverified : 0;
   return {
     solved: solved.length - saveFailed,
     repaired: repaired.length,
-    unresolved: result.unresolved.length - repaired.length,
+    // What the engine imported is no longer unresolved: it is in the book,
+    // badged for what it is.
+    unresolved: result.unresolved.length - repaired.length - settled,
     saveFailed,
+    ...(engine ? { engine } : {}),
     confident: result.confident,
     settings: result.settings,
     answerRanges: result.answerRanges,

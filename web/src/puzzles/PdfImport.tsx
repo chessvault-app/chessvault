@@ -136,6 +136,7 @@ export function PdfImport({
   // printed number, so updating in place genuinely updates them.
   const [mode, setMode] = useState<'update' | 'rebuild'>('update');
   const [repair, setRepair] = useState(false);
+  const [engine, setEngine] = useState(true);
   const [preparing, setPreparing] = useState(false);
   /**
    * An unfinished scan of THIS book, if there is one.
@@ -196,7 +197,7 @@ export function PdfImport({
     } finally {
       setPreparing(false);
     }
-    job.start(slug, file, templates, { repair });
+    job.start(slug, file, templates, { repair, engine });
   };
 
   // A book's PDF is the one file this window exists for, so the whole
@@ -369,7 +370,7 @@ export function PdfImport({
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => job.resume(slug, templates, { repair })}
+                onClick={() => job.resume(slug, templates, { repair, engine })}
               >
                 {t('Carry on from page {page}', { page: saved.page + 1 })}
               </Button>
@@ -415,6 +416,25 @@ export function PdfImport({
               </label>
             ))}
           </div>
+        )}
+
+        {!mine && (
+          <label className="text-muted flex cursor-pointer items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={engine}
+              onChange={(e) => setEngine(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {t('Ask the engine where the book cannot be read')}
+              <span className="text-subtle block">
+                {t(
+                  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds about a minute per hundred.',
+                )}
+              </span>
+            </span>
+          </label>
         )}
 
         {!mine && (
@@ -521,7 +541,7 @@ export function PdfImport({
             <Button
               variant="primary"
               size="sm"
-              onClick={() => job.resume(slug, templates, { repair })}
+              onClick={() => job.resume(slug, templates, { repair, engine })}
             >
               <Play className="size-3.5" />
               {t('Carry on')}
@@ -531,7 +551,12 @@ export function PdfImport({
         {reading && (
           <p className="text-muted flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
-            {t("reading the book’s solutions")}
+            {job.engineAt
+              ? t('checking positions the book’s answers did not fit ({done} of {total})', {
+                  done: job.engineAt.done,
+                  total: job.engineAt.total,
+                })
+              : t("reading the book’s solutions")}
           </p>
         )}
         {solve && (
@@ -557,6 +582,25 @@ export function PdfImport({
               {solve.saveFailed > 0 &&
                 ` ${t('{n} solved puzzles could not be saved — they are kept below as drafts.', { n: solve.saveFailed })}`}
             </p>
+            {solve.engine && solve.engine.corroborated + solve.engine.only + solve.engine.unverified > 0 && (
+              <p className="text-muted pt-1">
+                {t(
+                  '{n} more came from the engine, where the book’s own answer could not be read.',
+                  {
+                    n:
+                      solve.engine.corroborated + solve.engine.only + solve.engine.unverified,
+                  },
+                )}{' '}
+                {t(
+                  '{corroborated} of those play to the squares the book printed, {only} were solved with nothing legible to check against, and {unverified} are a position and a side with no winning line found.',
+                  {
+                    corroborated: solve.engine.corroborated,
+                    only: solve.engine.only,
+                    unverified: solve.engine.unverified,
+                  },
+                )}
+              </p>
+            )}
             <p className="text-subtle pt-1">
               {t('Answers found on {pages}.', {
                 pages:
