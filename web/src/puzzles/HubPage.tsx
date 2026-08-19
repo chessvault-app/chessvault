@@ -578,12 +578,20 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
               same right-aligned time. Two lists of the same rows that
               place their eye differently read as two different tables,
               and a time column left to size itself moves the eye between
-              rows as "just now" gives way to "5 days ago". */}
+              rows as "just now" gives way to "5 days ago".
+
+              The time column is w-20 and not w-16: at 4rem "1 min ago"
+              and "Aug 11, 2025" both ran to a second line on a narrower
+              phone, which cost the row its height. The eye rides ml-auto,
+              so widening the time simply moves it a rem left —
+              there is spare room between the difficulty word and it —
+              and whitespace-nowrap makes the wrap impossible rather than
+              merely unlikely. */}
           <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
           <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
           <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
           <span
-            className="text-subtle w-16 shrink-0 text-right tabular-nums"
+            className="text-subtle w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
             title={formatWhen(h.at)}
           >
             {formatAgo(h.at)}

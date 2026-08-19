@@ -365,7 +365,7 @@ export function DashboardPage() {
                     {/* ml-auto is this list's own layout, not the eye's. */}
                     <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
                     <span
-                      className="text-subtle w-16 shrink-0 text-right tabular-nums"
+                      className="text-subtle w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
                       title={formatWhen(h.at)}
                     >
                       {formatAgo(h.at)}
