@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
+import { forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes } from 'react';
 import { cn } from '@/lib/cn';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'danger-solid';
@@ -25,11 +25,47 @@ const sizes: Record<Size, string> = {
   'icon-sm': 'size-7 rounded-md pointer-coarse:size-9',
 };
 
+/**
+ * Everything a button looks like before its variant and its size — shared
+ * with ButtonLink below, which must be indistinguishable from a Button
+ * standing next to it in a row.
+ *
+ * nowrap: Korean has no spaces to break at, so a narrow button split
+ * 추가 down the middle into two stacked syllables. Latin labels were
+ * never wide enough to notice.
+ */
+const BASE =
+  'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium ' +
+  'transition-[background-color,color,border-color,box-shadow,transform] duration-150 ' +
+  'active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45';
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
   active?: boolean;
 }
+
+/**
+ * The same button, as a link.
+ *
+ * A control that goes OUT of the app is an anchor and nothing else: a
+ * button with an onClick that navigates loses the middle click, the
+ * context menu and the address the browser shows on hover — and a screen
+ * reader announces the wrong kind of thing. But standing one in a row of
+ * buttons, it has to be the same object to the eye — and copying Button's
+ * class string beside it is how the two come to disagree about a padding.
+ */
+export type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
+  variant?: Variant;
+  size?: Size;
+};
+
+export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(function ButtonLink(
+  { className, variant = 'secondary', size = 'md', ...props },
+  ref,
+) {
+  return <a ref={ref} className={cn(BASE, variants[variant], sizes[size], className)} {...props} />;
+});
 
 // Does the button say anything in text? A visible label is already the
 // accessible name — and must stay it, or "click Cancel" stops working for
@@ -58,13 +94,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       }
       data-active={active || undefined}
       className={cn(
-        // nowrap: Korean has no spaces to break at, so a narrow button split
-        // 추가 down the middle into two stacked syllables. Latin labels were
-        // never wide enough to notice.
-        'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium',
-        'transition-[background-color,color,border-color,box-shadow,transform] duration-150',
-        'active:scale-[0.97]',
-        'disabled:pointer-events-none disabled:opacity-45',
+        BASE,
         variants[variant],
         sizes[size],
         active && 'bg-primary-soft text-primary border-primary/30',
