@@ -21,7 +21,7 @@ import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { fromDrawShapes, toDrawShapes } from '@/board/shapes';
-import { EvalBar, EvalBarSlot } from '@/engine/EvalBar';
+import { EvalBar, EvalBarSlot, EvalBarStrip } from '@/engine/EvalBar';
 import { toWhitePov } from '@/engine/uci';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -179,13 +179,14 @@ export function AnalysisBoard({
           {/* The eval bar sits beside the board in every layout (lanph3re's
               call): on phones it costs a sliver of board width but stays a
               persistent eval readout even when the Engine tab isn't open. */}
+          {/* Beside the board at `wide` only — see EvalBarSlot. The bar
+              is drawn when the engine is on and its width held open when it
+              is not: rendered conditionally, it took the row's gap-2 with it
+              when it went, so switching the engine on stole 20px from the
+              board and stepped the whole thing sideways under the thumb. */}
           {engineOn ? (
-            <EvalBar score={evalScore} className="shrink-0" />
+            <EvalBar score={evalScore} className="shrink-0 stacked:hidden" />
           ) : (
-            // The bar's own width, held open while it is not drawn. Rendered
-            // conditionally, it took the row's gap-2 with it when it went, so
-            // switching the engine on stole 20px from the board and stepped
-            // the whole thing sideways under the thumb.
             <EvalBarSlot />
           )}
           <div className="relative min-w-0 flex-1">
@@ -213,6 +214,13 @@ export function AnalysisBoard({
             <NagBadge node={node} orientation={orientation} book={bookMove} />
           </div>
         </div>
+        {/* And under the board when stacked, where the board is the page and
+            has no width to lend: the bar lies along its bottom edge instead.
+            The strip is there whether or not the bar is, so the pane
+            switcher and the panels below it stay put across the toggle. */}
+        <EvalBarStrip>
+          {engineOn && <EvalBar score={evalScore} orientation="horizontal" />}
+        </EvalBarStrip>
         <PlayerBar side={orientation} editable={editablePlayers} />
       </div>
       {/* Navigation under the board — but on phones it moves to the

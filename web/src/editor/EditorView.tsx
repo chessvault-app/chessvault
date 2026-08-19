@@ -453,9 +453,10 @@ export function EditorView({
             what stops the size changing on the way to and from analysis.
             Not on a phone: nothing sits beside the board there, and the
             stacked editor's board is deliberately as wide as the screen
-            (EDITOR_BOARD_MAX_W). */}
+            (EDITOR_BOARD_MAX_W) — the slot is `wide` only, so the phone
+            layout keeps every pixel it had. */}
         <div className={cn('flex w-full items-stretch gap-2', EDITOR_BOARD_MAX_W)}>
-          <EvalBarSlot className="stacked:hidden" />
+          <EvalBarSlot />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             {/* Desktop: one fixed-height combined row above the board (board
                 alignment across views). Phones: the opponent's pieces above the

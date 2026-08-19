@@ -27,7 +27,7 @@ import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker'
 import { FinalAssessment } from './FinalAssessment';
 import type { Dests, Key } from '@lichess-org/chessground/types';
 import { BOARD_MAX_W } from '@/board/boardSize';
-import { EvalBarSlot } from '@/engine/EvalBar';
+import { EvalBarSlot, EvalBarStrip } from '@/engine/EvalBar';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
@@ -1176,6 +1176,10 @@ export function RepertoireView() {
                 />
               </div>
             </div>
+            {/* The strip AnalysisBoard draws its bar in when stacked, held
+                open here too — otherwise everything under the board jumped
+                20px at the moment the line ended. */}
+            <EvalBarStrip />
             <PlayerSlot side={orientation} fen={node.fen} />
           </div>
         </div>

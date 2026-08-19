@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { formatScore, winningChances } from './uci.ts';
@@ -11,35 +12,43 @@ interface EvalBarProps {
 }
 
 /**
+ * The room the bar takes, kept open whether or not there is a bar in it —
+ * one of these per axis, because the bar changes sides with the layout.
+ *
+ * `EvalBarSlot` is its WIDTH, beside the board, and exists only at `wide`.
+ * `EvalBarStrip` is its HEIGHT, under the board, and only when stacked.
+ *
+ * Both exist because the bar shares the board's box rather than floating
+ * over it: 12px of bar and 8px of gap come out of whatever axis it sits on,
+ * so a board drawn without the reservation is 20px bigger than the same
+ * board drawn with it, and the difference shows the moment the two are the
+ * same board — the engine being switched on, or a trainer handing its board
+ * to AnalysisBoard when the puzzle ends. Reserved, nothing moves either way.
+ *
+ * Which side it sits on is a layout question, not a taste one. Beside the
+ * board it costs WIDTH, and on a phone the board has none to spare: the
+ * board is the page there, and 20px off its width is 20px off all eight
+ * files (lanph3re: the reservation made the board look pushed off-centre).
+ * Under the board it costs HEIGHT, which the stacked layouts already spend
+ * on strips and controls.
+ */
+export function EvalBarSlot() {
+  return <div className="hidden w-3 shrink-0 wide:block" aria-hidden />;
+}
+
+export function EvalBarStrip({ children }: { children?: ReactNode }) {
+  // Fixed height, always rendered: the switch turning the bar on must not
+  // move the pane switcher and the panels under it by 12px.
+  return <div className="h-3 w-full wide:hidden">{children}</div>;
+}
+
+/**
  * White-advantage gauge.
  *
  * Always drawn from White's perspective regardless of board orientation, which
  * is the convention every chess site uses — flipping it with the board would
  * make the same position appear to change evaluation.
  */
-/**
- * The eval bar's width, held open on a board that has no bar to draw.
- *
- * The bar shares the board's row rather than floating over it, so its
- * 12px and the row's gap-2 come out of the board — and a board drawn
- * WITHOUT the reservation is 20px wider than the same board drawn with
- * it. That is a difference you can only see when the two are the same
- * board a moment apart: the trainers and the repertoire hand their board
- * over to AnalysisBoard when the line or the puzzle ends, and it shrank
- * and stepped right at exactly that moment. It is also what makes the
- * board the same size on every page, which is the whole point of the
- * shared budget in board/boardSize.ts.
- *
- * A component rather than a copied `w-3`, because it is the same 12px as
- * the bar above and the two have to agree. The className is for the one
- * caller that reserves the room only where it is needed — the editor, which
- * indents its whole board stack at `wide` and runs the board full-width on
- * a phone, where nothing beside it exists to line up with.
- */
-export function EvalBarSlot({ className }: { className?: string }) {
-  return <div className={cn('w-3 shrink-0', className)} aria-hidden />;
-}
-
 export function EvalBar({ score, orientation = 'vertical', className }: EvalBarProps) {
   const fraction = score ? winningChances(score) : 0.5;
   const percent = `${(fraction * 100).toFixed(1)}%`;

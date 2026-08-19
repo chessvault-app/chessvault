@@ -29,7 +29,7 @@ import { usePromotion } from '@/board/usePromotion';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
-import { EvalBarSlot } from '@/engine/EvalBar';
+import { EvalBarSlot, EvalBarStrip } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -911,6 +911,10 @@ function Trainer({
               )}
             </div>
           </div>
+          {/* The strip AnalysisBoard draws its bar in when stacked, held
+              open here too — otherwise everything under the board jumped
+              20px at the moment the puzzle ended. */}
+          <EvalBarStrip />
           </div>
         </div>
       )}
