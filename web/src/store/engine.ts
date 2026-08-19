@@ -95,8 +95,23 @@ export const useEngine = create<EngineState>()(
   persist(
     (set, get) => {
       const onUpdate = (update: SearchUpdate): void => {
-        // Drop results for a position we have already navigated away from.
-        if (pendingFen && update.fen !== pendingFen) return;
+        /**
+         * Only results this store is still waiting for.
+         *
+         * The guard used to be `pendingFen && update.fen !== pendingFen`,
+         * which let everything through in the one state where nothing
+         * should be: switched OFF, where `pendingFen` is null. Off does
+         * not silence the worker instantly — `stop` is answered by a
+         * `bestmove` a round trip later, and a coalesced `info` frame can
+         * still be armed — so the last search's lines landed in the store
+         * a few milliseconds AFTER setEnabled(false) had cleared them.
+         * Invisible at the time, because nothing renders while the engine
+         * is off, and still there whenever it was switched back on:
+         * lanph3re saw one position's answer under another position's
+         * board. Two conditions, both of which have to hold for a result
+         * to be wanted at all.
+         */
+        if (!get().enabled || update.fen !== pendingFen) return;
         set({
           resultFen: update.fen,
           lines: update.lines,
@@ -199,7 +214,19 @@ export const useEngine = create<EngineState>()(
           }
           // Back on within the grace period: the worker is still here.
           holdIdleTeardown();
-          set({ enabled: true, error: null, threadsAvailable: supportsThreads() });
+          // Cleared here as well as on the way off, because the way off is
+          // not the only way results get in (see onUpdate) and because a
+          // switch-on starts a search rather than finishing one: until its
+          // first update arrives there is nothing to show, and whatever is
+          // left in the store is by definition an older position's.
+          set({
+            enabled: true,
+            error: null,
+            threadsAvailable: supportsThreads(),
+            lines: [],
+            resultFen: null,
+            finished: false,
+          });
           if (pendingFen) {
             requestedFen = pendingFen;
             void ensureEngine().analyse(pendingFen, get().depth, get().moveSeconds * 1000);
