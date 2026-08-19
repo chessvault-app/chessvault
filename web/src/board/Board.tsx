@@ -100,6 +100,16 @@ function pruneKingCastleDests(
 }
 
 /**
+ * How long a piece takes to travel to its new square.
+ *
+ * Exported because a caller that REPLACES this board when a line finishes
+ * has to let the last move land first — swap the component and chessground
+ * mounts afresh at the final position, which is a jump, not a move (see
+ * the trainers' solution replays).
+ */
+export const BOARD_ANIM_MS = 180;
+
+/**
  * React wrapper around chessground.
  *
  * chessground owns its own DOM and diffs internally, so the element is created
@@ -186,7 +196,7 @@ export function Board({
       // circles in particular never register.
       disableContextMenu: true,
       addDimensionsCssVarsTo: host.current,
-      animation: { enabled: true, duration: 180 },
+      animation: { enabled: true, duration: BOARD_ANIM_MS },
       highlight: { lastMove: true, check: true },
       // Touch: dragging a piece must never scroll the page under the board.
       blockTouchScroll: true,

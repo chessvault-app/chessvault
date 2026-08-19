@@ -24,7 +24,7 @@ import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
-import { Board } from '@/board/Board';
+import { BOARD_ANIM_MS, Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
@@ -476,7 +476,11 @@ function Trainer({
       setPlies(at);
       setView(positionAt(puzzle, at));
       if (at < moves.length) after(650, step);
-      else setPhase('done');
+      // One animation's grace before `done`, which is what swaps this board
+      // for the analysis one — and a swap mounts a fresh chessground at the
+      // final position, so the last move of the line arrived without ever
+      // being played. Every move but the last one animated (lanph3re).
+      else after(BOARD_ANIM_MS, () => setPhase('done'));
     };
     step();
   };
