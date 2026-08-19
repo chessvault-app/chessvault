@@ -947,7 +947,10 @@ export function RepertoireView() {
       });
       useEngine.getState().setEnabled(true);
       setAnalysing(true);
-      setPane('engine');
+      // The phone STAYS on the Game pane: that is where the line's own
+      // ending is written, with the score, Save line to study and New
+      // game on it, and switching to the engine put the reader in front
+      // of a search instead (lanph3re). The engine tab is one tap away.
     }
     if (phase !== 'ended' && analysing) {
       setAnalysing(false);

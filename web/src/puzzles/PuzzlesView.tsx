@@ -558,9 +558,12 @@ function Trainer({
   useEffect(() => {
     if (phase === 'done' && puzzle && !analysing) {
       analyse();
-      // The answer is what you came back for, so a phone is put on the
-      // engine pane rather than left on the puzzle's own text.
-      setPane('engine');
+      // A phone STAYS on the puzzle's own pane. It used to be moved to the
+      // engine — the answer being what you came back for — but that panel
+      // is also where the verdict, the difficulty and the themes are, and
+      // swapping it out at the exact moment the puzzle resolves answers a
+      // question with a different one (lanph3re). The engine tab is one
+      // tap away, and now it is a choice.
     }
     // A new puzzle un-does all of it, engine included: an evaluation on
     // screen while the next one is being solved IS the next one's answer.

@@ -386,15 +386,17 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
 
   /**
    * A solved puzzle analyses itself — there is no Analyse button on either
-   * layout now, and the phone is put on the engine pane because that is
-   * what you came back for. Leaving the puzzle undoes all of it, engine
-   * included: an evaluation still up while the next one is being solved IS
-   * the next one's answer.
+   * layout now. The phone STAYS on the puzzle's own pane, though: it was
+   * moved to the engine on the theory that the evaluation is what you came
+   * back for, and what it actually did was answer the puzzle by replacing
+   * the panel that says whether you got it right (lanph3re). The engine
+   * tab is one tap away and is now a choice. Leaving the puzzle undoes all
+   * of it, engine included: an evaluation still up while the next one is
+   * being solved IS the next one's answer.
    */
   useEffect(() => {
     if (phase === 'done' && node && !analysing) {
       analyse();
-      setPane('engine');
     }
     if (phase !== 'done' && analysing) {
       setAnalysing(false);
