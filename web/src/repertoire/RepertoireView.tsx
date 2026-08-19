@@ -1589,8 +1589,10 @@ export function RepertoireView() {
   ) : (
   <AnswerPanel
     // Takes the column's spare height, so the panel under it sits on the
-    // board's bottom edge instead of floating above it.
-    className="min-h-0 flex-1 shrink"
+    // board's bottom edge instead of floating above it — down to `min-h-32`,
+    // the floor the trainers' copies of this panel keep, so a short `wide`
+    // window cannot squeeze it below its own header and toolbar.
+    className="min-h-32 flex-1 shrink"
     tree={tree}
     cursorId={cursorId}
     onSelect={setCursorId}

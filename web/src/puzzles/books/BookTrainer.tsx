@@ -709,8 +709,15 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   ) : (
   <AnswerPanel
     // Takes the column's spare height, so the panel under it sits on the
-    // board's bottom edge instead of floating above it.
-    className="min-h-0 flex-1 shrink"
+    // board's bottom edge instead of floating above it — but not below
+    // `min-h-32`, the floor the analysing branch's panel already keeps,
+    // for the same reason: a phone in landscape is a `wide` layout with
+    // 390px of height, and with no floor this panel took the whole squeeze
+    // and was drawn shorter than its own header and toolbar, with nothing
+    // to scroll because a panel hides what does not fit. With the floor the
+    // squeeze goes to the puzzle panel below, whose body is a scroller, and
+    // past that to the column, which is one too.
+    className="min-h-32 flex-1 shrink"
     tree={tree}
     cursorId={cursorId}
     onSelect={setCursorId}

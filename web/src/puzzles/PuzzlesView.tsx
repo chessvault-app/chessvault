@@ -644,7 +644,11 @@ function Trainer({
       // The panel that takes the column's spare height, so the puzzle panel
       // under it sits on the board's bottom edge rather than floating above
       // it — the same job EngineBlock's panel does once the puzzle is over.
-      className="min-h-0 flex-1 shrink"
+      // `min-h-32` is the floor the analysing branch above already keeps,
+      // and for the same reason: with none, a short `wide` window (a phone
+      // in landscape) squeezed this panel below its own header and toolbar
+      // with nothing to scroll.
+      className="min-h-32 flex-1 shrink"
       tree={answerTree}
       cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
       onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}

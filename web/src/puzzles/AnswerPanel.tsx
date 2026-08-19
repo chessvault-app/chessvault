@@ -53,7 +53,18 @@ export function AnswerPanel({
     <Panel flush className={cn('min-h-[10rem] shrink-0', className)}>
       <PanelHeader title={title} />
       {isEmpty ? (
-        <p className="text-subtle px-3 py-6 text-center text-sm">{emptyText}</p>
+        // Shrinkable and scrollable, exactly like the move table it stands
+        // in for: this is the panel's middle, and the middle is what has to
+        // give when the column is short. At its natural height it pushed
+        // the toolbar below the panel's own floor instead.
+        //
+        // The padding is on the text, not on the flex item: a border-box
+        // element cannot be shorter than its own padding, so `py-6` on the
+        // item itself was a 48px floor that `min-h-0` could not undo — the
+        // shrink stopped 7px early and the toolbar wore it.
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <p className="text-subtle px-3 py-6 text-center text-sm">{emptyText}</p>
+        </div>
       ) : (
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto text-base leading-relaxed">
           <MainlineTable tree={tree} cursorId={cursorId} onSelect={onSelect} />
