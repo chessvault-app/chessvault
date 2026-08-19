@@ -626,49 +626,40 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       </div>
     </div>
 
-    {/* The primary action stretches to fill the row (lanph3re: a
-        left-biased cluster looks unbalanced, centring is worse) —
-        secondaries sit compactly at its right. */}
-    {/* The row is the panel's floor: outside the scrolling body, so a
-        thumb finds it in the same place whatever the status text ran to,
-        and `shrink-0` so the squeeze is always taken by the text above
-        it. Where the panel is content-sized (desktop) nothing moves. */}
-    <div className="flex shrink-0 flex-wrap gap-2 p-3">
+    {/* justify-end, gap-2, the primary one LAST — the row every window in
+        this app ends on (ui/PromptSheet), and what the other trainer's
+        floor does. The primary used to LEAD and stretch across the row
+        (lanph3re: a left-biased cluster looks unbalanced, centring is
+        worse), which put Submit and Next unsolved at the opposite edge
+        from the puzzle trainer's Next puzzle — two screens maintained as
+        siblings, disagreeing about where the button you press is. Ending
+        the line is what fixes the imbalance the stretch was for.
+
+        The row is also the panel's floor: outside the scrolling body, so
+        a thumb finds it in the same place whatever the status text ran
+        to, and `shrink-0` so the squeeze is always taken by the text
+        above it. Where the panel is content-sized (desktop) nothing
+        moves. */}
+    <div className="flex shrink-0 flex-wrap justify-end gap-2 p-3">
         {phase === 'done' ? (
           <>
+            <Button variant="secondary" size="sm" onClick={retry}>
+              <RotateCcw className="size-3.5" />
+              {t('Retry')}
+            </Button>
             {next && (
               <Button
                 variant="primary"
                 size="sm"
-                className="flex-1"
                 onClick={() => navigate('puzzles', 'books', slug, next)}
               >
                 <RotateCw className="size-3.5" />
                 {t('Next unsolved')}
               </Button>
             )}
-            <Button variant="secondary" size="sm" className={next ? '' : 'flex-1'} onClick={retry}>
-              <RotateCcw className="size-3.5" />
-              {t('Retry')}
-            </Button>
           </>
         ) : (
           <>
-            <Button
-              variant="primary"
-              size="sm"
-              className="flex-1"
-              disabled={phase !== 'solving' || !hasMoves}
-              title={t('Grade the mainline — this is the only judged moment')}
-              onClick={() => void submit()}
-            >
-              {phase === 'checking' ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Check className="size-3.5" />
-              )}
-              {t('Submit')}
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -686,6 +677,20 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             >
               <X className="size-3.5" />
               {t('Skip')}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={phase !== 'solving' || !hasMoves}
+              title={t('Grade the mainline — this is the only judged moment')}
+              onClick={() => void submit()}
+            >
+              {phase === 'checking' ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Check className="size-3.5" />
+              )}
+              {t('Submit')}
             </Button>
           </>
         )}
