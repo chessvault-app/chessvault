@@ -13,6 +13,7 @@ import {
   ListOrdered,
   Play,
   RotateCcw,
+  Settings2,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -47,6 +48,7 @@ import { InfoTip } from '@/ui/InfoTip';
 import { KingIcon } from '@/ui/KingIcon';
 import { Segmented } from '@/ui/Segmented';
 import { SideDot } from '@/ui/SideDot';
+import { Modal } from '@/ui/Modal';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
@@ -455,6 +457,14 @@ export function RepertoireView() {
   // practised at all.
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  /**
+   * Whether the phone is showing the setup sheet.
+   *
+   * A desktop never sets this: the same fields are a panel in its side
+   * column, and the button that would open the sheet is on the Game
+   * panel, which a desktop only shows once a game is on.
+   */
+  const [setupOpen, setSetupOpen] = useState(false);
 
   // Seed a tree with the template's line — used both for the idle preview
   // (picking an opening shows its position at once) and for starting a game.
@@ -1023,6 +1033,282 @@ export function RepertoireView() {
 
 
 
+  /**
+   * The fields that choose the next game.
+   *
+   * A desktop stands them in its side column, where a form has room to
+   * simply be there. A phone opens them as a sheet instead: under a
+   * board, five Selects and two Segmenteds are most of a screen, and
+   * what a phone wants on arrival is the board, what would be played,
+   * and the button that plays it — not the form that was already
+   * answered last time.
+   */
+  const setupFields = (
+    <>
+      {/* Free play plays anything; drill holds you to a study. The
+          two toggles share one shape — Segmented, the control that
+          says one-of-these in its track, not pairs of actions.
+
+          Both carry a label, in the same style as the Selects
+          below, so the panel is one rhythm of labelled fields.
+          Unlabelled they were four buttons of one size stacked
+          two by two, and nothing said which pair chose what
+          (lanph3re's call). The kings are the second half of the
+          same fix: whatever the eye lands on first, the side pair
+          can no longer be mistaken for the mode pair. */}
+      <Field label="Mode">
+        <Segmented
+          value={mode}
+          onChange={setMode}
+          ariaLabel="Mode"
+          segments={[
+            { value: 'spar', label: t('Free play') },
+            { value: 'drill', label: t('Drill a study') },
+          ]}
+        />
+      </Field>
+      <Field label="Play as">
+        <Segmented
+          value={userColor}
+          onChange={setUserColor}
+          ariaLabel="Play as"
+          segments={(['white', 'black'] as const).map((c) => ({
+            value: c,
+            label: (
+              <>
+                <KingIcon side={c} />
+                {c === 'white' ? t('White') : t('Black')}
+              </>
+            ),
+          }))}
+        />
+      </Field>
+      <Field label="Source">
+        <Select
+          value={source}
+          onChange={setSource}
+          ariaLabel={t('Where replies come from')}
+          steady
+          groups={[
+            // The demo hides the online source rather than offering
+            // it broken — no token can ship in a static bundle.
+            ...(isDemo()
+              ? []
+              : [
+                  {
+                    label: 'Online (via proxy)',
+                    options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
+                  },
+                ]),
+            ...(databases.length > 0
+              ? [
+                  {
+                    label: 'Reference databases',
+                    options: databases.map((b) => ({ value: b.name, label: b.label ?? bookLabel(b.name) })),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </Field>
+      {/* A rating band is the online database's own dimension. A book
+          has none: its population was fixed when it was built, so the
+          choice of book IS the choice of field. */}
+      {source === ONLINE_SOURCE && (
+        <Field label="Rating">
+          <Select
+            value={band}
+            onChange={setBand}
+            ariaLabel={t('Opponent strength')}
+            steady
+            groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
+          />
+        </Field>
+      )}
+      {mode === 'drill' && mapDrill ? (
+        // Sent over by the opening map: the whole repertoire as one
+        // scope. Letting it go returns the ordinary study picker.
+        <div className="border-line flex flex-col gap-1 rounded-lg border p-2">
+          <span className="text-muted text-sm font-medium">{t('From the opening map')}</span>
+          <p className="text-fg text-sm">{mapDrill.label}</p>
+          <p className="text-subtle text-sm">
+            {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            onClick={() => setMapDrill(null)}
+          >
+            {t('Drill a study instead')}
+          </Button>
+        </div>
+      ) : mode === 'drill' ? (
+        studyList !== null && studyList.length === 0 ? (
+          <p className="text-muted text-sm leading-relaxed">
+            {t('No studies yet — create one in Studies, or save a line you played first.')}
+          </p>
+        ) : (
+          <>
+            <Field label="Study">
+              <Select
+                value={drillStudy}
+                onChange={setDrillStudy}
+                ariaLabel={t('Study to drill')}
+                steady
+                groups={[
+                  { options: (studyList ?? []).map((id) => ({ value: id, label: id })) },
+                ]}
+              />
+            </Field>
+            {drillChapters && drillChapters.length > 1 && (
+              <Field label="Chapter">
+                <Select
+                  value={chapterPick}
+                  onChange={setChapterPick}
+                  ariaLabel={t('Chapter to drill')}
+                  steady
+                  groups={[
+                    // The whole study as one repertoire — every
+                    // chapter's lines count, transpositions
+                    // included — or one chapter alone.
+                    { options: [{ value: 'all', label: t('Whole study') }] },
+                    // Under a heading and numbered, because a
+                    // chapter's name is the user's to choose: one
+                    // actually called "Whole study" was the same row
+                    // twice, on the closed trigger as much as in the
+                    // list, and nothing said which was which. The
+                    // numbers are the ones the study's own chapter
+                    // list shows.
+                    {
+                      label: t('Chapters'),
+                      options: drillChapters.map((c, i) => ({
+                        value: String(i),
+                        label: `${i + 1}. ${c.name}`,
+                      })),
+                    },
+                  ]}
+                />
+              </Field>
+            )}
+          </>
+        )
+      ) : (
+        <Field label="Opening">
+          <OpeningPicker value={template} onChange={setTemplate} />
+        </Field>
+      )}
+    </>
+  );
+
+  /**
+   * Why Start might be refused, what the drill record holds, and the two
+   * ways to begin.
+   *
+   * One block, because a disabled Start whose reason is on another
+   * screen is the riddle the reason was written to answer. It follows
+   * the fields in the desktop's panel and sits on the Game panel on a
+   * phone, where the fields are behind the sheet.
+   */
+  const startBlock = (
+    <>
+      {/* A disabled Start with no word is a riddle; the reason
+          is one line. */}
+      {needsToken && (
+        <p className="text-subtle text-sm leading-relaxed">
+          {t(
+            'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.',
+          )}
+        </p>
+      )}
+      {mode === 'drill' && drillChapter && !drillReady && (
+        <p className="text-subtle text-sm leading-relaxed">
+          {wholeStudy
+            ? t('This study has no moves yet — nothing to drill.')
+            : t('This chapter has no moves yet — nothing to drill.')}
+        </p>
+      )}
+      {/* What the record holds against this chapter, a way to work
+          it off — and the one way to forget it, behind a confirm.
+          Shown whenever anything was ever drilled, so a clean
+          record can still be wiped. */}
+      {mode === 'drill' && summary && summary.attempted > 0 && (
+        <div className="flex items-center gap-2">
+          <p className="text-subtle min-w-0 flex-1 text-sm leading-relaxed">
+            {summary.review.length > 0 &&
+              t('{n} positions to review', { n: summary.review.length })}
+            {summary.review.length > 0 && summary.gaps > 0 && ' · '}
+            {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
+            {summary.review.length === 0 &&
+              summary.gaps === 0 &&
+              t('Every drilled position stands recalled.')}
+          </p>
+          <ConfirmSheet
+            icon={Eraser}
+            triggerTitle="Forget the drill record — misses, gaps and recalls in every study"
+            question="Forget the whole drill record, across all studies?"
+            confirmLabel={t('Forget everything')}
+            onConfirm={() => {
+              void api('/api/repertoire/reset', { method: 'POST' })
+                .then(() => setSummary({ attempted: 0, review: [], gaps: 0 }))
+                .catch(() => {});
+            }}
+          />
+        </div>
+      )}
+      {/* The row that starts it, laid out the way every dialog in
+          the app lays its actions out: justify-end, gap-2, and the
+          primary one LAST so it sits at the end of the line the eye
+          finishes on (ui/PromptSheet). This is a panel rather than
+          a dialog, but it is the same thing — a block of choices
+          with one action at the bottom — and it was the only one
+          starting from the left. */}
+      <div className="flex flex-wrap justify-end gap-2">
+        {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
+          <Button variant="secondary" size="sm" disabled={!drillReady} onClick={startFromMiss}>
+            {t('Drill a missed position')}
+          </Button>
+        )}
+        <Button
+          variant="primary"
+          size="sm"
+          disabled={needsToken || (mode === 'drill' && !drillReady)}
+          onClick={startGame}
+        >
+          <Play className="size-3.5" />
+          {t('Start')}
+        </Button>
+      </div>
+    </>
+  );
+
+  /**
+   * What Start would begin: the opening or study to be played, and the
+   * terms it is played on.
+   *
+   * The Game panel says it because on a phone the fields that chose it
+   * are behind a sheet — a panel offering nothing but Start has to say
+   * what it starts. The opening's ECO and its name, the way the picker's
+   * own trigger spells them.
+   */
+  const setupLine =
+    mode === 'drill'
+      ? mapDrill
+        ? mapDrill.label
+        : !drillStudy
+          ? t('No study chosen yet.')
+          : wholeStudy
+            ? `${drillStudy} — ${t('Whole study')}`
+            : `${drillStudy}${drillChapter ? ` — ${drillChapter.name}` : ''}`
+      : template.eco
+        ? `${template.eco}  ${template.name}`
+        : t(template.name);
+  const setupTerms = [
+    mode === 'drill' ? t('Drill a study') : t('Free play'),
+    t('Playing as {side}', { side: userColor === 'white' ? t('White') : t('Black') }),
+    sourceLabel,
+  ].join(' · ');
+
   // Game panel in the trainers' shape: status and the game's own actions
   // live here; the moves panel is the one every other board page uses.
   const gamePanel = (
@@ -1030,37 +1316,57 @@ export function RepertoireView() {
     <PanelHeader
       title={t('Game')}
       actions={
-        <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
-          <RotateCcw className="size-3.5" />
-          {t('New game')}
-        </Button>
+        /* Idle, it opens the choices; mid-game it drops them and comes
+           back here. The same control at two moments — the way to what
+           the next game will be — so it is one slot, not two. */
+        phase === 'idle' ? (
+          <Button variant="ghost" size="sm" onClick={() => setSetupOpen(true)} title={t('Set up a new game')}>
+            <Settings2 className="size-3.5" />
+            {t('Settings')}
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={newGame} title={t('Set up a new game')}>
+            <RotateCcw className="size-3.5" />
+            {t('New game')}
+          </Button>
+        )
       }
     />
     <div className="flex flex-col gap-3 p-3">
-      <p
-        className={cn(
-          'text-sm leading-relaxed',
-          (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
-            ? 'text-warn'
-            : 'text-muted',
-        )}
-      >
-        {phase === 'ended'
-          ? endKind === 'gap'
-            ? gapMsg
-            : endKind === 'line'
-              ? t('End of your prepared line — every move matched the study.')
-              : t('This line has run past the database — you are on your own now.')
-          : error
-            ? error
-            : drillNotice
-              ? drillNotice
-              : phase === 'thinking'
-                ? t('Your opponent is replying…')
-                : pos.turn === userColor && atTip
-                  ? t('Your move.')
-                  : t('Reviewing an earlier move — step to the end to keep playing.')}
-      </p>
+      {/* Idle, the panel is what the page opens on: what the next game
+          would be, and the button that begins it. Playing, it is the
+          status line the trainers all carry. */}
+      {phase === 'idle' ? (
+        <div className="flex flex-col gap-1">
+          <p className="text-fg text-sm leading-relaxed">{setupLine}</p>
+          <p className="text-subtle text-sm leading-relaxed">{setupTerms}</p>
+        </div>
+      ) : (
+        <p
+          className={cn(
+            'text-sm leading-relaxed',
+            (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
+              ? 'text-warn'
+              : 'text-muted',
+          )}
+        >
+          {phase === 'ended'
+            ? endKind === 'gap'
+              ? gapMsg
+              : endKind === 'line'
+                ? t('End of your prepared line — every move matched the study.')
+                : t('This line has run past the database — you are on your own now.')
+            : error
+              ? error
+              : drillNotice
+                ? drillNotice
+                : phase === 'thinking'
+                  ? t('Your opponent is replying…')
+                  : pos.turn === userColor && atTip
+                    ? t('Your move.')
+                    : t('Reviewing an earlier move — step to the end to keep playing.')}
+        </p>
+      )}
       {gapNote && phase !== 'ended' && (
         <p className="text-subtle text-sm leading-relaxed">{gapNote}</p>
       )}
@@ -1113,6 +1419,9 @@ export function RepertoireView() {
           )}
         </FinalAssessment>
       )}
+      {/* On a desktop these follow the fields in the New game panel, and
+          this panel is not on screen at all until a game is. */}
+      {phase === 'idle' && startBlock}
     </div>
   </Panel>
   );
@@ -1212,236 +1521,24 @@ export function RepertoireView() {
       <div className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden wide:pb-4 stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}>
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header}</div>
 
-        {/* fit: a short form under a tall board. Left to shrink, the panel
-            cut its own Start button off with nothing to scroll to. */}
         {phase === 'idle' ? (
-          <>
-          <Panel flush fit className="shrink-0">
-            <PanelHeader title={t('New game')} />
-            <div className="flex flex-col gap-3 p-3">
-              {/* Free play plays anything; drill holds you to a study. The
-                  two toggles share one shape — Segmented, the control that
-                  says one-of-these in its track, not pairs of actions.
+          /* fit: a short form under a tall board. Left to shrink, the panel
+             cut its own Start button off with nothing to scroll to.
 
-                  Both carry a label, in the same style as the Selects
-                  below, so the panel is one rhythm of labelled fields.
-                  Unlabelled they were four buttons of one size stacked
-                  two by two, and nothing said which pair chose what
-                  (lanph3re's call). The kings are the second half of the
-                  same fix: whatever the eye lands on first, the side pair
-                  can no longer be mistaken for the mode pair. */}
-              <Field label="Mode">
-                <Segmented
-                  value={mode}
-                  onChange={setMode}
-                  ariaLabel="Mode"
-                  segments={[
-                    { value: 'spar', label: t('Free play') },
-                    { value: 'drill', label: t('Drill a study') },
-                  ]}
-                />
-              </Field>
-              <Field label="Play as">
-                <Segmented
-                  value={userColor}
-                  onChange={setUserColor}
-                  ariaLabel="Play as"
-                  segments={(['white', 'black'] as const).map((c) => ({
-                    value: c,
-                    label: (
-                      <>
-                        <KingIcon side={c} />
-                        {c === 'white' ? t('White') : t('Black')}
-                      </>
-                    ),
-                  }))}
-                />
-              </Field>
-              <Field label="Source">
-                <Select
-                  value={source}
-                  onChange={setSource}
-                  ariaLabel={t('Where replies come from')}
-                  steady
-                  groups={[
-                    // The demo hides the online source rather than offering
-                    // it broken — no token can ship in a static bundle.
-                    ...(isDemo()
-                      ? []
-                      : [
-                          {
-                            label: 'Online (via proxy)',
-                            options: [{ value: ONLINE_SOURCE, label: 'Lichess database' }],
-                          },
-                        ]),
-                    ...(databases.length > 0
-                      ? [
-                          {
-                            label: 'Reference databases',
-                            options: databases.map((b) => ({ value: b.name, label: b.label ?? bookLabel(b.name) })),
-                          },
-                        ]
-                      : []),
-                  ]}
-                />
-              </Field>
-              {/* A rating band is the online database's own dimension. A book
-                  has none: its population was fixed when it was built, so the
-                  choice of book IS the choice of field. */}
-              {source === ONLINE_SOURCE && (
-                <Field label="Rating">
-                  <Select
-                    value={band}
-                    onChange={setBand}
-                    ariaLabel={t('Opponent strength')}
-                    steady
-                    groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
-                  />
-                </Field>
-              )}
-              {mode === 'drill' && mapDrill ? (
-                // Sent over by the opening map: the whole repertoire as one
-                // scope. Letting it go returns the ordinary study picker.
-                <div className="border-line flex flex-col gap-1 rounded-lg border p-2">
-                  <span className="text-muted text-sm font-medium">{t('From the opening map')}</span>
-                  <p className="text-fg text-sm">{mapDrill.label}</p>
-                  <p className="text-subtle text-sm">
-                    {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="self-start"
-                    onClick={() => setMapDrill(null)}
-                  >
-                    {t('Drill a study instead')}
-                  </Button>
-                </div>
-              ) : mode === 'drill' ? (
-                studyList !== null && studyList.length === 0 ? (
-                  <p className="text-muted text-sm leading-relaxed">
-                    {t('No studies yet — create one in Studies, or save a line you played first.')}
-                  </p>
-                ) : (
-                  <>
-                    <Field label="Study">
-                      <Select
-                        value={drillStudy}
-                        onChange={setDrillStudy}
-                        ariaLabel={t('Study to drill')}
-                        steady
-                        groups={[
-                          { options: (studyList ?? []).map((id) => ({ value: id, label: id })) },
-                        ]}
-                      />
-                    </Field>
-                    {drillChapters && drillChapters.length > 1 && (
-                      <Field label="Chapter">
-                        <Select
-                          value={chapterPick}
-                          onChange={setChapterPick}
-                          ariaLabel={t('Chapter to drill')}
-                          steady
-                          groups={[
-                            // The whole study as one repertoire — every
-                            // chapter's lines count, transpositions
-                            // included — or one chapter alone.
-                            { options: [{ value: 'all', label: t('Whole study') }] },
-                            // Under a heading and numbered, because a
-                            // chapter's name is the user's to choose: one
-                            // actually called "Whole study" was the same row
-                            // twice, on the closed trigger as much as in the
-                            // list, and nothing said which was which. The
-                            // numbers are the ones the study's own chapter
-                            // list shows.
-                            {
-                              label: t('Chapters'),
-                              options: drillChapters.map((c, i) => ({
-                                value: String(i),
-                                label: `${i + 1}. ${c.name}`,
-                              })),
-                            },
-                          ]}
-                        />
-                      </Field>
-                    )}
-                  </>
-                )
-              ) : (
-                <Field label="Opening">
-                  <OpeningPicker value={template} onChange={setTemplate} />
-                </Field>
-              )}
-              {/* A disabled Start with no word is a riddle; the reason
-                  is one line. */}
-              {needsToken && (
-                <p className="text-subtle text-sm leading-relaxed">
-                  {t(
-                    'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.',
-                  )}
-                </p>
-              )}
-              {mode === 'drill' && drillChapter && !drillReady && (
-                <p className="text-subtle text-sm leading-relaxed">
-                  {wholeStudy
-                    ? t('This study has no moves yet — nothing to drill.')
-                    : t('This chapter has no moves yet — nothing to drill.')}
-                </p>
-              )}
-              {/* What the record holds against this chapter, a way to work
-                  it off — and the one way to forget it, behind a confirm.
-                  Shown whenever anything was ever drilled, so a clean
-                  record can still be wiped. */}
-              {mode === 'drill' && summary && summary.attempted > 0 && (
-                <div className="flex items-center gap-2">
-                  <p className="text-subtle min-w-0 flex-1 text-sm leading-relaxed">
-                    {summary.review.length > 0 &&
-                      t('{n} positions to review', { n: summary.review.length })}
-                    {summary.review.length > 0 && summary.gaps > 0 && ' · '}
-                    {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
-                    {summary.review.length === 0 &&
-                      summary.gaps === 0 &&
-                      t('Every drilled position stands recalled.')}
-                  </p>
-                  <ConfirmSheet
-                    icon={Eraser}
-                    triggerTitle="Forget the drill record — misses, gaps and recalls in every study"
-                    question="Forget the whole drill record, across all studies?"
-                    confirmLabel={t('Forget everything')}
-                    onConfirm={() => {
-                      void api('/api/repertoire/reset', { method: 'POST' })
-                        .then(() => setSummary({ attempted: 0, review: [], gaps: 0 }))
-                        .catch(() => {});
-                    }}
-                  />
-                </div>
-              )}
-              {/* The row that starts it, laid out the way every dialog in
-                  the app lays its actions out: justify-end, gap-2, and the
-                  primary one LAST so it sits at the end of the line the eye
-                  finishes on (ui/PromptSheet). This is a panel rather than
-                  a dialog, but it is the same thing — a block of choices
-                  with one action at the bottom — and it was the only one
-                  starting from the left. */}
-              <div className="flex flex-wrap justify-end gap-2">
-                {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
-                  <Button variant="secondary" size="sm" disabled={!drillReady} onClick={startFromMiss}>
-                    {t('Drill a missed position')}
-                  </Button>
-                )}
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={needsToken || (mode === 'drill' && !drillReady)}
-                  onClick={startGame}
-                >
-                  <Play className="size-3.5" />
-                  {t('Start')}
-                </Button>
+             The panel only where there is a column to stand it in. On a
+             phone the same fields are the sheet the Game panel opens, and
+             the Game panel is what the page shows on arrival. */
+          wide ? (
+            <Panel flush fit className="shrink-0">
+              <PanelHeader title={t('New game')} />
+              <div className="flex flex-col gap-3 p-3">
+                {setupFields}
+                {startBlock}
               </div>
-            </div>
-          </Panel>
-          </>
+            </Panel>
+          ) : (
+            gamePanel
+          )
         ) : (
           <>
             {/* Moves above the game on a desktop; one pane at a time on a
@@ -1490,6 +1587,16 @@ export function RepertoireView() {
             </Button>
           </div>
         </MobileActionBar>
+      )}
+
+      {/* The New game fields as a window — which on a phone is the bottom
+          sheet every form in this app is there. Only when stacked: a
+          desktop stands them in its column, and rendering both would be
+          the same fields twice, sharing one set of state. */}
+      {setupOpen && !wide && phase === 'idle' && (
+        <Modal title="New game" icon={Settings2} onClose={() => setSetupOpen(false)}>
+          {setupFields}
+        </Modal>
       )}
 
       {saveOpen && (

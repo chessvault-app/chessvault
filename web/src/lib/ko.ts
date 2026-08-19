@@ -647,6 +647,8 @@ export const ko: Record<string, string> = {
   'Where replies come from': '응수의 출처',
   'Lichess database': 'Lichess 데이터베이스',
   'Set up a new game': '새 게임 설정',
+  'Playing as {side}': '{side} 플레이',
+  'No study chosen yet.': '아직 선택한 스터디가 없습니다.',
   'Make your first move on the board.': '보드에서 첫 수를 두세요.',
   Rating: '레이팅',
   Opening: '오프닝',
