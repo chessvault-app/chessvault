@@ -218,6 +218,24 @@ function submit(board: Gray, detail: boolean, settle: Job['settle']): void {
   pump();
 }
 
+/**
+ * Hand the workers back.
+ *
+ * They used to be one worker that simply stayed alive for the session,
+ * which was small enough not to matter; a pool the width of the machine
+ * is not, and a phone that has finished an import should not still be
+ * holding six of them. Queued boards are settled as unread rather than
+ * left hanging — nothing calls this with work outstanding, but a promise
+ * nobody ever resolves would hang the import rather than degrade it.
+ */
+function releasePool(): void {
+  for (const job of queue.splice(0)) job.settle(null);
+  for (const entry of pool.splice(0)) {
+    entry.job?.settle(null);
+    entry.w.terminate();
+  }
+}
+
 function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
   return new Promise((resolve) => {
     submit(board, false, (reply) => resolve(reply?.readings ?? null));
@@ -566,6 +584,10 @@ async function scan(
     // The checkpoint is deliberately NOT cleared here: a scan that fell
     // over is exactly the one worth resuming.
     set({ status: 'failed', error: `Could not read the PDF: ${(e as Error).message}` });
+  } finally {
+    // A paused scan keeps its workers: it is about to carry on, and
+    // rebuilding them costs the model again. Anything else is over.
+    if (get().status !== 'paused') releasePool();
   }
 }
 
