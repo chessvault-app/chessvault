@@ -55,18 +55,25 @@
    an iPad Pro upright wants a huge board with panes below). `wide` =
    side-by-side; `stacked` = its exact complement. Full desktop features (all
    panels at once, no pane tabs) still key off `lg`. */
-/* NOTE: the shorthand form cannot hold a comma-separated media list (Tailwind
+/* `wide` had a width-only `min-width: 64rem` branch as well, and it made the
+   sentence above false for the one device it names. 64rem IS 1024px, which is
+   the iPad Pro 12.9" portrait width (and the 13" M4's 1032 clears it), so an
+   upright iPad took the side-by-side layout and a board bound by the leftover
+   width rather than by its height. Measured on the board page at 1024x1366:
+   a 448px board using 40% of the screen, against 792px and 98% one pixel
+   narrower, where the portrait rule already applied. Removing the branch
+   costs the case it was there for — a portrait desktop window at least
+   1024 wide now stacks too — which is the same trade stated above, applied
+   to a monitor instead of a tablet.
+   NOTE: the shorthand form cannot hold a comma-separated media list (Tailwind
    emits a broken selector for the second branch), hence the block form. */
 @custom-variant wide {
-  @media (min-width: 64rem) {
-    @slot;
-  }
   @media (orientation: landscape) and (min-width: 44rem) {
     @slot;
   }
 }
 @custom-variant stacked {
-  @media (max-width: 63.9375rem) and ((orientation: portrait) or (max-width: 43.9375rem)) {
+  @media (orientation: portrait), (max-width: 43.9375rem) {
     @slot;
   }
 }
@@ -768,8 +775,14 @@ cg-board square.check {
    the bar comes out of the board's own width rather than the row's — adding
    for it here only re-opens slack between the two columns. Written
    as plain CSS because Tailwind strips the outer calc() from an arbitrary
-   value and emits `min(...) + 30rem`, which is invalid and dropped whole. */
-@media (min-width: 64rem), (orientation: landscape) and (min-width: 44rem) {
+   value and emits `min(...) + 30rem`, which is invalid and dropped whole.
+
+   This condition is the `wide` variant written out by hand, and the two have
+   to be edited TOGETHER. Changing the variant alone leaves the `wide:`
+   classes laying the row out side by side while these caps stay off, so the
+   board column keeps its `flex-1` and takes whatever it likes: caught at
+   640x360, where the editor's side column ran 2px past the viewport. */
+@media (orientation: landscape) and (min-width: 44rem) {
   .board-row-cap {
     max-width: min(
       96rem,
