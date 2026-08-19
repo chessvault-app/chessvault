@@ -5,6 +5,100 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.5
+
+A release about geometry: what the app does with a screen that is short,
+sideways, upright or simply not the one it was drawn on. Thirty-six
+changes, almost all of them measured on the pixel.
+
+- **An upright iPad Pro stacks, like every other portrait screen.** The
+  rule has always been that portrait stacks — a tall screen wants a huge
+  board with the panels below it — and the one device named in the rule
+  as the reason for it was the one device exempt from it: a width-only
+  branch let anything at least 1024px wide go side by side, and 1024 is
+  exactly the iPad Pro 12.9-inch portrait width. Measured at 1024x1366,
+  the board was 448px filling 40% of the screen; one pixel narrower,
+  where the portrait rule already applied, it was 792px and 98%. It is
+  the wide one now, and the 13-inch M4 goes 448 to 800. The cost, stated
+  plainly: a portrait desktop window at least 1024 wide stacks too.
+
+- **A short or sideways window scrolls instead of cutting things off.**
+  The board keeps a floor under it so a short landscape viewport cannot
+  collapse it to nothing, and what that floor overflowed by was simply
+  cut, with no scrollbar anywhere to say so — measured at 740x360, the
+  board page lost 61px, the editor 71, the repertoire 59, both trainers
+  45. Five pages, nothing lost now. A phone held sideways also squeezed
+  the side column past the point of being a pane at all: at 667x375 the
+  move panel was 18px around 40px of content. The column keeps a floor,
+  and the page gives instead.
+
+- **A panel is the height of what it says.** Panels had been grown to
+  the bottom bar so a phone's column would not end in a band of page
+  background, which bought a panel drawn a screen tall around three
+  lines of text with the empty half of it inside the border. Blank space
+  under the text belongs to the page, not to the panel. Both trainers'
+  Puzzle panel and the repertoire's Game panel take their content's
+  height again and shrink from there, and where they meet the column's
+  floor it is the body that scrolls rather than the frame that runs past
+  the edge. A phone gets the same 12px band under the last panel on
+  every board page now, where it was 32 on some and 12 on others.
+
+- **The buttons scroll with the text they answer to.** Pinning a row to
+  a panel's floor kept it in one place for a thumb, at two costs: it
+  held station while the text moved behind it, which reads as two panels
+  in one, and a floor cannot shrink, so a short window squeezed the text
+  to a couple of lines to keep a row on screen nobody was reaching for.
+  At 375x600 the book trainer's body goes from 51px of a needed 92 to
+  111px of a needed 152.
+
+- **Every row of buttons ends the way every window in the app ends.**
+  Right-aligned, a gap of 8px, the primary one last. The book trainer's
+  primaries used to lead the row and stretch across it; the puzzle
+  trainer's alignment jumped from one edge to the other the moment the
+  puzzle ended; the link out to the game a position came from sat up in
+  the body text as blue prose. One row now, in both trainers, and both
+  say "Next puzzle". Settings' wipe confirmation, the most serious
+  question the app asks, was the one place still standing its buttons as
+  a row — it stacks now, destructive on top and filled, the way every
+  other destructive question here already did.
+
+- **A finished puzzle can be played again.** Retry replays the same
+  puzzle from the top and reports nothing: the attempt that counts was
+  decided the first time through, and a win sent after the solution has
+  been seen would put a clean solve in the history for a puzzle that was
+  given away.
+
+- **A phone stays on the panel that says what just happened.** All three
+  finishing screens used to move you to the engine pane the moment a
+  puzzle was solved or a line ran out, on the theory that the evaluation
+  was what you came back for — replacing the verdict, the difficulty and
+  the themes, or the line's ending and the row of things to do about it.
+  The engine is a second question, and it is one tap away. At the end of
+  a repertoire line the engine also went on and straight back off again,
+  and returning to the assessment started a second search of a position
+  it had already scored; it shows the number it had.
+
+- **The last move of a shown solution is a move.** Both trainers replay
+  a solution a move per beat, and on the last one the in-place analysis
+  swapped in a fresh board, which draws rather than animates — so every
+  move of the line slid to its square except the one the replay was for.
+  The swap waits one animation now.
+
+- **The editor's Position sheet has a way out of it.** On a phone the
+  sheet covers the board it edits and its fields write straight through,
+  so there was nothing to press meaning "I have finished" and nothing at
+  all that undid a change made with the board out of sight. It ends on
+  Cancel and Apply, and only Apply keeps what changed — the chevron, the
+  scrim, a drag down and a second press of the button had all quietly
+  kept it, so the answer depended on which way you happened to leave.
+  Side to move gets its king glyph, as the repertoire's has; the
+  castling flags stopped wearing the colour this app paints actions
+  with, and now say they are toggles out loud.
+
+- **A long vault path breaks instead of running off the page.** A
+  Windows path has no break opportunity in it at all, backslashes
+  included. Measured at 320px wide, it ended 32px past the edge.
+
 ## 0.4.4
 
 - **Text is the size other apps use.** Body copy had been sitting on the

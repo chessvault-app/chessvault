@@ -96,9 +96,17 @@ against the editor's own font size, not in the px it resolved to once.
   number. One gutter scale (1rem, 1.5rem from `md`, where the sidebar
   appears) and one safe-area-aware bottom inset come with it.
 - Board-family pages (Board, studies/games viewer, trainers,
-  repertoire, editor) fit the viewport instead of scrolling, capped at
-  76rem by the shared constants in `ui/layout.ts` — one place, not
-  eight copies.
+  repertoire, editor) fit the viewport rather than scrolling, by the
+  shared shells in `ui/layout.ts` — one place, not eight copies. The
+  row is 76rem up to about 1350px and then follows the window to a
+  96rem ceiling, so a large monitor draws a large board. Two shells,
+  because "fit the viewport" has two readings when stacked:
+  `BOARD_SCROLL_SHELL` lets the page itself scroll (board, repertoire,
+  editor), `BOARD_HELD_SHELL` holds the page still and gives its side
+  column the scrolling (analysis, study, both trainers). A held page
+  scrolls only where the column can no longer be squeezed — a short
+  landscape window, where a floor on the column binds and the shell is
+  what gives.
 - Canvas pages (the opening map) sit in `ui/CanvasShell`: the ordinary
   `PageHeader` on `PageShell`'s own gutters, an optional search row
   under it, and then one surface filling everything below, edge to
