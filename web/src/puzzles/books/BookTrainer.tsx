@@ -594,12 +594,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     )}
     {/* `grow` so the body owns the panel's full height rather than
         stopping at its text, and `overflow-y-auto` so that the height is
-        a ceiling and not a promise: the status text is the part that can
-        run long, and the part you can afford to scroll, because the
-        buttons are not in it. `min-h-0` because a flex item will not
-        shrink below its content without it, which is exactly the
-        overflow being fixed. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3 pb-0">
+        a ceiling and not a promise: the status text can run taller than
+        the band a phone has under the board, and without this the panel
+        ran past the column with Panel's overflow-hidden cutting whatever
+        hung off the end. `min-h-0` because a flex item will not shrink
+        below its content without it, which is exactly the overflow being
+        fixed. */}
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3">
       <div className="flex flex-col gap-0.5">
         {phase === 'done' ? (
           <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-bad')}>
@@ -626,23 +627,24 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               : t('Explore freely — only the mainline is judged on submit.')}
         </p>
       </div>
-    </div>
 
-    {/* justify-end, gap-2, the primary one LAST — the row every window in
-        this app ends on (ui/PromptSheet), and what the other trainer's
-        floor does. The primary used to LEAD and stretch across the row
-        (lanph3re: a left-biased cluster looks unbalanced, centring is
-        worse), which put Submit and Next puzzle at the opposite edge
-        from the puzzle trainer's Next puzzle — two screens maintained as
-        siblings, disagreeing about where the button you press is. Ending
-        the line is what fixes the imbalance the stretch was for.
+      {/* The row is IN the body, and scrolls with it (lanph3re), as the
+          other trainer's does: pinned to the panel's floor it held its
+          place while the status text moved behind it, which reads as two
+          panels in one — and on a short window the pinning is what
+          squeezed the text to keep a row nobody was reaching for on
+          screen. It follows what it answers to instead.
 
-        The row is also the panel's floor: outside the scrolling body, so
-        a thumb finds it in the same place whatever the status text ran
-        to, and `shrink-0` so the squeeze is always taken by the text
-        above it. Where the panel is content-sized (desktop) nothing
-        moves. */}
-    <div className="flex shrink-0 flex-wrap justify-end gap-2 p-3">
+          justify-end, gap-2, the primary one LAST — the row every window
+          in this app ends on (ui/PromptSheet), and what the other trainer
+          does. The primary used to LEAD and stretch across the row
+          (lanph3re: a left-biased cluster looks unbalanced, centring is
+          worse), which put Submit and Next puzzle at the opposite edge
+          from the puzzle trainer's Next puzzle — two screens maintained
+          as siblings, disagreeing about where the button you press is.
+          Ending the line is what fixes the imbalance the stretch was
+          for. */}
+      <div className="flex flex-wrap justify-end gap-2">
         {phase === 'done' ? (
           <>
             <Button variant="secondary" size="sm" onClick={retry}>
@@ -696,6 +698,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             </Button>
           </>
         )}
+      </div>
     </div>
   </Panel>
   );
