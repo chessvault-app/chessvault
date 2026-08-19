@@ -466,6 +466,54 @@ export function RepertoireView() {
    * panel, which a desktop only shows once a game is on.
    */
   const [setupOpen, setSetupOpen] = useState(false);
+  /**
+   * The choices as they stood when that sheet opened — what Cancel puts
+   * back.
+   *
+   * Kept as a SNAPSHOT rather than as a draft the fields write into,
+   * which is what the archive's filter window does with the same two
+   * buttons. The fields here are not inert: choosing an opening
+   * previews it on the board behind the sheet, choosing a study fetches
+   * its chapters and its drill record. A draft would have to reproduce
+   * all of that against a shadow copy of the state, or give the preview
+   * up; restoring on the way out costs one object and keeps both.
+   *
+   * A ref, because no render reads it. Dismissing the sheet any other
+   * way — the scrim, Escape, Back, the swipe — is Cancel too: a window
+   * carrying a Cancel button has already said what leaving means.
+   */
+  const staged = useRef<{
+    mode: Mode;
+    userColor: 'white' | 'black';
+    source: string;
+    band: string;
+    template: OpeningTemplate;
+    drillStudy: string;
+    chapterPick: string;
+    mapDrill: MapDrillTarget | null;
+  } | null>(null);
+  const openSetup = (): void => {
+    staged.current = { mode, userColor, source, band, template, drillStudy, chapterPick, mapDrill };
+    setSetupOpen(true);
+  };
+  const cancelSetup = (): void => {
+    const was = staged.current;
+    staged.current = null;
+    setSetupOpen(false);
+    if (!was) return;
+    setMode(was.mode);
+    setUserColor(was.userColor);
+    setSource(was.source);
+    setBand(was.band);
+    setTemplate(was.template);
+    setDrillStudy(was.drillStudy);
+    setChapterPick(was.chapterPick);
+    setMapDrill(was.mapDrill);
+  };
+  const applySetup = (): void => {
+    staged.current = null;
+    setSetupOpen(false);
+  };
 
   // Seed a tree with the template's line — used both for the idle preview
   // (picking an opening shows its position at once) and for starting a game.
@@ -1310,6 +1358,33 @@ export function RepertoireView() {
     sourceLabel,
   ].join(' · ');
 
+  /**
+   * The settings as the way INTO the settings, which is the puzzle
+   * trainer's theme row exactly: the chosen value IS the control, so
+   * nothing is labelled twice and the header keeps no button for it.
+   *
+   * Under Start, not over it. Both are things to press and only one of
+   * them is what the page is for — with the row first, the eye met the
+   * smaller question on the way to the bigger one on every visit. Not
+   * truncated: the source and the band are the half that would be cut,
+   * and the half that changes.
+   */
+  const setupRow = (
+    <button
+      type="button"
+      onClick={openSetup}
+      title={t('Set up a new game')}
+      className={cn(
+        'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+        'border-line border px-3 py-2.5 text-left transition-colors duration-100',
+      )}
+    >
+      <Settings2 className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+      <span className="text-fg min-w-0 flex-1 text-sm">{setupTerms}</span>
+      <ChevronRight className="text-subtle size-3.5 shrink-0" />
+    </button>
+  );
+
   // Game panel in the trainers' shape: status and the game's own actions
   // live here; the moves panel is the one every other board page uses.
   const gamePanel = (
@@ -1344,32 +1419,10 @@ export function RepertoireView() {
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
       {phase === 'idle' ? (
-        <>
-          {/* The trainers' own headline size — the puzzle panel sets its
-              verdict in text-base font-semibold, and this is the same
-              line at the same moment: what the board in front of you
-              is. */}
-          <p className="text-fg text-base font-semibold leading-snug">{setupLine}</p>
-          {/* The settings as the way INTO the settings, which is the
-              puzzle trainer's theme row exactly: the chosen value IS
-              the control, so nothing has to be labelled twice and the
-              header keeps no button for it. Not truncated — the source
-              and the band are the half that would be cut, and they are
-              the half that changes. */}
-          <button
-            type="button"
-            onClick={() => setSetupOpen(true)}
-            title={t('Set up a new game')}
-            className={cn(
-              'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-              'border-line border px-3 py-2.5 text-left transition-colors duration-100',
-            )}
-          >
-            <Settings2 className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-            <span className="text-fg min-w-0 flex-1 text-sm">{setupTerms}</span>
-            <ChevronRight className="text-subtle size-3.5 shrink-0" />
-          </button>
-        </>
+        /* The trainers' own headline size — the puzzle panel sets its
+           verdict in text-base font-semibold, and this is the same line
+           at the same moment: what the board in front of you is. */
+        <p className="text-fg text-base font-semibold leading-snug">{setupLine}</p>
       ) : (
         <p
           className={cn(
@@ -1449,8 +1502,11 @@ export function RepertoireView() {
         </FinalAssessment>
       )}
       {/* On a desktop these follow the fields in the New game panel, and
-          this panel is not on screen at all until a game is. */}
+          this panel is not on screen at all until a game is. Start
+          leads; the row that would change what it starts comes after
+          it. */}
       {phase === 'idle' && startBlock}
+      {phase === 'idle' && setupRow}
     </div>
   </Panel>
   );
@@ -1623,8 +1679,22 @@ export function RepertoireView() {
           desktop stands them in its column, and rendering both would be
           the same fields twice, sharing one set of state. */}
       {setupOpen && !wide && phase === 'idle' && (
-        <Modal title="New game" icon={Settings2} onClose={() => setSetupOpen(false)}>
+        <Modal title="New game" icon={Settings2} onClose={cancelSetup}>
           {setupFields}
+          {/* justify-end, gap-2, the primary one LAST — the row every
+              window in this app ends on (ui/PromptSheet). Apply only
+              closes: the fields have been writing straight through all
+              along, which is what puts the chosen opening on the board
+              behind the sheet. Cancel is the one that does work, by
+              putting back what was there when the sheet opened. */}
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={cancelSetup}>
+              {t('Cancel')}
+            </Button>
+            <Button variant="primary" size="sm" onClick={applySetup}>
+              {t('Apply')}
+            </Button>
+          </div>
         </Modal>
       )}
 
