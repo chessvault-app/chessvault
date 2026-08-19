@@ -4,6 +4,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { Button } from '@/ui/Button';
+import { ListRow } from '@/ui/ListRow';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { Select } from '@/ui/Select';
@@ -256,10 +257,10 @@ export function DashboardPage() {
             <ul>
               {books.map((b) => (
                 <li key={b.slug} className="border-line border-b last:border-b-0">
-                  <button
-                    type="button"
+                  {/* The hairline is on the li, so the row itself is undivided. */}
+                  <ListRow
                     onClick={() => navigate('puzzles', 'books', b.slug)}
-                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors duration-100"
+                    className="text-sm"
                   >
                     <span className="text-fg min-w-0 flex-1 truncate font-medium">{b.title}</span>
                     <span className="text-subtle shrink-0 font-mono tabular-nums">
@@ -272,7 +273,7 @@ export function DashboardPage() {
                       className="w-24 shrink-0"
                     />
                     <ChevronRight className="text-subtle size-3.5 shrink-0" />
-                  </button>
+                  </ListRow>
                 </li>
               ))}
             </ul>
@@ -348,11 +349,11 @@ export function DashboardPage() {
             <ul className="max-h-96 overflow-y-auto">
               {puzzles.slice(0, 200).map((h) => (
                 <li key={h.id} className="border-line border-b last:border-b-0">
-                  <button
-                    type="button"
+                  <ListRow
+                    dense
                     onClick={() => navigate('puzzles', 'id', h.id)}
                     title={t('Replay puzzle #{id}', { id: h.id })}
-                    className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm transition-colors duration-100"
+                    className="text-sm"
                   >
                     {h.win ? (
                       <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
@@ -369,7 +370,7 @@ export function DashboardPage() {
                     >
                       {formatAgo(h.at)}
                     </span>
-                  </button>
+                  </ListRow>
                 </li>
               ))}
             </ul>

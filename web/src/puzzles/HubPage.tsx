@@ -17,6 +17,7 @@ import { useMediaQuery } from '@/lib/media';
 import { INITIAL_FEN } from '@shared/tree';
 import { Board } from '@/board/Board';
 import { PageHeader } from '@/ui/PageHeader';
+import { ListRow } from '@/ui/ListRow';
 import { PageShell } from '@/ui/PageShell';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Skeleton, SkeletonRows, useSlowLoad } from '@/ui/Skeleton';
@@ -457,11 +458,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
       <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
         {t('Worth practising')}
       </p>
-      <button
-        type="button"
-        onClick={() => navigate('puzzles', 'theme', weak.theme)}
-        className="hover:bg-surface-2 flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-100"
-      >
+      <ListRow onClick={() => navigate('puzzles', 'theme', weak.theme)}>
         <span className="bg-surface-2 text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
           <Puzzle className="size-3.5" />
         </span>
@@ -481,7 +478,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
           {weak.wins}/{weak.attempts}
         </span>
         <ChevronRight className="text-subtle size-3.5 shrink-0" />
-      </button>
+      </ListRow>
     </div>
   );
 }
@@ -493,12 +490,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
         {t('Recently read')}
       </p>
       {books.map((b) => (
-        <button
-          key={b.slug}
-          type="button"
-          onClick={() => navigate('puzzles', 'books', b.slug)}
-          className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left transition-colors duration-100 last:border-b-0"
-        >
+        <ListRow key={b.slug} divided onClick={() => navigate('puzzles', 'books', b.slug)}>
           {b.cover ? (
             <img
               src={`/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`}
@@ -520,7 +512,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
             {b.solved}/{b.puzzles}
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />
-        </button>
+        </ListRow>
       ))}
     </div>
   );
@@ -569,12 +561,13 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
         </p>
       )}
       {attempts.map((h) => (
-        <button
+        <ListRow
           key={h.id + h.at}
-          type="button"
+          divided
+          dense
           onClick={() => navigate('puzzles', 'id', h.id)}
           title={t('Replay puzzle #{id}', { id: h.id })}
-          className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-1.5 text-left text-sm transition-colors duration-100 last:border-b-0"
+          className="text-sm"
         >
           {h.win ? (
             <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
@@ -595,7 +588,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
           >
             {formatAgo(h.at)}
           </span>
-        </button>
+        </ListRow>
       ))}
       </div>
       {preview.layer}

@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn';
 import { navigate } from '@/lib/router';
 import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/ui/Button';
+import { ListRow } from '@/ui/ListRow';
 import { Skeleton } from '@/ui/Skeleton';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { useDifficultyWord } from '@/puzzles/bands';
@@ -402,17 +403,12 @@ export function HomePage() {
               {t('Continue')}
             </p>
             {continueRows.map(({ icon: Icon, label, detail, go }) => (
-              <button
-                key={label + detail}
-                type="button"
-                onClick={go}
-                className="hover:bg-surface-2 border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left text-sm transition-colors duration-100 last:border-b-0"
-              >
+              <ListRow key={label + detail} divided onClick={go} className="text-sm">
                 <Icon className="text-subtle size-3.5 shrink-0" />
                 <span className="text-fg min-w-0 flex-1 truncate font-medium">{label}</span>
                 <span className="text-subtle shrink-0">{detail}</span>
                 <ChevronRight className="text-subtle size-3.5 shrink-0" />
-              </button>
+              </ListRow>
             ))}
           </div>
         )}
@@ -437,12 +433,12 @@ export function HomePage() {
               </Button>
             </div>
             {checklist.map((step) => (
-              <button
+              <ListRow
                 key={step.label}
-                type="button"
+                divided
                 onClick={step.go}
                 disabled={step.done}
-                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-left text-sm transition-colors duration-100 last:border-b-0 enabled:hover:bg-surface-2 disabled:opacity-60"
+                className="text-sm"
               >
                 {step.done ? (
                   <Check className="text-good size-3.5 shrink-0" />
@@ -457,7 +453,7 @@ export function HomePage() {
                   {step.label}
                 </span>
                 {!step.done && <ChevronRight className="text-subtle size-3.5 shrink-0" />}
-              </button>
+              </ListRow>
             ))}
           </div>
         )}
