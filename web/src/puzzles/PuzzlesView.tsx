@@ -738,12 +738,13 @@ function Trainer({
     )}
     {/* `grow` so the body owns the panel's full height rather than
         stopping at its text, and `overflow-y-auto` so that the height is
-        a ceiling and not a promise: this is the one part of the panel
-        that can be arbitrarily tall (a puzzle with eight themes), and it
-        is also the part you can afford to scroll, because the buttons are
-        not in it. `min-h-0` because a flex item will not shrink below its
-        content without it, which is exactly the overflow being fixed. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3 pb-0">
+        a ceiling and not a promise: a puzzle with eight themes is taller
+        than the band a phone has under the board, and without this the
+        panel ran past the column with Panel's overflow-hidden cutting
+        whatever hung off the end. `min-h-0` because a flex item will not
+        shrink below its content without it, which is exactly the overflow
+        being fixed. */}
+    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3">
       {phase === 'done' && puzzle ? (
         <>
           <p
@@ -804,15 +805,13 @@ function Trainer({
           </p>
         </div>
       )}
-    </div>
 
-    {/* The actions and the settings row are the panel's floor: outside
-        the scrolling body, so a thumb finds them in the same place
-        whatever the puzzle's text ran to, and `shrink-0` so the squeeze
-        is always taken by the text above them. It carries its own `p-3`
-        because the body's gap ends at the body's edge. Where the panel
-        is content-sized (desktop) this changes nothing. */}
-    <div className="flex shrink-0 flex-col gap-3 p-3">
+      {/* The actions and the settings row are IN the body, and scroll with
+          it (lanph3re): pinned to the panel's floor they held their place
+          while the text moved behind them, which reads as two panels in
+          one — and on a short window the pinning is what squeezed the text
+          to a couple of lines to keep a row nobody was reaching for on
+          screen. They follow what they answer to instead. */}
       {/* justify-end, gap-2, the primary one LAST — the row every window
           in this app ends on (ui/PromptSheet, and the repertoire's New
           game). A finished puzzle's row is read along a line and finishes
