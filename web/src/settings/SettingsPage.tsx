@@ -126,7 +126,13 @@ export function SettingsPage() {
 
         {!isDemo() && (
           <p className="text-subtle text-sm leading-relaxed">
-            {t('Vault:')} <span className="font-mono">{settings.vaultPath}</span>{' '}
+            {/* `break-all`: a path is one unbroken word to the line breaker —
+                a Windows one has no break opportunity at all, backslashes
+                included — so it ran straight out of the paragraph and the
+                page cut it. Measured at 320px: the span ended 32px past the
+                viewport. It is width and path length together, so it breaks
+                rather than waiting for a breakpoint. */}
+            {t('Vault:')} <span className="font-mono break-all">{settings.vaultPath}</span>{' '}
             {t('— every game, study and puzzle lives there as plain files. Display settings live on this device.')}
           </p>
         )}
