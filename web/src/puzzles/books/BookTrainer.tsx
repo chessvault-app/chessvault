@@ -519,7 +519,14 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // moment), and the puzzle grid reveals from the header the way the
   // trainer reveals its difficulty row.
   const puzzlePanel = (
-  <Panel flush className="shrink-0">
+  // `grow` on a phone: the info pane is this panel (and, off fresh
+  // training, the Training one), neither of which is tall enough to reach
+  // the bottom bar — so the column ended in a band of page background.
+  // Growing without shrinking (`shrink-0`, basis auto) fills that band
+  // and still cannot squeeze the panel's own content, which `overflow-
+  // hidden` would clip rather than scroll. A desktop keeps `shrink-0`
+  // alone: there the moves panel above already takes the spare height.
+  <Panel flush className={wide ? 'shrink-0' : 'shrink-0 grow'}>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -581,7 +588,10 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         <PuzzleGrid slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
       </Modal>
     )}
-    <div className="flex flex-col gap-3 p-3">
+    {/* `grow` so the body owns the panel's full height rather than
+        stopping at its text: the actions below hang off `mt-auto`,
+        which has nothing to push against in a box sized to content. */}
+    <div className="flex grow flex-col gap-3 p-3">
       <div className="flex flex-col gap-0.5">
         {phase === 'done' ? (
           <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-bad')}>
@@ -612,7 +622,12 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       {/* The primary action stretches to fill the row (lanph3re: a
           left-biased cluster looks unbalanced, centring is worse) —
           secondaries sit compactly at its right. */}
-      <div className="flex flex-wrap gap-2">
+      {/* mt-auto: on a phone the panel now stretches to the bottom bar,
+          and actions left under the text put the tap targets in the
+          middle of the panel with dead surface beneath them. Where the
+          panel is content-sized (desktop) there is no free space to
+          absorb and the row does not move. */}
+      <div className="mt-auto flex flex-wrap gap-2">
         {phase === 'done' ? (
           <>
             {next && (

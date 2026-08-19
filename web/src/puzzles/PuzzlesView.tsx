@@ -641,7 +641,14 @@ function Trainer({
   </Panel>
     ) : null;
   const puzzlePanel = (
-  <Panel flush className="shrink-0">
+  // `grow` on a phone: the info pane is this panel (and, off fresh
+  // training, the Training one), neither of which is tall enough to reach
+  // the bottom bar — so the column ended in a band of page background.
+  // Growing without shrinking (`shrink-0`, basis auto) fills that band
+  // and still cannot squeeze the panel's own content, which `overflow-
+  // hidden` would clip rather than scroll. A desktop keeps `shrink-0`
+  // alone: there the moves panel above already takes the spare height.
+  <Panel flush className={wide ? 'shrink-0' : 'shrink-0 grow'}>
     <PanelHeader
       title={t('Puzzle')}
       actions={
@@ -692,7 +699,10 @@ function Trainer({
         </button>
       </Modal>
     )}
-    <div className="flex flex-col gap-3 p-3">
+    {/* `grow` so the body owns the panel's full height rather than
+        stopping at its text: the actions below hang off `mt-auto`,
+        which has nothing to push against in a box sized to content. */}
+    <div className="flex grow flex-col gap-3 p-3">
       {phase === 'done' && puzzle ? (
         <>
           <p
@@ -763,7 +773,11 @@ function Trainer({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      {/* mt-auto: on a phone the panel stretches to the bottom bar, so
+          this row and the settings row under it settle on its bottom
+          edge instead of stranding empty surface below them. Desktop
+          panels are content-sized, so nothing moves there. */}
+      <div className="mt-auto flex flex-wrap gap-2">
         {phase === 'done' ? (
           <>
             <Button
