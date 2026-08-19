@@ -60,7 +60,17 @@ export const BOARD_WIDE_SHELL =
   // The row's own cap lives in index.css as `.board-row-cap`: it needs the
   // side column's width, and a rule that has to agree with another file is
   // better written where the number is than repeated as a constant here.
-  'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full board-row-cap';
+  //
+  // `wide:overflow-y-auto` is the fallback BOARD_MAX_W has always said it
+  // had and never got. The board keeps an 18rem floor so a short-landscape
+  // viewport does not collapse it to nothing, and the note there ends "the
+  // page scrolls" — but nothing in `wide` scrolled: the shell is `h-full`
+  // with an overflow rule only under `stacked:`, and `main` is
+  // overflow-hidden, so the floor's overflow was simply cut. Measured at
+  // 740x360: the board page wanted 364px in 303px and lost 61 of them, the
+  // editor 71, the repertoire 59, both trainers 35. It costs nothing where
+  // the row fits, which is every window that was not already losing pixels.
+  'wide:flex-row wide:gap-4 wide:p-4 wide:mx-auto wide:w-full wide:overflow-y-auto board-row-cap';
 
 /**
  * The board's own column in that row.
