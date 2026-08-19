@@ -91,9 +91,9 @@ export const BOARD_WIDE_SIDE =
 
 /**
  * The whole shell — stacked and wide halves — for the board pages whose
- * COLUMN scrolls when stacked: the trainers, the solution recorder, the
- * repertoire and the editor. One string, because these six shells were
- * six pasted literals and drifted exactly as pasted literals do.
+ * COLUMN scrolls when stacked: the solution recorder, the repertoire and
+ * the editor. One string, because these shells were pasted literals and
+ * drifted exactly as pasted literals do.
  *
  * stacked:pb-8 — this column is what scrolls on a phone, and its last
  * panel used to end flush against the bottom navigation with its own
@@ -103,11 +103,31 @@ export const BOARD_WIDE_SIDE =
  * then a 10px scrollbar), so p-3 alone left the panels almost touching
  * the thumb while the whole column sat 10px left of centre.
  *
- * Analysis and study deliberately do NOT use this: stacked, they are
- * overflow-hidden columns whose panels own the scrolling, so flush
- * against the bottom bar is their design — they append BOARD_WIDE_SHELL
- * to stacked classes of their own.
+ * The pages whose panels own their scrolling take BOARD_HELD_SHELL
+ * instead — see below. Neither rule above earns its keep there, and both
+ * cost: padding for a scrollbar that cannot appear.
  */
 export const BOARD_SCROLL_SHELL =
   'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pb-8 stacked:pr-4 stacked:[scrollbar-gutter:stable_both-edges] ' +
   BOARD_WIDE_SHELL;
+
+/**
+ * The same shell for the board pages that do NOT scroll when stacked:
+ * analysis, study and both puzzle trainers. Their side column is a
+ * `min-h-0 flex-1` box with its own `overflow-y-auto`, so the shell around
+ * it always fits the screen exactly and its scrollbar can never appear.
+ *
+ * Which is why it takes none of BOARD_SCROLL_SHELL's allowances. A phone
+ * ends flush against the bottom bar here BY DESIGN: the column has already
+ * given the last panel a hard bottom edge to sit on, and 32px of padding
+ * for a panel border that is not being cut is 32px of dead page between
+ * the panel and the navigation you are reaching past it for. `pr-4` and
+ * the stable gutter go with it — reserving a lane for a scrollbar that
+ * cannot be drawn only pushed the column 4px off centre.
+ *
+ * Analysis and study wrote this string out by hand, twice, which is the
+ * drift BOARD_SCROLL_SHELL exists to prevent; the trainers moving here
+ * made it a fourth copy, so it is a constant like its sibling.
+ */
+export const BOARD_HELD_SHELL =
+  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ' + BOARD_WIDE_SHELL;

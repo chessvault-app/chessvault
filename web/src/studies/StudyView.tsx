@@ -25,7 +25,7 @@ import { cn } from '@/lib/cn';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
-import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -225,7 +225,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   );
 
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ${BOARD_WIDE_SHELL}`}>
+    <div className={BOARD_HELD_SHELL}>
       {titleRow('wide:hidden')}
       {/* The pieces move in both modes. A study opens as a document to step
           through, but trying a move in a position you are reading is a

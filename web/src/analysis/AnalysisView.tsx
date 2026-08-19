@@ -16,7 +16,7 @@ import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
-import { BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -90,7 +90,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
   return (
     // Stacked layouts scroll the page (full-width board, pane past the fold,
     // like the lichess app); desktop fits the viewport with internal scrolls.
-    <div className={`flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-hidden ${BOARD_WIDE_SHELL}`}>
+    <div className={BOARD_HELD_SHELL}>
       {/* Stacked layouts lead with a header like every other page; games
           opened here from elite/archives get a way back on phones. */}
       <BoardPageHeader explorer={wantExplorer} />
