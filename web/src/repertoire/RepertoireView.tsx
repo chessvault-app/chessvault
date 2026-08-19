@@ -1110,6 +1110,11 @@ export function RepertoireView() {
           value={mode}
           onChange={setMode}
           ariaLabel="Mode"
+          // even, because these two sit one above the other: sized by their
+          // labels, "Free play | Drill a study" broke at a different point
+          // from "White | Black" and the pair read as two controls rather
+          // than one pair of questions.
+          even
           segments={[
             { value: 'spar', label: t('Free play') },
             { value: 'drill', label: t('Drill a study') },
@@ -1121,6 +1126,7 @@ export function RepertoireView() {
           value={userColor}
           onChange={setUserColor}
           ariaLabel="Play as"
+          even
           segments={(['white', 'black'] as const).map((c) => ({
             value: c,
             label: (
@@ -1312,15 +1318,22 @@ export function RepertoireView() {
           a dialog, but it is the same thing — a block of choices
           with one action at the bottom — and it was the only one
           starting from the left. */}
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-col gap-2 wide:flex-row wide:flex-wrap wide:justify-end">
         {mode === 'drill' && (summary?.review.length ?? 0) > 0 && (
-          <Button variant="secondary" size="sm" disabled={!drillReady} onClick={startFromMiss}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full wide:w-auto"
+            disabled={!drillReady}
+            onClick={startFromMiss}
+          >
             {t('Drill a missed position')}
           </Button>
         )}
         <Button
           variant="primary"
           size="sm"
+          className="w-full wide:w-auto"
           disabled={needsToken || (mode === 'drill' && !drillReady)}
           onClick={startGame}
         >
@@ -1500,6 +1513,16 @@ export function RepertoireView() {
             </Button>
           )}
         </FinalAssessment>
+      )}
+      {/* What the page IS, in the words home and More already use for it
+          — one line, under what it would play and above the button that
+          plays it. The long version stays behind the ? in the header: a
+          paragraph the panel made every visit re-read is exactly what
+          that InfoTip was cut out of. */}
+      {phase === 'idle' && (
+        <p className="text-subtle text-sm leading-relaxed">
+          {t('Practise an opening against real games')}
+        </p>
       )}
       {/* On a desktop these follow the fields in the New game panel, and
           this panel is not on screen at all until a game is. Start

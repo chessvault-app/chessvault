@@ -33,6 +33,7 @@ export function Segmented<T extends string>({
   segments,
   ariaLabel,
   size = 'md',
+  even = false,
   className,
 }: {
   value: T;
@@ -41,6 +42,17 @@ export function Segmented<T extends string>({
   ariaLabel: string;
   /** `sm` is the icon-only size used in a toolbar. */
   size?: 'sm' | 'md';
+  /**
+   * Halves (or thirds) of exactly equal width, whatever the labels say.
+   *
+   * The default sizes each segment by its own label first (see the
+   * flex-auto note below), which is right for a control read on its
+   * own. It is wrong for a COLUMN of them: stacked as fields in a form,
+   * two tracks whose lit pills break at 48% and at 50% read as two
+   * controls of slightly different make, and the eye finds the 7px it
+   * cannot name. Where the segments are stacked, this lines them up.
+   */
+  even?: boolean;
   className?: string;
 }) {
   // Concentric radii, or the lit segment reads as clipped: a child corner
@@ -96,7 +108,11 @@ export function Segmented<T extends string>({
               // the short one adrift in its own padding. From a basis of
               // auto each segment is as wide as its label first and shares
               // what is left after.
-              'flex min-w-0 flex-auto items-center justify-center gap-1.5 whitespace-nowrap',
+              'flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap',
+              // basis-0 is the half of flex-1 that does the work here:
+              // it takes each segment's own width out of the sum, so
+              // what is shared is the whole track.
+              even ? 'flex-1 basis-0' : 'flex-auto',
               'font-medium transition-colors duration-100',
               seg,
               on
