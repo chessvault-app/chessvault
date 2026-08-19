@@ -525,16 +525,12 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // moment), and the puzzle grid reveals from the header the way the
   // trainer reveals its difficulty row.
   const puzzlePanel = (
-  // `grow` on a phone: the info pane is this panel (and, off fresh
-  // training, the Training one), neither of which is tall enough to reach
-  // the bottom bar — so the column ended in a band of page background.
-  // It SHRINKS as well, which it did not use to: the panel's text can be
-  // taller than the band a phone has left under the board, and a panel
-  // that could not shrink ran past the column's edge with its actions cut
-  // in half. It fits the column now and its BODY scrolls; the actions
-  // below the body never do. A desktop keeps `shrink-0` alone: there the
-  // moves panel above already takes the spare height.
-  <Panel flush className={wide ? '' : 'grow'}>
+  // No `grow`, on either layout — see the note on the puzzle trainer's
+  // panel, which is this one's sibling and changed with it. The panel is
+  // the height of what it says; it grows with its content to the column's
+  // floor and then its BODY scrolls, and the space it does not need is
+  // left to the page rather than drawn as empty panel.
+  <Panel flush>
     <PanelHeader
       title={t('Puzzle')}
       actions={

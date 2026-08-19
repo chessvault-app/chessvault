@@ -675,17 +675,21 @@ function Trainer({
           })
         : null;
   const puzzlePanel = (
-  // `grow` on a phone: the info pane is this panel, which is not tall
-  // enough to reach the bottom bar on its own — so the column ended in a
-  // band of page background.
-  // It SHRINKS as well, which it did not use to: a solved puzzle's text
-  // (verdict, difficulty, plays, a wrapped row of themes, the game link)
-  // is taller than the band a 375x812 phone has left under the board, and
-  // a panel that could not shrink simply ran past the column's edge with
-  // its actions cut in half. It fits the column now and its BODY scrolls;
-  // the actions below the body never do. A desktop keeps `shrink-0`
-  // alone: there the moves panel above already takes the spare height.
-  <Panel flush className={wide ? '' : 'grow'}>
+  // No `grow`, on either layout: the panel is the height of what it says.
+  // A phone had it stretched to the bottom bar (f1e1757) so the column
+  // would not end in a band of page background — but a panel that is one
+  // line of status and a button, drawn a screen tall, is a worse thing to
+  // look at than the band was, and lanph3re has called it. Blank surface
+  // under the text belongs to the page, not inside a border.
+  //
+  // It still SHRINKS, which is the half of that change worth keeping: a
+  // solved puzzle's text (verdict, difficulty, plays, a wrapped row of
+  // themes, the game link) is taller than the band a 375x812 phone has
+  // left under the board, and a panel that could not shrink ran past the
+  // column's edge with its actions cut in half. So it grows with its
+  // content up to the column's floor — the bottom bar — and there it
+  // stops and its BODY scrolls instead.
+  <Panel flush>
     <PanelHeader
       title={t('Puzzle')}
       actions={
