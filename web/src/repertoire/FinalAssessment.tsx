@@ -1,10 +1,23 @@
 import { Loader2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { EvalBar } from '@/engine/EvalBar';
 import { terminalScore } from '@/engine/terminal';
 import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
 import { t } from '@/lib/i18n';
+
+/**
+ * The last verdict, kept outside the component.
+ *
+ * On a phone the panel this sits in is UNMOUNTED while the engine pane is
+ * showing, so coming back from the engine built a fresh component with an
+ * empty verdict and started a whole second search of a position that had
+ * already been answered — for as many times as the reader looked at the
+ * engine and came back. One entry, because there is only ever one
+ * finished line on screen; it is keyed by the position, so it can never
+ * answer for a different one.
+ */
+let lastVerdict: { fen: string; score: { cp?: number; mate?: number } } | null = null;
 
 /**
  * How the line ended, and a way into the board.
@@ -15,10 +28,13 @@ import { t } from '@/lib/i18n';
  * something, and it carries the answer to the question you would open
  * the board to ask: how does this position actually stand.
  *
- * The engine is switched on to answer it. That is a session switch, not
- * a stored preference — `enabled` is deliberately not persisted (see
- * store/engine.ts) — so this turns it on for the evaluation and leaves
- * it visibly on, rather than running something the app says is off.
+ * The engine is not switched on HERE, though it once was. The page turns
+ * it on when the line ends, and a child's effect runs before its parent's
+ * — so this component won the race every time, believed the engine was
+ * its own, and duly switched it off again the moment its search returned
+ * or the pane it lives in was swapped away. The engine went on and
+ * straight back off at the end of every line. It waits for `enabled`
+ * now, and never touches it.
  */
 export function FinalAssessment({
   fen,
@@ -29,7 +45,6 @@ export function FinalAssessment({
   children?: ReactNode;
 }) {
   const enabled = useEngine((s) => s.enabled);
-  const setEnabled = useEngine((s) => s.setEnabled);
   const analyse = useEngine((s) => s.analyse);
   const lines = useEngine((s) => s.lines);
   const resultFen = useEngine((s) => s.resultFen);
@@ -43,11 +58,9 @@ export function FinalAssessment({
    * goes — otherwise stopping it would erase the very thing it was
    * started for.
    */
-  const [verdict, setVerdict] = useState<{ cp?: number; mate?: number } | null>(null);
-  // Whether WE turned it on. An engine the reader had already running is
-  // theirs, and stopping it because a sparring line ended would be this
-  // page reaching outside itself.
-  const startedByUs = useRef(false);
+  const [verdict, setVerdict] = useState<{ cp?: number; mate?: number } | null>(
+    () => (lastVerdict?.fen === fen ? lastVerdict.score : null),
+  );
 
   /**
    * A line that ended in mate is already answered, and asking the engine
@@ -64,34 +77,26 @@ export function FinalAssessment({
   const settled = useMemo(() => terminalScore(fen), [fen]);
 
   useEffect(() => {
-    if (verdict || settled) return;
-    if (!enabled) {
-      startedByUs.current = true;
-      setEnabled(true);
-      return;
-    }
+    // Nothing to search: already answered, or answered by the rules. And
+    // nothing to search WITH until the page has switched the engine on —
+    // this re-runs when it does.
+    if (verdict || settled || !enabled) return;
     analyse(fen);
-  }, [enabled, fen, verdict, settled, analyse, setEnabled]);
+  }, [enabled, fen, verdict, settled, analyse]);
 
-  // One position, one search: take the answer at the end of it and stop.
-  // It used to run on after the number appeared, which on a phone is a
-  // fan spinning for a line that finished a minute ago.
+  // One position, one search: take the answer at the end of it and keep
+  // it. The engine is left alone — it belongs to the page, which wants it
+  // on so the Engine pane and the analysis board have something to show,
+  // and a finished search is not spinning anything anyway.
   useEffect(() => {
     if (verdict || !finished || resultFen !== fen) return;
     const best = lines[0];
     if (!best) return;
     const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
-    setVerdict(toWhitePov({ cp: best.cp, mate: best.mate }, turn));
-    if (startedByUs.current) setEnabled(false);
-  }, [finished, resultFen, fen, lines, verdict, setEnabled]);
-
-  // Leaving mid-search stops it too, for the same reason.
-  useEffect(
-    () => () => {
-      if (startedByUs.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
+    const score = toWhitePov({ cp: best.cp, mate: best.mate }, turn);
+    lastVerdict = { fen, score };
+    setVerdict(score);
+  }, [finished, resultFen, fen, lines, verdict]);
 
   // Before the verdict is in, show the engine's running best guess.
   const live =
