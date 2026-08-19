@@ -809,10 +809,14 @@ function Trainer({
           in this app ends on (ui/PromptSheet, and the repertoire's New
           game). A finished puzzle's row is read along a line and finishes
           on the action, which is why the link out to the game it came
-          from leads and Next closes. The row while SOLVING is a different
-          shape and stays left: Hint and Solution are things you may reach
-          for at any moment, not the end of a sentence. */}
-      <div className={cn('flex flex-wrap gap-2', phase === 'done' && 'justify-end')}>
+          from leads and Next closes.
+
+          Both phases, not just the finished one (lanph3re's call): this is
+          one row that changes what it holds, and alignment that moved with
+          the phase made it read as two different rows swapping places on
+          the panel's floor. Hint, Solution and Skip end on Skip, which is
+          the one that leaves this puzzle. */}
+      <div className="flex flex-wrap justify-end gap-2">
         {phase === 'done' ? (
           <>
             {/* An anchor, not a button that navigates: it goes out of the
