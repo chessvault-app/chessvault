@@ -44,6 +44,19 @@ export function ClearButton({
       className={cn(
         'text-subtle hover:text-fg hover:bg-fg/10 absolute top-1/2 grid -translate-y-1/2',
         'size-5 place-items-center rounded-full transition-colors duration-100',
+        // 20px of disc, which a thumb misses — and misses expensively,
+        // since the field it lands on instead reopens the keyboard. The
+        // disc cannot grow: the field reserves exactly its width in
+        // padding (pr-7), so a bigger circle sits on the text. So the
+        // FINGER gets the bigger target instead, the way Switch does it.
+        //
+        // -inset-2 and not the -inset-3 used elsewhere. That reaches 36px,
+        // which is what an icon-sm Button already becomes under a thumb,
+        // and every millimetre past it is taken from the text beside it —
+        // where a mis-tap does not merely press the wrong thing, it
+        // empties the field. A destructive button is the wrong one to
+        // make greedy.
+        'pointer-coarse:before:absolute pointer-coarse:before:-inset-2 pointer-coarse:before:content-[""]',
         className,
       )}
     >
