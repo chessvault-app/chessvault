@@ -40,7 +40,7 @@ export const ko: Record<string, string> = {
   // --- common actions ------------------------------------------------------
   Back: '뒤로',
   Forward: '앞으로',
-  Start: '처음',
+  Start: '시작',
   Latest: '최신',
   Cancel: '취소',
   Save: '저장',
