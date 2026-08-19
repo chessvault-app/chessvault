@@ -132,16 +132,32 @@ export function EditorView({
   /**
    * The position as it stood when the Position sheet was opened.
    *
-   * The sheet's fields write STRAIGHT THROUGH — the board behind them
-   * turns black to move, loses a castling right, takes a new en passant
-   * square as each control is touched, which is the whole point of an
-   * editor. So Apply has nothing to apply; it is Cancel that does the
-   * work, by putting back what was there when the sheet opened. Same
-   * bargain the repertoire's New game sheet makes, and for the same
-   * reason: a window with no way back is a window you cannot experiment
-   * in, and a phone's sheet covers the board it is editing.
+   * The sheet's fields write straight through to `state` as they are
+   * touched — that is what draws the board and the FEN line under them
+   * while the sheet is open, and it is the whole point of an editor. What
+   * makes them a DRAFT is this: nothing leaves the sheet except through
+   * Apply. Cancel, the back chevron, the scrim, a drag down, the Position
+   * button pressed a second time — every one of them puts this back
+   * (lanph3re: apply on Apply, everything else discards).
+   *
+   * Loading a position is the exception, and only because it is not one:
+   * the loader replaces the whole position and closes the sheet itself,
+   * which is that page's Apply.
    */
   const sheetSnapshot = useRef<EditorState | null>(null);
+  /**
+   * Leave the sheet, keeping the draft or throwing it away.
+   *
+   * One function because there are six ways out and five of them mean the
+   * same thing — wiring them one at a time is how a window comes to
+   * discard on its Cancel and keep on its chevron.
+   */
+  const closeSheet = (commit: boolean): void => {
+    if (!commit && sheetSnapshot.current) setState(sheetSnapshot.current);
+    sheetSnapshot.current = null;
+    setSheetOpen(false);
+    setLoadPage(false);
+  };
   /**
    * Whether the sheet is showing its Load page.
    *
@@ -453,24 +469,16 @@ export function EditorView({
         </Panel>
 
         {/* The row every window in this app ends on (ui/PromptSheet):
-            justify-end, gap-2, the primary one LAST. Only in the sheet —
-            the wide layout's column is not a window and has nothing to
-            close or take back. Apply only closes: the fields have been
-            writing through to the board all along. */}
+            justify-end, gap-2, the primary one LAST. Apply is the ONLY
+            way a change made in here survives; see closeSheet. Only in
+            the sheet — the wide layout's column is not a window, it is
+            the editor itself, and its edits are the position. */}
         {place === 'sheet' && (
           <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                if (sheetSnapshot.current) setState(sheetSnapshot.current);
-                setSheetOpen(false);
-                setLoadPage(false);
-              }}
-            >
+            <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
               {t('Cancel')}
             </Button>
-            <Button variant="primary" size="sm" onClick={() => setSheetOpen(false)}>
+            <Button variant="primary" size="sm" onClick={() => closeSheet(true)}>
               {t('Apply')}
             </Button>
           </div>
@@ -638,8 +646,12 @@ export function EditorView({
                 active={sheetOpen}
                 className="h-full wide:hidden"
                 onClick={() => {
-                  if (!sheetOpen) sheetSnapshot.current = state;
-                  setSheetOpen((v) => !v);
+                  if (sheetOpen) {
+                    closeSheet(false);
+                    return;
+                  }
+                  sheetSnapshot.current = state;
+                  setSheetOpen(true);
                 }}
                 title={t('Position details (side to move, castling, FEN)')}
               >
@@ -683,13 +695,7 @@ export function EditorView({
           on a phone and this only ever opens on one (`wide:hidden` on the
           button that opens it). */}
       {sheetOpen && (
-        <Modal
-          title="Position"
-          onClose={() => {
-            setSheetOpen(false);
-            setLoadPage(false);
-          }}
-        >
+        <Modal title="Position" onClose={() => closeSheet(false)}>
           {positionPanels('sheet')}
           {/* The second page, written inside the first: Modal parks this
               sheet behind it, wires the back chevron to onClose and holds
@@ -698,10 +704,9 @@ export function EditorView({
             <Modal title="Load position" onClose={() => setLoadPage(false)}>
               <LoadPositionForm
                 loadText={loadText}
-                onDone={() => {
-                  setLoadPage(false);
-                  setSheetOpen(false);
-                }}
+                // The loaded position IS the answer, so this commits —
+                // there is nothing of the draft left to keep or discard.
+                onDone={() => closeSheet(true)}
                 onCancel={() => setLoadPage(false)}
                 onImage={(file) => {
                   setPhotoFile(file);
@@ -723,8 +728,7 @@ export function EditorView({
                     onApply={(reading) => {
                       if (reading.fen) applyImageFen(reading.fen);
                       setPhotoTemplates(null);
-                      setSheetOpen(false);
-                      setLoadPage(false);
+                      closeSheet(true);
                     }}
                     onClose={() => setPhotoTemplates(null)}
                   />
