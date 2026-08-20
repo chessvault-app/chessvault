@@ -229,7 +229,12 @@ export function MainlineTable({
         out.push(
           <p
             key={`${mainChildId}-comment`}
-            className="border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5 text-sm leading-relaxed"
+            // A step down from the moves it annotates on a desktop, where
+            // the column is read at arm's length beside the board. Stacked,
+            // the same band sits under the board on a phone and 14px was
+            // the smallest thing on the screen anyone was expected to READ
+            // rather than glance at, so there it matches the moves.
+            className="border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5 text-sm leading-relaxed stacked:text-base"
           >
             {child.comment}
           </p>,
