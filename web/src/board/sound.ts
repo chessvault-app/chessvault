@@ -29,15 +29,68 @@ const loading = new Map<string, Promise<void>>();
     the move rotation and leave it audibly stuck on one take. */
 const turn = new Map<SoundKind, number>();
 
+/**
+ * Awake, or a promise of being awake — null when it is already running.
+ *
+ * `!== 'running'` rather than `=== 'suspended'`, because suspended is not
+ * the only way a context stops. WebKit has a fourth state, `interrupted`,
+ * which is where an iPhone puts the context for a call, for Siri, for
+ * another app taking the audio session, and for a home-screen app being
+ * switched away from. Nothing here used to resume out of it — the test was
+ * for `suspended` exactly — so one interruption left every later move
+ * starting sources into a context that would never play them, silently,
+ * until the app was reloaded. That is the shape of a board that stops
+ * sounding with no way to reproduce it: it is not the move, it is whatever
+ * happened before the move.
+ *
+ * lib.dom's AudioContextState does not know that fourth state, which is why
+ * this is a negative test against `running` and not a list of the states
+ * worth resuming from.
+ */
+function wake(ac: AudioContext): Promise<void> | null {
+  if (ac.state === 'running') return null;
+  // A context that cannot resume yet — no gesture has reached the page —
+  // is not an error: the sample is started anyway, exactly as before, and
+  // the next gesture arms it for good.
+  return ac.resume().catch(() => {});
+}
+
 function audio(): AudioContext | null {
   try {
-    ctx ??= new AudioContext();
-    // Unlocked by the first user gesture; resume is a no-op afterwards.
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (!ctx) {
+      ctx = new AudioContext();
+      listen(ctx);
+    }
+    // No wake here: every caller goes on to playSample, which waits for the
+    // resume it asks for rather than starting a source alongside it.
     return ctx;
   } catch {
     return null;
   }
+}
+
+/**
+ * Put the context back before it is needed, not when a move needs it.
+ *
+ * `playSample` can wait for a resume, but waiting is a sound that arrives
+ * late, and the move that pays for it is the first one after coming back
+ * to the app — the one most likely to be noticed. So the two moments that
+ * end an interruption re-arm it directly: returning to the foreground, and
+ * the first touch after that (WebKit will often only resume inside a
+ * gesture, and on a board the first touch IS the move about to be played).
+ * `statechange` covers an interruption that ends while the app is open.
+ *
+ * Guarded by wake()'s own `running` test, so none of these does anything
+ * once the context is live — including the statechange that resuming fires.
+ */
+function listen(ac: AudioContext): void {
+  if (typeof document === 'undefined') return;
+  const back = (): void => {
+    if (document.visibilityState === 'visible') void wake(ac);
+  };
+  document.addEventListener('visibilitychange', back);
+  document.addEventListener('pointerdown', back, { passive: true });
+  ac.addEventListener('statechange', back);
 }
 
 /** One gain node for everything, so the volume setting is a single value
@@ -81,10 +134,19 @@ function playSample(ac: AudioContext, file: string): void {
     source.connect(output(ac));
     source.start();
   };
-  if (buffers.has(file)) play();
-  // First use: play as soon as the decode lands — a beat late once, then
-  // instant forever.
-  else void load(ac, file).then(play);
+  // Two things can be missing: the sample, and a context able to play it.
+  // The sample is the familiar one — first use of a take waits for its
+  // decode, a beat late once and instant forever after.
+  //
+  // The context is the one that bit. A source started on a context that is
+  // not running is at the mercy of the engine: Chrome queues it for the
+  // resume, WebKit is content to drop it. So the start waits for the
+  // resume to land instead of racing it — which costs the move after an
+  // interruption a few milliseconds, and buys it being heard at all.
+  const decoded = buffers.has(file) ? null : load(ac, file);
+  const awake = wake(ac);
+  if (!decoded && !awake) play();
+  else void Promise.all([decoded, awake]).then(play);
 }
 
 /** The file a kind should play now, honouring the setting and the rotation. */
