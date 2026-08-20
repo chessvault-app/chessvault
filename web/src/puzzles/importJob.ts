@@ -16,7 +16,7 @@ import {
 } from '@shared/bookImport';
 import { solveBook, type SolveResult, type VerifiedPuzzle } from '@shared/bookSolve';
 import { engineTier, type EnginePuzzle } from '@shared/bookEngine';
-import { releaseBookEngine, searchPosition } from '@/engine/bookSearch';
+import { ENGINE_POOL_SIZE, releaseBookEngine, searchPosition } from '@/engine/bookSearch';
 import { repairBoard } from '@shared/bookRepair';
 import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs';
 import type { CellCandidates } from '@shared/bookRepair';
@@ -858,16 +858,13 @@ async function readSolutions(
     const candidates = result.unresolved.filter((n) => boards.has(n) && labelled.has(n));
     const counts = { corroborated: 0, only: 0, unverified: 0 };
     useImportJob.setState({ engineAt: { done: 0, total: candidates.length } });
-    let done = 0;
-    for (const number of candidates) {
-      // The job was cleared out from under us; stop rather than keep
-      // saving into a book nobody is importing any more.
-      if (useImportJob.getState().status !== 'reading') break;
+
+    const ask = (number: number): Promise<EnginePuzzle | null> => {
       const board = boards.get(number)!;
       const hints = result.unresolvedHints.get(number);
       const goal = pageMateGoal(byPage.get(labelled.get(number)!.page)?.text ?? '');
       const side = hints?.side ?? board.sideStated;
-      const puzzle = await engineTier(
+      return engineTier(
         {
           number,
           placement: board.placement,
@@ -877,15 +874,72 @@ async function readSolutions(
         },
         searchPosition,
       );
-      done += 1;
-      useImportJob.setState({ engineAt: { done, total: candidates.length } });
-      if (!puzzle || !(await save(puzzle))) continue;
-      if (puzzle.provenance === 'engine-corroborated') counts.corroborated += 1;
-      else if (puzzle.provenance === 'engine-only') counts.only += 1;
-      else counts.unverified += 1;
+    };
+
+    /**
+     * Searched several at a time, saved one at a time in the book's own
+     * order.
+     *
+     * The searching is the whole cost of this phase and the boards are
+     * independent, so they go out to the engine pool together — the same
+     * shape the page scan already has. What comes back is held until every
+     * lower number has been dealt with, so an import that is cancelled or
+     * loses the network partway leaves a PREFIX of the book behind rather
+     * than a scatter of whichever searches happened to finish first.
+     */
+    const answers: (EnginePuzzle | null | undefined)[] = new Array(candidates.length);
+    let next = 0;
+    let done = 0;
+    let saved = 0;
+    let saving = false;
+    let failure: unknown = null;
+
+    const drain = async (): Promise<void> => {
+      // One drain at a time. The one already running re-reads the array
+      // after every save, so it picks up whatever landed while it waited.
+      if (saving) return;
+      saving = true;
+      try {
+        while (saved < answers.length && answers[saved] !== undefined) {
+          const puzzle = answers[saved];
+          saved += 1;
+          if (!puzzle || !(await save(puzzle))) continue;
+          if (puzzle.provenance === 'engine-corroborated') counts.corroborated += 1;
+          else if (puzzle.provenance === 'engine-only') counts.only += 1;
+          else counts.unverified += 1;
+        }
+      } finally {
+        saving = false;
+      }
+    };
+
+    const worker = async (): Promise<void> => {
+      while (failure === null) {
+        // The job was cleared out from under us; stop rather than keep
+        // saving into a book nobody is importing any more.
+        if (useImportJob.getState().status !== 'reading') return;
+        const at = next++;
+        if (at >= candidates.length) return;
+        answers[at] = await ask(candidates[at]!);
+        done += 1;
+        useImportJob.setState({ engineAt: { done, total: candidates.length } });
+        // The network going is the whole scan failing, not one board
+        // degrading: carried out and rethrown once the pool is back.
+        await drain().catch((e: unknown) => {
+          failure = e;
+        });
+      }
+    };
+
+    await Promise.all(Array.from({ length: ENGINE_POOL_SIZE }, worker));
+    if (failure === null) {
+      await drain().catch((e: unknown) => {
+        failure = e;
+      });
     }
     releaseBookEngine();
     useImportJob.setState({ engineAt: null });
+    if (failure !== null) throw failure;
     engine = counts;
   }
   const settled = engine ? engine.corroborated + engine.only + engine.unverified : 0;
