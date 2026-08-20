@@ -242,10 +242,14 @@ function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
   });
 }
 
+/** Every cell's full distribution, plus what its shifted re-reads said. */
+interface DetailedReading {
+  cells: CellCandidates[];
+  labels: string[];
+}
+
 /** The same pool, asked for every cell's distribution — repair only. */
-function classifyDetailInWorker(
-  board: Gray,
-): Promise<{ cells: CellCandidates[]; labels: string[] } | null> {
+function classifyDetailInWorker(board: Gray): Promise<DetailedReading | null> {
   return new Promise((resolve) => {
     submit(board, true, (reply) =>
       resolve(
@@ -969,6 +973,16 @@ async function readSolutions(
 const REPAIR_LIMIT = 400;
 
 /**
+ * How many boards may be out with the pool at once.
+ *
+ * Twice the pool, so a worker that finishes has its next board already
+ * waiting rather than waiting on a page render. Higher does not read any
+ * faster and costs memory: every queued board is a transferred copy of a
+ * 512² crop, and a whole book's worth is ~100 MB sitting in the queue.
+ */
+const READ_AHEAD = POOL_SIZE * 2;
+
+/**
  * Rescue the boards whose printed solution refused to replay.
  *
  * The cell classifier is right about 99.4% of squares, which still leaves
@@ -981,6 +995,11 @@ const REPAIR_LIMIT = 400;
  * Five times the work of a normal read, so it runs only on the failures,
  * and only on the pages that actually hold one — which is why the pages are
  * re-rendered here rather than kept in memory through the whole scan.
+ *
+ * That re-read is nearly all of the cost — 3.5 GMACs a board against the
+ * search's 33 ms — so the boards are handed to the pool as they are cut and
+ * searched as their readings land, the way the scan already reads a page.
+ * Reading one board at a time left five of six workers idle.
  */
 async function repairUnread(
   pdf: PDFDocumentProxy,
@@ -1001,11 +1020,17 @@ async function repairUnread(
     const page = labelled.get(number)!.page;
     byPage.set(page, [...(byPage.get(page) ?? []), number]);
   }
+  const pages = [...byPage].sort((a, b) => a[0] - b[0]);
 
   const out: VerifiedPuzzle[] = [];
-  for (const [pageNo, numbers] of [...byPage].sort((a, b) => a[0] - b[0])) {
+  /** Boards already handed to the pool, oldest first. */
+  const reading: { number: number; detail: ReturnType<typeof classifyDetailInWorker> }[] = [];
+  let nextPage = 0;
+
+  /** Cut a page's failing boards and hand every one of them to the pool. */
+  const submitPage = async (pageNo: number, numbers: number[]): Promise<void> => {
     const geo = geometry.find((g) => g.page === pageNo);
-    if (!geo) continue;
+    if (!geo) return;
     const page = await pdf.getPage(pageNo);
     const base = page.getViewport({ scale: 1 });
     const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
@@ -1013,39 +1038,50 @@ async function repairUnread(
     canvas.width = Math.round(viewport.width);
     canvas.height = Math.round(viewport.height);
     await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
-
     for (const number of numbers) {
-      const rect = labelled.get(number)!.rect;
-      const { board } = cropDiagram(canvas, rect);
-      const detail = await classifyDetailInWorker(board);
-      if (!detail) continue;
-      const fixed = repairBoard(
-        detail.cells,
-        detail.labels,
-        (labels) => {
-          const placement = labelsToFen(
-            labels.map((ch) => (ch === '1' ? 'empty' : ch)) as Parameters<typeof labelsToFen>[0],
-            false,
-          ).split(' ')[0];
-          if (!placement) return null;
-          const replayed = result.replayFor(number, placement);
-          return replayed ? { placement, side: 'w' as const, sans: replayed.san } : null;
-        },
-        // Two cells, not three. The third level costs more than the first
-        // two together and, on the book measured, found the fewest — and
-        // this runs while somebody watches an import finish.
-        { maxEdits: 2 },
-      );
-      if (!fixed.repaired) continue;
-      // Ask once more for the real answer: the search only needed to know
-      // THAT the position replays, this needs the moves it produced.
-      const verified = result.replayFor(number, fixed.repaired.placement);
-      if (verified) out.push({ number, ...verified });
-      // Yield after every board: the search is hundreds of replays, and it
-      // runs here rather than in the worker because replaying needs the
-      // book's parsed answers.
-      await new Promise((r) => setTimeout(r, 0));
+      const { board } = cropDiagram(canvas, labelled.get(number)!.rect);
+      reading.push({ number, detail: classifyDetailInWorker(board) });
     }
+  };
+
+  /** Search one board, once its detailed reading has landed. */
+  const searchOne = async (number: number, detail: DetailedReading | null): Promise<void> => {
+    if (!detail) return;
+    const fixed = repairBoard(
+      detail.cells,
+      detail.labels,
+      (labels) => {
+        const placement = labelsToFen(
+          labels.map((ch) => (ch === '1' ? 'empty' : ch)) as Parameters<typeof labelsToFen>[0],
+          false,
+        ).split(' ')[0];
+        if (!placement) return null;
+        const replayed = result.replayFor(number, placement);
+        return replayed ? { placement, side: 'w' as const, sans: replayed.san } : null;
+      },
+      // Two cells, not three. The third level costs more than the first
+      // two together and, on the book measured, found the fewest — and
+      // this runs while somebody watches an import finish.
+      { maxEdits: 2 },
+    );
+    if (!fixed.repaired) return;
+    // Ask once more for the real answer: the search only needed to know
+    // THAT the position replays, this needs the moves it produced.
+    const verified = result.replayFor(number, fixed.repaired.placement);
+    if (verified) out.push({ number, ...verified });
+    // Yield after every board: the search is hundreds of replays, and it
+    // runs here rather than in the worker because replaying needs the
+    // book's parsed answers.
+    await new Promise((r) => setTimeout(r, 0));
+  };
+
+  while (nextPage < pages.length || reading.length > 0) {
+    while (reading.length < READ_AHEAD && nextPage < pages.length) {
+      const [pageNo, numbers] = pages[nextPage++]!;
+      await submitPage(pageNo, numbers);
+    }
+    const next = reading.shift();
+    if (next) await searchOne(next.number, await next.detail);
   }
   return out;
 }
