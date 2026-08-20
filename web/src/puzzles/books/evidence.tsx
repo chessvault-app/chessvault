@@ -5,7 +5,8 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/lib/cn';
 import { suppressNextClick } from '@/lib/suppressNextClick';
@@ -125,11 +126,34 @@ export function SourcePane({
  * used, never in a lookup popup. Rects are page fractions; the crop is
  * plain pixel math once the image's natural size is known.
  */
+/** How much room under the eye a peek wants before it opens downwards: the
+    crop is 252px wide and a diagram crop runs about that tall again, plus
+    the box's own padding. Under this, and only then, it opens upwards. */
+const PEEK_NEEDS_BELOW = 300;
+
 /** The book-scan peek beside a puzzle: hovers open on a mouse, and TAPS open
     on touch (the hover-only version did nothing on a phone). Tap the eye again
-    or anywhere else to close. */
+    or anywhere else to close.
+
+    On the BODY and position-fixed, not absolute where it is written. The eye
+    sits in a panel header, and a panel clips what does not fit — it is a
+    scrolling column, so `overflow` is the point of it. An absolutely
+    positioned peek was therefore cut off at the panel's edge: measured in the
+    book trainer at 1280px, 148px of the 270px-wide box was over the panel's
+    left edge and simply not drawn. A floating layer has no business living
+    inside the thing it floats over; Select's list learnt this first, and this
+    is the same fix. */
 export function EvidencePeek({ slug, page, rect }: { slug: string; page: string; rect?: SourceRect }) {
   const [open, setOpen] = useState(false);
+  const [hover, setHover] = useState(false);
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [box, setBox] = useState<DOMRect | null>(null);
+  const shown = open || hover;
+  // Measured as it appears, and again never — a peek is a held gesture, so
+  // anything that MOVES the eye underneath it closes it instead (below).
+  useLayoutEffect(() => {
+    setBox(shown ? (anchor.current?.getBoundingClientRect() ?? null) : null);
+  }, [shown]);
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent | TouchEvent): void => {
@@ -148,8 +172,32 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
       document.removeEventListener('touchstart', onDown, true);
     };
   }, [open]);
+  // A fixed box is pinned to where the eye WAS. Scrolling the panel or
+  // resizing the window moves the eye out from under it, so put it away
+  // rather than leave it floating over nothing.
+  useEffect(() => {
+    if (!shown) return;
+    const drop = (): void => {
+      setOpen(false);
+      setHover(false);
+    };
+    window.addEventListener('scroll', drop, true);
+    window.addEventListener('resize', drop);
+    return () => {
+      window.removeEventListener('scroll', drop, true);
+      window.removeEventListener('resize', drop);
+    };
+  }, [shown]);
+  const below = box ? window.innerHeight - box.bottom : 0;
+  const up = box ? below < PEEK_NEEDS_BELOW && box.top > below : false;
   return (
-    <span data-peek className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9">
+    <span
+      ref={anchor}
+      data-peek
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9"
+    >
       <button
         type="button"
         title={t('Peek at the book scan')}
@@ -163,16 +211,34 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
       >
         <Eye className="text-subtle group-hover:text-fg size-3.5 transition-colors pointer-coarse:size-4.5" />
       </button>
-      <span
-        className={cn(
-          'pointer-events-none absolute right-0 top-8 z-40 group-hover:block',
-          open ? 'block' : 'hidden',
+      {shown &&
+        box &&
+        createPortal(
+          <span
+            aria-hidden
+            style={{
+              // Hugging the eye's right edge, but never past the window's
+              // own — a peek beside a control near the right rail would
+              // otherwise trade a panel's clipping for the screen's.
+              right: Math.max(8, window.innerWidth - box.right),
+              ...(up ? { bottom: window.innerHeight - box.top + 4 } : { top: box.bottom + 4 }),
+            }}
+            className="pointer-events-none fixed z-50 block"
+          >
+            <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
+              <SourceCrop
+                slug={slug}
+                page={page}
+                rect={rect}
+                // Never wider than the window it floats in: the same box is
+                // what a phone opens by tapping the eye.
+                width={Math.min(252, window.innerWidth - 40)}
+                plain
+              />
+            </span>
+          </span>,
+          document.body,
         )}
-      >
-        <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
-          <SourceCrop slug={slug} page={page} rect={rect} width={252} plain />
-        </span>
-      </span>
     </span>
   );
 }
