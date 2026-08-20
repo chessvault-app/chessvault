@@ -5,7 +5,6 @@ import { Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmar
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Field } from '@/ui/Field';
 import { ClearableInput, Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
@@ -1140,7 +1139,7 @@ function RecoveryCard() {
     <Card icon={History} title={t('Deleted documents')}>
       <p className="text-subtle text-sm leading-relaxed">
         {t(
-          'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions in its ⋯ menu.',
+          'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.',
         )}
       </p>
 
@@ -1164,16 +1163,23 @@ function RecoveryCard() {
                   })}
                 </span>
               </span>
-              <ConfirmSheet
-                icon={RotateCcw}
-                triggerTitle={t('Bring this back')}
+              {/* No confirmation, unlike the restore inside a document.
+                  That one overwrites a document you still have; this one
+                  brings back one you do not — the list holds only paths
+                  absent from the vault, so there is nothing here to
+                  overwrite and nothing to lose by pressing it. Asking
+                  "are you sure?" before an action that cannot take
+                  anything away is how a confirmation stops meaning
+                  anything where it matters. */}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t('Bring this back')}
                 disabled={busy !== ''}
-                question={t('Bring “{name}” back into the vault?', {
-                  name: item.id.split('/').at(-1)!,
-                })}
-                confirmLabel="Restore"
-                onConfirm={() => void restore(item)}
-              />
+                onClick={() => void restore(item)}
+              >
+                <RotateCcw className="size-3.5" />
+              </Button>
             </li>
           ))}
         </ul>

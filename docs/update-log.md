@@ -9,9 +9,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 - **The vault's history is readable from inside the app.** Every change
   to every document has been auto-committed to `vault/.history.git` since
-  the first release, and using it meant a terminal. Now Earlier versions
-  in a study's, game's or note's ⋯ menu lists the times it was saved,
-  shows what any of them held and puts one back, and Settings → Deleted
+  the first release, and using it meant a terminal. Now the clock in a
+  study's, game's or note's header lists the times it was saved, shows
+  what any of them held and puts one back, and Settings → Deleted
   documents recovers a document that is gone entirely. Restoring writes
   in place and is itself undoable: the state it replaces is committed
   first, so it is back in the list a moment later. Where a vault keeps no

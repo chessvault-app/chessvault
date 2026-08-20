@@ -270,8 +270,8 @@ against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 — history included — to any machine for an off-cloud copy.
 
 That first layer is reachable from the app, not only from git. Every
-study, game and note has Earlier versions in its ⋯ menu, which lists the
-times it was saved, shows what any of them held, and puts one back;
+study, game and note has a clock in its header which lists the times it
+was saved, shows what any of them held, and puts one back;
 Settings → Deleted documents does the same for documents that are gone
 entirely.
 Restoring writes in place and is itself undoable — the state it replaces

@@ -1596,10 +1596,9 @@ export const ko: Record<string, string> = {
   'Deleted documents': '삭제된 문서',
   'Nothing is missing.': '사라진 문서가 없습니다.',
   'Bring this back': '되살리기',
-  'Bring “{name}” back into the vault?': '“{name}”을(를) 보관함으로 되살릴까요?',
   '“{name}” is back.': '“{name}”을(를) 되살렸습니다.',
   '{kind} · deleted {when}': '{kind} · {when}에 삭제됨',
   'no version to restore': '복원할 버전이 없습니다',
-  'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions in its ⋯ menu.':
-    '모든 문서의 모든 버전이 자동으로 보관됩니다. 삭제된 문서는 여기서 되살릴 수 있고, 열려 있는 문서의 이전 버전은 그 문서의 ⋯ 메뉴에 있습니다.',
+  'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.':
+    '모든 문서의 모든 버전이 자동으로 보관됩니다. 삭제된 문서는 여기서 되살릴 수 있고, 열려 있는 문서의 이전 버전은 그 문서 머리글의 시계 아이콘에 있습니다.',
 };
