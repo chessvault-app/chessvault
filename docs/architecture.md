@@ -109,6 +109,18 @@ feed at `/updates` instead, for anyone who would rather not use them
 Backups are layered: `vault/.history.git` (per-change undo), host
 snapshots, and `scripts/backup-vault.sh` for an off-host pull.
 
+`server/vaultHistory.ts` serves that first layer back to the app, so
+recovery never needs a shell: the versions of one document, any version's
+bytes, the documents the history remembers and the vault no longer has,
+and a restore that writes the blob through `writeAtomic` after forcing an
+autosave — never `git checkout`, which would move the repo's index under
+the watcher. Paths are built from a fixed directory table plus a
+`validId` document id, so nothing outside `studies/`, `notes/` and
+`games/collection/` is addressable. It is mounted in `server/index.ts`
+rather than `mountVault`, because the demo shares that list and has
+neither git nor `node:child_process`; every route answers
+`{ available: false }` where there is no history to read.
+
 ## Shared code
 
 `shared/` holds the move-tree and PGN codec used by both server and web:

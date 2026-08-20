@@ -107,6 +107,17 @@ Tailscale만 쓸 수도 있습니다. 둘 다 같은 서버로 가는 HTTP일 �
 백업은 여러 겹입니다. `vault/.history.git`(변경마다 되돌리기), 호스트
 스냅숏, 그리고 호스트 밖으로 받아 두는 `scripts/backup-vault.sh`입니다.
 
+`server/vaultHistory.ts`가 그 첫 겹을 앱에 돌려주므로 복구에 셸이 필요
+없습니다. 한 문서의 버전 목록, 특정 버전의 내용, 히스토리에는 있지만
+보관함에는 없는 문서 목록, 그리고 자동 저장을 먼저 강제한 뒤 `writeAtomic`으로
+내용을 쓰는 복원입니다 — `git checkout`은 쓰지 않습니다. 감시자가 쓰고 있는
+저장소의 인덱스를 건드리기 때문입니다. 경로는 고정된 디렉터리 표와 `validId`를
+통과한 문서 id로만 만들어지므로 `studies/`, `notes/`, `games/collection/` 밖은
+가리킬 수 없습니다. 데모는 `mountVault` 목록을 공유하지만 git도
+`node:child_process`도 없으므로, 이 API는 `server/index.ts`에서 따로
+마운트되고 히스토리가 없는 곳에서는 모든 경로가 `{ available: false }`로
+답합니다.
+
 ## 공유 코드
 
 `shared/`에는 서버와 웹이 함께 쓰는 수 트리와 PGN 코덱이 들어 있습니다.

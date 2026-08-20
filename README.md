@@ -269,6 +269,14 @@ Backups are layered: the server auto-commits every vault change to
 against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 — history included — to any machine for an off-cloud copy.
 
+That first layer is reachable from the app, not only from git. Every
+study, game and note has Earlier versions in its ⋯ menu, which lists the
+times it was saved, shows what any of them held, and puts one back;
+Settings → Deleted documents does the same for documents that are gone
+entirely.
+Restoring writes in place and is itself undoable — the state it replaces
+is committed first, so it is in the list a moment later.
+
 ## Optional data
 
 The app runs with an empty `data/`. These three datasets light up specific
