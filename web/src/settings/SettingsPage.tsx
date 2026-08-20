@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Skeleton, SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
 import QRCode from 'qrcode';
-import { Eye, EyeOff, HardDrive, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
+import { Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { Field } from '@/ui/Field';
 import { ClearableInput, Input } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
@@ -14,6 +15,7 @@ import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { formatWhen } from '@/lib/dates';
 import { navigate, up } from '@/lib/router';
 import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
@@ -118,6 +120,7 @@ export function SettingsPage() {
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
             <BrowsedGamesCard />
+            <RecoveryCard />
             <DangerCard gate={settings.gate} />
             {typeof __LAG__ !== 'undefined' && __LAG__ && <LagCard />}
             <VersionCard />
@@ -1049,6 +1052,139 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
           <Button variant="danger" onClick={() => void clear()}>{t('Remove')}</Button>
         )}
       </div>
+      <Feedback note={note} />
+    </Card>
+  );
+}
+
+// --- Deleted documents -------------------------------------------------------
+
+/**
+ * Bringing back something that is no longer there.
+ *
+ * The history panel on a document answers "this got wrecked"; it cannot
+ * answer "this is gone", because a deleted study has no page left to open
+ * a panel from. That case is why people opened a terminal, so it gets the
+ * one place in the app you go when you do not know where else to go.
+ *
+ * The card hides itself when the vault keeps no history — a packaged
+ * install with no git, the demo — rather than showing a permanently empty
+ * box. It stays visible when the history exists and nothing is missing,
+ * because a card that only appears after a disaster is one nobody knows
+ * they have.
+ */
+function RecoveryCard() {
+  type Gone = { kind: 'studies' | 'notes' | 'games'; id: string; at: string };
+  const [gone, setGone] = useState<Gone[] | null>(null);
+  const [available, setAvailable] = useState<boolean | null>(null);
+  const [note, setNote] = useState<Note>(null);
+  const [busy, setBusy] = useState('');
+  const [showAll, setShowAll] = useState(false);
+  const pending = useSlowLoad(available === null);
+  /**
+   * Nothing ever leaves this list — a document deleted a year ago is still
+   * missing — so on a vault of any age it is long, and mostly old scratch
+   * documents somebody meant to delete. The newest few are the ones a
+   * person came here for; the rest are one press away, with the count
+   * said out loud rather than quietly dropped.
+   */
+  const FIRST = 8;
+
+  const load = async (): Promise<void> => {
+    try {
+      const res = await api<{ available: boolean; deleted?: Gone[] }>('/api/history/deleted');
+      setAvailable(res.available);
+      setGone(res.deleted ?? []);
+    } catch {
+      // No history route at all: nothing to offer, and nothing is wrong.
+      setAvailable(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  // Named the way the rest of the app names them, so a row reads as the
+  // thing it will put back rather than as a directory.
+  const kindLabel = (kind: Gone['kind']): string =>
+    kind === 'studies' ? t('Study') : kind === 'games' ? t('Game') : t('Note');
+
+  const restore = async (item: Gone): Promise<void> => {
+    setBusy(`${item.kind}/${item.id}`);
+    setNote(null);
+    try {
+      const versions = await api<{ versions?: { sha: string }[] }>(
+        `/api/history/doc/${item.kind}/${encodeURIComponent(item.id)}`,
+      );
+      // The newest version it ever had is the one it was when deleted.
+      const sha = versions.versions?.[0]?.sha;
+      if (!sha) throw new Error(t('no version to restore'));
+      await api('/api/history/restore', {
+        method: 'POST',
+        json: { kind: item.kind, id: item.id, sha },
+      });
+      setNote({ kind: 'ok', text: t('“{name}” is back.', { name: item.id.split('/').at(-1)! }) });
+      await load();
+    } catch (error) {
+      setNote({ kind: 'error', text: apiErrorMessage(error) });
+    } finally {
+      setBusy('');
+    }
+  };
+
+  if (available === null) return pending ? <Skeleton className="h-28 rounded-xl" /> : null;
+  if (!available) return null;
+
+  return (
+    <Card icon={History} title={t('Deleted documents')}>
+      <p className="text-subtle text-sm leading-relaxed">
+        {t(
+          'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock beside Save.',
+        )}
+      </p>
+
+      {gone?.length === 0 && (
+        <p className="text-subtle text-sm">{t('Nothing is missing.')}</p>
+      )}
+
+      {gone && gone.length > 0 && (
+        <ul className="flex flex-col gap-1">
+          {(showAll ? gone : gone.slice(0, FIRST)).map((item) => (
+            <li
+              key={`${item.kind}/${item.id}`}
+              className="flex items-center justify-between gap-2 py-1"
+            >
+              <span className="min-w-0">
+                <span className="text-fg block truncate text-sm">{item.id}</span>
+                <span className="text-subtle text-xs">
+                  {t('{kind} · deleted {when}', {
+                    kind: kindLabel(item.kind),
+                    when: formatWhen(item.at),
+                  })}
+                </span>
+              </span>
+              <ConfirmSheet
+                icon={RotateCcw}
+                triggerTitle={t('Bring this back')}
+                disabled={busy !== ''}
+                question={t('Bring “{name}” back into the vault?', {
+                  name: item.id.split('/').at(-1)!,
+                })}
+                confirmLabel="Restore"
+                onConfirm={() => void restore(item)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {gone && gone.length > FIRST && !showAll && (
+        <Button variant="secondary" size="sm" onClick={() => setShowAll(true)}>
+          {t('Show all {n}', { n: gone.length })}
+        </Button>
+      )}
+
       <Feedback note={note} />
     </Card>
   );
