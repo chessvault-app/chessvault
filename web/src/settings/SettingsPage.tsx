@@ -1140,7 +1140,7 @@ function RecoveryCard() {
     <Card icon={History} title={t('Deleted documents')}>
       <p className="text-subtle text-sm leading-relaxed">
         {t(
-          'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock beside Save.',
+          'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions in its ⋯ menu.',
         )}
       </p>
 

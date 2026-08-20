@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { History, RotateCcw } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { History, MoreHorizontal, RotateCcw } from 'lucide-react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { t } from '@/lib/i18n';
+import { ActionSheet } from './ActionSheet';
 import { Button } from './Button';
-import { ConfirmSheet } from './ConfirmSheet';
 import { Sheet } from './Sheet';
 import { Skeleton } from './Skeleton';
 
@@ -19,13 +19,19 @@ import { Skeleton } from './Skeleton';
  * A version is chosen by WHEN it was taken, so the list leads with the
  * time and nothing else — a commit id is the right key and the wrong
  * label, and there is no message worth showing when every message is
- * "vault autosave". Picking one shows what it holds before anything is
- * written, because the whole point is to look before you leap.
+ * "vault autosave".
+ *
+ * ONE sheet, two pages. Picking a version turns the page to what that
+ * version holds, with the chevron in the corner to turn back; it does not
+ * open a second window over the first. The detail page is also where the
+ * restore is confirmed, because it already shows the thing being restored
+ * — a separate "are you sure?" over the top would be asking about a
+ * document it was not showing, which is the weaker of the two questions.
  *
  * Restoring writes over the document in place. That is safe rather than
  * reckless because the server commits the current state first, so the
- * version being replaced is itself in this list a moment later — the
- * confirmation says so, since that is the fact that makes the choice easy.
+ * version being replaced is back in this list a moment later — the page
+ * says so, since that is the fact that makes the choice easy.
  */
 
 export type HistoryKind = 'studies' | 'notes' | 'games';
@@ -35,7 +41,7 @@ interface Version {
   at: string;
 }
 
-export function HistoryPanel({
+function HistorySheet({
   kind,
   id,
   name,
@@ -55,6 +61,7 @@ export function HistoryPanel({
   /** Distinct from "no versions": this vault cannot offer history at all. */
   const [unavailable, setUnavailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Null on the list page; a version means the sheet has turned its page. */
   const [chosen, setChosen] = useState<Version | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -69,12 +76,10 @@ export function HistoryPanel({
         if (!live) return;
         if (!res.available) setUnavailable(true);
         else setVersions(res.versions ?? []);
-      } catch (caught) {
+      } catch {
         // The demo and any deployment without git answer 404 here. That is
         // "no history", not a fault, and must not read as one.
-        if (!live) return;
-        setUnavailable(true);
-        void caught;
+        if (live) setUnavailable(true);
       }
     })();
     return () => {
@@ -113,12 +118,53 @@ export function HistoryPanel({
     }
   };
 
+  // --- Page two: one version, and the offer to go back to it -------------
+  if (chosen) {
+    return (
+      <Sheet
+        label={formatWhen(chosen.at)}
+        onClose={onClose}
+        onBack={() => setChosen(null)}
+        className="gap-3"
+        fill
+      >
+        <p className="text-subtle text-sm">
+          {t('This is what “{name}” held {when}.', { name, when: formatAgo(chosen.at) })}
+        </p>
+
+        {preview === null ? (
+          <Skeleton className="min-h-24 flex-1" />
+        ) : (
+          <pre className="bg-surface-2 text-subtle min-h-0 flex-1 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
+            {preview}
+          </pre>
+        )}
+
+        <p className="text-subtle shrink-0 text-sm">
+          {t('The version you have now is kept too, so you can come back to it here.')}
+        </p>
+
+        <Button
+          variant="danger"
+          size="md"
+          className="w-full shrink-0 justify-center"
+          disabled={busy || preview === null}
+          onClick={() => void restore(chosen)}
+        >
+          <RotateCcw className="size-3.5" />
+          {t('Restore this version')}
+        </Button>
+
+        {error && <p className="text-bad shrink-0 text-sm">{error}</p>}
+      </Sheet>
+    );
+  }
+
+  // --- Page one: when this document was saved ----------------------------
   return (
     <Sheet label={t('Earlier versions')} onClose={onClose} className="gap-3" fill>
       <p className="text-subtle text-sm">
-        {t('Every change to “{name}” is kept automatically. Pick a time to look at it.', {
-          name,
-        })}
+        {t('Every change to “{name}” is kept automatically. Pick a time to look at it.', { name })}
       </p>
 
       {unavailable && (
@@ -150,9 +196,7 @@ export function HistoryPanel({
             <li key={version.sha}>
               <button
                 type="button"
-                className={`flex w-full items-baseline gap-2 rounded px-2 py-2 text-left ${
-                  chosen?.sha === version.sha ? 'bg-surface-2' : 'hover:bg-surface-2/60'
-                }`}
+                className="hover:bg-surface-2/60 flex w-full items-baseline gap-2 rounded px-2 py-2 text-left"
                 onClick={() => void choose(version)}
               >
                 {/* The relative time answers "is this the one?"; the exact
@@ -165,41 +209,70 @@ export function HistoryPanel({
         </ul>
       )}
 
-      {chosen && (
-        <div className="flex min-h-0 shrink-0 flex-col gap-2">
-          {preview === null ? (
-            <Skeleton className="h-24" />
-          ) : (
-            <pre className="bg-surface-2 text-subtle max-h-40 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
-              {preview.slice(0, 4000)}
-            </pre>
-          )}
-          <ConfirmSheet
-            icon={RotateCcw}
-            label={t('Restore this version')}
-            triggerTitle={t('Restore this version')}
-            triggerTone="danger"
-            disabled={busy || preview === null}
-            question={t(
-              'Replace “{name}” with the version from {when}? The version you have now is kept too, so you can come back to it here.',
-              { name, when: formatWhen(chosen.at) },
-            )}
-            confirmLabel="Restore"
-            onConfirm={() => void restore(chosen)}
-          />
-        </div>
-      )}
-
       {error && <p className="text-bad text-sm">{error}</p>}
     </Sheet>
   );
 }
 
-/** The header button that opens the panel. Same shape in every document. */
-export function HistoryButton({ onClick }: { onClick: () => void }) {
+/**
+ * The document's own overflow menu.
+ *
+ * Earlier versions is a document action, not a moves action, so it does
+ * not belong in the moves panel's ⋯ (which the Board shares, where there
+ * is no document at all). It gets the header's own ⋯ instead — the same
+ * control every shelf card already wears, in the one place all three
+ * document kinds have in common.
+ */
+export function DocumentMenu({
+  kind,
+  id,
+  name,
+  onRestored,
+}: {
+  kind: HistoryKind;
+  id: string;
+  name: string;
+  onRestored: () => void;
+}) {
+  const trigger = useRef<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [history, setHistory] = useState(false);
+
   return (
-    <Button variant="ghost" size="icon-sm" title={t('Earlier versions')} onClick={onClick}>
-      <History className="size-3.5" />
-    </Button>
+    <>
+      <Button
+        ref={trigger}
+        variant="ghost"
+        size="icon-sm"
+        title={t('More')}
+        active={open}
+        onClick={() => setOpen(true)}
+      >
+        <MoreHorizontal className="size-3.5" />
+      </Button>
+      {open && (
+        <ActionSheet
+          title={t('Document')}
+          anchor={trigger}
+          actions={[
+            {
+              label: 'Earlier versions',
+              icon: History,
+              onSelect: () => setHistory(true),
+            },
+          ]}
+          onClose={() => setOpen(false)}
+        />
+      )}
+      {history && (
+        <HistorySheet
+          kind={kind}
+          id={id}
+          name={name}
+          onClose={() => setHistory(false)}
+          onRestored={onRestored}
+        />
+      )}
+    </>
   );
 }

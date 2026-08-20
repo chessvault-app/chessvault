@@ -1590,8 +1590,12 @@ export const ko: Record<string, string> = {
     '이 보관함은 기록을 남기지 않으므로 보여줄 이전 버전이 없습니다.',
   'This is the only version so far — nothing has changed since it was created.':
     '아직 이 버전뿐입니다 — 만들어진 뒤로 바뀐 것이 없습니다.',
-  'Replace “{name}” with the version from {when}? The version you have now is kept too, so you can come back to it here.':
-    '“{name}”을(를) {when} 버전으로 바꿀까요? 지금 버전도 함께 보관되므로 여기서 다시 되돌아올 수 있습니다.',
+  'This is what “{name}” held {when}.': '{when} “{name}”의 내용입니다.',
+  'The version you have now is kept too, so you can come back to it here.':
+    '지금 버전도 함께 보관되므로 여기서 다시 되돌아올 수 있습니다.',
+  // The ⋯ menu on a document, named for what it acts on — the moves
+  // panel's own ⋯ is titled 수순 and is a different menu.
+  Document: '문서',
   'Deleted documents': '삭제된 문서',
   'Nothing is missing.': '사라진 문서가 없습니다.',
   'Bring this back': '되살리기',
@@ -1599,6 +1603,6 @@ export const ko: Record<string, string> = {
   '“{name}” is back.': '“{name}”을(를) 되살렸습니다.',
   '{kind} · deleted {when}': '{kind} · {when}에 삭제됨',
   'no version to restore': '복원할 버전이 없습니다',
-  'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock beside Save.':
-    '모든 문서의 모든 버전이 자동으로 보관됩니다. 삭제된 문서는 여기서 되살릴 수 있고, 열려 있는 문서의 이전 버전은 저장 옆 시계 아이콘에 있습니다.',
+  'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions in its ⋯ menu.':
+    '모든 문서의 모든 버전이 자동으로 보관됩니다. 삭제된 문서는 여기서 되살릴 수 있고, 열려 있는 문서의 이전 버전은 그 문서의 ⋯ 메뉴에 있습니다.',
 };

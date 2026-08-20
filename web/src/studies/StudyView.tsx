@@ -42,7 +42,7 @@ import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl } from '@/ui/SaveControl';
-import { HistoryButton, HistoryPanel } from '@/ui/HistoryPanel';
+import { DocumentMenu } from '@/ui/HistoryPanel';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { AnnotationPane } from './AnnotationPane';
@@ -80,7 +80,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   // — and, in the store, keeps the autosave from writing what a reader
   // merely walked through. See the subscriber in store/study.ts.
   const [loadOpen, setLoadOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const editing = useStudy((s) => s.editing);
   const setEditing = useStudy((s) => s.setEditing);
   const undoable = useUndoable();
@@ -217,9 +216,17 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
-      {/* Beside Save on purpose: the two are the same subject seen from
-          either end — what this document becomes, and what it has been. */}
-      <HistoryButton onClick={() => setHistoryOpen(true)} />
+      {/* The document's own menu, distinct from the moves panel's — that
+          one is shared with the Board, which has no document. */}
+      <DocumentMenu
+        kind={kind === 'game' ? 'games' : 'studies'}
+        id={id}
+        name={id.split('/').at(-1)!}
+        // Re-open rather than patch the store: a restore replaced the file
+        // on disk, and the document in the tab is now a stale copy of
+        // something that no longer exists.
+        onRestored={() => void open(id, base)}
+      />
       <SaveControl
         state={saveState}
         error={error}
@@ -352,19 +359,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           onRecover={() => useStudy.getState().recover()}
           onDismiss={() => void useStudy.getState().dismissRecovery()}
           onDefer={() => useStudy.getState().deferRecovery()}
-        />
-      )}
-
-      {historyOpen && (
-        <HistoryPanel
-          kind={kind === 'game' ? 'games' : 'studies'}
-          id={id}
-          name={id.split('/').at(-1)!}
-          onClose={() => setHistoryOpen(false)}
-          // Re-open rather than patch the store: a restore replaced the
-          // file on disk, and the document in the tab is now a stale copy
-          // of something that no longer exists.
-          onRestored={() => void open(id, base)}
         />
       )}
 

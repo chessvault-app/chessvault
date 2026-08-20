@@ -36,6 +36,7 @@ export function Sheet({
   onClose,
   className,
   fill = false,
+  onBack,
 }: {
   label: string;
   children: ReactNode;
@@ -65,6 +66,20 @@ export function Sheet({
    * a window with nothing to say.
    */
   fill?: boolean;
+  /**
+   * This sheet is showing a second PAGE of itself, and this goes back to
+   * the first.
+   *
+   * A sheet that needs to show a detail — the contents of one earlier
+   * version, say — used to open a second sheet over the first. Two
+   * stacked windows for one train of thought is a layer too many: the
+   * question underneath is still there, dimmed, and answering the top one
+   * leaves you looking at a window you have already finished with. So the
+   * sheet turns its own page instead, and the chevron in the corner is
+   * how you turn it back — the same control, in the same place, as the
+   * one `covered` puts there for a sheet standing over a hidden window.
+   */
+  onBack?: () => void;
 }) {
   const phone = useMediaQuery('(max-width: 39.9375rem)');
   const drag = useSheetDrag(onClose);
@@ -118,7 +133,9 @@ export function Sheet({
   );
 
   // Escape, and Android's Back gesture with it — see useCloseRequest.
-  useCloseRequest(onClose);
+  // On a second page they mean "back to the first", not "close the whole
+  // sheet": Back that skips a page is Back that loses your place.
+  useCloseRequest(onBack ?? onClose);
 
   // Portalled for the same reason ActionSheet is: a rename opened from a
   // shelf card is a child of that card, and a card that lifts under the
@@ -243,14 +260,14 @@ export function Sheet({
               a way back to it. It is the same control, in the same
               corner, as a Modal's second page. */}
           <div className="flex items-center gap-2">
-            {covered && (
+            {(onBack || covered) && (
               <Button
                 variant="ghost"
                 size="icon-sm"
                 title={t('Back')}
                 aria-label={t('Back')}
                 className="-my-1 -ml-1 shrink-0"
-                onClick={onClose}
+                onClick={onBack ?? onClose}
               >
                 <ChevronLeft className="size-3.5" />
               </Button>

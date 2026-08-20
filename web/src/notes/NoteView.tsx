@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button';
 import { ClearableInput } from '@/ui/Input';
 import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
-import { HistoryButton, HistoryPanel } from '@/ui/HistoryPanel';
+import { DocumentMenu } from '@/ui/HistoryPanel';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -148,7 +148,6 @@ function NoteEditor({
   // Notes open read-only (wiki-links follow on plain click); the header's
   // Edit button switches the TipTap editor live.
   const [editable, setEditable] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   /**
    * What is on the server, so an edit can be told from a settling node.
    *
@@ -398,8 +397,7 @@ function NoteEditor({
           <Pencil className="size-3.5 md:mr-1" />
           <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
-        {/* Beside Save: what this note becomes, and what it has been. */}
-        <HistoryButton onClick={() => setHistoryOpen(true)} />
+        <DocumentMenu kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <SaveControl
           state={saveState}
           autoSaves={autosave}
@@ -410,16 +408,6 @@ function NoteEditor({
       </div>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
-
-      {historyOpen && (
-        <HistoryPanel
-          kind="notes"
-          id={id}
-          name={id.split('/').at(-1)!}
-          onClose={() => setHistoryOpen(false)}
-          onRestored={onRestored}
-        />
-      )}
 
       {recovery && editor && (
         <RecoverySheet
