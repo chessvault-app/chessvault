@@ -17,6 +17,11 @@ vault/*
 # Local copies pulled from the server by scripts/backup-vault.sh.
 vault-backups/
 
+# Editor and agent scaffolding: whose machine runs what, not how the app
+# works. .claude/launch.json names a dev command and a port, which every
+# contributor already gets from package.json.
+.claude/
+
 .DS_Store
 *.log
 
