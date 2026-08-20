@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import {
+  answerPageIndex,
   assignLabels,
   deriveNumbering,
   isMoveish,
+  pageMateGoal,
   tokenPrefix,
   letterSides,
   pageNumbers,
@@ -13,6 +15,8 @@ import {
   type TextPage,
 } from '@shared/bookImport';
 import { solveBook, type SolveResult, type VerifiedPuzzle } from '@shared/bookSolve';
+import { engineTier, type EnginePuzzle } from '@shared/bookEngine';
+import { releaseBookEngine, searchPosition } from '@/engine/bookSearch';
 import { repairBoard } from '@shared/bookRepair';
 import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs';
 import type { CellCandidates } from '@shared/bookRepair';
@@ -66,6 +70,13 @@ export interface ImportOptions {
    * minutes, so it is worth offering and not worth imposing.
    */
   repair?: boolean;
+  /**
+   * Ask the engine about the boards whose printed solution would not
+   * replay. On by default: without it an import of a book whose answers
+   * scanned badly is puzzles-with-solutions plus a pile of drafts, which
+   * is the whole reason the offline pipeline grew these tiers.
+   */
+  engine?: boolean;
 }
 
 /** What the solve stage concluded, for the dialog to show. */
@@ -76,6 +87,11 @@ export interface SolveSummary {
   unresolved: number;
   /** Solved, but the server refused the save — left selected as drafts. */
   saveFailed: number;
+  /**
+   * What the engine settled, of the boards the book's own answers could
+   * not. Absent when the engine pass was switched off.
+   */
+  engine?: { corroborated: number; only: number; unverified: number };
   confident: boolean;
   /** How the book turned out to write its answers — worked out, not set. */
   settings: SolveResult['settings'];
@@ -97,6 +113,8 @@ interface ImportJobState {
   found: FoundDiagram[];
   /** Null until the text half has run; null after it finds nothing. */
   solve: SolveSummary | null;
+  /** How far the engine pass has got, while it is running. */
+  engineAt: { done: number; total: number } | null;
   error: string | null;
   start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
   /** Continue a scan a reload, a crash, or a pause interrupted. */
@@ -107,86 +125,138 @@ interface ImportJobState {
   clear: () => void;
 }
 
-/** One classification worker, shared across scans; lazy so the chunk only
-    loads when a scan actually starts. */
-let worker: Worker | null = null;
-let nextId = 0;
-const pending = new Map<number, (r: CellReading[] | null) => void>();
-const detailPending = new Map<
-  number,
-  (r: { cells: CellCandidates[]; labels: string[] } | null) => void
->();
+/**
+ * The classification pool.
+ *
+ * Reading one board is ~950 ms of CellNet inference and nothing else:
+ * measured over 212 boards of '1001 Chess Exercises', classifyBoardNet is
+ * 948 ms of a 1014 ms board, against 62 ms to warp it, 5 ms to find its
+ * corners and 8 ms to detect a whole page's diagrams. A book is a thousand
+ * boards, so on ONE worker a scan is twenty minutes with every other core
+ * idle — the offline pipeline gets 4.3x out of the same work simply by
+ * sharding it across six processes.
+ *
+ * Boards are independent, so they go out to a pool instead. One core is
+ * left alone: the main thread still has to render pages, cut crops and
+ * keep the app usable while this runs in the background.
+ */
+const POOL_SIZE = Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 4) - 1));
 
-function ensureWorker(): Worker {
-  worker ??= (() => {
-    const w = new Worker(new URL('./ocr/cellnet.worker.ts', import.meta.url), {
-      type: 'module',
-    });
-    w.onmessage = (e: MessageEvent) => {
-      const { id, readings, cells, labels } = e.data as {
-        id: number;
-        readings?: CellReading[] | null;
-        cells?: { probs: number[]; top: number; votes: [number, number][] }[] | null;
-        labels?: string[];
-      };
-      const waitingForDetail = detailPending.get(id);
-      if (waitingForDetail) {
-        detailPending.delete(id);
-        waitingForDetail(
-          cells && labels
-            ? { cells: cells.map((c) => ({ ...c, votes: new Map(c.votes) })), labels }
-            : null,
-        );
-        return;
-      }
-      pending.get(id)?.(readings ?? null);
-      pending.delete(id);
-    };
-    // A crashed worker must not strand its callers: every waiting promise
-    // resolves to "unread" (which degrades to a draft), and the worker is
-    // dropped so the next board boots a fresh one.
-    w.onerror = () => {
-      for (const resolve of pending.values()) resolve(null);
-      for (const resolve of detailPending.values()) resolve(null);
-      pending.clear();
-      detailPending.clear();
-      w.terminate();
-      if (worker === w) worker = null;
-    };
-    return w;
-  })();
-  return worker;
+/** What the worker sends back, before it is turned into either answer. */
+interface WorkerReply {
+  readings?: CellReading[] | null;
+  cells?: { probs: number[]; top: number; votes: [number, number][] }[] | null;
+  labels?: string[];
+}
+
+interface Job {
+  id: number;
+  detail: boolean;
+  w: number;
+  h: number;
+  data: ArrayBuffer;
+  /** null = the worker died holding this board; the caller degrades. */
+  settle: (reply: WorkerReply | null) => void;
+}
+
+interface PoolWorker {
+  w: Worker;
+  /** The one board it is reading, or null when it is free. */
+  job: Job | null;
+}
+
+const pool: PoolWorker[] = [];
+const queue: Job[] = [];
+let nextId = 0;
+
+/** Boot a worker. Lazy, so the chunk only loads when a scan starts. */
+function spawn(): PoolWorker {
+  const entry: PoolWorker = {
+    w: new Worker(new URL('./ocr/cellnet.worker.ts', import.meta.url), { type: 'module' }),
+    job: null,
+  };
+  entry.w.onmessage = (e: MessageEvent) => {
+    const job = entry.job;
+    entry.job = null;
+    job?.settle(e.data as WorkerReply);
+    pump();
+  };
+  // A crashed worker must not strand its caller: the board it was holding
+  // resolves to "unread" (which degrades to a draft), and the worker is
+  // dropped so the next board boots a fresh one in its place.
+  entry.w.onerror = () => {
+    const job = entry.job;
+    entry.job = null;
+    job?.settle(null);
+    entry.w.terminate();
+    const at = pool.indexOf(entry);
+    if (at >= 0) pool.splice(at, 1);
+    pump();
+  };
+  pool.push(entry);
+  return entry;
+}
+
+/** Hand queued boards to free workers, growing the pool up to its size. */
+function pump(): void {
+  while (queue.length > 0) {
+    const free = pool.find((p) => p.job === null) ?? (pool.length < POOL_SIZE ? spawn() : null);
+    if (!free) return;
+    const job = queue.shift()!;
+    free.job = job;
+    free.w.postMessage({ id: job.id, w: job.w, h: job.h, data: job.data, detail: job.detail }, [
+      job.data,
+    ]);
+  }
+}
+
+function submit(board: Gray, detail: boolean, settle: Job['settle']): void {
+  // Copied out of the page's gray, not sliced off its buffer: the copy is
+  // what gets transferred, so the caller keeps its own pixels intact.
+  const data = new Uint8ClampedArray(board.data).buffer;
+  queue.push({ id: ++nextId, detail, w: board.w, h: board.h, data, settle });
+  pump();
+}
+
+/**
+ * Hand the workers back.
+ *
+ * They used to be one worker that simply stayed alive for the session,
+ * which was small enough not to matter; a pool the width of the machine
+ * is not, and a phone that has finished an import should not still be
+ * holding six of them. Queued boards are settled as unread rather than
+ * left hanging — nothing calls this with work outstanding, but a promise
+ * nobody ever resolves would hang the import rather than degrade it.
+ */
+function releasePool(): void {
+  for (const job of queue.splice(0)) job.settle(null);
+  for (const entry of pool.splice(0)) {
+    entry.job?.settle(null);
+    entry.w.terminate();
+  }
 }
 
 function classifyInWorker(board: Gray): Promise<CellReading[] | null> {
-  const w = ensureWorker();
-  const id = ++nextId;
-  const buffer = board.data.buffer.slice(
-    board.data.byteOffset,
-    board.data.byteOffset + board.data.byteLength,
-  );
   return new Promise((resolve) => {
-    pending.set(id, resolve);
-    w.postMessage({ id, w: board.w, h: board.h, data: buffer }, [buffer]);
+    submit(board, false, (reply) => resolve(reply?.readings ?? null));
   });
 }
 
-/** The same worker, asked for every cell's distribution — repair only. */
+/** The same pool, asked for every cell's distribution — repair only. */
 function classifyDetailInWorker(
   board: Gray,
 ): Promise<{ cells: CellCandidates[]; labels: string[] } | null> {
-  // ensureWorker, not worker!: a resumed import whose checkpoint was
-  // written after the final page never runs the page loop, so the repair
-  // pass used to be the first caller — and dereferenced null.
-  const w = ensureWorker();
-  const id = ++nextId;
-  const buffer = board.data.buffer.slice(
-    board.data.byteOffset,
-    board.data.byteOffset + board.data.byteLength,
-  );
   return new Promise((resolve) => {
-    detailPending.set(id, resolve);
-    w.postMessage({ id, w: board.w, h: board.h, data: buffer, detail: true }, [buffer]);
+    submit(board, true, (reply) =>
+      resolve(
+        reply?.cells && reply.labels
+          ? {
+              cells: reply.cells.map((c) => ({ ...c, votes: new Map(c.votes) })),
+              labels: reply.labels,
+            }
+          : null,
+      ),
+    );
   });
 }
 
@@ -248,6 +318,7 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   pages: 0,
   found: [],
   solve: null,
+  engineAt: null,
   error: null,
 
   // 'reading' is as live as 'scanning': the text half runs for minutes
@@ -258,7 +329,16 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   start: (slug, file, templates, options) => {
     const { status } = get();
     if (status === 'scanning' || status === 'reading') return;
-    set({ slug, status: 'scanning', page: 0, pages: 0, found: [], solve: null, error: null });
+    set({
+      slug,
+      status: 'scanning',
+      page: 0,
+      pages: 0,
+      found: [],
+      solve: null,
+      engineAt: null,
+      error: null,
+    });
     void scan(file, templates, options ?? {}, set, get, null);
   },
 
@@ -275,6 +355,7 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
         pages: saved.pages,
         found: saved.results,
         solve: null,
+        engineAt: null,
         error: null,
       });
       void scan(saved.file, templates, options ?? {}, set, get, saved);
@@ -291,7 +372,16 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
     })),
 
   clear: () =>
-    set({ slug: null, status: 'idle', page: 0, pages: 0, found: [], solve: null, error: null }),
+    set({
+      slug: null,
+      status: 'idle',
+      page: 0,
+      pages: 0,
+      found: [],
+      solve: null,
+      engineAt: null,
+      error: null,
+    }),
 }));
 
 /** Downscale the first-page canvas to a shelf-sized JPEG and save it as the
@@ -376,10 +466,20 @@ async function scan(
       }
 
       const rects = detectDiagrams(grayFromCanvas(canvas));
-      const placements: (string | null)[] = [];
+      // Cut the page up first and hand each board to the pool as it is
+      // cut, so the workers are reading board one while board two is
+      // still being warped. Yielding between cuts keeps the app usable:
+      // a crop is ~60 ms of main thread and a page holds eight of them.
+      const cutting: { dataUrl: string; features: Uint8Array[]; cells: Promise<CellReading[] | null> }[] = [];
       for (const rect of rects) {
         const { dataUrl, board, features } = cropDiagram(canvas, rect);
-        let cells = await classifyInWorker(board);
+        cutting.push({ dataUrl, features, cells: classifyInWorker(board) });
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      const placements: (string | null)[] = [];
+      for (const [at, rect] of rects.entries()) {
+        const { dataUrl, features, cells: reading } = cutting[at]!;
+        let cells = await reading;
         if (!cells && templates.length > 0) cells = classifyBoard(features, templates);
         let fen: string | null = null;
         let uncertain = 0;
@@ -484,6 +584,10 @@ async function scan(
     // The checkpoint is deliberately NOT cleared here: a scan that fell
     // over is exactly the one worth resuming.
     set({ status: 'failed', error: `Could not read the PDF: ${(e as Error).message}` });
+  } finally {
+    // A paused scan keeps its workers: it is about to carry on, and
+    // rebuilding them costs the model again. Anything else is over.
+    if (get().status !== 'paused') releasePool();
   }
 }
 
@@ -504,6 +608,30 @@ export interface PageGeometry {
   /** The size it was rendered at, so a rect can be stored as fractions. */
   w: number;
   h: number;
+}
+
+/**
+ * What an evidence page is called on the server.
+ *
+ * The server writes `page033.jpg` (see the evidence route), a puzzle's
+ * evidence points at that name, and a draft's evidence points at it too.
+ * Three places agreeing by hand is three places to get it wrong, so they
+ * all ask here instead.
+ */
+export function evidencePage(page: number): string {
+  return `page${String(page).padStart(3, '0')}.jpg`;
+}
+
+/** One page of the PDF at the size the whole importer assumes. */
+async function renderPage(pdf: PDFDocumentProxy, pageNo: number): Promise<HTMLCanvasElement> {
+  const page = await pdf.getPage(pageNo);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+  return canvas;
 }
 
 /** The source page, sized like the offline pipeline's evidence images. */
@@ -600,6 +728,17 @@ async function readSolutions(
   const solved = [...result.puzzles, ...repaired];
   solved.sort((a, b) => a.number - b.number);
 
+  // The answers page each number is printed on, settled BEFORE the upload
+  // because those pages are evidence as much as the diagram's own page is.
+  const answerPageFor = answerPageIndex(texts, result.answerRanges, numbering.maxNumber);
+  const answerPages = new Set<number>();
+  for (const diagram of found) {
+    const page = diagram.number === undefined ? undefined : answerPageFor(diagram.number);
+    if (page === undefined) continue;
+    answerPages.add(page);
+    diagram.solutionPage = evidencePage(page);
+  }
+
   // Evidence first: a puzzle must never reference a page image that is not
   // there, so the pages go up before anything that points at them.
   //
@@ -608,9 +747,19 @@ async function readSolutions(
   // printed page — so the page it came off is precisely what it needs.
   // Sending only the solved pages left drafts with a crop and nothing to
   // read, which is the one thing they cannot be corrected without.
+  //
+  // And the answers pages. An answers chapter prints no diagrams, so the
+  // scan kept none of its pixels and nothing here ever asked for them —
+  // which is why every Solutions tab, on drafts and puzzles alike, pointed
+  // at a file that had never been uploaded. They are rendered now, once,
+  // and only the ones something actually points at.
   const wanted = new Set<number>(
     geometry.filter((g) => g.rects.length > 0).map((g) => g.page),
   );
+  for (const page of answerPages) wanted.add(page);
+  for (const page of [...wanted].sort((a, b) => a - b)) {
+    if (!pageImages.has(page)) pageImages.set(page, pageJpeg(await renderPage(pdf, page)));
+  }
   const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
   for (let i = 0; i < pages.length; i += 12) {
     const chunk = pages.slice(i, i + 12).filter((p) => p.image);
@@ -626,54 +775,22 @@ async function readSolutions(
     });
   }
 
-  /**
-   * The answers page a number is printed on.
-   *
-   * Mirrors what scripts/ml/enrich_solution_pages.py does offline, and for
-   * the same stated reason: a person enters a draft's solution while
-   * looking at it. Numbers are anchored where the answer pages print them;
-   * anything the scan mangled falls back to the page whose run of numbers
-   * covers it.
-   */
-  const anchors = new Map<number, number>();
-  for (const [from, to] of result.answerRanges) {
-    for (let page = from; page <= to; page++) {
-      const text = byPage.get(page);
-      if (!text) continue;
-      for (const match of text.text.matchAll(/(\d{1,4})/g)) {
-        const value = Number(match[1]);
-        if (value >= 1 && value <= numbering.maxNumber && !anchors.has(value)) {
-          anchors.set(value, page);
-        }
-      }
-    }
-  }
-  const runs = [...new Set(anchors.values())]
-    .map((page) => ({ page, first: Math.min(...[...anchors].filter(([, p]) => p === page).map(([n]) => n)) }))
-    .sort((a, b) => a.first - b.first);
-  const solutionPageFor = (number: number | undefined): string | undefined => {
-    if (number === undefined || runs.length === 0) return undefined;
-    const anchored = anchors.get(number);
-    if (anchored !== undefined) return `page${String(anchored).padStart(3, '0')}.jpg`;
-    let chosen = runs[0]!.page;
-    for (const run of runs) {
-      if (run.first <= number) chosen = run.page;
-      else break;
-    }
-    return `page${String(chosen).padStart(3, '0')}.jpg`;
-  };
-  for (const diagram of found) {
-    const page = solutionPageFor(diagram.number);
-    if (page) diagram.solutionPage = page;
-  }
-
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));
   let saveFailed = 0;
-  for (const puzzle of solved) {
+
+  /**
+   * Save one puzzle with its evidence. True when the book now holds it.
+   *
+   * Every tier goes through here, so a puzzle the engine settled carries
+   * exactly the evidence a book-parsed one does — the page, the place on
+   * it, and the page its answer is on.
+   */
+  const save = async (puzzle: VerifiedPuzzle | EnginePuzzle): Promise<boolean> => {
     const where = labelled.get(puzzle.number);
     const size = where ? sizes.get(where.page) : undefined;
-    if (!where || !size) continue;
+    if (!where || !size) return false;
     const rect = where.rect;
+    const answers = answerPageFor(puzzle.number);
     // The rect is stored as fractions of the page, so it survives whatever
     // size the evidence image happens to be.
     try {
@@ -684,15 +801,21 @@ async function readSolutions(
           fen: puzzle.fen,
           uci: puzzle.uci,
           san: puzzle.san,
+          ...('wildcards' in puzzle && puzzle.wildcards ? { wildcards: puzzle.wildcards } : {}),
           provenance: puzzle.provenance,
           evidence: {
-            page: `page${String(where.page).padStart(3, '0')}.jpg`,
+            page: evidencePage(where.page),
             rect: {
               x: rect.x / size.w,
               y: rect.y / size.h,
               w: rect.w / size.w,
               h: rect.h / size.h,
             },
+            // A verified puzzle carries the page its answer is on exactly
+            // as a draft does. It went out without one until now, so the
+            // one tier that HAS a printed solution to check against was
+            // the one tier you could not check it against.
+            ...(answers === undefined ? {} : { solutionPage: evidencePage(answers) }),
           },
         },
       });
@@ -705,24 +828,75 @@ async function readSolutions(
       // the outage into a draft.
       if (e instanceof ApiError && e.status !== 0) {
         saveFailed += 1;
-        continue;
+        return false;
       }
       throw e;
     }
     const index = foundAt.get(`${where.page}:${rect.x}:${rect.y}`);
     if (index !== undefined) {
       found[index]!.solved = true;
-      // A solved puzzle is already saved; it must not be saved again as a
-      // draft when the user accepts what is left.
+      // A saved puzzle must not be saved again as a draft when the user
+      // accepts what is left.
       found[index]!.selected = false;
     }
-  }
+    return true;
+  };
 
+  for (const puzzle of solved) await save(puzzle);
+
+  /**
+   * What the book itself could not answer for, the engine is asked about.
+   *
+   * Only the boards that were READ and NUMBERED: a diagram with no number
+   * has no printed answer to have failed, and one that never resolved into
+   * a position has nothing to search. The tiers, and the rule for telling
+   * them apart, are shared/bookEngine.ts — the same decision the offline
+   * pipeline makes, on the same evidence.
+   */
+  let engine: SolveSummary['engine'];
+  if (options.engine !== false && result.unresolved.length > 0) {
+    const candidates = result.unresolved.filter((n) => boards.has(n) && labelled.has(n));
+    const counts = { corroborated: 0, only: 0, unverified: 0 };
+    useImportJob.setState({ engineAt: { done: 0, total: candidates.length } });
+    let done = 0;
+    for (const number of candidates) {
+      // The job was cleared out from under us; stop rather than keep
+      // saving into a book nobody is importing any more.
+      if (useImportJob.getState().status !== 'reading') break;
+      const board = boards.get(number)!;
+      const hints = result.unresolvedHints.get(number);
+      const goal = pageMateGoal(byPage.get(labelled.get(number)!.page)?.text ?? '');
+      const side = hints?.side ?? board.sideStated;
+      const puzzle = await engineTier(
+        {
+          number,
+          placement: board.placement,
+          ...(side ? { side } : {}),
+          squares: hints?.squares ?? [],
+          ...(goal > 0 ? { mateIn: goal } : {}),
+        },
+        searchPosition,
+      );
+      done += 1;
+      useImportJob.setState({ engineAt: { done, total: candidates.length } });
+      if (!puzzle || !(await save(puzzle))) continue;
+      if (puzzle.provenance === 'engine-corroborated') counts.corroborated += 1;
+      else if (puzzle.provenance === 'engine-only') counts.only += 1;
+      else counts.unverified += 1;
+    }
+    releaseBookEngine();
+    useImportJob.setState({ engineAt: null });
+    engine = counts;
+  }
+  const settled = engine ? engine.corroborated + engine.only + engine.unverified : 0;
   return {
     solved: solved.length - saveFailed,
     repaired: repaired.length,
-    unresolved: result.unresolved.length - repaired.length,
+    // What the engine imported is no longer unresolved: it is in the book,
+    // badged for what it is.
+    unresolved: result.unresolved.length - repaired.length - settled,
     saveFailed,
+    ...(engine ? { engine } : {}),
     confident: result.confident,
     settings: result.settings,
     answerRanges: result.answerRanges,

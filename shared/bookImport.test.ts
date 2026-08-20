@@ -3,6 +3,7 @@ import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import {
   Dialect,
+  answerPageIndex,
   assignLabels,
   castlingRights,
   chapterSides,
@@ -449,5 +450,48 @@ describe('deriveNumbering', () => {
     // ceiling — only a run that keeps counting does.
     const found = deriveNumbering(digits([...Array(60).keys()].map((i) => i + 1), 'bare'));
     expect(found.maxNumber).toBe(60);
+  });
+});
+
+describe('answerPageIndex', () => {
+  /** An answers chapter: page 106 prints 1..3, page 107 prints 50..51. */
+  const answers: TextPage[] = [
+    { page: 105, width: 400, words: [], text: 'the last page of puzzles 998 999 1000 1001' },
+    { page: 106, width: 400, words: [], text: '1 - Rxa6# 2 - Nb5# 3 - Rf7#' },
+    { page: 107, width: 400, words: [], text: '50 - Qh6+ 51 - Bxg6' },
+  ];
+
+  it('sends a number to the page that prints it', () => {
+    const pageFor = answerPageIndex(answers, [[106, 107]], 1001);
+    expect(pageFor(2)).toBe(106);
+    expect(pageFor(51)).toBe(107);
+  });
+
+  it('falls back to the run a mangled number sits in', () => {
+    // 4 is on page 106 in the book, but the scan lost it. The run that
+    // starts at 1 is the last one starting at or below 4, so 106 it is.
+    const pageFor = answerPageIndex(answers, [[106, 107]], 1001);
+    expect(pageFor(4)).toBe(106);
+    expect(pageFor(60)).toBe(107);
+  });
+
+  it('reads nothing outside the answers pages', () => {
+    // 998 is printed on page 105, which is puzzles, not answers.
+    const pageFor = answerPageIndex(answers, [[106, 107]], 1001);
+    expect(pageFor(998)).toBe(107);
+  });
+
+  it('ignores numbers past the book’s ceiling', () => {
+    const pageFor = answerPageIndex(
+      [{ page: 20, width: 400, words: [], text: '1996 - a year, not a puzzle 7 - Qxf7#' }],
+      [[20, 20]],
+      100,
+    );
+    expect(pageFor(7)).toBe(20);
+    expect(pageFor(1996)).toBe(20); // by the run, not by the printed digits
+  });
+
+  it('answers nothing when the book has no answers pages', () => {
+    expect(answerPageIndex(answers, [], 1001)(2)).toBeUndefined();
   });
 });

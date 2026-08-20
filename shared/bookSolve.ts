@@ -49,6 +49,16 @@ export interface SolveResult {
   puzzles: VerifiedPuzzle[];
   /** Boards whose solution could not be replayed — these become drafts. */
   unresolved: number[];
+  /**
+   * What the book still says about a number whose line would not replay:
+   * the side its text implies, and every square its printed answer names.
+   *
+   * A scan that turned the piece letters to soup usually left the squares
+   * intact, and they are the only independent thing left to check an
+   * engine's answer against — which is the difference between
+   * `engine-corroborated` and `engine-only` (see bookEngine.ts).
+   */
+  unresolvedHints: Map<number, { side?: 'w' | 'b'; squares: string[] }>;
   /** Where the answers turned out to be, which nobody had to write down. */
   answerRanges: [number, number][];
   /**
@@ -105,6 +115,7 @@ export function solveBook(
   const dialect = new Dialect();
   const puzzles: VerifiedPuzzle[] = [];
   const unresolved: number[] = [];
+  const unresolvedHints = new Map<number, { side?: 'w' | 'b'; squares: string[] }>();
 
   // Two passes for the same reason the scoring uses two: the first teaches
   // the dialect what this book's figurines mean, the second spends it.
@@ -115,11 +126,13 @@ export function solveBook(
     const hints = pass === 0 ? undefined : withGlyphs(dialect.hints());
     puzzles.length = 0;
     unresolved.length = 0;
+    unresolvedHints.clear();
     for (const [number, board] of boards) {
       const body = entries.get(number);
       const mainline = body ? parseMainline(body, config) : null;
       if (!mainline) {
         unresolved.push(number);
+        unresolvedHints.set(number, { squares: squaresIn(body) });
         continue;
       }
       const stated =
@@ -142,7 +155,10 @@ export function solveBook(
         done = true;
         break;
       }
-      if (!done) unresolved.push(number);
+      if (!done) {
+        unresolved.push(number);
+        unresolvedHints.set(number, { side: stated, squares: squaresIn(body) });
+      }
     }
   }
 
@@ -184,11 +200,17 @@ export function solveBook(
     ranking,
     puzzles,
     unresolved,
+    unresolvedHints,
     answerRanges: answerPages(pages, config),
     replayFor,
     learnedHints: dialect.hints(),
     confident: puzzles.length >= MIN_VALIDATED && share >= MIN_SHARE,
   };
+}
+
+/** Every square an entry names, whatever its piece letters turned into. */
+function squaresIn(body: string | undefined): string[] {
+  return [...new Set(body?.match(/[a-h][1-8]/g) ?? [])];
 }
 
 /**

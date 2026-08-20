@@ -8,8 +8,8 @@
 > What lives here is how the models were trained and how a change is
 > measured against a whole book in a minute rather than by re-scanning in
 > a browser. The reading logic itself is shared code — `shared/bookImport.ts`,
-> `bookConfigSearch.ts`, `bookSolve.ts`, `bookGlyphs.ts`, `bookRepair.ts` —
-> so the two cannot drift.
+> `bookConfigSearch.ts`, `bookSolve.ts`, `bookGlyphs.ts`, `bookRepair.ts`,
+> `bookEngine.ts` — so the two cannot drift.
 
 That doc indexes the import stages and every script they run; this file
 is the models. Between the two sit three tools documented in their own
