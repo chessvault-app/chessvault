@@ -76,6 +76,28 @@ interface BookEvidence {
   solutionPage?: string;
 }
 
+/**
+ * A book's puzzles as the book prints them.
+ *
+ * puzzles.json is in the order things were WRITTEN, and the importer
+ * writes in passes — everything it could read off the solutions page
+ * first, then what the engine had to settle. So a file straight out of
+ * an import runs 955, 956, ... 1001, then back to 2, 4, 10: grouped by
+ * fidelity tier, not by number. Every walk over the list inherited that
+ * — the trainer's next/previous, its grid sheet, and "next unsolved" —
+ * so solving forward stayed inside one tier and then jumped to the top
+ * of the next one.
+ *
+ * Sorting on the way out rather than on the way in fixes the books
+ * already imported too, and costs one sort of ~1,000 ids per read.
+ * Puzzles with no printed number (added by hand) keep their relative
+ * order at the end, where the book page's own grid already puts them.
+ */
+const inPrintedOrder = <T extends { number?: number }>(puzzles: T[]): T[] =>
+  [...puzzles].sort(
+    (a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER),
+  );
+
 /** The tiers a solution can arrive with, in descending confidence. */
 const PROVENANCE = [
   'book-parsed',
@@ -379,7 +401,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       // on the biggest book that is 1.7 MB the phone no longer parses.
       // Solutions come from /solutions when a puzzle is opened; evidence
       // one puzzle at a time from the route below.
-      puzzles: readJson<BookPuzzle[]>(puzzlesPath(slug), []).map((p) => ({
+      puzzles: inPrintedOrder(readJson<BookPuzzle[]>(puzzlesPath(slug), [])).map((p) => ({
         id: p.id,
         ...(p.number === undefined ? {} : { number: p.number }),
         ...(p.provenance === undefined ? {} : { provenance: p.provenance }),
@@ -413,7 +435,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     const progress = readJson<Record<string, PuzzleProgress>>(progressPath(slug), {});
-    const puzzle = readJson<BookPuzzle[]>(puzzlesPath(slug), []).find(
+    const puzzle = inPrintedOrder(readJson<BookPuzzle[]>(puzzlesPath(slug), [])).find(
       (p) => progress[p.id]?.last !== 'win',
     );
     if (!puzzle) return c.json({ error: 'nothing left unsolved in this book' }, 404);

@@ -244,6 +244,38 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
+  it('lists a book in printed order, whatever order it was imported in', async () => {
+    await post('/api/puzzlebooks', { title: 'Order Book' });
+    const slug = encodeURIComponent('Order Book');
+    const mate = { fen: '7k/8/8/8/8/8/8/R6K w - - 0 1', uci: ['a1a8'], san: ['Ra8#'] };
+    // An import writes what it read off the solutions page first and what
+    // the engine settled second — so the file runs 955, 1001, then 2, 4.
+    for (const [number, provenance] of [
+      [955, 'book-parsed'],
+      [1001, 'book-parsed'],
+      [2, 'engine-only'],
+      [4, 'engine-only'],
+    ] as const) {
+      await post(`/api/puzzlebooks/${slug}/puzzles`, { ...mate, number, provenance });
+    }
+
+    const detail = (await (await app.request(`/api/puzzlebooks/${slug}`)).json()) as {
+      puzzles: { number: number }[];
+    };
+    // The trainer's next/previous walk this list, so tier grouping here is
+    // a solver who never leaves the tier they started in.
+    expect(detail.puzzles.map((p) => p.number)).toEqual([2, 4, 955, 1001]);
+
+    // And the hub's "next unsolved" starts at the book's first puzzle, not
+    // the first one the importer happened to write.
+    const next = (await (await app.request(`/api/puzzlebooks/${slug}/next`)).json()) as {
+      puzzle: { number: number };
+    };
+    expect(next.puzzle.number).toBe(2);
+
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
+  });
+
   it('clears a book’s contents but keeps the book and the history', async () => {
     await post('/api/puzzlebooks', { title: 'Clear Book' });
     const slug = encodeURIComponent('Clear Book');
