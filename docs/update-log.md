@@ -5,7 +5,49 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.4.6
+
+A release about books and about the record of your own work: reading a
+scanned one into the app at the speed the machine can actually manage,
+and getting back a document you changed or deleted. Thirty-nine changes.
+
+- **Reading a scanned book uses the whole machine.** Classifying a board
+  is almost a second of inference and nothing else, and it ran on one
+  worker while every other core sat idle — twenty minutes for a
+  thousand-board book. Boards are independent, so they go out to a pool
+  as wide as the machine less one core, which leaves the app usable while
+  it runs. The 1,033 diagrams of a 1,001-puzzle book now read in 314 s on
+  a 12-core machine.
+
+- **The engine answers for the boards the book's own answer could not.**
+  A scan that turns the printed solution to soup used to leave a
+  position with nothing attached to it. Those boards are searched
+  instead and imported labelled by how much is known — highest where the
+  engine's line lands on the squares the book itself printed, lower where
+  it is decisive with nothing to check it against, lower again where the
+  position is merely legal and the side known. Nothing is taken on trust:
+  every line is replayed from the position that gets stored, and what
+  will not replay stays a draft. On the 1,001 book, 276 unreadable boards
+  became 269 puzzles.
+
+- **That engine pass costs 8 seconds, where it used to cost 137.** It
+  searched one position at a time on a fixed half-second clock, so it was
+  the one phase of an import a faster machine did not finish sooner. It
+  is now a pool of single-threaded engines that stop at a depth rather
+  than running the clock out — 16.7x on the same book and machine,
+  measured end to end. The trade is stated where it is made: thirteen
+  boards that used to be claimed now import badged one tier lower.
+
+- **Every puzzle carries the page its answer is printed on**, verified
+  tiers exactly as much as drafts, so the one kind that has a printed
+  solution to check against is no longer the kind you cannot check.
+
+- **A book's puzzles come back in the book's order.** The importer writes
+  in passes, so a freshly imported book ran 955, 956 … 1001 and only then
+  2, 4, 10 — grouped by how confidently each was read. Next, previous,
+  the grid sheet and "next unsolved" all inherited that. Sorting by the
+  printed number on the way out repairs the books already imported
+  instead of needing their files rewritten.
 
 - **The vault's history is readable from inside the app.** Every change
   to every document has been auto-committed to `vault/.history.git` since
