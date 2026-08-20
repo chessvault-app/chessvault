@@ -39,7 +39,12 @@ export function git(gitDir: string, workTree: string, args: string[]): Promise<s
     execFile(
       'git',
       ['--git-dir', gitDir, '--work-tree', workTree, ...IDENTITY, ...args],
-      { timeout: 60_000 },
+      // 64 MB rather than execFile's 1 MB default. `git show` of a study
+      // hands back a whole PGN, which the studies route caps at 20 MB, and
+      // `status --porcelain` over a vault mid-import lists thousands of
+      // paths — both silently became "command failed" at the default, and
+      // for the writer that meant an autosave that quietly did not happen.
+      { timeout: 60_000, maxBuffer: 64 * 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error) reject(new Error(stderr.trim() || error.message));
         else resolvePromise(stdout);

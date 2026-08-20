@@ -17,6 +17,7 @@ import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
 import { settingsApi } from './settings.ts';
 import { startVaultBackup } from './vaultBackup.ts';
+import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
 import { APP_VERSION, DATA, REPO_ROOT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
 
@@ -177,6 +178,31 @@ app.use('/api/*', requireAuth());
 // server/mountVault.ts for why that list is not written twice any more.
 mountVault(app);
 
+/**
+ * The safety net, started here so recovery can force a commit before it
+ * overwrites anything. Failing to start is not fatal — the app runs fine
+ * without a history, and the recovery routes then report themselves
+ * unavailable rather than erroring.
+ */
+const vaultBackup = startVaultBackup().catch((error: Error) => {
+  console.error('[vault-backup] disabled:', error.message);
+  return null;
+});
+
+/**
+ * Reading that safety net back out. NOT in mountVault: the demo shares
+ * that list and has neither git nor node:child_process, so it answers 404
+ * here and the recovery UI shows its unavailable state.
+ */
+app.route(
+  '/api',
+  vaultHistoryApi(undefined, {
+    commitNow: async () => {
+      await (await vaultBackup)?.commitNow();
+    },
+  }),
+);
+
 app.route('/api', lichessExplorerApi());
 app.route('/api', puzzleBooksApi());
 app.route('/api', settingsApi());
@@ -330,11 +356,6 @@ if (existsSync(dist)) {
   app.use('/*', serveStatic({ root: './dist' }));
   app.get('*', serveStatic({ path: './dist/index.html' }));
 }
-
-// Safety net: every vault change is auto-committed to vault/.history.git.
-void startVaultBackup().catch((error: Error) =>
-  console.error('[vault-backup] disabled:', error.message),
-);
 
 serve({ fetch: app.fetch, port: PORT, hostname: BIND }, (info) => {
   console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);

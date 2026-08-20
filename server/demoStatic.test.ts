@@ -44,6 +44,10 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
   puzzleBooksApi: 'book puzzles come from commercial PDFs and are not ours to publish',
   lichessExplorerApi: 'proxying the explorer needs the deployment\'s Lichess token',
   lichessStudiesApi: 'importing a study needs that same token',
+  vaultHistoryApi:
+    'recovery reads vault/.history.git through git; the demo vault lives in ' +
+    'the tab and the shims have no node:child_process, so there is no ' +
+    'history to offer and the recovery UI shows its unavailable state',
 };
 
 describe('the static demo keeps up with the app', () => {
