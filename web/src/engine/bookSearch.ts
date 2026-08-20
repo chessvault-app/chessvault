@@ -21,8 +21,26 @@ let engine: StockfishEngine | null = null;
 let resolveSearch: ((line: EngineLine | null) => void) | null = null;
 let queue: Promise<unknown> = Promise.resolve();
 
-/** Deep enough that the time limit is always the one that binds. */
-const DEPTH = 40;
+/**
+ * The limit that normally binds; the caller's millisecond budget is the
+ * backstop behind it.
+ *
+ * This was 40 — deliberately unreachable, so that the clock ended every
+ * search. That made the phase cost exactly its budget: a flat half second
+ * a position, on a machine with eleven idle cores, whatever the position
+ * was. Measured over 81 candidate boards from '1001 Chess Exercises for
+ * Beginners' in this worker, half of them spent the whole 500 ms.
+ *
+ * Depth 16 on ONE thread reads the same 81 in 6.5 s against 26.5 s for
+ * depth 40 at four threads. It agrees with a 3 s reference search on 74 of
+ * them where the old setting agreed on 80, and the six it gives up are
+ * boards it declines to call decisive — they import a tier lower, badged,
+ * rather than wrongly. False verdicts, where a shallow search calls a
+ * position winning that a long one does not, were one in 81; and nothing
+ * is stored on the engine's word anyway, since every line is replayed from
+ * the fen before it is written.
+ */
+const DEPTH = 16;
 
 function ensureEngine(): StockfishEngine {
   engine ??= new StockfishEngine(
