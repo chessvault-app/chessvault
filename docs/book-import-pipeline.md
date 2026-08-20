@@ -198,12 +198,21 @@ history.
 
 For a like-for-like figure from the app rather than the pipeline: the
 1001 book imported in the browser, on a 12-core machine, reads its 126
-pages and 1,033 diagrams in 314 s, then spends 137 s asking the engine
+pages and 1,033 diagrams in 314 s, then spends 8 s asking the engine
 about the 276 boards whose printed answers would not replay. It comes
-out as 958 puzzles — 688 book-parsed, 119 engine-corroborated, 110
-engine-only, 41 engine-unverified — and 75 drafts. Fresh detection, no
+out as 957 puzzles — 688 book-parsed, 108 engine-corroborated, 108
+engine-only, 53 engine-unverified — and 76 drafts. Fresh detection, no
 caches, which is why the book-parsed count sits below the row above:
 that row's read cache holds rects today's detection no longer finds.
+
+That engine phase cost 137 s until it was rebuilt — one four-threaded
+engine searching a fixed half second a board, on a machine with eleven
+idle cores. It is now a pool of single-threaded engines stopping at
+depth 16, which is 16.7x on the same book and the same machine, with the
+scan either side of it unchanged (313.6 s on the run that produced the
+numbers above). What it costs is tier, not puzzles: the engine settled
+269 of the 276 against 270 before, and thirteen boards that used to be
+claimed as corroborated or engine-only now import badged unverified.
 
 The Ultimate Chess Puzzle Book is the weakest of the scans. Ten of its
 pages were scanned upside down; `derotate.ts` turns those back over and

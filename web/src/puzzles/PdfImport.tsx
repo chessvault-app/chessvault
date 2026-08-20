@@ -430,7 +430,7 @@ export function PdfImport({
               {t('Ask the engine where the book cannot be read')}
               <span className="text-subtle block">
                 {t(
-                  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds about a minute per hundred.',
+                  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds a few seconds per hundred.',
                 )}
               </span>
             </span>
