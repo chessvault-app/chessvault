@@ -22,7 +22,15 @@ export function SettingRow({
         <div className="text-base font-medium">{title}</div>
         <div className="text-subtle text-sm">{blurb}</div>
       </div>
-      {children}
+      {/* The control keeps its own width and the words give way, not the
+          other way round. A row is a label and a control competing for one
+          phone-width line: with both able to shrink, the flex algorithm
+          took it out of the CONTROL — artificial latency's 86px menu was
+          handed 74px — and a control too narrow to say what it is set to
+          is worse than a blurb that wraps one line further. Every control
+          used in a row is compact (a switch, a small button, a menu), so
+          none of them can take the row past the card by refusing. */}
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }
