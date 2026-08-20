@@ -100,6 +100,52 @@ export const CASTLE_STYLES: { id: CastleStyle; label: string }[] = [
   { id: 'rook', label: 'Move the king onto the rook (h1)' },
 ];
 
+/**
+ * How large a comment is rendered in the move list.
+ *
+ * 'medium' is what the app rendered for its whole life, and is the default:
+ * 14px against the moves' 16px, a deliberate step down beside a board on a
+ * desktop where the column is read at arm's length.
+ *
+ * It replaces a `stacked:text-base` that lifted the comment to the moves'
+ * size under a board on a phone, on the grounds that 14px was the smallest
+ * thing on the screen anyone was expected to READ rather than glance at.
+ * That was the right size and the wrong mechanism: a viewport cannot tell
+ * how far away the screen is being held, and it left the same document
+ * rendering two ways for reasons the reader could neither see nor change.
+ * The lift is now 'large', and it is a choice — which is the whole point of
+ * this setting, and why the sizes are flat at every width.
+ *
+ * Per-device like the rest of this store, which is what makes that work: the
+ * phone can be set large while the desktop keeps the comment out of the way
+ * of the moves.
+ */
+export type AnnotationSize = 'small' | 'medium' | 'large';
+
+export const ANNOTATION_SIZES: { id: AnnotationSize; label: string }[] = [
+  { id: 'small', label: 'Small' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'large', label: 'Large' },
+];
+
+/**
+ * Written out as whole class strings rather than composed from a size name,
+ * because Tailwind scans for literals — a `text-${size}` here is a class that
+ * never reaches the stylesheet.
+ *
+ * A variation's comment stays one step under the mainline's and keeps its
+ * italic at the call site: what marks it as an aside is the gap between the
+ * two, so the setting moves the pair together rather than closing it.
+ */
+export const ANNOTATION_CLASS: Record<AnnotationSize, { mainline: string; variation: string }> = {
+  // 11px for the aside, which has no scale step of its own — the ladder has
+  // to keep the gap at its bottom rung too, or the smallest setting is the
+  // one where a variation's comment stops reading as one.
+  small: { mainline: 'text-xs', variation: 'text-[0.6875rem]' },
+  medium: { mainline: 'text-sm', variation: 'text-xs' },
+  large: { mainline: 'text-base', variation: 'text-sm' },
+};
+
 export const PIECE_SETS: { id: PieceSet; label: string }[] = [
   { id: 'cburnett', label: 'Cburnett' },
   { id: 'merida', label: 'Merida' },
@@ -183,6 +229,8 @@ interface PrefsState {
   castleStyle: CastleStyle;
   /** File and rank labels on the board edge. */
   coordinates: boolean;
+  /** How large a comment is rendered in the move list. */
+  annotationSize: AnnotationSize;
   /** One short vibration when a piece lands. Android only — iOS Safari
       exposes no haptics to web pages, so there the setting is inert. */
   haptics: boolean;
@@ -218,6 +266,7 @@ interface PrefsState {
   setSchemeId: (id: string) => void;
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
+  setAnnotationSize: (size: AnnotationSize) => void;
   setHaptics: (on: boolean) => void;
   setAutosave: (on: boolean) => void;
 }
@@ -261,6 +310,8 @@ export const usePrefs = create<PrefsState>()(
       captureSound: 'take-1',
       castleStyle: 'king',
       coordinates: true,
+      // What the move list has always rendered a comment at.
+      annotationSize: 'medium',
       haptics: true,
       autosave: false,
       schemeId: 'default',
@@ -279,6 +330,7 @@ export const usePrefs = create<PrefsState>()(
       setCaptureSound: (captureSound) => set({ captureSound }),
       setCastleStyle: (castleStyle) => set({ castleStyle }),
       setCoordinates: (coordinates) => set({ coordinates }),
+      setAnnotationSize: (annotationSize) => set({ annotationSize }),
       setHaptics: (haptics) => set({ haptics }),
       setAutosave: (autosave) => set({ autosave }),
       setSchemeId: (schemeId) => {

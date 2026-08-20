@@ -6,6 +6,7 @@ import { cn } from '@/lib/cn';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
 import { useReview } from '@/store/review';
+import { ANNOTATION_CLASS, usePrefs } from '@/store/prefs';
 import { useBookTags } from '@/lib/opening';
 import { t } from '@/lib/i18n';
 
@@ -161,6 +162,7 @@ export function MainlineTable({
   // before any judgment exists it is clutter.
   const reviewed = useReview((s) => s.points !== null);
   const bookIds = useBookTags(tree, reviewed);
+  const annotation = ANNOTATION_CLASS[usePrefs((s) => s.annotationSize)];
   const keep = (ids: NodeId[]): NodeId[] =>
     currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
 
@@ -229,12 +231,18 @@ export function MainlineTable({
         out.push(
           <p
             key={`${mainChildId}-comment`}
-            // A step down from the moves it annotates on a desktop, where
-            // the column is read at arm's length beside the board. Stacked,
-            // the same band sits under the board on a phone and 14px was
-            // the smallest thing on the screen anyone was expected to READ
-            // rather than glance at, so there it matches the moves.
-            className="border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5 text-sm leading-relaxed stacked:text-base"
+            // Size is Settings > Appearance > Annotation size, and is flat at
+            // every width — see prefs for what replaced the `stacked:` lift
+            // that used to live on this line.
+            // `leading-relaxed` AFTER the size: cn merges Tailwind, and a
+            // font size dropping an earlier line height is exactly what it
+            // is for — put it first and the comment reads at the size's own
+            // tighter leading (measured: 14px/20px instead of 14px/22.75px).
+            className={cn(
+              'border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5',
+              annotation.mainline,
+              'leading-relaxed',
+            )}
           >
             {child.comment}
           </p>,
@@ -358,6 +366,7 @@ export function PromoteStrip({
  * variation rendered as a nested block.
  */
 function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookIds }: LineProps) {
+  const annotation = ANNOTATION_CLASS[usePrefs((s) => s.annotationSize)];
   const items: React.ReactNode[] = [];
   let cursor: NodeId | undefined = fromId;
   const blackFirst = blackToMoveAtRoot(tree);
@@ -394,7 +403,10 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
       items.push(
         <p
           key={`${mainChildId}-comment`}
-          className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-xs italic"
+          className={cn(
+            'text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 italic',
+            annotation.variation,
+          )}
         >
           {child.comment}
         </p>,
@@ -449,6 +461,7 @@ function VariationBranch({
   bookIds: Set<NodeId>;
 }) {
   const node = getNode(tree, startId);
+  const annotation = ANNOTATION_CLASS[usePrefs((s) => s.annotationSize)];
   return (
     <>
       <MoveChip
@@ -463,7 +476,12 @@ function VariationBranch({
       {/* The variation's own first move is rendered here rather than by `Line`,
           so its comment has to be emitted here too or it would be dropped. */}
       {node.comment && (
-        <p className="text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 text-xs italic">
+        <p
+          className={cn(
+            'text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 italic',
+            annotation.variation,
+          )}
+        >
           {node.comment}
         </p>
       )}

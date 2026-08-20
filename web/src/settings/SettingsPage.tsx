@@ -16,7 +16,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { formatWhen } from '@/lib/dates';
 import { navigate, up } from '@/lib/router';
-import { BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
+import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -461,7 +461,7 @@ function DesktopCard() {
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, castleStyle, coordinates, setBoardTheme, setPieces, setSchemeId, setCastleStyle, setCoordinates } =
+  const { boardTheme, pieces, schemeId, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setCastleStyle, setCoordinates, setAnnotationSize } =
     usePrefs();
 
   return (
@@ -555,6 +555,20 @@ function AppearanceCard() {
           onChange={(v) => setPieces(v as PieceSet)}
           ariaLabel={t('Piece set')}
           groups={[{ options: PIECE_SETS.map(({ id, label }) => ({ value: id, label })) }]}
+        />
+      </Field>
+
+      {/* Appearance rather than Documents: it changes how one panel is
+          drawn on THIS device, and nothing about the document — the same
+          study read on a phone and a desktop is the same file either way.
+          Named for the size rather than the subject, so it cannot be read
+          as a switch for whether annotations show at all. */}
+      <Field label="Annotation size">
+        <Select
+          value={annotationSize}
+          onChange={(v) => setAnnotationSize(v as AnnotationSize)}
+          ariaLabel={t('Annotation size')}
+          groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
         />
       </Field>
 

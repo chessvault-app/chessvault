@@ -785,6 +785,12 @@ export const ko: Record<string, string> = {
   'Play a click on moves and captures.': '수와 기물 잡기에 소리를 냅니다.',
   'Vibrate on moves': '수를 둘 때 진동',
   'One short tick when your piece lands.': '기물을 놓을 때 짧게 한 번 진동합니다.',
+  'Annotation size': '주석 크기',
+  // The middle size reuses the dictionary's own Medium, down with the
+  // difficulty words — one key, one word, and duplicating it here would
+  // be two entries free to drift apart.
+  Small: '작게',
+  Large: '크게',
   'Board coordinates': '보드 좌표',
   'File and rank labels on the board edge.': '보드 가장자리의 파일·랭크 표시입니다.',
   'Two-factor authentication': '2단계 인증',
