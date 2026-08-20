@@ -198,8 +198,13 @@ history.
 
 For a like-for-like figure from the app rather than the pipeline: the
 1001 book imported in the browser, on a 12-core machine, reads its 126
-pages and 1,033 diagrams in 314 s, then spends 137 s asking the engine
-about the 276 boards whose printed answers would not replay. It comes
+pages and 1,033 diagrams in 314 s, then asks the engine about the 276
+boards whose printed answers would not replay. That second phase cost
+137 s when it was one four-threaded engine searching a fixed half second
+a board; it is now a pool of single-threaded ones stopping at depth 16,
+which measured 18x faster over 81 of those boards (26.63 s to 1.47 s,
+same machine, same worker). The whole-book figure has NOT been remeasured
+since — on those per-board timings it should be under 10 s. It comes
 out as 958 puzzles — 688 book-parsed, 119 engine-corroborated, 110
 engine-only, 41 engine-unverified — and 75 drafts. Fresh detection, no
 caches, which is why the book-parsed count sits below the row above:
