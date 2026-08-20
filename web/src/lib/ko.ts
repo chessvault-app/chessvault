@@ -1593,9 +1593,6 @@ export const ko: Record<string, string> = {
   'This is what “{name}” held {when}.': '{when} “{name}”의 내용입니다.',
   'The version you have now is kept too, so you can come back to it here.':
     '지금 버전도 함께 보관되므로 여기서 다시 되돌아올 수 있습니다.',
-  // The ⋯ menu on a document, named for what it acts on — the moves
-  // panel's own ⋯ is titled 수순 and is a different menu.
-  Document: '문서',
   'Deleted documents': '삭제된 문서',
   'Nothing is missing.': '사라진 문서가 없습니다.',
   'Bring this back': '되살리기',

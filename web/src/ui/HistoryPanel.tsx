@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { History, MoreHorizontal, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { History, RotateCcw } from 'lucide-react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { t } from '@/lib/i18n';
-import { ActionSheet } from './ActionSheet';
 import { Button } from './Button';
 import { Sheet } from './Sheet';
 import { Skeleton } from './Skeleton';
@@ -215,15 +214,17 @@ function HistorySheet({
 }
 
 /**
- * The document's own overflow menu.
+ * The way in: a clock in the document's header.
  *
- * Earlier versions is a document action, not a moves action, so it does
- * not belong in the moves panel's ⋯ (which the Board shares, where there
- * is no document at all). It gets the header's own ⋯ instead — the same
- * control every shelf card already wears, in the one place all three
- * document kinds have in common.
+ * It sat behind the header's ⋯ for a while, on the reasoning that a
+ * document's actions belong in a menu. But this is the document's only
+ * header action besides Edit and Save, and a menu holding one item is a
+ * second press to reach a thing that had room to be visible — the ⋯ was
+ * chrome standing in for a single button. First of the three, because it
+ * is the one that looks BACKWARDS: history, then editing, then saving,
+ * left to right in the order the document moves through time.
  */
-export function DocumentMenu({
+export function DocumentHistory({
   kind,
   id,
   name,
@@ -234,42 +235,26 @@ export function DocumentMenu({
   name: string;
   onRestored: () => void;
 }) {
-  const trigger = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
-  const [history, setHistory] = useState(false);
 
   return (
     <>
       <Button
-        ref={trigger}
         variant="ghost"
         size="icon-sm"
-        title={t('More')}
+        className="shrink-0"
+        title={t('Earlier versions')}
         active={open}
         onClick={() => setOpen(true)}
       >
-        <MoreHorizontal className="size-3.5" />
+        <History className="size-3.5" />
       </Button>
       {open && (
-        <ActionSheet
-          title={t('Document')}
-          anchor={trigger}
-          actions={[
-            {
-              label: 'Earlier versions',
-              icon: History,
-              onSelect: () => setHistory(true),
-            },
-          ]}
-          onClose={() => setOpen(false)}
-        />
-      )}
-      {history && (
         <HistorySheet
           kind={kind}
           id={id}
           name={name}
-          onClose={() => setHistory(false)}
+          onClose={() => setOpen(false)}
           onRestored={onRestored}
         />
       )}

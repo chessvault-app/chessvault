@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button';
 import { ClearableInput } from '@/ui/Input';
 import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
-import { DocumentMenu } from '@/ui/HistoryPanel';
+import { DocumentHistory } from '@/ui/HistoryPanel';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -388,6 +388,8 @@ function NoteEditor({
           <ChevronLeft className="size-3.5" />
         </Button>
         <NoteTitle id={id} />
+        {/* History, then Edit, then Save — see StudyView's header. */}
+        <DocumentHistory kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <Button
           variant={editable ? 'primary' : 'secondary'}
           size="sm"
@@ -397,7 +399,6 @@ function NoteEditor({
           <Pencil className="size-3.5 md:mr-1" />
           <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
-        <DocumentMenu kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <SaveControl
           state={saveState}
           autoSaves={autosave}

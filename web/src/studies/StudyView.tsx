@@ -42,7 +42,7 @@ import { PaneTabs } from '@/ui/PaneTabs';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl } from '@/ui/SaveControl';
-import { DocumentMenu } from '@/ui/HistoryPanel';
+import { DocumentHistory } from '@/ui/HistoryPanel';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { AnnotationPane } from './AnnotationPane';
@@ -202,6 +202,17 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <ChevronLeft className="size-3.5" />
       </Button>
       <TitleEditor id={id} backSection={backSection} />
+      {/* History, then Edit, then Save: what this document has been, what
+          it is becoming, what it becomes. */}
+      <DocumentHistory
+        kind={kind === 'game' ? 'games' : 'studies'}
+        id={id}
+        name={id.split('/').at(-1)!}
+        // Re-open rather than patch the store: a restore replaced the file
+        // on disk, and the document in the tab is now a stale copy of
+        // something that no longer exists.
+        onRestored={() => void open(id, base)}
+      />
       {/* One edit button for the whole document, in the header — the shape
           Notes uses. There is no separate pencil for the title (double-click
           it, as in a note) and none inside the moves panel: editing a
@@ -216,17 +227,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         <Pencil className="size-3.5 md:mr-1" />
         <span className="max-md:hidden">{editing ? t('Done') : t('Edit')}</span>
       </Button>
-      {/* The document's own menu, distinct from the moves panel's — that
-          one is shared with the Board, which has no document. */}
-      <DocumentMenu
-        kind={kind === 'game' ? 'games' : 'studies'}
-        id={id}
-        name={id.split('/').at(-1)!}
-        // Re-open rather than patch the store: a restore replaced the file
-        // on disk, and the document in the tab is now a stale copy of
-        // something that no longer exists.
-        onRestored={() => void open(id, base)}
-      />
       <SaveControl
         state={saveState}
         error={error}
