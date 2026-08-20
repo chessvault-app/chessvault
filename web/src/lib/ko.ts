@@ -531,6 +531,18 @@ export const ko: Record<string, string> = {
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',
   'Try harder on boards that fail': '실패한 보드에 더 공을 들이기',
+  'That PDF is too big to read in the browser — the limit is {mb} MB.':
+    '그 PDF는 브라우저에서 읽기에 너무 큽니다 — 한도는 {mb} MB입니다.',
+  'checking the PDF': 'PDF를 확인하는 중',
+  'Ask the engine where the book cannot be read': '책을 읽을 수 없는 곳은 엔진에 묻기',
+  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds about a minute per hundred.':
+    '인쇄된 정답이 재생되지 않은 포지션은 대신 엔진이 탐색하고, 얼마나 알아냈는지에 따라 표시를 달아 가져옵니다 — 엔진의 수가 책이 인쇄한 칸에 떨어질 때가 가장 높습니다. 백 개마다 1분쯤 더 걸립니다.',
+  'checking positions the book’s answers did not fit ({done} of {total})':
+    '책의 정답이 맞지 않은 포지션을 확인하는 중 ({done}/{total})',
+  '{n} more came from the engine, where the book’s own answer could not be read.':
+    '{n}개는 책의 정답을 읽지 못해 엔진에서 나왔습니다.',
+  '{corroborated} of those play to the squares the book printed, {only} were solved with nothing legible to check against, and {unverified} are a position and a side with no winning line found.':
+    '그중 {corroborated}개는 책이 인쇄한 칸으로 이어지고, {only}개는 대조할 글자가 없는 채로 풀렸으며, {unverified}개는 이기는 수를 찾지 못한 포지션과 둘 차례입니다.',
   'clearing the book': '책을 비우는 중',
   "reading the book's solutions": '책의 정답을 읽는 중',
   'Position from an image': '이미지에서 포지션 읽기',
