@@ -1022,7 +1022,13 @@ function Trainer({
         {/* The column header band: h-9 + the column's gap-3 equals the
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
-        <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
+        {/* pr-[13px] on the right only: the title outdents to the column
+            edge like every other page's, but the session line is a VALUE,
+            and read down the column it sat 13px right of every value in
+            the panels below it — a panel's own text starts inside its
+            border (1px) and its padding (p-3), so that is the line the
+            eye follows. */}
+        <div className="hidden h-9 shrink-0 items-center gap-2 pr-[13px] wide:flex">
             <h1 className="text-fg text-base font-semibold">{title}
           </h1>
           <span className="min-w-0 flex-1" />
