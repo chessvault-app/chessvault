@@ -261,6 +261,28 @@ applies as you touch it and has nothing to confirm. Those get an X on
 invisible. A phone still shows none: the sheet drags away from anywhere
 on itself, which is the gesture it was given instead.
 
+**A window may turn its own page rather than open another.** A sheet
+that needs to show a detail — the contents of one earlier version, say —
+sets `Sheet`'s `onBack` and replaces its own body, and the chevron in the
+top-left corner turns the page back. Escape and Android's Back go to the
+previous page, not out of the sheet. This is the same control, in the
+same corner, that `covered` already draws for a sheet standing over a
+window it has hidden, and the same one a `Modal`'s second page uses.
+
+Reach for it before a second sheet. Two stacked windows for one train of
+thought is a layer too many: the question underneath is still there,
+dimmed, and answering the top one leaves you looking at a window you have
+already finished with. A second page that shows the thing being acted on
+is also the better confirmation — it names what will happen to WHAT,
+where a generic "are you sure?" over the top can only name the action.
+
+And a confirmation is worth having only where something can be lost.
+Restoring an earlier version of an open document overwrites what is there
+and is confirmed on that second page; restoring a deleted one puts back a
+file that is absent and asks nothing, because a question in front of an
+action with nothing to lose is how questions stop being read where they
+matter.
+
 The row-actions sheet (`ActionSheet`, the phone half of a row's ⋯) is
 the exception, and it proves the rule: it is a list of verbs with no
 button row of its own, so there is nowhere for a Cancel to sit that is
