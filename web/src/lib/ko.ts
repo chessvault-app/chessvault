@@ -475,6 +475,10 @@ export const ko: Record<string, string> = {
   'Counts as a failed attempt': '실패한 시도로 기록됩니다',
   'Puzzle not found.': '퍼즐을 찾을 수 없습니다.',
   'That book does not exist.': '그런 책이 없습니다.',
+  "No puzzle books yet. Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.":
+    '아직 퍼즐 책이 없습니다. 종이 책 한 권마다 하나씩 만들고, 보드에서 퍼즐을 직접 입력하거나 책의 PDF를 가져오세요 — 정답과 진행 상황은 책 뒤가 아니라 여기에 남습니다.',
+  'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.':
+    '아직 퍼즐 책이 없습니다. 스캔한 전술 책을 가져오면 다이어그램이 풀 수 있는 문제가 되고, 진행 상황도 함께 기록됩니다.',
   'Nothing matches these filters.': '이 조건에 맞는 것이 없습니다.',
   'Play the solution — every move, both sides.': '정답을 두세요 — 양쪽 모두, 모든 수를.',
   'Record the solution — every move, both sides.': '정답을 기록하세요 — 양쪽 모두, 모든 수를.',

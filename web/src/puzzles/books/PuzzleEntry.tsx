@@ -188,7 +188,7 @@ export function PuzzleEntry({
       <EditorView
         key={prefill ?? 'blank'}
         initialFen={prefill ?? undefined}
-        useLabel="Record solution"
+        useLabel={t('Record solution')}
         onUse={confirmPosition}
       />
     ) : (

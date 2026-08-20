@@ -245,8 +245,9 @@ export function DashboardPage() {
               <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
                 <BookMarked className="text-subtle size-6" strokeWidth={1.5} />
                 <p className="text-muted max-w-xs text-sm leading-relaxed">
-                  No puzzle books yet. Import a scanned tactics book and its diagrams become a
-                  solvable, progress-tracked set.
+                  {t(
+                    'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.',
+                  )}
                 </p>
                 <Button variant="primary" size="sm" onClick={() => navigate('puzzles', 'books')}>
                   <BookMarked className="size-3.5" />

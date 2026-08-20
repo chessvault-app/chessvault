@@ -1028,7 +1028,25 @@ export function ArchiveBrowser({
           only fire here — the collection's rows are the same component in
           a column with twice the room. */}
       {month && (
-        <ul className="@container/arc divide-line max-h-96 min-h-0 divide-y overflow-y-auto border-t border-line sm:max-h-none sm:flex-1">
+        <ul
+          className={cn(
+            '@container/arc divide-line min-h-0 divide-y border-t border-line',
+            // Who scrolls, the list or the thing holding it.
+            //
+            // In a panel it is the list: it sits in a column beside the
+            // collection and 24rem is the share of that column it may
+            // take. In a WINDOW on a phone the window is already a
+            // fixed-height sheet with its own scroller, and the same cap
+            // stopped the list 24rem down a sheet more than twice that
+            // tall — measured at 440x956: an 841px sheet, a 384px list,
+            // 190px of empty surface under it and the last row cut
+            // through the middle. So there the rows simply flow and the
+            // sheet scrolls them, which is what the sheet is for.
+            place === 'window'
+              ? 'sm:max-h-none sm:flex-1 sm:overflow-y-auto'
+              : 'max-h-96 overflow-y-auto sm:max-h-none sm:flex-1',
+          )}
+        >
           {loading === 'games' && visibleMonthGames.length === 0 ? (
             // Rows, not a spinner on an empty box. Fetching a month used to
             // take the games away and leave one line of text where the list
