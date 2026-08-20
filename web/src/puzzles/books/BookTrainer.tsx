@@ -230,8 +230,8 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       await new Promise((r) => setTimeout(r, 2000));
       body = await send();
     }
-    // Fold the server's own new entry into the cache, so the grid is
-    // right on the next puzzle without a refetch.
+    // Fold the server's own new entry into the cache, so the grid and
+    // "next unsolved" are right on the next puzzle without a refetch.
     if (body?.progress) {
       const next = patchProgress(slug, puzzle.id, body.progress);
       // The cache is patched either way; the STATE is only touched while
@@ -410,22 +410,11 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, node, analysing]);
 
-  /**
-   * Where "Next puzzle" goes when the answer is in: the next puzzle in
-   * the book, in printed order.
-   *
-   * It used to be the next UNSOLVED one, wrapping past the end — which
-   * meant working through a book jumped over everything already solved
-   * and then looped back to the front, so the reader lost the book's own
-   * order the moment they revisited a puzzle. The button beside it (the
-   * header's chevron) always meant "the one after this one"; both now
-   * agree, and stopping at the last puzzle is what the chevron does too.
-   *
-   * Drafts are not in this list at all — they live in `book.drafts` and
-   * open the editor, not the solver — so stepping through it never lands
-   * on one that has no solution to submit against.
-   */
-  const nextInBook = (): string | null => book?.puzzles[index + 1]?.id ?? null;
+  const nextUnsolved = (): string | null => {
+    if (!book) return null;
+    const after = book.puzzles.slice(index + 1).concat(book.puzzles.slice(0, index));
+    return after.find((p) => book.progress[p.id]?.last !== 'win')?.id ?? null;
+  };
 
   // The verdict is a coloured line in the panel; say it out loud too
   // (see ui/announce — same treatment as the Lichess trainer's verdicts).
@@ -473,7 +462,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
 
   const solverSide = parseFen(puzzle.fen).unwrap().turn;
   const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
-  const next = nextInBook();
+  const next = nextUnsolved();
   const hasMoves = getNode(tree, tree.rootId).children.length > 0;
   // Bottom-band navigation over the entered line (view-only stepping).
   const tipId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
