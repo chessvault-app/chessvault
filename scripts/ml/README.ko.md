@@ -9,8 +9,8 @@
 > 브라우저에서 다시 스캔하는 대신 1분 만에 책 한 권 전체에 대해 어떻게
 > 측정하는지입니다. 읽는 로직 자체는 공유 코드입니다 —
 > `shared/bookImport.ts`, `bookConfigSearch.ts`, `bookSolve.ts`,
-> `bookGlyphs.ts`, `bookRepair.ts` — 그래서 둘이 서로 어긋날 수
-> 없습니다.
+> `bookGlyphs.ts`, `bookRepair.ts`, `bookEngine.ts` — 그래서 둘이 서로
+> 어긋날 수 없습니다.
 
 저 문서가 가져오기 단계들과 그 단계가 돌리는 모든 스크립트의 색인이고, 이
 파일은 모델 쪽입니다. 둘 사이에는 자기 머리글로만 설명되는 도구 셋이

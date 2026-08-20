@@ -10,22 +10,31 @@ tiers. Everything runs locally; only the resulting vault files matter.
 
 **In the app** is the normal way: open a puzzle book, import its PDF, and
 the browser does the whole thing — renders each page, finds the diagrams,
-reads them with CellNet, reads the page's text layer, pairs numbers to
-diagrams, works out how the book writes its answers, and saves what
-replays as numbered puzzles with evidence. The user picks a file; there
-is nothing to configure, and nothing about the book is written down
+reads them with CellNet across a pool of workers as wide as the machine,
+reads the page's text layer, pairs numbers to diagrams, works out how the
+book writes its answers, saves what replays as numbered puzzles, asks the
+engine about the boards whose printed answer would not replay, and
+uploads the pages all of it points at. The user picks a file; there is
+nothing to configure, and nothing about the book is written down
 anywhere.
 
 **Offline** is the backup and the laboratory. The stages below run the
 same shared code (`shared/bookImport.ts`, `shared/bookConfigSearch.ts`,
-`shared/bookSolve.ts`, `shared/bookGlyphs.ts`, `shared/bookRepair.ts`)
-over pre-rendered pages, which is what makes it
+`shared/bookSolve.ts`, `shared/bookGlyphs.ts`, `shared/bookRepair.ts`,
+`shared/bookEngine.ts`) over pre-rendered pages, which is what makes it
 possible to measure a change against a whole book in a minute instead of
-re-scanning in a browser. The two passes it once carried alone — glyph
-hints and solution-constrained board repair — are in the app now. What
-stays offline-only is the engine tiering of stage 3 and the repair
-search's third cell: the app stops at two edits, because its search runs
-while somebody watches an import finish.
+re-scanning in a browser. The passes it once carried alone — glyph hints,
+solution-constrained board repair, and the engine tiers — are all in the
+app now. What stays offline-only is the repair search's third cell (the
+app stops at two edits, because its search runs while somebody watches an
+import finish) and the things that make measurement fast rather than
+better: the read cache, the engine cache, and `--jobs` sharding.
+
+Beware what those two make of the same book: a warm offline measure reads
+no pixels at all (`read cache: N boards`) and finishes in seconds, while
+the app reads every board every time. Cold and single-process, the two
+are within about 15% of each other per board — 1.01 s offline against
+1.17 s in the browser, of which ~948 ms is CellNet either way.
 
 The per-book config files under `scripts/ml/books/` belong to the offline
 side only. The app states none of it: number style and ceiling are read
@@ -41,7 +50,11 @@ parsed into moves, and replaying those moves on that position is legal
 (with any claimed mate actually mate, and the position passing a
 piece-count reachability gate). One success validates all three inputs
 at once. Everything that fails the chain degrades gracefully into
-engine-backed tiers or drafts — nothing is silently dropped.
+engine-backed tiers or drafts — nothing is silently dropped, and that is
+now true of an import run in the app, not only of the offline pipeline.
+
+Every puzzle carries its evidence whatever tier it landed in: the page it
+was printed on, its rect on that page, and the page its answer is on.
 
 ## Stages (`scripts/ml/`)
 
@@ -71,16 +84,24 @@ engine-backed tiers or drafts — nothing is silently dropped.
    tiers every entry. Validated → book-parsed; else Stockfish solves the
    read position — decisive + overlapping the squares the book's entry
    mentions → engine-corroborated; decisive alone → engine-only; legal +
-   known side → engine-unverified; rest → drafts. Repair ties are
-   settled here: exactly one candidate whose engine line is decisive and
-   square-corroborated imports as a book solution. Engine results cache
-   to `<report>-engine-cache.json`, so re-imports are cheap. Writes the
+   known side → engine-unverified; rest → drafts. That decision is
+   `shared/bookEngine.ts`, which takes the engine as a parameter, so the
+   app runs the identical rule with its own Stockfish worker and the
+   tests run it against a fake. Repair ties are settled here: exactly one
+   candidate whose engine line is decisive and square-corroborated
+   imports as a book solution. Engine results cache to
+   `<report>-engine-cache.json`, so re-imports are cheap. Writes the
    vault book (puzzles/drafts/book.json + evidence manifest).
 4. **Evidence images** — `evidence_jpegs.py` converts emitted grays.
 5. **Solution pages** — `enrich_solution_pages.py <cfg>` stamps
    every puzzle/draft with the solutions-chapter page covering its
    number (rendered separately into `diagrams/`), so the trainer can
-   peek at the printed answer.
+   peek at the printed answer. The app does the same for itself, from
+   the same rule in `answerPageIndex()` (`shared/bookImport.ts`): anchor
+   a number where the answers pages print it, and fall back to the page
+   whose run of numbers covers it. It renders and uploads those pages
+   too — an answers chapter holds no diagrams, so nothing else in a scan
+   would ever have kept them.
 
 Self-supervised text helpers (both take `--book`):
 - `digit_labels.py` — learns the book's digit shapes from text-layer
@@ -157,6 +178,15 @@ history.
 | The Woodpecker Method | 1,043 / 1,128 | 619 | 81 |
 | The Ultimate Chess Puzzle Book | 689 / 1001 | 204 | 166 |
 | 5334 Problems, Combinations and Games | 4,878 / 5,334 | 4,878 | — |
+
+For a like-for-like figure from the app rather than the pipeline: the
+1001 book imported in the browser, on a 12-core machine, reads its 126
+pages and 1,033 diagrams in 314 s, then spends 137 s asking the engine
+about the 276 boards whose printed answers would not replay. It comes
+out as 958 puzzles — 688 book-parsed, 119 engine-corroborated, 110
+engine-only, 41 engine-unverified — and 75 drafts. Fresh detection, no
+caches, which is why the book-parsed count sits below the row above:
+that row's read cache holds rects today's detection no longer finds.
 
 The Ultimate Chess Puzzle Book is the weakest of the scans. Ten of its
 pages were scanned upside down; `derotate.ts` turns those back over and
