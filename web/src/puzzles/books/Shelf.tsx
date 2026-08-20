@@ -378,9 +378,9 @@ export function Shelf() {
           <div className="bg-surface border-line flex flex-col items-center gap-3 rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle size-6" />
             <p className="text-muted text-base">
-              No puzzle books yet. Create one per paper book, then enter its
-              puzzles from the board or import the book's own PDF — solutions
-              and progress live here, not in the back of the book.
+              {t(
+                "No puzzle books yet. Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.",
+              )}
             </p>
             {/* The empty state ends on the press that fills it, like every
                 other shelf's. */}
