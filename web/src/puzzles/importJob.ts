@@ -725,6 +725,14 @@ async function readSolutions(
   const repaired = options.repair
     ? await repairUnread(pdf, geometry, labelled, boards, result)
     : [];
+  // The repair pass is the last thing that reads a board, and the engine
+  // phase after it now runs a pool of its own. Six classification workers,
+  // each holding the model, have nothing left to do and no reason to sit
+  // through it beside six engines — this is the longest, widest moment of
+  // an import, and on a phone it is the one that decides whether it
+  // survives. The scan's own release stays where it is: it is what covers
+  // the paths that never reach here, and running twice releases nothing.
+  releasePool();
   const solved = [...result.puzzles, ...repaired];
   solved.sort((a, b) => a.number - b.number);
 
