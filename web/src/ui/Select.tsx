@@ -328,8 +328,23 @@ export function Select({
         {/* One grid cell holding every option at once. The invisible ones
             set the column's width — the widest of them wins — and the
             visible one is laid over the top of it. That is what makes the
-            trigger keep one width without a number being chosen for it. */}
-        <span className={cn('min-w-0 flex-1 text-left', steady ? 'grid' : 'truncate')}>
+            trigger keep one width without a number being chosen for it.
+
+            minmax(0,auto), because a bare `grid` column never shrinks past
+            its widest option even when the trigger has less room than that:
+            in the settings row for artificial latency the trigger got 74px
+            for 86px of content, and "0.5 seconds" was painted straight
+            across the button's own right border and out over the chevron.
+            A 0 floor lets the track take whatever width the trigger really
+            has, so the label truncates the way a too-narrow label should.
+            overflow-hidden clips the invisible sizers with it — they are
+            whitespace-nowrap and would otherwise still spill. */}
+        <span
+          className={cn(
+            'min-w-0 flex-1 text-left',
+            steady ? 'grid grid-cols-[minmax(0,auto)] overflow-hidden' : 'truncate',
+          )}
+        >
           {steady &&
             flat.map((option) => (
               <span
