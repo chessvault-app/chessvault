@@ -535,8 +535,8 @@ export const ko: Record<string, string> = {
     '그 PDF는 브라우저에서 읽기에 너무 큽니다 — 한도는 {mb} MB입니다.',
   'checking the PDF': 'PDF를 확인하는 중',
   'Ask the engine where the book cannot be read': '책을 읽을 수 없는 곳은 엔진에 묻기',
-  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds about a minute per hundred.':
-    '인쇄된 정답이 재생되지 않은 포지션은 대신 엔진이 탐색하고, 얼마나 알아냈는지에 따라 표시를 달아 가져옵니다 — 엔진의 수가 책이 인쇄한 칸에 떨어질 때가 가장 높습니다. 백 개마다 1분쯤 더 걸립니다.',
+  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds a few seconds per hundred.':
+    '인쇄된 정답이 재생되지 않은 포지션은 대신 엔진이 탐색하고, 얼마나 알아냈는지에 따라 표시를 달아 가져옵니다 — 엔진의 수가 책이 인쇄한 칸에 떨어질 때가 가장 높습니다. 백 개마다 몇 초씩 더 걸립니다.',
   'checking positions the book’s answers did not fit ({done} of {total})':
     '책의 정답이 맞지 않은 포지션을 확인하는 중 ({done}/{total})',
   '{n} more came from the engine, where the book’s own answer could not be read.':
