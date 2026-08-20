@@ -2,46 +2,21 @@ import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
 import { VAULT } from './paths.ts';
+import { git, historyGitDir, HISTORY_DIR_NAME } from './vaultGit.ts';
 
 /**
  * Vault safety net: every change inside vault/ is auto-committed to a
  * dedicated history repo, so any bug (or bad edit) that mangles a study,
  * game or book is recoverable with plain git.
  *
- * The history repo's git-dir lives INSIDE the vault as `.history.git` (it
- * moves with the data) but there is no `.git` file or directory marker in
- * the worktree itself — the project repo, which deliberately tracks vault
- * documents too, keeps seeing plain files rather than a submodule
- * boundary. All commands run as `git --git-dir=… --work-tree=…`, the
- * dotfiles pattern.
+ * How the repo is addressed — the git-dir inside the vault, the worktree
+ * flag, the committer identity — lives in server/vaultGit.ts, shared with
+ * the reader that serves this history back to the app.
  *
  * Browse it with:  git --git-dir=vault/.history.git log --stat
  */
 
-const HISTORY_DIR_NAME = '.history.git';
 const DEBOUNCE_MS = 15_000;
-
-/** Committer identity for autosaves; nothing global is touched. */
-const IDENTITY = [
-  '-c',
-  'user.name=Chess Vault',
-  '-c',
-  'user.email=vault@localhost',
-];
-
-function git(gitDir: string, workTree: string, args: string[]): Promise<string> {
-  return new Promise((resolvePromise, reject) => {
-    execFile(
-      'git',
-      ['--git-dir', gitDir, '--work-tree', workTree, ...IDENTITY, ...args],
-      { timeout: 60_000 },
-      (error, stdout, stderr) => {
-        if (error) reject(new Error(stderr.trim() || error.message));
-        else resolvePromise(stdout);
-      },
-    );
-  });
-}
 
 export interface VaultBackup {
   /** Debounced; called by the fs watcher, exposed for tests. */
@@ -60,7 +35,7 @@ export async function startVaultBackup(
   dir: string = VAULT,
   debounceMs: number = DEBOUNCE_MS,
 ): Promise<VaultBackup> {
-  const gitDir = resolve(dir, HISTORY_DIR_NAME);
+  const gitDir = historyGitDir(dir);
 
   if (!existsSync(gitDir)) {
     mkdirSync(dir, { recursive: true });
