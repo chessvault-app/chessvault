@@ -1579,4 +1579,17 @@ export const ko: Record<string, string> = {
   // chips reuse those entries rather than coining second translations.
   'Back-rank mate': '백랭크 메이트',
   'Temporary sacrifice': '일시적 희생',
+  // --- earlier versions and recovery ---------------------------------------
+  // 되돌리기 is undo; putting a document back to an earlier state is 복원.
+  'Earlier versions': '이전 버전',
+  'Restore this version': '이 버전으로 복원',
+  Restore: '복원',
+  'Every change to “{name}” is kept automatically. Pick a time to look at it.':
+    '“{name}”의 모든 변경 사항이 자동으로 보관됩니다. 시점을 골라 살펴보세요.',
+  'This vault is not keeping a history, so there is nothing earlier to show.':
+    '이 보관함은 기록을 남기지 않으므로 보여줄 이전 버전이 없습니다.',
+  'This is the only version so far — nothing has changed since it was created.':
+    '아직 이 버전뿐입니다 — 만들어진 뒤로 바뀐 것이 없습니다.',
+  'Replace “{name}” with the version from {when}? The version you have now is kept too, so you can come back to it here.':
+    '“{name}”을(를) {when} 버전으로 바꿀까요? 지금 버전도 함께 보관되므로 여기서 다시 되돌아올 수 있습니다.',
 };

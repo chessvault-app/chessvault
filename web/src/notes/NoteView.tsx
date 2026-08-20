@@ -9,6 +9,7 @@ import { Button } from '@/ui/Button';
 import { ClearableInput } from '@/ui/Input';
 import { RecoverySheet } from '@/ui/RecoverySheet';
 import { SaveControl, type SaveState } from '@/ui/SaveControl';
+import { HistoryButton, HistoryPanel } from '@/ui/HistoryPanel';
 import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -45,6 +46,13 @@ export function NoteView({ id }: { id: string }) {
    * saving. Offered, never applied: see RecoverySheet.
    */
   const [recovery, setRecovery] = useState<{ pgn: string; at: string } | null>(null);
+  /**
+   * Bumped when an earlier version is restored. The file on disk changed
+   * underneath the open editor, so the note is re-fetched and the editor
+   * remounted on it — patching the live document would leave the save
+   * baseline describing a file that no longer exists.
+   */
+  const [restored, setRestored] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +76,7 @@ export function NoteView({ id }: { id: string }) {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+  }, [id, restored]);
 
   if (failed) {
     return (
@@ -95,7 +103,7 @@ export function NoteView({ id }: { id: string }) {
 
   return (
     <NoteEditor
-      key={id}
+      key={`${id}:${restored}`}
       id={id}
       initialDoc={initialDoc}
       loaded={loaded}
@@ -105,6 +113,7 @@ export function NoteView({ id }: { id: string }) {
       saveTimer={saveTimer}
       recovery={recovery}
       onRecoveryAnswered={() => setRecovery(null)}
+      onRestored={() => setRestored((n) => n + 1)}
     />
   );
 }
@@ -119,6 +128,7 @@ function NoteEditor({
   saveTimer,
   recovery,
   onRecoveryAnswered,
+  onRestored,
 }: {
   id: string;
   initialDoc: object;
@@ -132,10 +142,13 @@ function NoteEditor({
   /** A copy the vault kept from a session that ended without saving. */
   recovery: { pgn: string; at: string } | null;
   onRecoveryAnswered: () => void;
+  /** An earlier version was written over the file; re-read it. */
+  onRestored: () => void;
 }) {
   // Notes open read-only (wiki-links follow on plain click); the header's
   // Edit button switches the TipTap editor live.
   const [editable, setEditable] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   /**
    * What is on the server, so an edit can be told from a settling node.
    *
@@ -385,6 +398,8 @@ function NoteEditor({
           <Pencil className="size-3.5 md:mr-1" />
           <span className="max-md:hidden">{editable ? t('Done') : t('Edit')}</span>
         </Button>
+        {/* Beside Save: what this note becomes, and what it has been. */}
+        <HistoryButton onClick={() => setHistoryOpen(true)} />
         <SaveControl
           state={saveState}
           autoSaves={autosave}
@@ -395,6 +410,16 @@ function NoteEditor({
       </div>
 
       <EditorContent editor={editor} className="min-h-0 flex-1" />
+
+      {historyOpen && (
+        <HistoryPanel
+          kind="notes"
+          id={id}
+          name={id.split('/').at(-1)!}
+          onClose={() => setHistoryOpen(false)}
+          onRestored={onRestored}
+        />
+      )}
 
       {recovery && editor && (
         <RecoverySheet
