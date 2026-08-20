@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
-import { AnalysisBoard } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
 import { PaneTabs } from '@/ui/PaneTabs';
@@ -816,8 +816,17 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
 
       {/* Phones: the bottom band navigates the entered line, like every
           other board page. The solver's actions (Submit, Solution, Skip)
-          live in the Puzzle panel above — no duplicates here. */}
+          live in the Puzzle panel above — no duplicates here.
+
+          Once the puzzle is over the board is AnalysisBoard, driven by the
+          analysis store rather than this component's tree, so these
+          buttons moved nothing — the same dead bar the puzzle trainer had.
+          `keyboard={false}`: the strip inside AnalysisBoard, hidden here
+          by its own classes, already owns the arrow keys. */}
       <MobileActionBar>
+        {analysing ? (
+          <BoardControls keyboard={false} className="py-1.5" />
+        ) : (
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
           <Button variant="ghost" size="icon" disabled={atRoot} onClick={() => goTo(tree.rootId)} title={t('Start')}>
             <ChevronFirst className="size-[1.1rem]" />
@@ -835,6 +844,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             <FlipVertical2 className="size-[1.1rem]" />
           </Button>
         </div>
+        )}
       </MobileActionBar>
     </div>
   );

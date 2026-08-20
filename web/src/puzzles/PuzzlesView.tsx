@@ -23,7 +23,7 @@ import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
-import { AnalysisBoard } from '@/board/AnalysisBoard';
+import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { BOARD_ANIM_MS, Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -1075,8 +1075,19 @@ function Trainer({
 
       {/* Phones: the bottom bar steps through the moves played so far, like
           every other board page. The puzzle's own actions (hint, solution,
-          skip, next) live in the panel above — no duplicates here. */}
+          skip, next) live in the panel above — no duplicates here.
+
+          Once the puzzle is over the board below is AnalysisBoard and the
+          line lives in the analysis store, so the buttons that drive
+          `review` drive nothing: all four sat there dead (Forward and
+          Latest permanently disabled, since `review` never leaves null),
+          and so did Flip. The analysis pages' own control strip is what
+          moves that board — `keyboard={false}` because the hidden
+          BoardControls inside AnalysisBoard already owns the arrow keys. */}
       <MobileActionBar>
+        {analysing ? (
+          <BoardControls keyboard={false} className="py-1.5" />
+        ) : (
         <div className="flex flex-1 items-center justify-center gap-1 py-1.5">
           <Button variant="ghost" size="icon" disabled={plies === 0} onClick={() => goToPly(1)} title={t('First move')}>
             <ChevronFirst className="size-[1.1rem]" />
@@ -1094,6 +1105,7 @@ function Trainer({
             <FlipVertical2 className="size-[1.1rem]" />
           </Button>
         </div>
+        )}
       </MobileActionBar>
     </div>
   );
