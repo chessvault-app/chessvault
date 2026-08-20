@@ -64,6 +64,10 @@ describe('engineTier', () => {
     );
     expect(out?.provenance).toBe('engine-unverified');
     expect(out?.uci).toEqual(['a1a2', 'b8c8']);
+    // And on the strength of ONE search: the badged tier reads the line out
+    // of the search that decided it was not decisive, rather than asking
+    // the same position the same question twice.
+    expect(search.asked).toHaveLength(1);
   });
 
   it('leaves a draft when there is neither a side nor a verdict', async () => {

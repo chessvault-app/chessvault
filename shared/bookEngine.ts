@@ -160,9 +160,17 @@ export async function engineTier(
   };
 
   let solved: (EngineLine & { side: 'w' | 'b' }) | null = null;
+  /**
+   * The stated side's search, kept rather than dropped. The unverified
+   * tier below used to search this same position a second time to get a
+   * line out of it — the identical fen for the identical budget, when the
+   * answer was already in hand. Every board that ends up badged cost two
+   * searches to say what one had said.
+   */
+  let stated: (EngineLine & { side: 'w' | 'b' }) | null = null;
   if (candidate.side) {
-    const line = await trySide(candidate.side);
-    if (decisive(line)) solved = line;
+    stated = await trySide(candidate.side);
+    if (decisive(stated)) solved = stated;
   } else {
     // No side to go on: the position has to say which one it is, and it
     // only counts if one side is decisively better than the other.
@@ -181,14 +189,11 @@ export async function engineTier(
 
   // Nothing decisive, but the position is legal and the book said whose
   // move it is: import it badged rather than dropping what was read.
-  if (!solved && candidate.side) {
+  if (!solved && candidate.side && stated) {
     const fen = fullFen(placement, candidate.side);
-    if (positionOf(fen)) {
-      const best = await search(fen, 500);
-      const line = best ? lineFromPv(fen, best.pv, MAX_PLIES) : null;
-      if (line) {
-        return { number, fen, uci: line.uci, san: line.san, provenance: 'engine-unverified' };
-      }
+    const line = lineFromPv(fen, stated.pv, MAX_PLIES);
+    if (line) {
+      return { number, fen, uci: line.uci, san: line.san, provenance: 'engine-unverified' };
     }
   }
   if (!solved) return null;
