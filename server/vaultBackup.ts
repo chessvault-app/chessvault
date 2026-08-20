@@ -23,7 +23,19 @@ export interface VaultBackup {
   schedule: () => void;
   /** Commit now if anything changed. Resolves when the commit is done. */
   commitNow: () => Promise<void>;
-  stop: () => void;
+  /**
+   * Stop watching, and resolve once the git work already in flight is
+   * finished — not merely once it has been abandoned.
+   *
+   * Clearing the timer and closing the watcher stops anything NEW from
+   * starting, but a commit already running is a child process with its
+   * work-tree inside the vault. On Windows a directory a live process
+   * holds cannot be removed, so a caller that stopped the backup and
+   * immediately deleted the vault got EPERM — intermittently, depending
+   * on whether the commit had finished. On Linux the delete succeeds
+   * regardless, which is why it showed up on one platform only.
+   */
+  stop: () => Promise<void>;
 }
 
 /**
@@ -164,6 +176,9 @@ export async function startVaultBackup(
     stop: () => {
       if (timer) clearTimeout(timer);
       watcher?.close();
+      // `running` is the serialised chain of git calls; awaiting it is
+      // what makes "stopped" mean the child processes are gone too.
+      return running;
     },
   };
 }

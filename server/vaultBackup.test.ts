@@ -17,8 +17,10 @@ describe('vault backup', () => {
   let dir: string;
   let backup: VaultBackup | null = null;
 
-  afterEach(() => {
-    backup?.stop();
+  afterEach(async () => {
+    // Awaited: stop() resolves when the git children are gone, and on
+    // Windows the directory cannot be removed until they are.
+    await backup?.stop();
     backup = null;
     rmSync(dir, { recursive: true, force: true });
   });
@@ -60,7 +62,7 @@ describe('vault backup', () => {
     expect(files).not.toContain('big.pgn');
 
     // Second start reuses the repo instead of re-initialising.
-    backup.stop();
+    await backup.stop();
     writeFileSync(join(dir, 'games.json'), '{"a":1}\n');
     backup = await startVaultBackup(dir, 50);
     expect(log(dir)).toHaveLength(2);

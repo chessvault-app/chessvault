@@ -26,8 +26,10 @@ describe('vault history api', () => {
   let app: Hono;
   let backup: VaultBackup | null = null;
 
-  afterEach(() => {
-    backup?.stop();
+  afterEach(async () => {
+    // Awaited: stop() resolves when the git children are gone, and on
+    // Windows the directory cannot be removed until they are.
+    await backup?.stop();
     backup = null;
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
