@@ -136,6 +136,23 @@ them. Configs are committed; nobody's disk layout should be.
 
 ## Runbook (per book)
 
+Starting a book nobody has read yet is circular, and the order is the
+part that is easy to get wrong: the stages will not run without a
+config, and `search-config.ts` — the thing that works the notation out
+from the book's own printed solutions — scores its candidates against
+boards, which only exist once a stage has read them. So:
+
+1. write a config with the identity fields only (`slug`, `title`,
+   `pages`, `solutionsAfterPage`, `maxNumber`, and the `text`/`cache`/
+   `report` paths), guessing the notation;
+2. run the measure once to fill the read cache;
+3. run `search-config.ts --book <cfg>` and copy the winner in;
+4. measure again — it reads no pixels this time — and check how many
+   solutions validated.
+
+[Importing a book from the shell](book-import-offline.md) walks that
+through with the commands. What follows assumes the config is right.
+
 ```
 # once: extract text, write the config, render pages
 python scripts/ml/extract_pdf_words.py book.pdf data/ml/<slug>-text.json

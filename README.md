@@ -466,6 +466,23 @@ npm run desktop:release        # check, tag, push — GitHub builds the installe
 Server-side, from your workstation: `bash scripts/deploy.sh` updates a
 server, `bash scripts/backup-vault.sh` pulls its vault down.
 
+## Importing a book from a shell (optional)
+
+Importing a PDF is something the app does — Puzzles → Books → Import a
+book — and nothing about it needs a terminal. If you live in one anyway,
+the same import can be driven from `scripts/ml/`, which buys you two
+things the app does not have: reads and engine answers cached to disk, so
+a second run over a book you have already imported is seconds, and
+`--jobs N` to shard the page reads across more than the six workers the
+app uses.
+
+A first import is not dramatically faster — 204 s against the app's 314 s
+for the 1,033 diagrams of a 1,001-puzzle book on a 12-core machine, since
+both run the same model — and the shell route asks you for something the
+app never does: a per-book config file stating the page range and the
+notation. [Importing a book from the shell](docs/book-import-offline.md)
+covers it, including how to bootstrap that config from the book itself.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md) — the plain-files vault, the
@@ -474,6 +491,8 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
   layout rules, and other standing decisions.
 - [Book import pipeline](docs/book-import-pipeline.md) — how PDFs
   become verified puzzle books, with a runbook.
+- [Importing a book from the shell](docs/book-import-offline.md) — the
+  offline route, what it costs you, and when it is worth it.
 - [Prepared databases](docs/databases.md) — the puzzle and reference-game
   databases: built once, copied to the server, rarely touched again.
 - [The repertoire trainer](docs/repertoire.md) — free play and drilling,

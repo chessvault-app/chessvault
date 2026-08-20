@@ -129,6 +129,22 @@
 
 ## 실행 안내서 (책 한 권 기준)
 
+아무도 읽지 않은 책을 시작하는 일은 순환이고, 틀리기 쉬운 부분은 순서입니다.
+단계들은 설정 없이는 돌지 않고, 책이 인쇄한 정답에서 표기법을 알아내 주는
+`search-config.ts`는 후보를 보드에 비추어 채점하는데, 그 보드는 단계가 한 번
+읽어야 생깁니다. 그래서:
+
+1. 신원 항목만 채운 설정을 씁니다(`slug`, `title`, `pages`,
+   `solutionsAfterPage`, `maxNumber`, 그리고 `text`/`cache`/`report` 경로).
+   표기법은 짐작해 둡니다.
+2. 측정을 한 번 돌려 읽기 캐시를 채웁니다.
+3. `search-config.ts --book <cfg>`를 돌리고 이긴 값을 설정에 옮깁니다.
+4. 다시 측정합니다. 이번에는 픽셀을 읽지 않습니다. 검증된 정답 개수를
+   확인합니다.
+
+[셸에서 책 가져오기](book-import-offline.ko.md)가 명령과 함께 이 과정을
+안내합니다. 아래는 설정이 맞다고 보고 이어집니다.
+
 ```
 # 한 번만: 텍스트 추출, 설정 작성, 페이지 렌더링
 python scripts/ml/extract_pdf_words.py book.pdf data/ml/<slug>-text.json
