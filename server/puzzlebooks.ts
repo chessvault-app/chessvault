@@ -314,9 +314,19 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
     // Replace only what a path cannot hold; the title's commas, quotes
     // and Korean survive, so the book keeps the name it was given.
-    const slug = sanitizeSegment(title, '');
-    if (!validSlug(slug)) return c.json({ error: 'that title cannot become a folder name' }, 400);
-    if (existsSync(bookDir(slug))) return c.json({ error: 'a book with that name exists' }, 409);
+    const base = sanitizeSegment(title, '');
+    if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
+    // The slug is an id, fixed at creation; the title is free to move on
+    // without it (PATCH renames, and the importer adopts the PDF's name).
+    // So a folder can be held by a book the shelf lists under a name that
+    // no longer resembles it — a book imported over the Korean "제목 없는 책"
+    // default keeps that folder while calling itself "1001 Chess
+    // Exercises". Refusing the name then told the user a book with that
+    // name exists while showing them no such book, and the New book button
+    // stopped working for good. Take the next free slug instead: the title
+    // is what was asked for, and duplicate titles are already possible.
+    let slug = base;
+    for (let n = 2; existsSync(bookDir(slug)); n += 1) slug = `${base} ${n}`;
     mkdirSync(bookDir(slug), { recursive: true });
     writeJson(resolve(bookDir(slug), 'book.json'), { title, createdAt: new Date().toISOString() });
     writeJson(puzzlesPath(slug), []);

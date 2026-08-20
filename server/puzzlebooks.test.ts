@@ -28,12 +28,49 @@ describe('puzzle books api', () => {
     const { slug } = await created.json();
     expect(slug).toBe('1001 Sacrifices');
 
-    expect((await post('/api/puzzlebooks', { title: '1001 Sacrifices' })).status).toBe(409);
+    // The same title again takes the next free slug rather than failing:
+    // a title is not an id, and two books may share one.
+    const twin = await post('/api/puzzlebooks', { title: '1001 Sacrifices' });
+    expect(twin.status).toBe(200);
+    expect((await twin.json()).slug).toBe('1001 Sacrifices 2');
     expect((await post('/api/puzzlebooks', {})).status).toBe(400);
 
     const list = await (await app.request('/api/puzzlebooks')).json();
-    expect(list.books).toHaveLength(1);
+    expect(list.books).toHaveLength(2);
     expect(list.books[0]).toMatchObject({ title: '1001 Sacrifices', puzzles: 0, solved: 0 });
+  });
+
+  /**
+   * The bug this guards: a book created as the shelf's placeholder and
+   * then renamed keeps its placeholder SLUG, so the folder stays occupied
+   * by a book nothing lists under that name. The shelf picks the next free
+   * TITLE, cannot see the collision coming, and New book answered "a book
+   * with that name exists" forever.
+   */
+  it('creates a book whose name a renamed book still holds on disk', async () => {
+    // Its own shelf: the tests below count the books on the shared one.
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    const shelf = new Hono().route('/api', puzzleBooksApi(own));
+    const make = (title: string): Promise<Response> | Response =>
+      shelf.request('/api/puzzlebooks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+    try {
+      const { slug } = await (await make('Untitled book')).json();
+      await shelf.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: '1001 Chess Exercises for Beginners' }),
+      });
+
+      const again = await make('Untitled book');
+      expect(again.status).toBe(200);
+      expect(await again.json()).toMatchObject({ slug: 'Untitled book 2' });
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
   });
 
   it('renames a book without moving its folder', async () => {
@@ -441,6 +478,10 @@ describe('puzzle books api', () => {
     const slug = encodeURIComponent('1001 Sacrifices');
     expect((await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' })).status).toBe(200);
     expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(404);
+    // Its same-titled twin from the first test, which took the next slug.
+    await app.request(`/api/puzzlebooks/${encodeURIComponent('1001 Sacrifices 2')}`, {
+      method: 'DELETE',
+    });
     const list = await (await app.request('/api/puzzlebooks')).json();
     expect(list.books).toHaveLength(0);
   });
