@@ -23,13 +23,14 @@ const NAG_CLASS: Record<number, string> = {
 };
 
 /**
- * A full-width comment row in the mainline table: a comment that interrupts
- * a move pair, rendered between the rows it interrupts.
+ * A full-width comment row in the mainline table — the chapter introduction
+ * at the top, and every comment that interrupts a move pair below it.
  *
  * `leading-relaxed` AFTER the size: cn merges Tailwind, and a font size
  * dropping an earlier line height is exactly what it is for — put it first
  * and the comment reads at the size's own tighter leading (measured:
  * 14px/20px instead of 14px/22.75px).
+
  */
 const commentRow = (size: string): string =>
   cn(
@@ -128,17 +129,21 @@ export function MoveTreePane({ className }: { className?: string }) {
           className,
         )}
       >
-        {isEmpty ? (
-          <p className="text-subtle px-3 py-6 text-center text-sm">
-            {t('Play a move on the board, or load a FEN or PGN.')}
-          </p>
-        ) : (
+        {/* An introduction with no moves under it yet is still the chapter's
+            text, so the table renders for it alone; the hint stays, under it,
+            because the chapter is still empty of moves. */}
+        {(!isEmpty || root.comment) && (
           <MainlineTable
             tree={tree}
             cursorId={cursorId}
             onSelect={setCursor}
             currentLineOnly={currentLineOnly}
           />
+        )}
+        {isEmpty && (
+          <p className="text-subtle px-3 py-6 text-center text-sm">
+            {t('Play a move on the board, or load a FEN or PGN.')}
+          </p>
         )}
       </div>
       <PromoteStrip tree={tree} cursorId={cursorId} onPromote={(id) => promoteNode(id, true)} />
@@ -183,6 +188,23 @@ export function MainlineTable({
     currentLineOnly ? ids.filter((id) => onPath.has(id)) : ids;
 
   const out: React.ReactNode[] = [];
+
+  // The root's own comment is the chapter introduction (a game's notes). It
+  // hangs off no move — it describes the position before the first ply — and
+  // the walk below only ever reads CHILDREN, so it was written, saved to the
+  // vault, reloaded and never shown again. It renders once, above the table.
+  const rootComment = getNode(tree, tree.rootId).comment;
+  if (rootComment) {
+    out.push(
+      <p
+        key="root-comment"
+        className={commentRow(annotation.mainline)}
+      >
+        {rootComment}
+      </p>,
+    );
+  }
+
   let row: RowState | null = null;
   const blackFirst = blackToMoveAtRoot(tree);
 
