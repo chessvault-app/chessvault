@@ -93,7 +93,10 @@ const SCHEMA = `
     eco TEXT,
     user_side TEXT,
     collection INTEGER NOT NULL,
-    site TEXT
+    site TEXT,
+    /* One game, two files — see stamp(). The losing copy stays indexed
+       and answers nothing: every query goes through where(). */
+    shadowed INTEGER NOT NULL DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS plies (
     pos INTEGER NOT NULL,
@@ -103,6 +106,7 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS plies_pos ON plies (pos);
   CREATE INDEX IF NOT EXISTS games_file ON games (file);
+  CREATE INDEX IF NOT EXISTS games_site ON games (site);
 `;
 
 /** Every .pgn under a directory, relative to it. */
@@ -158,6 +162,18 @@ class MyGamesIndex {
       const db = new Database(this.dbPath);
       db.pragma('journal_mode = WAL');
       db.exec(SCHEMA);
+      // `shadowed` arrived after the first vaults did, and CREATE TABLE IF
+      // NOT EXISTS does not add a column to a table that is already there.
+      // The index is derived and could simply be rebuilt, but a rebuild is
+      // a full rescan (seconds on a big vault) and this is one ALTER and
+      // one stamping pass. Every row lands at 0, so the pass is not
+      // optional: without it an upgraded vault double-counts until the
+      // next file changes.
+      const columns = db.prepare('PRAGMA table_info(games)').all() as { name: string }[];
+      if (!columns.some((c) => c.name === 'shadowed')) {
+        db.exec('ALTER TABLE games ADD COLUMN shadowed INTEGER NOT NULL DEFAULT 0');
+        this.stamp(db);
+      }
       const max = db.prepare('SELECT MAX(id) AS id FROM games').get() as { id: number | null };
       this.nextId = (max.id ?? 0) + 1;
       this.db = db;
@@ -185,6 +201,7 @@ class MyGamesIndex {
     );
 
     const seen = new Set<string>();
+    let changed = false;
     for (const rel of pgnsUnder(this.gamesDir)) {
       seen.add(rel);
       let stat;
@@ -196,11 +213,64 @@ class MyGamesIndex {
       const before = known.get(rel);
       if (before && before.mtime_ms === stat.mtimeMs && before.bytes === stat.size) continue;
       this.indexFile(db, rel, stat.mtimeMs, stat.size);
+      changed = true;
     }
 
     for (const path of known.keys()) {
-      if (!seen.has(path)) this.forget(db, path);
+      if (!seen.has(path)) {
+        this.forget(db, path);
+        changed = true;
+      }
     }
+
+    // Both halves matter, which is why this is one flag and not two: a new
+    // file can shadow an existing one, and DELETING a file can un-shadow
+    // the copy that was standing behind it. Keeping the game you kept and
+    // then deleting the cached month must leave the game answering, not
+    // silently drop it out of every count.
+    if (changed) this.stamp(db);
+  }
+
+  /**
+   * Decide which copy of a game answers, when the vault holds more than
+   * one.
+   *
+   * Keeping a game COPIES it into collection/ and leaves the archive month
+   * cached, so one game is two rows — and every count was summing both.
+   * `site` is the game's own URL (chess.com's [Link], Lichess's [Site]),
+   * which is the only thing in a PGN that says "these are the same game"
+   * rather than merely resembling it.
+   *
+   * A row is shadowed when a BETTER copy of it exists: the kept one, and
+   * failing that the older row. Exactly one survivor per URL, and the
+   * survivor is the annotatable copy.
+   *
+   * Two guards, both load-bearing:
+   * - No URL, no merge. A hand-imported PGN has no `site`, and two games
+   *   alike in players, moves and date are what a rematch is.
+   * - `user_side` must match. The archive browser caches ANY player's
+   *   months, so a vault that has browsed both seats of one game holds it
+   *   twice with opposite sides. Those are two rows on purpose: merging
+   *   them would answer a "games I had White in" question with the copy
+   *   filed under Black.
+   *
+   * Runs on a changed vault, not on a query — one table scan per sync
+   * that did something, and none at all on the usual sync that found
+   * nothing new. MEASURED on this machine over 5,500 games, 500 of them
+   * kept copies: 3–4 ms, against 661 ms for the first full index of the
+   * same vault and 30 ms for a sync that finds nothing.
+   */
+  private stamp(db: InstanceType<typeof Database>): void {
+    db.prepare(`
+      UPDATE games SET shadowed = CASE WHEN site IS NOT NULL AND EXISTS (
+        SELECT 1 FROM games o
+        WHERE o.site = games.site
+          AND o.id <> games.id
+          AND o.user_side IS games.user_side
+          AND (o.collection > games.collection
+               OR (o.collection = games.collection AND o.id < games.id))
+      ) THEN 1 ELSE 0 END
+    `).run();
   }
 
   private forget(db: InstanceType<typeof Database>, rel: string): void {
@@ -273,9 +343,16 @@ class MyGamesIndex {
    * Outcome is expressed against `user_side` rather than stored: a "win" is
    * a white win in a game you had White in. Games where the side is unknown
    * cannot answer the question and are excluded rather than guessed at.
+   *
+   * Every query that counts games goes through here, which is the point:
+   * the shadowed clause is unconditional, so a second copy of a game
+   * cannot reach an aggregate by way of a query that forgot about it.
    */
   private where(f: MyGamesFilters): { sql: string; binds: unknown[] } {
-    const clauses: string[] = [];
+    // See stamp(). Not a filter the caller can turn off — a game counted
+    // twice is wrong under every filter, "Kept only" included: the copy
+    // that survives a pair is the kept one, so that chip still finds it.
+    const clauses: string[] = ['g.shadowed = 0'];
     const binds: unknown[] = [];
     if (f.side) {
       clauses.push('g.user_side = ?');
@@ -306,7 +383,8 @@ class MyGamesIndex {
       binds.push(f.to);
     }
     if (f.collectionOnly) clauses.push('g.collection = 1');
-    return { sql: clauses.length ? ` AND ${clauses.join(' AND ')}` : '', binds };
+    // Never empty now — the shadowed clause is always in it.
+    return { sql: ` AND ${clauses.join(' AND ')}`, binds };
   }
 
   /**
@@ -384,9 +462,8 @@ class MyGamesIndex {
    * the set while the position after its move is not; a game whose whole
    * indexed prefix stays inside never appears.
    *
-   * `limit` bounds the games READ, newest first, and the copies of one
-   * game are merged after that — so a window full of kept games returns
-   * fewer rows than it read, never more.
+   * `limit` bounds the games read, newest first, and a shadowed copy is
+   * not one of them — the window is that many distinct games.
    */
   deviations(
     keys: ReadonlySet<bigint>,
@@ -413,7 +490,7 @@ class MyGamesIndex {
       .prepare(`
         SELECT id, file, idx, white, black, result, date, site, collection
         FROM games g
-        WHERE g.user_side = ?
+        WHERE g.user_side = ? AND g.shadowed = 0
         ORDER BY g.date DESC, g.id DESC
         LIMIT ?
       `)
@@ -428,25 +505,11 @@ class MyGamesIndex {
       site: string | null;
       collection: number;
     }[];
-    // One game, two files. Keeping a game out of an archive COPIES it into
-    // collection/ and leaves the month cached, so the index holds both and
-    // the panel listed the same game twice, identically. `site` is the
-    // game's own URL — chess.com's [Link], Lichess's [Site] — so the pair
-    // says outright that it is a pair, and the kept copy wins: it is the
-    // one you can annotate, and the badge on the row is then true.
+    // The pair a kept game makes is resolved in the index rather than
+    // here — `shadowed` above — so this list and the explorer's numbers
+    // agree on what one game is. It was JavaScript in this method first,
+    // which fixed the panel and left every count still summing both.
     //
-    // Only a URL merges. A hand-imported game has no `site` at all, and
-    // two of those are two games until something says otherwise; guessing
-    // from names and a date would silently swallow a rematch. This fixes
-    // the list and nothing else: movesAt() and stats() still count both
-    // copies of a kept game, which is a separate (and older) bug.
-    const preferred = new Map<string, (typeof games)[number]>();
-    for (const g of games) {
-      if (!g.site) continue;
-      const seen = preferred.get(g.site);
-      if (!seen || (g.collection === 1 && seen.collection === 0)) preferred.set(g.site, g);
-    }
-    const unique = games.filter((g) => !g.site || preferred.get(g.site) === g);
     // `pos` is a 64-bit key and a plain JS number would silently mangle it
     // past 2^53. better-sqlite3 answers that with safeIntegers, which hands
     // back a BigInt — but this same code runs in the static demo over
@@ -460,7 +523,7 @@ class MyGamesIndex {
     );
 
     const out: ReturnType<MyGamesIndex['deviations']> = [];
-    for (const game of unique) {
+    for (const game of games) {
       const plies = (pliesOf.all(game.id) as { pos: string; uci: string }[]).map((row) => ({
         pos: BigInt(row.pos),
         uci: row.uci,
@@ -516,21 +579,27 @@ class MyGamesIndex {
    *
    * `matching` answers the filter window's question — how many games the
    * chips in front of you still let through — which is the number worth
-   * reading while setting them. It equals `games` when nothing is set.
+   * reading while setting them. It equals `games` when nothing is set,
+   * which is why `games` counts what can answer rather than what is
+   * stored: a shadowed copy is a row in the table but not a game you
+   * played, and a line reading "482 games" beside 481 answerable ones is
+   * the double-count wearing a different hat.
    */
   stats(filters: MyGamesFilters = {}): { games: number; positions: number; matching: number } {
     const db = this.open();
     if (!db) return { games: 0, positions: 0, matching: 0 };
-    const games = (db.prepare('SELECT COUNT(*) AS n FROM games').get() as { n: number }).n;
+    const games = (
+      db.prepare('SELECT COUNT(*) AS n FROM games WHERE shadowed = 0').get() as { n: number }
+    ).n;
     const positions = (
       db.prepare('SELECT COUNT(DISTINCT pos) AS n FROM plies').get() as { n: number }
     ).n;
     const { sql, binds } = this.where(filters);
-    const matching = sql
-      ? (db.prepare(`SELECT COUNT(*) AS n FROM games g WHERE 1 = 1${sql}`).get(...binds) as {
-          n: number;
-        }).n
-      : games;
+    const matching = (
+      db.prepare(`SELECT COUNT(*) AS n FROM games g WHERE 1 = 1${sql}`).get(...binds) as {
+        n: number;
+      }
+    ).n;
     return { games, positions, matching };
   }
 

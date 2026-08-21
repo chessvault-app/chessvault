@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -281,6 +282,110 @@ describe('my games index', () => {
     expect((await deviationsAsWhite()).find((d) => d.sans.join() === 'e4,c5')!.collection).toBe(
       false,
     );
+  });
+
+  /**
+   * The "indexed N games" line, and how many of those a filter lets by.
+   *
+   * Reindexes first: a plain read syncs at most every SCAN_INTERVAL_MS,
+   * and a test that writes a file and immediately asks would otherwise be
+   * answered from before the write — passing whatever it expected.
+   */
+  const held = async (query = ''): Promise<{ games: number; matching: number }> => {
+    await app.request('/api/mygames/reindex', { method: 'POST' });
+    return (await (await app.request(`/api/mygames/status?${query}`)).json()) as never;
+  };
+
+  it('counts a game kept out of an archive once, not twice', async () => {
+    // The explorer's move totals and the pane's own count both summed the
+    // archived copy AND the kept one, so keeping a game inflated your
+    // record of it — 2 games played from one game played.
+    mkdirSync(join(games, 'collection'), { recursive: true });
+    const link = 'https://www.chess.com/game/live/11';
+    writeFileSync(
+      join(games, 'chesscom', 'me', '2026-06.pgn'),
+      `[Link "${link}"]\n${game({ white: 'me', black: 'foe', result: '1-0', date: '2026.06.10', tc: '600', moves: '1. e4 e5 2. Bc4' })}`,
+    );
+    const archived = await held();
+    expect(archived.games).toBe(5);
+    expect(total((await ask('')).moves)).toBe(5);
+
+    // Keep it. Same game, second file, and nothing about the record of
+    // what was played may move.
+    writeFileSync(join(games, 'collection', 'kept.pgn'), kept(link, '1. e4 e5 2. Bc4', '2026.06.10'));
+    expect(await held()).toEqual(archived);
+    expect(total((await ask('')).moves)).toBe(5);
+
+    // And the copy that answers is the kept one, so "Kept only" finds it.
+    expect((await held('collection=1')).matching).toBe(1);
+  });
+
+  it('lets the archived copy answer again when the kept one is deleted', async () => {
+    // Un-shadowing is the half a one-way rule gets wrong: delete the game
+    // you kept and the cached month is still there, so the game is still
+    // yours. It must come back to the count, not vanish with the file.
+    mkdirSync(join(games, 'collection'), { recursive: true });
+    const link = 'https://www.chess.com/game/live/12';
+    writeFileSync(
+      join(games, 'chesscom', 'me', '2026-07.pgn'),
+      `[Link "${link}"]\n${game({ white: 'me', black: 'foe', result: '1-0', date: '2026.07.10', tc: '600', moves: '1. e4 e5 2. Bc4' })}`,
+    );
+    writeFileSync(join(games, 'collection', 'kept.pgn'), kept(link, '1. e4 e5 2. Bc4', '2026.07.10'));
+    expect((await held()).games).toBe(5);
+
+    rmSync(join(games, 'collection', 'kept.pgn'));
+    await app.request('/api/mygames/reindex', { method: 'POST' });
+    expect((await held()).games).toBe(5);
+    expect((await held('collection=1')).matching).toBe(0);
+  });
+
+  it('upgrades a database that predates the shadow column', async () => {
+    // What every existing vault does on the release that adds this: the
+    // table is already there, so CREATE TABLE IF NOT EXISTS adds nothing,
+    // and the copies are already indexed. Dropping the column reproduces
+    // exactly that state — and the ALTER on open has to be followed by a
+    // stamping pass, or the vault double-counts until a file next moves.
+    mkdirSync(join(games, 'collection'), { recursive: true });
+    const link = 'https://www.chess.com/game/live/14';
+    writeFileSync(
+      join(games, 'chesscom', 'me', '2026-09.pgn'),
+      `[Link "${link}"]\n${game({ white: 'me', black: 'foe', result: '1-0', date: '2026.09.10', tc: '600', moves: '1. e4 e5 2. Bc4' })}`,
+    );
+    writeFileSync(join(games, 'collection', 'kept.pgn'), kept(link, '1. e4 e5 2. Bc4', '2026.09.10'));
+    expect((await held()).games).toBe(5);
+
+    // Back to the old shape, with the pair sitting in it.
+    const old = new Database(join(dir, 'index.sqlite'));
+    old.exec('ALTER TABLE games DROP COLUMN shadowed');
+    expect(
+      (old.prepare('PRAGMA table_info(games)').all() as { name: string }[]).some(
+        (c) => c.name === 'shadowed',
+      ),
+    ).toBe(false);
+    old.close();
+
+    // A fresh server over that same database, as an upgrade is.
+    app = new Hono().route('/api', myGamesApi(games, join(dir, 'index.sqlite')));
+    expect((await held()).games).toBe(5);
+  });
+
+  it('keeps both seats of a game browsed from both archives', async () => {
+    // The archive browser caches ANY player's months, so browsing your
+    // opponent as well as yourself files one game twice — under opposite
+    // sides. Those are not a kept copy and its original: merging them
+    // would answer "games I had White in" with the row filed under Black.
+    const link = 'https://www.chess.com/game/live/13';
+    const pgn = `[Link "${link}"]\n${game({ white: 'me', black: 'foe', result: '1-0', date: '2026.06.20', tc: '600', moves: '1. e4 e5 2. Bc4' })}`;
+    mkdirSync(join(games, 'chesscom', 'foe'), { recursive: true });
+    writeFileSync(join(games, 'chesscom', 'me', '2026-06.pgn'), pgn);
+    writeFileSync(join(games, 'chesscom', 'foe', '2026-06.pgn'), pgn);
+
+    // Six games held, and the pair shows up under both seats: the three
+    // the fixture gives White plus this one, and the fixture's one Black
+    // game plus the opponent's filing of the same game.
+    expect((await held()).games).toBe(6);
+    expect((await held('side=white')).matching).toBe(4);
+    expect((await held('side=black')).matching).toBe(2);
   });
 
   it('answers many positions in one request, under the same filters', async () => {
