@@ -5,6 +5,32 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.7
+
+A release about not having to watch an import happen.
+
+- **"Try harder on boards that fail" uses the whole machine too.** The
+  search it is named for was never the cost: on a failing board it is 33
+  ms of replaying candidate positions, against 6.2 s to re-read the board
+  itself — the same classifier as a normal read, run five times over so a
+  cell that flips under a small shift can be spotted. That re-read already
+  had the pool to run on and was not using it: boards went out one at a
+  time, so five workers in six sat idle while one worked. They now go out
+  as they are cut and are searched as their readings land, which is what
+  the scan beside them has always done. Same boards, same candidates, same
+  refusals — the puzzles come back in the same order, just sooner.
+
+- **An import no longer needs somebody watching it.** Cover the window and
+  a scan stopped on page one and said nothing about it, because pdf.js
+  renders a page in pieces scheduled on animation frames and a window
+  nobody is looking at gets none — measured, zero in two seconds. It now
+  renders under the one intent that is not scheduled that way, which
+  changes nothing about the pixels: both kinds of page a book can be, text
+  and photograph, came out byte for byte identical. The waits between
+  pages were on timers too, which a browser deliberately slows down in a
+  background tab; they are not any more. Start a long book and go and do
+  something else.
+
 ## 0.4.6
 
 A release about books and about the record of your own work: reading a
