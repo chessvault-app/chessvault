@@ -62,6 +62,8 @@ export interface BookEvidence {
   rect?: SourceRect;
   /** The solutions page covering this puzzle's number (page-level match). */
   solutionPage?: string;
+  /** The whole answers section, for an entry with no number to match on. */
+  solutionPages?: string[];
 }
 
 export interface PuzzleProgress {

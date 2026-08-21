@@ -50,14 +50,19 @@ import {
   type BookDraft,
   type BookPuzzle,
   bookTemplates,
-  diagramUrl,
   forgetBook,
   loadBook,
   loadSolutions,
   usePuzzleEvidence,
 } from './data';
 import { useWideLayout } from '@/lib/media';
-import { SourceCrop, SourcePane, ZoomablePage, useElementWidth } from './evidence';
+import {
+  SourceCrop,
+  SourcePane,
+  SolutionsView,
+  hasSolutions,
+  useElementWidth,
+} from './evidence';
 
 /** Load the puzzle, then reuse the standard entry flow to replace it. */
 export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string }) {
@@ -245,7 +250,9 @@ export function PuzzleEntry({
               tabs={[
                 { id: 'board' as const, label: 'Board' },
                 { id: 'diagram' as const, label: 'Diagram' },
-                ...(evidence?.solutionPage ? [{ id: 'solutions' as const, label: 'Solutions' }] : []),
+                ...(evidence && hasSolutions(evidence)
+                  ? [{ id: 'solutions' as const, label: 'Solutions' }]
+                  : []),
               ]}
               value={stackedView}
               onChange={setStackedView}
@@ -267,14 +274,10 @@ export function PuzzleEntry({
                   <img src={draft.imageUrl} alt={t('book diagram')} className="border-line w-full rounded-md border" />
                 ) : null}
               </div>
-            ) : evidence?.solutionPage ? (
+            ) : evidence && hasSolutions(evidence) ? (
               <div ref={stackedPane} className="p-4">
                 {stackedPaneW > 0 && (
-                  <ZoomablePage
-                    src={diagramUrl(slug, evidence.solutionPage)}
-                    alt={t('solutions page')}
-                    width={stackedPaneW - 32}
-                  />
+                  <SolutionsView slug={slug} evidence={evidence} width={stackedPaneW - 32} />
                 )}
               </div>
             ) : null}

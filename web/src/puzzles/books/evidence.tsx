@@ -1,4 +1,6 @@
 import {
+  ChevronLeft,
+  ChevronRight,
   Maximize2,
   Minimize2,
   Eye,
@@ -25,7 +27,8 @@ import {
 /**
  * The correction sidebar: the book's own scans, right where the board is
  * being fixed. Diagram tab = the page cropped to this puzzle's diagram;
- * Solutions tab = the solutions page covering its number.
+ * Solutions tab = the solutions page covering its number, or the whole
+ * answers section for an entry with no number to match on.
  */
 const SOURCE_PANE_WIDTH_KEY = 'vault:panel-w:book-source';
 const SOURCE_PANE_DEFAULT_W = 340;
@@ -57,7 +60,7 @@ export function SourcePane({
   return (
     <div className="flex min-h-0 shrink-0">
       <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width: shown }}>
-      {evidence.solutionPage && (
+      {hasSolutions(evidence) && (
         <PaneTabs
           className="mb-1"
           tabs={[
@@ -75,12 +78,8 @@ export function SourcePane({
             {t('The book’s own scan — make the board match it.')}
           </p>
         </>
-      ) : tab === 'solutions' && evidence.solutionPage ? (
-        <ZoomablePage
-          src={diagramUrl(slug, evidence.solutionPage)}
-          alt={t('solutions page')}
-          width={shown - 32}
-        />
+      ) : tab === 'solutions' && hasSolutions(evidence) ? (
+        <SolutionsView slug={slug} evidence={evidence} width={shown - 32} />
       ) : null}
       </aside>
       <div
@@ -115,6 +114,73 @@ export function SourcePane({
             panels' bottom-edge resize. */}
         <div className="bg-line h-8 w-[3px] rounded-full" />
       </div>
+    </div>
+  );
+}
+
+/** Whether there is anything to put behind a Solutions tab. */
+export function hasSolutions(evidence: BookEvidence): boolean {
+  return Boolean(evidence.solutionPage) || (evidence.solutionPages?.length ?? 0) > 0;
+}
+
+/**
+ * What a Solutions tab shows.
+ *
+ * One page when the entry's number was read: the page that number is
+ * printed on. Otherwise the whole answers section, a page at a time —
+ * which is what an entry with no number can honestly point at, and what
+ * finishing it by hand means reading anyway. The pager sits above the
+ * page rather than beside it: the pane is a column, and this is the
+ * narrowest thing in the app that has ever needed one.
+ */
+export function SolutionsView({
+  slug,
+  evidence,
+  width,
+}: {
+  slug: string;
+  evidence: BookEvidence;
+  width: number;
+}) {
+  const pages = evidence.solutionPage
+    ? [evidence.solutionPage]
+    : (evidence.solutionPages ?? []);
+  const [at, setAt] = useState(0);
+  // A shorter section (a re-import that read more numbers) must not leave
+  // the pager pointing past the end.
+  const index = Math.min(at, Math.max(0, pages.length - 1));
+  const page = pages[index];
+  if (!page) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      {pages.length > 1 && (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            title={t('Previous page')}
+            disabled={index === 0}
+            onClick={() => setAt(index - 1)}
+          >
+            <ChevronLeft className="size-3.5" />
+          </Button>
+          <span className="text-subtle flex-1 text-center font-mono text-xs">
+            {index + 1} / {pages.length}
+          </span>
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            title={t('Next page')}
+            disabled={index === pages.length - 1}
+            onClick={() => setAt(index + 1)}
+          >
+            <ChevronRight className="size-3.5" />
+          </Button>
+        </div>
+      )}
+      {/* Keyed on the page: a new image starts at zoom 1 rather than
+          inheriting wherever the last one was left. */}
+      <ZoomablePage key={page} src={diagramUrl(slug, page)} alt={t('solutions page')} width={width} />
     </div>
   );
 }
