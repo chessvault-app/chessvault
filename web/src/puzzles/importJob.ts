@@ -130,6 +130,8 @@ interface ImportJobState {
   resume: (slug: string, templates: Template[], options?: ImportOptions) => void;
   /** Stop after the page being read, keeping the checkpoint. */
   pause: () => void;
+  /** Give up on a book's scan entirely — the book itself is going away. */
+  abandon: (slug: string) => void;
   toggle: (index: number) => void;
   clear: () => void;
 }
@@ -407,6 +409,25 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
     if (get().status === 'scanning') set({ status: 'paused' });
   },
 
+  /**
+   * Give up on a book's scan: it is being deleted, so there is nowhere
+   * left to put what it reads.
+   *
+   * Clearing is what stops it. The page loop returns as soon as the status
+   * is not `scanning`, and the checkpoint write reads the slug back out of
+   * the store, so a cleared job writes no more pages. A scan already in
+   * its text half cannot be interrupted mid-read — it finishes into a book
+   * that is gone, which costs time and nothing else, and its own terminal
+   * states check the slug before reporting anything.
+   *
+   * By slug, so a stale delete cannot cancel the scan of a DIFFERENT book
+   * that has started since.
+   */
+  abandon: (slug) => {
+    if (get().slug !== slug) return;
+    get().clear();
+  },
+
   toggle: (index) =>
     set((s) => ({
       found: s.found.map((f, i) => (i === index ? { ...f, selected: !f.selected } : f)),
@@ -608,10 +629,14 @@ async function scan(
       ? await readSolutions(slug, pdf, texts, geometry, results, pageImages, options)
       : null;
     if (slug) await clearCheckpoint(slug);
+    // Abandoned while this ran (the book was deleted): there is nothing to
+    // report the result of, and nothing that should look like a job again.
+    if (get().slug === null) return;
     set({ solve: summary, status: 'done', found: [...results] });
   } catch (e) {
     // The checkpoint is deliberately NOT cleared here: a scan that fell
     // over is exactly the one worth resuming.
+    if (get().slug === null) return;
     set({ status: 'failed', error: `Could not read the PDF: ${(e as Error).message}` });
   } finally {
     // A paused scan keeps its workers: it is about to carry on, and

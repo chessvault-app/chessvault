@@ -33,7 +33,7 @@ import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 
 import { useImportJob } from '../importJob';
-import { listCheckpoints, type CheckpointSummary } from '../importCheckpoint';
+import { clearCheckpoint, listCheckpoints, type CheckpointSummary } from '../importCheckpoint';
 
 import { ProgressBar } from '@/ui/ProgressBar';
 
@@ -174,10 +174,17 @@ export function Shelf() {
   useEffect(() => void load(), [load]);
 
   const removeBook = async (slug: string): Promise<void> => {
+    // A scan of a book that is going away has nowhere to put what it
+    // reads, and its saved pages hold the whole PDF. Stop it BEFORE the
+    // delete, so it is not still uploading into a directory the next line
+    // removes — and drop what it had written, which no server-side delete
+    // can reach: the checkpoint is IndexedDB, in this browser.
+    useImportJob.getState().abandon(slug);
     // A failed delete is not reported here: the reload below redraws the
     // shelf from the server, so a book that survived simply reappears.
     await api(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' }).catch(() => {});
     forgetBook(slug);
+    await clearCheckpoint(slug);
     void load();
   };
 
