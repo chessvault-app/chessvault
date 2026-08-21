@@ -70,9 +70,18 @@ export function Panel({
 
   // The inline style must beat whatever flex/min/max classes the call site
   // uses by default — but only on desktop, where the grip is visible; small
-  // screens keep their flex behaviour untouched. A user-dragged height is
-  // exact; the default is only a CAP, so sparse content isn't padded out
-  // to an empty box.
+  // screens keep their flex behaviour untouched. Both the dragged height
+  // and the default one are EXACT: a panel's size is a property of the
+  // layout, never of what happens to be in it.
+  //
+  // The default used to be only a cap, so that sparse content wasn't padded
+  // out to an empty box — but a panel sized to its content resizes itself
+  // every time the content changes, and in a fixed-height column that comes
+  // out of its neighbours. Stepping through a study, each explorer lookup
+  // returned a different number of continuations, the explorer grew or
+  // shrank to fit, and the chapters list above it jumped by the same amount
+  // on every move. Empty space below the last row costs nothing; a list
+  // that moves while you are aiming at it does.
   //
   // Shrinkable in both cases (`0 1 auto`, not `none`), because these panels
   // live in a column whose height is the board's and cannot grow: a panel
@@ -99,7 +108,7 @@ export function Panel({
             flex: '0 1 auto' as const,
           }
         : defaultHeight !== undefined
-          ? { maxHeight: defaultHeight, flex: '0 1 auto' as const }
+          ? { height: defaultHeight, maxHeight: defaultHeight, flex: '0 1 auto' as const }
           : undefined;
 
   return (
