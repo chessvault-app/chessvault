@@ -1179,6 +1179,22 @@ function NodePanel({
                   <span className="text-fg min-w-0 flex-1 truncate text-sm">
                     {d.white} – {d.black}
                   </span>
+                  {/* The index holds the archive months and the collection
+                      alike and this list filters neither, so a kept game
+                      and a merely cached one sit side by side — and a game
+                      kept OUT of an archive is both files, appearing twice.
+                      "Kept" is the word the filter chips use for the same
+                      thing. Only the kept row is marked: an archived game
+                      is the ordinary case, and a badge on every row is a
+                      column, not a badge. */}
+                  {d.collection && (
+                    <span
+                      className="bg-surface-2 text-muted shrink-0 rounded px-1.5 py-0.5 text-xs"
+                      title={t('In your collection')}
+                    >
+                      {t('Kept')}
+                    </span>
+                  )}
                   <span className="text-subtle shrink-0 text-sm">{d.result}</span>
                   <span
                     className={d.userDeviated ? 'text-warn shrink-0 text-sm font-medium' : 'text-muted shrink-0 text-sm font-medium'}

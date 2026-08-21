@@ -1490,6 +1490,10 @@ export const ko: Record<string, string> = {
   "Rapid": "래피드",
   "Classical": "클래시컬",
   "Kept only": "보관한 것만",
+  // The badge on a deviation row; "Kept only" above is the filter that
+  // narrows to the same games, so they share the word.
+  "Kept": "보관함",
+  "In your collection": "보관함에 담긴 게임입니다",
   "Only the games in your collection, not every archived game": "보관함에 담은 게임만 봅니다. 전체 기보가 아닙니다",
   "From date": "시작일",
   "To date": "종료일",

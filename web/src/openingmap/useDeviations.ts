@@ -26,6 +26,13 @@ export interface Deviation {
   sans: string[];
   key: string;
   userDeviated: boolean;
+  /**
+   * Kept in the collection, rather than only cached from an archive.
+   * The index holds both — `vault/games` is the archive months AND
+   * `collection/` — and this list deliberately does not filter, so a row
+   * has to say which it is.
+   */
+  collection: boolean;
 }
 
 export function useDeviations(

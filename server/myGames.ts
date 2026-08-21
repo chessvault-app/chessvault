@@ -400,12 +400,14 @@ class MyGamesIndex {
     sans: string[];
     key: string;
     userDeviated: boolean;
+    /** Kept in the collection, rather than only cached from an archive. */
+    collection: boolean;
   }[] {
     const db = this.open();
     if (!db) return [];
     const games = db
       .prepare(`
-        SELECT id, file, idx, white, black, result, date, site
+        SELECT id, file, idx, white, black, result, date, site, collection
         FROM games g
         WHERE g.user_side = ?
         ORDER BY g.date DESC, g.id DESC
@@ -420,6 +422,7 @@ class MyGamesIndex {
       result: number;
       date: string | null;
       site: string | null;
+      collection: number;
     }[];
     // `pos` is a 64-bit key and a plain JS number would silently mangle it
     // past 2^53. better-sqlite3 answers that with safeIntegers, which hands
@@ -475,6 +478,7 @@ class MyGamesIndex {
         result: game.result,
         date: game.date,
         site: game.site,
+        collection: game.collection === 1,
         ply: at,
         sans,
         key: BigInt.asUintN(64, plies[at]!.pos).toString(16),

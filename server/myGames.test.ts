@@ -213,6 +213,45 @@ describe('my games index', () => {
     expect(deviations[0]!.result).toBe('1/2-1/2');
   });
 
+  it('says which deviating games are kept in the collection', async () => {
+    // The index reads the archive months and collection/ alike, and
+    // deviations() filters neither — so the SAME game kept out of an
+    // archive is two files and two rows. That is what the badge on the
+    // row is for: the pair is real, and only one of them is kept.
+    mkdirSync(join(games, 'collection'), { recursive: true });
+    writeFileSync(
+      join(games, 'collection', 'kept.pgn'),
+      // A kept game carries the stamp the collect route writes; without
+      // it a file outside `<site>/<user>/` has no side, and this query
+      // asks for White's.
+      `[VaultSide "white"]\n${game({ white: 'me', black: 'foe', result: '1/2-1/2', date: '2026.03.10', tc: '180+2', moves: '1. d4 d5' })}`,
+    );
+
+    const keys: string[] = [];
+    const pos = Chess.default();
+    keys.push(hashSetup(pos.toSetup()).toString(16));
+    for (const san of ['e4', 'e5']) {
+      pos.play(parseSan(pos, san)!);
+      keys.push(hashSetup(pos.toSetup()).toString(16));
+    }
+    const res = await app.request('/api/mygames/deviations', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ keys, side: 'white' }),
+    });
+    const { deviations } = (await res.json()) as {
+      deviations: { sans: string[]; collection: boolean; file: string }[];
+    };
+    const d4 = deviations.filter((d) => d.sans.join() === 'd4');
+    // Both copies of the 1.d4 game are reported, and they differ only in
+    // this flag.
+    expect(d4).toHaveLength(2);
+    expect(d4.map((d) => d.collection).sort()).toEqual([false, true]);
+    expect(d4.find((d) => d.collection)!.file).toBe('collection/kept.pgn');
+    // An archive-only game says so.
+    expect(deviations.find((d) => d.sans.join() === 'e4,c5')!.collection).toBe(false);
+  });
+
   it('answers many positions in one request, under the same filters', async () => {
     const pos = Chess.default();
     pos.play(parseSan(pos, 'e4')!);
