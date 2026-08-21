@@ -15,6 +15,7 @@ import {
 import { parseSan } from 'chessops/san';
 import { hashSetup } from '../shared/zobrist.ts';
 import { pathUser, userSideOf } from '../shared/gameIndex.ts';
+import { commentText } from '../shared/pgn.ts';
 import { openingsIndex, type Opening } from './openings.ts';
 import { VAULT_CONFIG, VAULT_GAMES } from './paths.ts';
 
@@ -88,7 +89,8 @@ function replaySummary(game: Game<PgnNodeData>): {
   for (const node of game.moves.mainlineNodes()) {
     if (node.children.length > 1) annotated = true;
     if (node.data.nags?.length) annotated = true;
-    if (node.data.comments?.some((c) => parseComment(c).text.trim().length > 0)) annotated = true;
+    if (node.data.comments?.some((c) => commentText(parseComment(c).text).length > 0))
+      annotated = true;
     if (annotated) break;
   }
 

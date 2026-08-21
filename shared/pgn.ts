@@ -32,6 +32,22 @@ let parsedNodeCounter = 0;
 /** Counter rather than `Object.keys(nodes).length`, which would make parsing O(n²). */
 const nextParsedId = (): NodeId => `q${(++parsedNodeCounter).toString(36)}`;
 
+/**
+ * Annotation commands nothing here reads, stripped from comment text.
+ *
+ * `parseComment` lifts out the four it knows — `[%eval]`, `[%clk]`, `[%cal]`,
+ * `[%csl]` — and leaves every other `[%...]` sitting in the text. A chess.com
+ * export carries `[%timestamp]` on every single move (and `[%c_effect]` on the
+ * last), so without this an imported game shows that machinery as a comment on
+ * every move.
+ */
+const UNREAD_COMMAND = /\[%[^\]]*\]/g;
+
+/** Text of a comment once the commands nothing reads are removed. */
+export function commentText(text: string): string {
+  return text.replace(UNREAD_COMMAND, ' ').replace(/\s+/g, ' ').trim();
+}
+
 /** Split one chessops comment string into our structured fields. */
 function splitComment(raw: string[] | undefined): {
   text?: string;
@@ -48,7 +64,8 @@ function splitComment(raw: string[] | undefined): {
 
   for (const chunk of raw) {
     const parsed = parseComment(chunk);
-    if (parsed.text) texts.push(parsed.text);
+    const text = commentText(parsed.text);
+    if (text) texts.push(text);
     shapes.push(...parsed.shapes);
     if (parsed.clock !== undefined) clock = parsed.clock;
     if (parsed.evaluation) {
@@ -85,7 +102,10 @@ function joinComment(node: MoveNode): string[] {
         }
       : {}),
   });
-  return comment.length > 0 ? [comment] : [];
+  // Trimmed: a comment carrying only a clock has an empty text field in
+  // front of it, which `makeComment` renders as a leading space.
+  const trimmed = comment.trim();
+  return trimmed.length > 0 ? [trimmed] : [];
 }
 
 /** Convert one parsed PGN game into a `MoveTree`. */

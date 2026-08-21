@@ -197,6 +197,24 @@ describe('PGN codec round-trip', () => {
     // Idempotence: a second round-trip must not drift.
     expect(treeToPgn(gameToTree(parsePgn(out)[0]!), {})).toBe(out);
   });
+
+  it('drops the annotation commands nothing reads (chess.com timestamps)', () => {
+    const pgn =
+      '1. e4 {[%clk 0:09:59.1][%timestamp 9]} e5 {[%clk 0:09:57.5] sharp [%timestamp 25]} ' +
+      '2. Nf3 {[%c_effect g6;square;g6;type;Winner;animated;true]} *';
+    const tree = gameToTree(parsePgn(pgn)[0]!);
+    const ids = collectSubtree(tree, tree.rootId);
+    const [e4, e5, nf3] = [1, 2, 3].map((i) => getNode(tree, ids[i]!));
+    expect(e4!.comment).toBeUndefined();
+    expect(e5!.comment).toBe('sharp');
+    expect(nf3!.comment).toBeUndefined();
+    // The clocks beside them still survive.
+    expect(e4!.clock).toBeCloseTo(599.1);
+
+    const out = treeToPgn(tree, {});
+    expect(out).not.toContain('timestamp');
+    expect(out).not.toContain('c_effect');
+  });
 });
 
 /**
