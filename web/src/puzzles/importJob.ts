@@ -264,6 +264,34 @@ function classifyDetailInWorker(board: Gray): Promise<DetailedReading | null> {
   });
 }
 
+/**
+ * Give the event loop a turn.
+ *
+ * Every one of these used to be `setTimeout(r, 0)`, which is not free: a
+ * nested timer is clamped, and measured on a hidden window it cost 5.1 ms
+ * a hop against 3.3 us for `scheduler.yield` and 12.3 us for a message
+ * hop. A browser clamps timers harder still once a tab has been in the
+ * background a while, which is the difference between an import that runs
+ * unattended and one that must be watched.
+ *
+ * `scheduler.yield` is the primitive meant for exactly this and lets input
+ * and painting go first; the message hop is the fallback where it is
+ * missing, and a fresh channel per call is close enough to free that
+ * pooling them would only be more code to read.
+ */
+function yieldToUi(): Promise<void> {
+  const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (scheduler?.yield) return scheduler.yield();
+  return new Promise((resolve) => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.close();
+      resolve();
+    };
+    channel.port2.postMessage(0);
+  });
+}
+
 const RENDER_WIDTH = 1400;
 
 /**
@@ -472,7 +500,7 @@ async function scan(
       for (const rect of rects) {
         const { dataUrl, board, features } = cropDiagram(canvas, rect);
         cutting.push({ dataUrl, features, cells: classifyInWorker(board) });
-        await new Promise((r) => setTimeout(r, 0));
+        await yieldToUi();
       }
       const placements: (string | null)[] = [];
       for (const [at, rect] of rects.entries()) {
@@ -537,7 +565,7 @@ async function scan(
         );
       }
       // Yield so navigation and rendering stay smooth between pages.
-      await new Promise((r) => setTimeout(r, 0));
+      await yieldToUi();
     }
     if (results.length === 0) {
       // A verdict, not an interruption: this book has been read to the end
@@ -565,7 +593,7 @@ async function scan(
     // The text half. Everything it needs about the book it works out from
     // the book — there is nothing here for anyone to configure.
     set({ status: 'reading' });
-    await new Promise((r) => setTimeout(r, 0));
+    await yieldToUi();
     const slug = get().slug;
     const summary = slug
       ? await readSolutions(slug, pdf, texts, geometry, results, pageImages, options)
@@ -625,7 +653,24 @@ async function renderPage(
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(viewport.width);
   canvas.height = Math.round(viewport.height);
-  await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+  await page.render({
+    canvas,
+    canvasContext: canvas.getContext('2d')!,
+    viewport,
+    // Renders a page in chunks scheduled on requestAnimationFrame, which a
+    // window nobody is looking at never gets — measured, zero callbacks in
+    // two seconds — so a background import stops on page one and says
+    // nothing. `print` is the one intent pdf.js does NOT schedule on frames
+    // (`useRequestAnimationFrame: !intentPrint`); the same page that never
+    // finished hidden then rendered in 36 ms.
+    //
+    // It is a rendering intent, not a printer: what it changes is annotation
+    // appearance and optional-content visibility, neither of which a scanned
+    // page has. Checked rather than assumed — display and print were
+    // byte-identical over the whole canvas on both a vector page and an
+    // image page, which are the two paths a book can take.
+    intent: 'print',
+  }).promise;
   // The page comes back with its canvas because the scan reads the page's
   // words from the same proxy, and fetching it again is a second parse.
   return { page, canvas };
@@ -1061,7 +1106,7 @@ async function repairUnread(
     // Yield after every board: the search is hundreds of replays, and it
     // runs here rather than in the worker because replaying needs the
     // book's parsed answers.
-    await new Promise((r) => setTimeout(r, 0));
+    await yieldToUi();
   };
 
   while (nextPage < pages.length || reading.length > 0) {
@@ -1115,7 +1160,7 @@ async function readAnswerGlyphs(
       });
       if (pixels) samples.push({ prefix, pixels });
     }
-    await new Promise((r) => setTimeout(r, 0));
+    await yieldToUi();
   }
   // Trained on what the text already settled; those labels come from lines
   // that replayed, so they are the trustworthy half.
