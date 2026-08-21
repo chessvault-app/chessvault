@@ -22,6 +22,22 @@ const NAG_CLASS: Record<number, string> = {
   6: 'text-nag-dubious',
 };
 
+/**
+ * A full-width comment row in the mainline table: a comment that interrupts
+ * a move pair, rendered between the rows it interrupts.
+ *
+ * `leading-relaxed` AFTER the size: cn merges Tailwind, and a font size
+ * dropping an earlier line height is exactly what it is for — put it first
+ * and the comment reads at the size's own tighter leading (measured:
+ * 14px/20px instead of 14px/22.75px).
+ */
+const commentRow = (size: string): string =>
+  cn(
+    'border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5',
+    size,
+    'leading-relaxed',
+  );
+
 const nagText = (nags: number[]): string => nags.map((n) => NAG_GLYPH[n] ?? `$${n}`).join('');
 const nagClass = (nags: number[]): string | undefined => {
   const quality = nags.find((n) => NAG_CLASS[n]);
@@ -234,15 +250,7 @@ export function MainlineTable({
             // Size is Settings > Appearance > Annotation size, and is flat at
             // every width — see prefs for what replaced the `stacked:` lift
             // that used to live on this line.
-            // `leading-relaxed` AFTER the size: cn merges Tailwind, and a
-            // font size dropping an earlier line height is exactly what it
-            // is for — put it first and the comment reads at the size's own
-            // tighter leading (measured: 14px/20px instead of 14px/22.75px).
-            className={cn(
-              'border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5',
-              annotation.mainline,
-              'leading-relaxed',
-            )}
+            className={commentRow(annotation.mainline)}
           >
             {child.comment}
           </p>,
