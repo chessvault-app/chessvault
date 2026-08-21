@@ -514,9 +514,14 @@ function AppearanceCard() {
                   className="size-3 shrink-0 rounded-full"
                   style={{
                     // The dot has to be able to be grey, or Greyscale
-                    // advertises itself with a blue spot.
-                    background: `oklch(58% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
-                    outline: `2px solid oklch(90% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
+                    // advertises itself with a blue spot. It also has to
+                    // be able to be BLACK ringed in white, or Greyscale
+                    // and High contrast — same hue, same tint, same
+                    // accent — draw the identical dot side by side and
+                    // the swatch stops telling them apart. Both lerps
+                    // are the ones --ui-contrast runs on the tokens.
+                    background: `oklch(${58 - 58 * (preset.scheme.contrast ?? 0)}% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
+                    outline: `2px solid oklch(${90 + 10 * (preset.scheme.contrast ?? 0)}% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
                   }}
                 />
                 {t(preset.label)}

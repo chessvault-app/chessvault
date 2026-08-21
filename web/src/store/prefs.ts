@@ -93,6 +93,16 @@ export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
   // greyscale scheme for anyone who still wants the app's own colour on
   // the buttons.
   { id: 'graphite', label: 'Graphite', scheme: { hue: 264, tint: 0, accent: 240 } },
+  // Greyscale with the lightness scale opened all the way up. The one
+  // scheme in which the words black and white are literally true: the
+  // dark page is #000 and its button is #fff, the light page is #fff and
+  // its button is #000. Greyscale itself is left where it is — it is a
+  // soft grey scheme and people are using it as one.
+  {
+    id: 'high-contrast',
+    label: 'High contrast',
+    scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0, contrast: 1 },
+  },
 ];
 
 /**

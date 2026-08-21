@@ -43,6 +43,19 @@ A release about not having to watch an import happen.
   background tab; they are not any more. Start a long book and go and do
   something else.
 
+- **A greyscale scheme with black and white in it.** Greyscale took the
+  colour out of the app and left the lightness where it was, so the name
+  promised two things it did not have: the dark page bottomed out at 15.5%
+  lightness and the lightest panel reached 29%, which is to say the whole
+  app sat in the middle of the scale with nothing at either end. High
+  contrast is that scheme with the scale opened all the way up — a #000000
+  page under a #ffffff button in the dark theme, and the reverse in the
+  light one, with text at 21:1 against the page. It is a fourth number on
+  the same three-number scheme model rather than a palette of its own, so
+  the eight schemes that came before are untouched: 320 token values, every
+  preset in both themes, identical pixel for pixel before and after.
+  Greyscale itself is one of them and stays the soft grey it has been.
+
 ## 0.4.6
 
 A release about books and about the record of your own work: reading a
