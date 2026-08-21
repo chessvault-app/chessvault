@@ -107,6 +107,9 @@ interface BookEvidence {
   rect?: { x: number; y: number; w: number; h: number };
   /** The answers page covering this puzzle's number. */
   solutionPage?: string;
+  /** The whole answers section, for an entry with no number to look one
+      up with — see the importer's attachAnswers. */
+  solutionPages?: string[];
 }
 
 /**
@@ -161,13 +164,26 @@ function roundRect(rect: { x: number; y: number; w: number; h: number }): {
   return { x: to4(rect.x), y: to4(rect.y), w: to4(rect.w), h: to4(rect.h) };
 }
 
+/** How many answers pages one entry may point at. Longer chapters than
+    this exist; reading 200 pages to finish one draft does not. */
+const MAX_SOLUTION_PAGES = 64;
+
 function cleanEvidence(raw: unknown): BookEvidence | undefined {
   if (!raw || typeof raw !== 'object') return undefined;
-  const { page, rect, solutionPage } = raw as BookEvidence;
+  const { page, rect, solutionPage, solutionPages } = raw as BookEvidence;
   const out: BookEvidence = {};
   if (typeof page === 'string' && IMAGE_FILE.test(page)) out.page = page;
   if (typeof solutionPage === 'string' && IMAGE_FILE.test(solutionPage)) {
     out.solutionPage = solutionPage;
+  }
+  // A whole answers section. Capped: this is a list of file names a client
+  // supplies, and the only thing bounding it otherwise is how long a book's
+  // answers chapter is.
+  if (Array.isArray(solutionPages)) {
+    const files = solutionPages.filter(
+      (f): f is string => typeof f === 'string' && IMAGE_FILE.test(f),
+    );
+    if (files.length > 0) out.solutionPages = files.slice(0, MAX_SOLUTION_PAGES);
   }
   if (
     rect &&

@@ -290,6 +290,40 @@ describe('puzzle books api', () => {
     await app.request(`/api/puzzlebooks/${slug}/puzzles/n42`, { method: 'DELETE' });
   });
 
+  it('keeps a whole answers section for an entry with no number', async () => {
+    const slug = sacrifices;
+    const { puzzle } = await (
+      await post(`/api/puzzlebooks/${slug}/puzzles`, {
+        fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
+        uci: ['a1a8'],
+        san: ['Ra8#'],
+        evidence: {
+          page: 'page033.jpg',
+          // The importer sends the section when it could not read the
+          // number, and junk in the list is dropped rather than taken.
+          solutionPages: ['page225.jpg', '../../etc/passwd', 'page226.jpg'],
+        },
+      })
+    ).json();
+    expect(puzzle.evidence.solutionPages).toEqual(['page225.jpg', 'page226.jpg']);
+
+    // Capped: the list is file names a client supplies.
+    const long = await (
+      await post(`/api/puzzlebooks/${slug}/puzzles`, {
+        fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
+        uci: ['a1a8'],
+        san: ['Ra8#'],
+        evidence: {
+          solutionPages: Array.from({ length: 200 }, (_, i) => `page${i + 1}.jpg`),
+        },
+      })
+    ).json();
+    expect(long.puzzle.evidence.solutionPages).toHaveLength(64);
+
+    await app.request(`/api/puzzlebooks/${slug}/puzzles/${puzzle.id}`, { method: 'DELETE' });
+    await app.request(`/api/puzzlebooks/${slug}/puzzles/${long.puzzle.id}`, { method: 'DELETE' });
+  });
+
   it('refuses a tier or an evidence file it does not recognise', async () => {
     const slug = sacrifices;
     const { puzzle } = await (
