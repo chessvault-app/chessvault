@@ -309,13 +309,18 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
                 <span className="hidden items-center gap-1 md:inline-flex">
                   <ReviewButton />
                 </span>
-                {editing && (
-                  <LoadPositionButton
-                    open={loadOpen}
-                    onOpenChange={setLoadOpen}
-                    triggerClassName="max-md:hidden"
-                  />
-                )}
+                {/* Not an editing tool: putting a position on the board
+                    is how you read one that arrived as a FEN in a message
+                    or a diagram in a photo, and while reading nothing is
+                    written back (the store's autosave subscriber ignores a
+                    reader's walk). Gating it on Edit made a reader turn
+                    editing on to look at a position — the one act that
+                    DOES start saving. */}
+                <LoadPositionButton
+                  open={loadOpen}
+                  onOpenChange={setLoadOpen}
+                  triggerClassName="max-md:hidden"
+                />
                 {editing && <MoveActions allowReset={false} allowClear />}
                 {/* No Clear the board here: in a study the board IS the
                     document, and resetting it would take the chapter's own
@@ -327,7 +332,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
                 <MovesOverflow
                   allowReset={false}
                   allowClear={editing}
-                  onLoadPosition={editing ? () => setLoadOpen(true) : undefined}
+                  onLoadPosition={() => setLoadOpen(true)}
                 />
               </>
             }
