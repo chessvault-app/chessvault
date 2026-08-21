@@ -62,6 +62,20 @@ export interface Scheme {
    * stored scheme without it means the accent it has always had.
    */
   accentTint?: number;
+  /**
+   * 0–1. How far the neutrals are pushed towards black and white; 0
+   * unless said otherwise, which is every scheme that existed before
+   * this number did.
+   *
+   * Separate from the two tint knobs on purpose: those decide how much
+   * COLOUR a scheme has, this decides how much of the lightness scale it
+   * uses, and they are independent. Greyscale said black/white/grey and
+   * delivered neither black nor white — its dark page bottomed out at
+   * 15.5% lightness and its lightest panel reached 29%, so the whole app
+   * sat in the middle of the range with nothing at either end. See
+   * --ui-contrast in index.css for what the number does to each token.
+   */
+  contrast?: number;
 }
 
 export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
@@ -288,13 +302,14 @@ const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
   }
 };
 
-/** Four custom properties; every token in index.css reads from them. */
-const applyScheme = ({ hue, tint, accent, accentTint = 1 }: Scheme): void => {
+/** Five custom properties; every token in index.css reads from them. */
+const applyScheme = ({ hue, tint, accent, accentTint = 1, contrast = 0 }: Scheme): void => {
   const el = document.documentElement;
   el.style.setProperty('--ui-hue', String(hue));
   el.style.setProperty('--ui-tint', String(tint));
   el.style.setProperty('--accent-hue', String(accent));
   el.style.setProperty('--accent-tint', String(accentTint));
+  el.style.setProperty('--ui-contrast', String(contrast));
 };
 
 export const usePrefs = create<PrefsState>()(

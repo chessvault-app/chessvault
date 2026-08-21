@@ -114,23 +114,46 @@
    */
   --accent-tint: 1;
 
+  /**
+   * How far the neutrals are pushed towards the ends of the scale, 0–1.
+   *
+   * 0 is every scheme this app has ever had, exactly — each lightness
+   * below is written as a lerp from the value it has always had to a
+   * high-contrast target, so at 0 the second term is multiplied away and
+   * the token resolves to the original number. Nothing about Slate or
+   * Paper or Mono moves.
+   *
+   * 1 is the other end: the dark page reaches true black and the light
+   * page true white, text goes to the opposite extreme, and the borders
+   * — which carry the structure once the fills stop differing much —
+   * move the other way to stay visible. The surface LADDER survives at
+   * both ends; it is compressed, not flattened, or every panel edge in
+   * the app would vanish at once.
+   *
+   * This is a lightness knob only. --ui-tint and --accent-tint decide
+   * how much colour there is; a scheme can be high-contrast and still
+   * be Slate. Greyscale + contrast 1 is the black/white/grey one.
+   */
+  --ui-contrast: 0;
+
   /* Width of the side column next to the board, and the only place it is
      written down: ui/layout.ts spends it in BOARD_WIDE_SIDE, and the row's
      own cap below has to know it too. */
   --board-side: 27rem;
 
-  --app-bg: oklch(98.4% calc(0.003 * var(--ui-tint)) var(--ui-hue));
-  --app-bg-accent: oklch(96.5% calc(0.008 * var(--ui-tint)) var(--ui-hue));
+  --app-bg: oklch(calc(98.4% + (100% - 98.4%) * var(--ui-contrast)) calc(0.003 * var(--ui-tint)) var(--ui-hue));
+  --app-bg-accent: oklch(calc(96.5% + (95% - 96.5%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
+  /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
-  --surface-2: oklch(97.2% calc(0.004 * var(--ui-tint)) var(--ui-hue));
-  --surface-3: oklch(94.4% calc(0.006 * var(--ui-tint)) var(--ui-hue));
-  --surface-inset: oklch(96% calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(calc(97.2% + (96% - 97.2%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(calc(94.4% + (91% - 94.4%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(calc(96% + (94% - 96%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(91% calc(0.006 * var(--ui-tint)) var(--ui-hue));
-  --border-strong: oklch(84% calc(0.009 * var(--ui-tint)) var(--ui-hue));
+  --border: oklch(calc(91% + (62% - 91%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --border-strong: oklch(calc(84% + (35% - 84%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
 
-  --text: oklch(23% calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --text-muted: oklch(46% calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  --text: oklch(calc(23% + (0% - 23%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --text-muted: oklch(calc(46% + (24% - 46%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
   /* Both quiet tiers were measured against --surface and --app-bg only,
      and passed there: subtle at 55% is 4.85:1 on white and 4.63:1 on the
      page. They are also used on --surface-2 and --surface-3, the raised
@@ -139,13 +162,13 @@
      (52% -> 46%) because at 52.5% the two tiers would have been the same
      colour; the ramp is wider now, not narrower. (Grey-on-grey maths: for
      neutrals, OKLCH L approximates Y^(1/3), so contrast = 1.05/(L³+0.05).) */
-  --text-subtle: oklch(52.5% calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(calc(52.5% + (30% - 52.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(50% calc(0.115 * var(--accent-tint)) var(--accent-hue));
-  --primary-hover: oklch(44% calc(0.12 * var(--accent-tint)) var(--accent-hue));
-  --primary-fg: oklch(99% 0 0);
-  --primary-soft: oklch(94% calc(0.04 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(50% calc(0.115 * var(--accent-tint)) var(--accent-hue) / 45%);
+  --primary: oklch(calc(50% + (0% - 50%) * var(--ui-contrast)) calc(0.115 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(calc(44% + (22% - 44%) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
+  --primary-fg: oklch(calc(99% + (100% - 99%) * var(--ui-contrast)) 0 0);
+  --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
+  --ring: oklch(calc(50% + (0% - 50%) * var(--ui-contrast)) calc(0.115 * var(--accent-tint)) var(--accent-hue) / 45%);
 
   --good: oklch(51% 0.141 150);
   --bad: oklch(54% 0.19 25);
@@ -182,8 +205,8 @@
      It is the surface INVERTED: dark on a light app, light on a dark one.
      Distinct by construction rather than by a colour chosen to contrast
      with today's palette, and the one convention this widget has. */
-  --toast: oklch(24% calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --toast-fg: oklch(98% calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --toast: oklch(calc(24% + (0% - 24%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --toast-fg: oklch(calc(98% + (100% - 98%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
 
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
   --board-light: oklch(91% 0.035 84);
@@ -195,8 +218,8 @@
   --sq-check: oklch(58% 0.23 27);
 
   /* Eval bar: the "white advantage" / "black advantage" fills. */
-  --eval-white: oklch(97% calc(0.004 * var(--ui-tint)) var(--ui-hue));
-  --eval-black: oklch(30% calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --eval-white: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(calc(30% + (0% - 30%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   /* Keeps the bar's dark half readable against a matching background. */
   --eval-border: oklch(0% 0 0 / 20%);
   /* Text sitting ON an eval fill (W/D/B bars, result badges). */
@@ -241,25 +264,25 @@
      field. Six points is enough for a card to be a card without the page
      turning into a hole. The surface LADDER is untouched — every panel,
      popover and input keeps its relationship to the others. */
-  --app-bg: oklch(15.5% calc(0.014 * var(--ui-tint)) var(--ui-hue));
-  --app-bg-accent: oklch(13% calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  --surface: oklch(21.5% calc(0.017 * var(--ui-tint)) var(--ui-hue));
-  --surface-2: oklch(25% calc(0.018 * var(--ui-tint)) var(--ui-hue));
-  --surface-3: oklch(29% calc(0.019 * var(--ui-tint)) var(--ui-hue));
-  --surface-inset: oklch(19% calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  --app-bg: oklch(calc(15.5% + (0% - 15.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --app-bg-accent: oklch(calc(13% + (0% - 13%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --surface: oklch(calc(21.5% + (13% - 21.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(calc(25% + (18.5% - 25%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(calc(29% + (24% - 29%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(calc(19% + (7% - 19%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(31% calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --border-strong: oklch(40% calc(0.024 * var(--ui-tint)) var(--ui-hue));
+  --border: oklch(calc(31% + (52% - 31%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
-  --text: oklch(96% calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --text-muted: oklch(78% calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  --text-subtle: oklch(66% calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --text: oklch(calc(96% + (100% - 96%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --text-muted: oklch(calc(78% + (90% - 78%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(calc(66% + (80% - 66%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(73% calc(0.135 * var(--accent-tint)) var(--accent-hue));
-  --primary-hover: oklch(78% calc(0.125 * var(--accent-tint)) var(--accent-hue));
-  --primary-fg: oklch(16% 0.025 235);
-  --primary-soft: oklch(30% calc(0.055 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(73% calc(0.135 * var(--accent-tint)) var(--accent-hue) / 50%);
+  --primary: oklch(calc(73% + (100% - 73%) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(calc(78% + (92% - 78%) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
+  --primary-fg: oklch(calc(16% + (0% - 16%) * var(--ui-contrast)) 0.025 235);
+  --primary-soft: oklch(calc(30% + (20% - 30%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
+  --ring: oklch(calc(73% + (100% - 73%) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue) / 50%);
 
   --good: oklch(72% 0.16 152);
   --bad: oklch(69% 0.18 25);
@@ -278,8 +301,8 @@
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner
      of a room this dim. */
-  --toast: oklch(90% calc(0.012 * var(--ui-tint)) var(--ui-hue));
-  --toast-fg: oklch(20% calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --toast: oklch(calc(90% + (100% - 90%) * var(--ui-contrast)) calc(0.012 * var(--ui-tint)) var(--ui-hue));
+  --toast-fg: oklch(calc(20% + (0% - 20%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light: oklch(60% 0.024 250);
@@ -290,8 +313,8 @@
   --sq-dest: oklch(72% 0.11 152 / 38%);
   --sq-check: oklch(62% 0.24 27);
 
-  --eval-white: oklch(93% calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --eval-black: oklch(13% calc(0.012 * var(--ui-tint)) var(--ui-hue));
+  --eval-white: oklch(calc(93% + (100% - 93%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(calc(13% + (0% - 13%) * var(--ui-contrast)) calc(0.012 * var(--ui-tint)) var(--ui-hue));
   --eval-border: oklch(100% 0 0 / 25%);
 
   --shadow-color: var(--ui-hue) 40% 4%;
