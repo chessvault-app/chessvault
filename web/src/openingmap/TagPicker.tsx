@@ -1,4 +1,4 @@
-import { BookOpen, ChevronLeft, Library, NotebookPen } from 'lucide-react';
+import { BookOpen, ChevronLeft, Library, NotebookPen, Swords } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { pgnToChapters } from '@shared/pgn';
 import { api } from '@/lib/api';
@@ -11,12 +11,25 @@ import { Skeleton, useSlowLoad } from '@/ui/Skeleton';
 import type { MapTag } from './model';
 
 /**
- * Picking what a node points at: a study (optionally one chapter of it)
- * or a note. Listings come from the metadata routes the shelves already
- * use; the study itself is fetched only when the user asks to scope a
- * tag to one chapter, because the listing's chapterNames are a card
- * caption, capped at four, not a table of contents.
+ * Picking what a node points at: a study (optionally one chapter of it),
+ * a collected game, or a note. Listings come from the metadata routes the
+ * shelves already use; the study itself is fetched only when the user asks
+ * to scope a tag to one chapter, because the listing's chapterNames are a
+ * card caption, capped at four, not a table of contents.
+ *
+ * A game is a one-chapter study living in games/collection/, so it speaks
+ * the same document API and needs nothing here but its own base path — and
+ * no Chapter button, because there is never a second chapter to scope to.
  */
+
+/** Where each kind's listing lives, and what its rows wear. */
+const KINDS = {
+  study: { base: 'studies', icon: Library, search: 'Search studies…' },
+  game: { base: 'games/docs', icon: Swords, search: 'Search games…' },
+  note: { base: 'notes', icon: NotebookPen, search: 'Search notes…' },
+} as const;
+
+type Kind = keyof typeof KINDS;
 
 interface Row {
   id: string;
@@ -32,10 +45,11 @@ export function TagPicker({
   onPick: (tag: MapTag) => void;
   onClose: () => void;
 }) {
-  const [kind, setKind] = useState<'study' | 'note'>('study');
+  const [kind, setKind] = useState<Kind>('study');
   const [filter, setFilter] = useState('');
-  const [rows, setRows] = useState<Record<'study' | 'note', Row[] | null>>({
+  const [rows, setRows] = useState<Record<Kind, Row[] | null>>({
     study: null,
+    game: null,
     note: null,
   });
   /** A study whose chapter is being chosen, with its full chapter list. */
@@ -53,7 +67,7 @@ export function TagPicker({
     if (rows[kind] !== null) return;
     let live = true;
     void (async () => {
-      const base = kind === 'study' ? 'studies' : 'notes';
+      const { base } = KINDS[kind];
       const body = await api<{ studies: { id: string; chapters: number }[] }>(`/api/${base}`);
       if (live) {
         setRows((r) => ({
@@ -94,7 +108,7 @@ export function TagPicker({
     // what this node points at — so it takes that sheet's height rather
     // than shrinking to its own list and reading as a second, smaller
     // window stacked on the first. The same call AddMoveSheet makes.
-    <Sheet label={t('Link a study or note')} onClose={onClose} fill>
+    <Sheet label={t('Link a study, game or note')} onClose={onClose} fill>
       {scoping === null ? (
         <>
           <div className="flex items-center gap-2">
@@ -103,6 +117,7 @@ export function TagPicker({
               onChange={setKind}
               segments={[
                 { value: 'study', label: t('Studies') },
+                { value: 'game', label: t('Games') },
                 { value: 'note', label: t('Notes') },
               ]}
               ariaLabel="What to link"
@@ -116,7 +131,7 @@ export function TagPicker({
               // believe. Naming what it searches is the shelves' own
               // wording, and it follows the segmented control, which is
               // the only thing that says which list is under it.
-              placeholder={kind === 'study' ? t('Search studies…') : t('Search notes…')}
+              placeholder={t(KINDS[kind].search)}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
@@ -149,7 +164,7 @@ export function TagPicker({
             ) : (
               list.map((row) => {
                 const wholeTag: MapTag = { kind, id: row.id };
-                const Icon = kind === 'study' ? Library : NotebookPen;
+                const Icon = KINDS[kind].icon;
                 return (
                   // One height for every row, whether or not it carries
                   // a Chapter button: a study row stood a touch target
