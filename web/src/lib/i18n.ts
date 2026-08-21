@@ -145,7 +145,14 @@ export function isUntitled(name: string, base: string): boolean {
   for (const names of Object.values(UNTITLED_NAMES)) {
     if (names[base]) bases.add(names[base]);
   }
-  return [...bases].some((b) => name === b || (name.startsWith(b) && /^ \d+$/.test(name.slice(b.length))));
+  // Normalised on both sides: "제목 없는 책" typed by a Korean IME on macOS
+  // is the same word as the one written here and a different STRING, and
+  // a placeholder the app cannot recognise is one it never offers to
+  // replace with the PDF's own name.
+  const typed = name.normalize('NFC');
+  return [...bases]
+    .map((b) => b.normalize('NFC'))
+    .some((b) => typed === b || (typed.startsWith(b) && /^ \d+$/.test(typed.slice(b.length))));
 }
 
 /**

@@ -95,6 +95,16 @@ export function fitSegment(name: string, reserve = 0): string {
 
 export function sanitizeSegment(name: string, fallback = 'Untitled'): string {
   const cleaned = name
+    // ONE normal form, because three filesystems disagree about which
+    // they store. "책" is one code point in NFC and two in NFD, and a
+    // Korean IME on macOS hands over the second; HFS+ then normalises
+    // every name it is given to NFD, APFS and NTFS keep what they are
+    // handed, and ext4 keeps bytes. Without this the same title yields a
+    // different folder name depending on the machine it was typed on,
+    // and a name compared against a folder listing matches on one OS and
+    // not on another. NFC is the form the web hands around, and it is
+    // what every comparison in this codebase assumes.
+    .normalize('NFC')
     .replace(FORBIDDEN_CHARS_G, ' ')
     .replace(/\s+/g, ' ')
     .replace(/^[.\s]+/, '')

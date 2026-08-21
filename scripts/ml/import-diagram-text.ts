@@ -23,6 +23,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { bookSlug } from '../../server/puzzlebooks.ts';
 import { Chess } from 'chessops/chess';
 import { makeBoardFen, makeFen, parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
@@ -505,7 +506,8 @@ for (const diagram of diagrams) {
 puzzles.sort((a, b) => a.number - b.number);
 unresolved.sort((a, b) => a - b);
 
-const dir = resolve(VAULT, 'puzzlebooks', BOOK.title);
+// bookSlug, not the raw title — see autoimport-import.ts.
+const dir = resolve(VAULT, 'puzzlebooks', bookSlug(BOOK.title));
 mkdirSync(resolve(dir, 'diagrams'), { recursive: true });
 const write = (name: string, value: unknown): void =>
   writeFileSync(resolve(dir, name), `${JSON.stringify(value, null, 1)}\n`);

@@ -152,6 +152,48 @@ describe('puzzle books api', () => {
     }
   });
 
+  /**
+   * The normal form half of the same question. HFS+ stores every name it
+   * is handed in NFD and reads it back that way, and a Korean IME on
+   * macOS types NFD to begin with, so a title and the folder holding it
+   * can be the same word and different bytes. Comparing them raw would
+   * move the folder on every startup, forever, on one OS out of three.
+   */
+  it('holds a title and its folder in one normal form', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    // The same word: composed, then decomposed the way macOS hands it over.
+    const composed = '제목 없는 책';
+    const decomposed = composed.normalize('NFD');
+    expect(decomposed).not.toBe(composed);
+    try {
+      const shelf = new Hono().route('/api', puzzleBooksApi(own));
+      const made = await shelf.request('/api/puzzlebooks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: decomposed }),
+      });
+      // Written composed, whichever form it arrived in.
+      expect(await made.json()).toMatchObject({ slug: composed });
+
+      // A folder left behind in the other form is recognised as the one
+      // the title asks for, and is not moved on and on at every startup.
+      rmSync(join(own, composed), { recursive: true, force: true });
+      mkdirSync(join(own, decomposed), { recursive: true });
+      writeFileSync(
+        join(own, decomposed, 'book.json'),
+        JSON.stringify({ title: composed }),
+      );
+      const restarted = new Hono().route('/api', puzzleBooksApi(own));
+      const list = await (await restarted.request('/api/puzzlebooks')).json();
+      expect(list.books).toHaveLength(1);
+      // Whatever this filesystem gave back, it is ONE book and it did not
+      // acquire a " 2" from being mistaken for a name already taken.
+      expect(list.books[0].slug.normalize('NFC')).toBe(composed);
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
+  });
+
   it('renames a book and moves its folder with it', async () => {
     const created = await post('/api/puzzlebooks', { title: 'Untitled book 7' });
     const { slug } = await created.json();

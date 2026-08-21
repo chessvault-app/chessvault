@@ -4,14 +4,13 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
-  renameSync,
   rmSync,
   statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
-import { writeAtomic } from './atomic.ts';
+import { renameRetrying, writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
 import { fitSegment, sanitizeSegment, validId } from '../shared/vaultNames.ts';
 
@@ -51,6 +50,36 @@ const BOOKS_DIR = resolve(VAULT, 'puzzlebooks');
  * than a tree.
  */
 const validSlug = (slug: string): boolean => !slug.includes('/') && validId(slug);
+
+/**
+ * The folder name a title asks for, before anything is checked for it.
+ *
+ * sanitizeSegment answers what a PATH can hold — the characters and
+ * device names Windows forbids, the leading and trailing dots and spaces
+ * it silently strips, and one Unicode normal form so that a title typed
+ * on a Mac and the same title typed on Windows ask for the same folder.
+ * fitSegment answers how much of it, in the bytes Linux counts rather
+ * than the characters Windows does, leaving room for the " 2" a taken
+ * name gets. Both matter now and did not before: a book's folder used to
+ * be minted once from a placeholder and is now whatever the reader calls
+ * the book.
+ *
+ * Exported because the offline importer under scripts/ml/ writes books
+ * into the same vault, and a second answer to "what folder is this
+ * title" is a book the app would move the moment it next started.
+ */
+export const bookSlug = (title: string): string => fitSegment(sanitizeSegment(title, ''), 8);
+
+/**
+ * Folder names as they are COMPARED — never as they are written.
+ *
+ * Two folders that a filesystem would hold as one: Windows and macOS fold
+ * case, HFS+ hands back names in a different normal form than it was
+ * given. Comparing raw readdir output against a name built from a title
+ * therefore answers differently on each OS, which is the whole bug class
+ * this guards. Written names keep their own case and NFC.
+ */
+const sameName = (name: string): string => name.normalize('NFC').toLowerCase();
 
 interface BookPuzzle {
   id: string;
@@ -264,19 +293,6 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   };
 
   /**
-   * The folder name a title asks for, before anything is checked for it.
-   *
-   * sanitizeSegment answers what a PATH can hold — the characters Windows
-   * forbids, its reserved device names, the leading and trailing dots and
-   * spaces it silently strips. fitSegment answers how much of it, in the
-   * bytes Linux counts rather than the characters Windows does, leaving
-   * room for the " 2" a taken name gets. Both matter here and did not
-   * before: a book's folder used to be minted once from a placeholder,
-   * and is now whatever the reader calls the book.
-   */
-  const slugFor = (title: string): string => fitSegment(sanitizeSegment(title, ''), 8);
-
-  /**
    * The nearest free folder to `base`, CASE-INSENSITIVELY free.
    *
    * Windows and macOS hold "Chess" and "chess" in one folder where Linux
@@ -291,11 +307,18 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const taken = new Set<string>();
     if (existsSync(dir)) {
       for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        if (entry.isDirectory() && entry.name !== mine) taken.add(entry.name.toLowerCase());
+        if (!entry.isDirectory()) continue;
+        // Its own folder is never in its own way — that is what lets a
+        // rename change only the case of a name, or only its normal
+        // form. Compared the same way as everything else here, or the
+        // book would fail to recognise itself on an OS that hands the
+        // name back in a form other than the one it was written in.
+        if (mine !== undefined && sameName(entry.name) === sameName(mine)) continue;
+        taken.add(sameName(entry.name));
       }
     }
     let next = base;
-    for (let n = 2; taken.has(next.toLowerCase()); n += 1) next = `${base} ${n}`;
+    for (let n = 2; taken.has(sameName(next)); n += 1) next = `${base} ${n}`;
     return next;
   };
 
@@ -308,10 +331,11 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const next = freeSlug(base, slug);
     if (next === slug) return slug;
     try {
-      renameSync(bookDir(slug), bookDir(next));
+      renameRetrying(bookDir(slug), bookDir(next));
     } catch {
-      // Open handles on Windows, a permission, a full disk. The caller
-      // writes the new title to the folder that is still there.
+      // A permission, a full disk, or a Windows handle that outlasted the
+      // retries. The caller writes the new title to the folder that is
+      // still there, and the pass at startup tries the move again.
       return slug;
     }
     const marks = readMarks();
@@ -341,8 +365,12 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
         {},
       ).title;
       if (!title) continue;
-      const base = slugFor(title);
-      if (base === entry.name || !validSlug(base)) continue;
+      const base = bookSlug(title);
+      // sameName, not equality: HFS+ stores every name it is handed in
+      // NFD and reads it back that way, so a folder written correctly as
+      // NFC comes back looking wrong. Comparing raw would move it on
+      // every single startup, forever, on one OS out of three.
+      if (sameName(base) === sameName(entry.name) || !validSlug(base)) continue;
       const moved = moveBook(entry.name, base);
       if (moved !== entry.name) console.log(`puzzlebooks: ${entry.name} -> ${moved}`);
     }
@@ -396,11 +424,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
 
   api.post('/puzzlebooks', async (c) => {
     const body = (await c.req.json().catch(() => ({}))) as { title?: string };
-    const title = body.title?.trim();
+    // NFC here as well as in the slug: a title typed on a Mac and the same
+    // title typed on Windows are different strings until they are
+    // normalised, and the shelf would show two books with one name.
+    const title = body.title?.trim().normalize('NFC');
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
     // Replace only what a path cannot hold; the title's commas, quotes
     // and Korean survive, so the book keeps the name it was given.
-    const base = slugFor(title);
+    const base = bookSlug(title);
     if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
     // Two books may be called the same thing — a title is a name, not an
     // id — so a taken folder takes the next one along rather than refusing.
@@ -442,9 +473,12 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     const body = (await c.req.json().catch(() => ({}))) as { title?: string };
-    const title = body.title?.trim();
+    // NFC here as well as in the slug: a title typed on a Mac and the same
+    // title typed on Windows are different strings until they are
+    // normalised, and the shelf would show two books with one name.
+    const title = body.title?.trim().normalize('NFC');
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
-    const base = slugFor(title);
+    const base = bookSlug(title);
     if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
     const book = readJson<{ title?: string; createdAt?: string }>(
       resolve(bookDir(slug), 'book.json'),

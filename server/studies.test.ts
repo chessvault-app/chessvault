@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chaptersToPgn, pgnToChapters } from '../shared/pgn.ts';
 import { sanitizeSegment, studiesApi, validId } from './studies.ts';
+import { fitSegment } from '../shared/vaultNames.ts';
 
 describe('studies api', () => {
   let dir: string;
@@ -137,10 +138,38 @@ describe('studies api', () => {
     expect(sanitizeSegment('  ..trailing.  ')).toBe('trailing');
     expect(sanitizeSegment('///', 'Study')).toBe('Study');
     expect(sanitizeSegment('CON')).toBe('CON_');
+    // One normal form, whichever the machine that typed it uses: a Korean
+    // IME on macOS composes "방어" out of jamo, and the name has to be the
+    // same string as the one a Windows IME hands over or the two disagree
+    // about which file they mean.
+    expect(sanitizeSegment('시칠리안 방어'.normalize('NFD'))).toBe('시칠리안 방어');
     // And whatever comes out is a name the vault will accept.
     for (const raw of ['Sicilian: Najdorf', '시칠리안 방어', '///', 'CON']) {
       expect(validId(sanitizeSegment(raw, 'Study')), raw).toBe(true);
     }
+  });
+
+  /**
+   * A segment has to fit the smallest limit any of the three filesystems
+   * imposes, and they do not count the same things: NTFS counts 255
+   * UTF-16 units, ext4 and APFS count 255 BYTES, and 120 Korean
+   * characters is 360 of them.
+   */
+  it('trims a name to what the strictest filesystem will hold', () => {
+    const long = fitSegment('가'.repeat(400));
+    expect(Buffer.byteLength(long, 'utf-8')).toBeLessThanOrEqual(255);
+    expect(validId(long)).toBe(true);
+
+    // Room left for what a caller appends to get clear of a taken name.
+    expect(Buffer.byteLength(fitSegment('가'.repeat(400), 8), 'utf-8')).toBeLessThanOrEqual(247);
+
+    // By code point, never by UTF-16 unit: half a surrogate pair is not
+    // valid UTF-8, and a filesystem is entitled to refuse it.
+    const astral = fitSegment('🨁'.repeat(200));
+    expect([...astral].every((c) => c.codePointAt(0)! > 0xffff)).toBe(true);
+
+    // A name already inside every limit is handed back untouched.
+    expect(fitSegment('Sicilian Najdorf')).toBe('Sicilian Najdorf');
   });
 
   it('deletes a study', async () => {

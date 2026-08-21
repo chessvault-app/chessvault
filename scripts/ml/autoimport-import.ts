@@ -19,6 +19,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { bookSlug } from '../../server/puzzlebooks.ts';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
@@ -35,7 +36,11 @@ const CFG = JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as {
   title: string;
   report: string;
 };
-const BOOK = resolve(REPO, 'vault', 'puzzlebooks', CFG.title);
+// bookSlug, not the raw title: the app derives a book's folder from its
+// title through one rule (Windows' forbidden characters, Linux's byte
+// limit, one Unicode normal form), and a second answer here would be a
+// book the server moved the moment it next started.
+const BOOK = resolve(REPO, 'vault', 'puzzlebooks', bookSlug(CFG.title));
 const emitDirArg = process.argv[2];
 if (!emitDirArg) throw new Error('usage: autoimport-import <emit_dir>');
 const emitDir: string = emitDirArg;
