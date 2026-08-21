@@ -45,7 +45,10 @@ export function TagPicker({
   onPick: (tag: MapTag) => void;
   onClose: () => void;
 }) {
-  const [kind, setKind] = useState<Kind>('study');
+  // Games, matching the leftmost segment: the picker opens on what a node
+  // most often wants tagged, and a control whose first segment is not the
+  // selected one asks the reader to check which of the two is lying.
+  const [kind, setKind] = useState<Kind>('game');
   const [filter, setFilter] = useState('');
   const [rows, setRows] = useState<Record<Kind, Row[] | null>>({
     study: null,
@@ -108,7 +111,7 @@ export function TagPicker({
     // what this node points at — so it takes that sheet's height rather
     // than shrinking to its own list and reading as a second, smaller
     // window stacked on the first. The same call AddMoveSheet makes.
-    <Sheet label={t('Link a study, game or note')} onClose={onClose} fill>
+    <Sheet label={t('Link a game, study or note')} onClose={onClose} fill>
       {scoping === null ? (
         <>
           <div className="flex items-center gap-2">

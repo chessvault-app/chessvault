@@ -1068,7 +1068,7 @@ function NodePanel({
         />
       </Field>
 
-      <Field label="Linked studies, games and notes">
+      <Field label="Linked games, studies and notes">
         <div className="flex flex-col gap-1">
           {tags.map((tag) => {
             const broken = tag.kind === 'study' && missing.has(tag.id);
@@ -1140,7 +1140,7 @@ function NodePanel({
             className={ADD_ROW}
           >
             <Plus className="size-4 shrink-0" />
-            <span className="min-w-0 flex-1 truncate">{t('Link a study, game or note')}</span>
+            <span className="min-w-0 flex-1 truncate">{t('Link a game, study or note')}</span>
           </button>
           {/* And the study that does not exist yet.
               Linking one meant leaving the map, making it in the shelf,
