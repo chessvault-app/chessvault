@@ -78,35 +78,77 @@ export function loadCellNet(): Promise<CellNet | null> {
   return cached;
 }
 
-/** 3×3 same-padding convolution + ReLU over CHW data. */
+/**
+ * 3×3 same-padding convolution + ReLU over CHW data.
+ *
+ * Half of a board read is this function — conv1 alone is 5.3M of the 10.8M
+ * multiply-adds a 32² tile costs — so the edge of the image is worth
+ * separating from the middle of it. Only the one-pixel border can fall
+ * outside, and every interior pixel was paying two bounds checks per tap to
+ * establish that it does not.
+ *
+ * The nine taps below are written out in the SAME order the general loop
+ * visits them, and added one statement at a time rather than summed in one
+ * expression, because float addition does not associate: reordering them
+ * would change the last bits of the result and this has to stay the same
+ * classifier. Verified against the old code over a whole board — every one
+ * of the 64 tiles' 13 probabilities bit-identical.
+ */
 function convRelu(layer: ConvLayer, src: Float32Array, size: number): Float32Array {
   const { outC, inC, weight, bias } = layer;
   const out = new Float32Array(outC * size * size);
   const plane = size * size;
+  const last = size - 1;
+
+  /** The general case, for pixels that can hang off the edge. */
+  const border = (oc: number, wBase: number, oBase: number, y: number, x: number): void => {
+    let acc = bias[oc]!;
+    for (let ic = 0; ic < inC; ic++) {
+      const iBase = ic * plane;
+      const wIC = wBase + ic * 9;
+      for (let ky = -1; ky <= 1; ky++) {
+        const sy = y + ky;
+        if (sy < 0 || sy >= size) continue;
+        const rowBase = iBase + sy * size;
+        const wRow = wIC + (ky + 1) * 3;
+        for (let kx = -1; kx <= 1; kx++) {
+          const sx = x + kx;
+          if (sx < 0 || sx >= size) continue;
+          acc += weight[wRow + kx + 1]! * src[rowBase + sx]!;
+        }
+      }
+    }
+    out[oBase + y * size + x] = acc > 0 ? acc : 0;
+  };
+
   for (let oc = 0; oc < outC; oc++) {
     const wBase = oc * inC * 9;
     const oBase = oc * plane;
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
+    for (let x = 0; x < size; x++) border(oc, wBase, oBase, 0, x);
+    for (let y = 1; y < last; y++) {
+      border(oc, wBase, oBase, y, 0);
+      for (let x = 1; x < last; x++) {
         let acc = bias[oc]!;
         for (let ic = 0; ic < inC; ic++) {
-          const iBase = ic * plane;
-          const wIC = wBase + ic * 9;
-          for (let ky = -1; ky <= 1; ky++) {
-            const sy = y + ky;
-            if (sy < 0 || sy >= size) continue;
-            const rowBase = iBase + sy * size;
-            const wRow = wIC + (ky + 1) * 3;
-            for (let kx = -1; kx <= 1; kx++) {
-              const sx = x + kx;
-              if (sx < 0 || sx >= size) continue;
-              acc += weight[wRow + kx + 1]! * src[rowBase + sx]!;
-            }
-          }
+          const w = wBase + ic * 9;
+          const r1 = ic * plane + y * size + x;
+          const r0 = r1 - size;
+          const r2 = r1 + size;
+          acc += weight[w]! * src[r0 - 1]!;
+          acc += weight[w + 1]! * src[r0]!;
+          acc += weight[w + 2]! * src[r0 + 1]!;
+          acc += weight[w + 3]! * src[r1 - 1]!;
+          acc += weight[w + 4]! * src[r1]!;
+          acc += weight[w + 5]! * src[r1 + 1]!;
+          acc += weight[w + 6]! * src[r2 - 1]!;
+          acc += weight[w + 7]! * src[r2]!;
+          acc += weight[w + 8]! * src[r2 + 1]!;
         }
         out[oBase + y * size + x] = acc > 0 ? acc : 0;
       }
+      border(oc, wBase, oBase, y, last);
     }
+    if (last > 0) for (let x = 0; x < size; x++) border(oc, wBase, oBase, last, x);
   }
   return out;
 }
