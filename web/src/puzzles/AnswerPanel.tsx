@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipVertical2 } from 'lucide-react';
 import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
@@ -10,16 +10,17 @@ import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 
 /**
- * The moves panel both puzzle trainers share: the analysis tab's own move
- * table (variations, comments and NAG glyphs included) over a caller-owned
- * tree, plus the standard navigation toolbar walking that tree. The caller
- * decides what selecting a node means.
+ * The moves panel both puzzle trainers and the repertoire drill share: the
+ * analysis tab's own move table (variations, comments and NAG glyphs
+ * included) over a caller-owned tree, plus the standard navigation toolbar
+ * walking that tree. The caller decides what selecting a node means.
  */
 export function AnswerPanel({
   tree,
   cursorId,
   onSelect,
   onPromote,
+  onFlip,
   title = t('Moves'),
   emptyText = t('Play a move on the board.'),
   className,
@@ -29,6 +30,19 @@ export function AnswerPanel({
   onSelect: (id: NodeId) => void;
   /** When set, a strip offers promoting the current side line. */
   onPromote?: (id: NodeId) => void;
+  /**
+   * Turn the board round.
+   *
+   * The desktop toolbar here is the whole of what a trainer offers for
+   * moving about — while solving there is no BoardControls on screen,
+   * because that one drives the analysis store and these screens hold
+   * their own tree. So the flip button was on the phone's action bar and
+   * nowhere else: on a desktop the only way to see the position from the
+   * other side was to finish the puzzle. Optional because the orientation
+   * belongs to the caller, which is the only thing that knows what the
+   * board is showing.
+   */
+  onFlip?: () => void;
   title?: string;
   emptyText?: string;
   /** Lets a caller make this the panel that fills the column's spare height. */
@@ -110,6 +124,16 @@ export function AnswerPanel({
         >
           <ChevronLast className="size-[1.1rem]" />
         </Button>
+        {onFlip && (
+          <>
+            {/* The divider BoardControls draws in the same place, for the
+                same reason: flipping is not a step through the line. */}
+            <div className="bg-line mx-1 h-5 w-px" />
+            <Button variant="ghost" size="icon" title={t('Flip board')} onClick={onFlip}>
+              <FlipVertical2 className="size-[1.1rem]" />
+            </Button>
+          </>
+        )}
       </div>
     </Panel>
   );

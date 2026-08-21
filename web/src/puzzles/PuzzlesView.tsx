@@ -652,6 +652,7 @@ function Trainer({
       tree={answerTree}
       cursorId={answerIds[(review ?? plies) - 1] ?? answerTree.rootId}
       onSelect={(id) => goToPly(id === answerTree.rootId ? 0 : answerIds.indexOf(id) + 1)}
+      onFlip={() => setFlipped((f) => !f)}
     />
   ) : (
     <Panel flush className="shrink-0">

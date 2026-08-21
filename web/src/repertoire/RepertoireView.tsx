@@ -1596,6 +1596,7 @@ export function RepertoireView() {
     tree={tree}
     cursorId={cursorId}
     onSelect={setCursorId}
+    onFlip={() => setFlipped((f) => !f)}
     emptyText="Make your first move on the board."
   />
   );

@@ -736,6 +736,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     onPromote={
       phase === 'solving' ? (id) => setTree(promoteToMainline(tree, id)) : undefined
     }
+    onFlip={() => setFlipped((f) => !f)}
     emptyText={t('Nothing entered yet — find the first move on the board.')}
   />
   );
