@@ -29,7 +29,7 @@ import { extractTextPage } from './ocr/pdfText';
 import type { Gray } from './ocr/image';
 // Type-only: this file already loads pdf.js at runtime, and the repair
 // pass re-renders pages, so it needs the real document type.
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import type { Role } from 'chessops/types';
 import {
   clearCheckpoint,
@@ -449,13 +449,7 @@ async function scan(
       // Where this page's diagrams begin in `results` — the checkpoint
       // below stores exactly that slice.
       const pageStart = results.length;
-      const page = await pdf.getPage(pageNo);
-      const base = page.getViewport({ scale: 1 });
-      const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(viewport.width);
-      canvas.height = Math.round(viewport.height);
-      await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+      const { page, canvas } = await renderPage(pdf, pageNo);
 
       // The book's own words, in the same pass. The answers chapter has no
       // diagrams on it at all, so every page is read whether or not the
@@ -563,13 +557,7 @@ async function scan(
     if (saved) {
       for (const g of geometry) {
         if (g.rects.length === 0 || pageImages.has(g.page)) continue;
-        const page = await pdf.getPage(g.page);
-        const base = page.getViewport({ scale: 1 });
-        const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(viewport.width);
-        canvas.height = Math.round(viewport.height);
-        await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+        const { canvas } = await renderPage(pdf, g.page);
         pageImages.set(g.page, pageJpeg(canvas));
       }
     }
@@ -627,7 +615,10 @@ export function evidencePage(page: number): string {
 }
 
 /** One page of the PDF at the size the whole importer assumes. */
-async function renderPage(pdf: PDFDocumentProxy, pageNo: number): Promise<HTMLCanvasElement> {
+async function renderPage(
+  pdf: PDFDocumentProxy,
+  pageNo: number,
+): Promise<{ page: PDFPageProxy; canvas: HTMLCanvasElement }> {
   const page = await pdf.getPage(pageNo);
   const base = page.getViewport({ scale: 1 });
   const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
@@ -635,7 +626,9 @@ async function renderPage(pdf: PDFDocumentProxy, pageNo: number): Promise<HTMLCa
   canvas.width = Math.round(viewport.width);
   canvas.height = Math.round(viewport.height);
   await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
-  return canvas;
+  // The page comes back with its canvas because the scan reads the page's
+  // words from the same proxy, and fetching it again is a second parse.
+  return { page, canvas };
 }
 
 /** The source page, sized like the offline pipeline's evidence images. */
@@ -770,7 +763,9 @@ async function readSolutions(
   );
   for (const page of answerPages) wanted.add(page);
   for (const page of [...wanted].sort((a, b) => a - b)) {
-    if (!pageImages.has(page)) pageImages.set(page, pageJpeg(await renderPage(pdf, page)));
+    if (!pageImages.has(page)) {
+      pageImages.set(page, pageJpeg((await renderPage(pdf, page)).canvas));
+    }
   }
   const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
   for (let i = 0; i < pages.length; i += 12) {
@@ -1031,13 +1026,7 @@ async function repairUnread(
   const submitPage = async (pageNo: number, numbers: number[]): Promise<void> => {
     const geo = geometry.find((g) => g.page === pageNo);
     if (!geo) return;
-    const page = await pdf.getPage(pageNo);
-    const base = page.getViewport({ scale: 1 });
-    const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(viewport.width);
-    canvas.height = Math.round(viewport.height);
-    await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+    const { canvas } = await renderPage(pdf, pageNo);
     for (const number of numbers) {
       const { board } = cropDiagram(canvas, labelled.get(number)!.rect);
       reading.push({ number, detail: classifyDetailInWorker(board) });
@@ -1111,13 +1100,7 @@ async function readAnswerGlyphs(
   for (const pageNo of [...wanted].sort((a, b) => a - b)) {
     const text = byPage.get(pageNo);
     if (!text) continue;
-    const page = await pdf.getPage(pageNo);
-    const base = page.getViewport({ scale: 1 });
-    const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(viewport.width);
-    canvas.height = Math.round(viewport.height);
-    await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise;
+    const { canvas } = await renderPage(pdf, pageNo);
     const gray = grayFromCanvas(canvas);
     const scale = text.width > 0 ? gray.w / text.width : 1;
     for (const word of text.words) {
