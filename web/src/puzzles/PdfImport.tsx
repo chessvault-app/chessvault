@@ -449,7 +449,7 @@ export function PdfImport({
               {t('Try harder on boards that fail')}
               <span className="text-subtle block">
                 {t(
-                  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles and took twenty minutes.',
+                  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles, and the import may take longer.',
                 )}
               </span>
             </span>

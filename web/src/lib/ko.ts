@@ -1238,8 +1238,8 @@ export const ko: Record<string, string> = {
   'Positions are unread for now: confirming the first draft teaches this book’s font.':
     '아직 포지션을 읽지 못했습니다. 첫 초안을 확인해 주면 이 책의 글꼴을 배웁니다.',
   '— still scanning': '— 아직 스캔 중',
-  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles and took twenty minutes.': 
-    '인쇄된 정답이 재생되지 않는 포지션마다 잘못 읽은 칸 하나를 찾아 다시 읽습니다. 퍼즐 1,000개짜리 책에서 26개를 더 건졌고 20분이 걸렸습니다.',
+  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles, and the import may take longer.':
+    '인쇄된 정답이 재생되지 않는 포지션마다 잘못 읽은 칸 하나를 찾아 다시 읽습니다. 퍼즐 1,000개짜리 책에서 26개를 더 건졌으며, 가져오기가 더 오래 걸릴 수 있습니다.',
   'page {page}/{pages} — {n} diagrams so far': '{page}/{pages}쪽 — 지금까지 다이어그램 {n}개',
   '{n} puzzles imported with their solutions': '정답과 함께 퍼즐 {n}개를 가져왔습니다',
   '{n} had a square misread, found by the book’s own solution.': 

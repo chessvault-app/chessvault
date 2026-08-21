@@ -66,8 +66,9 @@ export interface ImportOptions {
   /**
    * Re-read the boards whose printed solution would not replay, looking
    * for a misread square. Off by default: measured on 1001 Chess
-   * Exercises it recovered 26 puzzles out of 242 failures and took twenty
-   * minutes, so it is worth offering and not worth imposing.
+   * Exercises it recovered 26 puzzles out of 242 failures, and it still
+   * adds to an import that is already long, so it is worth offering and
+   * not worth imposing.
    */
   repair?: boolean;
   /**
