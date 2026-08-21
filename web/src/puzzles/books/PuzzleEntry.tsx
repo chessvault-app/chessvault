@@ -160,6 +160,10 @@ export function PuzzleEntry({
         // learning is best-effort
       }
     })();
+    // The confirmed position becomes what the editor reopens on, so
+    // Cancel in the recorder steps BACK to it rather than throwing the
+    // corrections away and starting from the stored one again.
+    setPrefill(confirmed);
     setFen(confirmed);
   };
 
@@ -259,9 +263,17 @@ export function PuzzleEntry({
             />
           )}
           <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
-            {stackedView === 'board' ? (
-              boardContent
-            ) : stackedView === 'diagram' ? (
+            {/* The board stays MOUNTED behind the other tabs rather than
+                being swapped out for them. It carries the work — the
+                position being set up in the editor, or the solution being
+                recorded — and unmounting it threw that away: stepping over
+                to the diagram and back handed the editor its prefill again
+                and the edits were gone (phones only; the wide layout has
+                always kept both on screen). */}
+            <div className={cn('h-full', stackedView !== 'board' && 'hidden')}>
+              {boardContent}
+            </div>
+            {stackedView === 'diagram' ? (
               <div ref={stackedPane} className="p-4">
                 {evidence?.page && stackedPaneW > 0 ? (
                   <SourceCrop
@@ -274,7 +286,7 @@ export function PuzzleEntry({
                   <img src={draft.imageUrl} alt={t('book diagram')} className="border-line w-full rounded-md border" />
                 ) : null}
               </div>
-            ) : evidence && hasSolutions(evidence) ? (
+            ) : stackedView === 'solutions' && evidence && hasSolutions(evidence) ? (
               <div ref={stackedPane} className="p-4">
                 {stackedPaneW > 0 && (
                   <SolutionsView slug={slug} evidence={evidence} width={stackedPaneW - 32} />
