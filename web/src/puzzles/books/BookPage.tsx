@@ -24,7 +24,7 @@ import { Suspense, lazy } from 'react';
 
 const PdfImport = lazy(() => import('../PdfImport').then((m) => ({ default: m.PdfImport })));
 import { useImportJob } from '../importJob';
-import { listCheckpoints, renameCheckpoint, type CheckpointSummary } from '../importCheckpoint';
+import { listCheckpoints, type CheckpointSummary } from '../importCheckpoint';
 import {
   classifyBoard,
   labelsToFen,
@@ -41,7 +41,6 @@ import {
   diagramUrl,
   forgetBook,
   loadBook,
-  noteRename,
 } from './data';
 import { PuzzleList } from './PuzzleList';
 import { PuzzleEntry } from './PuzzleEntry';
@@ -160,43 +159,27 @@ export function BookPage({ slug }: { slug: string }) {
   }, [slug]);
   useEffect(() => void load(), [load]);
 
-  // Renaming edits the title AND the folder under it, so the book's slug
-  // — its URL, its bookmark, the key its saved scan is filed under — can
-  // come back changed. Everything this page holds by slug follows it.
+  // Renaming edits the title and only the title. The slug is an id: the
+  // folder, the URL, the bookmark and the saved scan are all filed under
+  // it and none of them are names, so none of them hear about this.
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   // Still worn by the placeholder name. The rename BUTTON that used to
   // read this is gone; what is left of it is the importer's offer to name
   // the book after the PDF, which only stands while nobody has named it.
   const untitled = book !== null && isUntitled(book.title, 'Untitled book');
-  const rename = async (title: string): Promise<string> => {
+  const rename = async (title: string): Promise<void> => {
     const next = title.trim();
-    if (!next || next === book?.title) return slug;
+    if (!next || next === book?.title) return;
     try {
-      const body = await api<{ slug?: string }>(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
         method: 'PATCH',
         json: { title: next },
       });
-      const moved = body.slug ?? slug;
       forgetBook(slug);
-      if (moved === slug) {
-        await load();
-        return slug;
-      }
-      // The folder moved. The scan checkpoint is keyed by slug in this
-      // browser and a running scan is keyed by it in memory, so both are
-      // pointed at the new name BEFORE the URL changes — navigating
-      // remounts this page, and a resume offer must not go looking for a
-      // book under the name it no longer has.
-      importJob.retarget(slug, moved);
-      await renameCheckpoint(slug, moved);
-      forgetBook(moved);
-      noteRename(slug, moved);
-      navigate('puzzles', 'books', moved);
-      return moved;
+      await load();
     } catch {
       // The header keeps the old title, which is what the server kept.
-      return slug;
     }
   };
 
@@ -367,7 +350,7 @@ export function BookPage({ slug }: { slug: string }) {
             onClose={() => setImporting(false)}
             // Only while the default name is still on: a chosen title is
             // the reader's own answer and outranks the filename.
-            onSuggestName={untitled ? rename : undefined}
+            onSuggestName={untitled ? (name) => void rename(name) : undefined}
           />
         </Suspense>
         )}

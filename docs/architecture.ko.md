@@ -18,7 +18,7 @@ vault/
     collection/       *.pgn        (손수 고른, 주석 가능한)
     chesscom/<user>/  YYYY-MM.pgn  (기보 캐시)
     lichess/<user>/   YYYY-MM.pgn
-  puzzlebooks/<slug>/
+  puzzlebooks/<id>/                  (b + 16진수 16자리, 제목은 book.json에)
     book.json  puzzles.json  drafts.json  progress.json  ocr.json
     diagrams/  *.jpg          (근거 스캔, 표지)
   puzzles/            history.jsonl  state.json

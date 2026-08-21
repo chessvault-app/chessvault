@@ -38,8 +38,12 @@ of the work below.
 
 ## Where it writes
 
-Straight into `vault/puzzlebooks/<title>/` **inside the repository** —
+Straight into `vault/puzzlebooks/<id>/` **inside the repository** —
 `puzzles.json`, `drafts.json`, `book.json` and the `diagrams/` images.
+The folder is an id (`b` and sixteen hex characters), not the title: the
+book is found by the title in its `book.json`, or made with a fresh id if
+there is no book by that name yet, so running this twice lands in the
+same book rather than beside it.
 Note that this is the repo's own `vault/`: unlike the server, these
 scripts do not read `CHESS_VAULT_DIR`, so if your vault lives elsewhere
 you will need to move the folder afterwards. Refresh the app and the

@@ -94,7 +94,7 @@ export function fitSegment(name: string, reserve = 0): string {
 }
 
 export function sanitizeSegment(name: string, fallback = 'Untitled'): string {
-  const cleaned = name
+  const trimmed = name
     // ONE normal form, because three filesystems disagree about which
     // they store. "책" is one code point in NFC and two in NFD, and a
     // Korean IME on macOS hands over the second; HFS+ then normalises
@@ -108,9 +108,13 @@ export function sanitizeSegment(name: string, fallback = 'Untitled'): string {
     .replace(FORBIDDEN_CHARS_G, ' ')
     .replace(/\s+/g, ' ')
     .replace(/^[.\s]+/, '')
-    .replace(/[.\s]+$/, '')
-    .slice(0, MAX_SEGMENT)
-    .trim();
+    .replace(/[.\s]+$/, '');
+  // fitSegment rather than slice(0, MAX_SEGMENT): a study, a note and a
+  // collected game are all FILES named after their titles, and 120 Korean
+  // characters is 360 UTF-8 bytes — inside the limit NTFS enforces and
+  // outside the one ext4 and APFS do, which is a name the server cannot
+  // write at all.
+  const cleaned = fitSegment(trimmed).trim();
   if (!cleaned) return fallback;
   // A name that is a Windows device is a file that cannot be created.
   return RESERVED_DEVICE.test(cleaned) ? `${cleaned}_` : cleaned;

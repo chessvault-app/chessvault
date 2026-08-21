@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { randomBytes } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
@@ -12,15 +13,33 @@ import {
 import { resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
-import { fitSegment, sanitizeSegment, validId } from '../shared/vaultNames.ts';
+import { validId } from '../shared/vaultNames.ts';
 
 /**
  * Book puzzles — positions transcribed from paper books (lanph3re's v1: manual
  * board entry; OCR later). Vault data, one directory per book:
  *
- *   vault/puzzlebooks/<slug>/book.json      { title, createdAt }
- *   vault/puzzlebooks/<slug>/puzzles.json   [{ id, fen, uci[], san[], added }]
- *   vault/puzzlebooks/<slug>/progress.json  { [id]: { tries, wins, last, at } }
+ *   vault/puzzlebooks/<id>/book.json      { title, createdAt }
+ *   vault/puzzlebooks/<id>/puzzles.json   [{ id, fen, uci[], san[], added }]
+ *   vault/puzzlebooks/<id>/progress.json  { [id]: { tries, wins, last, at } }
+ *
+ * The folder is an ID — `b` and sixteen hex characters, minted once and
+ * never touched again. The book's NAME lives in book.json and nowhere
+ * else. This was the title for a while, which reads better in a file
+ * manager and cost more than it was worth: a title is a thing people
+ * change, so the folder had to move when they did, and everything holding
+ * the old name — bookmarks, the URL, a half-finished scan checkpointed in
+ * the browser — had to be carried across with it. An id that never moves
+ * is one that nothing can be left pointing at. Browsing a book is what
+ * the app is for.
+ *
+ * It also ends a whole class of bug for free. A folder built from a name
+ * has to survive three filesystems that disagree about what a name is —
+ * the characters and device names Windows forbids, the 255 BYTES Linux
+ * counts where Windows counts characters, the case Windows and macOS fold
+ * together, the Unicode normal form HFS+ rewrites underneath you — and
+ * every one of those was a way for two different books to land in one
+ * folder, or for one book to look like two. Hex is none of them.
  *
  * Unlike the lichess trainer, solutions here demand BOTH sides' moves.
  */
@@ -52,34 +71,18 @@ const BOOKS_DIR = resolve(VAULT, 'puzzlebooks');
 const validSlug = (slug: string): boolean => !slug.includes('/') && validId(slug);
 
 /**
- * The folder name a title asks for, before anything is checked for it.
+ * A book's folder: `b` and eight random bytes as hex.
  *
- * sanitizeSegment answers what a PATH can hold — the characters and
- * device names Windows forbids, the leading and trailing dots and spaces
- * it silently strips, and one Unicode normal form so that a title typed
- * on a Mac and the same title typed on Windows ask for the same folder.
- * fitSegment answers how much of it, in the bytes Linux counts rather
- * than the characters Windows does, leaving room for the " 2" a taken
- * name gets. Both matter now and did not before: a book's folder used to
- * be minted once from a placeholder and is now whatever the reader calls
- * the book.
- *
- * Exported because the offline importer under scripts/ml/ writes books
- * into the same vault, and a second answer to "what folder is this
- * title" is a book the app would move the moment it next started.
+ * Random rather than a hash of the title, because two books may be called
+ * the same thing — the shelf's own New button offers one name to every
+ * book it makes — and a hash would file them both in one folder, which is
+ * the collision this id exists to make impossible. Eight bytes is 2^64:
+ * a vault would need billions of books before two ever met.
  */
-export const bookSlug = (title: string): string => fitSegment(sanitizeSegment(title, ''), 8);
+const newBookId = (): string => `b${randomBytes(8).toString('hex')}`;
 
-/**
- * Folder names as they are COMPARED — never as they are written.
- *
- * Two folders that a filesystem would hold as one: Windows and macOS fold
- * case, HFS+ hands back names in a different normal form than it was
- * given. Comparing raw readdir output against a name built from a title
- * therefore answers differently on each OS, which is the whole bug class
- * this guards. Written names keep their own case and NFC.
- */
-const sameName = (name: string): string => name.normalize('NFC').toLowerCase();
+/** Minted here, so a folder that was never minted here is recognisable. */
+const isBookId = (name: string): boolean => /^b[0-9a-f]{16}$/.test(name);
 
 interface BookPuzzle {
   id: string;
@@ -197,6 +200,34 @@ function writeJson(path: string, value: unknown): void {
   writeAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+/**
+ * The folder holding the book with this title, made if there is not one.
+ *
+ * For the offline importer under scripts/ml/, which writes into the same
+ * vault as the app. It used to build a path out of the title directly,
+ * which stopped being possible the moment a folder became an id — and was
+ * already wrong, because it was a second answer to "where does this book
+ * live" and the two would drift.
+ *
+ * Found by TITLE, so running a pipeline twice lands in the book it landed
+ * in last time rather than making a second one beside it. Compared in one
+ * normal form, since the config file and this vault may have been typed
+ * on different machines.
+ */
+export function bookDirFor(title: string, dir: string = BOOKS_DIR): string {
+  const name = title.normalize('NFC');
+  mkdirSync(dir, { recursive: true });
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const book = readJson<{ title?: string }>(resolve(dir, entry.name, 'book.json'), {});
+    if (book.title?.normalize('NFC') === name) return resolve(dir, entry.name);
+  }
+  const made = resolve(dir, newBookId());
+  mkdirSync(made, { recursive: true });
+  writeJson(resolve(made, 'book.json'), { title: name, createdAt: new Date().toISOString() });
+  return made;
+}
+
 export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   const bookDir = (slug: string): string => resolve(dir, slug);
   const puzzlesPath = (slug: string): string => resolve(bookDir(slug), 'puzzles.json');
@@ -293,86 +324,35 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   };
 
   /**
-   * The nearest free folder to `base`, CASE-INSENSITIVELY free.
+   * One pass at startup over folders that were named before books had ids.
    *
-   * Windows and macOS hold "Chess" and "chess" in one folder where Linux
-   * holds two, and this vault is written on a Linux server, opened by a
-   * Windows desktop shell and backed up to whatever the reader has. Two
-   * books that differ only in case are a vault that cannot be copied.
+   * Every one of them is named after a title — the title the book had at
+   * the moment it was created, which for most of them is the placeholder
+   * nobody chose. The name is kept: it goes into book.json first if that
+   * file has no title of its own, so a folder is never renamed to an id
+   * with nothing left saying what it was.
    *
-   * `mine` is the book's own folder, which is never in its own way — that
-   * is what lets a rename change only the case of a name.
-   */
-  const freeSlug = (base: string, mine?: string): string => {
-    const taken = new Set<string>();
-    if (existsSync(dir)) {
-      for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        if (!entry.isDirectory()) continue;
-        // Its own folder is never in its own way — that is what lets a
-        // rename change only the case of a name, or only its normal
-        // form. Compared the same way as everything else here, or the
-        // book would fail to recognise itself on an OS that hands the
-        // name back in a form other than the one it was written in.
-        if (mine !== undefined && sameName(entry.name) === sameName(mine)) continue;
-        taken.add(sameName(entry.name));
-      }
-    }
-    let next = base;
-    for (let n = 2; taken.has(sameName(next)); n += 1) next = `${base} ${n}`;
-    return next;
-  };
-
-  /**
-   * Move a book's folder to the next free slug at `base`, and take with it
-   * everything OUTSIDE the folder that named the old one. Returns the slug
-   * the book now lives at — the old one if the move could not be made.
-   */
-  const moveBook = (slug: string, base: string): string => {
-    const next = freeSlug(base, slug);
-    if (next === slug) return slug;
-    try {
-      renameRetrying(bookDir(slug), bookDir(next));
-    } catch {
-      // A permission, a full disk, or a Windows handle that outlasted the
-      // retries. The caller writes the new title to the folder that is
-      // still there, and the pass at startup tries the move again.
-      return slug;
-    }
-    const marks = readMarks();
-    if (marks.includes(slug)) writeMarks(marks.map((s) => (s === slug ? next : s)));
-    // Both are keyed by slug and both would answer for a book that has
-    // moved out from under them.
-    idsCache.delete(slug);
-    tallyCache.delete(slug);
-    return next;
-  };
-
-  /**
-   * One pass at startup over books whose folder predates the rule above.
-   *
-   * Without it the invariant would only hold for books renamed from now
-   * on, and a shelf that already has "1001 Chess Exercises" filed under
-   * "제목 없는 책" would keep it forever — with no way to fix it from
-   * the app, since renaming a book to the name it already has is not a
-   * rename. It is a move, not a rewrite: nothing inside a book is read or
-   * written, and a folder that cannot be moved is left exactly as it was.
+   * A move, not a rewrite. Nothing inside a book is read or written, and
+   * a folder that will not move is left exactly as it was and tried again
+   * next time.
    */
   if (existsSync(dir)) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const title = readJson<{ title?: string }>(
-        resolve(bookDir(entry.name), 'book.json'),
-        {},
-      ).title;
-      if (!title) continue;
-      const base = bookSlug(title);
-      // sameName, not equality: HFS+ stores every name it is handed in
-      // NFD and reads it back that way, so a folder written correctly as
-      // NFC comes back looking wrong. Comparing raw would move it on
-      // every single startup, forever, on one OS out of three.
-      if (sameName(base) === sameName(entry.name) || !validSlug(base)) continue;
-      const moved = moveBook(entry.name, base);
-      if (moved !== entry.name) console.log(`puzzlebooks: ${entry.name} -> ${moved}`);
+      if (!entry.isDirectory() || isBookId(entry.name)) continue;
+      const path = resolve(bookDir(entry.name), 'book.json');
+      const book = readJson<{ title?: string; createdAt?: string }>(path, {});
+      // The folder name IS the book's name when book.json does not say
+      // otherwise, and it is about to stop being readable.
+      if (!book.title) writeJson(path, { ...book, title: entry.name.normalize('NFC') });
+      const id = newBookId();
+      try {
+        renameRetrying(bookDir(entry.name), bookDir(id));
+      } catch {
+        continue;
+      }
+      const marks = readMarks();
+      if (marks.includes(entry.name)) writeMarks(marks.map((m) => (m === entry.name ? id : m)));
+      console.log(`puzzlebooks: ${entry.name} -> ${id}`);
     }
   }
 
@@ -431,14 +411,12 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
     // Replace only what a path cannot hold; the title's commas, quotes
     // and Korean survive, so the book keeps the name it was given.
-    const base = bookSlug(title);
-    if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
-    // Two books may be called the same thing — a title is a name, not an
-    // id — so a taken folder takes the next one along rather than refusing.
-    // Refusing is what the shelf's New book button used to meet: it picks a
-    // title no book is using, which is not the same question as which
-    // FOLDER is free, and it could not see the collision coming.
-    const slug = freeSlug(base);
+    // No answer here can be "that name is taken". The folder is an id
+    // nothing else holds, and the title is a name like any other name —
+    // which is what the shelf's New book button needed all along: it
+    // offers the same placeholder to every book it makes, and used to be
+    // refused by a folder it could not see.
+    const slug = newBookId();
     mkdirSync(bookDir(slug), { recursive: true });
     writeJson(resolve(bookDir(slug), 'book.json'), { title, createdAt: new Date().toISOString() });
     writeJson(puzzlesPath(slug), []);
@@ -446,47 +424,30 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   });
 
   /**
-   * Rename a book: the title, and the FOLDER with it.
+   * Rename a book. One write to book.json, and nothing else in the vault
+   * or in any client has to hear about it: the folder is an id, the URL
+   * is that id, a bookmark is that id, and a half-finished scan in the
+   * browser is filed under that id. None of them are names.
    *
-   * The slug used to be frozen at creation on the reasoning that ids do
-   * not follow display names. True of ids in general, and wrong here: a
-   * book's slug is minted from the name the book had at its very first
-   * moment, which is the placeholder nobody chose. That left "1001 Chess
-   * Exercises for Beginners" living in a folder called "제목 없는 책" —
-   * unreadable to anyone opening the vault, and the reason a taken slug
-   * could be invisible to the shelf and break the New book button.
-   *
-   * So the folder moves. What that costs, and what pays it:
-   *
-   *  - Bookmarks are re-pointed here, in the same request.
-   *  - The URL changes, so the response carries the new slug and the
-   *    client navigates to it.
-   *  - A half-finished import is checkpointed in the BROWSER under the
-   *    old slug; web/src/puzzles/books/BookPage.tsx re-keys it and
-   *    retargets a running scan when this returns a moved slug.
-   *  - Progress travels inside the folder, so it needs nothing.
-   *
-   * If the move itself fails the title still changes and the folder stays:
-   * a rename that half-worked is worse than one that renamed less.
+   * This is the whole reason the folder stopped being the title. The
+   * version that renamed the directory had to carry all four across, in
+   * the right order, without remounting the page under an open import
+   * window — for a rename the importer fires one line before it starts a
+   * nine-hundred page scan.
    */
   api.patch('/puzzlebooks/:slug', async (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
     const body = (await c.req.json().catch(() => ({}))) as { title?: string };
-    // NFC here as well as in the slug: a title typed on a Mac and the same
-    // title typed on Windows are different strings until they are
-    // normalised, and the shelf would show two books with one name.
+    // NFC: a title typed on a Mac and the same title typed on Windows are
+    // different strings until they are normalised, and the shelf would
+    // show two books wearing one name.
     const title = body.title?.trim().normalize('NFC');
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
-    const base = bookSlug(title);
-    if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
-    const book = readJson<{ title?: string; createdAt?: string }>(
-      resolve(bookDir(slug), 'book.json'),
-      {},
-    );
-    const next = base === slug ? slug : moveBook(slug, base);
-    writeJson(resolve(bookDir(next), 'book.json'), { ...book, title });
-    return c.json({ slug: next, title });
+    const path = resolve(bookDir(slug), 'book.json');
+    const book = readJson<{ title?: string; createdAt?: string }>(path, {});
+    writeJson(path, { ...book, title });
+    return c.json({ slug, title });
   });
 
   api.delete('/puzzlebooks/:slug', (c) => {

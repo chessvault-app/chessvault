@@ -125,12 +125,8 @@ export function PdfImport({
    * Passed only while the book still wears its "Untitled book" default:
    * the chosen PDF's own name is offered as the book's. The caller owns
    * the rename — this window only knows what the file was called.
-   *
-   * It answers with the slug the book ends up at, because naming it moves
-   * its folder: everything below this line must address the book by the
-   * name it now has, not the placeholder it had when this window opened.
    */
-  onSuggestName?: (title: string) => Promise<string>;
+  onSuggestName?: (title: string) => void;
 }) {
   const job = useImportJob();
   const [saving, setSaving] = useState(false);
@@ -176,14 +172,11 @@ export function PdfImport({
     }
     // An untitled book takes its name from the PDF it is being fed —
     // the shelf otherwise fills with "Untitled book 3" cards whose only
-    // identity is a cover. Awaited, and its answer used from here on: the
-    // rename moves the folder, so starting the scan against the captured
-    // `slug` would write nine hundred pages of evidence to a book that is
-    // no longer there.
-    let target = slug;
+    // identity is a cover. The book itself does not move: its folder is
+    // an id, so the scan below writes to the same place either way.
     if (onSuggestName) {
       const suggested = suggestTitle(file);
-      if (suggested) target = await onSuggestName(suggested);
+      if (suggested) onSuggestName(suggested);
     }
     setPreparing(true);
     try {
@@ -197,7 +190,7 @@ export function PdfImport({
         return;
       }
       if (existing > 0 && mode === 'rebuild') {
-        await api(`/api/puzzlebooks/${encodeURIComponent(target)}/puzzles`, { method: 'DELETE' });
+        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/puzzles`, { method: 'DELETE' });
       }
     } catch (e) {
       setSaveError(apiErrorMessage(e));
@@ -205,7 +198,7 @@ export function PdfImport({
     } finally {
       setPreparing(false);
     }
-    job.start(target, file, templates, { repair, engine });
+    job.start(slug, file, templates, { repair, engine });
   };
 
   // A book's PDF is the one file this window exists for, so the whole

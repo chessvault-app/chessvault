@@ -225,35 +225,6 @@ export async function readCheckpoint(slug: string): Promise<ImportCheckpoint | n
   };
 }
 
-/**
- * Re-key a saved scan when its book's folder moves.
- *
- * A rename changes the slug (server/puzzlebooks.ts), and a scan of a
- * nine-hundred page book is the longest thing this app does — losing one
- * to a rename would be a worse bug than the one renaming fixes. Manifest
- * and pages move in ONE transaction, so a scan is never half-keyed.
- */
-export async function renameCheckpoint(from: string, to: string): Promise<void> {
-  if (from === to) return;
-  await withTx('readwrite', (tx) => {
-    const store = tx.objectStore(STORE);
-    const manifests = store.get(from);
-    manifests.onsuccess = () => {
-      const manifest = manifests.result as Manifest | undefined;
-      if (!manifest) return;
-      store.delete(from);
-      store.put({ ...manifest, slug: to });
-    };
-    const pages = tx.objectStore(PAGES);
-    const found = pages.getAll(pageRange(from));
-    found.onsuccess = () => {
-      pages.delete(pageRange(from));
-      for (const page of found.result as CheckpointPage[]) pages.put({ ...page, slug: to });
-    };
-    return null;
-  });
-}
-
 export async function clearCheckpoint(slug: string): Promise<void> {
   await withTx('readwrite', (tx) => {
     tx.objectStore(PAGES).delete(pageRange(slug));

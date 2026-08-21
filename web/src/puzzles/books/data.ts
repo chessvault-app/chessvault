@@ -168,28 +168,6 @@ export const shelfMemory = {
   coversDecoded: false,
 };
 
-/**
- * The React key a book's page keeps across a rename.
- *
- * BooksView keys the page on the slug so that stepping from one book to
- * another starts a clean page. A rename now changes the slug too — and
- * remounting on THAT would close whatever is open, which in the case that
- * matters is the import window: the importer names an untitled book after
- * its PDF the moment a file is chosen, so the rename lands one line
- * before the scan starts and would take the window down with it.
- *
- * So a renamed book keeps the key it was drawn under. Session-only and
- * one entry per rename — it is a React identity, not a redirect: every
- * request still goes to the slug the book actually has.
- */
-const pageKeys = new Map<string, string>();
-
-export function noteRename(from: string, to: string): void {
-  pageKeys.set(to, pageKeys.get(from) ?? from);
-}
-
-export const pageKeyOf = (slug: string): string => pageKeys.get(slug) ?? slug;
-
 export function forgetBook(slug?: string): void {
   // The shelf shows each book's puzzle and progress counts, so whatever
   // invalidates a book invalidates the shelf's summary of it too.

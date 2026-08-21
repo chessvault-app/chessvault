@@ -119,15 +119,6 @@ interface ImportJobState {
   start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
   /** Continue a scan a reload, a crash, or a pause interrupted. */
   resume: (slug: string, templates: Template[], options?: ImportOptions) => void;
-  /**
-   * Follow a book whose folder moved under a running scan.
-   *
-   * Every save point reads `slug` from this store rather than closing
-   * over it, so pointing it at the new folder is the whole of it — the
-   * pages already written went to the old folder, which IS the new one
-   * under a different name.
-   */
-  retarget: (from: string, to: string) => void;
   /** Stop after the page being read, keeping the checkpoint. */
   pause: () => void;
   toggle: (index: number) => void;
@@ -349,10 +340,6 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
       error: null,
     });
     void scan(file, templates, options ?? {}, set, get, null);
-  },
-
-  retarget: (from, to) => {
-    if (get().slug === from) set({ slug: to });
   },
 
   resume: (slug, templates, options) => {
