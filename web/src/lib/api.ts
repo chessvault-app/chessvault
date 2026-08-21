@@ -94,9 +94,19 @@ export async function api<T = unknown>(
   return (await res.json().catch(() => undefined)) as T;
 }
 
-/** The error's message when it is an ApiError, a generic line otherwise. */
+/**
+ * The error's message when it is an ApiError, a generic line otherwise.
+ *
+ * Translated HERE rather than at the call site. The server's own error
+ * strings are English sentences, and ko.ts carries a block of them for
+ * exactly this reason — but only about half the call sites remembered to
+ * write `t(apiErrorMessage(e))`, so a Korean user met "a book with that
+ * name exists" in English. One `t()` at the boundary every message passes
+ * through cannot be forgotten. Double translation is a no-op: a Korean
+ * sentence is not a key, so it falls back to itself.
+ */
 export function apiErrorMessage(error: unknown): string {
   return error instanceof ApiError
-    ? error.message
+    ? t(error.message)
     : t('Request failed ({status})', { status: '?' });
 }

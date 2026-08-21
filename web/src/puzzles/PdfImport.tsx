@@ -172,7 +172,8 @@ export function PdfImport({
     }
     // An untitled book takes its name from the PDF it is being fed —
     // the shelf otherwise fills with "Untitled book 3" cards whose only
-    // identity is a cover.
+    // identity is a cover. The book itself does not move: its folder is
+    // an id, so the scan below writes to the same place either way.
     if (onSuggestName) {
       const suggested = suggestTitle(file);
       if (suggested) onSuggestName(suggested);

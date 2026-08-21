@@ -36,8 +36,11 @@ Exercises*의 다이어그램 1,033개를 읽는 데 `--jobs 6`으로 204초, �
 
 ## 어디에 쓰는가
 
-저장소 안의 `vault/puzzlebooks/<title>/`에 바로 씁니다 — `puzzles.json`,
-`drafts.json`, `book.json`, 그리고 `diagrams/`의 이미지들입니다. 이것이
+저장소 안의 `vault/puzzlebooks/<id>/`에 바로 씁니다 — `puzzles.json`,
+`drafts.json`, `book.json`, 그리고 `diagrams/`의 이미지들입니다. 폴더 이름은
+제목이 아니라 id입니다(`b` + 16진수 16자리). 책은 `book.json`의 제목으로 찾고,
+그런 이름의 책이 없으면 새 id로 만듭니다. 그래서 두 번 돌려도 같은 책에
+들어가지, 옆에 하나 더 생기지 않습니다. 이것이
 저장소 자신의 `vault/`라는 점에 주의하십시오. 서버와 달리 이 스크립트들은
 `CHESS_VAULT_DIR`를 보지 않으므로, 보관함이 다른 곳에 있다면 나중에 폴더를
 옮겨야 합니다. 앱을 새로 고치면 책이 보입니다. 퍼즐 id가 `n<번호>`라서 다시

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { puzzleBooksApi } from './puzzlebooks.ts';
@@ -8,6 +8,8 @@ import { puzzleBooksApi } from './puzzlebooks.ts';
 describe('puzzle books api', () => {
   let dir: string;
   let app: Hono;
+  /** The first book's id, kept because the tests below share one shelf. */
+  let sacrifices = '';
 
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
@@ -22,25 +24,159 @@ describe('puzzle books api', () => {
       body: JSON.stringify(body),
     });
 
+  const BOOK_ID = /^b[0-9a-f]{16}$/;
+
   it('creates a book and lists it', async () => {
     const created = await post('/api/puzzlebooks', { title: '1001 Sacrifices' });
     expect(created.status).toBe(200);
     const { slug } = await created.json();
-    expect(slug).toBe('1001 Sacrifices');
+    sacrifices = slug;
+    // An id, not the title: nothing about the folder is derived from the
+    // name, so nothing about the name can collide.
+    expect(slug).toMatch(BOOK_ID);
 
-    expect((await post('/api/puzzlebooks', { title: '1001 Sacrifices' })).status).toBe(409);
+    // Which is what lets two books be called the same thing. The shelf's
+    // New button offers one placeholder to every book it makes, and this
+    // used to be answered with "a book with that name exists".
+    const twin = await post('/api/puzzlebooks', { title: '1001 Sacrifices' });
+    expect(twin.status).toBe(200);
+    const { slug: twinSlug } = await twin.json();
+    expect(twinSlug).toMatch(BOOK_ID);
+    expect(twinSlug).not.toBe(slug);
+    // A title is still required — it is the only name the book has.
     expect((await post('/api/puzzlebooks', {})).status).toBe(400);
 
     const list = await (await app.request('/api/puzzlebooks')).json();
-    expect(list.books).toHaveLength(1);
-    expect(list.books[0]).toMatchObject({ title: '1001 Sacrifices', puzzles: 0, solved: 0 });
+    expect(list.books).toHaveLength(2);
+    expect(list.books.map((b: { title: string }) => b.title)).toEqual([
+      '1001 Sacrifices',
+      '1001 Sacrifices',
+    ]);
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toMatchObject({
+      title: '1001 Sacrifices',
+      puzzles: 0,
+      solved: 0,
+    });
   });
 
-  it('renames a book without moving its folder', async () => {
+  /**
+   * The bug all of this began with: New book answered "a book with that
+   * name exists" on every press, forever, and showed no such book.
+   *
+   * A book created as the shelf's placeholder and then renamed used to
+   * keep its placeholder folder, so the name stayed taken by a book
+   * nothing listed under it. The shelf picks a title no book is using,
+   * which was never the same question as which folder is free, and it
+   * could not see the collision coming. Neither question exists now.
+   */
+  it('makes a new book under the placeholder name however often it is asked', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    const shelf = new Hono().route('/api', puzzleBooksApi(own));
+    const make = (title: string): Promise<Response> | Response =>
+      shelf.request('/api/puzzlebooks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+    try {
+      const first = await (await make('제목 없는 책')).json();
+      await shelf.request(`/api/puzzlebooks/${first.slug}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: '1001 Chess Exercises for Beginners' }),
+      });
+
+      // Renamed or not, the placeholder was never a folder and is free.
+      for (let n = 0; n < 3; n += 1) expect((await make('제목 없는 책')).status).toBe(200);
+      const list = await (await shelf.request('/api/puzzlebooks')).json();
+      expect(list.books).toHaveLength(4);
+      expect(new Set(list.books.map((b: { slug: string }) => b.slug)).size).toBe(4);
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * Every folder in a vault written before books had ids is named after a
+   * title. They are moved once, at startup — and the name is kept: it goes
+   * into book.json first when that file has none of its own, so no folder
+   * is ever renamed to an id with nothing left saying what it was.
+   */
+  it('moves a folder named after a title to an id at startup', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    // One with a title of its own, already diverged from its folder.
+    mkdirSync(join(own, '제목 없는 책', 'diagrams'), { recursive: true });
+    writeFileSync(
+      join(own, '제목 없는 책', 'book.json'),
+      JSON.stringify({ title: '1001 Chess Exercises for Beginners' }),
+    );
+    writeFileSync(join(own, '제목 없는 책', 'diagrams', 'cover.jpg'), 'jpeg');
+    // And one whose folder name is the only name it has.
+    mkdirSync(join(own, 'Chess Evolution'), { recursive: true });
+    writeFileSync(join(own, 'Chess Evolution', 'puzzles.json'), '[]');
+    writeFileSync(join(own, '.bookmarks.json'), JSON.stringify({ slugs: ['제목 없는 책'] }));
+    try {
+      const shelf = new Hono().route('/api', puzzleBooksApi(own));
+      const list = await (await shelf.request('/api/puzzlebooks')).json();
+      expect(list.books).toHaveLength(2);
+      for (const book of list.books) expect(book.slug).toMatch(BOOK_ID);
+
+      const renamed = list.books.find(
+        (b: { title: string }) => b.title === '1001 Chess Exercises for Beginners',
+      );
+      expect(renamed).toMatchObject({ cover: true });
+      // The folder name became the title of the book that had none.
+      expect(list.books.map((b: { title: string }) => b.title)).toContain('Chess Evolution');
+      // The bookmark went with it.
+      const marks = await (await shelf.request('/api/puzzlebooks/bookmarks')).json();
+      expect(marks.slugs).toEqual([renamed.slug]);
+
+      // And a second start moves nothing: an id is already an id.
+      const before = readdirSync(own).sort();
+      new Hono().route('/api', puzzleBooksApi(own));
+      expect(readdirSync(own).sort()).toEqual(before);
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * A title is stored in ONE normal form. "제목" is one code point per
+   * syllable composed and two decomposed, a Korean IME on macOS types the
+   * second, and two books wearing what looks like one name is a shelf
+   * nobody can read. The folder is unaffected either way, which is rather
+   * the point.
+   */
+  it('stores a title in one normal form', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    const composed = '제목 없는 책';
+    expect(composed.normalize('NFD')).not.toBe(composed);
+    try {
+      const shelf = new Hono().route('/api', puzzleBooksApi(own));
+      const made = await shelf.request('/api/puzzlebooks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: composed.normalize('NFD') }),
+      });
+      const { slug } = await made.json();
+      expect(slug).toMatch(BOOK_ID);
+      const list = await (await shelf.request('/api/puzzlebooks')).json();
+      expect(list.books[0].title).toBe(composed);
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
+  });
+
+  it('renames a book without moving anything', async () => {
     const created = await post('/api/puzzlebooks', { title: 'Untitled book 7' });
     const { slug } = await created.json();
+    await app.request('/api/puzzlebooks/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
 
-    const renamed = await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+    const renamed = await app.request(`/api/puzzlebooks/${slug}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ title: 'Chess Evolution' }),
@@ -48,12 +184,24 @@ describe('puzzle books api', () => {
     expect(renamed.status).toBe(200);
     expect(await renamed.json()).toMatchObject({ slug, title: 'Chess Evolution' });
 
-    // The slug is the id every route holds: it must not have moved.
+    // The id is what the URL, the folder and the bookmark all hold, and a
+    // new name is not news to any of them.
+    expect(existsSync(join(dir, slug))).toBe(true);
+    expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(200);
     const list = await (await app.request('/api/puzzlebooks')).json();
-    const book = list.books.find((b: { slug: string }) => b.slug === slug);
-    expect(book).toMatchObject({ slug, title: 'Chess Evolution' });
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toMatchObject({
+      title: 'Chess Evolution',
+    });
+    const marks = await (await app.request('/api/puzzlebooks/bookmarks')).json();
+    expect(marks.slugs).toContain(slug);
+    await app.request('/api/puzzlebooks/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
+    const moved = slug;
 
-    const empty = await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+    const empty = await app.request(`/api/puzzlebooks/${encodeURIComponent(moved)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ title: '  ' }),
@@ -69,11 +217,11 @@ describe('puzzle books api', () => {
       ).status,
     ).toBe(404);
 
-    await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    await app.request(`/api/puzzlebooks/${encodeURIComponent(moved)}`, { method: 'DELETE' });
   });
 
   it('adds puzzles, tracks attempts, deletes puzzles', async () => {
-    const slug = encodeURIComponent('1001 Sacrifices');
+    const slug = sacrifices;
     const added = await post(`/api/puzzlebooks/${slug}/puzzles`, {
       fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
       uci: ['a1a2', 'h1h2'],
@@ -94,7 +242,13 @@ describe('puzzle books api', () => {
     expect(detail.progress[puzzle.id].last).toBe('win');
 
     const list = await (await app.request('/api/puzzlebooks')).json();
-    expect(list.books[0]).toMatchObject({ puzzles: 1, solved: 1, failed: 0 });
+    // Found by id: the twin beside it shares its title exactly, so which
+    // of the two the shelf sorts first is not a thing to assert on.
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toMatchObject({
+      puzzles: 1,
+      solved: 1,
+      failed: 0,
+    });
 
     const del = await app.request(`/api/puzzlebooks/${slug}/puzzles/${puzzle.id}`, {
       method: 'DELETE',
@@ -106,7 +260,7 @@ describe('puzzle books api', () => {
   });
 
   it('takes a puzzle an importer read out of the book, with its evidence', async () => {
-    const slug = encodeURIComponent('1001 Sacrifices');
+    const slug = sacrifices;
     const sent = {
       fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
       uci: ['a1a8'],
@@ -137,7 +291,7 @@ describe('puzzle books api', () => {
   });
 
   it('refuses a tier or an evidence file it does not recognise', async () => {
-    const slug = encodeURIComponent('1001 Sacrifices');
+    const slug = sacrifices;
     const { puzzle } = await (
       await post(`/api/puzzlebooks/${slug}/puzzles`, {
         fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1',
@@ -156,7 +310,7 @@ describe('puzzle books api', () => {
   });
 
   it('resets progress without touching puzzles', async () => {
-    const slug = encodeURIComponent('1001 Sacrifices');
+    const slug = sacrifices;
     const added = await post(`/api/puzzlebooks/${slug}/puzzles`, {
       fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
       uci: ['a1a2', 'h1h2'],
@@ -177,8 +331,9 @@ describe('puzzle books api', () => {
   });
 
   it('stores and returns OCR templates per book', async () => {
-    await post('/api/puzzlebooks', { title: 'OCR Book' });
-    const slug = encodeURIComponent('OCR Book');
+    const { slug } = await (
+      await post('/api/puzzlebooks', { title: 'OCR Book' })
+    ).json();
 
     const empty = await app.request(`/api/puzzlebooks/${slug}/ocr`);
     expect(((await empty.json()) as { templates: unknown[] }).templates).toEqual([]);
@@ -206,8 +361,9 @@ describe('puzzle books api', () => {
   });
 
   it('keeps evidence out of the book list and serves it per puzzle', async () => {
-    await post('/api/puzzlebooks', { title: 'Split Book' });
-    const slug = encodeURIComponent('Split Book');
+    const { slug } = await (
+      await post('/api/puzzlebooks', { title: 'Split Book' })
+    ).json();
     await post(`/api/puzzlebooks/${slug}/puzzles`, {
       number: 4,
       fen: '7k/8/8/8/8/8/8/R6K w - - 0 1',
@@ -245,8 +401,9 @@ describe('puzzle books api', () => {
   });
 
   it('lists a book in printed order, whatever order it was imported in', async () => {
-    await post('/api/puzzlebooks', { title: 'Order Book' });
-    const slug = encodeURIComponent('Order Book');
+    const { slug } = await (
+      await post('/api/puzzlebooks', { title: 'Order Book' })
+    ).json();
     const mate = { fen: '7k/8/8/8/8/8/8/R6K w - - 0 1', uci: ['a1a8'], san: ['Ra8#'] };
     // An import writes what it read off the solutions page first and what
     // the engine settled second — so the file runs 955, 1001, then 2, 4.
@@ -277,8 +434,9 @@ describe('puzzle books api', () => {
   });
 
   it('clears a book’s contents but keeps the book and the history', async () => {
-    await post('/api/puzzlebooks', { title: 'Clear Book' });
-    const slug = encodeURIComponent('Clear Book');
+    const { slug } = await (
+      await post('/api/puzzlebooks', { title: 'Clear Book' })
+    ).json();
     const image = `data:image/png;base64,${Buffer.from('fakepng').toString('base64')}`;
     await post(`/api/puzzlebooks/${slug}/puzzles`, {
       number: 1,
@@ -310,8 +468,9 @@ describe('puzzle books api', () => {
   });
 
   it('stores evidence pages under a name the page owns', async () => {
-    await post('/api/puzzlebooks', { title: 'Evidence Book' });
-    const slug = encodeURIComponent('Evidence Book');
+    const { slug } = await (
+      await post('/api/puzzlebooks', { title: 'Evidence Book' })
+    ).json();
     const image = `data:image/jpeg;base64,${Buffer.from('fakejpeg').toString('base64')}`;
 
     const first = await post(`/api/puzzlebooks/${slug}/evidence`, {
@@ -348,8 +507,9 @@ describe('puzzle books api', () => {
   });
 
   it('stores, updates, serves and deletes drafts', async () => {
-    await post('/api/puzzlebooks', { title: 'Draft Book' });
-    const slug = encodeURIComponent('Draft Book');
+    const { slug } = await (
+      await post('/api/puzzlebooks', { title: 'Draft Book' })
+    ).json();
     // 1x1 white JPEG-ish payload is enough for the API contract.
     const image = `data:image/png;base64,${Buffer.from('fakepng').toString('base64')}`;
 
@@ -398,9 +558,13 @@ describe('puzzle books api', () => {
   });
 
   it('opens a book whose title has the punctuation chess titles use', async () => {
+    // "5334 Problems, Combinations and Games" was on the shelf and could
+    // not be opened, because of one comma in what was then its folder
+    // name. A title is not a path any more, so the comma is just a comma.
     const title = '5334 Problems, Combinations & Games';
-    expect((await post('/api/puzzlebooks', { title })).status).toBe(200);
-    const slug = encodeURIComponent(title);
+    const made = await post('/api/puzzlebooks', { title });
+    expect(made.status).toBe(200);
+    const { slug } = await made.json();
     expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(200);
     expect(
       (await post(`/api/puzzlebooks/${slug}/puzzles`, {
@@ -413,22 +577,30 @@ describe('puzzle books api', () => {
   });
 
   it('makes a book whose title is not written in Latin', async () => {
-    // The shelf's own New book button offers a translated title, so in
-    // Korean the ASCII-only rule this replaced left an empty slug and
-    // answered "that title cannot become a folder name" — pressing Create
-    // could not make a book at all.
+    // The shelf's own New book button offers a translated title, and an
+    // ASCII-only rule once left it with an empty folder name and "that
+    // title cannot become a folder name" as the answer to pressing
+    // Create: a Korean reader could not make a book at all. Nothing about
+    // a title reaches the filesystem now, but the title still has to come
+    // back exactly as it went in.
     const title = '제목 없는 책';
-    expect((await post('/api/puzzlebooks', { title })).status).toBe(200);
-    const slug = encodeURIComponent(title);
+    const made = await post('/api/puzzlebooks', { title });
+    expect(made.status).toBe(200);
+    const { slug } = await made.json();
     expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(200);
     const list = await (await app.request('/api/puzzlebooks')).json();
     expect(list.books.some((b: { title: string }) => b.title === title)).toBe(true);
     await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
-  it('refuses a title with nothing left in it once a path is ruled out', async () => {
+  it('takes any title at all, since a title is not a path any more', async () => {
+    // "///" could not be a folder name and was refused when it had to be
+    // one. It is a name now, and a strange name is the reader's business.
     const res = await post('/api/puzzlebooks', { title: '///' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
+    const { slug } = await res.json();
+    expect(slug).toMatch(BOOK_ID);
+    await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' });
   });
 
   it('still refuses names that could escape the books folder', async () => {
@@ -438,9 +610,13 @@ describe('puzzle books api', () => {
   });
 
   it('deletes a book', async () => {
-    const slug = encodeURIComponent('1001 Sacrifices');
-    expect((await app.request(`/api/puzzlebooks/${slug}`, { method: 'DELETE' })).status).toBe(200);
-    expect((await app.request(`/api/puzzlebooks/${slug}`)).status).toBe(404);
+    const before = await (await app.request('/api/puzzlebooks')).json();
+    for (const book of before.books) {
+      expect((await app.request(`/api/puzzlebooks/${book.slug}`, { method: 'DELETE' })).status).toBe(
+        200,
+      );
+      expect((await app.request(`/api/puzzlebooks/${book.slug}`)).status).toBe(404);
+    }
     const list = await (await app.request('/api/puzzlebooks')).json();
     expect(list.books).toHaveLength(0);
   });

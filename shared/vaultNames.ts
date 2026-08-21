@@ -58,14 +58,63 @@ export function validId(id: string): boolean {
  * rejected, and everything else — Korean, accents, punctuation — is left
  * exactly as its author wrote it.
  */
+/**
+ * The longest a single path segment may be, in UTF-8 BYTES.
+ *
+ * MAX_SEGMENT counts characters, which is the limit NTFS enforces (255
+ * UTF-16 units) and not the one Linux and macOS do: ext4 and APFS cap a
+ * name at 255 bytes, and 120 Korean characters is 360 of them. A name
+ * inside one limit and outside the other is a folder that cannot be
+ * created on the server this vault runs on — which only started to matter
+ * when a book's folder became its title rather than a slug minted once.
+ */
+const MAX_SEGMENT_BYTES = 255;
+
+/**
+ * Trim a sanitized name until a filesystem will take it as one segment,
+ * keeping `reserve` bytes free for a caller that appends (" 2", " 3" —
+ * the next free folder when the name is taken).
+ *
+ * By code point, never by UTF-16 unit: cutting a name in half through a
+ * surrogate pair leaves an unpaired one, which is not valid UTF-8 and
+ * which some filesystems refuse outright. Whatever the cut exposes at the
+ * end — a space, a dot — goes the same way it would have in
+ * sanitizeSegment, so the result is still a name this vault accepts.
+ */
+export function fitSegment(name: string, reserve = 0): string {
+  const budget = MAX_SEGMENT_BYTES - reserve;
+  const bytes = (s: string): number => new TextEncoder().encode(s).length;
+  let out = Array.from(name).slice(0, MAX_SEGMENT).join('');
+  if (bytes(out) > budget) {
+    const chars = Array.from(out);
+    while (chars.length > 0 && bytes(chars.join('')) > budget) chars.pop();
+    out = chars.join('');
+  }
+  return out.replace(/[.\s]+$/, '');
+}
+
 export function sanitizeSegment(name: string, fallback = 'Untitled'): string {
-  const cleaned = name
+  const trimmed = name
+    // ONE normal form, because three filesystems disagree about which
+    // they store. "책" is one code point in NFC and two in NFD, and a
+    // Korean IME on macOS hands over the second; HFS+ then normalises
+    // every name it is given to NFD, APFS and NTFS keep what they are
+    // handed, and ext4 keeps bytes. Without this the same title yields a
+    // different folder name depending on the machine it was typed on,
+    // and a name compared against a folder listing matches on one OS and
+    // not on another. NFC is the form the web hands around, and it is
+    // what every comparison in this codebase assumes.
+    .normalize('NFC')
     .replace(FORBIDDEN_CHARS_G, ' ')
     .replace(/\s+/g, ' ')
     .replace(/^[.\s]+/, '')
-    .replace(/[.\s]+$/, '')
-    .slice(0, MAX_SEGMENT)
-    .trim();
+    .replace(/[.\s]+$/, '');
+  // fitSegment rather than slice(0, MAX_SEGMENT): a study, a note and a
+  // collected game are all FILES named after their titles, and 120 Korean
+  // characters is 360 UTF-8 bytes — inside the limit NTFS enforces and
+  // outside the one ext4 and APFS do, which is a name the server cannot
+  // write at all.
+  const cleaned = fitSegment(trimmed).trim();
   if (!cleaned) return fallback;
   // A name that is a Windows device is a file that cannot be created.
   return RESERVED_DEVICE.test(cleaned) ? `${cleaned}_` : cleaned;

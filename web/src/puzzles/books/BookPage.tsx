@@ -159,8 +159,9 @@ export function BookPage({ slug }: { slug: string }) {
   }, [slug]);
   useEffect(() => void load(), [load]);
 
-  // Renaming edits the TITLE; the slug (the folder, the URL, the progress
-  // key) stays put — a slug is an id, and ids do not follow names.
+  // Renaming edits the title and only the title. The slug is an id: the
+  // folder, the URL, the bookmark and the saved scan are all filed under
+  // it and none of them are names, so none of them hear about this.
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   // Still worn by the placeholder name. The rename BUTTON that used to

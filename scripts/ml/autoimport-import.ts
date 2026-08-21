@@ -19,6 +19,7 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { bookDirFor } from '../../server/puzzlebooks.ts';
 import { Chess } from 'chessops/chess';
 import { parseFen } from 'chessops/fen';
 import { makeSanAndPlay, parseSan } from 'chessops/san';
@@ -35,7 +36,10 @@ const CFG = JSON.parse(readFileSync(process.argv[bookAt + 1]!, 'utf-8')) as {
   title: string;
   report: string;
 };
-const BOOK = resolve(REPO, 'vault', 'puzzlebooks', CFG.title);
+// A book's folder is an id, not its title, so it is looked up rather
+// than built — by the same function the app uses, because a second
+// answer to "where does this book live" is a second copy of the book.
+const BOOK = bookDirFor(CFG.title, resolve(REPO, 'vault', 'puzzlebooks'));
 const emitDirArg = process.argv[2];
 if (!emitDirArg) throw new Error('usage: autoimport-import <emit_dir>');
 const emitDir: string = emitDirArg;
