@@ -11,7 +11,7 @@ A release about not having to watch an import happen.
 
 - **"Try harder on boards that fail" uses the whole machine too.** The
   search it is named for was never the cost: on a failing board it is 33
-  ms of replaying candidate positions, against 6.2 s to re-read the board
+  ms of replaying candidate positions, against seconds to re-read the board
   itself — the same classifier as a normal read, run five times over so a
   cell that flips under a small shift can be spotted. That re-read already
   had the pool to run on and was not using it: boards went out one at a
@@ -19,6 +19,18 @@ A release about not having to watch an import happen.
   as they are cut and are searched as their readings land, which is what
   the scan beside them has always done. Same boards, same candidates, same
   refusals — the puzzles come back in the same order, just sooner.
+
+- **Reading a board is four times faster, and every import gets it.** Half
+  of a board read is one 3x3 convolution, and every one of its taps was
+  checking whether it had fallen off the edge of the image when only the
+  outermost pixel ever can: separating the border from the middle is 1.73x,
+  bit for bit the same answer — 832 probabilities compared against the old
+  code, none of them different. The other half is the repair read's four
+  extra passes over all 64 cells, which exist to catch a cell that changes
+  its mind when the board shifts. Cells the classifier is sure of do not do
+  that: across 2,496 cells of a real book, every one of the 93 that flipped
+  had a margin under 0.4. Only the close calls are read again, at twice
+  that margin for safety, which is 320 reads a board down to 153.
 
 - **An import no longer needs somebody watching it.** Cover the window and
   a scan stopped on page one and said nothing about it, because pdf.js
