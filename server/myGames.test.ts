@@ -213,20 +213,11 @@ describe('my games index', () => {
     expect(deviations[0]!.result).toBe('1/2-1/2');
   });
 
-  it('says which deviating games are kept in the collection', async () => {
-    // The index reads the archive months and collection/ alike, and
-    // deviations() filters neither — so the SAME game kept out of an
-    // archive is two files and two rows. That is what the badge on the
-    // row is for: the pair is real, and only one of them is kept.
-    mkdirSync(join(games, 'collection'), { recursive: true });
-    writeFileSync(
-      join(games, 'collection', 'kept.pgn'),
-      // A kept game carries the stamp the collect route writes; without
-      // it a file outside `<site>/<user>/` has no side, and this query
-      // asks for White's.
-      `[VaultSide "white"]\n${game({ white: 'me', black: 'foe', result: '1/2-1/2', date: '2026.03.10', tc: '180+2', moves: '1. d4 d5' })}`,
-    );
-
+  /**
+   * The prepared set for the deviation tests: the 1.e4 e5 complex, as
+   * White. Start, after e4, after e5 — everything else is off the book.
+   */
+  const preparedKeys = (): string[] => {
     const keys: string[] = [];
     const pos = Chess.default();
     keys.push(hashSetup(pos.toSetup()).toString(16));
@@ -234,22 +225,62 @@ describe('my games index', () => {
       pos.play(parseSan(pos, san)!);
       keys.push(hashSetup(pos.toSetup()).toString(16));
     }
+    return keys;
+  };
+
+  const deviationsAsWhite = async (): Promise<
+    { sans: string[]; collection: boolean; file: string; site: string | null }[]
+  > => {
     const res = await app.request('/api/mygames/deviations', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ keys, side: 'white' }),
+      body: JSON.stringify({ keys: preparedKeys(), side: 'white' }),
     });
-    const { deviations } = (await res.json()) as {
-      deviations: { sans: string[]; collection: boolean; file: string }[];
-    };
-    const d4 = deviations.filter((d) => d.sans.join() === 'd4');
-    // Both copies of the 1.d4 game are reported, and they differ only in
-    // this flag.
-    expect(d4).toHaveLength(2);
-    expect(d4.map((d) => d.collection).sort()).toEqual([false, true]);
-    expect(d4.find((d) => d.collection)!.file).toBe('collection/kept.pgn');
-    // An archive-only game says so.
-    expect(deviations.find((d) => d.sans.join() === 'e4,c5')!.collection).toBe(false);
+    expect(res.status).toBe(200);
+    return ((await res.json()) as { deviations: never[] }).deviations;
+  };
+
+  // A kept game carries the stamp the collect route writes; without it a
+  // file outside `<site>/<user>/` has no side, and these ask for White's.
+  const kept = (link: string | null, moves: string, date: string): string =>
+    `[VaultSide "white"]\n${link === null ? '' : `[Link "${link}"]\n`}${game({ white: 'me', black: 'foe', result: '1-0', date, tc: '600', moves })}`;
+
+  it('shows one row for a game kept out of an archive, and says it is kept', async () => {
+    // Keeping a game COPIES it: the month stays cached, so the index holds
+    // the same game twice and the panel listed it twice, identically. The
+    // URL each copy carries is what says they are one game — and the kept
+    // copy is the one that survives, because it is the annotatable one.
+    mkdirSync(join(games, 'collection'), { recursive: true });
+    const link = 'https://www.chess.com/game/live/9';
+    writeFileSync(
+      join(games, 'chesscom', 'me', '2026-05.pgn'),
+      `[Link "${link}"]\n${game({ white: 'me', black: 'foe', result: '1-0', date: '2026.05.10', tc: '600', moves: '1. d4 Nf6' })}`,
+    );
+    writeFileSync(join(games, 'collection', 'kept-linked.pgn'), kept(link, '1. d4 Nf6', '2026.05.10'));
+
+    const linked = (await deviationsAsWhite()).filter((d) => d.site === link);
+    expect(linked).toHaveLength(1);
+    expect(linked[0]!.collection).toBe(true);
+    expect(linked[0]!.file).toBe('collection/kept-linked.pgn');
+  });
+
+  it('keeps two games with no URL apart, however alike they look', async () => {
+    // Nothing merges without a URL to merge on. These two are the same
+    // moves on the same day by the same players — a rematch is exactly
+    // that — and guessing from names and a date would swallow one.
+    mkdirSync(join(games, 'collection'), { recursive: true });
+    writeFileSync(join(games, 'collection', 'a.pgn'), kept(null, '1. d4 Nf6', '2026.05.11'));
+    writeFileSync(join(games, 'collection', 'b.pgn'), kept(null, '1. d4 Nf6', '2026.05.11'));
+
+    const rows = (await deviationsAsWhite()).filter((d) => d.file.startsWith('collection/'));
+    expect(rows).toHaveLength(2);
+    expect(rows.every((d) => d.site === null && d.collection)).toBe(true);
+  });
+
+  it('says an archived game is not kept', async () => {
+    expect((await deviationsAsWhite()).find((d) => d.sans.join() === 'e4,c5')!.collection).toBe(
+      false,
+    );
   });
 
   it('answers many positions in one request, under the same filters', async () => {

@@ -383,6 +383,10 @@ class MyGamesIndex {
    * the index. A game "leaves the book" at the first position that is in
    * the set while the position after its move is not; a game whose whole
    * indexed prefix stays inside never appears.
+   *
+   * `limit` bounds the games READ, newest first, and the copies of one
+   * game are merged after that — so a window full of kept games returns
+   * fewer rows than it read, never more.
    */
   deviations(
     keys: ReadonlySet<bigint>,
@@ -424,6 +428,25 @@ class MyGamesIndex {
       site: string | null;
       collection: number;
     }[];
+    // One game, two files. Keeping a game out of an archive COPIES it into
+    // collection/ and leaves the month cached, so the index holds both and
+    // the panel listed the same game twice, identically. `site` is the
+    // game's own URL — chess.com's [Link], Lichess's [Site] — so the pair
+    // says outright that it is a pair, and the kept copy wins: it is the
+    // one you can annotate, and the badge on the row is then true.
+    //
+    // Only a URL merges. A hand-imported game has no `site` at all, and
+    // two of those are two games until something says otherwise; guessing
+    // from names and a date would silently swallow a rematch. This fixes
+    // the list and nothing else: movesAt() and stats() still count both
+    // copies of a kept game, which is a separate (and older) bug.
+    const preferred = new Map<string, (typeof games)[number]>();
+    for (const g of games) {
+      if (!g.site) continue;
+      const seen = preferred.get(g.site);
+      if (!seen || (g.collection === 1 && seen.collection === 0)) preferred.set(g.site, g);
+    }
+    const unique = games.filter((g) => !g.site || preferred.get(g.site) === g);
     // `pos` is a 64-bit key and a plain JS number would silently mangle it
     // past 2^53. better-sqlite3 answers that with safeIntegers, which hands
     // back a BigInt — but this same code runs in the static demo over
@@ -437,7 +460,7 @@ class MyGamesIndex {
     );
 
     const out: ReturnType<MyGamesIndex['deviations']> = [];
-    for (const game of games) {
+    for (const game of unique) {
       const plies = (pliesOf.all(game.id) as { pos: string; uci: string }[]).map((row) => ({
         pos: BigInt(row.pos),
         uci: row.uci,
