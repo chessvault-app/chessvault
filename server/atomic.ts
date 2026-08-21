@@ -15,11 +15,15 @@ export function writeAtomic(path: string, data: string, options?: WriteFileOptio
   const tmp = `${path}.tmp`;
   if (options === undefined) writeFileSync(tmp, data);
   else writeFileSync(tmp, data, options);
-  renameOverRetrying(tmp, path);
+  renameRetrying(tmp, path);
 }
 
 /**
  * renameSync, surviving Windows' transient EPERM.
+ *
+ * Exported because a book's folder moves the same way when it is renamed
+ * (server/puzzlebooks.ts), and a directory is MORE exposed to this than a
+ * file: anything holding one page image of a book open holds the folder.
  *
  * On Windows a rename over a file something else briefly holds open —
  * Defender scanning the bytes that were just written, the search indexer
@@ -29,7 +33,7 @@ export function writeAtomic(path: string, data: string, options?: WriteFileOptio
  * anything still failing after that, or failing with any other code, is a
  * real error and is thrown. POSIX never takes the retry path.
  */
-function renameOverRetrying(from: string, to: string): void {
+export function renameRetrying(from: string, to: string): void {
   for (let attempt = 0; ; attempt += 1) {
     try {
       renameSync(from, to);

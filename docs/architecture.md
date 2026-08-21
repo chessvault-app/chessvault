@@ -18,7 +18,7 @@ vault/
     collection/       *.pgn        (curated, annotatable)
     chesscom/<user>/  YYYY-MM.pgn  (archive cache)
     lichess/<user>/   YYYY-MM.pgn
-  puzzlebooks/<slug>/
+  puzzlebooks/<id>/                  (b + 16 hex; the title lives in book.json)
     book.json  puzzles.json  drafts.json  progress.json  ocr.json
     diagrams/  *.jpg          (evidence scans, cover)
   puzzles/            history.jsonl  state.json
