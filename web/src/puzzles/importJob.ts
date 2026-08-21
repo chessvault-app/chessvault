@@ -20,7 +20,7 @@ import { ENGINE_POOL_SIZE, releaseBookEngine, searchPosition } from '@/engine/bo
 import { repairBoard } from '@shared/bookRepair';
 import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs';
 import type { CellCandidates } from '@shared/bookRepair';
-import type { ReadBoard } from '@shared/bookConfigSearch';
+import { answerPages, type ReadBoard } from '@shared/bookConfigSearch';
 import type { CellReading, Template } from './ocr/classify';
 import { classifyBoard, labelsToFen } from './ocr/classify';
 import { grayFromCanvas, cropDiagram } from './ocr/browser';
@@ -59,6 +59,14 @@ export interface FoundDiagram {
   solved?: boolean;
   /** The answers page covering this diagram's number, once known. */
   solutionPage?: string;
+  /**
+   * The whole answers section, for a diagram with no number to look one up
+   * with. Most of what stays a draft is exactly that — a diagram whose
+   * printed number the scan could not read — and finishing one by hand
+   * means reading the answers, so a section it can point at honestly beats
+   * a page it cannot name.
+   */
+  solutionPages?: string[];
 }
 
 /** Choices the user made before the import started. */
@@ -723,8 +731,96 @@ async function readSolutions(
     };
   });
 
+  /**
+   * Send up the page images anything now points at.
+   *
+   * EVERY page that produced a diagram, not only the solved ones. What is
+   * left over becomes a draft, and a draft is finished by hand from the
+   * printed page — so the page it came off is precisely what it needs.
+   * Sending only the solved pages left drafts with a crop and nothing to
+   * read, which is the one thing they cannot be corrected without.
+   *
+   * And the answers pages. An answers chapter prints no diagrams, so the
+   * scan kept none of its pixels and nothing here ever asked for them —
+   * which is why every Solutions tab, on drafts and puzzles alike, pointed
+   * at a file that had never been uploaded. They are rendered now, once,
+   * and only the ones something actually points at.
+   */
+  const uploadEvidence = async (answers: Set<number>): Promise<void> => {
+    const wanted = new Set<number>(
+      geometry.filter((g) => g.rects.length > 0).map((g) => g.page),
+    );
+    for (const page of answers) wanted.add(page);
+    for (const page of [...wanted].sort((a, b) => a - b)) {
+      if (!pageImages.has(page)) {
+        pageImages.set(page, pageJpeg((await renderPage(pdf, page)).canvas));
+      }
+    }
+    const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
+    for (let i = 0; i < pages.length; i += 12) {
+      const chunk = pages.slice(i, i + 12).filter((p) => p.image);
+      if (chunk.length === 0) continue;
+      // Evidence is the floor everything else stands on. If it did not
+      // land, stop here: the throw keeps the checkpoint, so this resumes
+      // rather than silently minting puzzles that point at pages that are
+      // not there.
+      await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/evidence`, {
+        method: 'POST',
+        json: { pages: chunk },
+      }).catch((e: unknown) => {
+        throw new Error(`the server refused the evidence pages (${apiErrorMessage(e)})`);
+      });
+    }
+  };
+
+  /**
+   * Point every diagram at the answers it should be read against, then send
+   * up the pages that makes real. Returns the per-number lookup, which the
+   * verified puzzles use as they save.
+   *
+   * A diagram whose number was read gets the single answers page that
+   * number is printed on. One without gets the WHOLE answers section —
+   * and that is most of what stays a draft, because failing to read the
+   * printed number is what kept it out of the solve in the first place.
+   * Finishing a draft by hand means reading the answers; a section it can
+   * point at is worth more than the nothing it used to carry.
+   *
+   * Evidence before anything that points at it, on every path: this runs
+   * from the bail-outs below too, which used to return before a single
+   * page image had been uploaded and left a book of drafts pointing at
+   * files that were never written.
+   */
+  const attachAnswers = async (
+    ranges: [number, number][],
+  ): Promise<(number: number) => number | undefined> => {
+    const answerPageFor = answerPageIndex(texts, ranges, numbering.maxNumber);
+    const section: number[] = [];
+    for (const [from, to] of ranges) for (let page = from; page <= to; page++) section.push(page);
+    const sectionFiles = section.map(evidencePage);
+    const answers = new Set<number>();
+    let sectionUsed = false;
+    for (const diagram of found) {
+      const page = diagram.number === undefined ? undefined : answerPageFor(diagram.number);
+      if (page !== undefined) {
+        answers.add(page);
+        diagram.solutionPage = evidencePage(page);
+      } else if (sectionFiles.length > 0) {
+        diagram.solutionPages = sectionFiles;
+        sectionUsed = true;
+      }
+    }
+    if (sectionUsed) for (const page of section) answers.add(page);
+    await uploadEvidence(answers);
+    return answerPageFor;
+  };
+
   const labelled = assignLabels(layouts);
-  if (labelled.size === 0) return null;
+  if (labelled.size === 0) {
+    // Nothing was labelled, so nothing can be solved — but the diagrams
+    // were still read, and every one of them is about to become a draft.
+    await attachAnswers(answerPages(texts, numbering as BookText));
+    return null;
+  }
 
   // Which entry in `found` each labelled diagram is, so the UI can show
   // what became a puzzle and what stayed a draft.
@@ -747,7 +843,10 @@ async function readSolutions(
     const foundIndex = foundAt.get(`${where.page}:${where.rect.x}:${where.rect.y}`);
     if (foundIndex !== undefined) found[foundIndex]!.number = number;
   }
-  if (boards.size === 0) return null;
+  if (boards.size === 0) {
+    await attachAnswers(answerPages(texts, numbering as BookText));
+    return null;
+  }
 
   let result = solveBook(texts, boards, { ...numbering, solutionsAfterPage: 0 });
 
@@ -779,54 +878,7 @@ async function readSolutions(
   const solved = [...result.puzzles, ...repaired];
   solved.sort((a, b) => a.number - b.number);
 
-  // The answers page each number is printed on, settled BEFORE the upload
-  // because those pages are evidence as much as the diagram's own page is.
-  const answerPageFor = answerPageIndex(texts, result.answerRanges, numbering.maxNumber);
-  const answerPages = new Set<number>();
-  for (const diagram of found) {
-    const page = diagram.number === undefined ? undefined : answerPageFor(diagram.number);
-    if (page === undefined) continue;
-    answerPages.add(page);
-    diagram.solutionPage = evidencePage(page);
-  }
-
-  // Evidence first: a puzzle must never reference a page image that is not
-  // there, so the pages go up before anything that points at them.
-  //
-  // EVERY page that produced a diagram, not only the solved ones. What is
-  // left over becomes a draft, and a draft is finished by hand from the
-  // printed page — so the page it came off is precisely what it needs.
-  // Sending only the solved pages left drafts with a crop and nothing to
-  // read, which is the one thing they cannot be corrected without.
-  //
-  // And the answers pages. An answers chapter prints no diagrams, so the
-  // scan kept none of its pixels and nothing here ever asked for them —
-  // which is why every Solutions tab, on drafts and puzzles alike, pointed
-  // at a file that had never been uploaded. They are rendered now, once,
-  // and only the ones something actually points at.
-  const wanted = new Set<number>(
-    geometry.filter((g) => g.rects.length > 0).map((g) => g.page),
-  );
-  for (const page of answerPages) wanted.add(page);
-  for (const page of [...wanted].sort((a, b) => a - b)) {
-    if (!pageImages.has(page)) {
-      pageImages.set(page, pageJpeg((await renderPage(pdf, page)).canvas));
-    }
-  }
-  const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
-  for (let i = 0; i < pages.length; i += 12) {
-    const chunk = pages.slice(i, i + 12).filter((p) => p.image);
-    if (chunk.length === 0) continue;
-    // Evidence is the floor everything else stands on. If it did not land,
-    // stop here: the throw keeps the checkpoint, so this resumes rather
-    // than silently minting puzzles that point at pages that are not there.
-    await api(`/api/puzzlebooks/${encodeURIComponent(slug)}/evidence`, {
-      method: 'POST',
-      json: { pages: chunk },
-    }).catch((e: unknown) => {
-      throw new Error(`the server refused the evidence pages (${apiErrorMessage(e)})`);
-    });
-  }
+  const answerPageFor = await attachAnswers(result.answerRanges);
 
   const sizes = new Map(geometry.map((g) => [g.page, { w: g.w, h: g.h }]));
   let saveFailed = 0;

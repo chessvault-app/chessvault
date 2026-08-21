@@ -323,6 +323,9 @@ export function PdfImport({
                 page: evidencePage(f.page),
                 ...(f.rect ? { rect: f.rect } : {}),
                 ...(f.solutionPage ? { solutionPage: f.solutionPage } : {}),
+                // No number on it, so no single answers page to name — it
+                // carries the section instead.
+                ...(f.solutionPages?.length ? { solutionPages: f.solutionPages } : {}),
               },
             })),
           },
