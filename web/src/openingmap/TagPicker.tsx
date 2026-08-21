@@ -24,8 +24,8 @@ import type { MapTag } from './model';
 
 /** Where each kind's listing lives, and what its rows wear. */
 const KINDS = {
-  study: { base: 'studies', icon: Library, search: 'Search studies…' },
   game: { base: 'games/docs', icon: Swords, search: 'Search games…' },
+  study: { base: 'studies', icon: Library, search: 'Search studies…' },
   note: { base: 'notes', icon: NotebookPen, search: 'Search notes…' },
 } as const;
 
@@ -116,8 +116,8 @@ export function TagPicker({
               value={kind}
               onChange={setKind}
               segments={[
-                { value: 'study', label: t('Studies') },
                 { value: 'game', label: t('Games') },
+                { value: 'study', label: t('Studies') },
                 { value: 'note', label: t('Notes') },
               ]}
               ariaLabel="What to link"
