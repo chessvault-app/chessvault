@@ -1,6 +1,6 @@
 import { TextArea } from '@/ui/Input';
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/notation';
 import { cn } from '@/lib/cn';
@@ -50,6 +50,45 @@ export function AnnotationPane({
   const [paletteOpen, setPaletteOpen] = useState(
     () => localStorage.getItem(PALETTE_KEY) !== 'closed',
   );
+  const box = useRef<HTMLTextAreaElement>(null);
+
+  // The desktop box grows with what is written in it, from its two rows up
+  // to eight, instead of staying at two and scrolling everything past the
+  // second line out of sight — an editor you cannot read your own note in.
+  // The move table above is min-h-0 flex-1, so it yields the rows rather
+  // than the panel growing past its column.
+  const fit = useCallback(() => {
+    const el = box.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    // scrollHeight is content + padding; the border is ours to add back, or
+    // the box settles two pixels short and scrolls its own last line.
+    const border = el.offsetHeight - el.clientHeight;
+    el.style.height = `${el.scrollHeight + border}px`;
+  }, []);
+
+  // `editing` is a dependency because it is what MOUNTS the textarea: turning
+  // the toolbar on over a note that was already long left the box at its two
+  // rows until the next keystroke, which is when the deps last changed
+  // (lanph3re's report). Layout effect, not effect: the resize lands before
+  // paint, so a long note never flashes at two rows on the way in.
+  useLayoutEffect(fit, [fit, draft, cursorId, coarse, editing]);
+
+  // Width is the other half of how tall the text is: the columns either side
+  // are draggable and the window resizes, and either rewraps the note. Width
+  // ONLY — our own height write must not feed itself back in.
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    let last = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth === last) return;
+      last = el.clientWidth;
+      fit();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fit, coarse, editing]);
 
   useEffect(() => {
     localStorage.setItem(PALETTE_KEY, paletteOpen ? 'open' : 'closed');
@@ -156,12 +195,15 @@ export function AnnotationPane({
           </button>
         ) : (
           <TextArea
+            ref={box}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onBlur={flush}
             placeholder={placeholder}
             rows={2}
-            className="min-w-0 flex-1 resize-none leading-relaxed"
+            // min-h holds the two rows the growth starts from, max-h caps it
+            // at eight — past that it scrolls rather than eating the moves.
+            className="max-h-48 min-h-16 min-w-0 flex-1 resize-none overflow-y-auto leading-relaxed"
           />
         )}
       </div>
