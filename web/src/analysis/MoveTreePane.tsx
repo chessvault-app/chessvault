@@ -30,11 +30,15 @@ const NAG_CLASS: Record<number, string> = {
  * dropping an earlier line height is exactly what it is for — put it first
  * and the comment reads at the size's own tighter leading (measured:
  * 14px/20px instead of 14px/22.75px).
-
+ *
+ * `break-words` because an annotation is not prose we control: paste a URL,
+ * an engine line or a run of keyboard mash and the line breaker sees ONE
+ * word, which pushed the whole panel into horizontal scroll (lanph3re's
+ * report) rather than wrapping.
  */
 const commentRow = (size: string): string =>
   cn(
-    'border-line/60 bg-surface-inset/40 text-muted whitespace-pre-line border-b px-2.5 py-1.5',
+    'border-line/60 bg-surface-inset/40 text-muted break-words whitespace-pre-line border-b px-2.5 py-1.5',
     size,
     'leading-relaxed',
   );
@@ -434,7 +438,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
         <p
           key={`${mainChildId}-comment`}
           className={cn(
-            'text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 italic',
+            'text-subtle border-line my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
           )}
         >
@@ -508,7 +512,7 @@ function VariationBranch({
       {node.comment && (
         <p
           className={cn(
-            'text-subtle border-line my-1 basis-full whitespace-pre-line border-l-2 pl-2 italic',
+            'text-subtle border-line my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
           )}
         >
