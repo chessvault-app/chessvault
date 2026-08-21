@@ -423,7 +423,10 @@ function SolutionRecorder({
             <div className="relative min-w-0 flex-1">
               <Board
                 fen={currentFen}
-                orientation={solverSide}
+                // White at the bottom, whoever is to move: this board sits
+                // beside the book's own scan and must match it — see the
+                // note on the trainer's orientation, which changed with it.
+                orientation="white"
                 dests={dests}
                 lastMove={line.at(-1) ? moveSquares(line.at(-1)!) : undefined}
                 check={pos.isCheck()}
@@ -433,7 +436,7 @@ function SolutionRecorder({
                 <PromotionPicker
                   color={promotion.pending.color}
                   dest={promotion.pending.dest}
-                  orientation={solverSide}
+                  orientation="white"
                   onSelect={promotion.complete}
                   onCancel={promotion.cancel}
                 />

@@ -1068,11 +1068,20 @@ function NodePanel({
         />
       </Field>
 
-      <Field label="Linked studies and notes">
+      <Field label="Linked games, studies and notes">
         <div className="flex flex-col gap-1">
           {tags.map((tag) => {
             const broken = tag.kind === 'study' && missing.has(tag.id);
-            const Icon = broken ? AlertTriangle : tag.kind === 'note' ? NotebookPen : Library;
+            // Games are curation, not preparation — they are tagged so the
+            // node has the games that belong to it, and coverage never
+            // reads them (see collectStudyTags).
+            const Icon = broken
+              ? AlertTriangle
+              : tag.kind === 'note'
+                ? NotebookPen
+                : tag.kind === 'game'
+                  ? Swords
+                  : Library;
             return (
               <div
                 key={`${tag.kind}\n${tag.id}\n${tag.chapter ?? ''}`}
@@ -1086,11 +1095,16 @@ function NodePanel({
                   onClick={() => {
                     // A study opens ON this node's position, not at its
                     // first chapter's first move — that is what following
-                    // a tag from a position means.
-                    if (tag.kind === 'study' && facts.fen) {
+                    // a tag from a position means. A game is the same
+                    // document behind the same view, so it lands the same
+                    // way: on the move the map is standing on.
+                    if (tag.kind !== 'note' && facts.fen) {
                       setJumpTarget({ fenKey: fenKey(facts.fen), chapter: tag.chapter });
                     }
-                    navigate(tag.kind === 'note' ? 'notes' : 'studies', encodeURIComponent(tag.id));
+                    navigate(
+                      tag.kind === 'note' ? 'notes' : tag.kind === 'game' ? 'games' : 'studies',
+                      encodeURIComponent(tag.id),
+                    );
                   }}
                 >
                   {tag.id.split('/').pop()}
@@ -1126,7 +1140,7 @@ function NodePanel({
             className={ADD_ROW}
           >
             <Plus className="size-4 shrink-0" />
-            <span className="min-w-0 flex-1 truncate">{t('Link a study or note')}</span>
+            <span className="min-w-0 flex-1 truncate">{t('Link a game, study or note')}</span>
           </button>
           {/* And the study that does not exist yet.
               Linking one meant leaving the map, making it in the shelf,

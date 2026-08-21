@@ -214,6 +214,13 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
   const [hover, setHover] = useState(false);
   const anchor = useRef<HTMLSpanElement>(null);
   const [box, setBox] = useState<DOMRect | null>(null);
+  // Touch synthesizes mouseenter on the tapped element, and there is no
+  // matching mouseleave until the pointer "moves" — which on a phone it
+  // never does. So the first tap set BOTH open and hover, and every way of
+  // dismissing (tap the eye again, tap anywhere else) cleared only `open`
+  // and left the peek on screen. Hover is a mouse's gesture; a coarse
+  // pointer does not get one, exactly as the puzzle preview already had it.
+  const fine = (): boolean => !window.matchMedia('(pointer: coarse)').matches;
   const shown = open || hover;
   // Measured as it appears, and again never — a peek is a held gesture, so
   // anything that MOVES the eye underneath it closes it instead (below).
@@ -260,15 +267,19 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
     <span
       ref={anchor}
       data-peek
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      onMouseEnter={() => {
+        if (fine()) setHover(true);
+      }}
+      onMouseLeave={() => {
+        if (fine()) setHover(false);
+      }}
       className="group relative grid size-7 shrink-0 place-items-center pointer-coarse:size-9"
     >
       <button
         type="button"
         title={t('Peek at the book scan')}
         onClick={(e) => {
-          if (window.matchMedia('(pointer: coarse)').matches) {
+          if (!fine()) {
             e.stopPropagation();
             setOpen((v) => !v);
           }

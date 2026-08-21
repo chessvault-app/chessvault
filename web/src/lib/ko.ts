@@ -226,6 +226,7 @@ export const ko: Record<string, string> = {
 
   // --- studies -------------------------------------------------------------
   'Search studies…': '스터디 검색…',
+  'Search games…': '게임 검색…',
   'Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.':
     '여기에 PGN을 붙여넣으세요 — Lichess 스터디 내보내기는 모든 챕터, 주석, 화살표와 함께 들어옵니다.',
   'Lichess username': 'Lichess 사용자명',
@@ -580,8 +581,8 @@ export const ko: Record<string, string> = {
   'Named from the opening catalogue': '오프닝 카탈로그에서 자동으로 이름이 붙습니다',
   'Intended depth': '목표 깊이',
   'full moves': '수 기준',
-  'Linked studies and notes': '연결된 스터디와 노트',
-  'Link a study or note': '스터디·노트 연결',
+  'Linked games, studies and notes': '연결된 게임·스터디·노트',
+  'Link a game, study or note': '게임·스터디·노트 연결',
   'Remove link': '연결 해제',
   'What to link': '연결할 종류',
   Linked: '연결됨',

@@ -461,7 +461,19 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   }
 
   const solverSide = parseFen(puzzle.fen).unwrap().turn;
-  const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
+  /**
+   * The board as the book printed it, not as the side to move.
+   *
+   * A scanned diagram is read white-at-bottom (importJob passes
+   * blackAtBottom: false, and that is the only reading a page diagram
+   * gets), so the FEN IS the picture on the page. Orienting a
+   * black-to-play puzzle from Black's side turned that picture upside
+   * down relative to the scan sitting beside it in the peek, which is
+   * exactly the comparison this screen exists to make. Whose move it is
+   * is said in words under the board, and the flip button is still there
+   * for anyone who wants the other view.
+   */
+  const orientation: Color = flipped ? 'black' : 'white';
   const next = nextUnsolved();
   const hasMoves = getNode(tree, tree.rootId).children.length > 0;
   // Bottom-band navigation over the entered line (view-only stepping).
@@ -724,6 +736,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     onPromote={
       phase === 'solving' ? (id) => setTree(promoteToMainline(tree, id)) : undefined
     }
+    onFlip={() => setFlipped((f) => !f)}
     emptyText={t('Nothing entered yet — find the first move on the board.')}
   />
   );
