@@ -4,6 +4,7 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  renameSync,
   rmSync,
   statSync,
   unlinkSync,
@@ -12,7 +13,7 @@ import {
 import { resolve } from 'node:path';
 import { writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
-import { sanitizeSegment, validId } from '../shared/vaultNames.ts';
+import { fitSegment, sanitizeSegment, validId } from '../shared/vaultNames.ts';
 
 /**
  * Book puzzles — positions transcribed from paper books (lanph3re's v1: manual
@@ -262,6 +263,91 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     writeAtomic(marksPath, `${JSON.stringify({ slugs }, null, 2)}\n`);
   };
 
+  /**
+   * The folder name a title asks for, before anything is checked for it.
+   *
+   * sanitizeSegment answers what a PATH can hold — the characters Windows
+   * forbids, its reserved device names, the leading and trailing dots and
+   * spaces it silently strips. fitSegment answers how much of it, in the
+   * bytes Linux counts rather than the characters Windows does, leaving
+   * room for the " 2" a taken name gets. Both matter here and did not
+   * before: a book's folder used to be minted once from a placeholder,
+   * and is now whatever the reader calls the book.
+   */
+  const slugFor = (title: string): string => fitSegment(sanitizeSegment(title, ''), 8);
+
+  /**
+   * The nearest free folder to `base`, CASE-INSENSITIVELY free.
+   *
+   * Windows and macOS hold "Chess" and "chess" in one folder where Linux
+   * holds two, and this vault is written on a Linux server, opened by a
+   * Windows desktop shell and backed up to whatever the reader has. Two
+   * books that differ only in case are a vault that cannot be copied.
+   *
+   * `mine` is the book's own folder, which is never in its own way — that
+   * is what lets a rename change only the case of a name.
+   */
+  const freeSlug = (base: string, mine?: string): string => {
+    const taken = new Set<string>();
+    if (existsSync(dir)) {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory() && entry.name !== mine) taken.add(entry.name.toLowerCase());
+      }
+    }
+    let next = base;
+    for (let n = 2; taken.has(next.toLowerCase()); n += 1) next = `${base} ${n}`;
+    return next;
+  };
+
+  /**
+   * Move a book's folder to the next free slug at `base`, and take with it
+   * everything OUTSIDE the folder that named the old one. Returns the slug
+   * the book now lives at — the old one if the move could not be made.
+   */
+  const moveBook = (slug: string, base: string): string => {
+    const next = freeSlug(base, slug);
+    if (next === slug) return slug;
+    try {
+      renameSync(bookDir(slug), bookDir(next));
+    } catch {
+      // Open handles on Windows, a permission, a full disk. The caller
+      // writes the new title to the folder that is still there.
+      return slug;
+    }
+    const marks = readMarks();
+    if (marks.includes(slug)) writeMarks(marks.map((s) => (s === slug ? next : s)));
+    // Both are keyed by slug and both would answer for a book that has
+    // moved out from under them.
+    idsCache.delete(slug);
+    tallyCache.delete(slug);
+    return next;
+  };
+
+  /**
+   * One pass at startup over books whose folder predates the rule above.
+   *
+   * Without it the invariant would only hold for books renamed from now
+   * on, and a shelf that already has "1001 Chess Exercises" filed under
+   * "제목 없는 책" would keep it forever — with no way to fix it from
+   * the app, since renaming a book to the name it already has is not a
+   * rename. It is a move, not a rewrite: nothing inside a book is read or
+   * written, and a folder that cannot be moved is left exactly as it was.
+   */
+  if (existsSync(dir)) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const title = readJson<{ title?: string }>(
+        resolve(bookDir(entry.name), 'book.json'),
+        {},
+      ).title;
+      if (!title) continue;
+      const base = slugFor(title);
+      if (base === entry.name || !validSlug(base)) continue;
+      const moved = moveBook(entry.name, base);
+      if (moved !== entry.name) console.log(`puzzlebooks: ${entry.name} -> ${moved}`);
+    }
+  }
+
   const api = new Hono();
 
   api.get('/puzzlebooks/bookmarks', (c) => c.json({ slugs: readMarks() }));
@@ -314,19 +400,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
     // Replace only what a path cannot hold; the title's commas, quotes
     // and Korean survive, so the book keeps the name it was given.
-    const base = sanitizeSegment(title, '');
+    const base = slugFor(title);
     if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
-    // The slug is an id, fixed at creation; the title is free to move on
-    // without it (PATCH renames, and the importer adopts the PDF's name).
-    // So a folder can be held by a book the shelf lists under a name that
-    // no longer resembles it — a book imported over the Korean "제목 없는 책"
-    // default keeps that folder while calling itself "1001 Chess
-    // Exercises". Refusing the name then told the user a book with that
-    // name exists while showing them no such book, and the New book button
-    // stopped working for good. Take the next free slug instead: the title
-    // is what was asked for, and duplicate titles are already possible.
-    let slug = base;
-    for (let n = 2; existsSync(bookDir(slug)); n += 1) slug = `${base} ${n}`;
+    // Two books may be called the same thing — a title is a name, not an
+    // id — so a taken folder takes the next one along rather than refusing.
+    // Refusing is what the shelf's New book button used to meet: it picks a
+    // title no book is using, which is not the same question as which
+    // FOLDER is free, and it could not see the collision coming.
+    const slug = freeSlug(base);
     mkdirSync(bookDir(slug), { recursive: true });
     writeJson(resolve(bookDir(slug), 'book.json'), { title, createdAt: new Date().toISOString() });
     writeJson(puzzlesPath(slug), []);
@@ -334,11 +415,28 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   });
 
   /**
-   * Rename a book. The TITLE only: the slug is the folder on disk and the
-   * key every route, bookmark and checkpoint holds, so it stays put — a
-   * slug is an id, and ids do not follow display names. This is also what
-   * lets the importer offer the PDF's own name for a book still wearing
-   * its "Untitled book" default without breaking anything mid-scan.
+   * Rename a book: the title, and the FOLDER with it.
+   *
+   * The slug used to be frozen at creation on the reasoning that ids do
+   * not follow display names. True of ids in general, and wrong here: a
+   * book's slug is minted from the name the book had at its very first
+   * moment, which is the placeholder nobody chose. That left "1001 Chess
+   * Exercises for Beginners" living in a folder called "제목 없는 책" —
+   * unreadable to anyone opening the vault, and the reason a taken slug
+   * could be invisible to the shelf and break the New book button.
+   *
+   * So the folder moves. What that costs, and what pays it:
+   *
+   *  - Bookmarks are re-pointed here, in the same request.
+   *  - The URL changes, so the response carries the new slug and the
+   *    client navigates to it.
+   *  - A half-finished import is checkpointed in the BROWSER under the
+   *    old slug; web/src/puzzles/books/BookPage.tsx re-keys it and
+   *    retargets a running scan when this returns a moved slug.
+   *  - Progress travels inside the folder, so it needs nothing.
+   *
+   * If the move itself fails the title still changes and the folder stays:
+   * a rename that half-worked is worse than one that renamed less.
    */
   api.patch('/puzzlebooks/:slug', async (c) => {
     const slug = c.req.param('slug');
@@ -346,10 +444,15 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
     const body = (await c.req.json().catch(() => ({}))) as { title?: string };
     const title = body.title?.trim();
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
-    const path = resolve(bookDir(slug), 'book.json');
-    const book = readJson<{ title?: string; createdAt?: string }>(path, {});
-    writeJson(path, { ...book, title });
-    return c.json({ slug, title });
+    const base = slugFor(title);
+    if (!validSlug(base)) return c.json({ error: 'that title cannot become a folder name' }, 400);
+    const book = readJson<{ title?: string; createdAt?: string }>(
+      resolve(bookDir(slug), 'book.json'),
+      {},
+    );
+    const next = base === slug ? slug : moveBook(slug, base);
+    writeJson(resolve(bookDir(next), 'book.json'), { ...book, title });
+    return c.json({ slug: next, title });
   });
 
   api.delete('/puzzlebooks/:slug', (c) => {

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { puzzleBooksApi } from './puzzlebooks.ts';
@@ -42,12 +42,13 @@ describe('puzzle books api', () => {
 
   /**
    * The bug this guards: a book created as the shelf's placeholder and
-   * then renamed keeps its placeholder SLUG, so the folder stays occupied
-   * by a book nothing lists under that name. The shelf picks the next free
-   * TITLE, cannot see the collision coming, and New book answered "a book
-   * with that name exists" forever.
+   * then renamed used to keep its placeholder SLUG, so the folder stayed
+   * occupied by a book nothing listed under that name. The shelf picks the
+   * next free TITLE, could not see the collision coming, and New book
+   * answered "a book with that name exists" forever. The folder follows
+   * the title now, so the placeholder is free again.
    */
-  it('creates a book whose name a renamed book still holds on disk', async () => {
+  it('frees the name a book was created under when it is renamed', async () => {
     // Its own shelf: the tests below count the books on the shared one.
     const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
     const shelf = new Hono().route('/api', puzzleBooksApi(own));
@@ -59,23 +60,106 @@ describe('puzzle books api', () => {
       });
     try {
       const { slug } = await (await make('Untitled book')).json();
-      await shelf.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+      const renamed = await shelf.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ title: '1001 Chess Exercises for Beginners' }),
       });
+      expect(await renamed.json()).toMatchObject({
+        slug: '1001 Chess Exercises for Beginners',
+      });
 
       const again = await make('Untitled book');
       expect(again.status).toBe(200);
-      expect(await again.json()).toMatchObject({ slug: 'Untitled book 2' });
+      expect(await again.json()).toMatchObject({ slug: 'Untitled book' });
     } finally {
       rmSync(own, { recursive: true, force: true });
     }
   });
 
-  it('renames a book without moving its folder', async () => {
+  /**
+   * A book whose folder predates that rule: the title moved on, the slug
+   * did not. Nobody could fix it from the app, since renaming a book to
+   * the name it already has is not a rename, so the api reconciles it once
+   * as it starts.
+   */
+  it('moves a legacy folder to match its title at startup', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    mkdirSync(join(own, 'Untitled book', 'diagrams'), { recursive: true });
+    writeFileSync(
+      join(own, 'Untitled book', 'book.json'),
+      JSON.stringify({ title: '1001 Chess Exercises for Beginners' }),
+    );
+    writeFileSync(join(own, 'Untitled book', 'diagrams', 'cover.jpg'), 'jpeg');
+    writeFileSync(join(own, '.bookmarks.json'), JSON.stringify({ slugs: ['Untitled book'] }));
+    try {
+      const shelf = new Hono().route('/api', puzzleBooksApi(own));
+      const list = await (await shelf.request('/api/puzzlebooks')).json();
+      expect(list.books).toMatchObject([
+        { slug: '1001 Chess Exercises for Beginners', cover: true },
+      ]);
+      const marks = await (await shelf.request('/api/puzzlebooks/bookmarks')).json();
+      expect(marks.slugs).toEqual(['1001 Chess Exercises for Beginners']);
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
+  });
+
+  /**
+   * A folder name has to survive every filesystem the vault is read on:
+   * the characters and device names Windows forbids, the 255 BYTES Linux
+   * counts where Windows counts characters, and the case Windows and
+   * macOS fold together where Linux does not.
+   */
+  it('gives every title a folder name a filesystem will take', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'puzzlebooks-'));
+    const shelf = new Hono().route('/api', puzzleBooksApi(own));
+    const make = (title: string): Promise<Response> | Response =>
+      shelf.request('/api/puzzlebooks', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+    try {
+      // Windows: forbidden characters out, reserved device names escaped.
+      expect(await (await make('Tal: Life and Games <2/2>')).json()).toMatchObject({
+        slug: 'Tal Life and Games 2 2',
+      });
+      expect(await (await make('con')).json()).toMatchObject({ slug: 'con_' });
+
+      // Linux: 255 bytes, not 255 characters. Korean is three bytes each.
+      const long = '가'.repeat(120);
+      const { slug: fitted } = await (await make(long)).json();
+      expect(Buffer.byteLength(fitted, 'utf-8')).toBeLessThanOrEqual(255);
+      expect(existsSync(join(own, fitted))).toBe(true);
+
+      // Windows and macOS: one folder, so the second book takes another.
+      const { slug: lower } = await (await make('chess evolution')).json();
+      const { slug: upper } = await (await make('Chess Evolution')).json();
+      expect(lower).toBe('chess evolution');
+      expect(upper).toBe('Chess Evolution 2');
+
+      // ...but a book is never in its own way: changing only the case of
+      // its own name is a rename, not a collision.
+      const cased = await shelf.request(`/api/puzzlebooks/${encodeURIComponent(lower)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ title: 'CHESS EVOLUTION' }),
+      });
+      expect(await cased.json()).toMatchObject({ slug: 'CHESS EVOLUTION' });
+    } finally {
+      rmSync(own, { recursive: true, force: true });
+    }
+  });
+
+  it('renames a book and moves its folder with it', async () => {
     const created = await post('/api/puzzlebooks', { title: 'Untitled book 7' });
     const { slug } = await created.json();
+    await app.request('/api/puzzlebooks/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug }),
+    });
 
     const renamed = await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
       method: 'PATCH',
@@ -83,14 +167,30 @@ describe('puzzle books api', () => {
       body: JSON.stringify({ title: 'Chess Evolution' }),
     });
     expect(renamed.status).toBe(200);
-    expect(await renamed.json()).toMatchObject({ slug, title: 'Chess Evolution' });
+    expect(await renamed.json()).toMatchObject({
+      slug: 'Chess Evolution',
+      title: 'Chess Evolution',
+    });
+    const moved = 'Chess Evolution';
 
-    // The slug is the id every route holds: it must not have moved.
+    // The folder went with the name, and nothing answers to the old one
+    // any more — including the bookmark, which lives outside the folder.
+    expect((await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`)).status).toBe(404);
     const list = await (await app.request('/api/puzzlebooks')).json();
-    const book = list.books.find((b: { slug: string }) => b.slug === slug);
-    expect(book).toMatchObject({ slug, title: 'Chess Evolution' });
+    expect(list.books.find((b: { slug: string }) => b.slug === slug)).toBeUndefined();
+    expect(list.books.find((b: { slug: string }) => b.slug === moved)).toMatchObject({
+      title: 'Chess Evolution',
+    });
+    const marks = await (await app.request('/api/puzzlebooks/bookmarks')).json();
+    expect(marks.slugs).toContain(moved);
+    expect(marks.slugs).not.toContain(slug);
+    await app.request('/api/puzzlebooks/bookmarks/toggle', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug: moved }),
+    });
 
-    const empty = await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+    const empty = await app.request(`/api/puzzlebooks/${encodeURIComponent(moved)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ title: '  ' }),
@@ -106,7 +206,7 @@ describe('puzzle books api', () => {
       ).status,
     ).toBe(404);
 
-    await app.request(`/api/puzzlebooks/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    await app.request(`/api/puzzlebooks/${encodeURIComponent(moved)}`, { method: 'DELETE' });
   });
 
   it('adds puzzles, tracks attempts, deletes puzzles', async () => {

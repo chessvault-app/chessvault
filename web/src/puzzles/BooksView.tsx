@@ -14,6 +14,7 @@
  */
 import { Shelf } from './books/Shelf';
 import { BookPage } from './books/BookPage';
+import { pageKeyOf } from './books/data';
 import { BookTrainer } from './books/BookTrainer';
 import { PuzzleCorrector } from './books/PuzzleEntry';
 
@@ -34,6 +35,8 @@ export function BooksView({ params }: { params: string[] }) {
   if (slug && puzzleId) {
     return <BookTrainer key={`${slug}/${puzzleId}`} slug={slug} puzzleId={puzzleId} />;
   }
-  if (slug) return <BookPage key={slug} slug={slug} />;
+  // pageKeyOf, not the slug: a rename changes the slug and must not
+  // remount the page under an open import window. See books/data.ts.
+  if (slug) return <BookPage key={pageKeyOf(slug)} slug={slug} />;
   return <Shelf />;
 }
