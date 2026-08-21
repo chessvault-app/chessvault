@@ -7,6 +7,7 @@ import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { api, ApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { useMediaQuery } from '@/lib/media';
 import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
 import { copyText } from '@/lib/clipboard';
@@ -439,6 +440,11 @@ export function MovesOverflow({
 }) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
+  // Every caller's own Load position button is `max-md:hidden`, so the menu
+  // row is the phone's stand-in for it, not a second copy of it: on a
+  // desktop both were showing, one icon apart. A class cannot say this —
+  // the row is a menu item, not a rendered control — so the list asks.
+  const phone = useMediaQuery('(max-width: 47.9375rem)');
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const reset = useAnalysis((s) => s.reset);
@@ -451,7 +457,7 @@ export function MovesOverflow({
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
 
   const actions: SheetAction[] = [
-    ...(onLoadPosition
+    ...(onLoadPosition && phone
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),
     // Offered only when there is a game to judge, and not while it is
