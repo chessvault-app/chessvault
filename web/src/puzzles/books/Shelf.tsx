@@ -100,6 +100,35 @@ function useBookSort(): {
   };
 }
 
+/**
+ * Throw away saved scans whose book is gone.
+ *
+ * A checkpoint holds the book's whole PDF and every crop it has read, in
+ * this browser's IndexedDB — which is why the delete route cannot touch
+ * it, and why clearing it in `removeBook` alone is not enough: the book
+ * may have been deleted on another device, or in another browser, or
+ * before the version that cleared it. The shelf is where the two facts
+ * meet, so this is where the orphans are collected. Unreachable
+ * otherwise: book ids are random, so no future book takes the slug back,
+ * and an interrupted scan is only ever OFFERED beside a book that is
+ * still on the shelf.
+ *
+ * Only ever from a list the server actually answered with. Sweeping on a
+ * failed load — offline, server down — would delete a live scan because
+ * the shelf could not be fetched, which is the one way this could cost
+ * someone the very work it exists to protect.
+ */
+async function sweepCheckpoints(fresh: BookSummary[]): Promise<void> {
+  const known = new Set(fresh.map((b) => b.slug));
+  const saved = await listCheckpoints();
+  for (const scan of saved) {
+    if (known.has(scan.slug)) continue;
+    // Deleted from under a scan that is still running here.
+    useImportJob.getState().abandon(scan.slug);
+    await clearCheckpoint(scan.slug);
+  }
+}
+
 export function Shelf() {
   // Seeded from the last visit, so coming back from a book shows the shelf
   // as you left it. Without this the component remounts empty, flashes its
@@ -164,6 +193,7 @@ export function Shelf() {
       shelfMemory.books = fresh;
       setBooks(fresh);
       setError(null);
+      void sweepCheckpoints(fresh);
     } catch (e) {
       // The skeleton must not spin forever on a blip: show the cached
       // shelf (or an empty one) under a line that says what happened.
