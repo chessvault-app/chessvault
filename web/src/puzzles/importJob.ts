@@ -22,14 +22,21 @@ import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs
 import type { CellCandidates } from '@shared/bookRepair';
 import { answerPages, type ReadBoard } from '@shared/bookConfigSearch';
 import type { CellReading, Template } from './ocr/classify';
-import { classifyBoard, labelsToFen } from './ocr/classify';
+import { labelsToFen } from './ocr/classify';
 import { grayFromCanvas, cropDiagram } from './ocr/browser';
-import { detectDiagrams } from './ocr/detect';
+import {
+  loadPdfjs,
+  PDF_OPTIONS,
+  RENDER_WIDTH,
+  readDiagramsOnPage,
+  renderPdfPage,
+  type Rect,
+} from './ocr/pdfPage';
 import { extractTextPage } from './ocr/pdfText';
 import type { Gray } from './ocr/image';
 // Type-only: this file already loads pdf.js at runtime, and the repair
 // pass re-renders pages, so it needs the real document type.
-import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { Role } from 'chessops/types';
 import {
   clearCheckpoint,
@@ -303,8 +310,6 @@ function yieldToUi(): Promise<void> {
   });
 }
 
-const RENDER_WIDTH = 1400;
-
 /**
  * Open the document and drop it again: the "is this a PDF we can read at
  * all" probe. The rebuild path clears a book's puzzles before importing
@@ -312,20 +317,19 @@ const RENDER_WIDTH = 1400;
  * word — an unreadable file emptied the book and imported nothing.
  */
 export async function canReadPdf(file: File): Promise<boolean> {
+  return (await pdfPageCount(file)) > 0;
+}
+
+/** How many pages the file has, or 0 when it does not open as a PDF. */
+export async function pdfPageCount(file: File): Promise<number> {
   try {
-    const pdfjs = await import('pdfjs-dist');
-    const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-    const task = pdfjs.getDocument({
-      data: await file.arrayBuffer(),
-      useWasm: false,
-      wasmUrl: `${window.location.origin}/pdfjs-wasm/`,
-    });
+    const pdfjs = await loadPdfjs();
+    const task = pdfjs.getDocument({ data: await file.arrayBuffer(), ...PDF_OPTIONS });
     const pages = (await task.promise).numPages;
     await task.destroy();
-    return pages > 0;
+    return pages;
   } catch {
-    return false;
+    return 0;
   }
 }
 
@@ -475,16 +479,8 @@ async function scan(
   saved: ImportCheckpoint | null,
 ): Promise<void> {
   try {
-    const pdfjs = await import('pdfjs-dist');
-    const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default;
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
-    const pdf = await pdfjs.getDocument({
-      data: await file.arrayBuffer(),
-      // Scanned books embed JBIG2/JPX images; npm's pdfjs-dist ships only
-      // the JS fallback decoders — skip the doomed wasm fetch.
-      useWasm: false,
-      wasmUrl: `${window.location.origin}/pdfjs-wasm/`,
-    }).promise;
+    const pdfjs = await loadPdfjs();
+    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer(), ...PDF_OPTIONS }).promise;
     set({ pages: pdf.numPages });
     // Everything phase one accumulates. Restored from the checkpoint when
     // resuming, which is the whole of what "resume" means here: the loop
@@ -507,7 +503,7 @@ async function scan(
       // Where this page's diagrams begin in `results` — the checkpoint
       // below stores exactly that slice.
       const pageStart = results.length;
-      const { page, canvas } = await renderPage(pdf, pageNo);
+      const { page, canvas } = await renderPdfPage(pdf, pageNo);
 
       // The book's own words, in the same pass. The answers chapter has no
       // diagrams on it at all, so every page is read whether or not the
@@ -521,31 +517,13 @@ async function scan(
         if (slug) void uploadCover(slug, canvas);
       }
 
-      const rects = detectDiagrams(grayFromCanvas(canvas));
-      // Cut the page up first and hand each board to the pool as it is
-      // cut, so the workers are reading board one while board two is
-      // still being warped. Yielding between cuts keeps the app usable:
-      // a crop is ~60 ms of main thread and a page holds eight of them.
-      const cutting: { dataUrl: string; features: Uint8Array[]; cells: Promise<CellReading[] | null> }[] = [];
-      for (const rect of rects) {
-        const { dataUrl, board, features } = cropDiagram(canvas, rect);
-        cutting.push({ dataUrl, features, cells: classifyInWorker(board) });
-        await yieldToUi();
-      }
+      // The vision half of a page — the same read the book reader does
+      // for one page at a time (ocr/pdfPage.ts), with the worker pool as
+      // its classifier.
+      const diagrams = await readDiagramsOnPage(canvas, classifyInWorker, templates, yieldToUi);
+      const rects = diagrams.map((d) => d.rect);
       const placements: (string | null)[] = [];
-      for (const [at, rect] of rects.entries()) {
-        const { dataUrl, features, cells: reading } = cutting[at]!;
-        let cells = await reading;
-        if (!cells && templates.length > 0) cells = classifyBoard(features, templates);
-        let fen: string | null = null;
-        let uncertain = 0;
-        if (cells) {
-          fen = labelsToFen(
-            cells.map((c) => c.label),
-            false,
-          );
-          uncertain = cells.filter((c) => c.confidence < 0.35).length;
-        }
+      for (const { rect, dataUrl, fen, uncertain } of diagrams) {
         placements.push(fen ? (fen.split(' ')[0] ?? null) : null);
         results.push({
           page: pageNo,
@@ -615,7 +593,7 @@ async function scan(
     if (saved) {
       for (const g of geometry) {
         if (g.rects.length === 0 || pageImages.has(g.page)) continue;
-        const { canvas } = await renderPage(pdf, g.page);
+        const { canvas } = await renderPdfPage(pdf, g.page);
         pageImages.set(g.page, pageJpeg(canvas));
       }
     }
@@ -645,14 +623,6 @@ async function scan(
   }
 }
 
-/** One diagram's place on its page, in render pixels. */
-export interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 /** What one rendered page contributed to the vision half. */
 export interface PageGeometry {
   page: number;
@@ -674,40 +644,6 @@ export interface PageGeometry {
  */
 export function evidencePage(page: number): string {
   return `page${String(page).padStart(3, '0')}.jpg`;
-}
-
-/** One page of the PDF at the size the whole importer assumes. */
-async function renderPage(
-  pdf: PDFDocumentProxy,
-  pageNo: number,
-): Promise<{ page: PDFPageProxy; canvas: HTMLCanvasElement }> {
-  const page = await pdf.getPage(pageNo);
-  const base = page.getViewport({ scale: 1 });
-  const viewport = page.getViewport({ scale: RENDER_WIDTH / base.width });
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.round(viewport.width);
-  canvas.height = Math.round(viewport.height);
-  await page.render({
-    canvas,
-    canvasContext: canvas.getContext('2d')!,
-    viewport,
-    // Renders a page in chunks scheduled on requestAnimationFrame, which a
-    // window nobody is looking at never gets — measured, zero callbacks in
-    // two seconds — so a background import stops on page one and says
-    // nothing. `print` is the one intent pdf.js does NOT schedule on frames
-    // (`useRequestAnimationFrame: !intentPrint`); the same page that never
-    // finished hidden then rendered in 36 ms.
-    //
-    // It is a rendering intent, not a printer: what it changes is annotation
-    // appearance and optional-content visibility, neither of which a scanned
-    // page has. Checked rather than assumed — display and print were
-    // byte-identical over the whole canvas on both a vector page and an
-    // image page, which are the two paths a book can take.
-    intent: 'print',
-  }).promise;
-  // The page comes back with its canvas because the scan reads the page's
-  // words from the same proxy, and fetching it again is a second parse.
-  return { page, canvas };
 }
 
 /** The source page, sized like the offline pipeline's evidence images. */
@@ -778,7 +714,7 @@ async function readSolutions(
     for (const page of answers) wanted.add(page);
     for (const page of [...wanted].sort((a, b) => a - b)) {
       if (!pageImages.has(page)) {
-        pageImages.set(page, pageJpeg((await renderPage(pdf, page)).canvas));
+        pageImages.set(page, pageJpeg((await renderPdfPage(pdf, page)).canvas));
       }
     }
     const pages = [...wanted].map((page) => ({ page, image: pageImages.get(page) }));
@@ -1149,7 +1085,7 @@ async function repairUnread(
   const submitPage = async (pageNo: number, numbers: number[]): Promise<void> => {
     const geo = geometry.find((g) => g.page === pageNo);
     if (!geo) return;
-    const { canvas } = await renderPage(pdf, pageNo);
+    const { canvas } = await renderPdfPage(pdf, pageNo);
     for (const number of numbers) {
       const { board } = cropDiagram(canvas, labelled.get(number)!.rect);
       reading.push({ number, detail: classifyDetailInWorker(board) });
@@ -1223,7 +1159,7 @@ async function readAnswerGlyphs(
   for (const pageNo of [...wanted].sort((a, b) => a - b)) {
     const text = byPage.get(pageNo);
     if (!text) continue;
-    const { canvas } = await renderPage(pdf, pageNo);
+    const { canvas } = await renderPdfPage(pdf, pageNo);
     const gray = grayFromCanvas(canvas);
     const scale = text.width > 0 ? gray.w / text.width : 1;
     for (const word of text.words) {
