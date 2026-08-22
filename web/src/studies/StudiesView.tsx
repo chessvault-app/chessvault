@@ -21,7 +21,7 @@ import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
 import { Button } from '@/ui/Button';
 import { Select } from '@/ui/Select';
-import { ClearableInput, TextArea } from '@/ui/Input';
+import { ClearableInput, Textarea } from '@/ui/Input';
 import { Field } from '@/ui/Field';
 import { Globe, Loader2 } from 'lucide-react';
 import { Modal } from '@/ui/Modal';
@@ -462,10 +462,10 @@ function CreateMenu() {
               ) : null
             }
           >
-            {/* The shared TextArea, not a hand-rolled one: it is where the
+            {/* The shared Textarea, not a hand-rolled one: it is where the
                 autofill-off attributes live, and this is the field iOS was
                 offering to complete with a contact. */}
-            <TextArea
+            <Textarea
               value={pgnText}
               onChange={(e) => takePgn(e.target.value)}
               placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}

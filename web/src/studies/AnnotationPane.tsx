@@ -1,4 +1,4 @@
-import { TextArea } from '@/ui/Input';
+import { Textarea } from '@/ui/Input';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
@@ -194,7 +194,7 @@ export function AnnotationPane({
             )}
           </button>
         ) : (
-          <TextArea
+          <Textarea
             ref={box}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -221,7 +221,7 @@ export function AnnotationPane({
             flush();
           }}
         >
-          <TextArea
+          <Textarea
             autoFocus={autoFocusField()}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}

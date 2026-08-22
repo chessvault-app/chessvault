@@ -7,7 +7,7 @@ import { Suspense, lazy } from 'react';
 
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
 import { Button } from '@/ui/Button';
-import { TextArea } from '@/ui/Input';
+import { Textarea } from '@/ui/Input';
 import { Modal } from '@/ui/Modal';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -193,7 +193,7 @@ export function LoadPositionForm({
           chrome (lanph3re's report). It shows only while the field is
           empty, which is exactly as long as it is useful. */}
       <div className="relative">
-        <TextArea
+        <Textarea
           ref={textarea}
           autoFocus={autoFocusField()}
           // The picture is what a PHONE opens this for; the box is what

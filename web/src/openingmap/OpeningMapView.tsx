@@ -24,7 +24,7 @@ import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { CollectionArt } from '@/ui/EmptyArt';
 import { Field } from '@/ui/Field';
-import { ClearableInput, Input, SearchInput, TextArea } from '@/ui/Input';
+import { ClearableInput, Input, SearchInput, Textarea } from '@/ui/Input';
 import { MiniBoard } from '@/ui/MiniBoard';
 import { Fab, type FabAction } from '@/ui/Fab';
 import { Select } from '@/ui/Select';
@@ -1048,7 +1048,7 @@ function NodePanel({
         </>
       )}
       <Field label="Note">
-        <TextArea
+        <Textarea
           rows={3}
           className="resize-none"
           /* The panel's fallback field, not its purpose — see

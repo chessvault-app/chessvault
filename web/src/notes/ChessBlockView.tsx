@@ -28,7 +28,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/Button';
-import { TextArea } from '@/ui/Input';
+import { Textarea } from '@/ui/Input';
 import { t } from '@/lib/i18n';
 
 interface BlockState {
@@ -269,7 +269,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
 
         {pasteOpen && editable && (
           <div className="flex flex-col gap-1.5">
-            <TextArea
+            <Textarea
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
               placeholder={t('Paste a FEN or PGN…')}

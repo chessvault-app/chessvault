@@ -28,7 +28,7 @@ import { PageShell } from '@/ui/PageShell';
 import { EmptyState } from '@/ui/EmptyState';
 import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
 
-import { ClearableInput, SearchInput, TextArea } from '@/ui/Input';
+import { ClearableInput, SearchInput, Textarea } from '@/ui/Input';
 import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
@@ -958,7 +958,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
       // width a form of this shape wants — a 4xl sheet was mostly margin.
       className="sm:max-w-[37.5rem]"
     >
-      <TextArea
+      <Textarea
         autoFocus={autoFocusField()}
         ref={pgnField}
         value={pgn}
