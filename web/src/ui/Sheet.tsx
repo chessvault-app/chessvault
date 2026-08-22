@@ -32,6 +32,7 @@ import { t } from '@/lib/i18n';
  */
 export function Sheet({
   label,
+  alert = false,
   children,
   onClose,
   className,
@@ -39,6 +40,11 @@ export function Sheet({
   onBack,
 }: {
   label: string;
+  /**
+   * A question that must be answered before anything else happens — a
+   * confirmation, and nothing else so far. Changes the role only.
+   */
+  alert?: boolean;
   children: ReactNode;
   onClose: () => void;
   className?: string;
@@ -156,7 +162,10 @@ export function Sheet({
       }}
     >
       <div
-        role="dialog"
+        // `alertdialog` where the sheet exists to be answered rather than
+        // read: it tells a screen reader to say the question at once
+        // instead of waiting to be asked what the window contains.
+        role={alert ? 'alertdialog' : 'dialog'}
         aria-modal="true"
         aria-label={t(label)}
         ref={(node) => {

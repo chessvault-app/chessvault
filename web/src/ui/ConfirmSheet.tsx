@@ -85,7 +85,7 @@ export function ConfirmSheet({
           draws its label in the quiet style every other window's title
           uses, which is not where a question you must answer belongs. */}
       {open && (
-        <Sheet label={t(confirmLabel)} onClose={() => setOpen(false)} className="gap-3">
+        <Sheet alert label={t(confirmLabel)} onClose={() => setOpen(false)} className="gap-3">
           <p className="text-fg text-base">{t(question)}</p>
           {/*
             Stacked, not a row, and the destructive one on top.
@@ -112,7 +112,15 @@ export function ConfirmSheet({
               <Icon className="size-3.5" />
               {t(confirmLabel)}
             </Button>
+            {/* Cancel takes the focus, not the destructive verb above it.
+                A confirmation opens under the keyboard on the answer that
+                loses nothing: Enter on a window that just appeared must
+                not be the press that cannot be taken back. (ui/dialogFocus
+                focuses the container when a window has no single text
+                field, which is right for a window to be read and wrong
+                for one to be answered.) */}
             <Button
+              autoFocus
               variant="secondary"
               size="md"
               className="w-full justify-center"
