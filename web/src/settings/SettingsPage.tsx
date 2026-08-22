@@ -458,7 +458,21 @@ const SCHEME_GROUPS = [
   label,
   options: ids.map((id) => {
     const preset = SCHEME_PRESETS.find((p) => p.id === id)!;
-    return { value: preset.id, label: preset.label };
+    const { accent, accentTint = 1, contrast = 0, tint, hue } = preset.scheme;
+    return {
+      value: preset.id,
+      label: preset.label,
+      // The dot the swatch row used to draw (lanph3re: keep it in the
+      // dropdown). It has to be able to be grey, or Greyscale advertises
+      // itself with a blue spot, and BLACK ringed in white, or Neutral and
+      // High contrast — same hue, same tint, same accent — draw the same
+      // dot. The lightness follows the primary's, the rule --primary-l
+      // applies in index.css: grey near-black, colour mid-scale.
+      dot: {
+        color: `oklch(${(20.5 + 37.5 * accentTint) * (1 - contrast)}% ${0.135 * accentTint} ${accent})`,
+        ring: `oklch(${90 + 10 * contrast}% ${0.006 * tint} ${hue})`,
+      },
+    };
   }),
 }));
 

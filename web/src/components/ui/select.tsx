@@ -41,6 +41,21 @@ export interface SelectOption {
   /** What the CLOSED trigger says, when the full label is more than a
       narrow trigger can show. */
   short?: string;
+  /** A colour swatch before the label — for an option whose name says
+      least about it (a colour scheme). `ring` outlines it, so a dot the
+      colour of the list can still be seen. */
+  dot?: { color: string; ring?: string };
+}
+
+/** The swatch an option's `dot` asks for, at text size. */
+function OptionDot({ dot }: { dot: NonNullable<SelectOption['dot']> }) {
+  return (
+    <span
+      aria-hidden
+      className="size-3 shrink-0 rounded-full"
+      style={{ background: dot.color, outline: dot.ring ? `2px solid ${dot.ring}` : undefined }}
+    />
+  );
 }
 
 export interface SelectGroup {
@@ -315,8 +330,9 @@ function SelectField({
             {face(t(option.short ?? option.label))}
           </span>
         ))}
-      <span className={cn('truncate', steady && 'col-start-1 row-start-1')}>
-        {selected ? face(t(selected.short ?? selected.label)) : '—'}
+      <span className={cn('flex min-w-0 items-center gap-2', steady && 'col-start-1 row-start-1')}>
+        {selected?.dot && <OptionDot dot={selected.dot} />}
+        <span className="truncate">{selected ? face(t(selected.short ?? selected.label)) : '—'}</span>
       </span>
     </>
   );
@@ -370,6 +386,7 @@ function SelectField({
                         mono && 'font-mono',
                       )}
                     >
+                      {option.dot && <OptionDot dot={option.dot} />}
                       <span className="min-w-0 flex-1 truncate">{t(option.label)}</span>
                       {option.value === value && <CheckIcon className="size-4 shrink-0" />}
                     </button>
@@ -410,6 +427,7 @@ function SelectField({
             {group.label && <SelectLabel>{t(group.label)}</SelectLabel>}
             {group.options.map((option) => (
               <SelectItem key={option.value} value={toRadix(option.value)}>
+                {option.dot && <OptionDot dot={option.dot} />}
                 {t(option.label)}
               </SelectItem>
             ))}
