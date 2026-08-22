@@ -1269,7 +1269,10 @@ export function RepertoireView() {
    * the fields in the desktop's panel and sits on the Game panel on a
    * phone, where the fields are behind the sheet.
    */
-  const startBlock = (
+  // The reasons and the record: body text, above the floor. They used to
+  // ride in the footer with the buttons, which put a paragraph on the
+  // panel's action band (lanph3re spotted the token note there).
+  const startNotes = (
     <>
       {/* A disabled Start with no word is a riddle; the reason
           is one line. */}
@@ -1315,6 +1318,11 @@ export function RepertoireView() {
           />
         </div>
       )}
+    </>
+  );
+
+  const startBlock = (
+    <>
       {/* The starts, as a column of full-width buttons on BOTH layouts.
           Each is as wide as whatever holds it — the settings row's width
           on a phone, the side column's on a desktop.
@@ -1550,6 +1558,7 @@ export function RepertoireView() {
           {t('Practise an opening against real games')}
         </p>
       )}
+      {phase === 'idle' && startNotes}
       {/* On a desktop these follow the fields in the New game panel, and
           this panel is not on screen at all until a game is. Start
           leads; the row that would change what it starts comes after
@@ -1708,6 +1717,7 @@ export function RepertoireView() {
               <PanelHeader title={t('New game')} />
               <div className="flex flex-col gap-3 p-3">
                 {setupFields}
+                {startNotes}
                 {startBlock}
               </div>
             </Panel>
