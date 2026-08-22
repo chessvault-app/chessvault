@@ -40,6 +40,7 @@ import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { rememberDrill, rememberedDrill } from '@/lib/training';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -1566,9 +1567,11 @@ export function RepertoireView() {
         and opens the settings (lanph3re's call — they belong on the floor
         rather than trailing the description). Ended: what the mode offers
         for the line just played, then New game, primary and last, the way
-        every row in this app ends. */}
+        every row in this app ends. shadcn's CardFooter: the slot a card
+        keeps for its actions, a muted band under a rule, the same one the
+        two trainers' rows stand on. */}
     {(phase === 'idle' || phase === 'ended') && (
-      <div className="flex shrink-0 flex-col gap-3 p-3">
+      <CardFooter className="flex-col items-stretch gap-3 px-3 py-3">
         {phase === 'idle' && startBlock}
         {phase === 'idle' && setupRow}
         {phase === 'ended' && (
@@ -1580,7 +1583,7 @@ export function RepertoireView() {
             </Button>
           </div>
         )}
-      </div>
+      </CardFooter>
     )}
   </Panel>
   );

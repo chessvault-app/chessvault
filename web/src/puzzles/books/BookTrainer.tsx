@@ -57,6 +57,7 @@ import { useAnalysis } from '@/store/analysis';
 
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 
@@ -658,8 +659,15 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           from the puzzle trainer's Next puzzle — two screens maintained
           as siblings, disagreeing about where the button you press is.
           Ending the line is what fixes the imbalance the stretch was
-          for. */}
-      <div className="flex flex-wrap justify-end gap-2">
+          for.
+
+          shadcn's CardFooter, the panel's own floor — the slot a card keeps
+          for its actions. Still the last child of the scrolling body, not
+          pinned outside it: mt-auto rests it on the floor while the text
+          is short and lets it scroll with the text when it is not; the
+          negative margins take back the body's p-3 so the band spans the
+          panel edge to edge. */}
+      <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
         {phase === 'done' ? (
           <>
             <Button variant="secondary" size="sm" onClick={retry}>
@@ -713,7 +721,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             </Button>
           </>
         )}
-      </div>
+      </CardFooter>
     </div>
   </Panel>
   );

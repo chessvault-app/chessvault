@@ -42,6 +42,7 @@ import { useEngine } from '@/store/engine';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
@@ -824,7 +825,29 @@ function Trainer({
           one — and on a short window the pinning is what squeezed the text
           to a couple of lines to keep a row nobody was reaching for on
           screen. They follow what they answer to instead. */}
-      {/* justify-end, gap-2, the primary one LAST — the row every window
+      {/* What is being trained — difficulty and theme — as the
+          panel's own last row, and the way into the window that
+          changes it. It sat on the header for a while, where a
+          labelled control among icon buttons read as chrome
+          (lanph3re's call: into the body). */}
+      {mode === 'fresh' && (
+        <DifficultyChip
+          difficulty={difficulty}
+          theme={theme}
+          onOpen={() => setShowDifficulty(true)}
+        />
+      )}
+
+      {/* shadcn's CardFooter, the panel's own floor — the slot a card keeps
+          for its actions, and what the other trainer and the repertoire
+          stand theirs on too. It is still the LAST child of the scrolling
+          body, not pinned outside it: mt-auto rests it on the floor while
+          the text is short and lets it scroll with the text when it is not,
+          which is the whole reason the row was put in the body (above).
+          The negative margins take back the body's p-3 so the band spans
+          the panel edge to edge.
+
+          justify-end, gap-2, the primary one LAST — the row every window
           in this app ends on (components/prompt-dialog, and the repertoire's New
           game). A finished puzzle's row is read along a line and finishes
           on the action, which is why the link out to the game it came
@@ -835,7 +858,7 @@ function Trainer({
           the phase made it read as two different rows swapping places on
           the panel's floor. Hint, Solution and Skip end on Skip, which is
           the one that leaves this puzzle. */}
-      <div className="flex flex-wrap justify-end gap-2">
+      <CardFooter className="-mx-3 -mb-3 mt-auto flex-wrap justify-end gap-2 px-3 py-2">
         {phase === 'done' ? (
           <>
             {/* An anchor, not a button that navigates: it goes out of the
@@ -904,20 +927,7 @@ function Trainer({
             )}
           </>
         )}
-      </div>
-
-      {/* What is being trained — difficulty and theme — as the
-          panel's own last row, and the way into the window that
-          changes it. It sat on the header for a while, where a
-          labelled control among icon buttons read as chrome
-          (lanph3re's call: into the body). */}
-      {mode === 'fresh' && (
-        <DifficultyChip
-          difficulty={difficulty}
-          theme={theme}
-          onOpen={() => setShowDifficulty(true)}
-        />
-      )}
+      </CardFooter>
     </div>
   </Panel>
   );
