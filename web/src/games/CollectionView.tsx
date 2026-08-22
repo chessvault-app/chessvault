@@ -708,12 +708,17 @@ export function CollectionView() {
               two-storey control. Naming the panel is what a header does,
               so the live tab is the header's own rule, thickened and lit
               under the name that is showing. */}
-          {/* shadcn's Tabs in the underline shape: the strip is the panel
-              header, with the live tab's name underlined in the accent. */}
+          {/* shadcn's Tabs in its `line` shape: the strip is the panel
+              header, with the live tab's name underlined. The live tab is
+              read from aria-selected — the owned TabsTrigger's hook; the
+              `data-active:` classes that used to be here are no variant
+              in this project, so they never applied and the registry's
+              raised pill sat inside an underline strip. */}
           <Tabs value={source} onValueChange={(v) => setSource(v as SourceId)} className="contents">
             <TabsList
+              variant="line"
               aria-label={t('Where to find a game')}
-              className="border-border flex h-10 shrink-0 items-center gap-1 rounded-none border-0 border-b bg-transparent p-0 px-2"
+              className="border-border flex h-10 w-auto shrink-0 items-center justify-start gap-1 rounded-none border-b p-0 px-2"
             >
               {SOURCES.map(({ id, label }) => (
                 <TabsTrigger
@@ -724,12 +729,10 @@ export function CollectionView() {
                   // column is 210px wide at the narrowest lg. Plain text
                   // at text-sm is 178. min-w-0 so a longer translation
                   // truncates rather than pushing the second tab out.
-                  className={cn(
-                    'relative flex h-10 min-w-0 flex-none items-center justify-start rounded-none px-1.5 text-sm font-semibold',
-                    'text-muted-foreground hover:text-foreground transition-colors duration-100',
-                    'data-active:bg-transparent data-active:text-foreground data-active:shadow-none',
-                    'data-active:after:bg-primary data-active:after:absolute data-active:after:inset-x-1 data-active:after:-bottom-px data-active:after:h-0.5 data-active:after:rounded-full',
-                  )}
+                  // The trigger is the strip's full height, so the
+                  // underline lands on the strip's rule, not 5px under a
+                  // padded pill.
+                  className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:-bottom-px"
                 >
                   <span className="truncate">{t(label)}</span>
                 </TabsTrigger>
