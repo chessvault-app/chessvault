@@ -3,6 +3,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { Input } from '@/components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
@@ -50,9 +52,12 @@ export function PasswordGate({ children }: { children: ReactNode }) {
   if (state === 'open') return <>{children}</>;
   if (state === 'checking') return <div className="bg-background h-[100dvh]" />;
 
-  const submit = async (): Promise<void> => {
+  // `completed` is the code as InputOTP just completed it, when its sixth
+  // digit submits: the state update that carries it may not have landed.
+  const submit = async (completed?: string): Promise<void> => {
     if (busy) return;
-    if (stage === 'password' ? !password : code.trim().length < 6) return;
+    const otp = completed ?? code;
+    if (stage === 'password' ? !password : otp.trim().length < 6) return;
     setBusy(true);
     setError(null);
     let res: Response;
@@ -65,7 +70,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         headers: { 'content-type': 'application/json' },
         // Stage one sends the password alone; the server replies needTotp
         // when an authenticator is configured.
-        body: JSON.stringify(stage === 'code' ? { password, code } : { password }),
+        body: JSON.stringify(stage === 'code' ? { password, code: otp } : { password }),
       });
     } catch {
       // A tailnet blip at exactly this moment used to leave the button on
@@ -154,17 +159,35 @@ export function PasswordGate({ children }: { children: ReactNode }) {
                 <ShieldCheck className="size-3" />
                 {t('Authenticator code')}
               </label>
-              <Input
+              {/* shadcn's InputOTP (lanph3re's call): six slots in two groups
+                  of three, the way the authenticator shows the code, and
+                  the sixth digit submits — a code is never longer, so
+                  there is nothing to press after it. Digits only, and
+                  one-time-code lets iOS offer the code from Messages. */}
+              <InputOTP
                 id="gate-code"
                 autoFocus
-                inputSize="lg"
+                maxLength={6}
+                pattern={REGEXP_ONLY_DIGITS}
                 inputMode="numeric"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="123 456"
                 autoComplete="one-time-code"
-                className="mb-3 w-full"
-              />
+                value={code}
+                onChange={setCode}
+                onComplete={(value) => void submit(value)}
+                containerClassName="mb-3 justify-center"
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
             </>
           )}
           {error && (
@@ -179,7 +202,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             disabled={busy || (stage === 'password' ? !password : code.trim().length < 6)}
             className="w-full justify-center"
           >
-            {busy ? 'Checking…' : stage === 'password' ? 'Continue' : 'Unlock'}
+            {t(busy ? 'Checking…' : stage === 'password' ? 'Continue' : 'Unlock')}
           </Button>
           {stage === 'code' && (
             <button
