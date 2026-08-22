@@ -74,7 +74,10 @@ export const COPYRIGHT_YEAR = '2026';
  * in this directory.
  */
 const ASSETS: { name: string; version: string; license: string; url: string; file: string | null }[] = [
-  { name: 'cburnett (piece set, app icon, favicon)', version: '—', license: 'GPL-2.0-or-later',
+  // The default pieces, and the knight and king glyphs the UI draws
+  // (components/knight-icon, king-icon). Not the app icon, favicon or landing
+  // mark any more: those are the hex, ours, since a015079.
+  { name: 'cburnett (piece set; the knight and king glyphs in the UI)', version: '—', license: 'GPL-2.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/cburnett', file: 'GPL-2.0.txt' },
   { name: 'merida (piece set)', version: '—', license: 'GPL-2.0-or-later',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/merida', file: 'GPL-2.0.txt' },

@@ -42,7 +42,7 @@ installed app.
 
 | What | Author | Licence |
 | --- | --- | --- |
-| cburnett (pieces, app icon, favicon, landing mark) | Colin M.L. Burnett | GPL-2.0-or-later |
+| cburnett (pieces; the knight and king glyphs drawn in the UI) | Colin M.L. Burnett | GPL-2.0-or-later |
 | merida | Armando Hernandez Marroquin | GPL-2.0-or-later |
 | chessnut | Alexis Luengas | Apache-2.0 |
 | pirouetti | pirouetti | AGPL-3.0-or-later |
