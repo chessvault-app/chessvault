@@ -145,7 +145,7 @@ export function Sheet({
     <CoverParent.Provider value={asParent}>
     <div
       className={cn(
-        'vv-band fixed inset-0 z-50 flex justify-center bg-black/50',
+        'vv-band fixed inset-0 z-50 flex justify-center bg-scrim',
         // Bottom edge on a phone, middle of the band on a desktop.
         'max-sm:items-end max-sm:p-0 sm:items-center sm:p-3',
         coveredBy > 0 && 'invisible',

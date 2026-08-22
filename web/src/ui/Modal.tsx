@@ -202,7 +202,7 @@ export function Modal({
         // vv-band: while the keyboard is up this is pinned to the band
         // that can be seen rather than to the layout viewport, which is
         // the thing iOS has just shifted. At rest it is inset-0.
-        'vv-band fixed inset-0 z-50 grid place-items-center bg-black/60',
+        'vv-band fixed inset-0 z-50 grid place-items-center bg-scrim',
         'max-sm:flex max-sm:items-end max-sm:justify-center max-sm:p-0',
         full ? 'sm:p-6' : 'sm:p-4',
         shut && 'hidden',
