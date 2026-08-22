@@ -388,6 +388,37 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   the global `:focus-visible` outline in the same colour, so a page has
   one focus style whichever kind of control has it.
 
+## The mark
+
+A hexagon outline with one of its six wedges filled, white on a black
+rounded square. It is in `web/public/favicon.svg`, cut into every icon
+size by `scripts/render-icons.mjs`, and drawn in the app by
+`web/src/components/brand-mark.tsx`.
+
+- **A hexagon is a cell** — a tile, a crystal, the outline of a cube seen
+  corner-on. Both readings fit a vault: a container, and a solid block
+  you can look into.
+- **The filled wedge is the top face of that cube catching light** — the
+  lid of the box, and one position out of many, the one in front of you.
+  A vault of games, studies and puzzles is exactly that: a lot of
+  material, and one thing you are working on.
+- **Outline and fill say what is yours and what is open.** The outline
+  is the boundary — your files, on your disk. Nothing is drawn locked:
+  the stance is "your chess, in plain files", not "behind a door", so
+  the mark is a container, not a padlock.
+- **Not a chess piece.** Every chess app wears a knight or a king; a
+  piece says "chess", not which app, and this app's distinction is where
+  your material lives, not the game. The pieces stay on the board
+  (cburnett); `KnightIcon` is what the app uses where it means *chess*
+  — the notes palette, an archive row, an empty state — never the brand.
+- **Black and white** because the theme at rest is neutral and the board
+  is the only colour the app insists on. The tile takes no side, sits
+  beside any other icon, and is the same two inks as the splash, so
+  launch and icon agree.
+- **Two shapes, because it has to survive 16 px.** An outline plus one
+  triangle keeps its silhouette in a browser tab and on the 32 px
+  sidebar tile, which is what a nine-dot lattice, tried first, did not.
+
 ## Process conventions
 
 - Verify in the browser (hard reload — plain F5 can serve stale
