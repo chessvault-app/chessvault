@@ -1508,6 +1508,8 @@ export const ko: Record<string, string> = {
   "Only the games in your collection, not every archived game": "보관함에 담은 게임만 봅니다. 전체 기보가 아닙니다",
   "From date": "시작일",
   "To date": "종료일",
+  // The date picker's empty trigger (components/date-picker).
+  "Pick a date": "날짜 선택",
   "Clear": "비우기",
   // The filter window's group headings. Close, Result and Games are already
   // above — one entry each, whatever screen asks for them.
