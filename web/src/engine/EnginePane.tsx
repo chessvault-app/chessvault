@@ -313,7 +313,7 @@ function CurrentLine() {
           // The one you are on carries the accent, the same way a hovered
           // ply in a variation above does — one grammar for "this move" in
           // the whole panel.
-          on ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-surface-3',
+          on ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-accent',
         )}
       >
         {numbered && (
@@ -489,7 +489,7 @@ function EngineSettings() {
   const maxThreads = Math.max(1, navigator.hardwareConcurrency || 4);
 
   return (
-    <div className="border-border bg-surface-inset grid gap-3 border-b px-3 py-3">
+    <div className="border-border bg-muted/50 grid gap-3 border-b px-3 py-3">
       <Slider
         label={t('Threads')}
         value={threads}

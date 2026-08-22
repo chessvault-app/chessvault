@@ -267,7 +267,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
   return (
     <p
       className={cn(
-        'text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps',
+        'text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium',
         className,
       )}
     >
@@ -279,7 +279,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
 /** The log's own shape, held while the attempts are still coming. */
 function HubSkeletonHistoryPanel() {
   return (
-    <div className="bg-card border-border flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
+    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
       <SkeletonPanelHeading width="w-24" className="shrink-0" />
       <div className="min-h-0 flex-1">
         <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
@@ -298,7 +298,7 @@ function HubSkeletonHistoryPanel() {
  */
 function HubSkeletonBookRow() {
   return (
-    <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
       <SkeletonPanelHeading width="w-20" />
       <div className="flex w-full items-center gap-2.5 px-3 py-2">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
@@ -341,7 +341,7 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
   return (
     <div
       className={cn(
-        'bg-card border-border flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
+        'bg-card flex w-full items-stretch gap-3 rounded-xl ring-1 ring-foreground/10 px-2.5 py-1.5',
         fill && 'min-h-0 flex-1',
       )}
     >
@@ -454,8 +454,8 @@ function EmptySlot({
  */
 function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   return (
-    <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+      <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Worth practising')}
       </p>
       <ListRow onClick={() => navigate('puzzles', 'theme', weak.theme)}>
@@ -485,8 +485,8 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
-    <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+    <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+      <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Recently read')}
       </p>
       {books.map((b) => (
@@ -550,8 +550,8 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // vault happens to hold, so a first session and a hundredth one put
     // every target in the same place. A section that appears only once it
     // has content also teaches nobody that it is there.
-    <div className="bg-card border-border flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
-      <p className="text-subtle border-border shrink-0 border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+    <div className="bg-card flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10">
+      <p className="text-muted-foreground border-border shrink-0 border-b px-3 pb-1.5 pt-2 text-sm font-medium">
         {t('Puzzle history')}
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1003,7 +1003,7 @@ function Hub() {
         {skeleton && <HubSkeletonCards fill={!historyBlock} />}
 
         {settled && solvedToday !== null && solvedToday > 0 && (
-          <p className="text-subtle px-1 text-xs label-caps">
+          <p className="text-muted-foreground px-1 text-sm font-medium">
             {t('Solved today: {n}', { n: solvedToday })}
           </p>
         )}
@@ -1124,7 +1124,7 @@ function Hub() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="border-border bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl border"
+                className="bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl ring-1 ring-foreground/10"
               >
                 <Skeleton className="size-5 rounded-sm" />
                 <Skeleton className="h-2.5 w-12" />

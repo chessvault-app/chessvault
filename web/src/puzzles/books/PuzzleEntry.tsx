@@ -543,7 +543,7 @@ function SolutionRecorder({
         </Panel>
 
         {verdicts && (
-          <div className="bg-card border-border shrink-0 rounded-xl border p-3 text-sm">
+          <div className="bg-card shrink-0 rounded-xl ring-1 ring-foreground/10 p-3 text-sm">
             {verdicts.map((note, i) => (
               <p key={i} className={note.startsWith('Engine agrees') ? 'text-good' : 'text-warn'}>
                 {note}

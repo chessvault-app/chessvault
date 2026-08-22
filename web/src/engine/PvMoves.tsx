@@ -105,7 +105,7 @@ export function PvMoves({
             // text grows to the right, so its own left edge stays put and
             // the pointer cannot fall off what it is pointing at.
             className={cn(
-              'hover:bg-surface-3 hover:text-primary rounded-sm px-0.5 font-medium hover:font-semibold',
+              'hover:bg-accent hover:text-primary rounded-sm px-0.5 font-medium hover:font-semibold',
               'transition-colors duration-100',
             )}
             onClick={() => onPlayLine(plies.slice(0, i + 1).map((p) => p.uci))}

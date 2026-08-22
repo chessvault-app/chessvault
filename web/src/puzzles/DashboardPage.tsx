@@ -420,9 +420,9 @@ function StatCard({
   action?: React.ReactNode;
 }) {
   return (
-    <div title={title} className="bg-card border-border flex items-center justify-between rounded-xl border px-3 py-2.5">
+    <div title={title} className="bg-card flex items-center justify-between rounded-xl ring-1 ring-foreground/10 px-3 py-2.5">
       <div>
-        <div className="text-subtle text-xs label-caps">
+        <div className="text-muted-foreground text-sm font-medium">
           {label}
         </div>
         <div className="text-foreground font-mono text-2xl font-bold tabular-nums">{value}</div>

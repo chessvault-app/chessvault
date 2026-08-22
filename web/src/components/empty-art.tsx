@@ -39,7 +39,7 @@ function Badge({ className, children }: { className?: string; children: ReactNod
   return (
     <span
       className={cn(
-        'border-background grid size-8 place-items-center rounded-full border-4 shadow-pop',
+        'border-background grid size-8 place-items-center rounded-full border-4 shadow-lg',
         className,
       )}
     >
@@ -93,7 +93,7 @@ export function NoMatchArt() {
     <KnightPlate
       glow="radial-gradient(circle, var(--color-foreground) 0%, transparent 70%)"
       badge={
-        <Badge className="bg-surface-3">
+        <Badge className="bg-accent">
           <Search className="text-muted-foreground size-4" strokeWidth={2.5} />
         </Badge>
       }

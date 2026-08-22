@@ -412,7 +412,7 @@ export function Shelf() {
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
         ) : visibleBooks.length === 0 ? (
-          <div className="bg-card border-border flex flex-col items-center gap-3 rounded-xl border p-6 text-center">
+          <div className="bg-card flex flex-col items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-6 text-center">
             <BookMarked className="text-subtle size-6" />
             <p className="text-muted-foreground text-base">
               {t(
@@ -528,7 +528,7 @@ function BookCard({
               className="border-border h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
             />
           ) : (
-            <span className="bg-surface-inset border-border grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
+            <span className="bg-muted/50 border-border grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
               <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
             </span>
           )}

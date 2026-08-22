@@ -98,10 +98,10 @@ export function ReviewStrip() {
     <div className="border-border shrink-0 border-t">
       {status === 'running' ? (
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="text-subtle text-xs label-caps">
+          <span className="text-muted-foreground text-sm font-medium">
             {t('Reviewing')}
           </span>
-          <div className="bg-surface-inset h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
+          <div className="bg-muted/50 h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">
             <div
               className="bg-primary h-full rounded-full transition-[width] duration-200"
               style={{ width: `${Math.round(progress * 100)}%` }}
@@ -191,7 +191,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
         ref={svg}
         viewBox={`0 0 ${GRAPH_W} ${GRAPH_H}`}
         preserveAspectRatio="none"
-        className="bg-surface-inset block h-16 w-full cursor-crosshair touch-none select-none"
+        className="bg-muted/50 block h-16 w-full cursor-crosshair touch-none select-none"
         onPointerDown={(e) => {
           try {
             e.currentTarget.setPointerCapture(e.pointerId);

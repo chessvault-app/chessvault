@@ -116,7 +116,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     return (
       <div className="fixed inset-0 z-50 grid place-items-center p-8">
         <div className="bg-scrim absolute inset-0" />
-        <div ref={card} className="border-border bg-card relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-pop">
+        <div ref={card} className="bg-card relative w-64 max-w-[80vw] rounded-xl ring-1 ring-foreground/10 p-1.5 shadow-lg">
           <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
         </div>
       </div>
@@ -126,7 +126,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     <div
       ref={card}
       style={{ top: preview.top, left: preview.left }}
-      className="border-border bg-card pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-pop"
+      className="bg-popover ring-foreground/10 $1 ring-1 $2"
     >
       <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-sm" />
     </div>
@@ -396,7 +396,7 @@ export function GameRow({
           // wraps to, rather than following the text it left behind.
           'ml-auto flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
           'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
-          'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
+          'group-hover:bg-accent/70 pointer-coarse:opacity-100',
         )}
       >
         {/* Hidden on touch, where it lives in the ⋯ sheet instead: it is a
@@ -514,9 +514,9 @@ export function ResultScore({
   // and a loss are not the same fact, and the list is mostly their games.
   const tone =
     parts.length !== 2 || !winner
-      ? 'bg-surface-3 text-muted-foreground'
+      ? 'bg-accent text-muted-foreground'
       : !userSide
-        ? 'bg-surface-3 text-foreground'
+        ? 'bg-accent text-foreground'
         : userSide === winner
           ? 'bg-good/15 text-good'
           : 'bg-destructive/15 text-destructive';

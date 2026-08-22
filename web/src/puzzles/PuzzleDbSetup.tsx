@@ -99,7 +99,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                   : t('Building the database')}
             </p>
 
-            <span className="bg-surface-inset border-border-strong flex h-2 w-full overflow-hidden rounded-full border">
+            <span className="bg-muted/50 border-border-strong flex h-2 w-full overflow-hidden rounded-full border">
               <span
                 className={cn(
                   'bg-primary h-full',

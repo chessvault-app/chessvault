@@ -40,7 +40,7 @@ export function ShelfFolderHeader({
         type="button"
         onDoubleClick={() => setRenaming(true)}
         title={t('Double-click to rename')}
-        className="text-subtle text-sm label-caps"
+        className="text-muted-foreground text-sm font-medium"
       >
         {folder}
       </button>

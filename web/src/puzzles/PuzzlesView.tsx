@@ -732,12 +732,12 @@ function Trainer({
             type="button"
             onClick={() => navigate('puzzles', 'themes')}
             className={cn(
-              'bg-muted hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+              'bg-muted hover:bg-accent group flex w-full items-center gap-2 rounded-md',
               'border-border border px-3 py-2.5 text-left transition-colors duration-100',
             )}
           >
             <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-            <span className="text-subtle shrink-0 text-xs label-caps">
+            <span className="text-muted-foreground shrink-0 text-sm font-medium">
               {t('Theme')}
             </span>
             <span className="text-foreground ml-auto truncate text-sm font-medium">
@@ -980,7 +980,7 @@ function Trainer({
               ) : error && metaAnswered ? (
                 // What happened, and a way to go again — a dead end here
                 // used to need a full page reload to recover from.
-                <div className="bg-card border-border grid aspect-square w-full place-items-center rounded-xl border">
+                <div className="bg-card grid aspect-square w-full place-items-center rounded-xl ring-1 ring-foreground/10">
                   <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
                     <p className="text-muted-foreground text-sm">{error}</p>
                     <Button
@@ -1208,7 +1208,7 @@ function MoveBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-foreground text-base font-bold shadow-panel',
+        'text-nag-foreground text-base font-bold shadow-sm',
         kind === 'good' ? 'bg-nag-good' : 'bg-nag-blunder',
       )}
     >

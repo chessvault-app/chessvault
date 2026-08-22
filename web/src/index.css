@@ -391,15 +391,14 @@
   --color-ring: var(--ring);
 
   /* The app's extensions — what shadcn has no word for, named in its
-     style. The ladder has two more rungs than card/muted: surface-3 is
-     the pressed or lit fill (a live segment, a hovered secondary button),
-     surface-inset the sunken one (a field, a settings row). subtle is the
-     third text tier under muted-foreground; border-strong the heavier
-     rule. primary-hover and primary-soft are real tokens rather than a
-     `/90` and a `/10` of primary because their contrast was measured. */
+     style: subtle is the third text tier under muted-foreground;
+     border-strong the heavier rule; primary-hover and primary-soft are
+     real tokens rather than a `/90` and a `/10` of primary because their
+     contrast was measured. (The ladder's surface-3 and surface-inset rungs
+     still exist as variables — the skeleton grid and a few strips read
+     them — but are no utilities: everything on the page uses muted and
+     accent.) */
   --color-background-accent: var(--background-accent);
-  --color-surface-3: var(--surface-3);
-  --color-surface-inset: var(--surface-inset);
   --color-subtle: var(--text-subtle);
   --color-border-strong: var(--border-strong);
   --color-primary-hover: var(--primary-hover);
@@ -663,26 +662,6 @@
   }
 }
 
-/* The small-caps label voice: a panel header, a count row's tally, the
-   name over a group of settings. Thirty-one places wore it as the same
-   three classes retyped, and two had already drifted — one to 0.06em,
-   which is the kind of difference nobody sees and everybody inherits.
-   The letter-spacing in particular is a number, and a number belongs in
-   one place.
-
-   SIZE IS NOT IN HERE, deliberately. The voice is 12px in almost every
-   case, but the More page's section headings and a shelf's folder name
-   are the same voice at 14px, and a utility that set font-size would
-   fight `text-sm` at the call site — two utilities, one property, and
-   the winner decided by their order in the emitted stylesheet rather
-   than by the order they are written in the class attribute. Colour is
-   out for the same reason: every caller today wants --text-subtle and
-   says so. This sets only what the three classes agreed on. */
-@utility label-caps {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
 
 /* ---------------------------------------------------------------------------
    Board theme.

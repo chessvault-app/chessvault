@@ -164,7 +164,7 @@ export function GrowDialog({
           <span className="text-muted-foreground text-sm">{t('games')}</span>
         </div>
         <div className="flex flex-col gap-1.5">
-          <span className="text-subtle text-xs label-caps">
+          <span className="text-muted-foreground text-sm font-medium">
             {t('From which games')}
           </span>
           <div className="flex flex-wrap items-center gap-1.5">

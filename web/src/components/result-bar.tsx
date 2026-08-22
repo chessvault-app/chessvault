@@ -19,7 +19,7 @@ export function ResultBar({ w, d, b }: { w: number; d: number; b: number }) {
   const pct = (n: number): number => (100 * n) / total;
   const segments = [
     { value: pct(w), className: 'bg-eval-white text-on-eval-white' },
-    { value: pct(d), className: 'bg-surface-3 text-muted-foreground' },
+    { value: pct(d), className: 'bg-accent text-muted-foreground' },
     { value: pct(b), className: 'bg-eval-black text-on-eval-black' },
   ];
   return (

@@ -56,8 +56,8 @@ function PeekCrop({
   return createPortal(
     <div
       className={cn(
-        'bg-card border-border pointer-events-none fixed z-[60] rounded-xl border p-2',
-        'shadow-pop',
+        'bg-card pointer-events-none fixed z-[60] rounded-xl ring-1 ring-foreground/10 p-2',
+        'shadow-lg',
       )}
       style={
         flip

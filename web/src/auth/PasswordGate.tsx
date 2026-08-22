@@ -111,14 +111,14 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* The same knight as the sidebar — the lock screen is the front
             door, so it wears the brand, not a padlock. */}
-        <div className="bg-primary text-primary-foreground mb-5 grid size-14 place-items-center rounded-2xl shadow-panel">
+        <div className="bg-primary text-primary-foreground mb-5 grid size-14 place-items-center rounded-2xl shadow-sm">
           <KnightIcon className="size-8" />
         </div>
         <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
         <p className="text-subtle mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 
         <form
-          className="bg-card border-border w-full rounded-2xl border p-6 shadow-panel"
+          className="bg-card border-border w-full rounded-2xl border p-6 shadow-sm"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();
@@ -128,7 +128,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label
                 htmlFor="gate-password"
-                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs label-caps"
+                className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-sm font-medium"
               >
                 <Lock className="size-3" />
                 {t('Password')}
@@ -149,7 +149,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label
                 htmlFor="gate-code"
-                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs label-caps"
+                className="text-muted-foreground mb-1.5 flex items-center gap-1.5 text-sm font-medium"
               >
                 <ShieldCheck className="size-3" />
                 {t('Authenticator code')}

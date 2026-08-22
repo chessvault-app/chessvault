@@ -75,7 +75,7 @@ export function UndoBar({
           // the same place. A name too long for it truncates, which is
           // what the width above the ellipsis was buying.
           'w-full max-w-[22rem] md:w-[22rem]',
-          'py-1.5 pl-4 pr-1.5 shadow-pop',
+          'py-1.5 pl-4 pr-1.5 shadow-lg',
           leaving ? 'animate-sink' : 'animate-rise pointer-events-auto',
         )}
       >

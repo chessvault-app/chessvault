@@ -176,7 +176,7 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // The rule under a title is the app's one way of separating a header
     // from what it heads — panels and windows alike (lanph3re's call); the
     // CardHeader draws it.
-    <CardHeader className={cn('flex h-10 shrink-0 flex-row items-center justify-between gap-2 px-3', className)}>
+    <CardHeader className={cn('flex shrink-0 flex-row items-center justify-between gap-2 px-3 py-2', className)}>
       {/* Translated HERE, not at every call site. A panel title is always
           user-facing, so a caller that forgets t() is a bug that renders
           fine in English and ships. Doing it once means it cannot be

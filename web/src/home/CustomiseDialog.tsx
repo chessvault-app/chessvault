@@ -236,7 +236,7 @@ function Group({
 }) {
   return (
     <div className="flex flex-col gap-1" role="group" aria-label={label}>
-      <p className="text-subtle px-1 pt-1 text-xs label-caps">
+      <p className="text-muted-foreground px-1 pt-1 text-sm font-medium">
         {label}
       </p>
       {/* A group that has emptied says so. A heading over nothing reads as
@@ -283,7 +283,7 @@ function Row({
     // both axes, as `overflow-y-auto` always is — pannable sideways by 3px
     // on a phone, with no scrollbar to say why. 12px of padding contains
     // it exactly, so the whole touch target survives.
-    <div className="border-border bg-surface-inset flex items-center gap-2 rounded-md border px-3 py-1.5">
+    <div className="border-border bg-muted/50 flex items-center gap-2 rounded-md border px-3 py-1.5">
       <Icon className="text-muted-foreground size-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate text-base">{t(label)}</span>
       {children}

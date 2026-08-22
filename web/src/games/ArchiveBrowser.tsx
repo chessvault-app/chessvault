@@ -766,7 +766,7 @@ export function ArchiveBrowser({
             to drop one that had been mistyped. */}
         {months.length === 0 && recents.length > 0 && (
           <div className="mt-1 flex flex-col gap-1.5">
-            <p className="text-subtle text-xs label-caps">
+            <p className="text-muted-foreground text-sm font-medium">
               {t('Recent searches')}
             </p>
             <div className="flex flex-wrap items-center gap-1">
@@ -939,7 +939,7 @@ export function ArchiveBrowser({
                   it, so there was nothing to say; now the list grows as it
                   is scrolled and the count is the only thing that tells
                   you Select all does not mean the whole decade. */}
-              <span className="text-subtle min-w-0 flex-1 truncate text-xs label-caps tabular-nums">
+              <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm tabular-nums font-medium">
                 {month === ALL_MONTHS
                   ? cursor >= months.length
                     ? t('{n} games · all {total} months', {
@@ -990,7 +990,7 @@ export function ArchiveBrowser({
               <span
                 className={cn(
                   'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
-                  picked.size > 0 ? 'bg-primary-soft text-primary' : 'bg-surface-3 text-subtle',
+                  picked.size > 0 ? 'bg-primary-soft text-primary' : 'bg-accent text-subtle',
                 )}
               >
                 {t('{n} selected', { n: picked.size })}

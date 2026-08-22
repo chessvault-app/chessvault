@@ -296,7 +296,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
             style={float.style}
             className="pointer-events-none z-50 block"
           >
-            <span className="bg-card border-border block rounded-xl border p-2 shadow-pop">
+            <span className="bg-card block rounded-xl ring-1 ring-foreground/10 p-2 shadow-lg">
               <SourceCrop
                 slug={slug}
                 page={page}
@@ -398,10 +398,10 @@ export function ZoomablePage({ src, alt, width }: { src: string; alt: string; wi
   return (
     <div className="relative" style={{ width }}>
       <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
-        <Button variant="secondary" size="icon-sm" title={t('Zoom out')} disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-panel">
+        <Button variant="secondary" size="icon-sm" title={t('Zoom out')} disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-sm">
           <ZoomOut className="size-3.5" />
         </Button>
-        <Button variant="secondary" size="icon-sm" title={t('Zoom in')} disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-panel">
+        <Button variant="secondary" size="icon-sm" title={t('Zoom in')} disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-sm">
           <ZoomIn className="size-3.5" />
         </Button>
       </span>
@@ -446,7 +446,7 @@ export function SourceCrop({
         title={t('Zoom out')}
         disabled={zoom <= ZOOM_MIN}
         onClick={() => bump(1 / 1.25)}
-        className="shadow-panel"
+        className="shadow-sm"
       >
         <ZoomOut className="size-3.5" />
       </Button>
@@ -456,7 +456,7 @@ export function SourceCrop({
         title={t('Zoom in')}
         disabled={zoom >= ZOOM_MAX}
         onClick={() => bump(1.25)}
-        className="shadow-panel"
+        className="shadow-sm"
       >
         <ZoomIn className="size-3.5" />
       </Button>
@@ -497,7 +497,7 @@ export function SourceCrop({
           size="icon-sm"
           title={t('Back to the diagram')}
           onClick={() => setFull(false)}
-          className="absolute right-1.5 top-1.5 shadow-panel"
+          className="absolute right-1.5 top-1.5 shadow-sm"
         >
           <Minimize2 className="size-3.5" />
         </Button>
@@ -550,7 +550,7 @@ export function SourceCrop({
           size="icon-sm"
           title={t('Show the whole page')}
           onClick={() => setFull(true)}
-          className="absolute right-1.5 top-1.5 shadow-panel"
+          className="absolute right-1.5 top-1.5 shadow-sm"
         >
           <Maximize2 className="size-3.5" />
         </Button>

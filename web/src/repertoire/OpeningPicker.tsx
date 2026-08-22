@@ -144,7 +144,7 @@ export function OpeningPicker({
       type="button"
       onClick={wide ? undefined : () => setOpenFresh(!open)}
       className={cn(
-        'border-border bg-surface-inset text-foreground flex h-9 min-w-0 items-center rounded-md border',
+        'border-input bg-transparent dark:bg-input/30 text-foreground flex h-9 min-w-0 items-center rounded-md border',
         'px-2.5 text-left text-sm transition-colors duration-100',
         'hover:border-primary/40',
       )}

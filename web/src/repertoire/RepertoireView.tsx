@@ -1391,7 +1391,7 @@ export function RepertoireView() {
       onClick={openSetup}
       title={t('Set up a new game')}
       className={cn(
-        'bg-muted hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+        'bg-muted hover:bg-accent group flex w-full items-center gap-2 rounded-md',
         'border-border border px-3 py-2.5 text-left transition-colors duration-100',
       )}
     >

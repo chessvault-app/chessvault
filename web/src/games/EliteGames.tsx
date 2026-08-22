@@ -557,7 +557,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 className={cn(
                   'flex shrink-0 items-center gap-0.5 rounded-lg p-0.5 transition-opacity duration-100',
                   'opacity-0 group-hover:opacity-100 focus-within:opacity-100',
-                  'group-hover:bg-surface-3/70 pointer-coarse:opacity-100',
+                  'group-hover:bg-accent/70 pointer-coarse:opacity-100',
                 )}
               >
                 <Button
@@ -636,7 +636,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         {filterRow('border-t')}
         <div className="border-border shrink-0 border-t px-3 py-1 pr-1.5">
           <div className="flex min-h-6 items-center gap-2">
-            <span className="text-subtle min-w-0 flex-1 truncate text-xs label-caps">
+            <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium">
               {count}
             </span>
             {dbControls}

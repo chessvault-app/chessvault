@@ -508,7 +508,7 @@ function MorePage() {
         <h1 className="px-1 text-xl font-semibold tracking-tight">{t('More')}</h1>
         {MORE_GROUPS.map(({ heading, items }) => (
           <div key={heading} className="flex flex-col gap-2">
-            <h2 className="text-subtle px-1 text-sm label-caps">
+            <h2 className="text-muted-foreground px-1 text-sm font-medium">
               {t(heading)}
             </h2>
             {items.map(({ section, param, label, icon: Icon, blurb }) => (
@@ -517,7 +517,7 @@ function MorePage() {
                 type="button"
                 onClick={() => (param ? navigate(section, param) : navigate(section))}
                 className={cn(
-                  'bg-card border-border flex items-center gap-3 rounded-xl border p-3.5 text-left',
+                  'bg-card flex items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left',
                   'active:bg-accent transition-colors duration-100',
                 )}
               >

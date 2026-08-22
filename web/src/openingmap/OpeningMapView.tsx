@@ -494,7 +494,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
       {loadError && (
         <CanvasOverlay>
-          <div className="border-border bg-card max-w-md rounded-xl border p-6">
+          <div className="bg-card max-w-md rounded-xl ring-1 ring-foreground/10 p-6">
             <p className="text-destructive text-base font-medium">{t('The opening map could not be read')}</p>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{loadError}</p>
           </div>
@@ -649,7 +649,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             ].map((group, at) => (
               <div key={group.label ?? `group-${at}`} className="flex flex-col gap-1">
                 {group.label && (
-                  <p className="text-subtle px-1 text-xs label-caps">
+                  <p className="text-muted-foreground px-1 text-sm font-medium">
                     {group.label}
                   </p>
                 )}
@@ -666,7 +666,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
             {databases.length > 0 && (
               <div className="flex flex-col gap-1">
-                <p className="text-subtle px-1 text-xs label-caps">
+                <p className="text-muted-foreground px-1 text-sm font-medium">
                   {databases.length === 1 ? t('Reference database') : t('Reference databases')}
                 </p>
                 {/* A list of one is not a list. Most vaults mount a single
@@ -709,7 +709,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 it was built, so the choice of database IS the field. */}
             {field.source === ONLINE_SOURCE && (
               <div className="flex flex-col gap-1">
-                <p className="text-subtle px-1 text-xs label-caps">
+                <p className="text-muted-foreground px-1 text-sm font-medium">
                   {t('Opponent strength')}
                 </p>
                 <Select

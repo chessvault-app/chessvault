@@ -715,7 +715,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-subtle text-xs label-caps">
+      <span className="text-muted-foreground text-sm font-medium">
         {t(label)}
       </span>
       {/* Wrapping, not scrolling sideways: the window has the width now, and
@@ -843,7 +843,7 @@ function TopGamesList({
 
   return (
     <div className="border-border border-t px-1.5 pb-2">
-      <p className="text-subtle px-1.5 pb-1 pt-2 text-xs label-caps">
+      <p className="text-muted-foreground px-1.5 pb-1 pt-2 text-sm font-medium">
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
@@ -915,7 +915,7 @@ function ResultBadge({ result }: { result: string }) {
         'shrink-0 rounded-sm px-1 py-px font-mono text-xs font-semibold',
         result === '1-0' && 'bg-eval-white text-on-eval-white',
         result === '0-1' && 'bg-eval-black text-on-eval-black',
-        result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted-foreground',
+        result !== '1-0' && result !== '0-1' && 'bg-accent text-muted-foreground',
       )}
     >
       {label}

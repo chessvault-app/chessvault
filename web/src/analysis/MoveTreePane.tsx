@@ -39,7 +39,7 @@ const NAG_CLASS: Record<number, string> = {
  */
 const commentRow = (size: string): string =>
   cn(
-    'border-border/60 bg-surface-inset/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-1.5',
+    'border-border/60 bg-muted/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-1.5',
     size,
     'leading-relaxed',
   );
@@ -218,7 +218,7 @@ export function MainlineTable({
         key={`row-${number}-${typeof white === 'object' && white ? white.id : 'w'}-${typeof black === 'object' && black ? black.id : 'b'}`}
         className="border-border/60 grid grid-cols-[2rem_1fr_1fr] border-b"
       >
-        <span className="bg-surface-inset/60 border-border/60 text-subtle flex items-center justify-center border-r font-mono text-xs">
+        <span className="bg-muted/60 border-border/60 text-subtle flex items-center justify-center border-r font-mono text-xs">
           {number}
         </span>
         <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
@@ -550,7 +550,7 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
         data-active={active}
         className={cn(
           'rounded-sm px-1 py-px font-medium transition-colors duration-100',
-          'hover:bg-surface-3',
+          'hover:bg-accent',
           active && 'bg-primary text-primary-foreground hover:bg-primary',
         )}
       >

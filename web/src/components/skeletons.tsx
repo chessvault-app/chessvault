@@ -123,7 +123,7 @@ export function SkeletonCards({
           <div
             key={i}
             className={cn(
-              'bg-card border-border flex gap-3 rounded-xl border shadow-panel',
+              'bg-card flex gap-3 rounded-xl ring-1 ring-foreground/10',
               grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
             )}
           >
@@ -167,7 +167,7 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
       {Array.from({ length: cards }, (_, i) => (
         <div
           key={i}
-          className="bg-card border-border flex w-full items-stretch gap-3 rounded-xl border p-3"
+          className="bg-card flex w-full items-stretch gap-3 rounded-xl ring-1 ring-foreground/10 p-3"
         >
           {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
               the size it will be rather than the size it looks like. */}
@@ -219,7 +219,7 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'bg-card border-border flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
+        'bg-card flex items-center gap-2.5 rounded-xl ring-1 ring-foreground/10 px-3 py-2.5',
         className,
       )}
     >
@@ -426,7 +426,7 @@ export function SkeletonBoard({
             without them started its main panel 104px too high and ended
             it 42px too low. */}
         {chapters && (
-          <div className="bg-card border-border flex shrink-0 flex-col overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
+          <div className="bg-card flex shrink-0 flex-col overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
             <div className="border-border flex h-10 shrink-0 items-center border-b px-3">
               <Skeleton className="h-2.5 w-20" />
             </div>
@@ -439,13 +439,13 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card border-border flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border p-3 shadow-panel">
+        <div className="bg-card flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl ring-1 ring-foreground/10 p-3">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
         {explorer && (
-          <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
+          <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-foreground/10 max-lg:hidden">
             <div className="flex h-10 items-center px-3">
               <Skeleton className="h-2.5 w-16" />
             </div>
@@ -478,7 +478,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (
-        <div key={g} className="border-border bg-card rounded-xl border p-4">
+        <div key={g} className="bg-card rounded-xl ring-1 ring-foreground/10 p-4">
           {/* The card's heading: an icon beside a title, on a 24px line. */}
           <div className="mb-3 flex h-6 items-center gap-2">
             <Skeleton className="size-4 shrink-0 rounded-sm" />
@@ -488,7 +488,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
             {Array.from({ length: 2 }, (_, i) => (
               <div
                 key={i}
-                className="border-border bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
+                className="border-border bg-muted/50 flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
               >
                 <div className="min-w-0">
                   <div className="flex h-6 items-center">

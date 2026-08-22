@@ -373,8 +373,8 @@ export function HomePage() {
             arrives, the card is reserved at last launch's size with
             skeleton rows, so the page does not jump when it fills in. */}
         {effective.continueCard && data === null && expectedRows > 0 && (
-          <div className="bg-card border-border mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+            <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
             {Array.from({ length: expectedRows }, (_, i) => (
@@ -398,8 +398,8 @@ export function HomePage() {
           </div>
         )}
         {effective.continueCard && continueRows.length > 0 && (
-          <div className="bg-card border-border mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
+            <p className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-sm font-medium">
               {t('Continue')}
             </p>
             {continueRows.map(({ icon: Icon, label, detail, go }) => (
@@ -414,9 +414,9 @@ export function HomePage() {
         )}
 
         {showChecklist && (
-          <div className="bg-card border-border mb-4 overflow-hidden rounded-xl border">
+          <div className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-foreground/10">
             <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
-              <p className="text-subtle flex-1 text-xs label-caps">
+              <p className="text-muted-foreground flex-1 text-sm font-medium">
                 {t('Set up your vault')}
               </p>
               <Button
@@ -462,7 +462,7 @@ export function HomePage() {
             the sheet. Outside the grid deliberately: with every tile
             switched off there would otherwise be nothing left to press. */}
         <div className="mb-2 flex items-center px-1">
-          <p className="text-subtle flex-1 text-xs label-caps">
+          <p className="text-muted-foreground flex-1 text-sm font-medium">
             {t('Shortcuts')}
           </p>
           <Button
@@ -485,7 +485,7 @@ export function HomePage() {
               key={id}
               type="button"
               onClick={() => navigate(...nav)}
-              className="bg-card border-border hover:border-border-strong hover:bg-accent group flex flex-col items-start gap-2 rounded-xl border p-3.5 text-left transition-colors duration-100"
+              className="bg-card hover:-strong hover:bg-accent group flex flex-col items-start gap-2 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left transition-colors duration-100"
             >
               <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
               <span>

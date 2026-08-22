@@ -62,7 +62,7 @@ usage moved up a rung instead:
 
 | Tier | Class | Size |
 | --- | --- | --- |
-| captions, small-caps labels | `text-xs` | 12px |
+| captions | `text-xs` | 12px |
 | body, list rows, panel text | `text-sm` | 14px |
 | titles, setting rows | `text-base` | 16px |
 | page titles (`PageHeader`) | `text-xl` | 20px |
@@ -141,16 +141,15 @@ against the editor's own font size, not in the px it resolved to once.
   same alpha family everywhere. Inset rounded pills are forbidden for
   striping: with few rows, one tinted pill reads as a selection, not
   as alternation (the engine PVs learned this).
-- A list's **count row** leads with the tally in the small-caps label
-  voice (`label-caps`, the utility in `index.css`) and keeps its
-  controls on the right — the elite and archive panels share this shape
-  because they take turns in one column. The utility carries the
-  weight, the capitals and the letter-spacing and nothing else: the
-  size travels with the call site, because the same voice is `text-xs`
-  in a panel header and `text-sm` in a More-page heading.
-- Column header bands are `h-9`; with the column's `gap-3` this equals
-  the board's `h-10` strip + `gap-2`, so panel tops align with the
-  board across Studies/Games/Board/Puzzles.
+- A list's **count row** leads with the tally in the section-label
+  voice — the registry's `text-sm font-medium text-muted-foreground`, the
+  same voice a panel's title and a group of settings are named in — and
+  keeps its controls on the right; the elite and archive panels share
+  this shape because they take turns in one column. (The small-caps
+  `label-caps` voice is gone with the old look.)
+- A panel's header is the registry's card header as a row (`PanelHeader`:
+  title, actions, `px-3 py-2`); it is no longer a fixed-height band, so
+  nothing else is sized against it.
 - `wide` / `stacked` are orientation-based custom variants: side-by-side
   when the viewport is wide, single column otherwise. Stacked layouts
   lead with a page header (convention: header at top), wide layouts put

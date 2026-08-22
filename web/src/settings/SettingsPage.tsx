@@ -153,7 +153,7 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-card border-border rounded-xl border p-4">
+    <section className="bg-card rounded-xl ring-1 ring-foreground/10 p-4">
       <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
         <Icon className="text-muted-foreground size-4" />
         {title}
