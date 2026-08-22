@@ -284,7 +284,7 @@ function NagBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-fg text-base font-bold shadow-md',
+        'text-nag-fg text-base font-bold shadow-panel',
         badge.className,
       )}
     >

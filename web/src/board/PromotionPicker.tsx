@@ -85,7 +85,7 @@ export function PromotionPicker({
             className={cn(
               'relative aspect-square w-full cursor-pointer border-none p-0',
               'bg-surface/95 hover:bg-primary-soft transition-colors duration-100',
-              'shadow-[0_2px_8px_-2px_rgba(0,0,0,0.4)]',
+              'shadow-pop',
             )}
           >
             {/* Injected as raw HTML because React rejects `<piece>` as an unknown

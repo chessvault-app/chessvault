@@ -431,6 +431,16 @@
   --font-mono: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
     Menlo, monospace;
 
+  /* Three lifts, all cast in --shadow-color so they agree with each
+     other and with the theme's hue — Tailwind's own shadow-sm/md are
+     fixed black and sat beside these as a different-coloured shadow.
+       control — the slightest lift: a primary button, the active tab
+                 in a pill track, a label chip on the board. Tailwind's
+                 shadow-sm geometry, in the app's colour.
+       panel   — a card or panel resting on the page.
+       pop     — something floating OVER the page: popover, sheet, toast,
+                 fab, a peek card. */
+  --shadow-control: 0 1px 3px 0 hsl(var(--shadow-color) / 10%), 0 1px 2px -1px hsl(var(--shadow-color) / 10%);
   --shadow-panel: 0 1px 2px -1px hsl(var(--shadow-color) / 12%), 0 4px 16px -6px hsl(var(--shadow-color) / 14%);
   --shadow-pop: 0 4px 12px -2px hsl(var(--shadow-color) / 18%), 0 16px 40px -12px hsl(var(--shadow-color) / 22%);
 }

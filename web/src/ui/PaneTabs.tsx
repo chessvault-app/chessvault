@@ -76,7 +76,7 @@ export function PaneTabs<T extends string>({
               // Text tabs are the book pages, not the board ones, and keep
               // their height: a label needs the line box a glyph does not.
               Icon ? 'py-1' : 'h-7 text-sm pointer-coarse:h-8',
-              tab.id === value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
+              tab.id === value ? 'bg-surface text-fg shadow-control' : 'text-muted hover:text-fg',
             )}
           >
             {Icon ? <Icon className="size-3.5" /> : t(tab.label)}

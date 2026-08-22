@@ -404,10 +404,10 @@ export function ZoomablePage({ src, alt, width }: { src: string; alt: string; wi
   return (
     <div className="relative" style={{ width }}>
       <span className="absolute left-1.5 top-1.5 z-10 flex gap-1">
-        <Button variant="secondary" size="icon-sm" title={t('Zoom out')} disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-md">
+        <Button variant="secondary" size="icon-sm" title={t('Zoom out')} disabled={zoom <= ZOOM_MIN} onClick={() => bump(1 / 1.25)} className="shadow-panel">
           <ZoomOut className="size-3.5" />
         </Button>
-        <Button variant="secondary" size="icon-sm" title={t('Zoom in')} disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-md">
+        <Button variant="secondary" size="icon-sm" title={t('Zoom in')} disabled={zoom >= ZOOM_MAX} onClick={() => bump(1.25)} className="shadow-panel">
           <ZoomIn className="size-3.5" />
         </Button>
       </span>
@@ -452,7 +452,7 @@ export function SourceCrop({
         title={t('Zoom out')}
         disabled={zoom <= ZOOM_MIN}
         onClick={() => bump(1 / 1.25)}
-        className="shadow-md"
+        className="shadow-panel"
       >
         <ZoomOut className="size-3.5" />
       </Button>
@@ -462,7 +462,7 @@ export function SourceCrop({
         title={t('Zoom in')}
         disabled={zoom >= ZOOM_MAX}
         onClick={() => bump(1.25)}
-        className="shadow-md"
+        className="shadow-panel"
       >
         <ZoomIn className="size-3.5" />
       </Button>
@@ -503,7 +503,7 @@ export function SourceCrop({
           size="icon-sm"
           title={t('Back to the diagram')}
           onClick={() => setFull(false)}
-          className="absolute right-1.5 top-1.5 shadow-md"
+          className="absolute right-1.5 top-1.5 shadow-panel"
         >
           <Minimize2 className="size-3.5" />
         </Button>
@@ -556,7 +556,7 @@ export function SourceCrop({
           size="icon-sm"
           title={t('Show the whole page')}
           onClick={() => setFull(true)}
-          className="absolute right-1.5 top-1.5 shadow-md"
+          className="absolute right-1.5 top-1.5 shadow-panel"
         >
           <Maximize2 className="size-3.5" />
         </Button>
