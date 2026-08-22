@@ -4,7 +4,6 @@ import {
   Eye,
   Loader2,
   RotateCcw,
-  Undo2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chessops/chess';
@@ -356,12 +355,6 @@ function SolutionRecorder({
     play(orig + dest);
   };
 
-  const undo = (): void => {
-    setLine((prev) => prev.slice(0, -1));
-    setWildcards((prev) => new Set([...prev].filter((i) => i < line.length - 1)));
-    setVerdicts(null);
-  };
-
   const toggleWildcard = (index: number): void => {
     setWildcards((prev) => {
       const next = new Set(prev);
@@ -471,20 +464,11 @@ function SolutionRecorder({
             board 48px below the panel beside it. */}
         <div className="hidden h-9 shrink-0 wide:block" />
         <Panel flush className="min-h-[10rem] shrink-0">
-          <PanelHeader
-            title={`Solution · ${line.length} plies`}
-            actions={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t('Undo the last move')}
-                disabled={line.length === 0}
-                onClick={undo}
-              >
-                <Undo2 className="size-3.5" />
-              </Button>
-            }
-          />
+          {/* No undo in the header (lanph3re's call): one icon up there,
+              for a thing Start over on the footer already does, was a
+              second control for the line outside the row that holds the
+              others. */}
+          <PanelHeader title={`Solution · ${line.length} plies`} />
           {/* What the panel is for, in the panel rather than in a header
               above it: a title bar with a back arrow made this read as its
               own page, which it is not — it is one step of the entry that
