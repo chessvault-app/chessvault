@@ -111,7 +111,7 @@ eval colours). Old names (`text-fg`, `text-subtle`, `bg-surface-3`,
 
 ## Before cutting a release
 
-Both of these, every time, before the version is bumped:
+All three of these, every time, before the version is bumped:
 
 **Audit the repo against this file.** `npm run verify` now does the two
 mechanical halves on every push and pull request — `check:repo` greps every
@@ -129,3 +129,15 @@ a number that was true, a file that has been renamed, a limitation that
 has been fixed — and a wrong doc is worse than a missing one because it
 is believed. Add the release's entry to `docs/update-log.md` while you
 are there.
+
+**Check the licence inventory.** The npm side is generated at build time
+(`web/vite.licenses.ts` walks `node_modules` into `licenses/index.html` and
+`dependencies.txt`) and cannot go stale; two things are by hand and can.
+After `npm run build`, compare `dist/licenses/dependencies.txt` — its
+licence set and its package count — against the rows in `THIRD-PARTY.md`,
+and ask whether anything since the last release arrived by *copying*
+rather than installing: a registry's component sources, a vendored file,
+artwork. The dependency walk never sees those, and MIT and ISC want their
+notice in every copy, so each needs an `ASSETS` entry in
+`web/vite.licenses.ts` and its licence text under `licenses/`. The shadcn/ui
+sources in `web/src/components/ui/` were missed this way for one release.
