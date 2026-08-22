@@ -372,7 +372,10 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
   tinting them (Slate is the app's previous look) and there is no second
   palette. The primary's lightness follows the accent knob: grey is the
-  registry's near-black, a coloured accent sits mid-scale. What the ladder says that shadcn has no
+  registry's near-black, a coloured accent sits mid-scale. Settings offers
+  shadcn's five base colours (Neutral, Stone, Zinc, Gray, Slate) as schemes
+  and a radius knob — `--radius`, the one number the corner ladder derives
+  from — beside the app's tinted schemes. What the ladder says that shadcn has no
   word for keeps its own name in the same style: `surface-3`,
   the colour grammar (`good`/`warn`/`info`) and the board and eval
   colours; the ladder's own rungs (surface-3, surface-inset, text-subtle,

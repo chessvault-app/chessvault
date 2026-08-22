@@ -76,12 +76,25 @@ function ContextMenuSubContent({
 
 function ContextMenuContent({
   className,
+  onClick,
+  onPointerDown,
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Content>) {
   return (
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
         data-slot="context-menu-content"
+        // A press inside this layer must not reach what the layer was written
+        // inside: React bubbles through portals, and a card or a row that
+        // opens on click would open under a menu item or a dialog's button.
+        onClick={(e) => {
+          onClick?.(e);
+          e.stopPropagation();
+        }}
+        onPointerDown={(e) => {
+          onPointerDown?.(e);
+          e.stopPropagation();
+        }}
         className={cn(CONTENT, 'max-h-(--radix-context-menu-content-available-height)', className)}
         {...props}
       />

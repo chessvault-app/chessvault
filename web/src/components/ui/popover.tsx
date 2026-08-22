@@ -14,6 +14,8 @@ function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimiti
 
 function PopoverContent({
   className,
+  onClick,
+  onPointerDown,
   align = 'center',
   sideOffset = 4,
   ...props
@@ -22,6 +24,17 @@ function PopoverContent({
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
         data-slot="popover-content"
+        // A press inside this layer must not reach what the layer was written
+        // inside: React bubbles through portals, and a card or a row that
+        // opens on click would open under a menu item or a dialog's button.
+        onClick={(e) => {
+          onClick?.(e);
+          e.stopPropagation();
+        }}
+        onPointerDown={(e) => {
+          onPointerDown?.(e);
+          e.stopPropagation();
+        }}
         align={align}
         sideOffset={sideOffset}
         className={cn(

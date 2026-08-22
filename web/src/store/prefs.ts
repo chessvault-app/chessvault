@@ -79,36 +79,45 @@ export interface Scheme {
 }
 
 export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
-  // The default is shadcn's neutral theme: pure greys, a near-black button
-  // on the light page and a near-white one on the dark — the look the
-  // component layer is drawn in (index.css derives the registry's values
-  // from these knobs at zero). Every other scheme is the same ladder with
-  // a tint; Slate is what the app was drawn in before.
+  // shadcn's five base colours first, as schemes: each is the registry's
+  // theme of that name — its neutral hue and how far from grey, with the
+  // primary left neutral the way shadcn leaves it. Neutral is the default
+  // and is the registry's neutral theme exactly (the knobs at zero).
   { id: 'default', label: 'Neutral', scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0 } },
-  { id: 'slate', label: 'Slate', scheme: { hue: 264, tint: 1, accent: 240 } },
+  { id: 'stone', label: 'Stone', scheme: { hue: 60, tint: 0.25, accent: 60, accentTint: 0 } },
+  { id: 'zinc', label: 'Zinc', scheme: { hue: 286, tint: 0.3, accent: 286, accentTint: 0 } },
+  { id: 'gray', label: 'Gray', scheme: { hue: 262, tint: 1, accent: 262, accentTint: 0 } },
+  { id: 'shadcn-slate', label: 'Slate', scheme: { hue: 257, tint: 2, accent: 257, accentTint: 0 } },
+  // The app's own schemes: the same ladder with a coloured accent.
+  { id: 'slate', label: 'Blue', scheme: { hue: 264, tint: 1, accent: 240 } },
   { id: 'paper', label: 'Paper', scheme: { hue: 75, tint: 1.8, accent: 45 } },
   { id: 'forest', label: 'Forest', scheme: { hue: 150, tint: 1.6, accent: 155 } },
   { id: 'rose', label: 'Rose', scheme: { hue: 350, tint: 1.5, accent: 350 } },
   { id: 'midnight', label: 'Midnight', scheme: { hue: 265, tint: 2.4, accent: 275 } },
+  // Neutral's surfaces with a coloured button: Mono leans violet, Graphite
+  // is the blue the app used to be drawn in.
   { id: 'mono', label: 'Mono', scheme: { hue: 264, tint: 0, accent: 264 } },
-  // Mono greys the panels and keeps a blue button; this greys that too.
-  { id: 'greyscale', label: 'Greyscale', scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0 } },
-  // Mono's surfaces with Slate's accent: the neutrals fully grey, and the
-  // blue the app is drawn in rather than Mono's own, which leans violet.
-  // The two differ by nothing else, which is the point — it is the
-  // greyscale scheme for anyone who still wants the app's own colour on
-  // the buttons.
   { id: 'graphite', label: 'Graphite', scheme: { hue: 264, tint: 0, accent: 240 } },
-  // Greyscale with the lightness scale opened all the way up. The one
-  // scheme in which the words black and white are literally true: the
-  // dark page is #000 and its button is #fff, the light page is #fff and
-  // its button is #000. Greyscale itself is left where it is — it is a
-  // soft grey scheme and people are using it as one.
+  // Neutral with the lightness scale opened all the way up: the dark page
+  // is #000 and its button #fff, the light page #fff and its button #000.
   {
     id: 'high-contrast',
     label: 'High contrast',
     scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0, contrast: 1 },
   },
+];
+
+/**
+ * The corner radius every rung of the ladder derives from (index.css:
+ * sm/md/lg/xl/2xl are multiples of it). shadcn's own knob, offered as the
+ * registry offers it: square, small, the default 0.625rem, large.
+ */
+export type RadiusId = 'none' | 'small' | 'default' | 'large';
+export const RADIUS_PRESETS: { id: RadiusId; label: string; rem: number }[] = [
+  { id: 'none', label: 'Square', rem: 0 },
+  { id: 'small', label: 'Small', rem: 0.3 },
+  { id: 'default', label: 'Default', rem: 0.625 },
+  { id: 'large', label: 'Large', rem: 1 },
 ];
 
 /**
@@ -287,6 +296,7 @@ interface PrefsState {
   /** Which preset is selected. */
   schemeId: string;
   scheme: Scheme;
+  radius: RadiusId;
   setBoardTheme: (t: BoardTheme) => void;
   setPieces: (p: PieceSet) => void;
   setSound: (on: boolean) => void;
@@ -294,6 +304,7 @@ interface PrefsState {
   setMoveSound: (id: string) => void;
   setCaptureSound: (id: string) => void;
   setSchemeId: (id: string) => void;
+  setRadius: (id: RadiusId) => void;
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
   setAnnotationSize: (size: AnnotationSize) => void;
@@ -316,6 +327,14 @@ const apply = (boardTheme: BoardTheme, pieces: PieceSet): void => {
     // (offline, never seen before) that fallback is the behaviour.
     void import(`../pieces/${pieces}.css`).catch(() => {});
   }
+};
+
+/** The one number the corner ladder derives from; the default is what :root says. */
+const applyRadius = (id: RadiusId): void => {
+  const rem = RADIUS_PRESETS.find((r) => r.id === id)?.rem;
+  const el = document.documentElement;
+  if (rem === undefined || id === 'default') el.style.removeProperty('--radius');
+  else el.style.setProperty('--radius', `${rem}rem`);
 };
 
 /** Five custom properties; every token in index.css reads from them. */
@@ -347,6 +366,7 @@ export const usePrefs = create<PrefsState>()(
       autosave: false,
       schemeId: 'default',
       scheme: SCHEME_PRESETS[0]!.scheme,
+      radius: 'default',
       setBoardTheme: (boardTheme) => {
         apply(boardTheme, get().pieces);
         set({ boardTheme });
@@ -370,6 +390,10 @@ export const usePrefs = create<PrefsState>()(
         applyScheme(scheme);
         set({ schemeId, scheme });
       },
+      setRadius: (radius) => {
+        applyRadius(radius);
+        set({ radius });
+      },
     }),
     {
       name: 'chess-vault:prefs',
@@ -379,7 +403,15 @@ export const usePrefs = create<PrefsState>()(
         // the scheme out here meant a rehydrate could put the colours back
         // to default while the setting still said otherwise.
         apply(state.boardTheme, state.pieces);
-        applyScheme(state.scheme);
+        // A preset is re-read from the list, not from what was stored: the
+        // list is what a preset MEANS, and it has changed (the default is
+        // shadcn's neutral now). A stored scheme under an id the list no
+        // longer has is kept as it was.
+        const preset = SCHEME_PRESETS.find((p) => p.id === state.schemeId);
+        const scheme = preset ? preset.scheme : state.scheme;
+        if (preset) state.scheme = scheme;
+        applyScheme(scheme);
+        applyRadius(state.radius ?? 'default');
       },
     },
   ),
@@ -387,7 +419,8 @@ export const usePrefs = create<PrefsState>()(
 
 /** Applied before React mounts so the board never flashes the default skin. */
 export function initPrefs(): void {
-  const { boardTheme, pieces, scheme } = usePrefs.getState();
+  const { boardTheme, pieces, scheme, radius } = usePrefs.getState();
   apply(boardTheme, pieces);
   applyScheme(scheme);
+  applyRadius(radius);
 }

@@ -96,6 +96,8 @@ function SelectTrigger({
 
 function SelectContent({
   className,
+  onClick,
+  onPointerDown,
   children,
   position = 'popper',
   align = 'start',
@@ -105,6 +107,17 @@ function SelectContent({
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
+        // A press inside this layer must not reach what the layer was written
+        // inside: React bubbles through portals, and a card or a row that
+        // opens on click would open under a menu item or a dialog's button.
+        onClick={(e) => {
+          onClick?.(e);
+          e.stopPropagation();
+        }}
+        onPointerDown={(e) => {
+          onPointerDown?.(e);
+          e.stopPropagation();
+        }}
         data-align-trigger={position === 'item-aligned'}
         className={cn(
           'bg-popover text-popover-foreground ring-foreground/10 relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg shadow-md ring-1 duration-100',

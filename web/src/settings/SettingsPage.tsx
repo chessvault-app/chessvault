@@ -17,7 +17,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { formatWhen } from '@/lib/dates';
 import { navigate, up } from '@/lib/router';
-import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
+import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
@@ -462,7 +462,7 @@ function DesktopCard() {
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setCastleStyle, setCoordinates, setAnnotationSize } =
+  const { boardTheme, pieces, schemeId, radius, castleStyle, coordinates, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setCastleStyle, setCoordinates, setAnnotationSize } =
     usePrefs();
 
   return (
@@ -535,6 +535,18 @@ function AppearanceCard() {
 
         </div>
       </FieldGroup>
+
+      {/* shadcn's own second knob: every corner in the app is a multiple of
+          one radius, so one number squares or rounds the whole thing. */}
+      <Field label="Corners">
+        <Select
+          value={radius}
+          onValueChange={(v) => setRadius(v as RadiusId)}
+          ariaLabel={t('Corners')}
+          className="w-full"
+          groups={[{ options: RADIUS_PRESETS.map(({ id, label }) => ({ value: id, label })) }]}
+        />
+      </Field>
 
       <Field label="Board">
         <div className="flex items-center gap-3">

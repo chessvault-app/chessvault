@@ -28,7 +28,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   shadcn's own design — its neutral theme (Neutral is the new default
   scheme; Slate, the old look, is one press away in Settings), its
   sizes and radius ladder, its focus rings, its dialogs, menus, tooltips
-  and cards.
+  and cards. Settings → Appearance gained shadcn's own knobs: its five base
+  colours (Neutral, Stone, Zinc, Gray, Slate) as schemes beside the app's
+  tinted ones, and a corner-radius setting (square, small, default, large)
+  that every corner in the app derives from.
 
 ## 0.4.7
 
