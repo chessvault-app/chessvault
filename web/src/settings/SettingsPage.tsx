@@ -172,25 +172,6 @@ function Card({
   );
 }
 
-/**
- * A labelled GROUP of controls, which must not be a <label>.
- *
- * Clicking the dead space in a label activates its first labelable
- * descendant — so a row of theme swatches inside one meant that clicking
- * beside them silently pressed the first swatch and reset the colours to
- * default. A label points at one control; this points at several — which
- * is also why it cannot be components/ui/field, whose label wires itself to one
- * child. The label voice matches components/ui/field's so the two read as one form.
- */
-function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1" role="group" aria-label={label}>
-      <span className="text-muted-foreground text-xs font-medium">{label}</span>
-      {children}
-    </div>
-  );
-}
-
 function Feedback({ note }: { note: { kind: 'ok' | 'error'; text: string } | null }) {
   if (!note) return null;
   return (
@@ -468,6 +449,19 @@ function DesktopCard() {
 
 // --- Appearance --------------------------------------------------------------
 
+/** The colour schemes, grouped the way SCHEME_PRESETS lists them. */
+const SCHEME_GROUPS = [
+  { label: 'shadcn', ids: ['default', 'stone', 'zinc', 'gray', 'shadcn-slate'] },
+  { label: 'Coloured', ids: ['slate', 'paper', 'forest', 'rose', 'midnight', 'mono', 'graphite'] },
+  { label: 'Contrast', ids: ['high-contrast'] },
+].map(({ label, ids }) => ({
+  label,
+  options: ids.map((id) => {
+    const preset = SCHEME_PRESETS.find((p) => p.id === id)!;
+    return { value: preset.id, label: preset.label };
+  }),
+}));
+
 function AppearanceCard() {
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
@@ -500,50 +494,20 @@ function AppearanceCard() {
         />
       </Field>
 
-      <FieldGroup label={t('Colours')}>
-        <div className="flex flex-col gap-2">
-          {/* Swatches rather than a dropdown: a colour scheme is the one
-              setting whose name tells you least about it. */}
-          <div className="flex flex-wrap gap-1.5">
-            {SCHEME_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                title={t(preset.label)}
-                aria-label={t(preset.label)}
-                aria-pressed={schemeId === preset.id}
-                onClick={() => setSchemeId(preset.id)}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-colors duration-100',
-                  schemeId === preset.id
-                    ? 'border-primary/60 bg-muted text-primary'
-                    : 'border-border text-muted-foreground hover:border-border hover:text-foreground',
-                )}
-              >
-                <span
-                  className="size-3 shrink-0 rounded-full"
-                  style={{
-                    // The dot has to be able to be grey, or Greyscale
-                    // advertises itself with a blue spot. It also has to
-                    // be able to be BLACK ringed in white, or Greyscale
-                    // and High contrast — same hue, same tint, same
-                    // accent — draw the identical dot side by side and
-                    // the swatch stops telling them apart. Both lerps
-                    // are the ones --ui-contrast runs on the tokens.
-                    // The dot's lightness follows the primary's: grey is near-black
-                    // (the registry's neutral), colour sits mid-scale — the same
-                    // rule --primary-l applies in index.css.
-                    background: `oklch(${(20.5 + 37.5 * (preset.scheme.accentTint ?? 1)) * (1 - (preset.scheme.contrast ?? 0))}% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
-                    outline: `2px solid oklch(${90 + 10 * (preset.scheme.contrast ?? 0)}% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
-                  }}
-                />
-                {t(preset.label)}
-              </button>
-            ))}
-          </div>
-
-        </div>
-      </FieldGroup>
+      {/* A dropdown like the rest of the card (lanph3re's call) — the row
+          of swatches was the one control here that did not look like its
+          neighbours. The list's headings stand in for the swatches' hint:
+          shadcn's own five greys, the app's coloured ones, and the
+          contrast one, each under its own label. */}
+      <Field label="Colours">
+        <Select
+          value={schemeId}
+          onValueChange={setSchemeId}
+          ariaLabel={t('Colours')}
+          className="w-full"
+          groups={SCHEME_GROUPS}
+        />
+      </Field>
 
       {/* shadcn's own second knob: every corner in the app is a multiple of
           one radius, so one number squares or rounds the whole thing. */}

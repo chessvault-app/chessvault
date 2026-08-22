@@ -835,6 +835,8 @@ export const ko: Record<string, string> = {
   Greyscale: '흑백',
   Graphite: '그래파이트',
   'High contrast': '고대비',
+  Coloured: '색상',
+  Contrast: '대비',
   Neutral: '뉴트럴',
   Stone: '스톤',
   Zinc: '징크',
