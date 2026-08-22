@@ -302,7 +302,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
             }}
             className="pointer-events-none fixed z-50 block"
           >
-            <span className="bg-surface border-line block rounded-xl border p-2 shadow-[var(--shadow-pop)]">
+            <span className="bg-surface border-line block rounded-xl border p-2 shadow-pop">
               <SourceCrop
                 slug={slug}
                 page={page}

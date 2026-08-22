@@ -57,7 +57,7 @@ function PeekCrop({
     <div
       className={cn(
         'bg-surface border-line pointer-events-none fixed z-[60] rounded-xl border p-2',
-        'shadow-[var(--shadow-pop)]',
+        'shadow-pop',
       )}
       style={
         flip

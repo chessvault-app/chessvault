@@ -422,7 +422,7 @@ export function Select({
             // page — a page scroll is what the dismiss handler listens for,
             // so without this a touch-scroll of the list closed the dropdown.
             'border-line bg-surface z-50 w-max max-w-72 overflow-y-auto overscroll-contain rounded-lg border p-1',
-            'shadow-[var(--shadow-pop)]',
+            'shadow-pop',
           )}
         >
           {groups.map((group, gi) => (

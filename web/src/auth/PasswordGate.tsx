@@ -111,14 +111,14 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* The same knight as the sidebar — the lock screen is the front
             door, so it wears the brand, not a padlock. */}
-        <div className="bg-primary text-primary-fg mb-5 grid size-14 place-items-center rounded-2xl shadow-[var(--shadow-panel)]">
+        <div className="bg-primary text-primary-fg mb-5 grid size-14 place-items-center rounded-2xl shadow-panel">
           <KnightIcon className="size-8" />
         </div>
         <h1 className="text-fg text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
         <p className="text-subtle mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 
         <form
-          className="bg-surface border-line w-full rounded-2xl border p-6 shadow-[var(--shadow-panel)]"
+          className="bg-surface border-line w-full rounded-2xl border p-6 shadow-panel"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();

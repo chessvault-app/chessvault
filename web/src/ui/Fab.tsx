@@ -164,7 +164,7 @@ export function Fab({
             // of the page needs no help being told from it.
             className={cn(
               'bg-toast text-toast-fg flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
-              'text-base shadow-[var(--shadow-pop)] transition-opacity duration-100 active:opacity-80',
+              'text-base shadow-pop transition-opacity duration-100 active:opacity-80',
             )}
           >
             <Icon className="size-4 shrink-0 opacity-70" />
@@ -188,7 +188,7 @@ export function Fab({
         className={cn(
           'bg-primary text-primary-fg hover:bg-primary-hover grid size-14 place-items-center rounded-full',
           'border border-primary-fg/30',
-          'shadow-[var(--shadow-pop)] transition-transform duration-100 active:scale-95',
+          'shadow-pop transition-transform duration-100 active:scale-95',
         )}
       >
         {open ? <X className="size-6" /> : <Icon className="size-6" strokeWidth={2.5} />}

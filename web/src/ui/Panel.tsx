@@ -116,7 +116,7 @@ export function Panel({
       ref={ref}
       style={style}
       className={cn(
-        'bg-surface border-line rounded-xl border shadow-[var(--shadow-panel)]',
+        'bg-surface border-line rounded-xl border shadow-panel',
         'flex flex-col',
         fit ? 'min-h-max overflow-visible' : 'min-h-0 overflow-hidden',
         !flush && 'p-3',

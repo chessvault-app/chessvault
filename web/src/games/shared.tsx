@@ -103,7 +103,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     return (
       <div className="fixed inset-0 z-50 grid place-items-center p-8">
         <div className="bg-scrim absolute inset-0" />
-        <div ref={card} className="border-line bg-surface relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-[var(--shadow-pop)]">
+        <div ref={card} className="border-line bg-surface relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-pop">
           <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
         </div>
       </div>
@@ -113,7 +113,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     <div
       ref={card}
       style={{ top: preview.top, left: preview.left }}
-      className="border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-[var(--shadow-pop)]"
+      className="border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-pop"
     >
       <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded" />
     </div>

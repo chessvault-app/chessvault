@@ -124,7 +124,7 @@ export function SkeletonCards({
           <div
             key={i}
             className={cn(
-              'bg-surface border-line flex gap-3 rounded-xl border shadow-[var(--shadow-panel)]',
+              'bg-surface border-line flex gap-3 rounded-xl border shadow-panel',
               grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
             )}
           >
@@ -427,7 +427,7 @@ export function SkeletonBoard({
             without them started its main panel 104px too high and ended
             it 42px too low. */}
         {chapters && (
-          <div className="bg-surface border-line flex shrink-0 flex-col overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] max-lg:hidden">
+          <div className="bg-surface border-line flex shrink-0 flex-col overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
             <div className="border-line flex h-10 shrink-0 items-center border-b px-3">
               <Skeleton className="h-2.5 w-20" />
             </div>
@@ -440,13 +440,13 @@ export function SkeletonBoard({
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-surface border-line flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border p-3 shadow-[var(--shadow-panel)]">
+        <div className="bg-surface border-line flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border p-3 shadow-panel">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
         {explorer && (
-          <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] max-lg:hidden">
+          <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
             <div className="flex h-10 items-center px-3">
               <Skeleton className="h-2.5 w-16" />
             </div>

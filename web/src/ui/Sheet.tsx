@@ -199,7 +199,7 @@ export function Sheet({
           // top padding itself. Padding on the CARD stays behind a sticky
           // child — the strip would pin 12px down, with the rows sliding
           // through the gap above it.
-          'border px-3 pb-3 pt-0 shadow-[var(--shadow-pop)] [&>*]:shrink-0',
+          'border px-3 pb-3 pt-0 shadow-pop [&>*]:shrink-0',
           // A tall sheet — the opening catalogue is a thousand rows — grows
           // until it runs out of screen, and on a phone the top of the
           // screen is under the notch. So its ceiling is the safe area

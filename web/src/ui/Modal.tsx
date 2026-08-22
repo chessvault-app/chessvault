@@ -243,7 +243,7 @@ export function Modal({
           // sheet hands the rest of the gesture to whatever is behind the
           // sheet, which then moves under a scrim you are still touching.
           'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto overscroll-contain',
-          'border p-3 shadow-[var(--shadow-pop)]',
+          'border p-3 shadow-pop',
           // Children keep their size; the WINDOW scrolls. A flex column is
           // allowed to shrink its children before it overflows, and that is
           // what it did the moment the keyboard shortened the sheet: the

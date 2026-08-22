@@ -39,7 +39,7 @@ function Badge({ className, children }: { className?: string; children: ReactNod
   return (
     <span
       className={cn(
-        'border-app grid size-8 place-items-center rounded-full border-4 shadow-[var(--shadow-pop)]',
+        'border-app grid size-8 place-items-center rounded-full border-4 shadow-pop',
         className,
       )}
     >

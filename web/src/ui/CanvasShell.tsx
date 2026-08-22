@@ -158,7 +158,7 @@ export function CanvasShell({
               // button row stop wrapping: at 18rem nearly every line in
               // it broke, which is a panel technically showing you
               // something and practically hiding it.
-              className="border-line bg-surface/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-[var(--shadow-panel)] backdrop-blur-md xl:w-[26rem]"
+              className="border-line bg-surface/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-panel backdrop-blur-md xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a

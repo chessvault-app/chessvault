@@ -135,7 +135,7 @@ export function ActionSheet({
                 }
         }
         className={cn(
-          'bg-surface border-line border p-2 shadow-[var(--shadow-pop)]',
+          'bg-surface border-line border p-2 shadow-pop',
           popover
             ? 'w-56 rounded-lg'
             : // The phone's home indicator lives under the sheet's last

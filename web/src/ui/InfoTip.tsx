@@ -52,7 +52,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
           className={
             'bg-surface border-line text-muted absolute left-0 top-full z-40 mt-1.5 w-64 ' +
             'rounded-lg border p-3 text-sm font-normal normal-case leading-relaxed tracking-normal ' +
-            'shadow-[var(--shadow-pop)]'
+            'shadow-pop'
           }
         >
           {children}

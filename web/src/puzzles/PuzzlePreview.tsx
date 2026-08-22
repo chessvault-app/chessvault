@@ -119,7 +119,7 @@ export function usePuzzlePreview(): {
         style={{ top: preview.top, left: preview.left }}
         className={cn(
           'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
-          'shadow-[var(--shadow-pop)]',
+          'shadow-pop',
         )}
       >
         <Board

@@ -119,7 +119,7 @@ export function Segmented<T extends string>({
                 ? // Raised, and in the segment's own colour where it has
                   // one. Two grey pills side by side made the live site
                   // and the dead one look interchangeable.
-                  'bg-surface-3 shadow-[var(--shadow-panel)] ' + (accent ? 'font-semibold' : 'text-fg')
+                  'bg-surface-3 shadow-panel ' + (accent ? 'font-semibold' : 'text-fg')
                 : // Dimmer than it was, so the gap between live and dead
                   // is a step rather than a shade.
                   'text-subtle hover:text-fg',

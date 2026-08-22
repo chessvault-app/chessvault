@@ -306,7 +306,7 @@ export function OpeningPicker({
               }}
               className={cn(
                 'bg-surface border-line z-50 flex flex-col overflow-hidden rounded-lg border',
-                'shadow-[var(--shadow-pop)]',
+                'shadow-pop',
               )}
             >
               {/* Above the scroll, not inside it: the search stays put
