@@ -32,6 +32,57 @@ declare global {
 }
 
 /**
+ * The dialogs listening for a close request, oldest first, where the
+ * platform will not do the stacking for us.
+ *
+ * CloseWatcher answers a close request with the most recent watcher
+ * alone. The fallback had no such rule: every open dialog added its own
+ * `document` keydown listener and every one of them fired, so one
+ * Escape over a confirm sheet closed the sheet AND the window
+ * underneath it, and an open Select inside a filter window took the
+ * window down with it. One listener and a stack restores the platform's
+ * own rule — last registered, first asked.
+ *
+ * Registration order, not DOM order, for the same reason CloseWatcher
+ * uses it: a dialog opened from inside another is mounted after it. The
+ * one arrangement it would read backwards is two dialogs mounting in a
+ * single commit, where React runs the child's effect first — the app
+ * has none (every stack here is opened by a press inside the window
+ * below), and a dialog that opens already covered would be the thing to
+ * reconsider, not this.
+ */
+const closers: Array<() => void> = [];
+let listening = false;
+
+function onEscape(e: KeyboardEvent): void {
+  if (e.key === 'Escape') closers[closers.length - 1]?.();
+}
+
+/**
+ * Put a closer on top of the fallback stack; the returned function
+ * takes it off again. Exported for the test beside this file — the hook
+ * below is the only caller, and the stack is the part with the rule in
+ * it.
+ */
+export function pushCloser(close: () => void): () => void {
+  closers.push(close);
+  if (!listening) {
+    document.addEventListener('keydown', onEscape);
+    listening = true;
+  }
+  return () => {
+    // By identity and from the top: the caller's cleanup may run after a
+    // later dialog has already registered, and only this one may go.
+    const at = closers.lastIndexOf(close);
+    if (at !== -1) closers.splice(at, 1);
+    if (closers.length === 0 && listening) {
+      document.removeEventListener('keydown', onEscape);
+      listening = false;
+    }
+  };
+}
+
+/**
  * Close this dialog the way the PLATFORM asks, not only the keyboard.
  *
  * A "close request" is Escape on a desktop and the system Back gesture
@@ -47,8 +98,8 @@ declare global {
  * request (so one Escape no longer falls through a stacked option sheet
  * into the window beneath it), and Android's predictive-back animation
  * rides it for free. Where the API is missing — older WebKit — the
- * fallback is exactly the per-dialog Escape listener this replaced, and
- * iOS has no Back gesture to lose.
+ * fallback is the stack above, which is that same rule written out by
+ * hand; iOS has no Back gesture to lose.
  */
 export function useCloseRequest(onClose: () => void, active = true): void {
   // The latest closer, so a watcher attached once never calls a stale one.
@@ -62,11 +113,7 @@ export function useCloseRequest(onClose: () => void, active = true): void {
       watcher.onclose = () => close.current();
       return () => watcher.destroy();
     }
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') close.current();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    return pushCloser(() => close.current());
   }, [active]);
 }
 
