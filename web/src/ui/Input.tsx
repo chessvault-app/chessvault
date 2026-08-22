@@ -13,8 +13,17 @@ import { t } from '@/lib/i18n';
 /**
  * The one text input. Every ad-hoc `bg-surface-inset border-line …` string
  * in the views drifted (two focus colours, four heights) — this is the
- * single source of truth. Keyboard focus keeps the global :focus-visible
- * ring; pointer focus tints the border with the primary colour.
+ * single source of truth.
+ *
+ * Focus is the global :focus-visible ring (index.css), the same one every
+ * Button wears, plus a tint on the border. No `outline-none` here, and
+ * none may be added: the utility lands in the `utilities` layer, which
+ * outranks the `base` layer the ring is declared in, so it did not hide
+ * the ring for pointer focus and keep it for the keyboard — it removed it
+ * for both, and a Tab into any field in the app landed nowhere visible.
+ * Browsers treat a typing field as focus-visible however it was reached,
+ * so the ring shows on click as well; that is the platform's reading of
+ * what a caret needs, and it is not worth a field with no ring at all.
  */
 
 type InputSize = 'sm' | 'md' | 'lg';
@@ -45,7 +54,7 @@ const sizes: Record<InputSize, string> = {
 
 const base =
   'bg-surface-inset border-line text-fg placeholder:text-subtle min-w-0 rounded-md border ' +
-  'outline-none transition-colors duration-100 focus:border-primary/50 ' +
+  'transition-colors duration-100 focus:border-primary/50 ' +
   'disabled:pointer-events-none disabled:opacity-45';
 
 /**

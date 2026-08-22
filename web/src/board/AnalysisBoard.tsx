@@ -342,7 +342,10 @@ function NameField({
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
         }}
         className={cn(
-          'text-fg placeholder:text-subtle w-full min-w-0 truncate bg-transparent text-base font-medium outline-none',
+          // No outline-none: this is a bare input with no border to tint,
+          // so the global :focus-visible ring is the only sign the name is
+          // being edited. rounded-md gives that ring Input's own corners.
+          'text-fg placeholder:text-subtle w-full min-w-0 truncate rounded-md bg-transparent text-base font-medium',
           showClear && 'pr-6',
           noAutofillClass,
         )}
