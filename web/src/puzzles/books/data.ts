@@ -104,6 +104,25 @@ export async function bookTemplates(slug: string): Promise<Template[]> {
   }
 }
 
+/** One position's place in the book, for the reader's hotspots. */
+export interface Placement {
+  id: string;
+  page: number;
+  rect?: SourceRect;
+  fen: string;
+}
+
+export async function loadPlacements(slug: string): Promise<Placement[]> {
+  try {
+    const body = await api<{ placements: Placement[] }>(
+      `/api/puzzlebooks/${encodeURIComponent(slug)}/placements`,
+    );
+    return body.placements;
+  } catch {
+    return [];
+  }
+}
+
 export const diagramUrl = (slug: string, file: string): string =>
   `/api/puzzlebooks/${encodeURIComponent(slug)}/diagrams/${file}`;
 

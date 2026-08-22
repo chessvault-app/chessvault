@@ -64,8 +64,15 @@ export async function loadBooks(force = false): Promise<LibraryBook[]> {
   return body.books;
 }
 
-export const pdfUrl = (id: string): string => `/api/books/${encodeURIComponent(id)}/pdf`;
-export const coverUrl = (id: string): string => `/api/books/${encodeURIComponent(id)}/cover.jpg`;
+/**
+ * The file's URL, versioned by its size: a replaced PDF is a different
+ * URL to every browser that ever cached the old one, so the reader opens
+ * the new file at once and pdf.js never asks the old entry for ranges.
+ */
+export const pdfUrl = (id: string, bytes: number): string =>
+  `/api/books/${encodeURIComponent(id)}/pdf?v=${bytes}`;
+export const coverUrl = (id: string, bytes = 0): string =>
+  `/api/books/${encodeURIComponent(id)}/cover.jpg?v=${bytes}`;
 
 /**
  * "chess-evolution_1.pdf" is how a scan arrives; "chess evolution 1" is a
