@@ -56,6 +56,21 @@ function hasSidelines(tree: MoveTree): boolean {
 }
 
 /**
+ * The branch guide a sideline hangs from: a right angle (lanph3re's call,
+ * over the plain bar) — down from the branch point, then across into the
+ * sideline's first move, the way a tree view draws a child. A sideline
+ * with siblings under it keeps the vertical running past it (├); the last
+ * one ends at its own move (└). Both halves are pseudo-elements on a
+ * relative row, so the moves wrap freely inside. The elbow's height is
+ * the caller's: it has to meet the first line's middle, and the two rows
+ * that use it pad differently.
+ */
+const BRANCH_ELBOW =
+  "before:border-border/70 before:absolute before:top-0 before:w-2 before:rounded-bl-sm before:border-b-2 before:border-l-2 before:content-['']";
+const BRANCH_CONTINUES =
+  "after:border-border/70 after:absolute after:top-0 after:border-l-2 after:content-['']";
+
+/**
  * Show only the line the cursor is on.
  *
  * Lives in the moves panel's HEADER, beside the other things that act on
@@ -281,19 +296,26 @@ export function MainlineTable({
         );
       }
       for (const variationId of shownVariationIds) {
+        const last = variationId === shownVariationIds[shownVariationIds.length - 1];
         out.push(
           <div
             key={`var-${variationId}`}
-            // A branch line down the left, the same bar the nested blocks
-            // inside Line draw (lanph3re's call): indent alone said "not
-            // the mainline", the bar says "a branch off it" — and a
-            // sideline with its own sidelines now reads as one tree, bar
-            // inside bar, instead of a bare first level over barred
-            // deeper ones. The bar is the inner box's border so it runs
-            // the height of every wrapped line; the row keeps the rule.
-            className="border-border/60 border-b py-1 pr-2 pl-3"
+            // The branch guide (BRANCH_ELBOW): indent alone said "not the
+            // mainline"; the elbow says "a branch off it", and where a
+            // sideline has its own sidelines the two levels read as one
+            // tree. The elbow sits at left-3; py-1 plus half a text-sm
+            // line puts the first line's middle at 14px, hence h-3.5. The
+            // continuing vertical runs to the row's bottom, which is the
+            // next sibling's top.
+            className={cn(
+              'border-border/60 relative border-b py-1 pr-2 pl-6',
+              BRANCH_ELBOW,
+              'before:left-3 before:h-3.5',
+              !last && BRANCH_CONTINUES,
+              !last && 'after:left-3 after:bottom-0',
+            )}
           >
-            <div className="border-border/70 text-muted-foreground flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-l-2 pl-2 text-sm">
+            <div className="text-muted-foreground flex flex-wrap items-baseline gap-x-1 gap-y-0.5 text-sm">
               <VariationBranch
                 tree={tree}
                 startId={variationId}
@@ -455,13 +477,22 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
       flowInterrupted = true;
     }
 
-    for (const variationId of keep(variationIds)) {
+    const shown = keep(variationIds);
+    for (const variationId of shown) {
+      const last = variationId === shown[shown.length - 1];
       items.push(
         <div
           key={`var-${variationId}`}
           className={cn(
-            'my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5',
-            'border-border/70 border-l-2 pl-2',
+            'relative my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5 pl-4',
+            // The branch guide, as on the table's own sideline rows (see
+            // BRANCH_ELBOW). No padding here, so the first line's middle
+            // is at 10px; the continuing vertical reaches 4px past the
+            // block's bottom to bridge the my-1 gap to the next sibling.
+            BRANCH_ELBOW,
+            'before:left-0 before:h-2.5',
+            !last && BRANCH_CONTINUES,
+            !last && 'after:left-0 after:-bottom-2',
             // Deeper variations dim further so the parent line stays readable.
             'text-muted-foreground text-sm',
           )}
