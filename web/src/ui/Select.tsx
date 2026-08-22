@@ -54,6 +54,9 @@ export interface SelectGroup {
  * heights. A touch target that grows is right; one control staying behind
  * is what makes it look wrong.
  */
+/** How long a run of letters counts as one search. */
+const TYPEAHEAD_MS = 700;
+
 const triggerSizes = {
   sm: 'h-7 px-2 text-sm pointer-coarse:h-9',
   md: 'h-8 px-2.5 text-sm pointer-coarse:h-9',
@@ -291,6 +294,9 @@ export function Select({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActive((i) => Math.max(0, i - 1));
+    } else if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      jumpTo(e.key);
     } else if (e.key === 'Home') {
       e.preventDefault();
       setActive(0);
@@ -304,6 +310,35 @@ export function Select({
     } else if (e.key === 'Tab') {
       setOpen(false);
     }
+  };
+
+  /**
+   * Typeahead: the last listbox convention this was missing.
+   *
+   * Letters typed in quick succession are one search — "ki" finds
+   * Kiwen-suwi past Kosikov — and a pause starts a new one. Repeating
+   * the SAME letter cycles the options beginning with it instead, which
+   * is what a list of eleven piece sets is usually being asked for.
+   *
+   * It moves the highlight rather than the value: nothing is chosen
+   * until Enter, the way arrowing already works here.
+   */
+  const typed = useRef({ buffer: '', at: 0 });
+  const jumpTo = (char: string): void => {
+    const now = Date.now();
+    const fresh = now - typed.current.at > TYPEAHEAD_MS;
+    const repeat = !fresh && typed.current.buffer === char;
+    const buffer = fresh || repeat ? char : typed.current.buffer + char;
+    typed.current = { buffer, at: now };
+
+    const query = buffer.toLowerCase();
+    const labelOf = (o: SelectOption): string => t(o.label).toLowerCase();
+    // From the one after the current, so a repeated letter walks the
+    // matches instead of sticking to the first.
+    const from = repeat ? active + 1 : active;
+    const order = flat.map((_, i) => (from + i) % flat.length);
+    const hit = order.find((i) => labelOf(flat[i]!).startsWith(query));
+    if (hit !== undefined) setActive(hit);
   };
 
   let index = -1;
