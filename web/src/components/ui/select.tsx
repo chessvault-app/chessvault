@@ -52,8 +52,11 @@ function OptionDot({ dot }: { dot: NonNullable<SelectOption['dot']> }) {
   return (
     <span
       aria-hidden
-      className="size-3 shrink-0 rounded-full"
-      style={{ background: dot.color, outline: dot.ring ? `2px solid ${dot.ring}` : undefined }}
+      // The ring is the dot's own border, not an outline: an outline paints
+      // outside the box and a list item clipped it (lanph3re saw the white
+      // ring cut). 16px with a 2px ring leaves the same 12px fill.
+      className="size-4 shrink-0 rounded-full border-2"
+      style={{ background: dot.color, borderColor: dot.ring ?? dot.color }}
     />
   );
 }
