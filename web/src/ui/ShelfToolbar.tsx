@@ -6,7 +6,7 @@ import { PageHeader } from './PageHeader';
 import { Segmented } from './Segmented';
 import { Select } from './Select';
 import type { ShelfLayout } from './ShelfCard';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**

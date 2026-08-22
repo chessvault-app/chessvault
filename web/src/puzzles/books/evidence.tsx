@@ -10,7 +10,7 @@ import {
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useFloating } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 
@@ -107,13 +107,13 @@ export function SourcePane({
           drag.current = null;
         }}
         className={cn(
-          'border-line/60 hover:bg-surface-2 flex w-2.5 shrink-0 touch-none',
+          'border-border/60 hover:bg-accent flex w-2.5 shrink-0 touch-none',
           'cursor-col-resize items-center justify-center border-l transition-colors',
         )}
       >
         {/* The grip, centred on the divider line — same idiom as the
             panels' bottom-edge resize. */}
-        <div className="bg-line h-8 w-[3px] rounded-full" />
+        <div className="bg-border h-8 w-[3px] rounded-full" />
       </div>
     </div>
   );
@@ -285,7 +285,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
         }}
         className="grid size-full place-items-center"
       >
-        <Eye className="text-subtle group-hover:text-fg size-3.5 transition-colors pointer-coarse:size-4.5" />
+        <Eye className="text-subtle group-hover:text-foreground size-3.5 transition-colors pointer-coarse:size-4.5" />
       </button>
       {shown &&
         box &&
@@ -296,7 +296,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
             style={float.style}
             className="pointer-events-none z-50 block"
           >
-            <span className="bg-surface border-line block rounded-xl border p-2 shadow-pop">
+            <span className="bg-card border-border block rounded-xl border p-2 shadow-pop">
               <SourceCrop
                 slug={slug}
                 page={page}
@@ -407,7 +407,7 @@ export function ZoomablePage({ src, alt, width }: { src: string; alt: string; wi
       </span>
       <div
         ref={viewport}
-        className="border-line max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+        className="border-border max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
       >
         <img src={src} alt={alt} className="max-w-none" style={{ width: Math.round(width * zoom) }} />
       </div>
@@ -476,7 +476,7 @@ export function SourceCrop({
       <div className="relative" style={{ width }}>
         <div
           ref={viewport}
-          className="border-line max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+          className="border-border max-h-[calc(100dvh-12rem)] overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
         >
           <div className="relative" style={{ width: Math.round(width * zoom) }}>
             <img src={src} alt={t('book page')} className="w-full" />
@@ -514,7 +514,7 @@ export function SourceCrop({
       {zoomButtons}
       <div
         ref={viewport}
-        className="border-line overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
+        className="border-border overflow-auto overscroll-contain rounded-md border [touch-action:pan-x_pan-y]"
         style={{ width, height: natural ? Math.round(ch * natural.h * fit) : width }}
       >
         <div

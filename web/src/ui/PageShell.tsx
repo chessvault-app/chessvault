@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * How wide a scrolling page's column is allowed to get. Three named

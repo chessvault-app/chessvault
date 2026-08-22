@@ -1,6 +1,6 @@
 import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import {
@@ -317,7 +317,7 @@ export function PhotoImport({
 
       {!img ? (
         <>
-          <label className="border-line hover:border-line-strong hover:bg-surface-2 grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+          <label className="border-border hover:border-border-strong hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
             <input
               type="file"
               accept="image/*"
@@ -327,7 +327,7 @@ export function PhotoImport({
                 if (file) pick(file);
               }}
             />
-            <span className="text-muted text-base">
+            <span className="text-muted-foreground text-base">
               Choose an image of the diagram
               <span className="text-subtle block text-sm">{t('a screenshot or scan works best')}</span>
             </span>
@@ -356,7 +356,7 @@ export function PhotoImport({
           {/* The one thing here that is a setting rather than a verb, so
               it stays by the board it describes; the verbs are together
               in the corner. */}
-          <label className="text-muted flex items-center gap-1.5 text-sm">
+          <label className="text-muted-foreground flex items-center gap-1.5 text-sm">
             <input
               type="checkbox"
               checked={blackAtBottom}
@@ -375,18 +375,18 @@ export function PhotoImport({
         <div
           className={cn(
             'rounded-lg border p-3 text-sm leading-relaxed',
-            reading.fen ? 'border-line bg-surface-inset/50' : 'border-info/40 bg-info/10',
+            reading.fen ? 'border-border bg-surface-inset/50' : 'border-info/40 bg-info/10',
           )}
         >
           {reading.fen === null ? (
-            <p className="text-muted">
+            <p className="text-muted-foreground">
               First diagram of this book — nothing to match against yet. Set
               the position up by hand; confirming it teaches the app this
               book&rsquo;s piece font, and the next images will read themselves.
             </p>
           ) : (
             <>
-              <p className="text-fg font-mono text-xs">{reading.fen.split(' ')[0]}</p>
+              <p className="text-foreground font-mono text-xs">{reading.fen.split(' ')[0]}</p>
               {reading.uncertain.length > 0 && (
                 <p className="text-nag-dubious mt-1">
                   Check by eye: {reading.uncertain.join(', ')}

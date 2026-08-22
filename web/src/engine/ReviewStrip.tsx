@@ -1,6 +1,6 @@
 import { BookOpen, ChevronDown, Loader2, Microscope, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { useReview, type GraphPoint } from '@/store/review';
 import { Button } from '@/ui/Button';
@@ -74,8 +74,8 @@ export function ReviewStrip() {
   if (status === 'idle') {
     if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
     return (
-      <div className="border-line flex shrink-0 items-center gap-2 border-t px-3 py-2">
-        <p className="text-muted min-w-0 flex-1 truncate text-sm">
+      <div className="border-border flex shrink-0 items-center gap-2 border-t px-3 py-2">
+        <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm">
           {t('See accuracy, mistakes and the evaluation graph.')}
         </p>
         <Button variant="secondary" size="sm" onClick={() => void run()}>
@@ -95,7 +95,7 @@ export function ReviewStrip() {
   }
 
   return (
-    <div className="border-line shrink-0 border-t">
+    <div className="border-border shrink-0 border-t">
       {status === 'running' ? (
         <div className="flex items-center gap-2 px-3 py-2">
           <span className="text-subtle text-xs label-caps">
@@ -113,7 +113,7 @@ export function ReviewStrip() {
         </div>
       ) : status === 'error' ? (
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="text-bad min-w-0 flex-1 truncate text-sm">{error}</span>
+          <span className="text-destructive min-w-0 flex-1 truncate text-sm">{error}</span>
           <Button variant="ghost" size="icon-sm" title={t('Dismiss')} onClick={clear}>
             <X className="size-3" />
           </Button>
@@ -222,7 +222,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
           y1={GRAPH_H / 2}
           x2={GRAPH_W}
           y2={GRAPH_H / 2}
-          stroke="var(--color-line-strong)"
+          stroke="var(--color-border-strong)"
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
@@ -260,7 +260,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
                       ? 'bg-nag-dubious size-2 rounded-full'
                       : p.book
                         ? 'bg-nag-book size-1 rounded-full'
-                        : 'bg-line-strong size-1 rounded-full',
+                        : 'bg-border-strong size-1 rounded-full',
                 i === cursorIndex && 'ring-primary ring-2',
               )}
             />
@@ -275,7 +275,7 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
   return (
     <div className="flex items-center gap-2 text-sm">
       <SideDot side={side} />
-      <span className="text-fg w-12 font-mono font-semibold tabular-nums">
+      <span className="text-foreground w-12 font-mono font-semibold tabular-nums">
         {summary.accuracy.toFixed(1)}%
       </span>
       <span className="text-subtle font-mono text-xs tabular-nums">

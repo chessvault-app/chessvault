@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { Role } from 'chessops/types';
 import type { Color } from '@lichess-org/chessground/types';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useDialogFocus } from '@/ui/dialogFocus';
 
@@ -84,7 +84,7 @@ export function PromotionPicker({
             }}
             className={cn(
               'relative aspect-square w-full cursor-pointer border-none p-0',
-              'bg-surface/95 hover:bg-primary-soft transition-colors duration-100',
+              'bg-card/95 hover:bg-primary-soft transition-colors duration-100',
               'shadow-pop',
             )}
           >

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useExplain } from '@/store/explain';
 
 /**
@@ -19,9 +19,9 @@ const NOMINAL: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9 };
 
 function bucketClass(value: number, piece: string): string {
   const surplus = Math.abs(value) - (NOMINAL[piece.toLowerCase()] ?? 0);
-  if (surplus >= 1.25) return 'bg-nag-brilliant text-nag-fg'; // carrying the position
-  if (surplus <= -1) return 'bg-surface/70 text-subtle'; // a bystander
-  return 'bg-surface/90 text-fg';
+  if (surplus >= 1.25) return 'bg-nag-brilliant text-nag-foreground'; // carrying the position
+  if (surplus <= -1) return 'bg-card/70 text-subtle'; // a bystander
+  return 'bg-card/90 text-foreground';
 }
 
 export function HeatMapOverlay({

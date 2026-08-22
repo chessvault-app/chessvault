@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, X } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { Button } from './Button';
@@ -203,7 +203,7 @@ export function Sheet({
           // [&>*]:shrink-0 for the other one: a short window is one field
           // and two buttons, and a flex column would rather squash them
           // than let itself overflow.
-          'bg-surface border-line flex max-h-full w-full flex-col gap-2 overflow-y-auto overscroll-contain',
+          'bg-card border-border flex max-h-full w-full flex-col gap-2 overflow-y-auto overscroll-contain',
           // pt-0, because the title strip below is sticky and carries the
           // top padding itself. Padding on the CARD stays behind a sticky
           // child — the strip would pin 12px down, with the rows sliding
@@ -257,10 +257,10 @@ export function Sheet({
             not one. Its own opaque fill because rows now pass beneath
             it. */}
         <div
-          className="border-line bg-surface sticky top-0 z-10 -mx-3 px-3 pb-2 pt-3 max-sm:touch-none max-sm:select-none sm:border-b"
+          className="border-border bg-card sticky top-0 z-10 -mx-3 px-3 pb-2 pt-3 max-sm:touch-none max-sm:select-none sm:border-b"
           {...(phone ? drag.handlers : {})}
         >
-          <div className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
+          <div className="bg-border mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
           {/* The chevron only when this sheet has hidden the window it was
               opened from — see sheetCover. Standing over a window you can
               still see, the scrim, the drag and Back all say how to leave

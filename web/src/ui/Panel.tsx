@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 
@@ -116,7 +116,7 @@ export function Panel({
       ref={ref}
       style={style}
       className={cn(
-        'bg-surface border-line rounded-xl border shadow-panel',
+        'bg-card border-border rounded-xl border shadow-panel',
         'flex flex-col',
         fit ? 'min-h-max overflow-visible' : 'min-h-0 overflow-hidden',
         !flush && 'p-3',
@@ -151,11 +151,11 @@ export function Panel({
             // mt-auto pins the grip to the panel's bottom edge even when a
             // dragged height leaves the panel taller than its content —
             // otherwise it floats mid-panel right under the last row.
-            'border-line/60 hover:bg-surface-2 mt-auto hidden h-2.5 shrink-0 touch-none',
+            'border-border/60 hover:bg-accent mt-auto hidden h-2.5 shrink-0 touch-none',
             'cursor-row-resize items-center justify-center border-t transition-colors lg:flex',
           )}
         >
-          <div className="bg-line h-[3px] w-8 rounded-full" />
+          <div className="bg-border h-[3px] w-8 rounded-full" />
         </div>
       )}
     </section>
@@ -178,7 +178,7 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
       // The rule under a title is the app's one way of separating a header
       // from what it heads — panels and windows alike (lanph3re's call).
       className={cn(
-        'border-line flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3',
+        'border-border flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3',
         className,
       )}
     >

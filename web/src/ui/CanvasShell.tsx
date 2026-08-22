@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { Button } from './Button';
@@ -158,7 +158,7 @@ export function CanvasShell({
               // button row stop wrapping: at 18rem nearly every line in
               // it broke, which is a panel technically showing you
               // something and practically hiding it.
-              className="border-line bg-surface/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-panel backdrop-blur-md xl:w-[26rem]"
+              className="border-border bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl border shadow-panel backdrop-blur-md xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a
@@ -166,7 +166,7 @@ export function CanvasShell({
                   stands over the canvas with no visible way out at all.
                   Named as well as marked, because a panel filling the
                   height no longer sits obviously beside its selection. */}
-              <div className="border-line flex shrink-0 items-center gap-2 border-b px-4 py-2">
+              <div className="border-border flex shrink-0 items-center gap-2 border-b px-4 py-2">
                 <p className="text-subtle min-w-0 flex-1 truncate text-sm">{t(panel.label)}</p>
                 <Button
                   variant="ghost"

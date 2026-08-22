@@ -124,7 +124,7 @@ export function FinalAssessment({
           the slot and a line that says so. */}
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2">
-          <span className="text-fg flex min-w-[3.75rem] items-center font-mono text-xl font-semibold tabular-nums">
+          <span className="text-foreground flex min-w-[3.75rem] items-center font-mono text-xl font-semibold tabular-nums">
             {score ? formatScore(score) : <Loader2 className="text-subtle size-4 animate-spin" />}
           </span>
           <EvalBar score={score} orientation="horizontal" className="flex-1" />

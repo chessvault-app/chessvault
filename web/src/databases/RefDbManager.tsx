@@ -2,7 +2,7 @@ import { Database, FileText, Loader2, Trash2, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 
@@ -315,7 +315,7 @@ export function RefDbManager({
 
         {/* Its own row, under the switch: the field wants the width, and
             on a phone there was never room for both on one line. */}
-        <div className="border-line flex shrink-0 items-center gap-2 border-b px-3 py-2">
+        <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
           <SearchInput
             inputSize="sm"
             value={query}
@@ -343,17 +343,17 @@ export function RefDbManager({
             thing here that takes minutes, so it says so from the top
             rather than from under whichever tab started it. */}
         {running && (
-          <p className="border-line text-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
+          <p className="border-border text-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
             <Loader2 className="size-3.5 shrink-0 animate-spin" />
             <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
           </p>
         )}
         {failed && (
-          <p className="border-line text-bad shrink-0 border-b px-3 py-2 font-mono text-xs">
+          <p className="border-border text-destructive shrink-0 border-b px-3 py-2 font-mono text-xs">
             {status?.log?.at(-1) ?? t('The build failed.')}
           </p>
         )}
-        {error && <p className="border-line text-bad shrink-0 border-b px-3 py-2 text-sm">{error}</p>}
+        {error && <p className="border-border text-destructive shrink-0 border-b px-3 py-2 text-sm">{error}</p>}
 
         {/* The list scrolls, the panel does not grow: one list at a time,
             capped, is what keeps the Build bar below in view. */}
@@ -369,7 +369,7 @@ export function RefDbManager({
             press that starts minutes of indexing says what it is about
             to index. */}
         {tab === 'sources' && pickedCount > 0 && (
-          <div className="border-line flex shrink-0 items-center gap-2 border-t px-3 py-2">
+          <div className="border-border flex shrink-0 items-center gap-2 border-t px-3 py-2">
             <span className="text-subtle min-w-0 flex-1 truncate text-sm">
               {t('{n} selected', { n: pickedCount })}
             </span>
@@ -437,15 +437,15 @@ export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
         aria-live="polite"
       >
         {/* The switch: one box the size the segmented control settles at. */}
-        <div className="border-line flex shrink-0 items-center border-b px-3 py-2">
+        <div className="border-border flex shrink-0 items-center border-b px-3 py-2">
           <Skeleton className="h-[1.9rem] w-52 rounded-xl" />
         </div>
         {/* The search row, and the upload icon beside it. */}
-        <div className="border-line flex shrink-0 items-center gap-2 border-b px-3 py-2">
+        <div className="border-border flex shrink-0 items-center gap-2 border-b px-3 py-2">
           <Skeleton className="h-7 min-w-0 flex-1" />
           <Skeleton className="size-7 shrink-0" />
         </div>
-        <ul className="divide-line min-h-0 flex-1 divide-y overflow-hidden">
+        <ul className="divide-border min-h-0 flex-1 divide-y overflow-hidden">
           {Array.from({ length: rows }, (_, i) => (
             <li key={i} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5">
               <Skeleton className={cn('h-3', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
@@ -472,7 +472,7 @@ function DbList({
   onDelete: (name: string) => void;
 }) {
   return (
-    <ul className="divide-line divide-y">
+    <ul className="divide-border divide-y">
       {databases.map((d) => (
         // 17px: five past the search field's left border, which pl-3 sat
         // exactly on. An off-scale literal because it is answering the
@@ -482,7 +482,7 @@ function DbList({
         // one, so it is written as itself rather than rounded to look
         // principled.
         <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5 text-sm">
-          <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>
+          <span className="text-foreground min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
           <span className="text-subtle shrink-0">
@@ -525,7 +525,7 @@ function SourceList({
   deleteDisabled: boolean;
 }) {
   return (
-    <ul className="divide-line divide-y">
+    <ul className="divide-border divide-y">
       {sources.map((s) => (
         <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5 text-sm">
           {/* The label covers the tick, the name and the size, and
@@ -538,7 +538,7 @@ function SourceList({
               checked={picked?.has(s.name) ?? false}
               onChange={(e) => onToggle(s.name, e.target.checked)}
             />
-            <span className="text-fg min-w-0 flex-1 truncate">{s.name}</span>
+            <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
             <span className="text-subtle shrink-0">{mb(s.bytes)}</span>
           </label>
           {/* Uploading is how a phone gets a file onto the server, so
@@ -595,12 +595,12 @@ function UploadWindow({
       <label
         {...drop.handlers}
         className={cn(
-          'text-muted flex min-h-40 cursor-pointer flex-col items-center justify-center',
+          'text-muted-foreground flex min-h-40 cursor-pointer flex-col items-center justify-center',
           'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-sm',
           'transition-colors duration-100',
           drop.dragging
             ? 'border-primary bg-primary-soft text-primary'
-            : 'border-line hover:border-primary/40 hover:bg-surface-2',
+            : 'border-border hover:border-primary/40 hover:bg-accent',
         )}
       >
         <input
@@ -624,7 +624,7 @@ function UploadWindow({
         ) : (
           <>
             <Upload className="size-6" />
-            <span className="text-fg text-base font-medium">{t('Choose .pgn files')}</span>
+            <span className="text-foreground text-base font-medium">{t('Choose .pgn files')}</span>
             <span className="text-subtle leading-relaxed">
               {t('Or drop them anywhere in this box')}
             </span>
@@ -665,7 +665,7 @@ function BuildWindow({
 
   return (
     <Modal title="Build a database" icon={Database} onClose={onClose}>
-      <p className="text-muted text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
       </p>
       <ClearableInput

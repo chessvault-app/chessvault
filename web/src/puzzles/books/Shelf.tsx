@@ -12,7 +12,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 import { SkeletonBookCards, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
@@ -407,14 +407,14 @@ export function Shelf() {
           </div>
         </div>
 
-        {error && <p className="text-bad mb-3 text-sm">{error}</p>}
+        {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
         {books === null || !coversReady ? (
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
         ) : visibleBooks.length === 0 ? (
-          <div className="bg-surface border-line flex flex-col items-center gap-3 rounded-xl border p-6 text-center">
+          <div className="bg-card border-border flex flex-col items-center gap-3 rounded-xl border p-6 text-center">
             <BookMarked className="text-subtle size-6" />
-            <p className="text-muted text-base">
+            <p className="text-muted-foreground text-base">
               {t(
                 "No puzzle books yet. Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.",
               )}
@@ -509,9 +509,9 @@ function BookCard({
         }}
         {...swipe.handlers}
         className={cn(
-          'bg-surface border-line group relative flex h-full cursor-pointer items-stretch gap-3',
+          'bg-card border-border group relative flex h-full cursor-pointer items-stretch gap-3',
           'overflow-hidden rounded-xl border p-3 text-left transition-colors duration-100',
-          'hover:border-line-strong hover:bg-surface-2',
+          'hover:border-border-strong hover:bg-accent',
           // The whole indicator that a book is kept, and it costs no width
           // — see the shelves and the games rows.
           marked && 'border-l-warn hover:border-l-warn border-l-2',
@@ -526,17 +526,17 @@ function BookCard({
               alt=""
               loading="lazy"
               decoding="async"
-              className="border-line h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
+              className="border-border h-24 w-[4.5rem] shrink-0 rounded-md border object-cover object-top"
             />
           ) : (
-            <span className="bg-surface-inset border-line grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
+            <span className="bg-surface-inset border-border grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
               <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
             </span>
           )}
           <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
             {/* pr keeps a long title clear of the corner control */}
             <span className="min-w-0 pr-7">
-              <span className="text-fg block truncate text-base font-medium">{book.title}</span>
+              <span className="text-foreground block truncate text-base font-medium">{book.title}</span>
               <span className="text-subtle block text-sm">
                 {t('{n} puzzles', { n: book.puzzles })}
               </span>

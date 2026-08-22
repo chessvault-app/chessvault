@@ -1,6 +1,6 @@
 import { Folder as FolderIcon, ChevronRight, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from './Button';
 import { ClearableInput } from './Input';
 import { Sheet } from './Sheet';
@@ -44,7 +44,7 @@ export function MoveToPopover({
             type="button"
             onClick={() => onPick(target)}
             className={cn(
-              'hover:bg-surface-2 group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
+              'hover:bg-accent group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
               'text-left text-base transition-colors duration-100',
             )}
           >
@@ -64,7 +64,7 @@ export function MoveToPopover({
           picking one that does, so it is separated and says what it does.
           The ↵ glyph that used to sit here was the only instruction, and it
           only means "press enter" to somebody who already knew. */}
-      <div className="border-line flex items-center gap-1 border-t pt-2">
+      <div className="border-border flex items-center gap-1 border-t pt-2">
         <ClearableInput
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

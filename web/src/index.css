@@ -9,6 +9,12 @@
 @layer theme, base, chessground, components, utilities;
 
 @import 'tailwindcss';
+/* shadcn's own sheet: the data-open/data-closed/data-checked variants its
+   components are written with, and tw-animate-css for their enter and
+   leave animations. Both are plain @utility/@custom-variant files and sit
+   in the layers the ones above declare. */
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 /* Fonts are installed as packages and bundled, never fetched from a CDN — the
    app has to render correctly with the network cable pulled.
@@ -108,7 +114,7 @@
    * a grey panel: Mono already flattened the surfaces, and left one blue
    * button, one blue link and one blue nav highlight standing in an
    * otherwise colourless app. Everything that is a CHOICE of colour
-   * multiplies by this; --good, --bad, --warn and --info do not, because
+   * multiplies by this; --good, --destructive, --warn and --info do not, because
    * a puzzle that cannot say wrong in red has lost something a palette
    * was never meant to take.
    */
@@ -141,8 +147,8 @@
      own cap below has to know it too. */
   --board-side: 27rem;
 
-  --app-bg: oklch(calc(98.4% + (100% - 98.4%) * var(--ui-contrast)) calc(0.003 * var(--ui-tint)) var(--ui-hue));
-  --app-bg-accent: oklch(calc(96.5% + (95% - 96.5%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
+  --background: oklch(calc(98.4% + (100% - 98.4%) * var(--ui-contrast)) calc(0.003 * var(--ui-tint)) var(--ui-hue));
+  --background-accent: oklch(calc(96.5% + (95% - 96.5%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
   --surface-2: oklch(calc(97.2% + (96% - 97.2%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
@@ -152,9 +158,9 @@
   --border: oklch(calc(91% + (62% - 91%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
   --border-strong: oklch(calc(84% + (35% - 84%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
 
-  --text: oklch(calc(23% + (0% - 23%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --text-muted: oklch(calc(46% + (24% - 46%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
-  /* Both quiet tiers were measured against --surface and --app-bg only,
+  --foreground: oklch(calc(23% + (0% - 23%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --muted-foreground: oklch(calc(46% + (24% - 46%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  /* Both quiet tiers were measured against --surface and --background only,
      and passed there: subtle at 55% is 4.85:1 on white and 4.63:1 on the
      page. They are also used on --surface-2 and --surface-3, the raised
      and inset panels, where 55% falls to 4.48:1 and 4.12:1 — under what
@@ -166,22 +172,22 @@
 
   --primary: oklch(calc(50% + (0% - 50%) * var(--ui-contrast)) calc(0.115 * var(--accent-tint)) var(--accent-hue));
   --primary-hover: oklch(calc(44% + (22% - 44%) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
-  --primary-fg: oklch(calc(99% + (100% - 99%) * var(--ui-contrast)) 0 0);
+  --primary-foreground: oklch(calc(99% + (100% - 99%) * var(--ui-contrast)) 0 0);
   --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
   --ring: oklch(calc(50% + (0% - 50%) * var(--ui-contrast)) calc(0.115 * var(--accent-tint)) var(--accent-hue) / 45%);
 
   --good: oklch(51% 0.141 150);
-  --bad: oklch(54% 0.19 25);
+  --destructive: oklch(54% 0.19 25);
   --warn: oklch(53% 0.112 75);
   --info: oklch(51% 0.102 230);
-  /* What reads ON a filled --bad panel, in both themes: the dark red is
+  /* What reads ON a filled --destructive panel, in both themes: the dark red is
      dark enough for white in light mode, and the light red of dark mode
      wants near-black. Only the swipe-to-remove strip fills --bad; every
      other use is text or a tint, which keeps the page colour behind it. */
-  --bad-fg: oklch(99% 0 0);
+  --destructive-foreground: oklch(99% 0 0);
   /* On --warn, which is a light amber in BOTH themes: white on it is a
      smear. The swipe-to-bookmark strip is the only thing that fills it. */
-  --warn-fg: oklch(22% 0.04 75);
+  --warn-foreground: oklch(22% 0.04 75);
   /**
    * The ECO tag: one hue per opening family (A–E), two lightnesses per
    * theme.
@@ -206,7 +212,7 @@
      Distinct by construction rather than by a colour chosen to contrast
      with today's palette, and the one convention this widget has. */
   --toast: oklch(calc(24% + (0% - 24%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --toast-fg: oklch(calc(98% + (100% - 98%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --toast-foreground: oklch(calc(98% + (100% - 98%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
 
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares. */
   --board-light: oklch(91% 0.035 84);
@@ -244,7 +250,7 @@
   --nag-interesting: #c46ad4;
   --nag-dubious: #f0c15c;
   --nag-book: #a88865;
-  --nag-fg: oklch(100% 0 0);
+  --nag-foreground: oklch(100% 0 0);
 
   /* Toggle-switch knob: white on the filled track in both themes. */
   --knob: oklch(100% 0 0);
@@ -264,8 +270,8 @@
      field. Six points is enough for a card to be a card without the page
      turning into a hole. The surface LADDER is untouched — every panel,
      popover and input keeps its relationship to the others. */
-  --app-bg: oklch(calc(15.5% + (0% - 15.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
-  --app-bg-accent: oklch(calc(13% + (0% - 13%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --background: oklch(calc(15.5% + (0% - 15.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --background-accent: oklch(calc(13% + (0% - 13%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(calc(21.5% + (13% - 21.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
   --surface-2: oklch(calc(25% + (18.5% - 25%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --surface-3: oklch(calc(29% + (24% - 29%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
@@ -274,23 +280,23 @@
   --border: oklch(calc(31% + (52% - 31%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
-  --text: oklch(calc(96% + (100% - 96%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --text-muted: oklch(calc(78% + (90% - 78%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --foreground: oklch(calc(96% + (100% - 96%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --muted-foreground: oklch(calc(78% + (90% - 78%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
   --text-subtle: oklch(calc(66% + (80% - 66%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
 
   --primary: oklch(calc(73% + (100% - 73%) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue));
   --primary-hover: oklch(calc(78% + (92% - 78%) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
-  --primary-fg: oklch(calc(16% + (0% - 16%) * var(--ui-contrast)) 0.025 235);
+  --primary-foreground: oklch(calc(16% + (0% - 16%) * var(--ui-contrast)) 0.025 235);
   --primary-soft: oklch(calc(30% + (20% - 30%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
   --ring: oklch(calc(73% + (100% - 73%) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue) / 50%);
 
   --good: oklch(72% 0.16 152);
-  --bad: oklch(69% 0.18 25);
+  --destructive: oklch(69% 0.18 25);
   --warn: oklch(80% 0.15 80);
   --info: oklch(72% 0.13 232);
-  /* Dark mode's --bad is a light red; white on it is unreadable. */
-  --bad-fg: oklch(18% 0.03 25);
-  --warn-fg: oklch(20% 0.04 80);
+  /* Dark mode's --destructive is a light red; white on it is unreadable. */
+  --destructive-foreground: oklch(18% 0.03 25);
+  --warn-foreground: oklch(20% 0.04 80);
   /* Light text on a near-black page — the pair the tag was drawn with. */
   --eco-l: 80%;
   --eco-c: calc(0.08 * var(--accent-tint));
@@ -302,7 +308,7 @@
      has to be plainly foreign to the page, not a headlight in the corner
      of a room this dim. */
   --toast: oklch(calc(90% + (100% - 90%) * var(--ui-contrast)) calc(0.012 * var(--ui-tint)) var(--ui-hue));
-  --toast-fg: oklch(calc(20% + (0% - 20%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --toast-foreground: oklch(calc(20% + (0% - 20%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light: oklch(60% 0.024 250);
@@ -321,38 +327,83 @@
 }
 
 
+/* shadcn's role tokens, derived from the ladder above.
+
+   These are the names the registry's components are written against
+   (bg-card, text-muted-foreground, border-input …). None of them is a new
+   colour: each points at a rung of the ladder, once, for both themes —
+   the var() resolves under whichever block is in force — so retuning a
+   rung above retunes every role that uses it, and there is no second
+   palette to keep in step. What the ladder says that shadcn does not
+   (surface-3, surface-inset, text-subtle, border-strong) is exposed
+   beside these in the @theme block below, under the same naming style. */
+:root {
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--surface-2);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--foreground);
+  /* shadcn's input CHROME colour — what `border-input` draws. The sunken
+     fill a field sits on is --surface-inset, which is a rung, not a role. */
+  --input: var(--border);
+}
+
 /* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile
    to `var(--surface)` directly, so flipping `.dark` re-themes without a rebuild
    and without duplicating every utility behind a `dark:` variant. */
 @theme inline {
-  --color-app: var(--app-bg);
-  --color-app-accent: var(--app-bg-accent);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
+  /* shadcn's vocabulary first — the names every registry component is
+     written against, so one added with `npx shadcn add` is themed the
+     moment it lands. Each is a ROLE; the app's own surface ladder above
+     supplies the values (card and popover are both --surface, the way
+     shadcn's own themes make them both white). */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* The app's extensions — what shadcn has no word for, named in its
+     style. The ladder has two more rungs than card/muted: surface-3 is
+     the pressed or lit fill (a live segment, a hovered secondary button),
+     surface-inset the sunken one (a field, a settings row). subtle is the
+     third text tier under muted-foreground; border-strong the heavier
+     rule. primary-hover and primary-soft are real tokens rather than a
+     `/90` and a `/10` of primary because their contrast was measured. */
+  --color-background-accent: var(--background-accent);
   --color-surface-3: var(--surface-3);
   --color-surface-inset: var(--surface-inset);
-
-  --color-border-DEFAULT: var(--border);
-  --color-line: var(--border);
-  --color-line-strong: var(--border-strong);
-
-  --color-fg: var(--text);
-  --color-muted: var(--text-muted);
   --color-subtle: var(--text-subtle);
-
-  --color-primary: var(--primary);
+  --color-border-strong: var(--border-strong);
   --color-primary-hover: var(--primary-hover);
-  --color-primary-fg: var(--primary-fg);
   --color-primary-soft: var(--primary-soft);
 
+  /* The colour grammar (docs/design-principles.md): green, amber and blue
+     each mean one thing; destructive above is the red. */
   --color-good: var(--good);
-  --color-bad: var(--bad);
-  --color-bad-fg: var(--bad-fg);
-  --color-warn-fg: var(--warn-fg);
-  --color-toast: var(--toast);
-  --color-toast-fg: var(--toast-fg);
   --color-warn: var(--warn);
+  --color-warn-foreground: var(--warn-foreground);
   --color-info: var(--info);
+  --color-toast: var(--toast);
+  --color-toast-foreground: var(--toast-foreground);
 
   --color-eval-white: var(--eval-white);
   --color-eval-black: var(--eval-black);
@@ -372,7 +423,7 @@
   --color-nag-interesting: var(--nag-interesting);
   --color-nag-dubious: var(--nag-dubious);
   --color-nag-book: var(--nag-book);
-  --color-nag-fg: var(--nag-fg);
+  --color-nag-foreground: var(--nag-foreground);
 
   --color-knob: var(--knob);
   --color-scrim: var(--scrim);
@@ -457,7 +508,7 @@
        until the first scroll, exposing the WKWebView's own black canvas
        below the app. Painting html in the app colour makes any such band
        invisible on every device. */
-    background-color: var(--app-bg);
+    background-color: var(--background);
     height: 100%;
   }
 
@@ -473,8 +524,8 @@
   }
 
   body {
-    background-color: var(--app-bg);
-    color: var(--text);
+    background-color: var(--background);
+    color: var(--foreground);
     font-family: var(--font-sans);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss03';
     -webkit-font-smoothing: antialiased;
@@ -513,7 +564,7 @@
     padding: 0.35rem 0.5rem;
     border: none;
     background: none;
-    color: var(--text);
+    color: var(--foreground);
     font-size: 0.875rem;
     text-align: left;
     border-radius: 0.375rem;
@@ -539,7 +590,7 @@
     border: 1px solid var(--border);
     border-radius: 0.375rem;
     background: var(--surface);
-    color: var(--text-muted);
+    color: var(--muted-foreground);
     font-size: 0.75rem;
     line-height: 1.4;
     box-shadow: var(--shadow-pop);
@@ -574,7 +625,7 @@
 
   ::selection {
     background: var(--primary-soft);
-    color: var(--text);
+    color: var(--foreground);
   }
 
   /* Slim, theme-aware scrollbars: a 6px thumb inside a 12px gutter, so it
@@ -910,7 +961,7 @@ cg-board square.check {
 .note-editor {
   font-size: 1rem;
   line-height: 1.7;
-  color: var(--text);
+  color: var(--foreground);
   /* Room to scroll past the last line. Without it a note ends exactly
      where the page does, so the line being written sits pinned to the
      bottom edge. The padding is INSIDE the editable box, so clicking
@@ -954,7 +1005,7 @@ cg-board square.check {
 .note-editor blockquote {
   border-left: 3px solid var(--border-strong);
   padding-left: 0.9em;
-  color: var(--text-muted);
+  color: var(--muted-foreground);
 }
 .note-editor code {
   font-family: var(--font-mono);

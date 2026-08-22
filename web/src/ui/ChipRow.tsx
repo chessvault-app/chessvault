@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -59,7 +59,7 @@ export function ChipRow({
   };
 
   const arrow =
-    'bg-surface/95 border-line text-subtle hover:text-fg absolute top-1/2 z-10 grid size-6 -translate-y-1/2 place-items-center rounded-full border shadow-panel transition-colors pointer-coarse:hidden';
+    'bg-card/95 border-border text-subtle hover:text-foreground absolute top-1/2 z-10 grid size-6 -translate-y-1/2 place-items-center rounded-full border shadow-panel transition-colors pointer-coarse:hidden';
 
   return (
     <div className={cn('relative min-w-0', className)}>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { ArrowUpToLine, BookOpen, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/ui/Button';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
@@ -39,7 +39,7 @@ const NAG_CLASS: Record<number, string> = {
  */
 const commentRow = (size: string): string =>
   cn(
-    'border-line/60 bg-surface-inset/40 text-muted break-words whitespace-pre-line border-b px-2.5 py-1.5',
+    'border-border/60 bg-surface-inset/40 text-muted-foreground break-words whitespace-pre-line border-b px-2.5 py-1.5',
     size,
     'leading-relaxed',
   );
@@ -216,9 +216,9 @@ export function MainlineTable({
     out.push(
       <div
         key={`row-${number}-${typeof white === 'object' && white ? white.id : 'w'}-${typeof black === 'object' && black ? black.id : 'b'}`}
-        className="border-line/60 grid grid-cols-[2rem_1fr_1fr] border-b"
+        className="border-border/60 grid grid-cols-[2rem_1fr_1fr] border-b"
       >
-        <span className="bg-surface-inset/60 border-line/60 text-subtle flex items-center justify-center border-r font-mono text-xs">
+        <span className="bg-surface-inset/60 border-border/60 text-subtle flex items-center justify-center border-r font-mono text-xs">
           {number}
         </span>
         <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
@@ -284,7 +284,7 @@ export function MainlineTable({
         out.push(
           <div
             key={`var-${variationId}`}
-            className="border-line/60 text-muted flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-sm"
+            className="border-border/60 text-muted-foreground flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-sm"
           >
             <VariationBranch
               tree={tree}
@@ -333,7 +333,7 @@ function MoveCell({
       data-active={active}
       className={cn(
         'flex items-baseline gap-1 px-3 py-1 text-left font-medium transition-colors duration-100',
-        active ? 'bg-primary text-primary-fg' : 'hover:bg-surface-2',
+        active ? 'bg-primary text-primary-foreground' : 'hover:bg-accent',
       )}
     >
       <span>{figurine(node.san ?? '?')}</span>
@@ -344,7 +344,7 @@ function MoveCell({
       )}
       {bookIds.has(id) && (
         <span className="self-center" title={t('Book move')}>
-          <BookOpen className={cn('size-3', active ? 'text-primary-fg/80' : 'text-nag-book')} />
+          <BookOpen className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')} />
         </span>
       )}
     </button>
@@ -384,7 +384,7 @@ export function PromoteStrip({
     <button
       type="button"
       onClick={() => onPromote(cursorId)}
-      className="bg-primary/10 text-primary hover:bg-primary/20 border-line flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-sm font-medium transition-colors duration-100"
+      className="bg-primary/10 text-primary hover:bg-primary/20 border-border flex w-full shrink-0 items-center justify-center gap-1.5 border-t px-3 py-1.5 text-sm font-medium transition-colors duration-100"
     >
       <ArrowUpToLine className="size-3.5" />
       {t('Make mainline')}
@@ -436,7 +436,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
         <p
           key={`${mainChildId}-comment`}
           className={cn(
-            'text-subtle border-line my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
+            'text-subtle border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
           )}
         >
@@ -452,7 +452,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
           key={`var-${variationId}`}
           className={cn(
             'my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5',
-            'border-line/70 border-l-2 pl-2',
+            'border-border/70 border-l-2 pl-2',
             // Deeper variations dim further so the parent line stays readable.
             'text-subtle text-sm',
           )}
@@ -510,7 +510,7 @@ function VariationBranch({
       {node.comment && (
         <p
           className={cn(
-            'text-subtle border-line my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
+            'text-subtle border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
           )}
         >
@@ -551,7 +551,7 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
         className={cn(
           'rounded-sm px-1 py-px font-medium transition-colors duration-100',
           'hover:bg-surface-3',
-          active && 'bg-primary text-primary-fg hover:bg-primary',
+          active && 'bg-primary text-primary-foreground hover:bg-primary',
         )}
       >
         {figurine(label)}
@@ -563,7 +563,7 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
         {book && (
           <span className="ml-1 inline-block align-middle" title={t('Book move')}>
             <BookOpen
-              className={cn('size-3', active ? 'text-primary-fg/80' : 'text-nag-book')}
+              className={cn('size-3', active ? 'text-primary-foreground/80' : 'text-nag-book')}
             />
           </span>
         )}
@@ -571,7 +571,7 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
           <span
             className={cn(
               'ml-1 inline-block size-1 rounded-full align-middle',
-              active ? 'bg-primary-fg/70' : 'bg-info',
+              active ? 'bg-primary-foreground/70' : 'bg-info',
             )}
             title={t('Has a comment')}
           />

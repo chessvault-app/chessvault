@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useRovingTabs } from './roving';
 import { t } from '@/lib/i18n';
 
@@ -112,8 +112,8 @@ export function Segmented<T extends string>({
   // move the row it sits in.
   const box = track
     ? size === 'sm'
-      ? 'border-line bg-surface-inset border rounded-lg p-0.5 pointer-coarse:h-9'
-      : 'border-line bg-surface-inset border rounded-xl p-1 pointer-coarse:h-9'
+      ? 'border-border bg-surface-inset border rounded-lg p-0.5 pointer-coarse:h-9'
+      : 'border-border bg-surface-inset border rounded-xl p-1 pointer-coarse:h-9'
     : 'gap-2';
   const seg = track
     ? size === 'sm'
@@ -174,16 +174,16 @@ export function Segmented<T extends string>({
                   ? // Raised, and in the segment's own colour where it has
                     // one. Two grey pills side by side made the live site
                     // and the dead one look interchangeable.
-                    'bg-surface-3 shadow-panel ' + (accent ? 'font-semibold' : 'text-fg')
+                    'bg-surface-3 shadow-panel ' + (accent ? 'font-semibold' : 'text-foreground')
                   : // Dimmer than it was, so the gap between live and dead
                     // is a step rather than a shade.
-                    'text-subtle hover:text-fg'
+                    'text-subtle hover:text-foreground'
                 : on
                   ? // The answer: filled in the accent, and outlined in it
                     // too, so it reads as chosen rather than merely tinted.
                     'border-primary/40 bg-primary-soft ' + (accent ? 'font-semibold' : 'text-primary')
                   : // A peer that was not chosen — an outline, not a hole.
-                    'border-line text-muted hover:border-line-strong hover:text-fg',
+                    'border-border text-muted-foreground hover:border-border-strong hover:text-foreground',
             )}
           >
             {label}

@@ -114,7 +114,7 @@ export function DashboardPage() {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-        {error && <p className="text-bad mb-3 text-sm">{error}</p>}
+        {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
         {/* This page carried a phone-only row of Train/Books/Themes
             buttons, from when the Puzzles tab landed here and it had to
             double as the hub. It is a launcher now (#/puzzles/hub), where
@@ -177,7 +177,7 @@ export function DashboardPage() {
               const losses = inBand.length - wins;
               return (
                 <div key={band.label} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
-                  <span className="text-muted text-sm">{t(band.label)}</span>
+                  <span className="text-muted-foreground text-sm">{t(band.label)}</span>
                   <ProgressBar total={inBand.length} solved={wins} failed={losses} showEmpty />
                   <span className="text-subtle w-16 text-right font-mono text-xs tabular-nums">
                     {inBand.length > 0 ? `${wins}/${inBand.length}` : '—'}
@@ -210,7 +210,7 @@ export function DashboardPage() {
                 {Array.from({ length: 3 }, (_, i) => (
                   <div
                     key={i}
-                    className="border-line flex items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
+                    className="border-border flex items-center gap-2.5 border-b px-3 py-2 last:border-b-0"
                   >
                     {/* A row of text-sm, whose line box is 16px. */}
                     <div className="flex h-4 min-w-0 flex-1 items-center">
@@ -244,7 +244,7 @@ export function DashboardPage() {
             {books.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
                 <BookMarked className="text-subtle size-6" strokeWidth={1.5} />
-                <p className="text-muted max-w-xs text-sm leading-relaxed">
+                <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
                   {t(
                     'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.',
                   )}
@@ -257,13 +257,13 @@ export function DashboardPage() {
             ) : (
             <ul>
               {books.map((b) => (
-                <li key={b.slug} className="border-line border-b last:border-b-0">
+                <li key={b.slug} className="border-border border-b last:border-b-0">
                   {/* The hairline is on the li, so the row itself is undivided. */}
                   <ListRow
                     onClick={() => navigate('puzzles', 'books', b.slug)}
                     className="text-sm"
                   >
-                    <span className="text-fg min-w-0 flex-1 truncate font-medium">{b.title}</span>
+                    <span className="text-foreground min-w-0 flex-1 truncate font-medium">{b.title}</span>
                     <span className="text-subtle shrink-0 font-mono tabular-nums">
                       {b.solved}/{b.puzzles}
                     </span>
@@ -296,7 +296,7 @@ export function DashboardPage() {
             nine buttons. `steady` keeps each from resizing as it is
             changed and shoving the other along the row.
           */}
-          <div className="border-line flex items-center gap-1.5 border-b px-3 py-2">
+          <div className="border-border flex items-center gap-1.5 border-b px-3 py-2">
             <Select
               value={resultFilter}
               onChange={(v) => setResultFilter(v as ResultFilter)}
@@ -349,7 +349,7 @@ export function DashboardPage() {
           ) : (
             <ul className="max-h-96 overflow-y-auto">
               {puzzles.slice(0, 200).map((h) => (
-                <li key={h.id} className="border-line border-b last:border-b-0">
+                <li key={h.id} className="border-border border-b last:border-b-0">
                   <ListRow
                     dense
                     onClick={() => navigate('puzzles', 'id', h.id)}
@@ -359,9 +359,9 @@ export function DashboardPage() {
                     {h.win ? (
                       <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
                     ) : (
-                      <X className="text-bad size-3.5 shrink-0" aria-label={t('failed')} />
+                      <X className="text-destructive size-3.5 shrink-0" aria-label={t('failed')} />
                     )}
-                    <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
+                    <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
                     <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
                     {/* ml-auto is this list's own layout, not the eye's. */}
                     <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
@@ -420,12 +420,12 @@ function StatCard({
   action?: React.ReactNode;
 }) {
   return (
-    <div title={title} className="bg-surface border-line flex items-center justify-between rounded-xl border px-3 py-2.5">
+    <div title={title} className="bg-card border-border flex items-center justify-between rounded-xl border px-3 py-2.5">
       <div>
         <div className="text-subtle text-xs label-caps">
           {label}
         </div>
-        <div className="text-fg font-mono text-2xl font-bold tabular-nums">{value}</div>
+        <div className="text-foreground font-mono text-2xl font-bold tabular-nums">{value}</div>
       </div>
       {action}
     </div>

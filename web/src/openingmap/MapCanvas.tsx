@@ -893,7 +893,7 @@ export function MapCanvas({
                 // Where you came FROM answers in bright foreground, where
                 // the field goes NEXT in its line's own colour, and
                 // everything else is a hairline in the border tone.
-                stroke={lit ? 'var(--color-fg)' : (main ?? 'var(--color-line)')}
+                stroke={lit ? 'var(--color-foreground)' : (main ?? 'var(--color-border)')}
                 strokeOpacity={lit || main ? 1 : 0.85}
                 strokeWidth={(lit ? 2.4 : main ? 2.6 : 1.1) / view.k}
                 strokeLinecap="round"
@@ -1055,19 +1055,19 @@ export function MapCanvas({
                   // line's own colour.
                   fill={
                     invalid
-                      ? 'var(--color-bad)'
+                      ? 'var(--color-destructive)'
                       : isRoot
-                        ? 'var(--color-fg)'
+                        ? 'var(--color-foreground)'
                         : planned
                           ? 'var(--color-surface-3)'
-                          : (onMain ?? 'var(--color-line-strong)')
+                          : (onMain ?? 'var(--color-border-strong)')
                   }
                   fillOpacity={planned ? 0.6 : onMain ? 1 : 0.92}
                   stroke={
                     selected
-                      ? 'var(--color-fg)'
+                      ? 'var(--color-foreground)'
                       : planned
-                        ? 'var(--color-muted)'
+                        ? 'var(--color-muted-foreground)'
                         : 'transparent'
                   }
                   strokeWidth={selected ? 2 : 1.2}
@@ -1085,7 +1085,7 @@ export function MapCanvas({
                       cx={0}
                       cy={0}
                       r={r + HELD_RING / view.k}
-                      fill="var(--color-fg)"
+                      fill="var(--color-foreground)"
                       opacity={0.1}
                     />
                     <circle
@@ -1093,7 +1093,7 @@ export function MapCanvas({
                       cy={0}
                       r={r + HELD_RING / view.k}
                       fill="none"
-                      stroke="var(--color-fg)"
+                      stroke="var(--color-foreground)"
                       strokeWidth={2.5 / view.k}
                       strokeDasharray={`${5 / view.k} ${4 / view.k}`}
                       opacity={0.95}
@@ -1136,7 +1136,7 @@ export function MapCanvas({
                     <circle cx={-r * 0.8} cy={-r * 0.8} r={3 * inv} fill="var(--color-warn)" />
                   )}
                   {(cov?.gapCount ?? 0) > 0 && (
-                    <circle cx={-r * 0.8} cy={r * 0.8} r={3 * inv} fill="var(--color-bad)" />
+                    <circle cx={-r * 0.8} cy={r * 0.8} r={3 * inv} fill="var(--color-destructive)" />
                   )}
                   {/* Muted, not primary: a note is a fact about a dot,
                       and the accent now means one thing only. */}
@@ -1145,7 +1145,7 @@ export function MapCanvas({
                       cx={r * 0.8}
                       cy={-r * 0.8}
                       r={3 * inv}
-                      fill="var(--color-muted)"
+                      fill="var(--color-muted-foreground)"
                     />
                   )}
                   {gapCount > 0 && (
@@ -1157,7 +1157,7 @@ export function MapCanvas({
                         fontSize={9.5 * inv}
                         fontWeight={700}
                         textAnchor="middle"
-                        fill="var(--color-warn-fg)"
+                        fill="var(--color-warn-foreground)"
                       >
                         {gapCount}
                       </text>
@@ -1176,7 +1176,7 @@ export function MapCanvas({
                   // whole point of the search is reading which dots these
                   // are, and at a fitted overview the labels are gone.
                   opacity={matches?.has(id) ? 1 : labelOpacity}
-                  fill={invalid ? 'var(--color-bad)' : 'var(--color-fg)'}
+                  fill={invalid ? 'var(--color-destructive)' : 'var(--color-foreground)'}
                 >
                   {clip(move, 16)}
                 </text>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useDismiss, useFloating, type Box } from '@/lib/floating';
 import { autoFocusField } from '@/lib/media';
 import { SearchInput } from '@/ui/Input';
@@ -193,7 +193,7 @@ export function OpeningPicker({
           openPicker();
         }}
         className={cn(
-          'border-line bg-surface-inset text-fg flex h-9 min-w-0 items-center rounded-md border',
+          'border-border bg-surface-inset text-foreground flex h-9 min-w-0 items-center rounded-md border',
           'px-2.5 text-left text-sm transition-colors duration-100',
           'hover:border-primary/40',
         )}
@@ -239,10 +239,10 @@ export function OpeningPicker({
                       onClick={() => pick(o)}
                       className={cn(
                         'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-sm',
-                        'hover:bg-surface-2 transition-colors duration-100 pointer-coarse:py-2.5',
+                        'hover:bg-accent transition-colors duration-100 pointer-coarse:py-2.5',
                         o.name === value.name && o.eco === value.eco
                           ? 'text-primary font-medium'
-                          : 'text-fg',
+                          : 'text-foreground',
                       )}
                     >
                       {o.eco && (
@@ -291,13 +291,13 @@ export function OpeningPicker({
                 maxHeight: Math.min(384, pop.placement?.room ?? 384),
               }}
               className={cn(
-                'bg-surface border-line z-50 flex flex-col overflow-hidden rounded-lg border',
+                'bg-card border-border z-50 flex flex-col overflow-hidden rounded-lg border',
                 'shadow-pop',
               )}
             >
               {/* Above the scroll, not inside it: the search stays put
                   while the catalogue scrolls under it. */}
-              <div className="border-line shrink-0 border-b p-2">{searchBox}</div>
+              <div className="border-border shrink-0 border-b p-2">{searchBox}</div>
               <div className="flex min-h-0 flex-1 flex-col p-1">{list}</div>
             </div>,
             document.body,

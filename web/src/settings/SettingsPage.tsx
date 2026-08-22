@@ -13,7 +13,7 @@ import { SettingRow } from '@/ui/SettingRow';
 import { Switch } from '@/ui/Switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { formatWhen } from '@/lib/dates';
 import { navigate, up } from '@/lib/router';
 import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type PieceSet, type SoundChoice } from '@/store/prefs';
@@ -65,7 +65,7 @@ export function SettingsPage() {
       return (
         <PageShell width="narrow">
           <div>
-            <p className="text-bad mb-3 text-sm">{loadError}</p>
+            <p className="text-destructive mb-3 text-sm">{loadError}</p>
             <Button variant="secondary" size="sm" onClick={() => void refresh()}>
               {t('Try again')}
             </Button>
@@ -152,9 +152,9 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section className="bg-surface border-line rounded-xl border p-4">
+    <section className="bg-card border-border rounded-xl border p-4">
       <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
-        <Icon className="text-muted size-4" />
+        <Icon className="text-muted-foreground size-4" />
         {title}
       </h2>
       <div className="flex flex-col gap-3">{children}</div>
@@ -184,7 +184,7 @@ function FieldGroup({ label, children }: { label: string; children: React.ReactN
 function Feedback({ note }: { note: { kind: 'ok' | 'error'; text: string } | null }) {
   if (!note) return null;
   return (
-    <p className={note.kind === 'ok' ? 'text-good text-sm' : 'text-bad text-sm'} role="status">
+    <p className={note.kind === 'ok' ? 'text-good text-sm' : 'text-destructive text-sm'} role="status">
       {note.text}
     </p>
   );
@@ -330,7 +330,7 @@ function VersionCard() {
           appeared to say otherwise. */}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-subtle">{t('Server')}</dt>
-        <dd className="text-fg font-mono">{server ?? '—'}</dd>
+        <dd className="text-foreground font-mono">{server ?? '—'}</dd>
         {/* Which BUILD, not which release. The version only moves once per
             release, so between releases it cannot tell a just-deployed app
             from one the phone has been holding in a cache — the question
@@ -349,13 +349,13 @@ function VersionCard() {
         ) : build ? (
           <>
             <dt className="text-subtle">{t('Built')}</dt>
-            <dd className="text-fg font-mono">{build}</dd>
+            <dd className="text-foreground font-mono">{build}</dd>
           </>
         ) : null}
         {app && (
           <>
             <dt className="text-subtle">{t('Desktop app')}</dt>
-            <dd className="text-fg font-mono">{app}</dd>
+            <dd className="text-foreground font-mono">{app}</dd>
           </>
         )}
       </dl>
@@ -371,7 +371,7 @@ function VersionCard() {
             <span
               className={cn(
                 'min-w-0 flex-1 break-words text-sm',
-                update.state === 'failed' ? 'text-bad' : 'text-muted',
+                update.state === 'failed' ? 'text-destructive' : 'text-muted-foreground',
               )}
             >
               {update.state === 'available'
@@ -507,7 +507,7 @@ function AppearanceCard() {
                   'flex items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-colors duration-100',
                   schemeId === preset.id
                     ? 'border-primary/60 bg-primary-soft text-primary'
-                    : 'border-line text-muted hover:border-line-strong hover:text-fg',
+                    : 'border-border text-muted-foreground hover:border-border-strong hover:text-foreground',
                 )}
               >
                 <span
@@ -680,8 +680,8 @@ function SoundCard() {
 
       <label className={cn('grid gap-1', !sound && 'opacity-50')}>
         <span className="flex items-baseline justify-between text-sm">
-          <span className="text-muted">{t('Volume')}</span>
-          <span className="text-fg font-mono tabular-nums">{Math.round(soundVolume * 100)}%</span>
+          <span className="text-muted-foreground">{t('Volume')}</span>
+          <span className="text-foreground font-mono tabular-nums">{Math.round(soundVolume * 100)}%</span>
         </span>
         <input
           type="range"
@@ -738,7 +738,7 @@ function BoardPreview({ theme }: { theme: BoardTheme }) {
   return (
     <span
       aria-hidden
-      className="border-line block size-9 shrink-0 rounded-md border"
+      className="border-border block size-9 shrink-0 rounded-md border"
       style={{
         backgroundColor: 'var(--board-light)',
         backgroundImage: 'repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%)',
@@ -754,13 +754,13 @@ function SecurityCard({ settings, onChanged }: { settings: Settings; onChanged: 
   return (
     <Card icon={ShieldCheck} title={t('Security')}>
       <PasswordBlock gate={settings.gate} />
-      <hr className="border-line" />
+      <hr className="border-border" />
       <TotpBlock settings={settings} onChanged={onChanged} />
       {/* Only when a gate exists: with no password there is no session to
           end, and a Sign out that reloads into an open app is noise. */}
       {settings.gate && (
         <>
-          <hr className="border-line" />
+          <hr className="border-border" />
           <SignOutBlock />
         </>
       )}
@@ -1039,7 +1039,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
         lichess.org/account/oauth/token/create
       </a>
       {settings.lichess.configured && (
-        <p className="text-muted text-sm">
+        <p className="text-muted-foreground text-sm">
           {t('A token ending in {last4} is configured.', { last4: `…${settings.lichess.last4}` })}
         </p>
       )}
@@ -1060,7 +1060,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
             type="button"
             onClick={() => setShow((v) => !v)}
             title={show ? 'Hide token' : 'Show token'}
-            className="text-subtle hover:text-fg absolute inset-y-0 right-0 grid w-9 place-items-center"
+            className="text-subtle hover:text-foreground absolute inset-y-0 right-0 grid w-9 place-items-center"
           >
             {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
@@ -1174,7 +1174,7 @@ function RecoveryCard() {
               className="flex items-center justify-between gap-2 py-1"
             >
               <span className="min-w-0">
-                <span className="text-fg block truncate text-sm">{item.id}</span>
+                <span className="text-foreground block truncate text-sm">{item.id}</span>
                 <span className="text-subtle text-xs">
                   {t('{kind} · deleted {when}', {
                     kind: kindLabel(item.kind),
@@ -1295,7 +1295,7 @@ function BrowsedGamesCard() {
            useSlowLoad: the choice here is not flash-or-nothing, it is
            flash-or-shove. */
         <>
-          <div className="divide-line border-line divide-y rounded-lg border">
+          <div className="divide-border border-border divide-y rounded-lg border">
             <div className="flex items-center gap-2 px-3 py-2">
               <div className="flex h-5 min-w-0 flex-1 items-center">
                 <Skeleton className="h-3 w-24" />
@@ -1316,7 +1316,7 @@ function BrowsedGamesCard() {
       )}
       {players !== null && players.length > 0 && (
         <>
-          <ul className="divide-line border-line divide-y rounded-lg border">
+          <ul className="divide-border border-border divide-y rounded-lg border">
             {players.map((p) => (
               <li key={`${p.provider}/${p.user}`} className="flex items-baseline gap-2 px-3 py-2">
                 <p className="min-w-0 flex-1 truncate text-base">{p.user}</p>
@@ -1395,12 +1395,12 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
   // other window, only more so.
   return (
     <Modal title="Wipe the entire vault?" icon={Trash2} onClose={onClose}>
-      <p className="text-muted text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
       </p>
       {gate && (
         <label className="flex flex-col gap-1">
-          <span className="text-muted text-sm font-medium">{t('Confirm your app password')}</span>
+          <span className="text-muted-foreground text-sm font-medium">{t('Confirm your app password')}</span>
           <Input
             autoFocus
             inputSize="lg"

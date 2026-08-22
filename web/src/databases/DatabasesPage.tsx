@@ -72,20 +72,20 @@ export function DatabasesPage() {
         // What is mounted, and why there is nothing to press. Only the
         // count: this mount has no name to show, and its size cannot be
         // measured through the demo's in-memory filesystem.
-        <div className="border-line bg-surface flex shrink-0 flex-col gap-1 rounded-xl border p-4 text-sm">
+        <div className="border-border bg-card flex shrink-0 flex-col gap-1 rounded-xl border p-4 text-sm">
           {meta.ready ? (
             <>
-              <p className="text-fg font-medium">
+              <p className="text-foreground font-medium">
                 {t('{n} games', { n: (meta.games ?? 0).toLocaleString() })}
               </p>
-              <p className="text-muted leading-relaxed">
+              <p className="text-muted-foreground leading-relaxed">
                 {t(
                   'This database is read-only. Uploading collections and building databases need the installed app.',
                 )}
               </p>
             </>
           ) : (
-            <p className="text-muted leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed">
               {t('This server has no reference games database.')}
             </p>
           )}

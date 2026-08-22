@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -42,7 +42,7 @@ export function ClearButton({
       onPointerDown={(e) => e.preventDefault()}
       onClick={onClear}
       className={cn(
-        'text-subtle hover:text-fg hover:bg-fg/10 absolute top-1/2 grid -translate-y-1/2',
+        'text-subtle hover:text-foreground hover:bg-foreground/10 absolute top-1/2 grid -translate-y-1/2',
         'size-5 place-items-center rounded-full transition-colors duration-100',
         // 20px of disc, which a thumb misses — and misses expensively,
         // since the field it lands on instead reopens the keyboard. The

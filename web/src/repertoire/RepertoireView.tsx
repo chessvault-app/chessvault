@@ -38,7 +38,7 @@ import { navigate, up } from '@/lib/router';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/ui/Button';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { rememberDrill, rememberedDrill } from '@/lib/training';
@@ -191,7 +191,7 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
     // top edge against 20px).
     <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
-      <span className={cn('min-w-0 flex-1 truncate text-base', toMove ? 'text-fg font-medium' : 'text-subtle')}>
+      <span className={cn('min-w-0 flex-1 truncate text-base', toMove ? 'text-foreground font-medium' : 'text-subtle')}>
         {side === 'white' ? t('White') : t('Black')}
       </span>
     </div>
@@ -1069,7 +1069,7 @@ export function RepertoireView() {
 
   const header = (
     <>
-      <h1 className="text-fg text-base font-semibold">{t('Repertoire')}</h1>
+      <h1 className="text-foreground text-base font-semibold">{t('Repertoire')}</h1>
       {/* What sparring is, behind a ? instead of a paragraph the idle
           panel made every visit re-read (lanph3re's call). */}
       <InfoTip label="Repertoire">
@@ -1186,9 +1186,9 @@ export function RepertoireView() {
       {mode === 'drill' && mapDrill ? (
         // Sent over by the opening map: the whole repertoire as one
         // scope. Letting it go returns the ordinary study picker.
-        <div className="border-line flex flex-col gap-1 rounded-lg border p-2">
-          <span className="text-muted text-sm font-medium">{t('From the opening map')}</span>
-          <p className="text-fg text-sm">{mapDrill.label}</p>
+        <div className="border-border flex flex-col gap-1 rounded-lg border p-2">
+          <span className="text-muted-foreground text-sm font-medium">{t('From the opening map')}</span>
+          <p className="text-foreground text-sm">{mapDrill.label}</p>
           <p className="text-subtle text-sm">
             {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
           </p>
@@ -1203,7 +1203,7 @@ export function RepertoireView() {
         </div>
       ) : mode === 'drill' ? (
         studyList !== null && studyList.length === 0 ? (
-          <p className="text-muted text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             {t('No studies yet — create one in Studies, or save a line you played first.')}
           </p>
         ) : (
@@ -1391,12 +1391,12 @@ export function RepertoireView() {
       onClick={openSetup}
       title={t('Set up a new game')}
       className={cn(
-        'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-        'border-line border px-3 py-2.5 text-left transition-colors duration-100',
+        'bg-muted hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+        'border-border border px-3 py-2.5 text-left transition-colors duration-100',
       )}
     >
       <Settings2 className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-      <span className="text-fg min-w-0 flex-1 text-sm">{setupTerms}</span>
+      <span className="text-foreground min-w-0 flex-1 text-sm">{setupTerms}</span>
       <ChevronRight className="text-subtle size-3.5 shrink-0" />
     </button>
   );
@@ -1492,14 +1492,14 @@ export function RepertoireView() {
         /* The trainers' own headline size — the puzzle panel sets its
            verdict in text-base font-semibold, and this is the same line
            at the same moment: what the board in front of you is. */
-        <p className="text-fg text-base font-semibold leading-snug">{setupLine}</p>
+        <p className="text-foreground text-base font-semibold leading-snug">{setupLine}</p>
       ) : (
         <p
           className={cn(
             'text-sm leading-relaxed',
             (phase === 'ended' && endKind === 'gap') || (drillNotice && phase === 'playing')
               ? 'text-warn'
-              : 'text-muted',
+              : 'text-muted-foreground',
           )}
         >
           {phase === 'ended'
@@ -1527,7 +1527,7 @@ export function RepertoireView() {
           the fix. A tokenless user read "could not reach" as
           the app being broken. */}
       {error && source === ONLINE_SOURCE && (
-        <p className="text-muted text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {t('The online database goes through your Lichess token.')}{' '}
           <a href="#/settings" className="text-primary hover:underline">
             {t('Add one in Settings')}

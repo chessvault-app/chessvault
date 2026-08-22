@@ -1,7 +1,7 @@
 import { Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { navigate } from '@/lib/router';
@@ -158,7 +158,7 @@ export function ThemesPage() {
           <PageHeader
             title={t('Puzzle themes')}
             back={() => navigate('puzzles', 'hub')}
-            actions={error && <span className="text-bad text-sm">{error}</span>}
+            actions={error && <span className="text-destructive text-sm">{error}</span>}
           />
           <SearchInput
             inputSize="sm"
@@ -279,7 +279,7 @@ function ThemeCard({
         'transition-colors duration-100',
         highlight
           ? 'bg-primary-soft border-primary/30 hover:border-primary/60'
-          : 'bg-surface border-line hover:border-line-strong hover:bg-surface-2',
+          : 'bg-card border-border hover:border-border-strong hover:bg-accent',
         className,
       )}
     >
@@ -290,7 +290,7 @@ function ThemeCard({
         )}
       />
       <span className="min-w-0 flex-1">
-        <span className={cn('block truncate text-sm font-medium', highlight ? 'text-primary' : 'text-fg')}>
+        <span className={cn('block truncate text-sm font-medium', highlight ? 'text-primary' : 'text-foreground')}>
           {label}
         </span>
         <span className="text-subtle block font-mono text-xs">

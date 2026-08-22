@@ -6,7 +6,7 @@ import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { Button } from '@/ui/Button';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -87,7 +87,7 @@ export function AnswerPanel({
       {onPromote && <PromoteStrip tree={tree} cursorId={cursorId} onPromote={onPromote} />}
       {/* The navigation toolbar — hidden on phones, where the bottom action
           bar owns move navigation (no duplicate). */}
-      <div className="border-line flex w-full shrink-0 items-center justify-center gap-1 border-t py-1 max-md:hidden">
+      <div className="border-border flex w-full shrink-0 items-center justify-center gap-1 border-t py-1 max-md:hidden">
         <Button
           variant="ghost"
           size="icon"
@@ -128,7 +128,7 @@ export function AnswerPanel({
           <>
             {/* The divider BoardControls draws in the same place, for the
                 same reason: flipping is not a step through the line. */}
-            <div className="bg-line mx-1 h-5 w-px" />
+            <div className="bg-border mx-1 h-5 w-px" />
             <Button variant="ghost" size="icon" title={t('Flip board')} onClick={onFlip}>
               <FlipVertical2 className="size-[1.1rem]" />
             </Button>

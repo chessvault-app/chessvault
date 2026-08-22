@@ -2,7 +2,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { BoardControls } from '@/board/AnalysisBoard';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Panel, PanelHeader } from '@/ui/Panel';
 
@@ -43,7 +43,7 @@ export function AnalysisMovesPanel({
         }
       />
       <MoveTreePane />
-      <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+      <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />
     </Panel>
   );
 }

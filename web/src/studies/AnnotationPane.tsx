@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { NAG_GLYPH } from '@/analysis/notation';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { autoFocusField } from '@/lib/media';
 import { Button } from '@/ui/Button';
@@ -132,7 +132,7 @@ export function AnnotationPane({
           onClick={() => toggleNag(nag, QUALITY_NAGS)}
         />
       ))}
-      <span className="bg-line mx-1 h-4 w-px" />
+      <span className="bg-border mx-1 h-4 w-px" />
       {ASSESSMENT_NAGS.map((nag) => (
         <NagButton
           key={nag}
@@ -157,7 +157,7 @@ export function AnnotationPane({
       title={t(paletteOpen ? 'Hide glyphs' : 'Show glyphs')}
       onClick={() => setPaletteOpen((open) => !open)}
       className={cn(
-        'text-muted hover:bg-surface-2 hover:text-fg flex shrink-0 items-center self-stretch',
+        'text-muted-foreground hover:bg-accent hover:text-foreground flex shrink-0 items-center self-stretch',
         'rounded-sm px-1 transition-colors duration-100',
       )}
     >
@@ -173,7 +173,7 @@ export function AnnotationPane({
   };
 
   return (
-    <div className={cn('border-line flex shrink-0 flex-col gap-1.5 border-t px-3 py-2', className)}>
+    <div className={cn('border-border flex shrink-0 flex-col gap-1.5 border-t px-3 py-2', className)}>
       {!atRoot && paletteOpen && palette}
       <div className="flex items-stretch gap-1">
         {!atRoot && toggle}
@@ -185,10 +185,10 @@ export function AnnotationPane({
           <button
             type="button"
             onClick={() => setSheet(true)}
-            className="border-line bg-surface-inset min-h-9 min-w-0 flex-1 rounded-md border px-2.5 py-2 text-left text-sm leading-relaxed"
+            className="border-border bg-surface-inset min-h-9 min-w-0 flex-1 rounded-md border px-2.5 py-2 text-left text-sm leading-relaxed"
           >
             {draft ? (
-              <span className="text-fg line-clamp-2 whitespace-pre-wrap">{draft}</span>
+              <span className="text-foreground line-clamp-2 whitespace-pre-wrap">{draft}</span>
             ) : (
               <span className="text-subtle">{placeholder}</span>
             )}
@@ -265,7 +265,7 @@ function NagButton({
         'pointer-coarse:h-8 pointer-coarse:min-w-8',
         active
           ? 'bg-primary-soft text-primary'
-          : 'text-muted hover:bg-surface-2 hover:text-fg',
+          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
       )}
     >
       {glyph}

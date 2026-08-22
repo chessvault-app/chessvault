@@ -6,7 +6,7 @@ import type { Color, Dests, Key, Piece, Role } from '@lichess-org/chessground/ty
 import { useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react';
 import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /** The underlying chessground handle, for callers that need direct calls
     (e.g. the editor starting a spare-piece drag from its palette). */

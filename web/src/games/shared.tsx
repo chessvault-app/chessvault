@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Board } from '@/board/Board';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { placeNear } from '@/lib/floating';
 
 import { Button } from '@/ui/Button';
@@ -116,7 +116,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     return (
       <div className="fixed inset-0 z-50 grid place-items-center p-8">
         <div className="bg-scrim absolute inset-0" />
-        <div ref={card} className="border-line bg-surface relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-pop">
+        <div ref={card} className="border-border bg-card relative w-64 max-w-[80vw] rounded-xl border p-1.5 shadow-pop">
           <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
         </div>
       </div>
@@ -126,7 +126,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     <div
       ref={card}
       style={{ top: preview.top, left: preview.left }}
-      className="border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-pop"
+      className="border-border bg-card pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-pop"
     >
       <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-sm" />
     </div>
@@ -263,15 +263,15 @@ export function GameRow({
       // row at widths the layout should never reach, which beats a row of
       // numbers printed on top of each other at widths it did.
       className={cn(
-        'group hover:bg-surface-2 relative flex cursor-pointer flex-wrap items-center gap-3',
+        'group hover:bg-accent relative flex cursor-pointer flex-wrap items-center gap-3',
         'overflow-hidden px-3 py-2 transition-colors duration-100',
         // The whole indicator that a game is kept: a warm edge down the
         // left, which costs no width. The lit star that used to stand at
         // the end of the row cost about 36px of two player names on every
         // phone, to say what this says for nothing.
         //
-        // Painted, not bordered. `divide-line` on the list sets
-        // border-color on every child through `.divide-line > *`, which
+        // Painted, not bordered. `divide-border` on the list sets
+        // border-color on every child through `.divide-border > *`, which
         // outranks a plain `border-l-warn` on the row — the edge came out
         // the same grey as the hairlines between rows.
         bookmarked && 'before:bg-warn before:absolute before:inset-y-0 before:left-0 before:w-0.5',
@@ -293,7 +293,7 @@ export function GameRow({
           {customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
-            <p className="text-fg truncate text-base font-semibold">
+            <p className="text-foreground truncate text-base font-semibold">
               {customName}
               {game.annotated && (
                 <NotebookPen className="text-info ml-1.5 inline size-3" aria-label={t('Annotated')} />
@@ -308,7 +308,7 @@ export function GameRow({
                   came last — so an archive of long handles showed two
                   names and no ratings at all. The name is the only part
                   that gives way. */}
-              <p className="text-fg flex items-baseline gap-1.5 text-base">
+              <p className="text-foreground flex items-baseline gap-1.5 text-base">
                 <SideDot side="white" className="shrink-0 translate-y-[-1px]" />
                 <span
                   className={cn(
@@ -325,7 +325,7 @@ export function GameRow({
                   <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
                 )}
               </p>
-              <p className="text-fg flex items-baseline gap-1.5 text-base">
+              <p className="text-foreground flex items-baseline gap-1.5 text-base">
                 <SideDot side="black" className="shrink-0 translate-y-[-1px]" />
                 <span
                   className={cn(
@@ -480,7 +480,7 @@ export function GameRow({
           rel="noreferrer"
           title={t('View on chess.com (needs internet)')}
           onClick={(e) => e.stopPropagation()}
-          className="text-subtle hover:text-fg shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
+          className="text-subtle hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
         >
           <ExternalLink className="size-3.5" />
         </a>
@@ -513,12 +513,12 @@ export function ResultScore({
   // and a loss are not the same fact, and the list is mostly their games.
   const tone =
     parts.length !== 2 || !winner
-      ? 'bg-surface-3 text-muted'
+      ? 'bg-surface-3 text-muted-foreground'
       : !userSide
-        ? 'bg-surface-3 text-fg'
+        ? 'bg-surface-3 text-foreground'
         : userSide === winner
           ? 'bg-good/15 text-good'
-          : 'bg-bad/15 text-bad';
+          : 'bg-destructive/15 text-destructive';
   return (
     <span
       title={fmtResult(result)}

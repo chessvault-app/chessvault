@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -138,7 +138,7 @@ function StudyList() {
         create={<CreateMenu />}
       />
 
-      {error && <p className="text-bad text-sm">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       {!listLoaded ? (
         // The shape of the list that is coming, rather than a blank page
@@ -456,7 +456,7 @@ function CreateMenu() {
             label="PGN"
             hint={
               pgnText.trim() ? (
-                <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-bad')}>
+                <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-destructive')}>
                   {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
                 </span>
               ) : null
@@ -492,7 +492,7 @@ function CreateMenu() {
             className="hidden"
             onChange={(e) => void pickFile(e.target.files?.[0])}
           />
-          {failure && <p className="text-bad text-sm">{failure}</p>}
+          {failure && <p className="text-destructive text-sm">{failure}</p>}
           {/* mt-1 on top of the window's own gap-3: the fields are a group,
               and what commits them should not look like another one. */}
           <div className="mt-1 flex justify-end gap-2">
@@ -631,11 +631,11 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               </span>
             }
           >
-            <div className="border-line max-h-60 overflow-y-auto rounded-md border">
+            <div className="border-border max-h-60 overflow-y-auto rounded-md border">
               {list.map(({ id, name }) => (
                 <label
                   key={id}
-                  className="hover:bg-surface-2 flex cursor-pointer items-center gap-2 px-2 py-1.5 text-base"
+                  className="hover:bg-accent flex cursor-pointer items-center gap-2 px-2 py-1.5 text-base"
                 >
                   <input
                     type="checkbox"
@@ -671,7 +671,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           )}
         </>
       )}
-      {failure && <p className="text-bad text-sm">{failure}</p>}
+      {failure && <p className="text-destructive text-sm">{failure}</p>}
       <div className="mt-1 flex justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}

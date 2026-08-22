@@ -1,7 +1,7 @@
 import { HelpCircle } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useDismiss, useFloating, type Box } from '@/lib/floating';
 import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
@@ -44,7 +44,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
         // invisible inset takes the thumb's target to 44px. Anchored on
         // the button, which is safe: the popover hangs off the wrapper.
         className={cn(
-          'text-subtle hover:text-fg relative grid size-5 place-items-center rounded-full transition-colors duration-100',
+          'text-subtle hover:text-foreground relative grid size-5 place-items-center rounded-full transition-colors duration-100',
           'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
         )}
         onMouseEnter={open}
@@ -77,7 +77,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
             role="tooltip"
             style={tip.style}
             className={
-              'bg-surface border-line text-muted z-50 w-64 ' +
+              'bg-card border-border text-muted-foreground z-50 w-64 ' +
               'rounded-lg border p-3 text-sm font-normal normal-case leading-relaxed tracking-normal ' +
               'shadow-pop'
             }
@@ -89,7 +89,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
 
       {sheet && (
         <Sheet label={t(label)} onClose={() => setSheet(false)}>
-          <p className="text-muted text-sm leading-relaxed">{children}</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">{children}</p>
         </Sheet>
       )}
     </span>

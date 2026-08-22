@@ -1,6 +1,6 @@
 import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from './Button';
 import { ActionSheet, type SheetAction } from './ActionSheet';
 import { MiniBoard } from './MiniBoard';
@@ -92,13 +92,13 @@ export function ShelfCard({
         }}
         {...swipe.handlers}
         className={cn(
-          'bg-surface border-line group relative flex h-full cursor-pointer gap-3',
+          'bg-card border-border group relative flex h-full cursor-pointer gap-3',
           'overflow-hidden rounded-xl border shadow-panel',
           // Lifts a little under the pointer, and the border comes up with
           // it. A card that only changed its border read as selected; one
           // that rises reads as reachable.
           'transition-[border-color,box-shadow,transform] duration-150',
-          'hover:border-line-strong hover:shadow-pop md:hover:-translate-y-px',
+          'hover:border-border-strong hover:shadow-pop md:hover:-translate-y-px',
           layout === 'grid' ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
           // A bookmarked card says so before it is read: a warm edge down
           // the left. It is the WHOLE indicator now — the filled star that
@@ -135,7 +135,7 @@ export function ShelfCard({
                 ⋯ alone is 36. */}
             <p
               className={cn(
-                'text-fg truncate font-semibold',
+                'text-foreground truncate font-semibold',
                 layout === 'grid' ? 'text-base leading-6' : 'text-base',
                 onToggleMark ? 'pr-14 pointer-coarse:pr-9' : 'pr-7 pointer-coarse:pr-9',
               )}
@@ -147,11 +147,11 @@ export function ShelfCard({
                 words sit between them. */}
             <p className="text-subtle text-xs leading-4">{meta}</p>
             {preview && layout === 'grid' && (
-              <p className="text-muted mt-1 line-clamp-2 text-sm leading-[1.35rem] opacity-90">
+              <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-[1.35rem] opacity-90">
                 {preview}
               </p>
             )}
-            {error && <p className="text-bad text-sm">{error}</p>}
+            {error && <p className="text-destructive text-sm">{error}</p>}
           </div>
         </div>
 

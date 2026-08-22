@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { BOARD_WIDE_COLUMN, BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
@@ -19,7 +19,7 @@ import { t } from '@/lib/i18n';
  *    fast enough that the right thing to show is nothing at all.
  */
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('bg-surface-2 animate-pulse rounded-md', className)} />;
+  return <div className={cn('bg-muted animate-pulse rounded-md', className)} />;
 }
 
 /**
@@ -124,7 +124,7 @@ export function SkeletonCards({
           <div
             key={i}
             className={cn(
-              'bg-surface border-line flex gap-3 rounded-xl border shadow-panel',
+              'bg-card border-border flex gap-3 rounded-xl border shadow-panel',
               grid ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
             )}
           >
@@ -168,7 +168,7 @@ export function SkeletonBookCards({ cards = 4, className }: { cards?: number; cl
       {Array.from({ length: cards }, (_, i) => (
         <div
           key={i}
-          className="bg-surface border-line flex w-full items-stretch gap-3 rounded-xl border p-3"
+          className="bg-card border-border flex w-full items-stretch gap-3 rounded-xl border p-3"
         >
           {/* Exactly the cover's own box (h-24 w-[4.5rem]), so the card is
               the size it will be rather than the size it looks like. */}
@@ -220,7 +220,7 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'bg-surface border-line flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
+        'bg-card border-border flex items-center gap-2.5 rounded-xl border px-3 py-2.5',
         className,
       )}
     >
@@ -307,7 +307,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
     >
       {/* The header the note keeps at the top of its column: a 28px row of
           back, name, edit and save, over the rule under it. */}
-      <div className="border-line -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 md:-mx-6 md:px-6 md:pt-6">
+      <div className="border-border -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pb-1.5 pt-4 md:-mx-6 md:px-6 md:pt-6">
         <div className="flex h-7 shrink-0 items-center gap-2">
           <Skeleton className="size-7 shrink-0 rounded-md" />
           <Skeleton className="h-3.5 min-w-0 flex-1" />
@@ -414,7 +414,7 @@ export function SkeletonBoard({
       <div className={cn('flex min-h-0 flex-1 flex-col gap-3', BOARD_WIDE_SIDE)}>
         <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden">{titleRow}</div>
         {/* What a phone has instead of the panels: the pane switcher. */}
-        <div className="bg-surface-2 border-line flex shrink-0 gap-0.5 rounded-lg border p-px lg:hidden">
+        <div className="bg-muted border-border flex shrink-0 gap-0.5 rounded-lg border p-px lg:hidden">
           {[0, 1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-6 flex-1 rounded-md" />
           ))}
@@ -427,26 +427,26 @@ export function SkeletonBoard({
             without them started its main panel 104px too high and ended
             it 42px too low. */}
         {chapters && (
-          <div className="bg-surface border-line flex shrink-0 flex-col overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
-            <div className="border-line flex h-10 shrink-0 items-center border-b px-3">
+          <div className="bg-card border-border flex shrink-0 flex-col overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
+            <div className="border-border flex h-10 shrink-0 items-center border-b px-3">
               <Skeleton className="h-2.5 w-20" />
             </div>
             <div className="flex h-10 items-center px-2">
               <Skeleton className="h-3 w-2/3" />
             </div>
-            <div className="bg-surface-2 h-2.5 shrink-0" />
+            <div className="bg-muted h-2.5 shrink-0" />
           </div>
         )}
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
             ran out, in a column the page fills to the bottom. */}
-        <div className="bg-surface border-line flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border p-3 shadow-panel">
+        <div className="bg-card border-border flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border p-3 shadow-panel">
           {Array.from({ length: 8 }, (_, i) => (
             <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
           ))}
         </div>
         {explorer && (
-          <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
+          <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border shadow-panel max-lg:hidden">
             <div className="flex h-10 items-center px-3">
               <Skeleton className="h-2.5 w-16" />
             </div>
@@ -479,7 +479,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
         <Skeleton className="h-4 w-28" />
       </div>
       {Array.from({ length: groups }, (_, g) => (
-        <div key={g} className="border-line bg-surface rounded-xl border p-4">
+        <div key={g} className="border-border bg-card rounded-xl border p-4">
           {/* The card's heading: an icon beside a title, on a 24px line. */}
           <div className="mb-3 flex h-6 items-center gap-2">
             <Skeleton className="size-4 shrink-0 rounded-sm" />
@@ -489,7 +489,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
             {Array.from({ length: 2 }, (_, i) => (
               <div
                 key={i}
-                className="border-line bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
+                className="border-border bg-surface-inset flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
               >
                 <div className="min-w-0">
                   <div className="flex h-6 items-center">
@@ -523,7 +523,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
   return (
     <Loading
       className={cn(
-        'border-line flex flex-wrap items-center gap-1.5 border-b px-3 py-2',
+        'border-border flex flex-wrap items-center gap-1.5 border-b px-3 py-2',
         className,
       )}
     >
@@ -546,7 +546,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
 export function SkeletonGameRows({ rows = 6, className }: { rows?: number; className?: string }) {
   const names = ['w-2/5', 'w-1/2', 'w-1/3', 'w-5/12', 'w-2/5', 'w-1/2'];
   return (
-    <Loading className={cn('divide-line divide-y', className)}>
+    <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-3 py-2">
           {/* The real row stacks three <p>s with no gap between them: two

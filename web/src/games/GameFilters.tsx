@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Select } from '@/ui/Select';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
@@ -27,7 +27,7 @@ export type ResultFilter = 'any' | '1-0' | '0-1' | '1/2-1/2';
 /** The standard one-line rail the filter selects sit in. */
 export function FilterRow({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <div className={cn('border-line flex flex-wrap items-center gap-1.5 px-3 py-2', className)}>
+    <div className={cn('border-border flex flex-wrap items-center gap-1.5 px-3 py-2', className)}>
       {children}
     </div>
   );

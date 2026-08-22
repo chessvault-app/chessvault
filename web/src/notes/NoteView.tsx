@@ -1,7 +1,7 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, Pencil } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { usePrefs } from '@/store/prefs';
@@ -82,7 +82,7 @@ export function NoteView({ id }: { id: string }) {
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted text-base">{failed}</p>
+          <p className="text-muted-foreground text-base">{failed}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
             <ChevronLeft className="mr-1 size-3.5" />
             {t('All notes')}
@@ -374,7 +374,7 @@ function NoteEditor({
           read as narrower than the text it formats. */}
       <div
         className={cn(
-          'border-line bg-app sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
+          'border-border bg-background sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
           // The palette is what the small bottom padding was for: it sits
           // right above the rule and does not want a gap of its own. In
           // reading mode it renders nothing, and the header was left with
@@ -505,7 +505,7 @@ function NoteTitle({ id }: { id: string }) {
           setEditing(true);
         }}
         title={failure ?? id}
-        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-bad' : 'text-fg')}
+        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
       >
         {folder && <span className="text-subtle">{folder} / </span>}
         {name}

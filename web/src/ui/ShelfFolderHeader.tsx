@@ -101,7 +101,7 @@ export function ShelfFolderHeader({
         </ActionSheet>
       )}
 
-      {failure && <span className="text-bad text-sm">{failure}</span>}
+      {failure && <span className="text-destructive text-sm">{failure}</span>}
     </div>
   );
 }

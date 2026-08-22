@@ -21,7 +21,7 @@ import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
@@ -166,7 +166,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted text-base">{error ?? `Could not open “${id}”.`}</p>
+          <p className="text-muted-foreground text-base">{error ?? `Could not open “${id}”.`}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
             <ChevronLeft className="mr-1 size-3.5" />
             {t(kind === 'game' ? 'All games' : 'All studies')}
@@ -339,7 +339,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           />
           <MoveTreePane />
           <ReviewStrip />
-          <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+          <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />
           <AnnotationPane
             editing={editing}
             rootPlaceholder={t(kind === 'game' ? 'Notes on this game…' : 'Chapter introduction…')}
@@ -445,7 +445,7 @@ function TitleEditor({
           setEditing(true);
         }}
         title={failure ?? id}
-        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-bad' : 'text-fg')}
+        className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
       >
         {folder && <span className="text-subtle">{folder} / </span>}
         {name}
@@ -608,7 +608,7 @@ function ChapterRow({
         // Touch: the inline input sits where the keyboard lands — rename in
         // a top-pinned sheet instead (the annotation/opening-search idiom).
         <>
-          <span className="text-muted flex h-8 min-w-0 flex-1 items-center truncate px-1.5 text-sm">
+          <span className="text-muted-foreground flex h-8 min-w-0 flex-1 items-center truncate px-1.5 text-sm">
             {ownName}
           </span>
           <PromptSheet
@@ -646,7 +646,7 @@ function ChapterRow({
             'transition-colors duration-100',
             index === chapterIndex
               ? 'bg-primary-soft text-primary font-semibold'
-              : 'text-muted hover:bg-surface-2 hover:text-fg',
+              : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {childCount > 0 ? (
@@ -662,7 +662,7 @@ function ChapterRow({
               }}
               // Touch gets a ~32px hit area; the negative margin cancels
               // the padding so the visual layout doesn't move.
-              className="hover:text-fg -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
+              className="hover:text-foreground -m-1 shrink-0 p-1 pointer-coarse:-m-2.5 pointer-coarse:p-2.5"
             >
               <ChevronDown
                 className={cn('size-3 transition-transform duration-100', isFolded && '-rotate-90')}

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -44,7 +44,7 @@ export function FilterChip({
         'pointer-coarse:min-h-9 pointer-coarse:px-3',
         active
           ? 'bg-primary-soft border-primary/40 text-primary'
-          : 'border-line text-muted hover:border-line-strong',
+          : 'border-border text-muted-foreground hover:border-border-strong',
       )}
     >
       {typeof label === 'string' ? t(label) : label}

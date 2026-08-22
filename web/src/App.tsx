@@ -19,7 +19,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
 import { navigate, useRoute, type Section } from '@/lib/router';
@@ -122,7 +122,7 @@ function DemoBanner() {
       // by matching its own sentence, which meant the images depended on
       // a string nobody would think to check when editing it.
       data-demo-banner
-      className="text-warn border-line flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--app-bg))] px-3 py-1.5 text-center text-sm"
+      className="text-warn border-border flex shrink-0 items-center justify-center gap-2 border-b bg-[color-mix(in_oklch,var(--warn)_14%,var(--background))] px-3 py-1.5 text-center text-sm"
     >
       {t('Demo — this is a sample vault of your own. Edit anything; a reload puts it back.')}
     </div>
@@ -160,7 +160,7 @@ function Shell() {
         // left a band under the bottom bar on lanph3re's phone, and a
         // shell that is wrong while nobody is typing is worse than a
         // keyboard that misbehaves while somebody is.
-        'bg-app text-fg vv-band flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
+        'bg-background text-foreground vv-band flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
@@ -282,7 +282,7 @@ function MobileBottom({ active }: { active: Section }) {
       <div
         id={MOBILE_BAR_SLOT_ID}
         className={cn(
-          'bg-surface/85 border-line flex items-stretch border-t backdrop-blur-xl md:hidden',
+          'bg-card/85 border-border flex items-stretch border-t backdrop-blur-xl md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
           !claimed && 'hidden',
         )}
@@ -321,7 +321,7 @@ function SubNavItem({
       className={cn(
         'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
         'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
-        active ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-surface-2 hover:text-fg',
+        active ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-accent hover:text-foreground',
       )}
     >
       <Icon className="size-3.5 shrink-0" />
@@ -334,7 +334,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
   return (
     <nav
       className={cn(
-        'bg-surface border-line hidden shrink-0 flex-col border-r md:flex',
+        'bg-card border-border hidden shrink-0 flex-col border-r md:flex',
         'w-[4.25rem] lg:w-52',
       )}
     >
@@ -342,9 +342,9 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         type="button"
         onClick={() => navigate('home')}
         title={t('Home')}
-        className="hover:bg-surface-2 flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
+        className="hover:bg-accent flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
       >
-        <div className="bg-primary text-primary-fg grid size-8 shrink-0 place-items-center rounded-lg">
+        <div className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-lg">
           {/* The cburnett knight — the same knight as on the board. */}
           <KnightIcon className="size-5" />
         </div>
@@ -376,7 +376,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                     // the soft fill alone was close enough to the sidebar
                     // that the current section had to be looked for.
                     'bg-primary-soft text-primary ring-primary/30 font-semibold ring-1 ring-inset'
-                  : 'text-muted hover:bg-surface-2 hover:text-fg',
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
               {isActive && (
@@ -414,7 +414,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
-            inTools(active) ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
+            inTools(active) ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
@@ -440,7 +440,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
-            active === 'databases' ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
+            active === 'databases' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {active === 'databases' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
@@ -449,7 +449,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         </button>
       </div>
 
-      <div className="border-line flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
+      <div className="border-border flex flex-col items-center gap-1 border-t p-2 lg:flex-row lg:justify-between lg:px-3">
         <ConnectionLabel />
         <div className="flex flex-col items-center gap-1 lg:flex-row">
           <button
@@ -461,7 +461,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
               'grid size-9 place-items-center rounded-lg transition-colors duration-100',
               active === 'settings'
                 ? 'bg-primary-soft text-primary'
-                : 'text-muted hover:bg-surface-2 hover:text-fg',
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground',
             )}
           >
             <Settings className="size-[1.15rem]" strokeWidth={2} />
@@ -517,11 +517,11 @@ function MorePage() {
                 type="button"
                 onClick={() => (param ? navigate(section, param) : navigate(section))}
                 className={cn(
-                  'bg-surface border-line flex items-center gap-3 rounded-xl border p-3.5 text-left',
-                  'active:bg-surface-2 transition-colors duration-100',
+                  'bg-card border-border flex items-center gap-3 rounded-xl border p-3.5 text-left',
+                  'active:bg-accent transition-colors duration-100',
                 )}
               >
-                <div className="bg-surface-2 text-muted grid size-10 shrink-0 place-items-center rounded-lg">
+                <div className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-lg">
                   <Icon className="size-5" strokeWidth={2} />
                 </div>
                 <div className="min-w-0">
@@ -549,7 +549,7 @@ function MobileNav({ active }: { active: Section }) {
   return (
     <nav
       className={cn(
-        'bg-surface/85 border-line flex shrink-0 items-stretch border-t backdrop-blur-xl md:hidden',
+        'bg-card/85 border-border flex shrink-0 items-stretch border-t backdrop-blur-xl md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
         // Gone while the keyboard is up. The shell now ends at the top of
@@ -624,11 +624,11 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-          <div className="bg-surface-2 text-subtle grid size-14 place-items-center rounded-2xl">
+          <div className="bg-muted text-subtle grid size-14 place-items-center rounded-2xl">
             <Wrench className="size-6" strokeWidth={1.75} />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">{t('Something went wrong')}</h1>
-          <p className="text-muted text-base leading-relaxed">
+          <p className="text-muted-foreground text-base leading-relaxed">
             {t('This page hit an error it could not recover from. Reloading usually clears it — nothing in your vault is affected.')}
           </p>
           <div className="mt-1 flex gap-2">
@@ -650,11 +650,11 @@ function Placeholder({ section }: { section: Section }) {
   return (
     <div className="grid h-full place-items-center p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-        <div className="bg-surface-2 text-subtle grid size-14 place-items-center rounded-2xl">
+        <div className="bg-muted text-subtle grid size-14 place-items-center rounded-2xl">
           <Swords className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight capitalize">{section}</h1>
-        <p className="text-muted text-base leading-relaxed">{t("This page isn't available.")}</p>
+        <p className="text-muted-foreground text-base leading-relaxed">{t("This page isn't available.")}</p>
       </div>
     </div>
   );

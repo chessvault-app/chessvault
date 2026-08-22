@@ -1,7 +1,7 @@
 import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from './Button';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -59,7 +59,7 @@ export function PageHeader({
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       {header}
-      <p className="text-muted text-sm leading-relaxed">{description}</p>
+      <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
@@ -196,7 +196,7 @@ export function BookPage({ slug }: { slug: string }) {
   if (missing) {
     return (
       <div className="grid h-full place-items-center">
-        <p className="text-muted text-base">{t('That book does not exist.')}</p>
+        <p className="text-muted-foreground text-base">{t('That book does not exist.')}</p>
       </div>
     );
   }
@@ -293,7 +293,7 @@ export function BookPage({ slug }: { slug: string }) {
                   setRenaming(true);
                 }}
                 title={t('Double-click to rename')}
-                className="text-fg min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
+                className="text-foreground min-w-0 flex-1 truncate text-xl font-semibold tracking-tight"
               >
                 {book?.title ?? slug}
               </h1>
@@ -389,7 +389,7 @@ export function BookPage({ slug }: { slug: string }) {
             )}
           </>
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
-          <div className="bg-surface border-line rounded-xl border p-6 text-center">
+          <div className="bg-card border-border rounded-xl border p-6 text-center">
             {/*
               The import goes FIRST. An empty book used to name only "Add
               puzzle" — the by-hand route — which reads as though a book
@@ -399,8 +399,8 @@ export function BookPage({ slug }: { slug: string }) {
               pages. Both are offered here rather than described, because
               this is the page where you would do either.
             */}
-            <p className="text-fg text-base font-medium">{t('Nothing in this book yet.')}</p>
-            <p className="text-muted mx-auto mt-1 max-w-md text-sm leading-relaxed">
+            <p className="text-foreground text-base font-medium">{t('Nothing in this book yet.')}</p>
+            <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm leading-relaxed">
               {t('Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.')}
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
@@ -484,7 +484,7 @@ function ScanPanel({
             ? t('Reading the book')
             : t('Import unfinished')}
       </p>
-      <p className="text-muted mt-1 text-sm">
+      <p className="text-muted-foreground mt-1 text-sm">
         {phase === 'reading'
           ? t('{found} diagrams read', { found })
           : t('page {page} of {pages} · {found} diagrams', {
@@ -493,7 +493,7 @@ function ScanPanel({
               found,
             })}
       </p>
-      <div className="bg-line mx-auto mt-3 h-1 max-w-xs overflow-hidden rounded-full">
+      <div className="bg-border mx-auto mt-3 h-1 max-w-xs overflow-hidden rounded-full">
         <div
           className={cn('h-full rounded-full transition-[width] duration-300', live ? 'bg-primary' : 'bg-warn')}
           style={{ width: `${pct}%` }}

@@ -34,7 +34,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -730,15 +730,15 @@ function Trainer({
           type="button"
           onClick={() => navigate('puzzles', 'themes')}
           className={cn(
-            'bg-surface-2 hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-            'border-line border px-3 py-2.5 text-left transition-colors duration-100',
+            'bg-muted hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+            'border-border border px-3 py-2.5 text-left transition-colors duration-100',
           )}
         >
           <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
           <span className="text-subtle shrink-0 text-xs label-caps">
             {t('Theme')}
           </span>
-          <span className="text-fg ml-auto truncate text-sm font-medium">
+          <span className="text-foreground ml-auto truncate text-sm font-medium">
             {theme ? themeLabel(theme) : t('All themes')}
           </span>
           <ChevronRight className="text-subtle size-3.5 shrink-0" />
@@ -762,7 +762,7 @@ function Trainer({
               // Green for a clean solve, amber for one that took a
               // second go — it was still found — and red only where
               // the answer was handed over.
-              revealed ? 'text-bad' : failed ? 'text-warn' : 'text-good',
+              revealed ? 'text-destructive' : failed ? 'text-warn' : 'text-good',
             )}
           >
             {revealed
@@ -777,15 +777,15 @@ function Trainer({
                 just solved one. The dashboard has always shown it
                 this way; this panel had not. */}
             <dt className="text-subtle">{t('Difficulty')}</dt>
-            <dd className="text-fg">{t(bandOf(puzzle.rating))}</dd>
+            <dd className="text-foreground">{t(bandOf(puzzle.rating))}</dd>
             <dt className="text-subtle">{t('Played')}</dt>
-            <dd className="text-fg font-mono">{puzzle.plays.toLocaleString()}</dd>
+            <dd className="text-foreground font-mono">{puzzle.plays.toLocaleString()}</dd>
             <dt className="text-subtle">{t('Themes')}</dt>
             <dd className="flex flex-wrap gap-1">
               {puzzle.themes.split(' ').map((t) => (
                 <span
                   key={t}
-                  className="bg-surface-2 text-muted rounded-sm px-1.5 py-0.5 text-xs"
+                  className="bg-muted text-muted-foreground rounded-sm px-1.5 py-0.5 text-xs"
                 >
                   {themeLabel(t)}
                 </span>
@@ -796,11 +796,11 @@ function Trainer({
       ) : (
         <div className="flex flex-col gap-0.5">
           {puzzle && phase !== 'loading' && (
-            <p className="text-fg text-2xl font-bold tracking-tight">
+            <p className="text-foreground text-2xl font-bold tracking-tight">
               {solverSide === 'white' ? t('White to play') : t('Black to play')}
             </p>
           )}
-          <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-bad' : 'text-muted')}>
+          <p className={cn('text-sm leading-relaxed', phase === 'wrong' ? 'text-destructive' : 'text-muted-foreground')}>
             {phase === 'wrong'
               ? t('That is not it — it rolls back, try again.')
               : phase === 'setup' || phase === 'opponent'
@@ -943,7 +943,7 @@ function Trainer({
         >
           <ChevronLeft className="size-3.5" />
         </Button>
-        <h1 className="text-fg text-base font-semibold">{title}
+        <h1 className="text-foreground text-base font-semibold">{title}
         </h1>
       </div>
       {/* Board column, matching the shared budget so the board sits where
@@ -977,9 +977,9 @@ function Trainer({
               ) : error && metaAnswered ? (
                 // What happened, and a way to go again — a dead end here
                 // used to need a full page reload to recover from.
-                <div className="bg-surface border-line grid aspect-square w-full place-items-center rounded-xl border">
+                <div className="bg-card border-border grid aspect-square w-full place-items-center rounded-xl border">
                   <div className="flex max-w-[80%] flex-col items-center gap-3 text-center">
-                    <p className="text-muted text-sm">{error}</p>
+                    <p className="text-muted-foreground text-sm">{error}</p>
                     <Button
                       variant="secondary"
                       size="sm"
@@ -1030,7 +1030,7 @@ function Trainer({
             border (1px) and its padding (p-3), so that is the line the
             eye follows. */}
         <div className="hidden h-9 shrink-0 items-center gap-2 pr-[13px] wide:flex">
-            <h1 className="text-fg text-base font-semibold">{title}
+            <h1 className="text-foreground text-base font-semibold">{title}
           </h1>
           <span className="min-w-0 flex-1" />
           {/* How the session is going — words and counts, never a rating. */}
@@ -1205,7 +1205,7 @@ function MoveBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-fg text-base font-bold shadow-panel',
+        'text-nag-foreground text-base font-bold shadow-panel',
         kind === 'good' ? 'bg-nag-good' : 'bg-nag-blunder',
       )}
     >

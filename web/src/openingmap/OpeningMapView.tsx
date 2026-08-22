@@ -8,7 +8,7 @@ import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { fenKey } from '@/lib/fen';
 import { fieldDatabases, MY_GAMES_SOURCE, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase } from '@/repertoire/field';
 import { setMapDrill } from '@/repertoire/mapDrill';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { setJumpTarget } from '@/studies/jumpTarget';
@@ -392,7 +392,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       back={() => up('more')}
       meta={
         <>
-          <span className="text-muted text-sm">{color === 'white' ? t('White') : t('Black')}</span>
+          <span className="text-muted-foreground text-sm">{color === 'white' ? t('White') : t('Black')}</span>
           <span className="text-subtle text-sm">
             {saveState === 'saving'
               ? t('Saving…')
@@ -435,7 +435,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 title={t(label)}
                 aria-label={t(label)}
                 onClick={onSelect}
-                className="text-muted hover:text-fg hidden hover:bg-transparent md:inline-flex"
+                className="text-muted-foreground hover:text-foreground hidden hover:bg-transparent md:inline-flex"
               >
                 <Icon className="size-5" />
               </Button>
@@ -462,7 +462,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       {/* The universe itself — no box, no border, edge to edge. */}
       {loaded && map && resolved && !empty && !revealed && (
         <CanvasOverlay>
-          <div className="text-muted flex items-center gap-2 text-base">
+          <div className="text-muted-foreground flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
             {t('Preparing the map…')}
           </div>
@@ -492,9 +492,9 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
       {loadError && (
         <CanvasOverlay>
-          <div className="border-line bg-surface max-w-md rounded-xl border p-6">
-            <p className="text-bad text-base font-medium">{t('The opening map could not be read')}</p>
-            <p className="text-muted mt-1 text-sm leading-relaxed">{loadError}</p>
+          <div className="border-border bg-card max-w-md rounded-xl border p-6">
+            <p className="text-destructive text-base font-medium">{t('The opening map could not be read')}</p>
+            <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{loadError}</p>
           </div>
         </CanvasOverlay>
       )}
@@ -535,7 +535,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
               className="min-w-0 flex-1 text-left"
               onClick={() => setDetailsOpen(true)}
             >
-              <span className="text-fg block truncate text-base font-medium">
+              <span className="text-foreground block truncate text-base font-medium">
                 {selectedFacts.parentId === null
                   ? t('Start position')
                   : `${moveNumberLabel(selectedFacts.ply)} ${selectedFacts.mapNode.san ?? ''}`}
@@ -609,7 +609,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
       {optionsOpen && (
         <Sheet label={t('Check coverage against')} onClose={() => setOptionsOpen(false)}>
-          <p className="text-muted text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             {t('The field the map compares itself with: gap badges, dot sizes and the statistics table all read from it.')}
           </p>
           {/* The kinds of field, laid out: there are two or three of
@@ -730,7 +730,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
  * linked-studies field for why a ghost button was not).
  */
 const ADD_ROW =
-  'border-line text-muted hover:border-primary/40 hover:text-fg flex items-center gap-2 ' +
+  'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground flex items-center gap-2 ' +
   'rounded-lg border border-dashed px-2 py-1.5 text-left text-sm transition-colors duration-100 ' +
   'disabled:pointer-events-none disabled:opacity-45';
 
@@ -812,7 +812,7 @@ function PickRow({
         'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-base transition-colors duration-100',
         picked
           ? 'border-primary/40 bg-primary-soft text-primary font-medium'
-          : 'border-line text-fg hover:bg-surface-2',
+          : 'border-border text-foreground hover:bg-accent',
       )}
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -973,14 +973,14 @@ function NodePanel({
           <MiniBoard
             fen={facts.fen}
             size={72}
-            className="border-line shrink-0 overflow-hidden rounded-md border"
+            className="border-border shrink-0 overflow-hidden rounded-md border"
           />
         )}
         <div className="min-w-0">
-          <p className="text-fg text-base font-semibold">{title}</p>
+          <p className="text-foreground text-base font-semibold">{title}</p>
           {lineName && !isRoot && <p className="text-subtle truncate text-sm">{lineName}</p>}
           {coverage?.covered && (
-            <p className="text-muted text-sm">
+            <p className="text-muted-foreground text-sm">
               {t('Prepared {plies} plies deep, {lines} lines', {
                 plies: coverage.preparedPlies,
                 lines: coverage.lineCount,
@@ -992,7 +992,7 @@ function NodePanel({
               className={
                 reachedMove(facts.ply, coverage.preparedPlies) < node.depth
                   ? 'text-warn text-sm'
-                  : 'text-muted text-sm'
+                  : 'text-muted-foreground text-sm'
               }
             >
               {t('Prepared to move {reached} — target {target}', {
@@ -1007,12 +1007,12 @@ function NodePanel({
             </p>
           )}
           {(coverage?.gapCount ?? 0) > 0 && (
-            <p className="text-bad text-sm">
+            <p className="text-destructive text-sm">
               {t('{n} drill gaps — the studies lack an answer', { n: coverage!.gapCount })}
             </p>
           )}
           {facts.fen === null && !isRoot && (
-            <p className="text-bad text-sm">{t('Not a legal move here')}</p>
+            <p className="text-destructive text-sm">{t('Not a legal move here')}</p>
           )}
         </div>
       </div>
@@ -1085,12 +1085,12 @@ function NodePanel({
             return (
               <div
                 key={`${tag.kind}\n${tag.id}\n${tag.chapter ?? ''}`}
-                className="border-line flex items-center gap-2 rounded-lg border px-2 py-1.5"
+                className="border-border flex items-center gap-2 rounded-lg border px-2 py-1.5"
               >
-                <Icon className={broken ? 'text-bad size-4 shrink-0' : 'text-muted size-4 shrink-0'} />
+                <Icon className={broken ? 'text-destructive size-4 shrink-0' : 'text-muted-foreground size-4 shrink-0'} />
                 <button
                   type="button"
-                  className="text-fg hover:text-primary min-w-0 flex-1 truncate text-left text-sm"
+                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-sm"
                   title={tag.id}
                   onClick={() => {
                     // A study opens ON this node's position, not at its
@@ -1110,7 +1110,7 @@ function NodePanel({
                   {tag.id.split('/').pop()}
                   {tag.chapter ? ` · ${tag.chapter}` : ''}
                 </button>
-                {broken && <span className="text-bad shrink-0 text-sm">{t('Missing')}</span>}
+                {broken && <span className="text-destructive shrink-0 text-sm">{t('Missing')}</span>}
                 {/* Was a bare 14px glyph — the row has room, so this is
                     the app's own icon button rather than a hand-rolled
                     one, and comes with the 28px box (36px under a thumb)
@@ -1159,7 +1159,7 @@ function NodePanel({
               {making ? t('Making the study…') : t('New study from this line')}
             </span>
           </button>
-          {makeError && <p className="text-bad px-1 text-sm">{makeError}</p>}
+          {makeError && <p className="text-destructive px-1 text-sm">{makeError}</p>}
         </div>
       </Field>
 
@@ -1190,7 +1190,7 @@ function NodePanel({
               const charted = node.children.some((c) => c.san === san);
               return (
                 <div key={`${d.file}#${d.idx}`} className="flex items-center gap-2 px-1">
-                  <span className="text-fg min-w-0 flex-1 truncate text-sm">
+                  <span className="text-foreground min-w-0 flex-1 truncate text-sm">
                     {d.white} – {d.black}
                   </span>
                   {/* The index holds the archive months and the collection
@@ -1203,7 +1203,7 @@ function NodePanel({
                       column, not a badge. */}
                   {d.collection && (
                     <span
-                      className="bg-surface-2 text-muted shrink-0 rounded-sm px-1.5 py-0.5 text-xs"
+                      className="bg-muted text-muted-foreground shrink-0 rounded-sm px-1.5 py-0.5 text-xs"
                       title={t('In your collection')}
                     >
                       {t('Kept')}
@@ -1211,7 +1211,7 @@ function NodePanel({
                   )}
                   <span className="text-subtle shrink-0 text-sm">{d.result}</span>
                   <span
-                    className={d.userDeviated ? 'text-warn shrink-0 text-sm font-medium' : 'text-muted shrink-0 text-sm font-medium'}
+                    className={d.userDeviated ? 'text-warn shrink-0 text-sm font-medium' : 'text-muted-foreground shrink-0 text-sm font-medium'}
                     title={d.userDeviated ? t('You left the book with this move') : t('They left the book with this move')}
                   >
                     {san}
@@ -1313,7 +1313,7 @@ function NodePanel({
           "Add a move" under a plus says nothing the plus did not. */}
       <div
         className={cn(
-          'border-line bg-surface sticky z-10 mt-auto flex items-stretch gap-1 border-t',
+          'border-border bg-card sticky z-10 mt-auto flex items-stretch gap-1 border-t',
           '-mx-3 px-3 pt-2',
           // Gone while the keyboard is up, the same as the phone's own
           // bottom bar. Pinned to the foot of a sheet that has just given
@@ -1420,7 +1420,7 @@ function NodePanel({
             // not `danger`, whose tinted card was right for a row of
             // bordered buttons and would be a red block in a toolbar of
             // bare ones. See PanelAction for the shared geometry.
-            triggerClassName={cn(PANEL_ACTION, 'text-bad hover:bg-bad/12 hover:text-bad')}
+            triggerClassName={cn(PANEL_ACTION, 'text-destructive hover:bg-destructive/12 hover:text-destructive')}
             question={t('Delete this move and everything after it? Linked studies are untouched.')}
             confirmLabel={t('Delete')}
             onConfirm={() => {

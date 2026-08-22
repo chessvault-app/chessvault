@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -42,8 +42,8 @@ export function EmptyState({
           flex column, and a picture that is 3px tall is worse than no
           picture. */}
       <div className="shrink-0">{art}</div>
-      <p className="text-fg mt-3 text-base font-semibold">{t(title)}</p>
-      <p className="text-muted max-w-sm text-sm leading-relaxed">{t(body)}</p>
+      <p className="text-foreground mt-3 text-base font-semibold">{t(title)}</p>
+      <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">{t(body)}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

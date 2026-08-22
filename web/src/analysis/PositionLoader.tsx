@@ -236,7 +236,7 @@ export function LoadPositionForm({
       </div>
 
       {error && (
-        <p className="text-bad flex items-start gap-1.5 text-sm">
+        <p className="text-destructive flex items-start gap-1.5 text-sm">
           <AlertCircle className="mt-px size-3.5 shrink-0" />
           {error}
         </p>
@@ -245,7 +245,7 @@ export function LoadPositionForm({
       {/* The photo half of the ONE load dialog (lanph3re's call): click,
           drop, or paste an image; the corner-adjust flow takes over. */}
       <label
-        className="border-line hover:border-line-strong text-subtle flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors"
+        className="border-border hover:border-border-strong text-subtle flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();

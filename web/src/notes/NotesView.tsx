@@ -207,7 +207,7 @@ function NoteList() {
         create={<CreateMenu notes={notes} onDone={refresh} />}
       />
 
-      {error && <p className="text-bad text-sm">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       {!loaded ? (
         pending ? (

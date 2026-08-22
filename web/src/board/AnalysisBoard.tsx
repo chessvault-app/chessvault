@@ -14,7 +14,7 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { BOARD_WIDE_COLUMN } from '@/ui/layout';
 import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { ClearButton } from '@/ui/ClearButton';
 import { noAutofill, noAutofillClass } from '@/ui/Input';
 import { Board } from '@/board/Board';
@@ -284,7 +284,7 @@ function NagBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-fg text-base font-bold shadow-panel',
+        'text-nag-foreground text-base font-bold shadow-panel',
         badge.className,
       )}
     >
@@ -345,7 +345,7 @@ function NameField({
           // No outline-none: this is a bare input with no border to tint,
           // so the global :focus-visible ring is the only sign the name is
           // being edited. rounded-md gives that ring Input's own corners.
-          'text-fg placeholder:text-subtle w-full min-w-0 truncate rounded-md bg-transparent text-base font-medium',
+          'text-foreground placeholder:text-subtle w-full min-w-0 truncate rounded-md bg-transparent text-base font-medium',
           showClear && 'pr-6',
           noAutofillClass,
         )}
@@ -416,14 +416,14 @@ function PlayerBar({
           onCommit={setName}
         />
       ) : (
-        <span className="text-fg min-w-0 truncate text-base font-medium">{name}</span>
+        <span className="text-foreground min-w-0 truncate text-base font-medium">{name}</span>
       )}
       {elo && <span className="text-subtle text-sm">{elo}</span>}
       {clock !== undefined && (
         <span
           className={cn(
             'ml-auto rounded-sm px-1.5 py-0.5 font-mono text-sm tabular-nums',
-            toMove ? 'bg-primary-soft text-primary font-semibold' : 'text-muted',
+            toMove ? 'bg-primary-soft text-primary font-semibold' : 'text-muted-foreground',
           )}
         >
           {formatClock(clock)}
@@ -577,7 +577,7 @@ export function BoardControls({
       <Button variant="ghost" size="icon" onClick={goToEnd} title={t('End (↓)')}>
         <ChevronLast className="size-[1.1rem]" />
       </Button>
-      <div className="bg-line mx-1 h-5 w-px" />
+      <div className="bg-border mx-1 h-5 w-px" />
       <Button variant="ghost" size="icon" onClick={flip} title={t('Flip board (f)')}>
         <FlipVertical2 className="size-[1.1rem]" />
       </Button>

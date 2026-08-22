@@ -4,7 +4,7 @@ import { getNode, pathTo } from '@shared/tree';
 import { api } from '@/lib/api';
 import { navigate, navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { useStudy } from '@/store/study';
 import {
@@ -262,14 +262,14 @@ export function ExplorerPane({
 
       {!enabled ? null : (
         <>
-          <div className="border-line flex h-8 shrink-0 items-center gap-2 border-b px-3">
+          <div className="border-border flex h-8 shrink-0 items-center gap-2 border-b px-3">
             {lineOpening ? (
               <>
                 <span className="text-subtle shrink-0 font-mono text-xs font-semibold">
                   {lineOpening.eco}
                 </span>
                 <span
-                  className="text-fg min-w-0 truncate text-sm font-medium"
+                  className="text-foreground min-w-0 truncate text-sm font-medium"
                   title={`${lineOpening.eco} ${lineOpening.name}`}
                 >
                   {lineOpening.name}
@@ -289,7 +289,7 @@ export function ExplorerPane({
             // until the position changed. Say what happened, offer to go
             // again in place.
             <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
-              <p className="text-bad text-sm">{error}</p>
+              <p className="text-destructive text-sm">{error}</p>
               {/* The online databases go through the server's Lichess
                   token; when they fail, the fix has an address. */}
               {isRemoteDb(book) && (
@@ -356,7 +356,7 @@ export function ExplorerPane({
                     <button
                       type="button"
                       onClick={() => setAllMoves((v) => !v)}
-                      className="text-subtle hover:text-fg w-full px-3 py-1 text-left text-xs transition-colors duration-100"
+                      className="text-subtle hover:text-foreground w-full px-3 py-1 text-left text-xs transition-colors duration-100"
                     >
                       {allMoves ? 'Show fewer moves' : `Show all ${moves.length} moves`}
                     </button>
@@ -516,7 +516,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
 
   return (
     <div className="flex flex-col gap-2 px-3 py-3">
-      <p className="text-muted text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
           '“{name}” has no position index yet. Indexing reads the games already in it — nothing to upload — and takes a minute or two.',
           { name: bookLabel(name) },
@@ -534,7 +534,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
             {t('Index positions')}
           </Button>
           {state === 'failed' && (
-            <span className="text-bad text-sm">{t('indexing failed — see the Databases page')}</span>
+            <span className="text-destructive text-sm">{t('indexing failed — see the Databases page')}</span>
           )}
         </div>
       )}
@@ -597,7 +597,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
           on screen admitted it (lanph3re's report). This window is where
           the corpus gets interrogated, so this is where it introduces
           itself. */}
-      <p className="text-muted text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
           'Answers come from your collection plus every chess.com and Lichess month you have browsed — a month, once viewed, keeps counting here. "Kept only" narrows to the collection.',
         )}
@@ -738,13 +738,13 @@ function MoveRow({
       // wins it outright on specificity — the row under the pointer has
       // to read as the row under the pointer.
       className={cn(
-        'hover:bg-surface-2 cursor-pointer transition-colors duration-100',
-        alt && 'bg-surface-2/50',
+        'hover:bg-accent cursor-pointer transition-colors duration-100',
+        alt && 'bg-muted/50',
       )}
     >
-      <td className="text-fg font-moves w-14 py-1 pl-3 pr-1 font-semibold">{move.san}</td>
+      <td className="text-foreground font-moves w-14 py-1 pl-3 pr-1 font-semibold">{move.san}</td>
       <td
-        className="text-muted w-14 py-1 pr-2 text-right font-mono tabular-nums"
+        className="text-muted-foreground w-14 py-1 pr-2 text-right font-mono tabular-nums"
         title={`${exact.format(move.total)} games`}
       >
         {compact.format(move.total)}
@@ -835,7 +835,7 @@ function TopGamesList({
   };
 
   return (
-    <div className="border-line border-t px-1.5 pb-2">
+    <div className="border-border border-t px-1.5 pb-2">
       <p className="text-subtle px-1.5 pb-1 pt-2 text-xs label-caps">
         {mine ? t('Recent games') : t('Top games')}
       </p>
@@ -857,17 +857,17 @@ function TopGamesList({
                 onClick={() => void open(g)}
                 title={t('Open this game')}
                 className={cn(
-                  'hover:bg-surface-2 flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1',
+                  'hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1',
                   'text-left text-sm transition-colors duration-100',
                 )}
               >
                 <span className="min-w-0 flex-1 truncate">
                   <SideDot side="white" className="mr-1 inline-block size-2 align-[-1px]" />
-                  <span className="text-fg">{g.white}</span>
+                  <span className="text-foreground">{g.white}</span>
                   <span className="text-subtle font-mono text-xs"> {g.whiteElo || ''} </span>
                   <span className="text-subtle">v</span>
                   <SideDot side="black" className="mx-1 inline-block size-2 align-[-1px]" />
-                  <span className="text-fg">{g.black}</span>
+                  <span className="text-foreground">{g.black}</span>
                   <span className="text-subtle font-mono text-xs"> {g.blackElo || ''}</span>
                 </span>
                 <ResultBadge result={g.result} />
@@ -878,7 +878,7 @@ function TopGamesList({
                   target="_blank"
                   rel="noreferrer"
                   title={`${gameUrl} (needs internet)`}
-                  className="text-subtle hover:text-fg shrink-0 p-1"
+                  className="text-subtle hover:text-foreground shrink-0 p-1"
                 >
                   <ExternalLink className="size-3" />
                 </a>
@@ -891,7 +891,7 @@ function TopGamesList({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-subtle hover:text-fg w-full px-1.5 pt-1 text-left text-xs"
+          className="text-subtle hover:text-foreground w-full px-1.5 pt-1 text-left text-xs"
         >
           {expanded ? t('Show fewer') : t('Show all {n}', { n: games.length })}
         </button>
@@ -908,7 +908,7 @@ function ResultBadge({ result }: { result: string }) {
         'shrink-0 rounded-sm px-1 py-px font-mono text-xs font-semibold',
         result === '1-0' && 'bg-eval-white text-on-eval-white',
         result === '0-1' && 'bg-eval-black text-on-eval-black',
-        result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted',
+        result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted-foreground',
       )}
     >
       {label}

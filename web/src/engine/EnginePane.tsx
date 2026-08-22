@@ -9,7 +9,7 @@ import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { Switch } from '@/ui/Switch';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { figurine } from '@/analysis/notation';
 import { formatPv, type PvPly } from './pv.ts';
@@ -126,7 +126,7 @@ export function EngineBlock({
                 <span
                   className={cn(
                     'font-mono text-sm font-semibold normal-case tabular-nums tracking-normal',
-                    (score.mate ?? score.cp ?? 0) >= 0 ? 'text-good' : 'text-bad',
+                    (score.mate ?? score.cp ?? 0) >= 0 ? 'text-good' : 'text-destructive',
                   )}
                 >
                   {formatScore(score)}
@@ -197,7 +197,7 @@ export function EngineBlock({
           on and back off by itself. The error is cleared by the next
           successful start, so it cannot outlive the thing it describes. */}
       {error && (
-        <p className="text-bad flex items-start gap-1.5 px-3 py-2 text-sm">
+        <p className="text-destructive flex items-start gap-1.5 px-3 py-2 text-sm">
           <AlertTriangle className="mt-px size-3.5 shrink-0" />
           {error}
         </p>
@@ -211,7 +211,7 @@ export function EngineBlock({
               the li, not the button, so hover still paints over it. */}
           <ul
             className={cn(
-              'flex min-h-0 flex-col overflow-y-auto py-1 [&>li:nth-child(even)]:bg-fg/[0.035]',
+              'flex min-h-0 flex-col overflow-y-auto py-1 [&>li:nth-child(even)]:bg-foreground/[0.035]',
               // Docked, the lines are capped so the move list under them
               // keeps a panel to live in. Standing alone they are capped by
               // the pane instead: `min-h-0` in a flex column means the list
@@ -223,7 +223,7 @@ export function EngineBlock({
             )}
           >
             {terminal ? (
-              <li className="text-muted px-3 py-1 text-sm">
+              <li className="text-muted-foreground px-3 py-1 text-sm">
                 {terminal.mate !== undefined
                   ? t('Checkmate — there is nothing left to search.')
                   : t('The game ends here — there is nothing left to search.')}
@@ -259,7 +259,7 @@ export function EngineBlock({
           bottom border already does the job. Nothing follows it when the
           block stands alone, so there is nothing to separate from — the
           rule just sat under the last row as a line to nowhere. */}
-      {enabled && !standalone && <div className="border-line shrink-0 border-b" />}
+      {enabled && !standalone && <div className="border-border shrink-0 border-b" />}
       <PvPeek peek={peek} orientation={orientation} />
     </div>
   );
@@ -306,7 +306,7 @@ function CurrentLine() {
           // The one you are on carries the accent, the same way a hovered
           // ply in a variation above does — one grammar for "this move" in
           // the whole panel.
-          on ? 'text-primary font-semibold' : 'text-muted hover:text-fg hover:bg-surface-3',
+          on ? 'text-primary font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-surface-3',
         )}
       >
         {numbered && (
@@ -394,7 +394,7 @@ function CurrentLine() {
   return (
     // Capped and scrollable: a game with sidelines at every move would
     // otherwise grow this box until it had eaten the variations above it.
-    <div className="border-line max-h-24 shrink-0 overflow-y-auto border-t px-3 py-1.5">
+    <div className="border-border max-h-24 shrink-0 overflow-y-auto border-t px-3 py-1.5">
       <div className="flex flex-wrap items-baseline gap-x-0.5 gap-y-1">{out}</div>
     </div>
   );
@@ -437,14 +437,14 @@ function PvRow({
           global title tooltip would have opened over the preview board. */}
       <div
         className={cn(
-          'group hover:bg-surface-2 flex w-full items-baseline gap-2 px-3 py-1 text-left',
+          'group hover:bg-accent flex w-full items-baseline gap-2 px-3 py-1 text-left',
           'transition-colors duration-100',
         )}
       >
         <span
           className={cn(
             'w-[3.25rem] shrink-0 font-mono text-sm font-semibold tabular-nums',
-            advantage >= 0 ? 'text-good' : 'text-bad',
+            advantage >= 0 ? 'text-good' : 'text-destructive',
           )}
         >
           {formatScore(score)}
@@ -482,7 +482,7 @@ function EngineSettings() {
   const maxThreads = Math.max(1, navigator.hardwareConcurrency || 4);
 
   return (
-    <div className="border-line bg-surface-inset grid gap-3 border-b px-3 py-3">
+    <div className="border-border bg-surface-inset grid gap-3 border-b px-3 py-3">
       <Slider
         label={t('Threads')}
         value={threads}
@@ -556,8 +556,8 @@ function Slider({
   return (
     <label className={cn('grid gap-1', disabled && 'opacity-50')}>
       <span className="flex items-baseline justify-between text-sm">
-        <span className="text-muted">{label}</span>
-        <span className="text-fg font-mono tabular-nums">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="text-foreground font-mono tabular-nums">
           {format ? format(value) : value}
           {hint ? <span className="text-subtle ml-1 font-sans">{hint}</span> : null}
         </span>

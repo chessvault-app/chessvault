@@ -1,6 +1,6 @@
 import { Bookmark, BookmarkX, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /** Past this much of a drag, letting go does the thing. */
@@ -141,11 +141,11 @@ export function SwipeTrack({ dx, bookmarked = false }: { dx: number; bookmarked?
         removing ? 'right-0 justify-end' : 'left-0 justify-start',
         removing
           ? armed
-            ? 'bg-bad text-bad-fg'
-            : 'bg-bad/55 text-bad-fg'
+            ? 'bg-destructive text-destructive-foreground'
+            : 'bg-destructive/55 text-destructive-foreground'
           : armed
-            ? 'bg-warn text-warn-fg'
-            : 'bg-warn/55 text-warn-fg',
+            ? 'bg-warn text-warn-foreground'
+            : 'bg-warn/55 text-warn-foreground',
       )}
       style={{ width: Math.abs(dx) }}
       aria-hidden

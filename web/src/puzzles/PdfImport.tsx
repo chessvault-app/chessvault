@@ -2,7 +2,7 @@ import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
@@ -56,7 +56,7 @@ function PeekCrop({
   return createPortal(
     <div
       className={cn(
-        'bg-surface border-line pointer-events-none fixed z-[60] rounded-xl border p-2',
+        'bg-card border-border pointer-events-none fixed z-[60] rounded-xl border p-2',
         'shadow-pop',
       )}
       style={
@@ -363,7 +363,7 @@ export function PdfImport({
         */}
         {!mine && saved && (
           <div className="border-primary/40 bg-primary-soft flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-fg text-sm font-medium">
+            <p className="text-foreground text-sm font-medium">
               {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
                 page: saved.page,
                 pages: saved.pages,
@@ -393,8 +393,8 @@ export function PdfImport({
         )}
 
         {!mine && !saved && existing > 0 && (
-          <div className="border-line bg-surface-2 flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-fg text-sm font-medium">
+          <div className="border-border bg-muted flex flex-col gap-2 rounded-lg border p-3">
+            <p className="text-foreground text-sm font-medium">
               {t('This book already holds {n} puzzles. What should the import do with them?', {
                 n: existing,
               })}
@@ -423,7 +423,7 @@ export function PdfImport({
         )}
 
         {!mine && (
-          <label className="text-muted flex cursor-pointer items-start gap-2 text-sm">
+          <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={engine}
@@ -442,7 +442,7 @@ export function PdfImport({
         )}
 
         {!mine && (
-          <label className="text-muted flex cursor-pointer items-start gap-2 text-sm">
+          <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
             <input
               type="checkbox"
               checked={repair}
@@ -468,7 +468,7 @@ export function PdfImport({
               'transition-colors',
               pdfDrop.dragging
                 ? 'border-primary bg-primary-soft'
-                : 'border-line hover:border-line-strong hover:bg-surface-2',
+                : 'border-border hover:border-border-strong hover:bg-accent',
             )}
           >
             <input
@@ -480,7 +480,7 @@ export function PdfImport({
                 if (file) void begin(file);
               }}
             />
-            <span className="text-muted text-base">
+            <span className="text-muted-foreground text-base">
               {t('Choose the book’s PDF')}
             <span className="text-subtle block text-sm">
                 {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
@@ -497,8 +497,8 @@ export function PdfImport({
           rather than only in a README nobody opens on the way here.
         */}
         {!mine && !saved && (
-          <p className="border-line bg-surface-2 text-subtle rounded-lg border p-3 text-sm">
-            <span className="text-muted font-medium">{t('Import only a book you own.')}</span>{' '}
+          <p className="border-border bg-muted text-subtle rounded-lg border p-3 text-sm">
+            <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
             {t(
               'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
             )}
@@ -506,7 +506,7 @@ export function PdfImport({
         )}
 
         {preparing && (
-          <p className="text-muted flex items-center gap-2 text-base">
+          <p className="text-muted-foreground flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
             {/* Covers both halves of the preparation: the readability
                 probe every path runs, and the clear a rebuild adds. */}
@@ -515,7 +515,7 @@ export function PdfImport({
         )}
         {scanning && (
           <div className="flex items-center gap-2">
-            <p className="text-muted flex min-w-0 flex-1 items-center gap-2 text-base">
+            <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-base">
               <Loader2 className="size-4 shrink-0 animate-spin" />
               <span className="truncate">
                 {t('page {page}/{pages} — {n} diagrams so far', {
@@ -536,7 +536,7 @@ export function PdfImport({
         )}
         {paused && (
           <div className="border-warn/40 bg-warn/5 flex flex-wrap items-center gap-2 rounded-lg border p-3">
-            <p className="text-fg min-w-0 flex-1 text-sm">
+            <p className="text-foreground min-w-0 flex-1 text-sm">
               {t('Paused at page {page} of {pages}. Nothing is lost.', {
                 page: job.page,
                 pages: job.pages,
@@ -553,7 +553,7 @@ export function PdfImport({
           </div>
         )}
         {reading && (
-          <p className="text-muted flex items-center gap-2 text-base">
+          <p className="text-muted-foreground flex items-center gap-2 text-base">
             <Loader2 className="size-4 animate-spin" />
             {job.engineAt
               ? t('checking positions the book’s answers did not fit ({done} of {total})', {
@@ -570,10 +570,10 @@ export function PdfImport({
               solve.confident ? 'border-good/40 bg-good/5' : 'border-warn/40 bg-warn/5',
             )}
           >
-            <p className="text-fg text-base font-medium">
+            <p className="text-foreground text-base font-medium">
               {t('{n} puzzles imported with their solutions', { n: solve.solved })}
             </p>
-            <p className="text-muted pt-1">
+            <p className="text-muted-foreground pt-1">
               {solve.confident
                 ? t('Each one replays the move the book prints, from the position on the page.')
                 : t(
@@ -587,7 +587,7 @@ export function PdfImport({
                 ` ${t('{n} solved puzzles could not be saved — they are kept below as drafts.', { n: solve.saveFailed })}`}
             </p>
             {solve.engine && solve.engine.corroborated + solve.engine.only + solve.engine.unverified > 0 && (
-              <p className="text-muted pt-1">
+              <p className="text-muted-foreground pt-1">
                 {t(
                   '{n} more came from the engine, where the book’s own answer could not be read.',
                   {
@@ -617,8 +617,8 @@ export function PdfImport({
             </p>
           </div>
         )}
-        {mine && job.error && <p className="text-bad text-sm">{job.error}</p>}
-        {saveError && <p className="text-bad text-sm">{saveError}</p>}
+        {mine && job.error && <p className="text-destructive text-sm">{job.error}</p>}
+        {saveError && <p className="text-destructive text-sm">{saveError}</p>}
 
         {found.length > 0 && (
           <>
@@ -641,7 +641,7 @@ export function PdfImport({
             */}
             <ul
               ref={listRef}
-              className="border-line divide-line max-h-72 divide-y overflow-y-auto rounded-lg border"
+              className="border-border divide-border max-h-72 divide-y overflow-y-auto rounded-lg border"
               /*
                 A peek pinned to where a row USED to be is worse than
                 none, and this list moves on its own: each page that
@@ -699,7 +699,7 @@ export function PdfImport({
                         // rather than an overlay, and "3개 불확실" read as
                         // though it were part of it.
                         'pr-4',
-                        peek?.i === i && 'bg-surface-2',
+                        peek?.i === i && 'bg-muted',
                       )}
                     >
                       <input
@@ -710,7 +710,7 @@ export function PdfImport({
                         className="accent-primary shrink-0"
                       />
                       <span className="w-24 shrink-0 font-mono text-xs">
-                        <span className="text-fg">
+                        <span className="text-foreground">
                           {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
                         </span>
                         {/* Once the printed numbers are worked out the row
@@ -758,7 +758,7 @@ export function PdfImport({
                           alt={`page ${f.page}`}
                           loading="lazy"
                           decoding="async"
-                          className="border-line mx-auto w-44 rounded-sm border"
+                          className="border-border mx-auto w-44 rounded-sm border"
                         />
                       </div>
                     )}

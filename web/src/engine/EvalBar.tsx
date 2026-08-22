@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useEngine } from '@/store/engine';
 import { formatScore, toWhitePov, winningChances } from './uci.ts';
@@ -134,7 +134,7 @@ export function EvalBar({ score, orientation = 'vertical', className }: EvalBarP
           on both. Centred on the midline, not below it. */}
       <div
         className={cn(
-          'bg-bad/80 absolute',
+          'bg-destructive/80 absolute',
           orientation === 'vertical'
             ? 'left-0 right-0 top-1/2 h-[3px] -translate-y-1/2'
             : 'bottom-0 top-0 left-1/2 w-[3px] -translate-x-1/2',

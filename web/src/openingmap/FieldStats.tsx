@@ -1,6 +1,6 @@
 import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Field } from '@/ui/Field';
@@ -162,7 +162,7 @@ export function FieldStats({
                 ROW,
                 'rounded-lg border px-2 py-1.5',
                 isGap ? 'border-warn/40' : 'border-transparent',
-                at % 2 === 1 && 'bg-surface-2/50',
+                at % 2 === 1 && 'bg-muted/50',
               )}
             >
               {/* A link where the move is on the map — in the link
@@ -209,7 +209,7 @@ export function FieldStats({
                     // invisible inset takes the target to 38px on a coarse
                     // pointer and moves nothing.
                     className={cn(
-                      'text-subtle hover:text-fg relative shrink-0',
+                      'text-subtle hover:text-foreground relative shrink-0',
                       'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
                     )}
                   >
@@ -230,7 +230,7 @@ export function FieldStats({
           </p>
         )}
         {gaps && gaps.gaps.length === 0 && (
-          <p className="text-muted col-span-3 px-2 pt-1 text-sm leading-relaxed">
+          <p className="text-muted-foreground col-span-3 px-2 pt-1 text-sm leading-relaxed">
             {t('Every reply over {pct}% runs into your preparation.', {
               pct: Math.round(GAP_SHARE * 100),
             })}

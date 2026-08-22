@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from './Button';
 import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
@@ -86,7 +86,7 @@ export function ConfirmSheet({
           uses, which is not where a question you must answer belongs. */}
       {open && (
         <Sheet alert label={t(confirmLabel)} onClose={() => setOpen(false)} className="gap-3">
-          <p className="text-fg text-base">{t(question)}</p>
+          <p className="text-foreground text-base">{t(question)}</p>
           {/*
             Stacked, not a row, and the destructive one on top.
             A row of two puts them a thumb's width apart on a phone, which

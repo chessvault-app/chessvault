@@ -48,7 +48,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
   }, []);
 
   if (state === 'open') return <>{children}</>;
-  if (state === 'checking') return <div className="bg-app h-[100dvh]" />;
+  if (state === 'checking') return <div className="bg-background h-[100dvh]" />;
 
   const submit = async (): Promise<void> => {
     if (busy) return;
@@ -107,18 +107,18 @@ export function PasswordGate({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="bg-app text-fg flex h-[100dvh] flex-col items-center justify-center p-6">
+    <div className="bg-background text-foreground flex h-[100dvh] flex-col items-center justify-center p-6">
       <div className="flex w-full max-w-sm flex-col items-center">
         {/* The same knight as the sidebar — the lock screen is the front
             door, so it wears the brand, not a padlock. */}
-        <div className="bg-primary text-primary-fg mb-5 grid size-14 place-items-center rounded-2xl shadow-panel">
+        <div className="bg-primary text-primary-foreground mb-5 grid size-14 place-items-center rounded-2xl shadow-panel">
           <KnightIcon className="size-8" />
         </div>
-        <h1 className="text-fg text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+        <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
         <p className="text-subtle mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 
         <form
-          className="bg-surface border-line w-full rounded-2xl border p-6 shadow-panel"
+          className="bg-card border-border w-full rounded-2xl border p-6 shadow-panel"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();
@@ -168,7 +168,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             </>
           )}
           {error && (
-            <p className="text-bad mb-3 text-sm" role="alert">
+            <p className="text-destructive mb-3 text-sm" role="alert">
               {error}
             </p>
           )}
@@ -185,7 +185,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={backToPassword}
-              className="text-subtle hover:text-fg mx-auto mt-3 flex items-center gap-1 text-sm"
+              className="text-subtle hover:text-foreground mx-auto mt-3 flex items-center gap-1 text-sm"
             >
               <ChevronLeft className="size-3" />
               {t('Use a different password')}

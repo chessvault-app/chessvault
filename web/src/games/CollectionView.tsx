@@ -16,7 +16,7 @@ import { cachedCollection, forgetCollection, loadCollection } from './collection
 
 import { sanitizeSegment } from '@shared/vaultNames';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useRovingTabs } from '@/ui/roving';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
@@ -473,7 +473,7 @@ export function CollectionView() {
         />
       )}
 
-      {error && <p className="text-bad text-sm">{error}</p>}
+      {error && <p className="text-destructive text-sm">{error}</p>}
 
       {/* Two columns on a desktop: the collection is the page and takes the
           full height (it showed four rows when the archive browser sat
@@ -686,7 +686,7 @@ export function CollectionView() {
           // as one block of text. The stripe is 2% of the foreground —
           // enough to group the two lines that belong together, not enough
           // to read as a highlight.
-          <ul className="divide-line min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-fg/[0.022] sm:max-h-[38dvh] lg:max-h-none">
+          <ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto [&>li:nth-child(even)]:bg-foreground/[0.022] sm:max-h-[38dvh] lg:max-h-none">
             {visible.map((game) => (
               <CollectionRow
                 key={gameKey(game)}
@@ -726,7 +726,7 @@ export function CollectionView() {
             role="tablist"
             aria-label={t('Where to find a game')}
             {...sourceTabs.stripProps}
-            className="border-line flex h-10 shrink-0 items-center gap-1 border-b px-2"
+            className="border-border flex h-10 shrink-0 items-center gap-1 border-b px-2"
           >
             {SOURCES.map(({ id, label }) => {
               const on = source === id;
@@ -747,8 +747,8 @@ export function CollectionView() {
                     'relative flex h-10 min-w-0 items-center px-1.5 text-sm font-semibold',
                     'transition-colors duration-100',
                     on
-                      ? 'text-fg after:bg-primary after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full'
-                      : 'text-subtle hover:text-fg',
+                      ? 'text-foreground after:bg-primary after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full'
+                      : 'text-subtle hover:text-foreground',
                   )}
                 >
                   <span className="truncate">{t(label)}</span>
@@ -987,7 +987,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         type="button"
         onClick={() => setDetailsOpen((v) => !v)}
         aria-expanded={detailsOpen}
-        className="text-subtle hover:text-fg flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
+        className="text-subtle hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
       >
         <ChevronRight
           className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}
@@ -1073,7 +1073,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         </div>
       )}
 
-      {failure && <p className="text-bad text-sm">{failure}</p>}
+      {failure && <p className="text-destructive text-sm">{failure}</p>}
 
       {/* Sticky, so the only way to submit is never scrolled away — this
           form is long enough with Advanced open that it now scrolls, and
@@ -1081,14 +1081,14 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           find.
 
           Full-bleed and bordered, because a sticky bar that is merely
-          bg-surface reads as a mistake the moment content passes UNDER
+          bg-card reads as a mistake the moment content passes UNDER
           it: half a field showing to the left of the buttons, the rest
           hidden, no line to say which is which. -mx-3 px-3 takes it to
           both edges of the window's own padding, the rule says where it
           starts, and z-10 keeps it over anything that scrolls beneath. */}
       <div
         className={cn(
-          'bg-surface border-line sticky z-10 -mx-3 flex justify-end gap-2 border-t px-3 pt-2',
+          'bg-card border-border sticky z-10 -mx-3 flex justify-end gap-2 border-t px-3 pt-2',
           // The bar reaches the window's own bottom edge and carries the
           // home-indicator clearance itself. Left to the window, that
           // clearance was a strip of empty surface UNDER the bar — about

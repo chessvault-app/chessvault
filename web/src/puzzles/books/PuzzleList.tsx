@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 import { navigate } from '@/lib/router';
 
@@ -76,7 +76,7 @@ export function PuzzleGrid({
                     ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
                     : last === 'loss'
                       ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                      : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
+                      : 'bg-card border-border text-muted-foreground hover:border-border-strong hover:bg-accent',
                 )}
               >
                 {p.number ?? i + 1}
@@ -396,7 +396,7 @@ export function PuzzleList({
                   ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
                   : state === 'failed'
                     ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                    : 'bg-surface border-line text-muted hover:border-line-strong hover:bg-surface-2',
+                    : 'bg-card border-border text-muted-foreground hover:border-border-strong hover:bg-accent',
               )}
             >
               {p.number ?? ordinalOf.get(p.id)}

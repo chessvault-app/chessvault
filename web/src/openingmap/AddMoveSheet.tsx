@@ -1,6 +1,6 @@
 import { Check, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { Button } from '@/ui/Button';
@@ -140,10 +140,10 @@ export function AddMoveSheet({
           <MiniBoard
             fen={facts.fen}
             size={56}
-            className="border-line shrink-0 overflow-hidden rounded-md border"
+            className="border-border shrink-0 overflow-hidden rounded-md border"
           />
         )}
-        <p className="text-muted text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {source
             ? t('Every reply the field plays here — tap one to chart it.')
             : t('What the studies prepare here — pick a field source to see statistics.')}
@@ -157,7 +157,7 @@ export function AddMoveSheet({
           that the bands meet. The panel's table is the same. */}
       <div className={cn(LIST, 'min-h-0 grow content-start overflow-y-auto sm:max-h-72')}>
         {field === null ? null : rows.length === 0 ? (
-          <p className="text-muted col-span-3 px-2 py-4 text-center text-sm">
+          <p className="text-muted-foreground col-span-3 px-2 py-4 text-center text-sm">
             {t('Nothing to offer — type the move instead.')}
           </p>
         ) : (
@@ -175,8 +175,8 @@ export function AddMoveSheet({
               // the row.
               className={cn(
                 ROW,
-                'hover:bg-surface-2 group rounded-lg px-2 py-1.5 text-left',
-                at % 2 === 1 && 'bg-surface-2/50',
+                'hover:bg-accent group rounded-lg px-2 py-1.5 text-left',
+                at % 2 === 1 && 'bg-muted/50',
               )}
             >
               {/* The panel's own row, part for part — see FieldRow. A
@@ -210,7 +210,7 @@ export function AddMoveSheet({
           be a form is a form that argues with the keyboard it opened. */}
       <form
         className={cn(
-          'border-line bg-surface sticky z-10 mt-auto flex items-center gap-2 border-t',
+          'border-border bg-card sticky z-10 mt-auto flex items-center gap-2 border-t',
           '-mx-3 px-3 pt-2',
           // Pinned to the foot of the sheet, over its padding, the way
           // the panel's action row is — and for a sharper reason: the
@@ -249,7 +249,7 @@ export function AddMoveSheet({
           <Plus className="size-3.5" /> {t('Add')}
         </Button>
       </form>
-      {error && <p className="text-bad px-1 text-sm">{error}</p>}
+      {error && <p className="text-destructive px-1 text-sm">{error}</p>}
     </Sheet>
   );
 }

@@ -1,7 +1,7 @@
 import { ChevronDown, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { ActionSheet } from './ActionSheet';
 import { Button } from './Button';
 import { useCloseRequest } from './dialogFocus';
@@ -156,14 +156,14 @@ export function Fab({
               setOpen(false);
               onSelect();
             }}
-            // The INVERTED surface, like the undo chip — not `bg-surface`,
+            // The INVERTED surface, like the undo chip — not `bg-card`,
             // which is the colour of the cards these float over. A pill in
             // card colours over a shelf of cards is a card-coloured shape
             // among card-coloured shapes: it read as part of the list
             // rather than as something that had just opened. The opposite
             // of the page needs no help being told from it.
             className={cn(
-              'bg-toast text-toast-fg flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
+              'bg-toast text-toast-foreground flex items-center gap-2 rounded-full py-2 pl-3 pr-4',
               'text-base shadow-pop transition-opacity duration-100 active:opacity-80',
             )}
           >
@@ -186,8 +186,8 @@ export function Fab({
         // low alpha, so it darkens the rim in dark mode and lightens it
         // in light, instead of dropping a grey ring on a blue disc.
         className={cn(
-          'bg-primary text-primary-fg hover:bg-primary-hover grid size-14 place-items-center rounded-full',
-          'border border-primary-fg/30',
+          'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
+          'border border-primary-foreground/30',
           'shadow-pop transition-transform duration-100 active:scale-95',
         )}
       >

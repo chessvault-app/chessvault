@@ -33,7 +33,7 @@ import { Panel, PanelHeader } from '@/ui/Panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
 import type { Template } from '@/puzzles/ocr/classify';
@@ -437,7 +437,7 @@ export function EditorView({
               {validity.reason}
             </p>
           )}
-          <div className="border-line flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
+          <div className="border-border flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
             {validity.legal && (
               <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
             )}
@@ -503,7 +503,7 @@ export function EditorView({
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <h1 className="text-fg text-base font-semibold">{t('Editor')}</h1>
+          <h1 className="text-foreground text-base font-semibold">{t('Editor')}</h1>
         </div>
       )}
 
@@ -597,7 +597,7 @@ export function EditorView({
             <div className="flex w-full flex-wrap items-center justify-center gap-2">
               {/* Nested-radius rule: the pill's radius ≈ button radius + padding,
                   so the active tool's highlight sits concentric in its corner. */}
-              <div className="bg-surface-2/60 border-line flex h-9 items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
+              <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
                 variant={tool.kind === 'move' ? 'primary' : 'ghost'}
                 size="sm"
@@ -699,7 +699,7 @@ export function EditorView({
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="flex h-9 shrink-0 items-center gap-2">
-          <h1 className="text-fg text-base font-semibold">{t('Editor')}</h1>
+          <h1 className="text-foreground text-base font-semibold">{t('Editor')}</h1>
         </div>
         {positionPanels('column')}
       </div>
@@ -799,7 +799,7 @@ function PiecePalette({
     <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1 wide:flex-nowrap">
       {colors.map((color, groupIndex) => (
         <div key={color} className="flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1">
-          {groupIndex > 0 && <span className="bg-line mx-1.5 hidden h-6 w-px shrink-0 wide:block" />}
+          {groupIndex > 0 && <span className="bg-border mx-1.5 hidden h-6 w-px shrink-0 wide:block" />}
           {ROLES.map((role) => {
             const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
             return (

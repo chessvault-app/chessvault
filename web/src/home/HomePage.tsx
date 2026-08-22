@@ -1,7 +1,7 @@
 import { BookOpen, Check, ChevronRight, Grid3x3, Library, Puzzle, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/ui/Button';
@@ -359,11 +359,11 @@ export function HomePage() {
     <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6">
       <div className="w-full max-w-lg">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="bg-primary text-primary-fg grid size-14 place-items-center rounded-2xl">
+          <div className="bg-primary text-primary-foreground grid size-14 place-items-center rounded-2xl">
             <KnightIcon className="size-9" />
           </div>
           <div>
-            <h1 className="text-fg text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
+            <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
             <p className="text-subtle text-base">{t('Your chess, in plain files.')}</p>
           </div>
         </div>
@@ -373,14 +373,14 @@ export function HomePage() {
             arrives, the card is reserved at last launch's size with
             skeleton rows, so the page does not jump when it fills in. */}
         {effective.continueCard && data === null && expectedRows > 0 && (
-          <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+          <div className="bg-card border-border mb-4 overflow-hidden rounded-xl border">
+            <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
               {t('Continue')}
             </p>
             {Array.from({ length: expectedRows }, (_, i) => (
               <div
                 key={i}
-                className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-sm last:border-b-0"
+                className="border-border flex w-full items-center gap-2.5 border-b px-3 py-2 text-sm last:border-b-0"
               >
                 <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                 {/* The row's height comes from an INVISIBLE real text line,
@@ -398,14 +398,14 @@ export function HomePage() {
           </div>
         )}
         {effective.continueCard && continueRows.length > 0 && (
-          <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+          <div className="bg-card border-border mb-4 overflow-hidden rounded-xl border">
+            <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
               {t('Continue')}
             </p>
             {continueRows.map(({ icon: Icon, label, detail, go }) => (
               <ListRow key={label + detail} divided onClick={go} className="text-sm">
                 <Icon className="text-subtle size-3.5 shrink-0" />
-                <span className="text-fg min-w-0 flex-1 truncate font-medium">{label}</span>
+                <span className="text-foreground min-w-0 flex-1 truncate font-medium">{label}</span>
                 <span className="text-subtle shrink-0">{detail}</span>
                 <ChevronRight className="text-subtle size-3.5 shrink-0" />
               </ListRow>
@@ -414,8 +414,8 @@ export function HomePage() {
         )}
 
         {showChecklist && (
-          <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <div className="border-line flex items-center border-b px-3 pb-1.5 pt-2">
+          <div className="bg-card border-border mb-4 overflow-hidden rounded-xl border">
+            <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
               <p className="text-subtle flex-1 text-xs label-caps">
                 {t('Set up your vault')}
               </p>
@@ -443,11 +443,11 @@ export function HomePage() {
                 {step.done ? (
                   <Check className="text-good size-3.5 shrink-0" />
                 ) : (
-                  <span className="border-line-strong size-3.5 shrink-0 rounded-full border" />
+                  <span className="border-border-strong size-3.5 shrink-0 rounded-full border" />
                 )}
                 <span
                   className={
-                    step.done ? 'text-subtle min-w-0 flex-1 line-through' : 'text-fg min-w-0 flex-1'
+                    step.done ? 'text-subtle min-w-0 flex-1 line-through' : 'text-foreground min-w-0 flex-1'
                   }
                 >
                   {step.label}
@@ -485,11 +485,11 @@ export function HomePage() {
               key={id}
               type="button"
               onClick={() => navigate(...nav)}
-              className="bg-surface border-line hover:border-line-strong hover:bg-surface-2 group flex flex-col items-start gap-2 rounded-xl border p-3.5 text-left transition-colors duration-100"
+              className="bg-card border-border hover:border-border-strong hover:bg-accent group flex flex-col items-start gap-2 rounded-xl border p-3.5 text-left transition-colors duration-100"
             >
               <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
               <span>
-                <span className="text-fg block text-base font-medium">
+                <span className="text-foreground block text-base font-medium">
                   {t(label)}
                   {count !== undefined && data?.counts[count] !== undefined ? (
                     <span className="text-subtle font-mono text-sm font-normal">

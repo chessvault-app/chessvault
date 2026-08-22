@@ -1,7 +1,7 @@
 import { AlertTriangle, Library } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { moveNumberLabel } from '@shared/tree';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
 import { ResultBar } from '@/ui/ResultBar';
@@ -72,7 +72,7 @@ export function MoveCell({
           // move is charted — pressing it goes to that node. It said so
           // in a tooltip and nowhere else, which is a thing you find by
           // accident or never.
-          linked ? 'text-primary' : 'text-fg',
+          linked ? 'text-primary' : 'text-foreground',
           // The fill lights the MOVE, not the cell: on the button it
           // reached across the mark beside it, and the mark is a fact
           // about the move rather than part of the link. `group-hover`
@@ -149,7 +149,7 @@ export function MoveResult({ move }: { move: Pick<FieldMove, 'w' | 'd' | 'b'> | 
 export function RowTail({ share, children }: { share: number | null; children?: ReactNode }) {
   return (
     <span className="flex shrink-0 items-center gap-1.5">
-      <span className="text-muted w-8 text-right text-sm">
+      <span className="text-muted-foreground w-8 text-right text-sm">
         {share === null ? '' : share >= 0.005 ? `${Math.round(share * 100)}%` : '<1%'}
       </span>
       <span className="flex w-3.5 justify-center">{children}</span>

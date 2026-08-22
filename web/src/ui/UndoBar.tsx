@@ -1,5 +1,5 @@
 import { Undo2 } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from './Button';
 import { t } from '@/lib/i18n';
 
@@ -64,7 +64,7 @@ export function UndoBar({
           was the last thing making this read as one more panel. */}
       <div
         className={cn(
-          'bg-toast text-toast-fg flex items-center gap-3 rounded-full',
+          'bg-toast text-toast-foreground flex items-center gap-3 rounded-full',
           // ONE WIDTH, whatever was removed. Sized to its own text, the
           // chip was a different object every time: measured at 166px for
           // a one-character name, 276 for a study, 520 for a long note
@@ -88,7 +88,7 @@ export function UndoBar({
         <Button
           variant="ghost"
           size="sm"
-          className="text-toast-fg hover:bg-toast-fg/12 hover:text-toast-fg font-semibold"
+          className="text-toast-foreground hover:bg-toast-foreground/12 hover:text-toast-foreground font-semibold"
           onClick={onUndo}
         >
           <Undo2 className="size-3.5" />

@@ -81,12 +81,12 @@ export function LeaveSheet() {
 
   return (
     <Sheet label={t('Unsaved changes')} onClose={cancelLeave} className="gap-3">
-      <p className="text-fg text-base">
+      <p className="text-foreground text-base">
         {t('You have unsaved changes in “{name}”. Would you like to save before leaving?', {
           name,
         })}
       </p>
-      {error && <p className="text-bad text-sm">{t(error)}</p>}
+      {error && <p className="text-destructive text-sm">{t(error)}</p>}
 
       {/* Three answers, three weights, in the order they should be
           considered: save, back out, throw away. Discard sat in the middle
@@ -122,7 +122,7 @@ export function LeaveSheet() {
           variant="ghost"
           size="md"
           disabled={busy}
-          className="text-bad/80 hover:bg-bad/10 hover:text-bad w-full justify-center"
+          className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive w-full justify-center"
           onClick={discardAndLeave}
         >
           <Trash2 className="size-3.5" />

@@ -57,7 +57,7 @@ export function RecoverySheet({
     // Dismissing by Escape, Back or the scrim leaves the swap where it is
     // — the answer that loses nothing, and the offer comes back next time.
     <Sheet label={t('Unsaved changes were found')} onClose={onDefer} className="gap-3">
-      <p className="text-fg text-base">
+      <p className="text-foreground text-base">
         {stamp
           ? t('“{name}” has changes from {when} that were never saved.', { name, when: stamp })
           : t('“{name}” has changes that were never saved.', { name })}

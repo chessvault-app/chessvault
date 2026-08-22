@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * A board the size of a thumbnail, drawn from a FEN and nothing else.

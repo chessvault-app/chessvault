@@ -11,7 +11,7 @@ import {
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { useMediaQuery } from '@/lib/media';
 import { INITIAL_FEN } from '@shared/tree';
@@ -188,7 +188,7 @@ function PuzzleCard({
       // slack around a shape that already has its own margins, while the
       // horizontal padding is still holding the text off the edge.
       className={cn(
-        'bg-surface border-line hover:bg-surface-2 flex w-full items-stretch gap-3',
+        'bg-card border-border hover:bg-accent flex w-full items-stretch gap-3',
         'rounded-xl border px-2.5 py-1.5 text-left transition-colors duration-100',
         // Sharing the leftover height between the cards puts it into the
         // BOARDS, where it is worth something, instead of into the gaps
@@ -212,7 +212,7 @@ function PuzzleCard({
         className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        <span className="text-fg text-base font-medium">{title}</span>
+        <span className="text-foreground text-base font-medium">{title}</span>
         {detail && <span className="text-subtle text-sm leading-snug">{detail}</span>}
         {/* Whose move — the one thing you cannot read off a thumbnail
             fast, and the thing lichess puts under every one of these.
@@ -221,7 +221,7 @@ function PuzzleCard({
             descender space that the letters beside it do not use, so a
             box-centred glyph sits visibly low. Left as ordinary inline
             text, the king takes the baseline like a letter does. */}
-        <span className="text-muted text-sm">
+        <span className="text-muted-foreground text-sm">
           <KingIcon side={side} className="mr-1.5" />
           {side === 'white' ? t('White to play') : t('Black to play')}
         </span>
@@ -267,7 +267,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
   return (
     <p
       className={cn(
-        'text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps',
+        'text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps',
         className,
       )}
     >
@@ -279,7 +279,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
 /** The log's own shape, held while the attempts are still coming. */
 function HubSkeletonHistoryPanel() {
   return (
-    <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
+    <div className="bg-card border-border flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
       <SkeletonPanelHeading width="w-24" className="shrink-0" />
       <div className="min-h-0 flex-1">
         <SkeletonRows rows={3} className="gap-0 px-3 py-0" />
@@ -298,7 +298,7 @@ function HubSkeletonHistoryPanel() {
  */
 function HubSkeletonBookRow() {
   return (
-    <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
+    <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border">
       <SkeletonPanelHeading width="w-20" />
       <div className="flex w-full items-center gap-2.5 px-3 py-2">
         <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
@@ -321,7 +321,7 @@ function HubSkeletonPanels({ history, books }: { history: boolean; books: boolea
   return (
     <>
       {history && <HubSkeletonHistoryPanel />}
-      {history && books && <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />}
+      {history && books && <div role="presentation" className="bg-border/70 mx-8 h-px shrink-0" />}
       {books && <HubSkeletonBookRow />}
     </>
   );
@@ -341,7 +341,7 @@ function HubSkeletonCard({ fill }: { fill: boolean }) {
   return (
     <div
       className={cn(
-        'bg-surface border-line flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
+        'bg-card border-border flex w-full items-stretch gap-3 rounded-xl border px-2.5 py-1.5',
         fill && 'min-h-0 flex-1',
       )}
     >
@@ -403,7 +403,7 @@ function EmptySlot({
         className={cn('shrink-0 rounded-md', fill ? 'h-full max-h-40 w-auto' : 'w-28')}
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
-        <span className="text-muted text-base font-medium">{title}</span>
+        <span className="text-muted-foreground text-base font-medium">{title}</span>
         {detail && <span className="text-subtle text-sm leading-snug">{detail}</span>}
       </span>
       {go && <ChevronRight className="text-subtle size-4 shrink-0 self-center" />}
@@ -411,7 +411,7 @@ function EmptySlot({
   );
   // PuzzleCard's geometry exactly; only the hover and the press differ.
   const shape = cn(
-    'bg-surface border-line flex w-full items-stretch gap-3',
+    'bg-card border-border flex w-full items-stretch gap-3',
     'rounded-xl border px-2.5 py-1.5 text-left',
     fill && 'min-h-0 flex-1',
   );
@@ -419,7 +419,7 @@ function EmptySlot({
     <button
       type="button"
       onClick={go}
-      className={cn(shape, 'hover:bg-surface-2 transition-colors duration-100')}
+      className={cn(shape, 'hover:bg-accent transition-colors duration-100')}
     >
       {body}
     </button>
@@ -454,16 +454,16 @@ function EmptySlot({
  */
 function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   return (
-    <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+    <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border">
+      <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
         {t('Worth practising')}
       </p>
       <ListRow onClick={() => navigate('puzzles', 'theme', weak.theme)}>
-        <span className="bg-surface-2 text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+        <span className="bg-muted text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
           <Puzzle className="size-3.5" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="text-fg truncate text-sm font-medium">{themeLabel(weak.theme)}</span>
+          <span className="text-foreground truncate text-sm font-medium">{themeLabel(weak.theme)}</span>
           {/* Solved against failed, the same bar a book wears. No rate and
               no rating — the bar says how it has gone and the page does
               not hand back a verdict. */}
@@ -485,8 +485,8 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
-    <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+    <div className="bg-card border-border shrink-0 overflow-hidden rounded-xl border">
+      <p className="text-subtle border-border border-b px-3 pb-1.5 pt-2 text-xs label-caps">
         {t('Recently read')}
       </p>
       {books.map((b) => (
@@ -497,15 +497,15 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
               alt=""
               // Decorative: the title is right beside it, so a screen
               // reader announcing the cover would only say it twice.
-              className="border-line h-10 w-7 shrink-0 rounded-sm border object-cover"
+              className="border-border h-10 w-7 shrink-0 rounded-sm border object-cover"
             />
           ) : (
-            <span className="bg-surface-2 text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+            <span className="bg-muted text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
               <BookMarked className="size-3.5" />
             </span>
           )}
           <span className="flex min-w-0 flex-1 flex-col gap-1">
-            <span className="text-fg truncate text-sm font-medium">{b.title}</span>
+            <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
             <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty />
           </span>
           <span className="text-subtle shrink-0 font-mono text-xs tabular-nums">
@@ -550,8 +550,8 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // vault happens to hold, so a first session and a hundredth one put
     // every target in the same place. A section that appears only once it
     // has content also teaches nobody that it is there.
-    <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-xs label-caps">
+    <div className="bg-card border-border flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
+      <p className="text-subtle border-border shrink-0 border-b px-3 pb-1.5 pt-2 text-xs label-caps">
         {t('Puzzle history')}
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -572,7 +572,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
           {h.win ? (
             <Check className="text-good size-3.5 shrink-0" aria-label={t('solved')} />
           ) : (
-            <X className="text-bad size-3.5 shrink-0" aria-label={t('failed')} />
+            <X className="text-destructive size-3.5 shrink-0" aria-label={t('failed')} />
           )}
           {/* The dashboard's columns exactly — same widths, same ml-auto,
               same right-aligned time. Two lists of the same rows that
@@ -587,7 +587,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
               there is spare room between the difficulty word and it —
               and whitespace-nowrap makes the wrap impossible rather than
               merely unlikely. */}
-          <span className="text-fg w-16 shrink-0 font-mono">#{h.id}</span>
+          <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
           <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
           <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
           <span
@@ -975,7 +975,7 @@ function Hub() {
           it divides is what makes it legible as a rule, which is what
           then lets the colour drop back rather than having to shout. */}
       {showHistory && showBooks && (
-        <div role="presentation" className="bg-line/70 mx-8 h-px shrink-0" />
+        <div role="presentation" className="bg-border/70 mx-8 h-px shrink-0" />
       )}
       {showBooks &&
         (slot === 'books' ? (
@@ -1124,7 +1124,7 @@ function Hub() {
             {[0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="border-line bg-surface flex h-16 flex-col items-center justify-center gap-1 rounded-xl border"
+                className="border-border bg-card flex h-16 flex-col items-center justify-center gap-1 rounded-xl border"
               >
                 <Skeleton className="size-5 rounded-sm" />
                 <Skeleton className="h-2.5 w-12" />
@@ -1162,8 +1162,8 @@ function Hub() {
                   'flex h-16 flex-col items-center justify-center gap-1 rounded-xl border',
                   'px-1 text-center text-sm font-medium leading-tight transition-colors',
                   primary
-                    ? 'bg-primary text-primary-fg border-primary hover:bg-primary-hover'
-                    : 'bg-surface border-line hover:bg-surface-2',
+                    ? 'bg-primary text-primary-foreground border-primary hover:bg-primary-hover'
+                    : 'bg-card border-border hover:bg-accent',
                 )}
               >
                 <Icon className={cn('size-5', primary ? '' : 'text-primary')} />

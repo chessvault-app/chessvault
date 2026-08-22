@@ -50,7 +50,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 
 import { api } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
@@ -496,7 +496,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       {/* The puzzle number IS the title; the tier collapses to its icon
           (tooltip explains). */}
       <span className="flex min-w-0 items-center gap-2">
-        <span className="text-fg font-mono text-base font-semibold">
+        <span className="text-foreground font-mono text-base font-semibold">
           #{puzzle.number ?? index + 1}
         </span>
         {puzzle.provenance &&
@@ -615,15 +615,15 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto p-3">
       <div className="flex flex-col gap-0.5">
         {phase === 'done' ? (
-          <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-bad')}>
+          <p className={cn('text-base font-semibold', won ? 'text-good' : 'text-destructive')}>
             {won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.')}
           </p>
         ) : (
-          <p className="text-fg text-2xl font-bold tracking-tight">
+          <p className="text-foreground text-2xl font-bold tracking-tight">
             {solverSide === 'white' ? t('White to play') : t('Black to play')}
           </p>
         )}
-        <p className="text-muted text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {phase === 'checking'
             ? t('Checking your answer…')
             : phase === 'done'

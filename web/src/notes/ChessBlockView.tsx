@@ -26,7 +26,7 @@ import type { Headers, MoveTree, NodeId } from '@shared/types';
 import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { Button } from '@/ui/Button';
 import { TextArea } from '@/ui/Input';
 import { t } from '@/lib/i18n';
@@ -184,7 +184,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   return (
     <NodeViewWrapper
       className={cn(
-        'border-line bg-surface-inset my-3 flex flex-col gap-2 rounded-xl border p-2 sm:flex-row',
+        'border-border bg-surface-inset my-3 flex flex-col gap-2 rounded-xl border p-2 sm:flex-row',
         // The box wraps the board, not the page: on a phone the block is a
         // board with its moves under it, and a border stretched to the
         // note's full width around a much narrower board read as an empty
@@ -318,10 +318,10 @@ function MoveStrip({
           className={cn(
             'rounded-sm px-1 py-0.5 font-mono text-sm transition-colors duration-100',
             id === cursorId
-              ? 'bg-primary text-primary-fg'
+              ? 'bg-primary text-primary-foreground'
               : path.has(id)
-                ? 'text-fg hover:bg-surface-2'
-                : 'text-muted hover:bg-surface-2',
+                ? 'text-foreground hover:bg-accent'
+                : 'text-muted-foreground hover:bg-accent',
           )}
         >
           {(needNumber || (node.ply + (blackFirst ? 1 : 0)) % 2 === 1) && (

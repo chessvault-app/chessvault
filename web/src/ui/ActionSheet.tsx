@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useFloating } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useCloseRequest, useDialogFocus } from './dialogFocus';
@@ -214,7 +214,7 @@ export function ActionSheet({
         ref={setDialogNode}
         style={!popover ? drag.style : float.style}
         className={cn(
-          'bg-surface border-line border p-2 shadow-pop',
+          'bg-card border-border border p-2 shadow-pop',
           popover
             ? 'w-56 rounded-lg'
             : // The phone's home indicator lives under the sheet's last
@@ -240,7 +240,7 @@ export function ActionSheet({
             {...drag.handlers}
             className="-mt-1 cursor-grab touch-none select-none pt-1 active:cursor-grabbing"
           >
-            <div className="bg-line mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
+            <div className="bg-border mx-auto mb-1.5 h-1 w-9 rounded-full" aria-hidden />
             <p className="text-subtle truncate px-3 pb-1 text-sm">{t(title)}</p>
           </div>
         )}
@@ -258,7 +258,7 @@ export function ActionSheet({
               'flex w-full items-center gap-3 rounded-lg text-left transition-colors duration-100',
               // A popover row is a menu item; a sheet row is a touch target.
               popover ? 'px-3 py-1.5 text-sm' : 'px-3 py-3 text-base',
-              danger ? 'text-bad hover:bg-bad/10' : 'text-fg hover:bg-surface-2',
+              danger ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-accent',
               className,
             )}
           >

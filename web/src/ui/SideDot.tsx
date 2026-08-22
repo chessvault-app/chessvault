@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * A chess-side swatch: the colour of the white or black pieces, with an

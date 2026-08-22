@@ -1,5 +1,5 @@
 import { cloneElement, createContext, isValidElement, useId, type ReactNode } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**

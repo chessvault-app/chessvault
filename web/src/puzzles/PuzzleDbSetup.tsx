@@ -1,7 +1,7 @@
 import { Download, Loader2, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/ui/Button';
 
@@ -87,11 +87,11 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
   return (
     <div className="flex h-full flex-col items-center justify-center overflow-y-auto p-6">
       <div className="flex w-full max-w-md flex-col gap-3 text-center">
-        <p className="text-fg text-base font-semibold">{t('No puzzle database yet')}</p>
+        <p className="text-foreground text-base font-semibold">{t('No puzzle database yet')}</p>
 
         {running ? (
           <>
-            <p className="text-muted text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {phase === 'downloading'
                 ? t('Downloading the puzzle dump')
                 : phase === 'indexing'
@@ -99,7 +99,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                   : t('Building the database')}
             </p>
 
-            <span className="bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border">
+            <span className="bg-surface-inset border-border-strong flex h-2 w-full overflow-hidden rounded-full border">
               <span
                 className={cn(
                   'bg-primary h-full',
@@ -126,7 +126,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
           </>
         ) : (
           <>
-            <p className="text-muted text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {t(
                 'The trainer runs on the Lichess puzzle database — 6.1 million puzzles, free to use. The app can fetch and build it for you: about 300 MB to download, and around 2.5 GB once built.',
               )}

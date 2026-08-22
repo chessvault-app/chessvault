@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * What this panel does, drawn: a board pulling games down from a cloud.

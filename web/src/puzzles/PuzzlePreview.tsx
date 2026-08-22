@@ -2,7 +2,7 @@ import { Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Board } from '@/board/Board';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { placeNear } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
@@ -96,7 +96,7 @@ export function usePuzzlePreview(): {
   };
 
   const eyeProps = (id: string) => ({
-    className: 'text-subtle hover:text-fg size-3.5 shrink-0',
+    className: 'text-subtle hover:text-foreground size-3.5 shrink-0',
     'aria-label': t('Preview the position'),
     onMouseEnter: (e: React.MouseEvent) => {
       if (!window.matchMedia('(pointer: coarse)').matches) void show(id, e.currentTarget);
@@ -131,7 +131,7 @@ export function usePuzzlePreview(): {
       <div
         style={{ top: preview.top, left: preview.left }}
         className={cn(
-          'border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
+          'border-border bg-card pointer-events-none fixed z-50 w-44 rounded-lg border p-1',
           'shadow-pop',
         )}
       >

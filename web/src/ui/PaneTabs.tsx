@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useRovingTabs } from './roving';
 import { t } from '@/lib/i18n';
 
@@ -41,7 +41,7 @@ export function PaneTabs<T extends string>({
         // under it on the one screen with no vertical room to spare, and
         // the track's inset is only there to show the active pill sitting
         // inside it — one pixel does that as well as two.
-        'bg-surface-2 border-line flex shrink-0 gap-0.5 rounded-lg border p-px',
+        'bg-muted border-border flex shrink-0 gap-0.5 rounded-lg border p-px',
         className,
       )}
     >
@@ -84,7 +84,7 @@ export function PaneTabs<T extends string>({
               // Text tabs are the book pages, not the board ones, and keep
               // their height: a label needs the line box a glyph does not.
               Icon ? 'py-1' : 'h-7 text-sm pointer-coarse:h-8',
-              tab.id === value ? 'bg-surface text-fg shadow-control' : 'text-muted hover:text-fg',
+              tab.id === value ? 'bg-card text-foreground shadow-control' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {Icon ? <Icon className="size-3.5" /> : t(tab.label)}

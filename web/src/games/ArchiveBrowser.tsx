@@ -10,7 +10,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
@@ -773,7 +773,7 @@ export function ArchiveBrowser({
               {recents.map((who) => (
                 <span
                   key={who}
-                  className="border-line text-muted hover:border-line-strong hover:text-fg group/recent flex w-fit shrink-0 items-center rounded-full border pl-2.5 transition-colors duration-100"
+                  className="border-border text-muted-foreground hover:border-border-strong hover:text-foreground group/recent flex w-fit shrink-0 items-center rounded-full border pl-2.5 transition-colors duration-100"
                 >
                   <button
                     type="button"
@@ -790,7 +790,7 @@ export function ArchiveBrowser({
                     title={t('Forget this search')}
                     aria-label={t('Forget this search')}
                     onClick={() => forgetRecent(who)}
-                    className="text-subtle hover:text-bad grid size-6 shrink-0 place-items-center rounded-full transition-colors duration-100"
+                    className="text-subtle hover:text-destructive grid size-6 shrink-0 place-items-center rounded-full transition-colors duration-100"
                   >
                     <X className="size-3" />
                   </button>
@@ -923,7 +923,7 @@ export function ArchiveBrowser({
           {offline && months.length > 0 && (
             <span className="text-warn text-sm">{t('offline — cached months only')}</span>
           )}
-          {error && <span className="text-bad text-sm">{error}</span>}
+          {error && <span className="text-destructive text-sm">{error}</span>}
         </div>
       )}
 
@@ -932,7 +932,7 @@ export function ArchiveBrowser({
         // small-caps label voice, the mode switch sits with the controls
         // on the right — the two lists take turns in one column and
         // their furniture should read as one design (lanph3re's call).
-        <div className="border-line flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-sm">
+        <div className="border-border flex min-h-8 flex-wrap items-center gap-2 border-t px-3 py-1 pr-1.5 text-sm">
           {!selecting ? (
             <>
               {/* How much of the archive is in hand. It used to be all of
@@ -983,7 +983,7 @@ export function ArchiveBrowser({
                     setPicked(e.target.checked ? new Set(uncollected.map(gameKey)) : new Set())
                   }
                 />
-                <span className="text-muted truncate">{t('Select all new')}</span>
+                <span className="text-muted-foreground truncate">{t('Select all new')}</span>
               </label>
               {/* A badge, not another grey sentence: it is the one number
                   that changes as you tick rows. */}
@@ -1031,7 +1031,7 @@ export function ArchiveBrowser({
       {month && (
         <ul
           className={cn(
-            '@container/arc divide-line min-h-0 divide-y border-t border-line',
+            '@container/arc divide-border min-h-0 divide-y border-t border-border',
             // Who scrolls, the list or the thing holding it.
             //
             // In a panel it is the list: it sits in a column beside the
@@ -1095,7 +1095,7 @@ export function ArchiveBrowser({
         // longer than its box — and the reassuring half ("Select all new
         // still takes every one") was the half nobody finished reading.
         <p
-          className="text-subtle border-line flex items-center gap-1.5 border-t px-3 py-2 text-xs"
+          className="text-subtle border-border flex items-center gap-1.5 border-t px-3 py-2 text-xs"
           title={t('Showing the first {shown} of {total}. Select all new still takes every one.', {
             shown: MAX_ROWS,
             total: visibleMonthGames.length,
@@ -1113,7 +1113,7 @@ export function ArchiveBrowser({
           results arrived somewhere below the fold. Rows in the same box
           instead, so the panel keeps its size and its place. */}
       {!month && loading === 'months' && (
-        <div className="border-line min-h-0 flex-1 border-t">
+        <div className="border-border min-h-0 flex-1 border-t">
           <SkeletonGameRows rows={6} />
         </div>
       )}
@@ -1121,7 +1121,7 @@ export function ArchiveBrowser({
       {/* Nothing browsed yet: fill the panel with a prompt instead of
           leaving a bare bar over blank space. */}
       {!month && loading !== 'months' && (
-        <div className="border-line flex min-h-0 flex-1 flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
+        <div className="border-border flex min-h-0 flex-1 flex-col items-center justify-center gap-3 border-t px-6 py-14 text-center">
           {/* What the panel does, drawn — rather than the same globe that
               is already on the button two inches above it.
 
@@ -1134,7 +1134,7 @@ export function ArchiveBrowser({
               is the first thing to go when there is no room. There is
               room: the window scrolls. */}
           <CloudBoardArt className="w-20 shrink-0" />
-          <p className="text-muted max-w-xs text-base leading-relaxed">
+          <p className="text-muted-foreground max-w-xs text-base leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month — then add the ones worth keeping to your collection.',
               { site: provider === 'chesscom' ? 'chess.com' : 'Lichess' },

@@ -10,7 +10,7 @@ import {
 import { ChevronLeft, X, type LucideIcon } from 'lucide-react';
 import { Button } from './Button';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { useCloseRequest, useDialogFocus } from './dialogFocus';
@@ -242,7 +242,7 @@ export function Modal({
           // business. Without it, reaching the end of the list inside a
           // sheet hands the rest of the gesture to whatever is behind the
           // sheet, which then moves under a scrim you are still touching.
-          'bg-surface border-line flex w-full flex-col gap-3 overflow-y-auto overscroll-contain',
+          'bg-card border-border flex w-full flex-col gap-3 overflow-y-auto overscroll-contain',
           'border p-3 shadow-pop',
           // Children keep their size; the WINDOW scrolls. A flex column is
           // allowed to shrink its children before it overflows, and that is
@@ -291,7 +291,7 @@ export function Modal({
             ActionSheet — one sheet idiom per phone. */}
         <div
           className={cn(
-            'border-line -mx-3 shrink-0 px-3 pb-2 sm:border-b',
+            'border-border -mx-3 shrink-0 px-3 pb-2 sm:border-b',
             // The header is the one place the browser must never pan:
             // it is not a scroller, and a drag begun here is a push on the
             // sheet by definition. The BODY keeps touch-action auto, since
@@ -306,7 +306,7 @@ export function Modal({
               drags, and content that scrolls hands the gesture over once
               it is at its top. */}
           <div
-            className="bg-line mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden"
+            className="bg-border mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden"
             aria-hidden
           />
           <div className="flex items-center gap-2">

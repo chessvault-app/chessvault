@@ -6,12 +6,12 @@ import {
   type TextareaHTMLAttributes,
 } from 'react';
 import { CalendarDays, Search } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { ClearButton } from '@/ui/ClearButton';
 import { t } from '@/lib/i18n';
 
 /**
- * The one text input. Every ad-hoc `bg-surface-inset border-line …` string
+ * The one text input. Every ad-hoc `bg-surface-inset border-border …` string
  * in the views drifted (two focus colours, four heights) — this is the
  * single source of truth.
  *
@@ -53,7 +53,7 @@ const sizes: Record<InputSize, string> = {
 };
 
 const base =
-  'bg-surface-inset border-line text-fg placeholder:text-subtle min-w-0 rounded-md border ' +
+  'bg-surface-inset border-border text-foreground placeholder:text-subtle min-w-0 rounded-md border ' +
   'transition-colors duration-100 focus:border-primary/50 ' +
   'disabled:pointer-events-none disabled:opacity-45';
 
@@ -371,13 +371,13 @@ export const SearchInput = forwardRef<HTMLInputElement, InputProps>(function Sea
         onPointerDown={(e) => e.preventDefault()}
         onClick={() => empty('leave')}
         className={cn(
-          'pointer-fine:hidden text-muted hover:text-fg grid shrink-0 place-items-center overflow-hidden',
+          'pointer-fine:hidden text-muted-foreground hover:text-foreground grid shrink-0 place-items-center overflow-hidden',
           'whitespace-nowrap rounded-full text-sm font-medium',
           // The same glass the sheets close with: a translucent disc that
           // takes its colour from whatever it sits on, with a hairline of
           // light along the edge. backdrop-blur is what makes it read as
           // glass rather than as a grey pill.
-          'bg-fg/8 hover:bg-fg/14 ring-fg/10 ring-1 ring-inset backdrop-blur-md',
+          'bg-foreground/8 hover:bg-foreground/14 ring-foreground/10 ring-1 ring-inset backdrop-blur-md',
           'transition-[max-width,margin,padding,opacity] duration-150',
           cancelSizes[inputSize],
           focused ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',

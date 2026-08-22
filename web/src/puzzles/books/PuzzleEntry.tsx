@@ -23,7 +23,7 @@ import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { EditorView } from '@/editor/EditorView';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 import { navigate } from '@/lib/router';
 
@@ -78,7 +78,7 @@ export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: st
     return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
   if (!puzzle) {
-    return <div className="text-muted grid h-full place-items-center text-base">{t('Puzzle not found.')}</div>;
+    return <div className="text-muted-foreground grid h-full place-items-center text-base">{t('Puzzle not found.')}</div>;
   }
   return (
     <PuzzleEntry
@@ -221,7 +221,7 @@ export function PuzzleEntry({
         <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
           <ChevronLeft className="size-3.5" />
         </Button>
-        <h1 className="text-fg min-w-0 flex-1 truncate text-base font-semibold">
+        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">
           {t(replace ? 'Fix' : 'Add')} <span className="font-mono">#{number}</span>
         </h1>
       </div>
@@ -235,8 +235,8 @@ export function PuzzleEntry({
               maxWidth={wideRowW > 0 ? Math.max(280, wideRowW - 640) : undefined}
             />
           ) : draft ? (
-            <aside className="border-line flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
-              <img src={draft.imageUrl} alt={t('book diagram')} className="border-line rounded-md border" />
+            <aside className="border-border flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
+              <img src={draft.imageUrl} alt={t('book diagram')} className="border-border rounded-md border" />
               <p className="text-subtle text-sm leading-relaxed">
                 {t('The diagram from the book — make the board match it, then record the solution.')}
               </p>
@@ -283,7 +283,7 @@ export function PuzzleEntry({
                     width={stackedPaneW - 32}
                   />
                 ) : draft ? (
-                  <img src={draft.imageUrl} alt={t('book diagram')} className="border-line w-full rounded-md border" />
+                  <img src={draft.imageUrl} alt={t('book diagram')} className="border-border w-full rounded-md border" />
                 ) : null}
               </div>
             ) : stackedView === 'solutions' && evidence && hasSolutions(evidence) ? (
@@ -457,7 +457,7 @@ function SolutionRecorder({
           </div>
           <div className="flex h-6 w-full items-center gap-2 px-0.5 text-sm">
             <SideDot side={turn} />
-            <span className="text-muted">{t('Play the solution — every move, both sides.')}</span>
+            <span className="text-muted-foreground">{t('Play the solution — every move, both sides.')}</span>
           </div>
         </div>
       </div>
@@ -488,7 +488,7 @@ function SolutionRecorder({
               above it: a title bar with a back arrow made this read as its
               own page, which it is not — it is one step of the entry that
               the board beside it belongs to. */}
-          <p className="text-muted px-3 pt-2.5 text-sm">
+          <p className="text-muted-foreground px-3 pt-2.5 text-sm">
             {t('Record the solution — every move, both sides.')}
           </p>
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-base">
@@ -522,7 +522,7 @@ function SolutionRecorder({
                           'rounded-sm px-1 transition-colors duration-100',
                           wildcards.has(i)
                             ? 'bg-primary-soft text-primary'
-                            : 'hover:bg-surface-2',
+                            : 'hover:bg-accent',
                         )}
                       >
                         {wildcards.has(i) ? `${m.san.charAt(0)}~` : m.san}
@@ -536,14 +536,14 @@ function SolutionRecorder({
             )}
           </div>
           {line.length > 1 && (
-            <p className="text-subtle border-line border-t px-3 py-1.5 text-xs">
+            <p className="text-subtle border-border border-t px-3 py-1.5 text-xs">
               {t('Tip: click an opponent move to mark it “any move” (the book’s ~).')}
             </p>
           )}
         </Panel>
 
         {verdicts && (
-          <div className="bg-surface border-line shrink-0 rounded-xl border p-3 text-sm">
+          <div className="bg-card border-border shrink-0 rounded-xl border p-3 text-sm">
             {verdicts.map((note, i) => (
               <p key={i} className={note.startsWith('Engine agrees') ? 'text-good' : 'text-warn'}>
                 {note}
@@ -551,7 +551,7 @@ function SolutionRecorder({
             ))}
           </div>
         )}
-        {error && <p className="text-bad text-sm">{error}</p>}
+        {error && <p className="text-destructive text-sm">{error}</p>}
 
         {/* Primary last, and Cancel beside it — the same order every
             button row in the app uses (PromptSheet is the reference).

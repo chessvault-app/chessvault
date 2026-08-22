@@ -6,7 +6,7 @@ import { EngineBlock } from '@/engine/EnginePane';
 import { ReviewButton, ReviewStrip } from '@/engine/ReviewStrip';
 import { ExplorerPane } from '@/explorer/ExplorerPane';
 import { api, ApiError } from '@/lib/api';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { up } from '@/lib/router';
 import { useOpeningName } from '@/lib/opening';
@@ -111,7 +111,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             board's h-10 strip + its gap-2, so the first panel's top edge
             aligns with the board's (lanph3re's call, matching studies/games). */}
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
-          <h1 className="text-fg text-base font-semibold">
+          <h1 className="text-foreground text-base font-semibold">
             {wantExplorer ? t('Explorer') : t('Board')}
           </h1>
         </div>
@@ -172,7 +172,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
           <ReviewStrip />
           {/* Navigation lives at the bottom of the moves panel (lanph3re's
               call), not under the board. */}
-          <BoardControls className="border-line border-t max-md:hidden" keyboard={false} />
+          <BoardControls className="border-border border-t max-md:hidden" keyboard={false} />
         </Panel>
         {/* Engine as its own phone tab — desktop shows it docked above, so
             this whole pane is lg:hidden. */}
@@ -239,7 +239,7 @@ function CollectGameButton() {
             ? 'Could not add this game'
             : 'Add this game to the collection'
       }
-      className={state === 'failed' ? 'text-bad' : state === 'done' ? 'text-good' : undefined}
+      className={state === 'failed' ? 'text-destructive' : state === 'done' ? 'text-good' : undefined}
       onClick={() => void collect()}
     >
       {state === 'busy' ? (
@@ -272,7 +272,7 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
       >
         <ChevronLeft className="size-3.5" />
       </Button>
-      <h1 className="text-fg min-w-0 truncate text-base font-semibold">{title}</h1>
+      <h1 className="text-foreground min-w-0 truncate text-base font-semibold">{title}</h1>
     </div>
   );
 }

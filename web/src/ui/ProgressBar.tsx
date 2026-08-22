@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -39,7 +39,7 @@ export function ProgressBar({
       role="img"
       aria-label={label}
       className={cn(
-        'bg-surface-inset border-line-strong flex h-2 w-full overflow-hidden rounded-full border',
+        'bg-surface-inset border-border-strong flex h-2 w-full overflow-hidden rounded-full border',
         className,
       )}
     >

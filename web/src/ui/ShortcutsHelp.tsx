@@ -45,10 +45,10 @@ export function ShortcutsHelp() {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
         {SHORTCUTS.map(({ keys, what }) => (
           <span key={keys} className="contents">
-            <dt className="bg-surface-2 border-line justify-self-start rounded-sm border px-1.5 py-0.5 font-mono">
+            <dt className="bg-muted border-border justify-self-start rounded-sm border px-1.5 py-0.5 font-mono">
               {keys}
             </dt>
-            <dd className="text-muted self-center">{t(what)}</dd>
+            <dd className="text-muted-foreground self-center">{t(what)}</dd>
           </span>
         ))}
       </dl>

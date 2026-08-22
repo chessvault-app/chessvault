@@ -1,7 +1,7 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { useDismiss, useFloating } from '@/lib/floating';
 import { useCloseRequest } from './dialogFocus';
@@ -355,9 +355,9 @@ export function Select({
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={onKeyDown}
         className={cn(
-          'border-line text-fg flex min-w-0 shrink items-center gap-1 rounded-md border',
+          'border-border text-foreground flex min-w-0 shrink items-center gap-1 rounded-md border',
           'transition-colors duration-100',
-          sunken ? 'bg-surface-inset focus:border-primary/50' : 'bg-surface-2 hover:bg-surface-3',
+          sunken ? 'bg-surface-inset focus:border-primary/50' : 'bg-muted hover:bg-surface-3',
           triggerSizes[size],
           mono && 'font-mono',
           className,
@@ -448,7 +448,7 @@ export function Select({
             // overscroll-contain: scrolling the list must not chain to the
             // page — a page scroll is what the dismiss handler listens for,
             // so without this a touch-scroll of the list closed the dropdown.
-            'border-line bg-surface z-50 w-max max-w-72 overflow-y-auto overscroll-contain rounded-lg border p-1',
+            'border-border bg-card z-50 w-max max-w-72 overflow-y-auto overscroll-contain rounded-lg border p-1',
             'shadow-pop',
           )}
         >
@@ -502,8 +502,8 @@ export function Select({
                       // misfire for a thumb.
                       'pointer-coarse:py-2.5',
                       'transition-colors duration-100',
-                      i === active && 'bg-surface-2',
-                      option.value === value ? 'text-primary font-medium' : 'text-fg',
+                      i === active && 'bg-muted',
+                      option.value === value ? 'text-primary font-medium' : 'text-foreground',
                       mono && 'font-mono',
                     )}
                   >
@@ -548,8 +548,8 @@ export function Select({
                   onClick={() => pick(option.value)}
                   className={cn(
                     'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-base',
-                    'hover:bg-surface-2 transition-colors duration-100',
-                    option.value === value ? 'text-primary font-medium' : 'text-fg',
+                    'hover:bg-accent transition-colors duration-100',
+                    option.value === value ? 'text-primary font-medium' : 'text-foreground',
                     mono && 'font-mono',
                   )}
                 >

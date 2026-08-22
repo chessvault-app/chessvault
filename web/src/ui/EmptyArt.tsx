@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Search } from 'lucide-react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 import { KnightIcon } from './KnightIcon';
 
 /**
@@ -26,7 +26,7 @@ function KnightPlate({ badge, glow }: { badge: ReactNode; glow: string }) {
         style={{ background: glow }}
         aria-hidden
       />
-      <div className="border-line bg-surface-2/60 absolute inset-0 -z-10 rounded-2xl border" aria-hidden />
+      <div className="border-border bg-muted/60 absolute inset-0 -z-10 rounded-2xl border" aria-hidden />
       <KnightIcon className="text-subtle size-12 opacity-70" />
       {/* Bottom-right, overlapping the plate's edge, so the two read as
           one object rather than as an icon with a sticker beside it. */}
@@ -39,7 +39,7 @@ function Badge({ className, children }: { className?: string; children: ReactNod
   return (
     <span
       className={cn(
-        'border-app grid size-8 place-items-center rounded-full border-4 shadow-pop',
+        'border-background grid size-8 place-items-center rounded-full border-4 shadow-pop',
         className,
       )}
     >
@@ -91,10 +91,10 @@ export function CollectionArt() {
 export function NoMatchArt() {
   return (
     <KnightPlate
-      glow="radial-gradient(circle, var(--color-fg) 0%, transparent 70%)"
+      glow="radial-gradient(circle, var(--color-foreground) 0%, transparent 70%)"
       badge={
         <Badge className="bg-surface-3">
-          <Search className="text-muted size-4" strokeWidth={2.5} />
+          <Search className="text-muted-foreground size-4" strokeWidth={2.5} />
         </Badge>
       }
     />

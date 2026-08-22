@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react';
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * A row of a list inside a panel, which goes somewhere when pressed.
@@ -50,8 +50,8 @@ export function ListRow({
       type={type}
       className={cn(
         'flex w-full items-center gap-2.5 px-3 text-left transition-colors duration-100',
-        'enabled:hover:bg-surface-2 disabled:opacity-60',
-        divided && 'border-line border-b last:border-b-0',
+        'enabled:hover:bg-accent disabled:opacity-60',
+        divided && 'border-border border-b last:border-b-0',
         dense ? 'py-1.5' : 'py-2',
         className,
       )}

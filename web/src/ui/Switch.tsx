@@ -1,4 +1,4 @@
-import { cn } from '@/lib/cn';
+import { cn } from '@/lib/utils';
 
 /**
  * The toggle switch (engine on/off, explorer on/off). Extracted from two

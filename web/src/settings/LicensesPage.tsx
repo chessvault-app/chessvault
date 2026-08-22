@@ -38,7 +38,7 @@ export function LicensesPage() {
       <iframe
         src={`${import.meta.env.BASE_URL}licenses/index.html`}
         title={t('Licences')}
-        className="border-line bg-surface mx-auto min-h-0 w-full max-w-5xl flex-1 rounded-xl border"
+        className="border-border bg-card mx-auto min-h-0 w-full max-w-5xl flex-1 rounded-xl border"
       />
     </div>
   );
