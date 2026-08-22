@@ -176,18 +176,24 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // The rule under a title is the app's one way of separating a header
     // from what it heads — panels and windows alike (lanph3re's call); the
     // CardHeader draws it.
-    <CardHeader className={className}>
+    <CardHeader className={cn('flex h-10 shrink-0 flex-row items-center justify-between gap-2 px-3', className)}>
       {/* Translated HERE, not at every call site. A panel title is always
           user-facing, so a caller that forgets t() is a bug that renders
           fine in English and ships. Doing it once means it cannot be
           forgotten; a caller that already translated passes Korean, and
           t() on a string with no entry returns it unchanged. */}
-      <CardTitle>{typeof title === 'string' ? t(title) : title}</CardTitle>
+      <CardTitle className="min-w-0 flex-1 truncate text-sm">
+        {typeof title === 'string' ? t(title) : title}
+      </CardTitle>
       {/* The actions take exactly their own width and the title takes the
           rest. They used to `grow` while the title merely `shrink`: on a
           phone the buttons — every one of them shrink-0 — overflowed their
           box and painted over the opening name instead of squeezing it. */}
-      {actions ? <CardAction className={actionsClassName}>{actions}</CardAction> : null}
+      {actions ? (
+        <CardAction className={cn('col-auto row-auto flex shrink-0 items-center justify-end gap-1 self-center', actionsClassName)}>
+          {actions}
+        </CardAction>
+      ) : null}
     </CardHeader>
   );
 }

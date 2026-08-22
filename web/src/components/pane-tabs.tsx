@@ -33,9 +33,7 @@ export function PaneTabs<T extends string>({
 }) {
   return (
     <Tabs value={value} onValueChange={(id) => onChange(id as T)} className="contents">
-      {/* p-px, not p-0.5: this row sits between a board and the panel
-          under it on the one screen with no vertical room to spare. */}
-      <TabsList className={className}>
+      <TabsList className={cn('w-auto', className)}>
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -49,7 +47,7 @@ export function PaneTabs<T extends string>({
               // target was never short of room; it was short of it
               // vertically, in the panel underneath. Text tabs keep their
               // height: a label needs the line box a glyph does not.
-              className={cn(Icon ? 'py-1' : 'h-7 text-sm pointer-coarse:h-8')}
+              className={cn(Icon && 'py-1')}
             >
               {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
             </TabsTrigger>

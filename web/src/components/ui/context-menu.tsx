@@ -6,10 +6,14 @@ import { cn } from '@/lib/utils';
 import { MENU_ITEM } from '@/components/ui/dropdown-menu';
 
 /**
- * shadcn's ContextMenu, owned — the same menu as DropdownMenu, opened at
- * the pointer by a right-click (or a long press), so it shares that file's
- * row classes and wears the same face.
+ * shadcn's ContextMenu (nova), owned — the same menu as DropdownMenu,
+ * opened at the pointer by a right-click (or a long press), so it shares
+ * that file's row classes and face.
  */
+
+const CONTENT =
+  'bg-popover text-popover-foreground ring-foreground/10 z-50 min-w-32 origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 ' +
+  'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95';
 
 function ContextMenu({ ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Root>) {
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
@@ -64,11 +68,7 @@ function ContextMenuSubContent({
   return (
     <ContextMenuPrimitive.SubContent
       data-slot="context-menu-sub-content"
-      className={cn(
-        'border-border bg-popover text-popover-foreground z-50 min-w-32 origin-(--radix-context-menu-content-transform-origin) overflow-hidden rounded-lg border p-2 shadow-pop duration-100',
-        'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-        className,
-      )}
+      className={cn(CONTENT, 'overflow-hidden shadow-lg', className)}
       {...props}
     />
   );
@@ -82,11 +82,7 @@ function ContextMenuContent({
     <ContextMenuPrimitive.Portal>
       <ContextMenuPrimitive.Content
         data-slot="context-menu-content"
-        className={cn(
-          'border-border bg-popover text-popover-foreground z-50 max-h-(--radix-context-menu-content-available-height) min-w-32 origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border p-2 shadow-pop duration-100',
-          'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
-          className,
-        )}
+        className={cn(CONTENT, 'max-h-(--radix-context-menu-content-available-height)', className)}
         {...props}
       />
     </ContextMenuPrimitive.Portal>
@@ -168,7 +164,7 @@ function ContextMenuLabel({
     <ContextMenuPrimitive.Label
       data-slot="context-menu-label"
       data-inset={inset}
-      className={cn('text-subtle truncate px-3 pb-2 text-sm data-inset:pl-9', className)}
+      className={cn('text-muted-foreground truncate px-1.5 py-1 text-xs font-medium data-inset:pl-7', className)}
       {...props}
     />
   );
@@ -181,7 +177,7 @@ function ContextMenuSeparator({
   return (
     <ContextMenuPrimitive.Separator
       data-slot="context-menu-separator"
-      className={cn('bg-border -mx-2 my-1 h-px', className)}
+      className={cn('bg-border -mx-1 my-1 h-px', className)}
       {...props}
     />
   );

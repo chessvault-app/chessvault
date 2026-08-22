@@ -82,12 +82,13 @@ trainer picks a puzzle, not a verdict to hand back to whoever solved it.
 
 **The component layer is shadcn/ui, and the registry files are owned.**
 `web/src/components/ui/` holds the files `npx shadcn add` writes (Radix,
-`cva`, `data-slot`), each given the app's face and carrying its measured
-behaviour — the phone sheet, the page/layer chevron, the keyboard band,
-the sole-field focus, Android Back, the coarse-pointer sizes, `title` as
-a tooltip. Add a primitive with `npx shadcn add <name>` and then make it
-this app's; a hand-rolled popover, menu, dialog or tooltip beside a Radix
-one is two focus stacks on one page. Composites go in `web/src/components`,
+`cva`, `data-slot`), in the registry's own face (nova) and carrying the
+app's measured behaviour on top — the phone sheet, the page/layer chevron,
+the keyboard band, the sole-field focus, Android Back, the coarse-pointer
+hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
+<name>`; keep its look, add only behaviour; a hand-rolled popover, menu,
+dialog or tooltip beside a Radix one is two focus stacks on one page. The
+theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in
 `docs/design-principles.md` for the token mapping and the focus-ring rule.
 

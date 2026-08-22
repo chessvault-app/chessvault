@@ -79,7 +79,13 @@ export interface Scheme {
 }
 
 export const SCHEME_PRESETS: { id: string; label: string; scheme: Scheme }[] = [
-  { id: 'default', label: 'Slate', scheme: { hue: 264, tint: 1, accent: 240 } },
+  // The default is shadcn's neutral theme: pure greys, a near-black button
+  // on the light page and a near-white one on the dark — the look the
+  // component layer is drawn in (index.css derives the registry's values
+  // from these knobs at zero). Every other scheme is the same ladder with
+  // a tint; Slate is what the app was drawn in before.
+  { id: 'default', label: 'Neutral', scheme: { hue: 264, tint: 0, accent: 264, accentTint: 0 } },
+  { id: 'slate', label: 'Slate', scheme: { hue: 264, tint: 1, accent: 240 } },
   { id: 'paper', label: 'Paper', scheme: { hue: 75, tint: 1.8, accent: 45 } },
   { id: 'forest', label: 'Forest', scheme: { hue: 150, tint: 1.6, accent: 155 } },
   { id: 'rose', label: 'Rose', scheme: { hue: 350, tint: 1.5, accent: 350 } },

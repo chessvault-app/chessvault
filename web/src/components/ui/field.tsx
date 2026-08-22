@@ -145,13 +145,11 @@ function Field({
         role="group"
         data-slot="field"
         data-orientation="vertical"
-        className={cn('group/field flex min-w-0 flex-col gap-1', className)}
+        className={cn('group/field flex min-w-0 flex-col gap-2', className)}
         {...props}
       >
         <div className="flex items-baseline justify-between gap-2">
-          <FieldLabel htmlFor={target} className="text-subtle text-xs font-medium">
-            {t(label)}
-          </FieldLabel>
+          <FieldLabel htmlFor={target}>{t(label)}</FieldLabel>
           {hint}
         </div>
         {control}

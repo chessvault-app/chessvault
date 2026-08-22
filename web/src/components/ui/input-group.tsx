@@ -7,29 +7,21 @@ import { Input, INPUT_BASE, type InputProps } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 /**
- * shadcn's InputGroup, owned: a field with things in it — a magnifier
- * before the text, a clear button after it — where the GROUP is the box
- * and the input inside it is bare.
- *
- * It wears Input's own look (INPUT_BASE, the same heights), so a search
- * field and a plain field in one toolbar are the same object to the eye.
- * The two things that move from the input to the group: the focus tint on
- * the border, and the keyboard ring. The global :focus-visible outline
- * would draw a square ring on the borderless input INSIDE the rounded box,
- * so the control turns it off (the one place in the app that may — see
- * components/ui/input for why nowhere else does) and the group draws the same ring
- * around the whole field with a `has-[]` variant.
+ * shadcn's InputGroup (nova), owned: a field with things in it — a
+ * magnifier before the text, a clear button after it — where the GROUP is
+ * the box and the input inside it is bare. The registry's face, with the
+ * app's size axis so it lines up with Input and Button in a row.
  */
 const inputGroupVariants = cva(
   cn(
     INPUT_BASE,
-    'group/input-group relative flex w-full items-center',
-    // Focus, on the group: the border tint whenever the field is focused,
-    // and the ring when the focus is keyboard-visible. Both read the inner
-    // control by its slot.
-    'has-[[data-slot=input-group-control]:focus]:border-primary/50',
-    'has-[[data-slot=input-group-control]:focus-visible]:outline-2 has-[[data-slot=input-group-control]:focus-visible]:outline-primary has-[[data-slot=input-group-control]:focus-visible]:outline-offset-2',
-    'has-disabled:pointer-events-none has-disabled:opacity-45',
+    'group/input-group relative flex w-full min-w-0 items-center',
+    'has-disabled:bg-input/50 has-disabled:opacity-50',
+    'has-[[data-slot=input-group-control]:focus-visible]:border-ring has-[[data-slot=input-group-control]:focus-visible]:ring-3 has-[[data-slot=input-group-control]:focus-visible]:ring-ring/50',
+    'has-[[data-slot][aria-invalid=true]]:border-destructive has-[[data-slot][aria-invalid=true]]:ring-3 has-[[data-slot][aria-invalid=true]]:ring-destructive/20',
+    'has-[>[data-align=block-end]]:h-auto has-[>[data-align=block-end]]:flex-col has-[>[data-align=block-start]]:h-auto has-[>[data-align=block-start]]:flex-col has-[>textarea]:h-auto',
+    'dark:has-disabled:bg-input/80 dark:has-[[data-slot][aria-invalid=true]]:ring-destructive/40',
+    'has-[>[data-align=block-end]]:[&>input]:pt-3 has-[>[data-align=block-start]]:[&>input]:pb-3 has-[>[data-align=inline-end]]:[&>input]:pr-1.5 has-[>[data-align=inline-start]]:[&>input]:pl-1.5',
   ),
   {
     variants: {
@@ -60,14 +52,16 @@ function InputGroup({
 }
 
 const inputGroupAddonVariants = cva(
-  "flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>svg:not([class*='size-'])]:size-4",
+  "flex h-auto cursor-text items-center justify-center gap-2 py-1.5 text-sm font-medium text-muted-foreground select-none group-data-[disabled=true]/input-group:opacity-50 [&>kbd]:rounded-[calc(var(--radius)-5px)] [&>svg:not([class*='size-'])]:size-4",
   {
     variants: {
       align: {
-        'inline-start': 'order-first pl-2 has-[>button]:ml-[-0.3rem]',
-        'inline-end': 'order-last pr-2 has-[>button]:mr-[-0.3rem]',
-        'block-start': 'order-first w-full justify-start px-2.5 pt-2',
-        'block-end': 'order-last w-full justify-start px-2.5 pb-2',
+        'inline-start': 'order-first pl-2 has-[>button]:ml-[-0.3rem] has-[>kbd]:ml-[-0.15rem]',
+        'inline-end': 'order-last pr-2 has-[>button]:mr-[-0.3rem] has-[>kbd]:mr-[-0.15rem]',
+        'block-start':
+          'order-first w-full justify-start px-2.5 pt-2 group-has-[>input]/input-group:pt-2 [.border-b]:pb-2',
+        'block-end':
+          'order-last w-full justify-start px-2.5 pb-2 group-has-[>input]/input-group:pb-2 [.border-t]:pt-2',
       },
     },
     defaultVariants: { align: 'inline-start' },
@@ -101,7 +95,7 @@ const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-non
       xs: "h-6 gap-1 rounded-[calc(var(--radius)-3px)] px-1.5 [&>svg:not([class*='size-'])]:size-3.5",
       sm: '',
       'icon-xs': 'size-6 rounded-[calc(var(--radius)-3px)] p-0 has-[>svg]:p-0',
-      'icon-sm': 'size-7 p-0 has-[>svg]:p-0',
+      'icon-sm': 'size-8 p-0 has-[>svg]:p-0',
     },
   },
   defaultVariants: { size: 'xs' },
@@ -138,17 +132,12 @@ function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
   );
 }
 
-/**
- * The bare input inside the group: no box of its own, the group's height,
- * and — the one exception in the app — no outline, since the group draws
- * the ring (see above).
- */
 function InputGroupInput({ className, ...props }: InputProps) {
   return (
     <Input
       data-slot="input-group-control"
       className={cn(
-        'h-full flex-1 rounded-none border-0 bg-transparent outline-none focus:border-0',
+        'h-full flex-1 rounded-none border-0 bg-transparent shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent',
         className,
       )}
       {...props}
@@ -161,7 +150,7 @@ function InputGroupTextarea({ className, ...props }: React.ComponentProps<'texta
     <Textarea
       data-slot="input-group-control"
       className={cn(
-        'flex-1 resize-none rounded-none border-0 bg-transparent py-2 outline-none focus:border-0',
+        'flex-1 resize-none rounded-none border-0 bg-transparent py-2 shadow-none ring-0 focus-visible:ring-0 disabled:bg-transparent aria-invalid:ring-0 dark:bg-transparent dark:disabled:bg-transparent',
         className,
       )}
       {...props}

@@ -147,19 +147,19 @@
      own cap below has to know it too. */
   --board-side: 27rem;
 
-  --background: oklch(calc(98.4% + (100% - 98.4%) * var(--ui-contrast)) calc(0.003 * var(--ui-tint)) var(--ui-hue));
-  --background-accent: oklch(calc(96.5% + (95% - 96.5%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
+  --background: oklch(100% calc(0.003 * var(--ui-tint)) var(--ui-hue));
+  --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
-  --surface-2: oklch(calc(97.2% + (96% - 97.2%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
-  --surface-3: oklch(calc(94.4% + (91% - 94.4%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
-  --surface-inset: oklch(calc(96% + (94% - 96%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(calc(97% + (96% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(calc(92.8% + (90% - 92.8%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(calc(98.5% + (97% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(calc(91% + (62% - 91%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
-  --border-strong: oklch(calc(84% + (35% - 84%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
+  --border: oklch(calc(92.2% + (62% - 92.2%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --border-strong: oklch(calc(85% + (35% - 85%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
 
-  --foreground: oklch(calc(23% + (0% - 23%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --muted-foreground: oklch(calc(46% + (24% - 46%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  --foreground: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --muted-foreground: oklch(calc(48% + (24% - 48%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
   /* Both quiet tiers were measured against --surface and --background only,
      and passed there: subtle at 55% is 4.85:1 on white and 4.63:1 on the
      page. They are also used on --surface-2 and --surface-3, the raised
@@ -168,23 +168,32 @@
      (52% -> 46%) because at 52.5% the two tiers would have been the same
      colour; the ramp is wider now, not narrower. (Grey-on-grey maths: for
      neutrals, OKLCH L approximates Y^(1/3), so contrast = 1.05/(L³+0.05).) */
-  --text-subtle: oklch(calc(52.5% + (30% - 52.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(calc(53% + (30% - 53%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(calc(50% + (0% - 50%) * var(--ui-contrast)) calc(0.115 * var(--accent-tint)) var(--accent-hue));
-  --primary-hover: oklch(calc(44% + (22% - 44%) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
-  --primary-foreground: oklch(calc(99% + (100% - 99%) * var(--ui-contrast)) 0 0);
+  /* shadcn's neutral primary is near-black on white and near-white on
+     dark — a grey button, which is what the accent knob at 0 means here.
+     With the knob up, a coloured button needs the middle of the scale to
+     read as colour at all (a blue at 20% lightness is navy), so the
+     lightness follows the tint: grey = the registry's value, full colour =
+     the 50% / 73% the app's schemes were drawn at. Contrast then lerps
+     towards the end of the scale as for every other token. */
+  --primary-l: calc(20.5% + 29.5% * var(--accent-tint));
+  --primary-hover-l: calc(34% + 10% * var(--accent-tint));
+  --primary: oklch(calc(var(--primary-l) * (1 - var(--ui-contrast))) calc(0.115 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(calc(var(--primary-hover-l) + (22% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
+  --primary-foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) 0 0);
   --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(calc(50% + (0% - 50%) * var(--ui-contrast)) calc(0.115 * var(--accent-tint)) var(--accent-hue) / 45%);
+  --ring: oklch(calc(70.8% + (50% - 70.8%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   --good: oklch(51% 0.141 150);
-  --destructive: oklch(54% 0.19 25);
+  --destructive: oklch(57.7% 0.245 27.3);
   --warn: oklch(53% 0.112 75);
   --info: oklch(51% 0.102 230);
   /* What reads ON a filled --destructive panel, in both themes: the dark red is
      dark enough for white in light mode, and the light red of dark mode
      wants near-black. Only the swipe-to-remove strip fills --bad; every
      other use is text or a tint, which keeps the page colour behind it. */
-  --destructive-foreground: oklch(99% 0 0);
+  --destructive-foreground: oklch(98.5% 0 0);
   /* On --warn, which is a light amber in BOTH themes: white on it is a
      smear. The swipe-to-bookmark strip is the only thing that fills it. */
   --warn-foreground: oklch(22% 0.04 75);
@@ -264,34 +273,34 @@
 .dark {
   color-scheme: dark;
 
-  /* The page sits further under the surfaces than it used to: at 17.5%
-     against a 21.5% surface there were four points of lightness between a
-     card and the page behind it, and a shelf of cards read as one flat
-     field. Six points is enough for a card to be a card without the page
-     turning into a hole. The surface LADDER is untouched — every panel,
-     popover and input keeps its relationship to the others. */
-  --background: oklch(calc(15.5% + (0% - 15.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
-  --background-accent: oklch(calc(13% + (0% - 13%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  --surface: oklch(calc(21.5% + (13% - 21.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
-  --surface-2: oklch(calc(25% + (18.5% - 25%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
-  --surface-3: oklch(calc(29% + (24% - 29%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
-  --surface-inset: oklch(calc(19% + (7% - 19%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  /* The registry's dark neutral: page 14.5%, card 20.5%, muted 26.9% —
+     six points between a card and the page behind it, enough for a card
+     to be a card without the page turning into a hole. The surface
+     LADDER keeps its rungs (surface-3, surface-inset) above those. */
+  --background: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --background-accent: oklch(calc(12% + (0% - 12%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --surface: oklch(calc(20.5% + (13% - 20.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(calc(26.9% + (18.5% - 26.9%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(calc(32% + (24% - 32%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(calc(23% + (7% - 23%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
 
-  --border: oklch(calc(31% + (52% - 31%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --border: oklch(calc(29% + (52% - 29%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
-  --foreground: oklch(calc(96% + (100% - 96%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --muted-foreground: oklch(calc(78% + (90% - 78%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  --text-subtle: oklch(calc(66% + (80% - 66%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
+  --muted-foreground: oklch(calc(74% + (90% - 74%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(calc(68% + (80% - 68%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
 
-  --primary: oklch(calc(73% + (100% - 73%) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue));
-  --primary-hover: oklch(calc(78% + (92% - 78%) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
-  --primary-foreground: oklch(calc(16% + (0% - 16%) * var(--ui-contrast)) 0.025 235);
+  --primary-l: calc(92.2% - 19.2% * var(--accent-tint));
+  --primary-hover-l: calc(85% - 7% * var(--accent-tint));
+  --primary: oklch(calc(var(--primary-l) + (100% - var(--primary-l)) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(calc(var(--primary-hover-l) + (92% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
+  --primary-foreground: oklch(calc(20.5% + (0% - 20.5%) * var(--ui-contrast)) calc(0.025 * var(--accent-tint)) 235);
   --primary-soft: oklch(calc(30% + (20% - 30%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
-  --ring: oklch(calc(73% + (100% - 73%) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue) / 50%);
+  --ring: oklch(calc(55.6% + (100% - 55.6%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
   --good: oklch(72% 0.16 152);
-  --destructive: oklch(69% 0.18 25);
+  --destructive: oklch(70.4% 0.191 22.2);
   --warn: oklch(80% 0.15 80);
   --info: oklch(72% 0.13 232);
   /* Dark mode's --destructive is a light red; white on it is unreadable. */
@@ -428,32 +437,19 @@
   --color-knob: var(--knob);
   --color-scrim: var(--scrim);
 
-  /* The corner ladder, every rung a fixed step from the one --radius on
-     :root, so moving that number moves the whole app and not half of it.
-
-     Only lg and xl were derived; sm, md and 2xl fell through to
-     Tailwind's own 4, 6 and 16px. The first two happened to be the
-     sizes wanted, but they were pinned, not derived. 2xl was simply
-     wrong: smaller than xl (16 < 18), so every phone bottom sheet
-     (`rounded-t-2xl`) had tighter corners than the desktop panel
-     (`rounded-xl`) it stands in for, and the 56px icon plates were
-     squarer than the 18px cards beside them. Now 4 / 6 / 14 / 18 / 22,
-     each written as the knob plus or minus its step.
-
-     Bare `rounded` is NOT on this ladder and cannot be put on it:
-     Tailwind resolves it from a theme key named `--radius` itself,
-     which this file keeps as a plain :root property rather than a
-     theme value — on purpose, since the 48 `rounded` call sites are
-     badges and move chips that want 4px, not the 10px knob. So `rounded`
-     is Tailwind's literal 0.25rem, the same size as `rounded-sm`; an
-     earlier `--radius-DEFAULT: var(--radius)` line here was never read
-     by any utility and is gone. A `@utility rounded` override does not
-     work either — Tailwind emits its own declaration after it. */
-  --radius-sm: calc(var(--radius) - 0.375rem);
-  --radius-md: calc(var(--radius) - 0.25rem);
-  --radius-lg: calc(var(--radius) + 0.25rem);
-  --radius-xl: calc(var(--radius) + 0.5rem);
-  --radius-2xl: calc(var(--radius) + 0.75rem);
+  /* The corner ladder is the registry's: every rung a multiple of the one
+     --radius on :root (6 / 8 / 10 / 14 / 18 px at the default 0.625rem), so
+     moving that number moves the whole app. Bare `rounded` is NOT on the
+     ladder: Tailwind resolves it from a theme key named --radius itself,
+     which this file keeps as a plain :root property on purpose — the
+     badges and move chips that use it want 4px, not the knob. */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Three roles, deliberately not two.
 
@@ -471,6 +467,9 @@
   --font-sans: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --font-moves: var(--font-sans);
+  /* The registry's heading face is Geist; it has no hangul, and the app
+     has one voice — Pretendard, set so its Latin is Inter-shaped. */
+  --font-heading: var(--font-sans);
   /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
      fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
      mono element fell through to whatever the OS offered — which is why
@@ -499,6 +498,7 @@
 @layer base {
   * {
     border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
   }
 
   html {
@@ -587,8 +587,8 @@
 
   /* Only show focus rings for keyboard users, but never suppress them entirely. */
   :focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
+    outline: 3px solid color-mix(in oklab, var(--ring) 50%, transparent);
+    outline-offset: 0;
   }
 
   /* Except the box a dialog is, which is not a control.

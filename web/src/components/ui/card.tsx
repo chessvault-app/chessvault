@@ -3,16 +3,25 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * shadcn's Card, owned: the standard raised surface — every pane in the
- * app sits in one (ui/Panel composes it, with its resize grip and scroll
- * rules). The face is the app's: the card fill, a border, the panel lift
- * (shadow-panel), rounded-xl.
+ * shadcn's Card (nova), owned: the registry's face — the card fill, a
+ * hairline ring, rounded-xl, no shadow — and its spacing variable. One
+ * departure: the root sets no padding or gap of its own, because Panel
+ * (every pane in the app) owns its scroll and its padding; CardHeader,
+ * CardContent and CardFooter still pad themselves from `--card-spacing`.
  */
-function Card({ className, ...props }: React.ComponentProps<'section'> & { asChild?: never }) {
+function Card({
+  className,
+  size = 'default',
+  ...props
+}: React.ComponentProps<'section'> & { size?: 'default' | 'sm' }) {
   return (
     <section
       data-slot="card"
-      className={cn('bg-card text-card-foreground border-border flex flex-col rounded-xl border shadow-panel', className)}
+      data-size={size}
+      className={cn(
+        'group/card bg-card text-card-foreground ring-foreground/10 flex flex-col rounded-xl text-sm ring-1 [--card-spacing:--spacing(4)] data-[size=sm]:[--card-spacing:--spacing(3)]',
+        className,
+      )}
       {...props}
     />
   );
@@ -22,18 +31,20 @@ function CardHeader({ className, ...props }: React.ComponentProps<'header'>) {
   return (
     <header
       data-slot="card-header"
-      className={cn('border-border flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3', className)}
+      className={cn(
+        'group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)',
+        className,
+      )}
       {...props}
     />
   );
 }
 
-/** The small-caps label voice every panel is titled in. */
 function CardTitle({ className, ...props }: React.ComponentProps<'h2'>) {
   return (
     <h2
       data-slot="card-title"
-      className={cn('text-subtle label-caps min-w-0 flex-1 truncate text-xs', className)}
+      className={cn('font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm', className)}
       {...props}
     />
   );
@@ -47,21 +58,21 @@ function CardAction({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-action"
-      className={cn('flex shrink-0 items-center justify-end gap-1', className)}
+      className={cn('col-start-2 row-span-2 row-start-1 self-start justify-self-end', className)}
       {...props}
     />
   );
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return <div data-slot="card-content" className={cn('p-3', className)} {...props} />;
+  return <div data-slot="card-content" className={cn('px-(--card-spacing)', className)} {...props} />;
 }
 
 function CardFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="card-footer"
-      className={cn('border-border flex items-center border-t px-3 py-2', className)}
+      className={cn('bg-muted/50 flex items-center rounded-b-xl border-t p-(--card-spacing)', className)}
       {...props}
     />
   );

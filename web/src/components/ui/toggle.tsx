@@ -5,29 +5,25 @@ import { Toggle as TogglePrimitive } from 'radix-ui';
 import { cn } from '@/lib/utils';
 
 /**
- * shadcn's Toggle, owned: a two-state button (aria-pressed, data-state).
- * `chip` is this app's filter chip — the outlined pill that fills with the
- * accent when it is on; `default`/`outline` are the stock faces.
+ * shadcn's Toggle (nova), owned: a two-state button (aria-pressed,
+ * data-state) in the registry's faces, plus two of this app's: `chip`, the
+ * pill a filter row is made of, and `plain`, a bare item for a composite
+ * that styles its own (Segmented).
  */
 const toggleVariants = cva(
-  'inline-flex shrink-0 items-center justify-center gap-1 whitespace-nowrap font-medium transition-colors duration-100 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0',
+  "group/toggle inline-flex items-center justify-center gap-1 rounded-lg text-sm font-medium whitespace-nowrap transition-all outline-none hover:bg-muted hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 aria-pressed:bg-muted data-[state=on]:bg-muted dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: 'rounded-lg bg-transparent hover:bg-accent hover:text-foreground data-[state=on]:bg-muted',
-        outline:
-          'rounded-lg border border-border bg-transparent hover:bg-accent hover:text-foreground data-[state=on]:bg-muted',
-        /** Bare: for a composite that styles its own items (Segmented). */
-        plain: '',
-        chip:
-          'rounded-full border text-sm px-2.5 py-1 pointer-coarse:min-h-9 pointer-coarse:px-3 ' +
-          'border-border text-muted-foreground hover:border-border-strong ' +
-          'data-[state=on]:bg-primary-soft data-[state=on]:border-primary/40 data-[state=on]:text-primary',
+        default: 'bg-transparent',
+        outline: 'border border-input bg-transparent hover:bg-muted',
+        plain: 'hover:bg-transparent aria-pressed:bg-transparent data-[state=on]:bg-transparent',
+        chip: 'rounded-full border border-input bg-transparent px-2.5 py-1 text-muted-foreground hover:text-foreground data-[state=on]:text-foreground pointer-coarse:min-h-9 pointer-coarse:px-3',
       },
       size: {
-        default: 'h-8 min-w-8 px-2.5 text-sm',
-        sm: 'h-7 min-w-7 px-2 text-sm',
-        lg: 'h-9 min-w-9 px-2.5 text-base',
+        default: 'h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        sm: "h-7 min-w-7 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: 'h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
         /** The chip sizes itself; a height would fight the pill's padding. */
         none: '',
       },
@@ -46,7 +42,7 @@ function Toggle({
     <TogglePrimitive.Root
       data-slot="toggle"
       data-variant={variant}
-      className={cn(toggleVariants({ variant, size }), className)}
+      className={cn(toggleVariants({ variant, size, className }))}
       {...props}
     />
   );

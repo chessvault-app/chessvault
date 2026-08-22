@@ -13,7 +13,7 @@ export interface Segment<T extends string> {
   /**
    * The colour this segment answers to when it is the live one — a site's
    * own green, say. Where a segment stands for something that HAS a
-   * colour, the raised surface alone made the two look interchangeable.
+   * colour, the raised pill alone made the two look interchangeable.
    */
   accent?: string;
 }
@@ -22,17 +22,14 @@ export interface Segment<T extends string> {
  * One choice out of two or three, all of them visible — in one of two
  * shapes, because it was being asked to do two different jobs in one.
  *
- * `tabs` is the original: a track with one lit segment inside it. That
- * shape says "these are faces of one surface and this is the one
- * showing", which is true of the databases panel and the archive's two
- * sites, and false of "play as". `choice` is for a value: no track, the
- * options standing as peers, the chosen one filled in the accent and the
- * rest outlined. lanph3re's call, from a mock of the two side by side.
- *
- * The ROLES follow the shape, which is the half a screen reader hears —
- * and they are shadcn's: a tablist (Tabs) announces panes, and a value
- * that is not a pane is a single-choice ToggleGroup, which Radix gives
- * radio semantics. Both are driven by the same arrow keys.
+ * `tabs` is shadcn's Tabs track: one raised pill inside a muted strip,
+ * which says "these are faces of one surface and this is the one
+ * showing" — true of the databases panel and the archive's two sites.
+ * `choice` is for a value: shadcn's ToggleGroup, the options standing as
+ * joined outlined peers with the chosen one filled (lanph3re's call, from
+ * a mock of the two side by side). The ROLES follow the shape, which is
+ * the half a screen reader hears: a tablist announces panes, and a value
+ * that is not a pane is a radiogroup. Both are driven by the same arrows.
  */
 export function Segmented<T extends string>({
   value,
@@ -51,92 +48,40 @@ export function Segmented<T extends string>({
   ariaLabel: string;
   /** `sm` is the icon-only size used in a toolbar. */
   size?: 'sm' | 'md';
-  /**
-   * What the strip IS: `tabs` where it switches what is shown under it,
-   * `choice` where it sets a value. Defaulting to `choice` because most
-   * of these are settings, and a strip that really is a tablist should
-   * have to say so.
-   */
+  /** What the strip IS: `tabs` switches what is shown under it, `choice` sets a value. */
   kind?: 'tabs' | 'choice';
-  /**
-   * The shape, where it should not follow from the kind: a `choice` of two
-   * icons or three numerals inside a sentence keeps the track and stays a
-   * radiogroup.
-   */
+  /** The shape, where it should not follow from the kind: a `choice` of two icons keeps the track. */
   look?: 'track' | 'row';
-  /**
-   * Halves (or thirds) of exactly equal width, whatever the labels say —
-   * for a COLUMN of these, where two tracks whose lit pills break at 48%
-   * and at 50% read as two controls of slightly different make.
-   */
+  /** Halves (or thirds) of exactly equal width, for a COLUMN of these. */
   even?: boolean;
   className?: string;
 }) {
   const tabs = kind === 'tabs';
   const track = (look ?? (tabs ? 'track' : 'row')) === 'track';
-  // Concentric radii, or the lit segment reads as clipped: child = parent −
-  // border − padding, derived from the radius token. The coarse-pointer
-  // height is set on the BOX and the segments fill it, so this lands on
-  // exactly the 36px a Button's icon-sm and a Select take on touch.
-  const box = track
-    ? size === 'sm'
-      ? 'border-border bg-surface-inset border rounded-lg p-0.5 pointer-coarse:h-9'
-      : 'border-border bg-surface-inset border rounded-xl p-1 pointer-coarse:h-9'
-    : 'gap-2';
-  const seg = track
-    ? size === 'sm'
-      ? 'h-6 pointer-coarse:h-full rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-sm'
-      : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-sm'
-    : size === 'sm'
-      ? 'h-7 rounded-lg border px-2.5 text-sm pointer-coarse:h-9'
-      : 'h-9 rounded-lg border px-3 text-sm';
-  // The lit state is written as data-active / data-[state=on] variants, so
-  // the same classes serve both shapes and Radix's own state attribute is
-  // what lights them.
-  const segClass = (accent?: string): string =>
-    cn(
-      // whitespace-nowrap: a segment is one or two words by definition, and
-      // a crowded row must squeeze its flexible neighbour, not break 스터디
-      // across two lines. flex-auto, not flex-1: each segment is as wide as
-      // its label first and shares what is left after; `even` takes each
-      // segment's own width out of the sum.
-      'flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap',
-      even ? 'flex-1 basis-0' : 'flex-auto',
-      'font-medium transition-colors duration-100',
-      seg,
-      track
-        ? // Raised, and in the segment's own colour where it has one;
-          // the dead ones dimmer, so the gap between live and dead is a
-          // step rather than a shade.
-          cn(
-            'text-subtle hover:text-foreground',
-            'data-active:bg-surface-3 data-active:shadow-panel data-[state=on]:bg-surface-3 data-[state=on]:shadow-panel',
-            accent
-              ? 'data-active:font-semibold data-[state=on]:font-semibold'
-              : 'data-active:text-foreground data-[state=on]:text-foreground',
-          )
-        : // The answer: filled in the accent, and outlined in it too, so it
-          // reads as chosen rather than merely tinted; a peer that was not
-          // chosen is an outline, not a hole.
-          cn(
-            'border-border text-muted-foreground hover:border-border-strong hover:text-foreground',
-            'data-[state=on]:border-primary/40 data-[state=on]:bg-primary-soft',
-            accent ? 'data-[state=on]:font-semibold' : 'data-[state=on]:text-primary',
-          ),
-    );
-  const boxClass = cn('flex shrink-0 items-center', box, className);
+  // pointer-coarse:h-9 on the box, because a toolbar is a ROW and Button
+  // and Select grow there too.
+  const box = cn('flex shrink-0 items-center', size === 'sm' ? 'h-7 pointer-coarse:h-9' : 'h-8 pointer-coarse:h-9', className);
+  const item = cn(
+    // whitespace-nowrap: a segment is one or two words by definition, and a
+    // crowded row must squeeze its flexible neighbour, not break 스터디
+    // across two lines. flex-auto, not flex-1: each segment is as wide as
+    // its label first; `even` takes each segment's own width out of the sum.
+    'min-w-0 whitespace-nowrap',
+    even ? 'flex-1 basis-0' : 'flex-auto',
+    size === 'sm' ? 'px-1.5' : 'px-2.5',
+  );
 
   if (tabs) {
     return (
       <Tabs value={value} onValueChange={(v) => onChange(v as T)} className="contents">
-        <TabsList aria-label={t(ariaLabel)} className={cn('gap-0', boxClass)}>
+        <TabsList aria-label={t(ariaLabel)} className={cn('w-auto', box)}>
           {segments.map(({ value: id, label, title, accent }) => (
             <TabsTrigger
               key={id}
               value={id}
               title={title ? t(title) : undefined}
               style={id === value && accent ? { color: accent } : undefined}
-              className={segClass(accent)}
+              className={cn(item, id === value && accent && 'font-semibold')}
             >
               {label}
             </TabsTrigger>
@@ -156,11 +101,13 @@ export function Segmented<T extends string>({
         if (v) onChange(v as T);
       }}
       aria-label={t(ariaLabel)}
-      variant="plain"
-      size="none"
+      variant={track ? 'default' : 'outline'}
+      size={size === 'sm' ? 'sm' : 'default'}
+      spacing={0}
       // w-auto: the group is a block that fills its line (a column of these
-      // lines up), not the stock w-fit strip.
-      className={cn('w-auto gap-0', boxClass)}
+      // lines up), not the registry's w-fit strip. The track look borrows
+      // the Tabs strip's muted fill and raised pill.
+      className={cn('w-auto', box, track && 'bg-muted rounded-lg p-[3px] gap-0')}
     >
       {segments.map(({ value: id, label, title, accent }) => (
         <ToggleGroupItem
@@ -168,7 +115,12 @@ export function Segmented<T extends string>({
           value={id}
           title={title ? t(title) : undefined}
           style={id === value && accent ? { color: accent } : undefined}
-          className={segClass(accent)}
+          className={cn(
+            item,
+            track &&
+              'h-[calc(100%-1px)] rounded-md data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm',
+            id === value && accent && 'font-semibold',
+          )}
         >
           {label}
         </ToggleGroupItem>

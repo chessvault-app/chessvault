@@ -521,7 +521,10 @@ function AppearanceCard() {
                     // accent — draw the identical dot side by side and
                     // the swatch stops telling them apart. Both lerps
                     // are the ones --ui-contrast runs on the tokens.
-                    background: `oklch(${58 - 58 * (preset.scheme.contrast ?? 0)}% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
+                    // The dot's lightness follows the primary's: grey is near-black
+                    // (the registry's neutral), colour sits mid-scale — the same
+                    // rule --primary-l applies in index.css.
+                    background: `oklch(${(20.5 + 37.5 * (preset.scheme.accentTint ?? 1)) * (1 - (preset.scheme.contrast ?? 0))}% ${0.135 * (preset.scheme.accentTint ?? 1)} ${preset.scheme.accent})`,
                     outline: `2px solid oklch(${90 + 10 * (preset.scheme.contrast ?? 0)}% ${0.006 * preset.scheme.tint} ${preset.scheme.hue})`,
                   }}
                 />

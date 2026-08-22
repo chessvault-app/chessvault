@@ -5,12 +5,8 @@ import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * shadcn's DropdownMenu, owned. Radix brings the menu role, arrow keys and
- * typeahead, the first item focused on open, collision-aware placement and
- * layer stacking; this file gives it the app's popover face — the same
- * border, fill and lift every floating layer here wears (shadow-pop) — and
- * the row geometry the ⋯ menus had: a 56-wide card, rows with the verb's
- * icon in the quiet colour beside it, destructive rows in red.
+ * shadcn's DropdownMenu (nova), owned: the registry's face; Radix's menu
+ * role, arrow keys and typeahead, first item focused on open, placement.
  */
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
@@ -40,7 +36,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          'border-border bg-popover text-popover-foreground z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg border p-2 shadow-pop duration-100',
+          'bg-popover text-popover-foreground ring-foreground/10 z-50 max-h-(--radix-dropdown-menu-content-available-height) w-(--radix-dropdown-menu-trigger-width) min-w-32 origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100',
           'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
@@ -54,17 +50,9 @@ function DropdownMenuGroup({ ...props }: React.ComponentProps<typeof DropdownMen
   return <DropdownMenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-/**
- * The row classes, shared with ContextMenu — the two are the same menu
- * opened two ways, and must read as one.
- */
+/** The registry's row, shared with ContextMenu — the same menu opened two ways. */
 export const MENU_ITEM =
-  'group/menu-item relative flex w-full cursor-default select-none items-center gap-3 rounded-lg px-3 py-1.5 text-sm outline-hidden transition-colors duration-100 ' +
-  'focus:bg-accent focus:text-accent-foreground data-inset:pl-9 ' +
-  'data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive ' +
-  'data-disabled:pointer-events-none data-disabled:opacity-50 ' +
-  "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 " +
-  'data-[variant=default]:[&_svg]:text-subtle data-[variant=destructive]:*:[svg]:text-destructive';
+  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
 
 function DropdownMenuItem({
   className,
@@ -148,7 +136,6 @@ function DropdownMenuRadioItem({
   );
 }
 
-/** The menu's name: what row these verbs are about, in the quiet voice. */
 function DropdownMenuLabel({
   className,
   inset,
@@ -158,7 +145,7 @@ function DropdownMenuLabel({
     <DropdownMenuPrimitive.Label
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn('text-subtle truncate px-3 pb-2 text-sm data-inset:pl-9', className)}
+      className={cn('text-muted-foreground truncate px-1.5 py-1 text-xs font-medium data-inset:pl-7', className)}
       {...props}
     />
   );
@@ -171,7 +158,7 @@ function DropdownMenuSeparator({
   return (
     <DropdownMenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cn('bg-border -mx-2 my-1 h-px', className)}
+      className={cn('bg-border -mx-1 my-1 h-px', className)}
       {...props}
     />
   );
@@ -181,7 +168,10 @@ function DropdownMenuShortcut({ className, ...props }: React.ComponentProps<'spa
   return (
     <span
       data-slot="dropdown-menu-shortcut"
-      className={cn('text-muted-foreground ml-auto text-xs tracking-widest', className)}
+      className={cn(
+        'text-muted-foreground group-focus/menu-item:text-accent-foreground ml-auto text-xs tracking-widest',
+        className,
+      )}
       {...props}
     />
   );
@@ -219,7 +209,7 @@ function DropdownMenuSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        'border-border bg-popover text-popover-foreground z-50 min-w-[96px] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-lg border p-2 shadow-pop duration-100',
+        'bg-popover text-popover-foreground ring-foreground/10 z-50 min-w-[96px] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-lg p-1 shadow-lg ring-1 duration-100',
         'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
         className,
       )}

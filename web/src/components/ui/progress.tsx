@@ -4,11 +4,10 @@ import { Progress as ProgressPrimitive } from 'radix-ui';
 import { cn } from '@/lib/utils';
 
 /**
- * shadcn's Progress, owned: Radix's progressbar role and aria-valuenow
- * over the app's bordered track — a track that stays visible when empty,
- * so nothing at 0% is still plainly a bar. `value` fills it with the
- * primary; ProgressIndicator is exported for a bar that is more than one
- * fill (the solved/failed bar in components/progress-bar).
+ * shadcn's Progress (nova), owned: the registry's thin muted track and
+ * Radix's progressbar role. `value` fills it with the primary;
+ * ProgressIndicator is exported for a bar that is more than one fill
+ * (the solved/failed bar in components/progress-bar).
  */
 function Progress({
   className,
@@ -20,14 +19,11 @@ function Progress({
     <ProgressPrimitive.Root
       data-slot="progress"
       value={value}
-      className={cn(
-        'bg-surface-inset border-border-strong relative flex h-2 w-full overflow-hidden rounded-full border',
-        className,
-      )}
+      className={cn('bg-muted relative flex h-1 w-full items-center overflow-x-hidden rounded-full', className)}
       {...props}
     >
       {children ?? (
-        <ProgressIndicator className="bg-primary" style={{ width: `${value ?? 0}%` }} />
+        <ProgressIndicator className="bg-primary size-full flex-1" style={{ transform: `translateX(-${100 - (value || 0)}%)` }} />
       )}
     </ProgressPrimitive.Root>
   );
@@ -40,7 +36,7 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn('h-full transition-[width]', className)}
+      className={cn('h-full transition-all', className)}
       {...props}
     />
   );

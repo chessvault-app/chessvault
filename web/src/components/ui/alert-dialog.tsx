@@ -7,6 +7,7 @@ import {
   DialogClose,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -14,17 +15,13 @@ import {
 } from '@/components/ui/dialog';
 
 /**
- * shadcn's AlertDialog — a question that must be answered before anything
- * else happens — owned, and built on this app's Dialog rather than on
- * Radix's AlertDialog primitive. One deliberate difference, and it is the
- * reason: Radix's alert dialog refuses to close on a press outside, and
- * every window in this app closes on the scrim (and drags away on a
- * phone) — a confirmation included. The scrim is never the advertised way
- * out, but it is always a way out, and a confirmation that behaved
- * differently from every other small window would be the one window that
- * had to be read before it could be dismissed. What a confirmation owes a
- * screen reader it keeps: `role="alertdialog"`, so the question is read at
- * once rather than waited for.
+ * shadcn's AlertDialog (nova) — a question that must be answered before
+ * anything else happens — owned, and built on this app's Dialog rather
+ * than on Radix's AlertDialog primitive. One deliberate difference: Radix's
+ * alert dialog refuses to close on a press outside, and every small window
+ * in this app closes on the scrim (never the advertised way out, always a
+ * way out). What a confirmation owes a screen reader it keeps:
+ * `role="alertdialog"`.
  */
 function AlertDialog(props: React.ComponentProps<typeof Dialog>) {
   return <Dialog data-slot="alert-dialog" {...props} />;
@@ -44,16 +41,12 @@ function AlertDialogHeader(props: React.ComponentProps<typeof DialogHeader>) {
 }
 
 /**
- * Stacked, not a row, and the action first: a row of two puts them a
- * thumb's width apart on a phone, which is the wrong geometry for a pair
- * where one is irreversible and the other is the way out. Full width each,
- * with a real gap, so the press that cannot be undone cannot be the one
- * you meant to make somewhere else.
+ * The registry's footer: the muted band with the buttons, stacked with
+ * the action on top on a phone (col-reverse) — the press that cannot be
+ * undone is not a thumb's width from the way out — and a row on a desktop.
  */
-function AlertDialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div data-slot="alert-dialog-footer" className={cn('mt-1 flex flex-col gap-2', className)} {...props} />
-  );
+function AlertDialogFooter(props: React.ComponentProps<typeof DialogFooter>) {
+  return <DialogFooter data-slot="alert-dialog-footer" {...props} />;
 }
 
 function AlertDialogTitle(props: React.ComponentProps<typeof DialogTitle>) {
@@ -65,10 +58,10 @@ function AlertDialogDescription(props: React.ComponentProps<typeof DialogDescrip
 }
 
 /**
- * The press that answers the question. FILLED rather than tinted — the
- * tinted destructive style belongs to the triggers that merely OPEN a
- * question — and it should name its action ("Reset all progress"), because
- * "Confirm" answers a question you have already stopped reading.
+ * The press that answers the question. Filled red by default here — every
+ * confirmation in this app guards something destructive, and it should
+ * name its action ("Reset all progress"), because "Confirm" answers a
+ * question you have already stopped reading.
  */
 function AlertDialogAction({
   className,
@@ -78,26 +71,18 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof Button>) {
   return (
     <DialogClose asChild>
-      <Button
-        data-slot="alert-dialog-action"
-        variant={variant}
-        size={size}
-        className={cn('w-full justify-center', className)}
-        {...props}
-      />
+      <Button data-slot="alert-dialog-action" variant={variant} size={size} className={cn(className)} {...props} />
     </DialogClose>
   );
 }
 
 /**
- * Cancel takes the focus, not the destructive verb above it: a
- * confirmation opens under the keyboard on the answer that loses nothing.
- * Enter on a window that just appeared must not be the press that cannot
- * be taken back.
+ * Cancel takes the focus, not the destructive verb: a confirmation opens
+ * under the keyboard on the answer that loses nothing.
  */
 function AlertDialogCancel({
   className,
-  variant = 'secondary',
+  variant = 'outline',
   size = 'default',
   autoFocus = true,
   ...props
@@ -109,7 +94,7 @@ function AlertDialogCancel({
         variant={variant}
         size={size}
         autoFocus={autoFocus}
-        className={cn('w-full justify-center', className)}
+        className={cn(className)}
         {...props}
       />
     </DialogClose>

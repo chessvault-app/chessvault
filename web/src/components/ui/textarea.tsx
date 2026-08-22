@@ -11,7 +11,7 @@ function Textarea({ className, ...props }: React.ComponentProps<'textarea'>) {
       autoComplete="off"
       autoCorrect="off"
       autoCapitalize="none"
-      className={cn(INPUT_BASE, 'px-2.5 py-2 text-sm pointer-coarse:text-base', className)}
+      className={cn(INPUT_BASE, 'flex field-sizing-content min-h-16 w-full px-2.5 py-2', className)}
       {...props}
     />
   );

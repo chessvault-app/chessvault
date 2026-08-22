@@ -28,7 +28,7 @@ Color carries meaning, and each hue has exactly one job:
 | amber (warn) | caution | Engine guess tier, offline notices |
 | blue (info) | trusted/informational | Book solution tier, annotated-game pen |
 | teal / purple | fidelity ladder middle rungs | Engine + book, Engine solution |
-| cyan (primary) | interactive/active | active nav, chips, buttons |
+| primary | interactive/active | active nav, chips, buttons — neutral (near-black / near-white) in the default scheme; the accent knob tints it |
 
 Corollaries that were learned the hard way: a green dot on a tile grid
 reads as "solved" no matter what you meant (the fidelity marks became
@@ -352,33 +352,38 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup,
   Toggle, Switch, Progress, Skeleton, Card, Separator — each the shape
   `npx shadcn add` writes (Radix underneath, `cva` variants, `data-slot`),
-  each wearing this app's face and carrying this app's physics: every
-  window a bottom sheet on a phone, dragged away from anywhere on itself;
-  the page/layer distinction and the back chevron; the keyboard band; the
-  sole-text-field focus; Android Back through CloseWatcher; the coarse-
-  pointer sizes; `title` as a tooltip. The registry is the starting
-  point, not the spec — when a stock file and a measured behaviour
-  disagree, the file changes and says why at the top. Adding a component
-  is `npx shadcn add <name>` followed by giving it the app's face.
+  each in the registry's own face (the nova style: its sizes, radius
+  ladder, focus rings, the inverted tooltip, the ring-hairline card) and
+  carrying this app's physics on top: every window a bottom sheet on a
+  phone, dragged away from anywhere on itself; the page/layer distinction
+  and the back chevron; the keyboard band; the sole-text-field focus;
+  Android Back through CloseWatcher; the coarse-pointer hit areas;
+  `title` as a tooltip. The look is shadcn's; what is added is
+  behaviour, and each file says at the top what it adds and why. Adding
+  a component is `npx shadcn add <name>`; it needs no restyling.
 - **`web/src/components/` holds the app's composites** (Panel, PageShell,
   ShelfCard, ActionMenu, PromptDialog, the skeletons …), built from the
   primitives; **`web/src/hooks/`** the window physics they share.
-- **The theme is the registry's vocabulary** — `bg-card`,
-  `text-muted-foreground`, `border-input`, `bg-destructive` — so a component
-  added tomorrow is themed the moment it lands. The roles are derived from
-  the app's own OKLCH ladder in `index.css` (`--card` and `--popover` are
-  both `--surface`), so the hue, tint and contrast knobs keep driving them
-  and there is no second palette. What the ladder says that shadcn has no
+- **The theme is the registry's vocabulary and, at rest, its values** —
+  `bg-card`, `text-muted-foreground`, `border-input`, `bg-destructive` — so
+  a component added tomorrow is themed the moment it lands. The default
+  scheme, Neutral, IS shadcn's neutral theme (white page, grey surfaces,
+  a near-black primary; 14.5 / 20.5 / 26.9 % on the dark side); the
+  values are written as the app's OKLCH ladder in `index.css` with the
+  hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
+  tinting them (Slate is the app's previous look) and there is no second
+  palette. The primary's lightness follows the accent knob: grey is the
+  registry's near-black, a coloured accent sits mid-scale. What the ladder says that shadcn has no
   word for keeps its own name in the same style: `surface-3`,
   `surface-inset`, `text-subtle`, `border-strong`, `good`/`warn`/`info`,
   the board and eval colours. A preset theme pasted over `:root` would
   override the roles but not the ladder they derive from, so the knobs in
   Settings would stop reaching them — re-express a theme in the ladder.
-- **One focus ring.** Keyboard focus is the global `:focus-visible`
-  outline; the registry's per-component `ring-3 ring-ring/50` was dropped
-  from every file so there is one focus style on a page, not two. The one
-  place a control turns the outline off is the bare input inside an
-  InputGroup, whose group draws the ring for it.
+- **One focus ring, the registry's.** Components draw shadcn's
+  `focus-visible:ring-3 ring-ring/50` and turn the outline off; everything
+  that is not a component (a bare button, a link) gets the same ring from
+  the global `:focus-visible` outline in the same colour, so a page has
+  one focus style whichever kind of control has it.
 
 ## Process conventions
 

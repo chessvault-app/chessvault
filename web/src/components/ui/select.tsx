@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Select as SelectPrimitive } from 'radix-ui';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -10,26 +10,18 @@ import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 
 /**
- * shadcn's Select, owned — Radix underneath, which brings the combobox and
- * listbox roles, arrow keys, Home/End, typeahead, collision-aware placement
- * and the aria wiring the hand-rolled one carried itself (lanph3re's
- * standing verdict on bare <select>s: "plain and not aesthetically good";
- * their opened list is OS chrome the theme cannot reach).
+ * shadcn's Select (nova), owned — Radix underneath: combobox and listbox
+ * roles, arrow keys, Home/End, typeahead, collision-aware placement. The
+ * registry's faces, with two additions of this app's:
  *
- * Two things this file does that the stock one does not:
- *
- *   - `position="popper"` by default. A dropdown belongs UNDER its
- *     trigger; Radix's item-aligned mode opens the list over the trigger
- *     with the chosen item on top of it, which is a native <select>'s
- *     idiom on a Mac and nobody else's.
+ *   - `position="popper"` by default: a dropdown belongs UNDER its
+ *     trigger; Radix's item-aligned mode opens the list over it.
  *   - The data-driven form every Select in the app is written in:
  *     `<Select value onValueChange groups ariaLabel …>` renders the whole
- *     control (see SelectField below), and on a PHONE that control's open
- *     list is the app's bottom sheet rather than a popover — the popover
- *     was a desktop shape shrunk to fit, anchored to wherever the trigger
- *     happened to sit and its rows a compromise between a menu and a
- *     thumb; a sheet rises where the thumb already is and gives every
- *     option a full-width row. Without `groups` it is the registry's Root.
+ *     control (SelectField below), and on a PHONE its open list is the
+ *     app's bottom sheet rather than a popover — a sheet rises where the
+ *     thumb already is and gives every option a full-width row. Without
+ *     `groups` it is the registry's Root.
  */
 
 const PHONE = '(max-width: 39.9375rem)';
@@ -46,14 +38,8 @@ const fromRadix = (v: string): string => (v === NONE ? '' : v);
 export interface SelectOption {
   value: string;
   label: string;
-  /**
-   * What the CLOSED trigger says, when the full label is more than a
-   * narrow trigger can show. An option's label is written for the open
-   * list, where there is room to qualify it — "2026-08 · 43 games" tells
-   * you which months are worth opening. On the button that is 111px of
-   * text in a 60px slot; the qualifier has done its job by the time the
-   * list closes.
-   */
+  /** What the CLOSED trigger says, when the full label is more than a
+      narrow trigger can show. */
   short?: string;
 }
 
@@ -63,37 +49,24 @@ export interface SelectGroup {
 }
 
 /**
- * `pointer-coarse:` on both sizes, because a toolbar is a ROW: Button and
- * Input grow their touch targets on a coarse pointer, and a control
- * staying behind is what makes a row look wrong.
+ * The registry's trigger, with `pointer-coarse:h-9` on both sizes — a
+ * toolbar is a ROW, and Button and Input grow there too.
  */
 const selectTriggerVariants = cva(
-  'border-border text-foreground flex min-w-0 shrink items-center gap-1 whitespace-nowrap rounded-md border transition-colors duration-100 ' +
-    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3",
+  "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       size: {
-        sm: 'h-7 px-2 text-sm pointer-coarse:h-9',
-        default: 'h-8 px-2.5 text-sm pointer-coarse:h-9',
-      },
-      /**
-       * Input-like (components/ui/input's sunken backdrop) instead of the raised menu
-       * face. Inside a Field, where the control is a form answer beside
-       * other form answers, it is sunken; in a toolbar or a settings row —
-       * itself a sunken strip, where a sunken trigger would vanish — it is
-       * raised.
-       */
-      look: {
-        inset: 'bg-surface-inset focus:border-primary/50',
-        raised: 'bg-muted hover:bg-surface-3',
+        sm: 'h-7 rounded-[min(var(--radius-md),10px)] pointer-coarse:h-9',
+        default: 'h-8 pointer-coarse:h-9',
       },
     },
-    defaultVariants: { size: 'default', look: 'raised' },
+    defaultVariants: { size: 'default' },
   },
 );
 
 function SelectGroup({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.Group>) {
-  return <SelectPrimitive.Group data-slot="select-group" className={cn(className)} {...props} />;
+  return <SelectPrimitive.Group data-slot="select-group" className={cn('scroll-my-1 p-1', className)} {...props} />;
 }
 
 function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.Value>) {
@@ -103,7 +76,6 @@ function SelectValue({ ...props }: React.ComponentProps<typeof SelectPrimitive.V
 function SelectTrigger({
   className,
   size = 'default',
-  look,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & VariantProps<typeof selectTriggerVariants>) {
@@ -111,12 +83,12 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      className={cn(selectTriggerVariants({ size, look }), className)}
+      className={cn(selectTriggerVariants({ size }), className)}
       {...props}
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDown className="text-subtle size-3" />
+        <ChevronDownIcon className="text-muted-foreground pointer-events-none size-4" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -127,7 +99,6 @@ function SelectContent({
   children,
   position = 'popper',
   align = 'start',
-  sideOffset = 4,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
@@ -136,15 +107,14 @@ function SelectContent({
         data-slot="select-content"
         data-align-trigger={position === 'item-aligned'}
         className={cn(
-          // overscroll-contain: scrolling the list must not chain to the
-          // page behind it.
-          'border-border bg-popover text-popover-foreground relative z-50 max-h-(--radix-select-content-available-height) w-max max-w-72 min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg border p-1 shadow-pop duration-100',
+          'bg-popover text-popover-foreground ring-foreground/10 relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg shadow-md ring-1 duration-100',
           'data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+          position === 'popper' &&
+            'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
           className,
         )}
         position={position}
         align={align}
-        sideOffset={sideOffset}
         // An open listbox owns its keys outright. The board's arrow
         // shortcuts listen on the window, and preventDefault does not stop
         // a bubble: stepping through options was also stepping through
@@ -170,7 +140,7 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn('text-subtle label-caps px-2 pb-0.5 pt-1.5 text-xs', className)}
+      className={cn('text-muted-foreground px-1.5 py-1 text-xs', className)}
       {...props}
     />
   );
@@ -181,21 +151,21 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        // A 28px row is a menu item for a mouse and a misfire for a thumb.
-        'relative flex w-full cursor-default select-none items-center gap-2 rounded-md py-1.5 pl-2 pr-7 text-left text-sm outline-hidden transition-colors duration-100 pointer-coarse:py-2.5',
-        'focus:bg-accent data-[state=checked]:text-primary data-[state=checked]:font-medium data-disabled:pointer-events-none data-disabled:opacity-50',
+        // pointer-coarse:py-2.5 — a 28px row is a menu item for a mouse
+        // and a misfire for a thumb.
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:py-2.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
     >
+      <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
+        <SelectPrimitive.ItemIndicator>
+          <CheckIcon className="pointer-events-none" />
+        </SelectPrimitive.ItemIndicator>
+      </span>
       <SelectPrimitive.ItemText asChild>
         <span className="min-w-0 flex-1 truncate">{children}</span>
       </SelectPrimitive.ItemText>
-      <span className="pointer-events-none absolute right-2 flex size-3 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <Check className="size-3" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
     </SelectPrimitive.Item>
   );
 }
@@ -220,10 +190,10 @@ function SelectScrollUpButton({
   return (
     <SelectPrimitive.ScrollUpButton
       data-slot="select-scroll-up-button"
-      className={cn('bg-popover z-10 flex cursor-default items-center justify-center py-1', className)}
+      className={cn("bg-popover z-10 flex cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4", className)}
       {...props}
     >
-      <ChevronUp className="size-3.5" />
+      <ChevronUpIcon />
     </SelectPrimitive.ScrollUpButton>
   );
 }
@@ -235,10 +205,10 @@ function SelectScrollDownButton({
   return (
     <SelectPrimitive.ScrollDownButton
       data-slot="select-scroll-down-button"
-      className={cn('bg-popover z-10 flex cursor-default items-center justify-center py-1', className)}
+      className={cn("bg-popover z-10 flex cursor-default items-center justify-center py-1 [&_svg:not([class*='size-'])]:size-4", className)}
       {...props}
     >
-      <ChevronDown className="size-3.5" />
+      <ChevronDownIcon />
     </SelectPrimitive.ScrollDownButton>
   );
 }
@@ -254,37 +224,23 @@ export interface SelectProps extends Omit<RootProps, 'children'> {
   size?: 'sm' | 'md';
   /** Which trigger edge the popover hugs. */
   align?: 'start' | 'end';
-  /** Overrule the form/toolbar look the surroundings decide. */
+  /** Kept for the form/toolbar distinction the callers make; the registry's trigger is one face. */
   inset?: boolean;
   mono?: boolean;
   /**
-   * Keep one width whatever is picked.
-   *
-   * A trigger sized to its current option moves the controls beside it
-   * every time the option changes. With this it reserves the width of
-   * its WIDEST option instead — not a number: "Last modified" is 73px and
-   * "최근 수정순" is 55px, so any width picked for one language clips or
-   * floats in the other. The options measure themselves (the invisible
-   * stack in the trigger).
+   * Keep one width whatever is picked: reserve the width of the WIDEST
+   * option (the options measure themselves — the invisible stack in the
+   * trigger), so a toolbar does not shift on every pick.
    */
   steady?: boolean;
-  /**
-   * Shown on the TRIGGER before the selection — "Status: Solved" — and
-   * never inside the list, where every row would repeat it. A filter menu
-   * has to say what it filters even when nothing is chosen.
-   */
+  /** Shown on the TRIGGER before the selection — "Status: Solved" — never inside the list. */
   prefix?: string;
-  /**
-   * Phone only: open the list as tall as the sheet it was opened from —
-   * for a Select that IS a section of the window it sits in.
-   */
+  /** Phone only: open the list as tall as the sheet it was opened from. */
   fill?: boolean;
   className?: string;
 }
 
-/**
- * The Root — or, given `groups`, the whole control (SelectField).
- */
+/** The Root — or, given `groups`, the whole control (SelectField). */
 function Select({ groups, ...props }: SelectProps) {
   if (groups) return <SelectField groups={groups} {...props} />;
   const {
@@ -309,7 +265,7 @@ function SelectField({
   ariaLabel,
   size = 'md',
   align = 'start',
-  inset,
+  inset: _inset,
   mono = false,
   steady = false,
   prefix,
@@ -319,8 +275,9 @@ function SelectField({
   onOpenChange,
   ...root
 }: SelectProps & { groups: SelectGroup[] }) {
-  const inField = React.useContext(FieldContext);
-  const sunken = inset ?? inField;
+  // Read for parity with Field (the context still marks a form control),
+  // even though the registry's trigger wears one face in both places.
+  React.useContext(FieldContext);
   const phone = useMediaQuery(PHONE);
   const [ownOpen, setOwnOpen] = React.useState(false);
   const open = openProp ?? ownOpen;
@@ -329,19 +286,10 @@ function SelectField({
     onOpenChange?.(next);
   };
   const flat = React.useMemo(() => groups.flatMap((g) => g.options), [groups]);
-  // The prefix rides on the trigger only, and on the invisible sizers too,
-  // or `steady` would reserve a width the real label overflows.
   const face = (text: string): string => (prefix ? `${t(prefix)}: ${text}` : text);
   const selected = flat.find((o) => o.value === value) ?? null;
-  // The sheet centres its current option once per opening — a months list
-  // is longer than a sheet — and only once, so a browse of the list is not
-  // yanked back to where it started by a later re-render.
   const centered = React.useRef(false);
 
-  // One grid cell holding every option at once: the invisible ones set the
-  // column's width and the visible one is laid over the top. minmax(0,auto)
-  // so a trigger with less room than its widest option truncates instead
-  // of painting across its own border.
   const labelClass = cn(
     'min-w-0 flex-1 text-left',
     steady ? 'grid grid-cols-[minmax(0,auto)] overflow-hidden' : 'truncate',
@@ -359,7 +307,6 @@ function SelectField({
       </span>
     </>
   );
-  const label = <span className={labelClass}>{labelInner}</span>;
 
   if (phone) {
     return (
@@ -370,14 +317,10 @@ function SelectField({
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen(true)}
-          className={cn(
-            selectTriggerVariants({ size: size === 'sm' ? 'sm' : 'default', look: sunken ? 'inset' : 'raised' }),
-            mono && 'font-mono',
-            className,
-          )}
+          className={cn(selectTriggerVariants({ size: size === 'sm' ? 'sm' : 'default' }), mono && 'font-mono', className)}
         >
-          {label}
-          <ChevronDown className="text-subtle size-3" />
+          <span className={labelClass}>{labelInner}</span>
+          <ChevronDownIcon className="text-muted-foreground size-4" />
         </button>
         {open && (
           <Dialog
@@ -390,7 +333,7 @@ function SelectField({
               {groups.map((group, gi) => (
                 <div key={gi}>
                   {group.label && (
-                    <p className="text-subtle label-caps px-2 pb-1 pt-2 text-xs">{t(group.label)}</p>
+                    <p className="text-muted-foreground px-2 pb-1 pt-2 text-xs">{t(group.label)}</p>
                   )}
                   {group.options.map((option) => (
                     <button
@@ -410,12 +353,12 @@ function SelectField({
                       className={cn(
                         'flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-base',
                         'hover:bg-accent transition-colors duration-100',
-                        option.value === value ? 'text-primary font-medium' : 'text-foreground',
+                        option.value === value ? 'font-medium' : 'text-foreground',
                         mono && 'font-mono',
                       )}
                     >
                       <span className="min-w-0 flex-1 truncate">{t(option.label)}</span>
-                      {option.value === value && <Check className="size-4 shrink-0" />}
+                      {option.value === value && <CheckIcon className="size-4 shrink-0" />}
                     </button>
                   ))}
                 </div>
@@ -439,8 +382,7 @@ function SelectField({
       <SelectTrigger
         aria-label={ariaLabel}
         size={size === 'sm' ? 'sm' : 'default'}
-        look={sunken ? 'inset' : 'raised'}
-        className={cn(mono && 'font-mono', className)}
+        className={cn('w-auto min-w-0 shrink', mono && 'font-mono', className)}
       >
         {/* asChild, because Radix's Value drops className and style on
             purpose (it is meant to be unstyled); as the flex item it has

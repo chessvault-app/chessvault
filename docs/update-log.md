@@ -22,9 +22,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   real tablist. The theme speaks shadcn's token vocabulary, derived from
   the app's own OKLCH ladder, so the hue, tint and contrast knobs keep
   working and a component added from the registry tomorrow is themed the
-  moment it lands. Measured against a 44-shot grid of the app at two
-  widths and two themes: pixel-identical through every step outside the
-  pages that draw a different puzzle each load.
+  moment it lands. The migration itself was measured against a 44-shot
+  grid of the app at two widths and two themes and was pixel-identical
+  through every step; then the look was let go: the app now wears
+  shadcn's own design — its neutral theme (Neutral is the new default
+  scheme; Slate, the old look, is one press away in Settings), its
+  sizes and radius ladder, its focus rings, its dialogs, menus, tooltips
+  and cards.
 
 ## 0.4.7
 

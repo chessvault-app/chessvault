@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
-import { ChevronLeft, X, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, XIcon, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -15,23 +15,18 @@ import { useSheetDrag } from '@/hooks/use-sheet-drag';
 export { CoverParent };
 
 /**
- * shadcn's Dialog, owned — and underneath it Radix's, which brings the
- * focus trap, the scroll lock, the Escape and outside-press dismissal, the
- * layer stacking (one Escape closes one dialog, topmost first) and the
- * aria wiring that every window in the app used to carry by hand.
+ * shadcn's Dialog (nova), owned — the registry's face, and underneath it
+ * Radix's focus trap, scroll lock, Escape and outside-press dismissal,
+ * layer stacking and aria wiring. What this file adds is the app's window
+ * physics, each learned on a device:
  *
- * What this file adds is the app's window physics, which no registry file
- * has and which were each learned on a device:
- *
- *   - EVERY window is a bottom sheet on a phone and a centred card on a
- *     desktop. A window that had replaced the app — edge to edge, no sense
- *     of what it was over — was the shape that was tried first; a sheet
- *     rising from the thumb's own edge reads as a thing ON the page, and
- *     it is pushed away by dragging it from anywhere on itself (sheetDrag).
+ *   - EVERY window is a bottom sheet on a phone and the registry's centred
+ *     card on a desktop; the sheet is pushed away by dragging it from
+ *     anywhere on itself (use-sheet-drag).
  *   - A page and a layer (see CoverParent): a default-sized window opened
  *     from inside another parks it and grows the back chevron; a small one
  *     floats over it, capped to its height, and grows the chevron only
- *     once it has hidden the window completely (sheetCover).
+ *     once it has hidden the window completely (use-sheet-cover).
  *   - The keyboard: the layer is pinned to the visible band while one is
  *     up (`vv-band`, index.css), the sheet takes a share of THAT, and a
  *     window whose only input is a text field puts the caret in it as it
@@ -40,21 +35,15 @@ export { CoverParent };
  *   - Android's Back gesture is a close request, via CloseWatcher where the
  *     platform has it; Escape still goes through Radix where it has not.
  *   - Nothing is transitioned on a phone: animating against iOS's own
- *     keyboard animation is what made earlier attempts jump about. The
- *     desktop card fades and scales in the stock way.
+ *     keyboard animation is what made earlier attempts jump about.
  *
- * The one structural departure from the stock file: DialogContent renders
- * its Content INSIDE the Overlay rather than beside it. The overlay is the
- * layout box — it centres the card on a desktop, packs it to the bottom
- * edge on a phone, and is what the keyboard band pins — and a card that
- * positioned itself `fixed` on its own would measure its percentages
- * against the viewport the keyboard has just covered.
+ * One structural departure from the stock file: DialogContent renders its
+ * Content INSIDE the Overlay rather than beside it. The overlay is the
+ * layout box — it centres the card, packs it to the bottom edge on a
+ * phone, and is what the keyboard band pins.
  */
 
-/**
- * How a DialogContent closes itself (the X, the drag, a page's back).
- * Radix keeps `onOpenChange` on the Root; the wrapper below hands it down.
- */
+/** How a DialogContent closes itself; the wrapper hands onOpenChange down. */
 const DialogCloseContext = React.createContext<() => void>(() => {});
 
 function Dialog({ onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -79,15 +68,19 @@ function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.C
 }
 
 /**
- * The scrim, and the layout box (see the note at the top). `vv-band`: while
- * the keyboard is up this is pinned to the band that can be seen rather
- * than to the layout viewport, which is the thing iOS has just shifted.
+ * The scrim — the registry's — and the layout box (see the note at the
+ * top). `vv-band`: while the keyboard is up this is pinned to the band that
+ * can be seen rather than to the layout viewport iOS has just shifted.
  */
 function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn('vv-band bg-scrim fixed inset-0 z-50 flex justify-center', className)}
+      className={cn(
+        'vv-band fixed inset-0 isolate z-50 flex justify-center bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs',
+        'sm:data-open:animate-in sm:data-open:fade-in-0',
+        className,
+      )}
       {...props}
     />
   );
@@ -99,14 +92,8 @@ const PHONE = '(max-width: 39.9375rem)';
 /**
  * Close on the platform's close request — Android's Back gesture, and in an
  * installed PWA that gesture is the only chrome an Android phone has.
- *
- * CloseWatcher is the purpose-built API: no history entries to push and
- * silently consume, the MOST RECENT watcher alone answers each request,
- * and Android's predictive-back animation rides it for free. It also
- * answers Escape, so where it exists Radix's own Escape handling is told
- * to stand down (see DialogContent) and this is the one door; where it is
- * missing — older WebKit — Radix answers Escape and iOS has no Back
- * gesture to lose.
+ * CloseWatcher also answers Escape, so where it exists Radix's own Escape
+ * handling stands down (see DialogContent) and this is the one door.
  */
 function useCloseWatcher(onClose: () => void, active: boolean): void {
   const close = React.useRef(onClose);
@@ -121,9 +108,9 @@ function useCloseWatcher(onClose: () => void, active: boolean): void {
 
 export interface DialogContentProps extends React.ComponentProps<typeof DialogPrimitive.Content> {
   /**
-   * The window's name, drawn in the quiet title strip every window shares
-   * — one closing idiom per app, so no window has to be read before it can
-   * be dismissed. Translated here. Omit it to compose DialogHeader and
+   * The window's name, drawn in the title row every window shares — one
+   * closing idiom per app, so no window has to be read before it can be
+   * dismissed. Translated here. Omit it to compose DialogHeader and
    * DialogTitle by hand, the stock way.
    */
   title?: string;
@@ -133,38 +120,20 @@ export interface DialogContentProps extends React.ComponentProps<typeof DialogPr
   /**
    * This window is showing a second PAGE of itself, and this goes back to
    * the first; or it came from another window, and this returns there.
-   * Escape and Android's Back go back rather than out, for a small window:
-   * Back that skips a page is Back that loses your place.
+   * Escape and Android's Back go back rather than out, for a small window.
    */
   onBack?: () => void;
-  /**
-   * Out of sight, still mounted — for a window that has opened another one
-   * as a sibling rather than a child: unmounting it would take the state of
-   * whatever it contains with it, including the very button that opened
-   * the second window. Hidden, it is still there to come back to.
-   */
+  /** Out of sight, still mounted — for a window that has opened another as a sibling. */
   hidden?: boolean;
   /**
-   * `sm` is the one-question window — a confirm, a rename, a picker — a
-   * small centred card, and on a phone a sheet sized to its content and
-   * capped to the window it was asked over. `default` is a window — a form,
-   * a list — and `full` a wide one on a DESKTOP, for a task rather than a
-   * question (browsing an archive); `full` says nothing on a phone, where
-   * every window is the same shape.
+   * `sm` is the one-question window (a confirm, a rename, a picker);
+   * `default` a window (a form, a list); `full` a wide one on a DESKTOP.
+   * On a phone every one of them is the bottom sheet.
    */
   size?: 'sm' | 'default' | 'full';
-  /**
-   * Open as tall as this window is allowed to be, instead of as tall as its
-   * own content — phones only. For a window whose content is a workspace
-   * or a list that filters: one height means the body scrolls and the
-   * footer stays where it was, instead of the sheet snapping to a new
-   * height on every keystroke. Not for the questions.
-   */
+  /** Open as tall as this window is allowed to be — phones only. */
   fill?: boolean;
-  /**
-   * A question that must be answered before anything else happens — a
-   * confirmation. Changes the role only: AlertDialog is the spelling.
-   */
+  /** A question that must be answered before anything else: the alertdialog role. */
   alert?: boolean;
 }
 
@@ -193,9 +162,7 @@ function DialogContent({
 
   // The second-page bookkeeping. `covered` counts child windows currently
   // over this one; `cover` is what those children call, handed down by
-  // context. Registering is an effect, so a child that unmounts — or is
-  // itself hidden — always releases what it took. `height` is this card,
-  // read live, because a card's height is its content's.
+  // context. `height` is this card, read live.
   const [covered, setCovered] = React.useState(0);
   const card = React.useRef<HTMLElement | null>(null);
   const asParent = React.useMemo(
@@ -211,12 +178,7 @@ function DialogContent({
   const coverParent = React.useContext(CoverParent);
 
   // A PAGE parks the window it came from and opens AS TALL AS it, on a
-  // phone: the elite window is pinned at 88% and its database manager is
-  // three rows, and a sheet that snaps between those heights reads as two
-  // windows, not one window turning its page. Measured once, in the same
-  // effect that parks the parent — the parent is still painted when the
-  // effect runs. A floor, not a size, so a page taller than its window
-  // still grows.
+  // phone — a floor, not a size, measured once in the same effect.
   const [pageMinH, setPageMinH] = React.useState(0);
   React.useEffect(() => {
     if (small || hidden || !coverParent) return;
@@ -225,10 +187,9 @@ function DialogContent({
   }, [small, hidden, coverParent]);
 
   // A LAYER never parks its parent; it is capped to it, and grows the
-  // chevron once it has hidden it completely — see sheetCover.
+  // chevron once it has hidden it completely — see use-sheet-cover.
   const { cap, covered: coversParent, ref: coverRef } = useSheetCover(small && phone);
 
-  // Out of sight for either reason: told to be, or covered by a page.
   const shut = hidden || covered > 0;
   // A nested page that names no destination goes back to the window it
   // covered — closing a page IS going back.
@@ -245,29 +206,23 @@ function DialogContent({
     return registerOpenDialog();
   }, [shut]);
 
-  // Every window is a sheet on a phone, and none is on a desktop — a
-  // centred card that slides away downwards is not answering any question
-  // the pointer asked.
   const drag = useSheetDrag(close);
 
-  // The sole-text-field focus happens HERE, in the ref callback, not in
-  // Radix's mount autofocus: a ref attaches synchronously inside the tap
-  // that opened the dialog, and iOS only raises the keyboard for a focus it
-  // can trace to a user gesture — from an effect it focuses the field and
-  // leaves the keyboard down. Guarded per node, because React re-runs ref
-  // callbacks on every render; the caret is placed once per opening.
-  const armed = React.useRef<HTMLElement | null>(null);
   // Whatever had the focus when this window opened — read on the FIRST
   // RENDER, before anything inside has mounted, and not left to Radix: its
   // FocusScope reads document.activeElement in its mount effect, by which
   // time a field's own autoFocus (or the ref below) has put the caret
-  // inside the window — so it would remember the field, try to return
-  // focus to a node that no longer exists when the window closes, and
-  // drop it on the body instead.
+  // inside the window — so it would remember the field and drop focus on
+  // the body when the window closes.
   const opener = React.useRef<HTMLElement | null | undefined>(undefined);
   if (opener.current === undefined) {
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   }
+  // The sole-text-field focus happens HERE, in the ref callback, not in
+  // Radix's mount autofocus: a ref attaches synchronously inside the tap
+  // that opened the dialog, and iOS only raises the keyboard for a focus it
+  // can trace to a user gesture. Guarded per node.
+  const armed = React.useRef<HTMLElement | null>(null);
   const setNode = (node: HTMLDivElement | null): void => {
     card.current = node;
     if (typeof ref === 'function') ref(node);
@@ -284,10 +239,7 @@ function DialogContent({
     <DialogPortal>
       <DialogOverlay
         className={cn(
-          // Bottom edge on a phone; the middle of the band on a desktop,
-          // with the window's own margin from the screen's edge.
-          'max-sm:items-end max-sm:p-0 sm:items-center',
-          small ? 'sm:p-3' : size === 'full' ? 'sm:p-6' : 'sm:p-4',
+          'max-sm:items-end max-sm:p-0 sm:items-center sm:p-4',
           // Parked under a page: out of sight, but still laid out, so the
           // page over it can read the height it is matching.
           covered > 0 && 'invisible',
@@ -302,7 +254,7 @@ function DialogContent({
           // Only when it is one: an explicit `role={undefined}` would
           // override the `dialog` Radix sets, not leave it alone.
           {...(alert ? { role: 'alertdialog' } : {})}
-          // The title strip names the window (aria-labelledby, via
+          // The title row names the window (aria-labelledby, via
           // DialogTitle); there is no description, and saying so is what
           // keeps Radix from asking for one.
           aria-describedby={undefined}
@@ -316,11 +268,8 @@ function DialogContent({
             e.preventDefault();
             if (!window.CloseWatcher) request();
           }}
-          // A press on the scrim closes. The tap's synthesized click must
-          // not land on whatever was under the scrim — a row, a tile — once
-          // the scrim is gone. A layer that is not one of Radix's (a menu
-          // or a listbox the app still portals itself) is INSIDE for this
-          // purpose; Radix would read a press in it as a press outside.
+          // A press on the scrim closes; the tap's synthesized click must
+          // not land on whatever was under the scrim once it is gone.
           onPointerDownOutside={(e) => {
             onPointerDownOutside?.(e);
             if (e.defaultPrevented) return;
@@ -331,13 +280,9 @@ function DialogContent({
             }
             suppressNextClick();
           }}
-          // Take focus only if nothing inside already has it — the ref
-          // above may have put the caret in the sole field. Otherwise the
-          // field is asked for again (for a window mounted hidden, whose
-          // fields appear only when it is shown), and failing that the
-          // window itself takes the focus: a container, which never pops a
-          // phone keyboard. Radix would have picked the first control,
-          // which on a phone is a keyboard nobody asked for.
+          // Take focus only if nothing inside already has it; otherwise the
+          // sole field, else the window itself — a container, which never
+          // pops a phone keyboard.
           onOpenAutoFocus={(e) => {
             onOpenAutoFocus?.(e);
             if (e.defaultPrevented) return;
@@ -349,10 +294,7 @@ function DialogContent({
             else node.focus({ preventScroll: true });
           }}
           // Hand focus back to the opener (see `opener`) — unless something
-          // moved it deliberately (a verb in this window focused a field
-          // behind it), in which case that choice stands. Always our own
-          // restore rather than Radix's, whose idea of the opener is wrong
-          // for the reason given above.
+          // moved it deliberately, in which case that choice stands.
           onCloseAutoFocus={(e) => {
             onCloseAutoFocus?.(e);
             if (e.defaultPrevented) return;
@@ -367,49 +309,36 @@ function DialogContent({
             ...style,
             ...(phone ? drag.style : undefined),
             // The parent's height as a VARIABLE, read into the min() below,
-            // so the parent's number and the band's own are both ceilings
-            // and the smaller one wins — whichever the keyboard leaves.
+            // so the parent's number and the band's own are both ceilings.
             ...(phone && small && cap ? ({ '--sheet-cap': `${cap}px` } as React.CSSProperties) : undefined),
-            // The page floor, phones only. min() with the same 88% the
-            // max-height uses, so a floor measured with the keyboard down
-            // cannot pin the sheet taller than the band the keyboard leaves.
+            // The page floor, phones only, capped by the same 88% the
+            // max-height uses.
             ...(phone && !small && pageMinH ? { minHeight: `min(${pageMinH}px, 88%)` } : undefined),
           }}
           className={cn(
-            // overscroll-contain: a scroll this window cannot use is its own
-            // business — without it, reaching the end of a list inside a
-            // sheet hands the rest of the gesture to whatever is behind it.
-            // [&>*]:shrink-0: children keep their size and the WINDOW
-            // scrolls; a flex column would rather squash a form than
-            // overflow, and that is what it did the moment the keyboard
-            // shortened the sheet.
-            'bg-popover text-popover-foreground border-border flex w-full flex-col overflow-y-auto overscroll-contain',
-            'border px-3 pb-3 pt-0 shadow-pop outline-none [&>*]:shrink-0',
-            small ? 'gap-2' : 'gap-3',
+            // The registry's card. overscroll-contain: a scroll this window
+            // cannot use is its own business. [&>*]:shrink-0: children keep
+            // their size and the WINDOW scrolls.
+            'bg-popover text-popover-foreground ring-foreground/10 flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-0 text-sm ring-1 outline-none [&>*]:shrink-0',
             // A BOTTOM SHEET on a phone, whatever the window is: rising from
-            // the thumb's own edge, stopping short of the top. 1.25rem under
-            // the last row so a short sheet does not end right at the home
-            // indicator.
+            // the thumb's own edge, stopping short of the top, with the
+            // same 1.25rem floor under its last row.
             'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
             small
-              ? // The lower of two ceilings: the sheet this one was opened
-                // over, and the room the screen has for one (`--sheet-band`,
-                // which knows about the notch and the keyboard). `fill`
-                // makes that ceiling the floor as well.
-                cn(
+              ? cn(
+                  // The lower of two ceilings: the sheet this one was opened
+                  // over, and the room the screen has for one; `fill` makes
+                  // that ceiling the floor as well.
                   'max-h-full max-sm:max-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
                   fill && 'max-sm:min-h-[min(var(--sheet-cap,100%),var(--sheet-band))]',
                   'sm:max-w-sm sm:rounded-xl',
                 )
-              : // 88% of THIS LAYER, not 88dvh: dvh does not shrink for a
-                // keyboard, and while one is up the layer IS the band above
-                // it. `fill` is a height rather than a second max-height —
-                // two max-h utilities on one element are settled by emit
-                // order, not by the order written here.
-                cn(
+              : cn(
+                  // 88% of THIS LAYER, not 88dvh: while a keyboard is up the
+                  // layer IS the band above it.
                   fill ? 'max-sm:h-[var(--sheet-band)]' : 'max-sm:max-h-[88%]',
                   'sm:h-auto sm:max-h-full sm:rounded-xl',
-                  size === 'full' ? 'sm:max-w-4xl' : 'sm:max-w-[32rem]',
+                  size === 'full' ? 'sm:max-w-4xl' : 'sm:max-w-lg',
                 ),
             // The desktop card arrives the stock way; a phone sheet does not
             // animate at all (see the note at the top).
@@ -419,60 +348,48 @@ function DialogContent({
           {...props}
         >
           {title !== undefined && (
-            // The title strip. Pinned to the top of the card, which scrolls:
-            // a ten-row list is taller than the sheet holding it, and the
-            // strip scrolling away took the label and the back chevron with
-            // it — a way back you have to scroll up to find is not one. The
-            // rule under it is the DESKTOP's, where every window and panel
-            // draws one; a bottom sheet draws none. On a phone the grabber
-            // sits above the title, and the whole strip is the mouse's drag
-            // handle — a finger may start anywhere (sheetDrag).
+            // The title row. Pinned to the top of the card, which scrolls:
+            // a ten-row list is taller than the sheet holding it, and a way
+            // back you have to scroll up to find is not one. On a phone the
+            // grabber sits above the title, and the whole row is the
+            // mouse's drag handle — a finger may start anywhere.
             <div
-              className="border-border bg-popover sticky top-0 z-10 -mx-3 px-3 pb-2 pt-3 max-sm:touch-none max-sm:select-none sm:border-b"
+              className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-4 pb-0 max-sm:touch-none max-sm:select-none"
               {...(phone ? drag.handlers : {})}
             >
               {/* The grabber, phones only: a SIGN that the sheet can be
                   pushed away, not the only place that answers. */}
-              <div className="bg-border mx-auto mb-2 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
+              <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
               <div className="flex items-center gap-2">
                 {/* The chevron: a page's way back, or a layer's once it has
-                    hidden the window it was opened from. Standing over a
-                    window you can still see, the scrim, the drag and Back
-                    all say how to leave. */}
+                    hidden the window it was opened from. */}
                 {(back || coversParent) && (
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     title={t('Back')}
                     aria-label={t('Back')}
-                    className="-my-1 -ml-1 shrink-0"
+                    className="-my-1 -ml-1.5 shrink-0"
                     onClick={back ?? close}
                   >
-                    <ChevronLeft className="size-3.5" />
+                    <ChevronLeft />
                   </Button>
                 )}
-                {Icon && <Icon className="text-subtle size-3.5 shrink-0" />}
-                <DialogPrimitive.Title
-                  data-slot="dialog-title"
-                  className="text-subtle min-w-0 flex-1 truncate text-sm font-normal"
-                >
-                  {t(title)}
-                </DialogPrimitive.Title>
+                {Icon && <Icon className="text-muted-foreground size-4 shrink-0" />}
+                <DialogTitle className="min-w-0 flex-1 truncate">{t(title)}</DialogTitle>
                 {actions}
-                {/* A way out for the mouse, and only for the mouse. A phone
+                {/* A way out for the mouse, and only for the mouse: a phone
                     has three already — drag the sheet down, tap the scrim,
-                    press Back. A desktop window has the scrim and Escape,
-                    and both are invisible: a window that is only a list of
-                    settings had nothing on screen that said how to leave. */}
+                    press Back. */}
                 <DialogPrimitive.Close asChild>
                   <Button
                     variant="ghost"
                     size="icon-sm"
                     title={t('Close')}
                     aria-label={t('Close')}
-                    className="-my-1 -mr-1 hidden shrink-0 sm:inline-flex"
+                    className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
                   >
-                    <X className="size-3.5" />
+                    <XIcon />
                   </Button>
                 </DialogPrimitive.Close>
               </div>
@@ -489,13 +406,31 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="dialog-header" className={cn('flex flex-col gap-2', className)} {...props} />;
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
+function DialogFooter({
+  className,
+  showCloseButton = false,
+  children,
+  ...props
+}: React.ComponentProps<'div'> & { showCloseButton?: boolean }) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      className={cn(
+        '-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end',
+        // On a phone the card's own floor (the safe area) is below this
+        // band; the band keeps its corners square there.
+        'max-sm:-mb-[calc(1.25rem+var(--safe-b))] max-sm:rounded-b-none max-sm:pb-[calc(1.25rem+var(--safe-b))]',
+        className,
+      )}
       {...props}
-    />
+    >
+      {children}
+      {showCloseButton && (
+        <DialogPrimitive.Close asChild>
+          <Button variant="outline">{t('Close')}</Button>
+        </DialogPrimitive.Close>
+      )}
+    </div>
   );
 }
 
@@ -503,7 +438,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-base leading-none font-medium', className)}
+      className={cn('font-heading text-base leading-none font-medium', className)}
       {...props}
     />
   );
@@ -516,7 +451,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cn('text-muted-foreground text-sm *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground', className)}
       {...props}
     />
   );

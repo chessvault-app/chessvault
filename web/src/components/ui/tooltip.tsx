@@ -4,18 +4,12 @@ import { Tooltip as TooltipPrimitive } from 'radix-ui';
 import { cn } from '@/lib/utils';
 
 /**
- * shadcn's Tooltip, owned. Radix brings the delay, the skip-delay across
- * neighbouring controls, hover AND keyboard focus as openers (the old
- * delegated `title` promoter never showed on focus), nothing on touch
- * (where there is no hover and the native behaviour — nothing — is
- * right), and placement inside the window. The face is the app's: a quiet
- * card in the popover colours, not the stock inverted chip.
- *
- * One provider at the root (main.tsx); Button wraps itself in one of these
- * whenever it is given a `title`, which is how most of the app's tooltips
- * arrive.
+ * shadcn's Tooltip (nova), owned: the inverted chip with its arrow. Radix
+ * brings the delay, the skip-delay across neighbouring controls, hover AND
+ * keyboard focus as openers, nothing on touch, and placement inside the
+ * window. One provider at the root (main.tsx); Button wraps itself in one
+ * of these whenever it is given a `title`.
  */
-
 function TooltipProvider({
   delayDuration = 400,
   ...props
@@ -33,7 +27,7 @@ function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimiti
 
 function TooltipContent({
   className,
-  sideOffset = 6,
+  sideOffset = 0,
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
@@ -43,15 +37,14 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          // Pointer-transparent, like the title bubble it replaces: a tip
-          // must never take the press meant for the control under it.
-          'border-border bg-popover text-muted-foreground pointer-events-none z-50 w-fit max-w-80 origin-(--radix-tooltip-content-transform-origin) rounded-md border px-2 py-1 text-xs leading-[1.4] shadow-pop',
-          'data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0',
+          'bg-foreground text-background z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-md px-3 py-1.5 text-xs has-data-[slot=kbd]:pr-1.5',
+          'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
           className,
         )}
         {...props}
       >
         {children}
+        <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

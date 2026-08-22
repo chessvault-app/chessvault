@@ -6,52 +6,49 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
- * shadcn's Button, owned.
+ * shadcn's Button (nova), owned. The faces, sizes and focus ring are the
+ * registry's; what this app adds:
  *
- * The variants are the registry's names with this app's looks behind them,
- * and the sizes are this app's measured heights under shadcn-shaped names
- * — a `sm` button is 28px because a `sm` Input and a `sm` Select are, and a
- * toolbar is a row (see components/ui/input for the scale). Two things the stock file
- * does differently, on purpose:
- *
- *   - No `outline-none` and no ring utilities. Keyboard focus is the global
- *     `:focus-visible` outline in index.css, the same one every control in
- *     the app wears; a ring that only shadcn components drew would be two
- *     focus styles on one page.
- *   - Coarse pointers get bigger hit areas (`pointer-coarse:`): 28px icon
- *     buttons are fine under a mouse and hostile under a thumb.
- *
- * nowrap: Korean has no spaces to break at, so a narrow button split
- * 추가 down the middle into two stacked syllables.
+ *   - `destructive-solid`, the filled red for a confirmation's own confirm
+ *     button (the registry's `destructive` is the tint, for the triggers
+ *     that merely open the question);
+ *   - `active`, the lit state of a toggle-like toolbar button — the
+ *     registry's expanded look, set as `data-active` too;
+ *   - bigger hit areas on coarse pointers (`pointer-coarse:`): 28px icon
+ *     buttons are fine under a mouse and hostile under a thumb;
+ *   - `title` as a Tooltip, and as the accessible name of an icon-only
+ *     button; `type="button"` unless told otherwise.
  */
 const buttonVariants = cva(
-  'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap font-medium ' +
-    'transition-[background-color,color,border-color,box-shadow,transform] duration-150 ' +
-    'active:scale-[0.97] disabled:pointer-events-none disabled:opacity-45 ' +
-    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: 'bg-primary text-primary-foreground hover:bg-primary-hover shadow-control',
-        secondary: 'bg-muted text-foreground hover:bg-surface-3 border border-border',
-        outline: 'border border-border bg-background hover:bg-accent hover:text-foreground',
-        ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
-        // Tinted, as in the nova style: for the triggers that merely OPEN a
-        // destructive question.
-        destructive: 'bg-destructive/12 text-destructive hover:bg-destructive/20 border border-destructive/25',
-        // Filled, for a confirmation's own confirm button — the one press in
-        // the app that cannot be taken back should not look like the tinted
-        // trigger that asked. --destructive-foreground is what reads on a
-        // filled destructive panel in both themes.
+        default: 'bg-primary text-primary-foreground hover:bg-primary/80',
+        outline:
+          'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground',
+        ghost:
+          'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
+        destructive:
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
         'destructive-solid':
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 border border-destructive',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: 'h-9 px-3.5 text-base gap-2 rounded-lg',
-        sm: 'h-7 px-2.5 text-sm gap-1.5 rounded-md pointer-coarse:h-9 pointer-coarse:px-3',
-        icon: 'size-9 rounded-lg pointer-coarse:size-11',
-        'icon-sm': 'size-7 rounded-md pointer-coarse:size-9',
+        default:
+          'h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 pointer-coarse:h-9',
+        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5 pointer-coarse:h-9 pointer-coarse:px-3",
+        lg: 'h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
+        icon: 'size-8 pointer-coarse:size-11',
+        'icon-xs':
+          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+        'icon-sm':
+          'size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg pointer-coarse:size-9',
+        'icon-lg': 'size-9',
       },
     },
     defaultVariants: {
@@ -67,19 +64,13 @@ export interface ButtonProps
   /**
    * Render the child element instead of a <button>, with the button's
    * classes and props merged onto it — how a link is given the button's
-   * look without copying its class string:
-   *
-   *   <Button asChild variant="ghost"><a href=…>…</a></Button>
-   *
-   * A control that goes OUT of the app is an anchor and nothing else: a
-   * button with an onClick that navigates loses the middle click, the
-   * context menu and the address the browser shows on hover.
+   * look: `<Button asChild variant="ghost"><a href=…>…</a></Button>`. A
+   * control that goes OUT of the app is an anchor and nothing else.
    */
   asChild?: boolean;
   /**
    * The lit state of a toggle-like button in a toolbar — the tool that is
-   * selected, the panel that is open. A tint of the accent, set as
-   * `data-active` for anything that wants to style against it.
+   * selected, the panel that is open.
    */
   active?: boolean;
 }
@@ -117,18 +108,14 @@ function Button({
       // name is what a screen reader and voice control get.
       aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
       data-active={active || undefined}
-      className={cn(
-        buttonVariants({ variant, size }),
-        active && 'bg-primary-soft text-primary border-primary/30',
-        className,
-      )}
+      className={cn(buttonVariants({ variant, size }), active && 'bg-muted text-foreground', className)}
       {...props}
     />
   );
-  // `title` is a tooltip, the shadcn way: Radix's Tooltip in the app's
-  // face, on hover and on keyboard focus, never on touch — instead of the
-  // browser's slow, unthemable bubble. The attribute itself is not set:
-  // two tips for one control would be the worst of both.
+  // `title` is a tooltip, the shadcn way: Radix's Tooltip on hover and on
+  // keyboard focus, never on touch — instead of the browser's bubble. The
+  // attribute itself is not set: two tips for one control would be the
+  // worst of both.
   if (title === undefined) return button;
   return (
     <Tooltip>
