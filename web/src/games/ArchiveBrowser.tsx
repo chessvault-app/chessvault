@@ -699,6 +699,7 @@ export function ArchiveBrowser({
           value={provider}
           onChange={switchProvider}
           ariaLabel="Which site to browse"
+          kind="tabs"
           className="w-full"
           segments={[
             {

@@ -18,15 +18,27 @@ export interface Segment<T extends string> {
 }
 
 /**
- * One choice out of two or three, all of them visible.
+ * One choice out of two or three, all of them visible — in one of two
+ * shapes, because it was being asked to do two different jobs in one.
  *
- * A pair of chips reads as two independent toggles — you cannot tell by
- * looking whether turning one on turns the other off. A segmented control
- * says it in the shape: one track, one lit segment, and the unlit ones
- * plainly part of the same thing.
+ * `tabs` is the original: a track with one lit segment inside it. That
+ * shape says "these are faces of one surface and this is the one
+ * showing", which is true of the databases panel and the archive's two
+ * sites, and false of "play as". A track cannot say "here are the
+ * options and this is the answer" — it says the answer IS the surface.
  *
- * Used for the archive's provider tabs and the shelves' grid/list switch,
- * which were two different hand-rolled versions of this.
+ * `choice` is for a value: no track, the options standing as peers, the
+ * chosen one filled in the accent and the rest outlined. It is sized to
+ * its words rather than splitting a fixed track, which is what made
+ * "Databases | PGN collections" sit oddly in a shape built for
+ * "White | Black". lanph3re's call, from a mock of the two side by side.
+ *
+ * The outer height is the same either way, so a control in a toolbar row
+ * does not move when its kind changes.
+ *
+ * The ROLES follow the shape, which is the half a screen reader hears: a
+ * tablist announces panes, and a value that is not a pane is a
+ * radiogroup. Both are driven by the same arrow keys (ui/roving).
  */
 export function Segmented<T extends string>({
   value,
@@ -34,6 +46,8 @@ export function Segmented<T extends string>({
   segments,
   ariaLabel,
   size = 'md',
+  kind = 'choice',
+  look,
   even = false,
   className,
 }: {
@@ -43,6 +57,28 @@ export function Segmented<T extends string>({
   ariaLabel: string;
   /** `sm` is the icon-only size used in a toolbar. */
   size?: 'sm' | 'md';
+  /**
+   * What the strip IS: `tabs` where it switches what is shown under it,
+   * `choice` where it sets a value. This decides the ROLES a screen
+   * reader hears — a tablist announces panes, and a value that is not a
+   * pane is a radiogroup — and, by default, the shape.
+   *
+   * Defaulting to `choice` because most of these are settings, and a
+   * strip that really is a tablist should have to say so.
+   */
+  kind?: 'tabs' | 'choice';
+  /**
+   * The shape, where it should not follow from the kind.
+   *
+   * A `choice` is a row of outlined peers, which needs WORDS: the
+   * shelf's grid/list pair is two icons, and the opening map's "at least
+   * 2 / 5 / 10 games" is three numerals inside a sentence. Stripped of
+   * the track, both read as separate toggles rather than as one question
+   * — this component's own first argument, and it still holds. They keep
+   * the track and stay a radiogroup, which is the half that was wrong
+   * before.
+   */
+  look?: 'track' | 'row';
   /**
    * Halves (or thirds) of exactly equal width, whatever the labels say.
    *
@@ -57,7 +93,7 @@ export function Segmented<T extends string>({
   className?: string;
 }) {
   // Concentric radii, or the lit segment reads as clipped: a child corner
-  // rounded-sm MORE than the space left inside the parent's own curve pushes
+  // rounded MORE than the space left inside the parent's own curve pushes
   // through it, and the difference shows first at the top-left. The rule
   // is child = parent − border − padding, so the two sizes carry matched
   // sets rather than one radius reused at both.
@@ -68,14 +104,24 @@ export function Segmented<T extends string>({
   // add themselves on top. That way this lands on exactly the 36px a
   // Button's `icon-sm` and a Select take on touch — a toolbar is a row,
   // and 34 or 38 would be as visibly wrong as the 30 it used to be.
-  const box =
-    size === 'sm'
-      ? 'rounded-lg border p-0.5 pointer-coarse:h-9'
-      : 'rounded-xl border p-1 pointer-coarse:h-9';
-  const seg =
-    size === 'sm'
+  const tabs = kind === 'tabs';
+  const track = (look ?? (tabs ? 'track' : 'row')) === 'track';
+  // `choice` has no track, so the buttons carry the height the box used
+  // to: 28px at sm and 36px at md, which is what every neighbouring
+  // control in a toolbar row already stands at. A kind change must not
+  // move the row it sits in.
+  const box = track
+    ? size === 'sm'
+      ? 'border-line bg-surface-inset border rounded-lg p-0.5 pointer-coarse:h-9'
+      : 'border-line bg-surface-inset border rounded-xl p-1 pointer-coarse:h-9'
+    : 'gap-2';
+  const seg = track
+    ? size === 'sm'
       ? 'h-6 pointer-coarse:h-full rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-sm'
-      : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-sm';
+      : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-sm'
+    : size === 'sm'
+      ? 'h-7 rounded-lg border px-2.5 text-sm pointer-coarse:h-9'
+      : 'h-9 rounded-lg border px-3 text-sm';
 
   const roving = useRovingTabs(
     segments.map((seg) => seg.value),
@@ -84,10 +130,10 @@ export function Segmented<T extends string>({
   );
   return (
     <div
-      role="tablist"
+      role={tabs ? 'tablist' : 'radiogroup'}
       aria-label={t(ariaLabel)}
       {...roving.stripProps}
-      className={cn('border-line bg-surface-inset flex shrink-0 items-center', box, className)}
+      className={cn('flex shrink-0 items-center', box, className)}
     >
       {segments.map(({ value: id, label, title, accent }) => {
         const on = id === value;
@@ -95,8 +141,8 @@ export function Segmented<T extends string>({
           <button
             key={id}
             type="button"
-            role="tab"
-            aria-selected={on}
+            role={tabs ? 'tab' : 'radio'}
+            {...(tabs ? { 'aria-selected': on } : { 'aria-checked': on })}
             tabIndex={roving.tabIndex(id)}
             title={title ? t(title) : undefined}
             onClick={() => onChange(id)}
@@ -123,14 +169,21 @@ export function Segmented<T extends string>({
               even ? 'flex-1 basis-0' : 'flex-auto',
               'font-medium transition-colors duration-100',
               seg,
-              on
-                ? // Raised, and in the segment's own colour where it has
-                  // one. Two grey pills side by side made the live site
-                  // and the dead one look interchangeable.
-                  'bg-surface-3 shadow-panel ' + (accent ? 'font-semibold' : 'text-fg')
-                : // Dimmer than it was, so the gap between live and dead
-                  // is a step rather than a shade.
-                  'text-subtle hover:text-fg',
+              track
+                ? on
+                  ? // Raised, and in the segment's own colour where it has
+                    // one. Two grey pills side by side made the live site
+                    // and the dead one look interchangeable.
+                    'bg-surface-3 shadow-panel ' + (accent ? 'font-semibold' : 'text-fg')
+                  : // Dimmer than it was, so the gap between live and dead
+                    // is a step rather than a shade.
+                    'text-subtle hover:text-fg'
+                : on
+                  ? // The answer: filled in the accent, and outlined in it
+                    // too, so it reads as chosen rather than merely tinted.
+                    'border-primary/40 bg-primary-soft ' + (accent ? 'font-semibold' : 'text-primary')
+                  : // A peer that was not chosen — an outline, not a hole.
+                    'border-line text-muted hover:border-line-strong hover:text-fg',
             )}
           >
             {label}

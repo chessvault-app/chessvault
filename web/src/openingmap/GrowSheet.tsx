@@ -151,6 +151,9 @@ export function GrowSheet({
             { value: '10', label: '10' },
           ]}
           ariaLabel="Games floor"
+          // Three numerals inside a sentence: the track keeps them one
+          // question rather than three little buttons. See `look`.
+          look="track"
         />
         <span className="text-muted text-sm">{t('games')}</span>
       </div>

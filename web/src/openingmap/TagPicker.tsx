@@ -124,6 +124,7 @@ export function TagPicker({
                 { value: 'note', label: t('Notes') },
               ]}
               ariaLabel="What to link"
+              kind="tabs"
             />
             <SearchInput
               className="flex-1"

@@ -414,7 +414,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             aria-label={t('Search moves and opening names')}
             // No backdrop of its own. SearchInput puts `className` on its
             // WRAPPER, which is square, so a translucent fill there
-            // painted a phantom rectangle behind the rounded-sm field and
+            // painted a phantom rectangle behind the rounded field and
             // around its clear button. It was there for a header that
             // floated over the canvas; the header sits above the canvas
             // now and the page's own background is behind it.

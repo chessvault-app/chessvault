@@ -215,6 +215,10 @@ export function ShelfToolbar({
               onChange={onLayout}
               ariaLabel="Layout"
               size="sm"
+              // A setting, so a radiogroup — but drawn as a track: its
+              // two options are ICONS, and a choice row needs words. See
+              // the `look` note in Segmented.
+              look="track"
               className="hidden sm:flex"
               segments={[
                 { value: 'grid', label: <LayoutGrid className="size-3.5" />, title: 'Grid view' },

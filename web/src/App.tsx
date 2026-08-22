@@ -162,7 +162,7 @@ function Shell() {
         // keyboard that misbehaves while somebody is.
         'bg-app text-fg vv-band flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
         // Standalone PWAs draw edge-to-edge: keep content clear of the
-        // dynamic island / notch (top) and the rounded-sm corners (sides).
+        // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
         'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
       )}

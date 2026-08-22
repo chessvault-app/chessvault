@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from 'react';
 
 /**
- * Arrow keys for a strip of tabs, and one Tab stop for the strip.
+ * Arrow keys for a strip of choices, and one Tab stop for the strip.
  *
  * Three of these were written in this app — PaneTabs, Segmented, and the
  * collection view's own panel-title switch — and all three had the roles
@@ -22,6 +22,10 @@ import type { KeyboardEvent } from 'react';
  * Vertical strips would want Up/Down; there are none, so there is no
  * `orientation` to pass. The strip's own element is what listens, so a
  * key pressed on any tab in it arrives here by bubbling.
+ *
+ * `radio` as well as `tab`, since Segmented grew a second shape: a
+ * radiogroup is driven by the same arrows, and the strip finds its
+ * buttons by role.
  */
 export function useRovingTabs<T extends string>(
   ids: readonly T[],
@@ -60,7 +64,7 @@ export function useRovingTabs<T extends string>(
     // itself: these components hold no refs to their own buttons, and a
     // ref array for three keys of arithmetic would be the more fragile
     // half of this.
-    const tabs = e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"]');
+    const tabs = e.currentTarget.querySelectorAll<HTMLElement>('[role="tab"],[role="radio"]');
     tabs[ids.indexOf(next)]?.focus();
   };
 
