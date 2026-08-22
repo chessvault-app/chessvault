@@ -42,6 +42,19 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   toggles and toggle-group items show a `title` as the tooltip, as
   buttons do.
 
+- **The screenshots and the landing page wear the new design.** Every
+  image in the README and on the site is recaptured from the demo in both
+  themes, and a `<picture>` picks the one matching the reader's system
+  setting — the app follows that setting, so a white screenshot on a dark
+  page was a picture of a different app from the one a click opens. The
+  landing page is rewritten as shadcn's neutral theme by hand (the same
+  tokens, the hairline-ring cards, the `--radius` ladder, the outline and
+  primary buttons, the Tabs-shaped language switch), light at rest and
+  dark under `prefers-color-scheme`, where it used to be dark only. The
+  capture script forces the theme through the app's own store instead of
+  inheriting it from whoever's machine runs it, which is how the last set
+  came out dark.
+
 ## 0.4.7
 
 A release about not having to watch an import happen.
