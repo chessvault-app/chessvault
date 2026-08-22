@@ -1,25 +1,25 @@
-import { useState, type ReactElement, type ReactNode } from 'react';
-import { Slot } from 'radix-ui';
-import type { LucideIcon } from 'lucide-react';
+import { useState, type ReactElement, type ReactNode } from "react";
+import { Slot } from "radix-ui";
+import type { LucideIcon } from "lucide-react";
 
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuTrigger,
-} from '@/components/ui/context-menu';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+} from "@/components/ui/context-menu";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { t } from '@/lib/i18n';
-import { useMediaQuery } from '@/lib/media';
+} from "@/components/ui/dropdown-menu";
+import { t } from "@/lib/i18n";
+import { useMediaQuery } from "@/lib/media";
 
 export interface MenuAction {
   label: string;
@@ -39,7 +39,7 @@ export interface MenuAction {
 }
 
 /** Where a menu stops being a sheet and becomes a popover. */
-const WIDE = '(min-width: 40rem)';
+const WIDE = "(min-width: 40rem)";
 
 /**
  * A row's actions: a list of verbs, each with a name and a whole row to be
@@ -67,7 +67,7 @@ export function ActionMenu({
   actions,
   children,
   detail,
-  align = 'end',
+  align = "end",
   open,
   onOpenChange,
 }: {
@@ -78,7 +78,7 @@ export function ActionMenu({
   /** Anything above the verbs — a detail line, say. */
   detail?: ReactNode;
   /** Which edge of the trigger the desktop menu hangs from. */
-  align?: 'start' | 'center' | 'end';
+  align?: "start" | "center" | "end";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
@@ -121,7 +121,12 @@ export function ActionMenu({
         {children}
       </Slot.Root>
       {isOpen && (
-        <ActionSheetBody title={title} actions={actions} detail={detail} onClose={() => setOpen(false)} />
+        <ActionSheetBody
+          title={title}
+          actions={actions}
+          detail={detail}
+          onClose={() => setOpen(false)}
+        />
       )}
     </>
   );
@@ -172,16 +177,32 @@ export function ActionContextMenu({
       >
         {children}
       </Slot.Root>
-      {open && <ActionSheetBody title={title} actions={actions} onClose={() => setOpen(false)} />}
+      {open && (
+        <ActionSheetBody
+          title={title}
+          actions={actions}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   );
 }
 
-function MenuRow({ action, kind }: { action: MenuAction; kind: 'dropdown' | 'context' }) {
+function MenuRow({
+  action,
+  kind,
+}: {
+  action: MenuAction;
+  kind: "dropdown" | "context";
+}) {
   const { label, icon: Icon, danger, className, onSelect } = action;
-  const Item = kind === 'dropdown' ? DropdownMenuItem : ContextMenuItem;
+  const Item = kind === "dropdown" ? DropdownMenuItem : ContextMenuItem;
   return (
-    <Item variant={danger ? 'destructive' : 'default'} className={className} onSelect={onSelect}>
+    <Item
+      variant={danger ? "destructive" : "default"}
+      className={className}
+      onSelect={onSelect}
+    >
       <Icon />
       {t(label)}
     </Item>
@@ -213,25 +234,40 @@ function ActionSheetBody({
     >
       <DialogContent size="sm" title={title} className="gap-0">
         {detail}
-        {actions.map(({ label, icon: Icon, danger, className, onSelect }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={() => {
-              onClose();
-              onSelect();
-            }}
-            className={cn(
-              // A sheet row is a touch target: a whole row to be tapped in.
-              'flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base transition-colors duration-100',
-              danger ? 'text-destructive hover:bg-destructive/10' : 'text-foreground hover:bg-accent',
-              className,
-            )}
-          >
-            <Icon className={cn('size-4 shrink-0', !danger && 'text-muted-foreground')} />
-            {t(label)}
-          </button>
-        ))}
+        {/* -mx-2: a row's icon starts where the title does, the way a
+            dropdown's label text sits over its items' icons. With the
+            rows inside the sheet's padding, the title, the icons and the
+            labels made three left edges (16, 28, 56) and a lit row looked
+            shifted against its own heading. mt-2: the lit row's pill used
+            to touch the title. */}
+        <div className="-mx-2 mt-2 flex flex-col">
+          {actions.map(({ label, icon: Icon, danger, className, onSelect }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => {
+                onClose();
+                onSelect();
+              }}
+              className={cn(
+                // A sheet row is a touch target: a whole row to be tapped in.
+                "flex items-center gap-3 rounded-lg px-2 py-3 text-left text-base transition-colors duration-100",
+                danger
+                  ? "text-destructive hover:bg-destructive/10"
+                  : "text-foreground hover:bg-accent",
+                className,
+              )}
+            >
+              <Icon
+                className={cn(
+                  "size-4 shrink-0",
+                  !danger && "text-muted-foreground",
+                )}
+              />
+              {t(label)}
+            </button>
+          ))}
+        </div>
       </DialogContent>
     </Dialog>
   );
