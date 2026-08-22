@@ -98,7 +98,7 @@ export function ShelfCard({
           // that rises reads as reachable.
           'transition-[border-color,box-shadow,transform] duration-150',
           'hover:border-border hover:shadow-md md:hover:-translate-y-px',
-          layout === 'grid' ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
+          layout === 'grid' ? 'px-4 py-3' : 'items-center px-3 py-2',
           // A bookmarked card says so before it is read: a warm edge down
           // the left. It is the WHOLE indicator now — the filled star that
           // used to sit in the corner cost a permanent 28px of every card
@@ -115,7 +115,12 @@ export function ShelfCard({
         <SwipeTrack dx={swipe.dx} bookmarked={marked} />
 
         <div
-          className={cn('flex min-w-0 flex-1 gap-3', board ? 'items-start' : 'items-center')}
+          // Centred, not top-aligned: the 64px board sets the card's height,
+          // and a title-and-meta that only fill 40 of it sat against the
+          // top with a dead band beneath, the title's cap visibly lower
+          // than the board's edge. Cards in one row share a height (h-full
+          // above), so centring also keeps the boards level across a row.
+          className="flex min-w-0 flex-1 items-center gap-3"
           style={swipe.style}
         >
           {/* The board a note opens with, where it has one — the fastest
