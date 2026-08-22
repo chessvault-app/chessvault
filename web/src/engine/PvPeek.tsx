@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { placeNear } from '@/lib/floating';
 import { Board } from '@/board/Board';
 import type { PvPly } from './pv.ts';
 
@@ -114,16 +115,25 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
  * docked right on a desktop, so the left is tried first and the right is
  * the fallback; the clamp keeps the card on screen for the lines nearest
  * the top and bottom of the pane.
+ *
+ * Two rectangles, which is why this composes one rather than passing a
+ * DOMRect straight through: the card is level with the PLY (a word in a
+ * line of moves) and clear of the ROW (the whole line), or a card for a
+ * move halfway along a line would be laid over the rest of it.
  */
 function place({ rect, row }: PvPeekState): { top: number; left: number } {
-  const leftOf = row.left - CARD_W - MARGIN;
-  const left =
-    leftOf >= MARGIN ? leftOf : Math.min(row.right + MARGIN, window.innerWidth - CARD_W - MARGIN);
-  const top = Math.min(
-    rect.top + rect.height / 2 - CARD_H / 2,
-    window.innerHeight - CARD_H - MARGIN,
+  return placeNear(
+    {
+      top: rect.top,
+      bottom: rect.bottom,
+      height: rect.height,
+      left: row.left,
+      right: row.right,
+      width: row.right - row.left,
+    },
+    { width: CARD_W, height: CARD_H },
+    { side: 'left', align: 'center', gap: MARGIN, margin: MARGIN },
   );
-  return { top: Math.max(top, MARGIN), left: Math.max(left, MARGIN) };
 }
 
 export function PvPeek({

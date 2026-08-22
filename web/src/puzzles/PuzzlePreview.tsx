@@ -3,9 +3,18 @@ import { useRef, useState } from 'react';
 import { Board } from '@/board/Board';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { placeNear } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { t } from '@/lib/i18n';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
+
+/**
+ * Same card, same measured size, as the game list's peek — `w-44` with
+ * `p-1`, whose board chessground floors to 162 rather than the 168 the
+ * padding leaves it. See games/shared.tsx: the two keep their own copies
+ * until the card itself is one component.
+ */
+const PEEK_CARD = { width: 176, height: 170 };
 
 /**
  * Peeking at a puzzle from a list of them.
@@ -67,12 +76,16 @@ export function usePuzzlePreview(): {
     }
     if (seq !== seqRef.current) return; // pointer moved on
     if (!anchor.isConnected) return; // row went away mid-fetch
-    const rect = anchor.getBoundingClientRect();
+    const { top, left } = placeNear(anchor.getBoundingClientRect(), PEEK_CARD, {
+      side: 'left',
+      align: 'center',
+      gap: 16,
+    });
     setPreview({
       fen: positionAt(puzzle, 1).fen,
       orientation: solverColor(puzzle),
-      top: Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200),
-      left: Math.max(rect.left - 192, 8),
+      top,
+      left,
     });
   };
 

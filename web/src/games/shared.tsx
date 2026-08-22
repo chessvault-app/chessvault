@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Board } from '@/board/Board';
 
 import { cn } from '@/lib/cn';
+import { placeNear } from '@/lib/floating';
 
 import { Button } from '@/ui/Button';
 
@@ -62,6 +63,18 @@ export const safeLink = (link?: string | null): string | undefined =>
 
 /** PGN results with the proper half glyph: 1/2-1/2 → ½-½. */
 export const fmtResult = (result: string): string => result.replaceAll('1/2', '½');
+
+/**
+ * The peek card, MEASURED rather than derived: it is `w-44` with `p-1`,
+ * so the width is 176 and the board inside it should make the height 176
+ * too — but chessground floors a board to a whole number of device pixels
+ * per square, so what it actually comes out at is 170 (measured in the
+ * running app at 1x). The old numbers here assumed 184 and centred the
+ * card 7px above the row it was pointing at. The same card is drawn by
+ * the puzzle list's preview, which keeps its own copy of this for the
+ * same reason a peek is not yet one component.
+ */
+const PEEK_CARD = { width: 176, height: 170 };
 
 export interface Preview {
   fen: string;
@@ -206,27 +219,18 @@ export function GameRow({
   const [menuOpen, setMenuOpen] = useState(false);
   const showPreviewAt = (rect: DOMRect, viaTap: boolean): void => {
     if (!game.finalFen) return;
-    const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
+    const { top, left } = placeNear(rect, PEEK_CARD, { side: 'left', align: 'center', gap: 16 });
     onPreview({
       fen: game.finalFen,
       orientation: game.userSide ?? 'white',
       top,
-      left: Math.max(rect.left - 192, 8),
+      left,
       pinned: viaTap,
     });
   };
   const showPreview = (e: React.MouseEvent<Element>, viaTap = false): void => {
-    if (!game.finalFen) return;
     if (!viaTap && coarse()) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const top = Math.min(Math.max(rect.top + rect.height / 2 - 92, 8), innerHeight - 200);
-    onPreview({
-      fen: game.finalFen,
-      orientation: game.userSide ?? 'white',
-      top,
-      left: Math.max(rect.left - 192, 8),
-      pinned: viaTap,
-    });
+    showPreviewAt(e.currentTarget.getBoundingClientRect(), viaTap);
   };
 
   const hidePreview = (): void => onPreview(null);
