@@ -1,3 +1,6 @@
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { suppressNextClick } from '@/lib/suppressNextClick';
+
 /**
  * Where a floating layer goes.
  *
@@ -153,4 +156,136 @@ export function placeNear(anchor: Box, size: Size, opts: PlaceOptions = {}): Pla
         top: clamp(cross, size.height, viewport.height, margin),
         left: clamp(main, size.width, viewport.width, margin),
       };
+}
+
+/**
+ * Place a layer whose size only the browser knows.
+ *
+ * Every remaining floating layer in the app is content-sized — a listbox
+ * is `w-max max-w-72`, a tip is as tall as its sentence — which is why
+ * they anchored themselves with `bottom` and `right` and let the browser
+ * resolve the rest. That works and it cannot flip, cap or clamp: nothing
+ * in CSS knows whether the box fits.
+ *
+ * So: render it, measure it, place it, all before the browser paints.
+ * `useLayoutEffect` is the whole trick — React re-renders synchronously
+ * inside it, so the provisional position is never on screen. ActionSheet
+ * has done this by hand for its vertical clamp since it was written;
+ * this is that, generalised and with the geometry shared.
+ *
+ * Returns `hidden` for the one frame before the measurement exists.
+ * Callers paint it anyway (`visibility: hidden`) rather than skipping
+ * the render, because a layer that is not in the DOM cannot be measured.
+ */
+export function useFloating(
+  anchor: Box | null,
+  opts: PlaceOptions = {},
+): {
+  ref: (node: HTMLElement | null) => void;
+  placement: Placement | null;
+  /** position/top/left, plus visibility until the measurement lands. */
+  style: CSSProperties;
+} {
+  const [node, setNode] = useState<HTMLElement | null>(null);
+  const [placement, setPlacement] = useState<Placement | null>(null);
+  const { side, align, gap, margin, flip, viewport } = opts;
+
+  useLayoutEffect(() => {
+    if (!anchor || !node) {
+      setPlacement(null);
+      return;
+    }
+    const seen = node.getBoundingClientRect();
+    const natural = { width: seen.width, height: seen.height };
+    const first = placeNear(anchor, natural, opts);
+    // A layer taller than the room it has will be capped by the caller's
+    // own max-height, so place the capped size rather than the natural
+    // one: placing the tall version and letting the clamp pull it back
+    // slides it over the anchor it belongs under. Same side as the first
+    // pass, and no second flip — the decision has been made.
+    const vertical = first.side === 'top' || first.side === 'bottom';
+    const fitted = vertical
+      ? { width: natural.width, height: Math.min(natural.height, first.room) }
+      : { width: Math.min(natural.width, first.room), height: natural.height };
+    setPlacement(placeNear(anchor, fitted, { ...opts, side: first.side, flip: false }));
+    // The options are spread into the deps by hand: a caller writes them
+    // as a literal, so the object is new on every render and depending on
+    // it would re-measure forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [anchor, node, side, align, gap, margin, flip, viewport?.width, viewport?.height]);
+
+  return {
+    ref: setNode,
+    placement,
+    style: placement
+      ? { position: 'fixed', top: placement.top, left: placement.left }
+      : { position: 'fixed', top: 0, left: 0, visibility: 'hidden' },
+  };
+}
+
+/**
+ * Close a floating layer when the press lands outside it.
+ *
+ * mousedown AND touchstart, because iOS synthesizes no mouse event for a
+ * document listener when a tap lands on dead space — without the touch
+ * half, a tap outside could not dismiss. And a dismissing TAP may only
+ * dismiss: its synthesized click is swallowed, or it presses whatever it
+ * landed on as well. Three of the six hand-written versions of this had
+ * that second half and three did not, which is how a tap on an iPad
+ * could close the opening picker and pick an opening underneath it in
+ * the same gesture.
+ *
+ * `inside` is everything a press may land in without dismissing — the
+ * layer, and usually the control that opened it.
+ */
+export function useDismiss(
+  active: boolean,
+  onDismiss: () => void,
+  inside: Array<RefObject<HTMLElement | null>>,
+  opts: {
+    /**
+     * What a scroll ANYWHERE ELSE means. A layer placed from a measured
+     * rectangle points at a stale position the moment the page moves
+     * under it, so 'close' is the default; 'ignore' is for a layer that
+     * is not anchored to anything. A scroll INSIDE the layer is never
+     * either — a long list scrolls itself.
+     */
+    scroll?: 'close' | 'ignore';
+    /** Called instead of closing, for a layer that follows its anchor. */
+    onScroll?: (e: Event) => void;
+  } = {},
+): void {
+  // Through a ref, so a caller may pass a fresh array and fresh closures
+  // every render without re-arming the listeners each time.
+  const latest = useRef({ onDismiss, inside, opts });
+  latest.current = { onDismiss, inside, opts };
+
+  useEffect(() => {
+    if (!active) return;
+    const within = (target: Node | null): boolean =>
+      target !== null && latest.current.inside.some((r) => r.current?.contains(target));
+
+    const onDown = (e: MouseEvent | TouchEvent): void => {
+      if (within(e.target as Node)) return;
+      latest.current.onDismiss();
+      if (e.type === 'touchstart') suppressNextClick();
+    };
+    const onScroll = (e: Event): void => {
+      if (within(e.target as Node)) return;
+      const { onScroll: follow, scroll = 'close' } = latest.current.opts;
+      if (follow) follow(e);
+      else if (scroll === 'close') latest.current.onDismiss();
+    };
+
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
+    // Capture: the thing that scrolls is usually a pane rather than the
+    // window, and a scroll event does not bubble.
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
+      document.removeEventListener('scroll', onScroll, true);
+    };
+  }, [active]);
 }

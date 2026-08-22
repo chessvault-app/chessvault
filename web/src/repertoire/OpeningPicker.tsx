@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { useDismiss, useFloating, type Box } from '@/lib/floating';
 import { autoFocusField } from '@/lib/media';
 import { SearchInput } from '@/ui/Input';
+import { useCloseRequest } from '@/ui/dialogFocus';
 import { Sheet } from '@/ui/Sheet';
 import { t } from '@/lib/i18n';
 
@@ -98,16 +100,13 @@ export function OpeningPicker({
   const [all, setAll] = useState<OpeningTemplate[] | null>(() => catalogue);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  /** Where the desktop popover goes; null means the phone's sheet. */
-  const [anchor, setAnchor] = useState<{
-    top?: number;
-    bottom?: number;
-    left: number;
-    width: number;
-    maxHeight: number;
-  } | null>(null);
+  /** The field's rectangle when the popover opened; null means the sheet. */
+  const [anchor, setAnchor] = useState<Box | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  /** As wide as the field, and never so narrow that a name is unreadable. */
+  const width = Math.max(anchor?.width ?? 0, 288);
+  const pop = useFloating(anchor, { side: 'bottom', align: 'start', gap: 4, margin: 12 });
 
   useEffect(() => {
     let cancelled = false;
@@ -152,49 +151,34 @@ export function OpeningPicker({
    */
   const openPicker = (): void => {
     setQuery('');
+    // The anchor is read once, when it opens — the same rule ActionSheet
+    // follows. Everything else (which side, the clamp, the cap) is
+    // lib/floating's from the popover's own measured size, where it used
+    // to be four lines of arithmetic here that no test ever saw.
     const rect = window.matchMedia('(min-width: 40rem)').matches
       ? triggerRef.current?.getBoundingClientRect()
       : undefined;
-    if (rect) {
-      const wanted = 384;
-      const width = Math.max(rect.width, 288);
-      const left = Math.min(rect.left, window.innerWidth - width - 8);
-      const below = window.innerHeight - rect.bottom - 12;
-      setAnchor(
-        below >= 240 || below >= rect.top - 12
-          ? { top: rect.bottom + 4, left, width, maxHeight: Math.min(wanted, below) }
-          : {
-              bottom: window.innerHeight - rect.top + 4,
-              left,
-              width,
-              maxHeight: Math.min(wanted, rect.top - 12),
-            },
-      );
-    } else {
-      setAnchor(null);
-    }
+    setAnchor(rect ?? null);
     setOpen(true);
   };
 
-  // The popover has no scrim, so it dismisses itself: Escape, and any
-  // press outside it (a press on the field again just closes it).
-  useEffect(() => {
-    if (!open || !anchor) return;
-    const onDown = (e: PointerEvent): void => {
-      const target = e.target as Node;
-      if (popoverRef.current?.contains(target) || triggerRef.current?.contains(target)) return;
-      setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('pointerdown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open, anchor]);
+  /**
+   * The popover has no scrim, so it dismisses itself: a press outside it
+   * (a press on the field again just closes it), and a close request.
+   *
+   * It used to listen for `pointerdown` alone and swallow nothing. On a
+   * touch device wide enough to get the popover rather than the sheet —
+   * an iPad — that is a tap which closes the picker AND presses whatever
+   * was under it, because the synthesized click still lands. useDismiss
+   * does the touchstart-and-suppress dance every other popover in the
+   * app already did.
+   *
+   * Escape moves to useCloseRequest with it, which also answers Android's
+   * Back gesture and, since dialogFocus grew a stack, closes only the
+   * topmost layer.
+   */
+  useDismiss(open && anchor !== null, () => setOpen(false), [popoverRef, triggerRef]);
+  useCloseRequest(() => setOpen(false), open && anchor !== null);
 
   return (
     <>
@@ -293,16 +277,18 @@ export function OpeningPicker({
           // floats over (see ActionSheet).
           return createPortal(
             <div
-              ref={popoverRef}
+              ref={(node) => {
+                popoverRef.current = node;
+                pop.ref(node);
+              }}
               role="dialog"
               aria-label={t('Opening')}
               style={{
-                position: 'fixed',
-                top: anchor.top,
-                bottom: anchor.bottom,
-                left: anchor.left,
-                width: anchor.width,
-                maxHeight: anchor.maxHeight,
+                ...pop.style,
+                width,
+                // 384 is as tall as this wants to be; less where the room
+                // is less, and the catalogue scrolls inside it.
+                maxHeight: Math.min(384, pop.placement?.room ?? 384),
               }}
               className={cn(
                 'bg-surface border-line z-50 flex flex-col overflow-hidden rounded-lg border',

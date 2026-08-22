@@ -3,7 +3,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
-import { suppressNextClick } from '@/lib/suppressNextClick';
+import { useDismiss, useFloating } from '@/lib/floating';
 import { useCloseRequest } from './dialogFocus';
 import { FieldContext } from './Field';
 import { Sheet } from './Sheet';
@@ -58,18 +58,6 @@ const triggerSizes = {
   sm: 'h-7 px-2 text-sm pointer-coarse:h-9',
   md: 'h-8 px-2.5 text-sm pointer-coarse:h-9',
 } as const;
-
-/**
- * Enough room under a trigger for a list to be worth opening downwards:
- * the popover's own floor (140px) plus the 4px offset and the 16px it
- * keeps off the window edge. Below that, and only then, it flips up.
- */
-const NEEDS_BELOW = 160;
-
-const prefersUp = (r: DOMRect): boolean => {
-  const below = window.innerHeight - r.bottom;
-  return below < NEEDS_BELOW && r.top > below;
-};
 
 export function Select({
   value,
@@ -150,8 +138,17 @@ export function Select({
   // Where the current touch started, to tell a tap from a list scroll.
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  // The Sheet/Modal breakpoint: below it the open list is a bottom sheet,
+  // not a popover, so everything anchored — the rect, the dismiss-on-tap
+  // and dismiss-on-scroll listeners, the touch backdrop — is popover-only.
+  const phone = useMediaQuery('(max-width: 39.9375rem)');
+  // The sheet centres its current option once per opening — a months list
+  // is longer than a sheet — and only once, so a browse of the list is not
+  // yanked back to where it started by a later re-render.
+  const centered = useRef(false);
+
   /**
-   * Which way the list opens: down unless down has no room.
+   * Where the list goes: under the trigger unless under it has no room.
    *
    * It used to flip up whenever the trigger sat below mid-screen, which
    * is a guess about room rather than a measurement of it. A Select
@@ -161,19 +158,18 @@ export function Select({
    * half the window free underneath. A list that covers the thing it
    * came from reads as a replacement, not as an answer.
    *
-   * So: room is measured on both sides and down wins ties, because down
-   * is where a dropdown is expected to go. Up is for the trigger that
-   * genuinely has nothing below it — a toolbar at the foot of a page.
+   * lib/floating now decides it from the list's OWN measured height
+   * rather than from a 160px stand-in for one, and ties still go down,
+   * where a dropdown is expected. It also clamps horizontally, which
+   * nothing here did: `left: rect.left` on a trigger near the right edge
+   * put a 288px list straight off the side of the window.
    */
-  const [dropUp, setDropUp] = useState(false);
-  // The Sheet/Modal breakpoint: below it the open list is a bottom sheet,
-  // not a popover, so everything anchored — the rect, the dismiss-on-tap
-  // and dismiss-on-scroll listeners, the touch backdrop — is popover-only.
-  const phone = useMediaQuery('(max-width: 39.9375rem)');
-  // The sheet centres its current option once per opening — a months list
-  // is longer than a sheet — and only once, so a browse of the list is not
-  // yanked back to where it started by a later re-render.
-  const centered = useRef(false);
+  const popover = useFloating(open && !phone ? rect : null, {
+    side: 'bottom',
+    align,
+    gap: 4,
+    margin: 16,
+  });
 
   const flat = useMemo(() => groups.flatMap((g) => g.options), [groups]);
   // The prefix rides on the trigger only, and on the invisible sizers too,
@@ -187,9 +183,7 @@ export function Select({
       setOpen(true);
       return;
     }
-    const r = trigger.current?.getBoundingClientRect() ?? null;
-    setRect(r);
-    setDropUp(r ? prefersUp(r) : false);
+    setRect(trigger.current?.getBoundingClientRect() ?? null);
     setActive(Math.max(0, flat.findIndex((o) => o.value === value)));
     setOpen(true);
   };
@@ -205,49 +199,30 @@ export function Select({
   // Sheet brings its own.
   useCloseRequest(() => setOpen(false), open && !phone);
 
-  // The popover is position-fixed off a measured rect: a scroll of the PAGE
-  // invalidates it, so dismiss — but scrolling INSIDE the list (a long
-  // options list scrolls) must not close it. A click elsewhere dismisses too.
+  // A press outside puts the list away — mousedown and touchstart both,
+  // and the tap's synthesized click swallowed, which lib/floating now
+  // owns for every popover in the app rather than each one remembering.
+  //
+  // Scrolling the LIST is fine (a long options list scrolls itself, and
+  // useDismiss ignores anything inside the layer). A scroll of the page
+  // behind must NOT dismiss either — that is what closed a short,
+  // non-scrollable dropdown on a touch drag. Instead the list follows
+  // its trigger, and only gives up when the trigger has left the window.
+  useDismiss(open && !phone, () => setOpen(false), [trigger, list], {
+    onScroll: () => {
+      const r = trigger.current?.getBoundingClientRect();
+      if (!r || r.bottom < 0 || r.top > window.innerHeight) setOpen(false);
+      else setRect(r);
+    },
+  });
+
+  // A resize moves everything at once and re-measuring mid-drag would
+  // chase it; the list is cheap to reopen.
   useEffect(() => {
-    // The sheet needs none of this: its scrim owns the outside tap, and a
-    // sheet is not anchored to anything a scroll could carry away.
     if (!open || phone) return;
     const close = (): void => setOpen(false);
-    // Both mousedown AND touchstart: iOS never synthesizes mouse events for
-    // document-level listeners when the tap lands on dead space, so without
-    // the touch listener a tap outside could not close the list on a phone.
-    const onDown = (e: MouseEvent | TouchEvent): void => {
-      const t = e.target as Node;
-      if (!trigger.current?.contains(t) && !list.current?.contains(t)) {
-        close();
-        // A dismissing TAP must only dismiss — swallow its synthesized
-        // click so it can't also press whatever it landed on.
-        if (e.type === 'touchstart') suppressNextClick();
-      }
-    };
-    // Scrolling the LIST is fine (ignore). A scroll of the page behind must
-    // NOT dismiss — that's what closed a short, non-scrollable dropdown on a
-    // touch drag. Instead follow the trigger; only close if it scrolls away.
-    const onScroll = (e: Event): void => {
-      if (list.current?.contains(e.target as Node)) return;
-      const r = trigger.current?.getBoundingClientRect();
-      if (!r || r.bottom < 0 || r.top > window.innerHeight) {
-        close();
-        return;
-      }
-      setRect(r);
-      setDropUp(prefersUp(r));
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('touchstart', onDown);
-    window.addEventListener('scroll', onScroll, true);
     window.addEventListener('resize', close);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('touchstart', onDown);
-      window.removeEventListener('scroll', onScroll, true);
-      window.removeEventListener('resize', close);
-    };
+    return () => window.removeEventListener('resize', close);
   }, [open, phone]);
 
   /**
@@ -401,21 +376,18 @@ export function Select({
           sits. */}
       {open && !phone && rect && createPortal(
         <div
-          ref={list}
+          ref={(node) => {
+            list.current = node;
+            popover.ref(node);
+          }}
           role="listbox"
           aria-label={ariaLabel}
           style={{
-            position: 'fixed',
-            ...(dropUp
-              ? { bottom: window.innerHeight - rect.top + 4 }
-              : { top: rect.bottom + 4 }),
-            ...(align === 'end'
-              ? { right: window.innerWidth - rect.right }
-              : { left: rect.left }),
+            ...popover.style,
             minWidth: rect.width,
-            maxHeight: dropUp
-              ? Math.max(140, rect.top - 16)
-              : Math.max(140, window.innerHeight - rect.bottom - 16),
+            // The floor is the old one: below about 140px a list is not
+            // worth opening as a list, and it is allowed to overhang.
+            maxHeight: Math.max(140, popover.placement?.room ?? 0),
           }}
           className={cn(
             // overscroll-contain: scrolling the list must not chain to the
