@@ -3,6 +3,8 @@ import { type VariantProps } from 'class-variance-authority';
 import { ToggleGroup as ToggleGroupPrimitive } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
+import { hasTextContent } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toggleVariants } from '@/components/ui/toggle';
 
 /**
@@ -44,16 +46,23 @@ function ToggleGroup({
   );
 }
 
+/**
+ * `title` is a tooltip, the shadcn way (see Button): Radix's Tooltip on
+ * hover and keyboard focus, never the browser's bubble, and an icon-only
+ * control's title doubles as its accessible name.
+ */
 function ToggleGroupItem({
   className,
   children,
   variant = 'default',
   size = 'default',
+  title,
   ...props
 }: React.ComponentProps<typeof ToggleGroupPrimitive.Item> & VariantProps<typeof toggleVariants>) {
   const context = React.useContext(ToggleGroupContext);
-  return (
+  const item = (
     <ToggleGroupPrimitive.Item
+      aria-label={props['aria-label'] ?? (hasTextContent(children) ? undefined : title)}
       data-slot="toggle-group-item"
       data-variant={context.variant || variant}
       data-size={context.size || size}
@@ -67,6 +76,13 @@ function ToggleGroupItem({
     >
       {children}
     </ToggleGroupPrimitive.Item>
+  );
+  if (title === undefined) return item;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{item}</TooltipTrigger>
+      <TooltipContent>{title}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -354,11 +354,29 @@
   --secondary: var(--surface-2);
   --secondary-foreground: var(--foreground);
   --muted: var(--surface-2);
-  --accent: var(--surface-2);
+  /* One rung above --muted, not the same rung: shadcn ties the two, and
+     in its own examples that is fine because a pressed toggle sits on the
+     page. Here it sits on a card, and a pressed state the same colour as
+     the hover state — and as a secondary button — could not be seen at
+     all (measured: 3% of lightness apart in light, 6% in dark). Hover
+     stays --muted; selected/pressed is --accent; the two are a rung apart. */
+  --accent: var(--surface-3);
   --accent-foreground: var(--foreground);
   /* shadcn's input CHROME colour — what `border-input` draws. The sunken
      fill a field sits on is --surface-inset, which is a rung, not a role. */
   --input: var(--border);
+}
+.dark {
+  /* shadcn's own dark input chrome is translucent white, and the active
+     tab's pill (`dark:bg-input/30 dark:border-input`) depends on it: over
+     the muted track, an opaque 29% grey at 30% was the track's own
+     colour, and the chosen tab could not be told from the others. */
+  --input: oklch(100% 0 0 / calc(15% + 10% * var(--ui-contrast)));
+  /* The pressed/selected fill, a further step up in the dark: the
+     surface-3 rung (32%) on a card (20.5%) read as one grey on another
+     in the crops — the eye is less sensitive a step apart down here than
+     it is in the light, where surface-3 (92.8%) on white is plain. */
+  --accent: oklch(calc(37% + (28% - 37%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 }
 
 /* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile

@@ -23,6 +23,7 @@ import { copyText } from '@/lib/clipboard';
 import { navigate, up } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { Segmented } from '@/components/segmented';
@@ -352,7 +353,22 @@ export function EditorView({
             </Field>
 
             <Field label="Castling rights">
-              <div className="flex gap-1">
+              {/* The registry's toggle group, four independent toggles
+                  (type="multiple"): outlined when off, the accent fill when
+                  on, aria-pressed from Radix. Not the filled primary: these
+                  four are a state, and primary is the colour of the thing to
+                  PRESS on a screen — a board full of pieces and one Save
+                  (lanph3re). */}
+              <ToggleGroup
+                type="multiple"
+                variant="outline"
+                size="sm"
+                spacing={1}
+                value={[...state.castling]}
+                onValueChange={(flags) => patch({ castling: new Set(flags as CastlingFlag[]) })}
+                aria-label={t('Castling rights')}
+                className="w-full"
+              >
                 {(
                   [
                     ['K', 'White O-O'],
@@ -361,34 +377,11 @@ export function EditorView({
                     ['q', 'Black O-O-O'],
                   ] as [CastlingFlag, string][]
                 ).map(([flag, title]) => (
-                  <Button
-                    key={flag}
-                    size="sm"
-                    variant="secondary"
-                    // The `active` tint and not the filled primary: these
-                    // four are a state, and primary is the colour of the
-                    // thing to PRESS on a screen — a board full of pieces
-                    // and one Save. Two castling rights lit up in it read
-                    // as the editor's two main actions (lanph3re). Active
-                    // is what every other toggle in the app wears.
-                    active={state.castling.has(flag)}
-                    // The colour said which were on and nothing else did:
-                    // `active` renders as data-active, which no screen
-                    // reader announces. A toggle has a pressed state.
-                    aria-pressed={state.castling.has(flag)}
-                    title={t(title)}
-                    onClick={() => {
-                      const castling = new Set(state.castling);
-                      if (castling.has(flag)) castling.delete(flag);
-                      else castling.add(flag);
-                      patch({ castling });
-                    }}
-                    className="flex-1 font-mono"
-                  >
+                  <ToggleGroupItem key={flag} value={flag} title={t(title)} className="flex-1 font-mono">
                     {flag}
-                  </Button>
+                  </ToggleGroupItem>
                 ))}
-              </div>
+              </ToggleGroup>
             </Field>
 
             <Field label="En passant target">

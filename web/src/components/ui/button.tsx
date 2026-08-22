@@ -78,7 +78,7 @@ export interface ButtonProps
 // Does the button say anything in text? A visible label is already the
 // accessible name — and must stay it, or "click Cancel" stops working for
 // voice control. Only icon-only buttons need naming by other means.
-function hasTextContent(children: React.ReactNode): boolean {
+export function hasTextContent(children: React.ReactNode): boolean {
   if (typeof children === 'string') return children.trim().length > 0;
   if (Array.isArray(children)) return children.some(hasTextContent);
   return false;
@@ -108,7 +108,7 @@ function Button({
       // name is what a screen reader and voice control get.
       aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
       data-active={active || undefined}
-      className={cn(buttonVariants({ variant, size }), active && 'bg-muted text-foreground', className)}
+      className={cn(buttonVariants({ variant, size }), active && 'bg-accent text-accent-foreground', className)}
       {...props}
     />
   );

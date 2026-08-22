@@ -371,7 +371,14 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   values are written as the app's OKLCH ladder in `index.css` with the
   hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
   tinting them (Slate is the app's previous look) and there is no second
-  palette. The primary's lightness follows the accent knob: grey is the
+  palette. Two roles depart from the registry's numbers, both measured:
+  `--accent` (the pressed, selected and highlighted fill) is a rung above
+  `--muted` (the hover fill) instead of the same rung, because a pressed
+  toggle on a card was 3% of lightness from its surroundings in the light
+  and 6% in the dark and could not be seen — 92.8% and 37% now — and the
+  dark `--input` is shadcn's own translucent white, which the chosen tab's
+  pill (`dark:bg-input/30 dark:border-input`) depends on: over the muted
+  track an opaque grey at 30% was the track's own colour. The primary's lightness follows the accent knob: grey is the
   registry's near-black, a coloured accent sits mid-scale. Settings offers
   shadcn's five base colours (Neutral, Stone, Zinc, Gray, Slate) as schemes
   and a radius knob — `--radius`, the one number the corner ladder derives

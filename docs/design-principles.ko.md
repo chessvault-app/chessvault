@@ -319,6 +319,60 @@ Safari는 칸에 적힌 말로 판단해 "이름"을 연락처로 채워 주겠�
 브라우저도 재현하지 못합니다. 키보드 위 팔레트는 iPad에서 멀쩡해 보였고
 iPhone에서 틀렸습니다.
 
+## 컴포넌트 층
+
+이 앱은 shadcn/ui 프로젝트입니다(`components.json`: radix-nova 스타일,
+Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 것:
+
+- **`web/src/components/ui/`에는 레지스트리의 파일이 들어 있고, 우리가
+  소유합니다.** Button, Input, Textarea, Label, Field, InputGroup, Dialog,
+  AlertDialog, DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs,
+  ToggleGroup, Toggle, Switch, Progress, Skeleton, Card, Separator — 각각
+  `npx shadcn add`가 써 주는 모양 그대로(밑은 Radix, `cva` 변형,
+  `data-slot`), 각각 레지스트리 자신의 얼굴(nova 스타일: 그 크기, 둥근
+  정도의 사다리, 포커스 링, 반전된 툴팁, 실선 링 카드)을 하고, 그 위에 이
+  앱의 물리를 얹습니다. 휴대폰에서는 모든 창이 아래에서 올라오는 시트이고
+  자기 몸 어디를 잡아도 끌어 내릴 수 있다는 것, 페이지와 층의 구분과 뒤로
+  가기 꺾쇠, 키보드 띠, 글자 입력란이 하나뿐일 때의 포커스, CloseWatcher를
+  통한 Android 뒤로 가기, 굵은 포인터의 터치 영역, 툴팁으로 보이는
+  `title`. 생김새는 shadcn의 것이고, 더한 것은 동작이며, 각 파일은 맨
+  위에 무엇을 왜 더했는지 적어 둡니다. 컴포넌트를 더하는 일은 `npx shadcn
+  add <name>`이고, 다시 꾸밀 필요가 없습니다.
+- **`web/src/components/`에는 앱의 합성 컴포넌트가 있습니다**(Panel,
+  PageShell, ShelfCard, ActionMenu, PromptDialog, 스켈레톤들 …). 기본
+  요소로 짓고, **`web/src/hooks/`**에 그들이 함께 쓰는 창의 물리가
+  있습니다.
+- **테마는 레지스트리의 어휘이고, 건드리지 않은 상태에서는 그 값입니다** —
+  `bg-card`, `text-muted-foreground`, `border-input`, `bg-destructive`
+  — 그래서 내일 더해지는 컴포넌트도 놓이는 순간 테마를 입습니다. 기본
+  스킴 Neutral은 shadcn의 neutral 테마 그 자체입니다(흰 페이지, 회색
+  표면, 거의 검은 primary; 다크 쪽은 14.5 / 20.5 / 26.9 %). 값은
+  `index.css`에서 앱의 OKLCH 사다리로, 색상·틴트·대비 손잡이를 lerp로
+  적어 두었으므로 설정 → 모양이 계속 그것을 물들이고(Slate가 앱의 예전
+  생김새입니다) 두 번째 팔레트는 없습니다. 두 역할은 레지스트리의 숫자에서
+  벗어나며, 둘 다 잰 결과입니다. `--accent`(눌림·선택·강조 채움)는
+  `--muted`(호버 채움)와 같은 단이 아니라 한 단 위입니다 — 카드 위에서
+  눌린 토글이 주변과 밝기 3%(라이트)·6%(다크) 차이여서 보이지 않았습니다.
+  지금은 92.8%와 37%입니다. 그리고 다크의 `--input`은 shadcn 자신의
+  반투명 흰색입니다. 선택된 탭의 알약(`dark:bg-input/30 dark:border-input`)
+  이 거기에 기대는데, 회색 띠 위에 불투명 회색 30%는 띠 자신의 색이었습니다.
+  primary의 밝기는 강조색 손잡이를 따릅니다. 회색이면 레지스트리의 거의
+  검정, 색이 있는 강조색은 중간쯤에 앉습니다. 설정은 앱의 색 입힌 스킴 곁에
+  shadcn의 기본색 다섯(Neutral, Stone, Zinc, Gray, Slate)을 스킴으로,
+  그리고 모서리 손잡이 — 모서리 사다리가 모두 거기서 나오는 숫자 하나
+  `--radius` — 를 내놓습니다. 사다리가 말하는데 shadcn에는 말이 없는 것은
+  같은 식의 자기 이름을 지킵니다: `surface-3`, 색의 문법
+  (`good`/`warn`/`info`), 보드와 평가 색. 사다리 자신의 단(surface-3,
+  surface-inset, text-subtle, border-strong)은 변수이지 유틸리티가
+  아닙니다. `:root` 위에 붙여 넣은 프리셋 테마는 역할은 덮어쓰지만 그
+  역할이 나오는 사다리는 덮지 못하므로, 설정의 손잡이가 거기 닿지 않게
+  됩니다 — 테마는 사다리로 다시 적으십시오.
+- **포커스 링은 하나, 레지스트리의 것.** 컴포넌트는 shadcn의
+  `focus-visible:ring-3 ring-ring/50`을 그리고 outline을 끕니다. 컴포넌트가
+  아닌 모든 것(맨 버튼, 링크)은 전역 `:focus-visible` outline에서 같은 색의
+  같은 링을 받으므로, 어떤 종류의 컨트롤이 포커스를 갖든 한 페이지의 포커스
+  모양은 하나입니다.
+
 ## 마크
 
 육각형 윤곽선에 여섯 조각 중 하나를 채운 형태, 검은 둥근 사각형 위의

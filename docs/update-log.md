@@ -33,7 +33,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   tinted ones, and a corner-radius setting (square, small, default, large)
   that every corner in the app derives from. Date filters are the registry's
   date picker (a calendar in a popover, in the app's language); every
-  confirmation is the registry's destructive alert dialog.
+  confirmation is the registry's destructive alert dialog. Two of the
+  registry's numbers were retuned after the crops were measured: the
+  pressed/selected fill sits a rung above the hover fill (a pressed toggle
+  on a card was 3% of lightness from its surroundings in the light, 6% in
+  the dark, and could not be seen), and the dark input chrome is shadcn's
+  own translucent white, which the chosen tab's pill depends on. Tabs,
+  toggles and toggle-group items show a `title` as the tooltip, as
+  buttons do.
 
 ## 0.4.7
 

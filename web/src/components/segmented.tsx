@@ -118,7 +118,7 @@ export function Segmented<T extends string>({
           className={cn(
             item,
             track &&
-              'h-[calc(100%-1px)] rounded-md data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm',
+              'h-[calc(100%-1px)] rounded-md aria-checked:bg-background aria-checked:text-foreground aria-checked:shadow-sm data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm',
             id === value && accent && 'font-semibold',
           )}
         >
