@@ -448,7 +448,7 @@ export function Select({
             // overscroll-contain: scrolling the list must not chain to the
             // page — a page scroll is what the dismiss handler listens for,
             // so without this a touch-scroll of the list closed the dropdown.
-            'border-border bg-card z-50 w-max max-w-72 overflow-y-auto overscroll-contain rounded-lg border p-1',
+            'border-border bg-card pointer-events-auto z-50 w-max max-w-72 overflow-y-auto overscroll-contain rounded-lg border p-1',
             'shadow-pop',
           )}
         >

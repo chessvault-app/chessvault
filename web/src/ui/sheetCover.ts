@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from 'react';
-import { CoverParent } from './Modal';
+import { CoverParent } from './coverParent';
 
 /**
  * The window a sheet was opened over: how tall it is, and whether the

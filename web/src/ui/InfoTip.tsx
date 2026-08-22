@@ -77,7 +77,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
             role="tooltip"
             style={tip.style}
             className={
-              'bg-card border-border text-muted-foreground z-50 w-64 ' +
+              'bg-card border-border text-muted-foreground pointer-events-auto z-50 w-64 ' +
               'rounded-lg border p-3 text-sm font-normal normal-case leading-relaxed tracking-normal ' +
               'shadow-pop'
             }

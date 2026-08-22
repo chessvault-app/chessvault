@@ -143,7 +143,7 @@ const TEXT_TYPES = new Set(['text', 'search', 'url', 'tel', 'email', 'password',
  * content, and opening it under a keyboard hides the very thing it is
  * for. The box is one tap away for whoever wants it.
  */
-function soleTextField(node: HTMLElement): HTMLElement | null {
+export function soleTextField(node: HTMLElement): HTMLElement | null {
   const fields = Array.from(
     node.querySelectorAll<HTMLElement>(
       'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])',
@@ -207,6 +207,18 @@ function acquireLock(): void {
 
 function releaseLock(): void {
   if (--openCount === 0) document.body.style.overflow = lockedOverflow;
+}
+
+/**
+ * Count a dialog that manages its own focus and scroll (components/ui/dialog,
+ * on Radix) as open, so `dialogOpen()` keeps answering for every window in
+ * the app. Returns the release. The body lock it also takes is harmless
+ * beside Radix's own — both set overflow hidden, and the last one out
+ * restores what it found.
+ */
+export function registerOpenDialog(): () => void {
+  acquireLock();
+  return releaseLock;
 }
 
 /**

@@ -291,7 +291,7 @@ export function OpeningPicker({
                 maxHeight: Math.min(384, pop.placement?.room ?? 384),
               }}
               className={cn(
-                'bg-card border-border z-50 flex flex-col overflow-hidden rounded-lg border',
+                'bg-card border-border pointer-events-auto z-50 flex flex-col overflow-hidden rounded-lg border',
                 'shadow-pop',
               )}
             >

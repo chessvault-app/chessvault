@@ -179,7 +179,7 @@ export function ActionSheet({
   return createPortal(
     <div
       className={cn(
-        'vv-band fixed inset-0 z-50',
+        'vv-band pointer-events-auto fixed inset-0 z-50',
         popover ? '' : 'bg-scrim flex items-end justify-center',
       )}
       onPointerDown={() => {
