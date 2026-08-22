@@ -1,26 +1,48 @@
 import { cn } from '@/lib/utils';
 
+/** chessground's element, which this file renders by hand — see below. The
+    names inside resolve to react's own, so nothing is imported for them. */
+declare module 'react' {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace JSX {
+    interface IntrinsicElements {
+      piece: DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement>;
+    }
+  }
+}
+
 /**
  * A board the size of a thumbnail, drawn from a FEN and nothing else.
  *
  * Deliberately not the real Board: that one is 35KB of interaction the
  * notes shelf has no use for, and the whole point of the notes LIST is
  * that it does not load the editor's chess machinery. This reads the
- * placement field of a FEN — the part before the first space — and draws
- * 64 squares. No move generation, no validation, no dependency.
+ * placement field of a FEN — the part before the first space — and
+ * places the pieces. No move generation, no validation, no dependency.
  *
- * The glyphs are the Unicode chess pieces, both colours drawn as solid
- * figures and separated by fill rather than by outline, because at 15px a
- * hollow white knight is a smudge.
+ * The squares are ONE painted background, not 64 cells. They were cells
+ * once, `aspect-square` in a grid, and a 72px board with a 1px border is
+ * 70px of squares — 8.75px each — so on a phone at 2× or 3× one rank
+ * boundary landed on a device pixel while its neighbours rounded the
+ * other way, and the card showed through as a black line across the
+ * middle of every thumbnail. A gradient has no seams to round.
+ *
+ * The pieces are chessground's own `piece` elements, which is how the
+ * thumbnail wears the piece set chosen in Settings: the art is CSS keyed
+ * on `.cg-wrap piece.<role>.<colour>` under `<html data-pieces>`, loaded
+ * once for the real board, so a `.cg-wrap` here gets it for nothing —
+ * none of chessground's JS comes with it. They were Unicode glyphs
+ * before, which matched no piece set and at 9px were told apart by a
+ * text-shadow halo.
  */
 
-const GLYPH: Record<string, string> = {
-  k: '♚',
-  q: '♛',
-  r: '♜',
-  b: '♝',
-  n: '♞',
-  p: '♟',
+const ROLE: Record<string, string> = {
+  k: 'king',
+  q: 'queen',
+  r: 'rook',
+  b: 'bishop',
+  n: 'knight',
+  p: 'pawn',
 };
 
 /** The 8 ranks of a FEN's placement field, expanded to 8 characters each. */
@@ -34,7 +56,7 @@ function ranks(fen: string): string[] | null {
     let line = '';
     for (const ch of row) {
       if (ch >= '1' && ch <= '8') line += ' '.repeat(Number(ch));
-      else if (GLYPH[ch.toLowerCase()]) line += ch;
+      else if (ROLE[ch.toLowerCase()]) line += ch;
       else return null;
     }
     if (line.length !== 8) return null;
@@ -43,15 +65,19 @@ function ranks(fen: string): string[] | null {
   return out;
 }
 
+/** a8 light at the top left, then alternating: one tile of four squares,
+    repeated four times each way. conic-gradient runs clockwise from the
+    top, so its quarters are top-right, bottom-right, bottom-left, top-left. */
+const SQUARES =
+  'conic-gradient(var(--board-dark) 25%, var(--board-light) 0 50%, var(--board-dark) 0 75%, var(--board-light) 0)';
+
 export function MiniBoard({
   fen,
   size = 56,
   className,
 }: {
   fen: string;
-  /** Edge length in px. The pieces are sized from it, not from the text
-      around it — an em here was relative to the card's font and drew
-      4px glyphs on a 44px board, which is an empty chessboard. */
+  /** Edge length in px, border included when the caller adds one. */
   size?: number;
   className?: string;
 }) {
@@ -59,59 +85,33 @@ export function MiniBoard({
   if (!rows) return null;
   return (
     <div
-      // The glyph fills its square: a chess character carries a lot of
-      // internal whitespace, and anything under about 90% of the square
-      // stops being a recognisable shape at this size.
-      style={{ width: size, height: size, fontSize: size / 8 }}
-      className={cn('grid shrink-0 grid-cols-8 overflow-hidden rounded-md', className)}
+      style={{ width: size, height: size }}
+      className={cn('shrink-0 overflow-hidden rounded-md', className)}
       aria-hidden
       // A decoration, not a diagram: the position is in the note, and a
       // screen reader announcing 64 squares before every card title would
       // make the shelf unusable.
     >
-      {rows.map((row, rank) =>
-        [...row].map((piece, file) => (
-          <div
-            key={`${rank}-${file}`}
-            className={cn(
-              'flex aspect-square items-center justify-center',
-              (rank + file) % 2 === 0 ? 'bg-[var(--board-light)]' : 'bg-[var(--board-dark)]',
-            )}
-          >
-            {piece !== ' ' && (
-              <span
-                className="leading-none"
-                style={{
-                  // The theme-invariant chess colours, which exist for
-                  // exactly this and which this board was the last place
-                  // not to use: "the colour of the black pieces" is a fact
-                  // about chess, so a side dot in a game row and a piece
-                  // here are the same two colours by construction rather
-                  // than by two people picking a hex.
-                  color:
-                    piece === piece.toUpperCase() ? 'var(--side-white)' : 'var(--side-black)',
-                  // An 8px piece has no interior left to distinguish it by,
-                  // so the two colours are told apart by fill against an
-                  // outline in the other colour. Without it a white knight
-                  // on a light square is a smudge.
-                  //
-                  // NOT --side-white-line / --side-black-line, which look
-                  // like they belong here and do not: those are 40% and 50%
-                  // borders drawn along the edge of a swatch, and at this
-                  // size the outline is a halo the glyph is read against —
-                  // it needs the near-opaque alpha it has.
-                  textShadow:
-                    piece === piece.toUpperCase()
-                      ? '0 0 1.5px rgba(0,0,0,0.95), 0 0 0.5px rgba(0,0,0,0.95)'
-                      : '0 0 1.5px rgba(255,255,255,0.9), 0 0 0.5px rgba(255,255,255,0.9)',
-                }}
-              >
-                {GLYPH[piece.toLowerCase()]}
-              </span>
-            )}
-          </div>
-        )),
-      )}
+      {/* .cg-wrap is `position: relative; display: block` in chessground's
+          base CSS, which is exactly what the pieces need to sit in. */}
+      <div
+        className="cg-wrap size-full"
+        style={{ backgroundImage: SQUARES, backgroundSize: '25% 25%' }}
+      >
+        {rows.map((row, rank) =>
+          [...row].map((piece, file) =>
+            piece === ' ' ? null : (
+              // Sized 12.5% square and absolutely positioned by the base
+              // CSS; only the square is this file's to say.
+              <piece
+                key={`${rank}-${file}`}
+                className={`${ROLE[piece.toLowerCase()]} ${piece === piece.toUpperCase() ? 'white' : 'black'}`}
+                style={{ left: `${file * 12.5}%`, top: `${rank * 12.5}%` }}
+              />
+            ),
+          ),
+        )}
+      </div>
     </div>
   );
 }
