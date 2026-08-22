@@ -391,7 +391,7 @@ function NoteEditor({
         {/* History, then Edit, then Save — see StudyView's header. */}
         <DocumentHistory kind="notes" id={id} name={id.split('/').at(-1)!} onRestored={onRestored} />
         <Button
-          variant={editable ? 'primary' : 'secondary'}
+          variant={editable ? 'default' : 'secondary'}
           size="sm"
           title={editable ? t('Back to reading') : t('Edit this note')}
           onClick={() => setEditable((v) => !v)}

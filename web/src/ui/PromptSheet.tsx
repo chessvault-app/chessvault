@@ -71,7 +71,7 @@ export function PromptSheet({
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}
         </Button>
-        <Button variant="primary" size="sm" disabled={!draft.trim()} onClick={submit}>
+        <Button variant="default" size="sm" disabled={!draft.trim()} onClick={submit}>
           {t(submitLabel)}
         </Button>
       </div>

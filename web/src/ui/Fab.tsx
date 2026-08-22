@@ -56,7 +56,7 @@ export function CreateControl({ actions, label = 'Create' }: { actions: FabActio
     <>
       <Button
         ref={trigger}
-        variant="primary"
+        variant="default"
         size="sm"
         className="hidden md:inline-flex"
         onClick={() => (single ? single.onSelect() : setMenuOpen(true))}

@@ -229,7 +229,7 @@ export function AnnotationPane({
             className="w-full resize-none leading-relaxed"
           />
           <Button
-            variant="primary"
+            variant="default"
             size="sm"
             className="self-end"
             onClick={() => {

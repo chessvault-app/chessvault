@@ -418,7 +418,7 @@ export function PhotoImport({
           </Button>
           {reading ? (
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() =>
                 onApply({
@@ -431,7 +431,7 @@ export function PhotoImport({
               {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
             </Button>
           ) : (
-            <Button variant="primary" size="sm" onClick={() => void read()}>
+            <Button variant="default" size="sm" onClick={() => void read()}>
               <ScanSearch className="size-3.5" />
               {t('Read position')}
             </Button>

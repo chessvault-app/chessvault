@@ -457,7 +457,7 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}
         </Button>
-        <Button variant="primary" size="sm" onClick={onDone}>
+        <Button variant="default" size="sm" onClick={onDone}>
           {t('Done')}
         </Button>
       </div>
@@ -529,7 +529,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
         </p>
       ) : (
         <div className="flex items-center gap-2">
-          <Button variant="primary" size="sm" onClick={() => void start()}>
+          <Button variant="default" size="sm" onClick={() => void start()}>
             <Hammer className="size-3.5" />
             {t('Index positions')}
           </Button>
@@ -696,7 +696,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}
         </Button>
-        <Button variant="primary" size="sm" onClick={onDone}>
+        <Button variant="default" size="sm" onClick={onDone}>
           {t('Done')}
         </Button>
       </div>

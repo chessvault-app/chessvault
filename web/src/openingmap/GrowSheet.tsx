@@ -220,7 +220,7 @@ export function GrowSheet({
           {t('Cancel')}
         </Button>
         <Button
-          variant="primary"
+          variant="default"
           size="sm"
           disabled={!lines || lines.length === 0}
           onClick={() => {

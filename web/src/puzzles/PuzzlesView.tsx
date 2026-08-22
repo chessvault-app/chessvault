@@ -41,7 +41,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/ui/announce';
-import { Button, ButtonLink } from '@/ui/Button';
+import { Button } from '@/ui/Button';
 import { Modal } from '@/ui/Modal';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -839,17 +839,17 @@ function Trainer({
                 app, to lichess, and middle click and the context menu are
                 how a link is used. */}
             {puzzle?.game_url && (
-              <ButtonLink
-                variant="ghost"
-                size="sm"
-                href={puzzle.game_url}
-                target="_blank"
-                rel="noreferrer"
-                title={t('Opens lichess (needs internet)')}
-              >
-                <ExternalLink className="size-3.5" />
-                {t('From this game')}
-              </ButtonLink>
+              <Button asChild variant="ghost" size="sm">
+                <a
+                  href={puzzle.game_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={t('Opens lichess (needs internet)')}
+                >
+                  <ExternalLink className="size-3.5" />
+                  {t('From this game')}
+                </a>
+              </Button>
             )}
             {/* Practice, not a second attempt — see retry(). */}
             <Button variant="secondary" size="sm" onClick={retry}>
@@ -857,7 +857,7 @@ function Trainer({
               {t('Retry')}
             </Button>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() =>
                 mode === 'single' ? navigate('puzzles', 'dashboard') : void loadNext(theme, difficulty)
@@ -1130,7 +1130,7 @@ function DifficultyRow({
         <Button
           key={d.id}
           size="sm"
-          variant={active === d.id ? 'primary' : 'secondary'}
+          variant={active === d.id ? 'default' : 'secondary'}
           className="min-w-0 flex-1 basis-[30%] px-0"
           title={'hint' in d ? t('Difficulty {hint}', { hint: t(d.hint) }) : t('Any difficulty')}
           onClick={() => onPick(d.id)}

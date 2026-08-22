@@ -174,8 +174,8 @@ export function PasswordGate({ children }: { children: ReactNode }) {
           )}
           <Button
             type="submit"
-            variant="primary"
-            size="md"
+            variant="default"
+            size="default"
             disabled={busy || (stage === 'password' ? !password : code.trim().length < 6)}
             className="w-full justify-center"
           >

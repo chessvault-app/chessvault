@@ -273,7 +273,7 @@ export function LoadPositionForm({
             {t('Cancel')}
           </Button>
         )}
-        <Button variant="primary" size="sm" onClick={submit} disabled={!text.trim()}>
+        <Button variant="default" size="sm" onClick={submit} disabled={!text.trim()}>
           {t('Load')}
         </Button>
       </div>

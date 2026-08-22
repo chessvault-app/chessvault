@@ -323,7 +323,7 @@ export function BookPage({ slug }: { slug: string }) {
             <FileUp className="size-3.5" />
             <span className="hidden wide:inline">{t('Import PDF')}</span>
           </Button>
-          <Button variant="primary" size="sm" title={t('Add a puzzle')} onClick={() => setAdding(true)}>
+          <Button variant="default" size="sm" title={t('Add a puzzle')} onClick={() => setAdding(true)}>
             <Plus className="size-3.5" />
             <span className="hidden wide:inline">{t('Add puzzle')}</span>
           </Button>
@@ -404,7 +404,7 @@ export function BookPage({ slug }: { slug: string }) {
               {t('Hand over the book’s PDF and the reader takes the diagrams and the printed solutions off its pages — it can be paused, and it picks up where it left off. Or set a position up by hand, recording the full solution, both sides’ moves.')}
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <Button variant="primary" size="sm" onClick={() => setImporting(true)}>
+              <Button variant="default" size="sm" onClick={() => setImporting(true)}>
                 <FileUp className="size-3.5" />
                 {t('Import a book PDF')}
               </Button>

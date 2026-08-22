@@ -64,7 +64,7 @@ export function ConfirmSheet({
   return (
     <>
       <Button
-        variant={triggerTone === 'danger' ? 'danger' : 'ghost'}
+        variant={triggerTone === 'danger' ? 'destructive' : 'ghost'}
         size={label ? 'sm' : 'icon-sm'}
         title={t(triggerTitle)}
         aria-haspopup="dialog"
@@ -101,8 +101,8 @@ export function ConfirmSheet({
           */}
           <div className="mt-1 flex flex-col gap-2">
             <Button
-              variant="danger-solid"
-              size="md"
+              variant="destructive-solid"
+              size="default"
               className="w-full justify-center"
               onClick={() => {
                 setOpen(false);
@@ -122,7 +122,7 @@ export function ConfirmSheet({
             <Button
               autoFocus
               variant="secondary"
-              size="md"
+              size="default"
               className="w-full justify-center"
               onClick={() => setOpen(false)}
             >

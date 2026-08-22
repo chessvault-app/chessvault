@@ -507,10 +507,10 @@ export function OpeningMapView({ params }: { params: string[] }) {
             body="Start with your first move for this colour — the rest of the tree grows from it."
             action={
               <div className="flex flex-wrap justify-center gap-2">
-                <Button variant="primary" size="sm" onClick={() => setAddTo(map.root.id)}>
+                <Button variant="default" size="sm" onClick={() => setAddTo(map.root.id)}>
                   <Plus className="size-3.5" /> {t('Add a move')}
                 </Button>
-                <Button size="sm" onClick={() => setGrowFrom(map.root.id)}>
+                <Button variant="secondary" size="sm" onClick={() => setGrowFrom(map.root.id)}>
                   <Sparkles className="size-3.5" /> {t('Grow from my games')}
                 </Button>
               </div>
@@ -1270,6 +1270,7 @@ function NodePanel({
             {chartable.map((san) => (
               <Button
                 key={san}
+                variant="secondary"
                 size="sm"
                 onClick={() => apply((d) => addChild(d, map.id, node.id, san))}
               >

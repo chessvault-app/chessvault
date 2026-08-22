@@ -226,7 +226,7 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
       </div>
       <p className="text-subtle text-sm">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
       <div className="flex items-center gap-3">
-        <Button variant="primary" onClick={() => void save()}>{t('Save profile')}</Button>
+        <Button variant="default" onClick={() => void save()}>{t('Save profile')}</Button>
         <Feedback note={note} />
       </div>
     </Card>
@@ -858,7 +858,7 @@ function PasswordBlock({ gate }: { gate: boolean }) {
         </Field>
       </div>
       <div className="flex items-center gap-3">
-        <Button variant="primary" disabled={next.length < 8 || (gate && current === '')} onClick={() => void change()}>
+        <Button variant="default" disabled={next.length < 8 || (gate && current === '')} onClick={() => void change()}>
           {t(gate ? 'Change password' : 'Set password')}
         </Button>
         <Feedback note={note} />
@@ -936,7 +936,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
             value={code}
             onChange={(e) => setCode(e.target.value)}
           />
-          <Button variant="danger" disabled={code.trim().length < 6} onClick={() => void disable()}>
+          <Button variant="destructive" disabled={code.trim().length < 6} onClick={() => void disable()}>
             {t('Turn off 2FA')}
           </Button>
         </div>
@@ -955,7 +955,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
             {settings.gate ? '' : t('Set an app password first.')}
           </p>
           <div className="flex items-center gap-3">
-            <Button disabled={!settings.gate} onClick={() => void start()}>{t('Set up 2FA')}</Button>
+            <Button variant="secondary" disabled={!settings.gate} onClick={() => void start()}>{t('Set up 2FA')}</Button>
             <Feedback note={note} />
           </div>
         </>
@@ -978,7 +978,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
               value={code}
               onChange={(e) => setCode(e.target.value)}
             />
-            <Button variant="primary" disabled={code.trim().length < 6} onClick={() => void enable()}>
+            <Button variant="default" disabled={code.trim().length < 6} onClick={() => void enable()}>
               {t('Verify & enable')}
             </Button>
             <Button variant="ghost" onClick={() => setEnroll(null)}>{t('Cancel')}</Button>
@@ -1065,9 +1065,9 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
             {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        <Button variant="primary" disabled={token.trim() === ''} onClick={() => void save()}>{t('Save')}</Button>
+        <Button variant="default" disabled={token.trim() === ''} onClick={() => void save()}>{t('Save')}</Button>
         {settings.lichess.configured && (
-          <Button variant="danger" onClick={() => void clear()}>{t('Remove')}</Button>
+          <Button variant="destructive" onClick={() => void clear()}>{t('Remove')}</Button>
         )}
       </div>
       <Feedback note={note} />
@@ -1356,7 +1356,7 @@ function DangerCard({ gate }: { gate: boolean }) {
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}
         />
-        <Button variant="danger" disabled={phrase !== WIPE_PHRASE} onClick={() => setConfirming(true)}>
+        <Button variant="destructive" disabled={phrase !== WIPE_PHRASE} onClick={() => setConfirming(true)}>
           {t('Wipe all data')}
         </Button>
       </div>
@@ -1425,8 +1425,8 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
           it is right for Save and Apply, not for this. */}
       <div className="mt-1 flex flex-col gap-2">
         <Button
-          variant="danger-solid"
-          size="md"
+          variant="destructive-solid"
+          size="default"
           className="w-full justify-center"
           disabled={busy || (gate && password === '')}
           onClick={() => void wipe()}
@@ -1434,7 +1434,7 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
           <Trash2 className="size-3.5" />
           {busy ? t('Wiping…') : t('Wipe everything')}
         </Button>
-        <Button variant="secondary" size="md" className="w-full justify-center" onClick={onClose}>
+        <Button variant="secondary" size="default" className="w-full justify-center" onClick={onClose}>
           {t('Cancel')}
         </Button>
       </div>

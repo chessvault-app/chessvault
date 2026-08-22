@@ -140,7 +140,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
             )}
 
             <div className="flex justify-center">
-              <Button variant="primary" onClick={() => void start()} disabled={starting}>
+              <Button variant="default" onClick={() => void start()} disabled={starting}>
                 {starting ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (

@@ -1007,7 +1007,7 @@ export function ArchiveBrowser({
                   {t('Cancel')}
                 </Button>
                 <Button
-                  variant="primary"
+                  variant="default"
                   size="sm"
                   disabled={picked.size === 0}
                   onClick={() => void collectMany(pickable.filter((g) => picked.has(gameKey(g))))}

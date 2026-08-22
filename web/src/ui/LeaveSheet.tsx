@@ -95,8 +95,8 @@ export function LeaveSheet() {
           gave it more ink than the harmless one. */}
       <div className="mt-1 flex flex-col gap-2">
         <Button
-          variant="primary"
-          size="md"
+          variant="default"
+          size="default"
           disabled={busy}
           className="w-full justify-center"
           onClick={() => void saveAndLeave()}
@@ -106,7 +106,7 @@ export function LeaveSheet() {
         </Button>
         <Button
           variant="secondary"
-          size="md"
+          size="default"
           disabled={busy}
           className="w-full justify-center"
           onClick={cancelLeave}
@@ -120,7 +120,7 @@ export function LeaveSheet() {
             to find, not sit level with the other two. */}
         <Button
           variant="ghost"
-          size="md"
+          size="default"
           disabled={busy}
           className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive w-full justify-center"
           onClick={discardAndLeave}

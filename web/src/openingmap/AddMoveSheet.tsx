@@ -245,7 +245,7 @@ export function AddMoveSheet({
             setError(null);
           }}
         />
-        <Button type="submit" variant="primary" size="sm" disabled={typed.trim() === ''}>
+        <Button type="submit" variant="default" size="sm" disabled={typed.trim() === ''}>
           <Plus className="size-3.5" /> {t('Add')}
         </Button>
       </form>

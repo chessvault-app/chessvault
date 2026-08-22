@@ -632,7 +632,7 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
             {t('This page hit an error it could not recover from. Reloading usually clears it — nothing in your vault is affected.')}
           </p>
           <div className="mt-1 flex gap-2">
-            <Button onClick={() => location.reload()}>{t('Reload')}</Button>
+            <Button variant="secondary" onClick={() => location.reload()}>{t('Reload')}</Button>
             <Button variant="ghost" onClick={() => navigate('home')}>
               {t('Go home')}
             </Button>

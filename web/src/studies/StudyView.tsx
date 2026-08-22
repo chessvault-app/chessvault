@@ -218,7 +218,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
           it, as in a note) and none inside the moves panel: editing a
           document is one mode, not two. */}
       <Button
-        variant={editing ? 'primary' : 'secondary'}
+        variant={editing ? 'default' : 'secondary'}
         size="sm"
         className="shrink-0"
         title={editing ? t('Hide the editing tools') : t('Show NAGs, comments and move tools')}

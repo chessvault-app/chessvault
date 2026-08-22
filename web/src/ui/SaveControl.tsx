@@ -98,7 +98,7 @@ export function SaveControl({
   const failed = state === 'error';
   return (
     <Button
-      variant="primary"
+      variant="default"
       size="sm"
       className="shrink-0"
       title={error ?? t(failed ? 'Save failed' : 'Save changes')}

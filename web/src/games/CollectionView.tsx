@@ -622,7 +622,7 @@ export function CollectionView() {
               title="Your collection is empty"
               body="The collection holds the games worth keeping — each one annotatable like a study. Import one, or browse your online archive and add the games you want to study."
               action={
-                <Button variant="primary" size="sm" onClick={() => setImporting(true)}>
+                <Button variant="default" size="sm" onClick={() => setImporting(true)}>
                   <Plus className="mr-1 size-3.5" />
                   {t('Import a game')}
                 </Button>
@@ -643,7 +643,7 @@ export function CollectionView() {
                 title="No bookmarked games yet"
                 body="Bookmark a game from the list and it is kept here, one press from wherever you are."
                 action={
-                  <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
+                  <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
                     <BookOpen className="mr-1 size-3.5" />
                     {t('Browse all games')}
                   </Button>
@@ -1109,7 +1109,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}
         </Button>
-        <Button variant="primary" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
+        <Button variant="default" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
           <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
           {t('Add to collection')}
         </Button>

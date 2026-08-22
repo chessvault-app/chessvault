@@ -665,7 +665,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
             </Button>
             {next && (
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 onClick={() => navigate('puzzles', 'books', slug, next)}
               >
@@ -695,7 +695,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
               {t('Skip')}
             </Button>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               disabled={phase !== 'solving' || !hasMoves}
               title={t('Grade the mainline — this is the only judged moment')}

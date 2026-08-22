@@ -277,7 +277,7 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
               className="w-full resize-none font-mono"
             />
             <div className="flex justify-end">
-              <Button variant="primary" size="sm" disabled={!pasteText.trim()} onClick={loadPasted}>
+              <Button variant="default" size="sm" disabled={!pasteText.trim()} onClick={loadPasted}>
                 {t('Load')}
               </Button>
             </div>

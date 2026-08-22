@@ -227,7 +227,7 @@ function NoteList() {
           title="No notes yet"
           body="A note is plain markdown with interactive boards embedded anywhere in the text — an idea, a plan, a game to come back to."
           action={
-            <Button variant="primary" size="sm" onClick={() => void newUntitledNote(notes, refresh)}>
+            <Button variant="default" size="sm" onClick={() => void newUntitledNote(notes, refresh)}>
               <Plus className="mr-1 size-3.5" />
               {t('New note')}
             </Button>
@@ -249,7 +249,7 @@ function NoteList() {
             title="No bookmarked notes yet"
             body="Bookmark a note from the shelf and it is kept here, one press from wherever you are."
             action={
-              <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
+              <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
                 <NotebookPen className="mr-1 size-3.5" />
                 {t('Browse all notes')}
               </Button>

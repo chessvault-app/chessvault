@@ -402,7 +402,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 {t('Upload PGN collections and index them into searchable databases of whole games.')}
               </p>
               <div className="flex justify-center">
-                <Button variant="primary" size="sm" onClick={() => navigate('databases')}>
+                <Button variant="default" size="sm" onClick={() => navigate('databases')}>
                   <Database className="size-3.5" />
                   {t('Go to Databases')}
                 </Button>

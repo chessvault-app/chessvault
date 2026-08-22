@@ -345,7 +345,7 @@ export function StructuredFiltersWindow({
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}
         </Button>
-        <Button variant="primary" size="sm" onClick={() => onApply(draft)}>
+        <Button variant="default" size="sm" onClick={() => onApply(draft)}>
           {t('Apply')}
         </Button>
       </div>

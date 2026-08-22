@@ -1329,7 +1329,7 @@ export function RepertoireView() {
           under it as the alternative it is. */}
       <div className="flex flex-col gap-2">
         <Button
-          variant="primary"
+          variant="default"
           size="sm"
           className="w-full"
           disabled={needsToken || (mode === 'drill' && !drillReady)}
@@ -1574,7 +1574,7 @@ export function RepertoireView() {
         {phase === 'ended' && (
           <div className="flex flex-wrap justify-end gap-2">
             {endAction}
-            <Button variant="primary" size="sm" onClick={newGame} title={t('Set up a new game')}>
+            <Button variant="default" size="sm" onClick={newGame} title={t('Set up a new game')}>
               <RotateCcw className="size-3.5" />
               {t('New game')}
             </Button>
@@ -1778,7 +1778,7 @@ export function RepertoireView() {
             <Button variant="secondary" size="sm" onClick={cancelSetup}>
               {t('Cancel')}
             </Button>
-            <Button variant="primary" size="sm" onClick={applySetup}>
+            <Button variant="default" size="sm" onClick={applySetup}>
               {t('Apply')}
             </Button>
           </div>

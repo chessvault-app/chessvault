@@ -157,7 +157,7 @@ export function DashboardPage() {
         ) : failed > 0 ? (
           <Button
             variant="secondary"
-            size="md"
+            size="default"
             className="mb-4 w-full justify-center"
             onClick={() => navigate('puzzles', 'failed')}
           >
@@ -249,7 +249,7 @@ export function DashboardPage() {
                     'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.',
                   )}
                 </p>
-                <Button variant="primary" size="sm" onClick={() => navigate('puzzles', 'books')}>
+                <Button variant="default" size="sm" onClick={() => navigate('puzzles', 'books')}>
                   <BookMarked className="size-3.5" />
                   {t('Import a book')}
                 </Button>

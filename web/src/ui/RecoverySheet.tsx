@@ -73,11 +73,11 @@ export function RecoverySheet({
           the answer is WHEN the copy was parked, which the sentence above
           leads with, and nothing here is a rescue from a disaster. */}
       <div className="mt-1 flex flex-col gap-2">
-        <Button variant="primary" size="md" className="w-full justify-center" onClick={onRecover}>
+        <Button variant="default" size="default" className="w-full justify-center" onClick={onRecover}>
           <History className="size-3.5" />
           {t('Restore changes')}
         </Button>
-        <Button variant="danger" size="md" className="w-full justify-center" onClick={onDismiss}>
+        <Button variant="destructive" size="default" className="w-full justify-center" onClick={onDismiss}>
           <Trash2 className="size-3.5" />
           {t('Discard changes')}
         </Button>

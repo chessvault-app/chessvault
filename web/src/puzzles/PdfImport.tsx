@@ -372,7 +372,7 @@ export function PdfImport({
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 onClick={() => job.resume(slug, templates, { repair, engine })}
               >
@@ -543,7 +543,7 @@ export function PdfImport({
               })}
             </p>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => job.resume(slug, templates, { repair, engine })}
             >
@@ -802,7 +802,7 @@ export function PdfImport({
           </Button>
           {found.length > 0 && (
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               disabled={saving || scanning || selectedCount === 0}
               onClick={() => void save()}

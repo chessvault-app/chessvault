@@ -586,7 +586,7 @@ function SolutionRecorder({
             {t('Cancel')}
           </Button>
           <Button
-            variant="primary"
+            variant="default"
             size="sm"
             disabled={line.length === 0 || saving}
             onClick={() => void save()}

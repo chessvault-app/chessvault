@@ -479,7 +479,7 @@ export function EditorView({
             <Button variant="secondary" size="sm" onClick={() => closeSheet(false)}>
               {t('Cancel')}
             </Button>
-            <Button variant="primary" size="sm" onClick={() => closeSheet(true)}>
+            <Button variant="default" size="sm" onClick={() => closeSheet(true)}>
               {t('Apply')}
             </Button>
           </div>
@@ -599,7 +599,7 @@ export function EditorView({
                   so the active tool's highlight sits concentric in its corner. */}
               <div className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(0.375rem+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between">
               <Button
-                variant={tool.kind === 'move' ? 'primary' : 'ghost'}
+                variant={tool.kind === 'move' ? 'default' : 'ghost'}
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
                 onClick={() => setTool({ kind: 'move' })}
@@ -609,7 +609,7 @@ export function EditorView({
                 <span className="hidden sm:inline">{t('Move')}</span>
               </Button>
               <Button
-                variant={tool.kind === 'erase' ? 'primary' : 'ghost'}
+                variant={tool.kind === 'erase' ? 'default' : 'ghost'}
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
                 onClick={() => setTool({ kind: 'erase' })}
@@ -674,7 +674,7 @@ export function EditorView({
                 <span>{t('Position')}</span>
               </Button>
               <Button
-                variant="primary"
+                variant="default"
                 size="sm"
                 className="h-full max-sm:w-10 max-sm:px-0"
                 disabled={!validity.legal}

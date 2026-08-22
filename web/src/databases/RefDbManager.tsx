@@ -382,7 +382,7 @@ export function RefDbManager({
               {t('Cancel')}
             </Button>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               className="shrink-0"
               disabled={running}
@@ -685,7 +685,7 @@ function BuildWindow({
         <Button variant="ghost" size="sm" onClick={onClose}>
           {t('Cancel')}
         </Button>
-        <Button variant="primary" size="sm" onClick={() => onBuild(name)}>
+        <Button variant="default" size="sm" onClick={() => onBuild(name)}>
           <Database className="size-3.5" />
           {t('Build')}
         </Button>

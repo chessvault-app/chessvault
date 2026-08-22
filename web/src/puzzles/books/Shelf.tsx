@@ -421,7 +421,7 @@ export function Shelf() {
             </p>
             {/* The empty state ends on the press that fills it, like every
                 other shelf's. */}
-            <Button variant="primary" size="sm" onClick={() => void create()}>
+            <Button variant="default" size="sm" onClick={() => void create()}>
               <BookMarked className="mr-1 size-3.5" />
               {t('New book')}
             </Button>

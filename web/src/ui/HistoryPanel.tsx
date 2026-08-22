@@ -144,8 +144,8 @@ function HistorySheet({
         </p>
 
         <Button
-          variant="danger"
-          size="md"
+          variant="destructive"
+          size="default"
           className="w-full shrink-0 justify-center"
           disabled={busy || preview === null}
           onClick={() => void restore(chosen)}

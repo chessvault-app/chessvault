@@ -155,7 +155,7 @@ function StudyList() {
           body="A study is a set of annotated chapters — lines, comments, arrows — kept as plain PGN. Start an empty one, or import a PGN you already have."
           action={
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               onClick={() => void newUntitledStudy(studies, create)}
             >
@@ -181,7 +181,7 @@ function StudyList() {
             title="No bookmarked studies yet"
             body="Bookmark a study from the shelf and it is kept here, one press from wherever you are."
             action={
-              <Button variant="primary" size="sm" onClick={() => setMarkedOnly(false)}>
+              <Button variant="default" size="sm" onClick={() => setMarkedOnly(false)}>
                 <Library className="mr-1 size-3.5" />
                 {t('Browse all studies')}
               </Button>
@@ -500,7 +500,7 @@ function CreateMenu() {
               {t('Cancel')}
             </Button>
             <Button
-              variant="primary"
+              variant="default"
               size="sm"
               disabled={!name.trim() || chapterCount === 0}
               onClick={() => void submit(name)}
@@ -678,7 +678,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
         </Button>
         {list && list.length > 0 && (
           <Button
-            variant="primary"
+            variant="default"
             size="sm"
             disabled={checked.size === 0 || busy}
             onClick={() => void importChecked()}
