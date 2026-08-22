@@ -25,7 +25,7 @@ import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { formatWhen } from '@/lib/dates';
-import { navigate, up } from '@/lib/router';
+import { navigate, up, type Section } from '@/lib/router';
 import { ANNOTATION_SIZES, BOARD_THEMES, CAPTURE_SOUNDS, CASTLE_STYLES, MOVE_SOUNDS, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type PieceSet, type RadiusId, type SoundChoice } from '@/store/prefs';
 import { previewSound } from '@/board/sound';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
@@ -129,6 +129,7 @@ export function SettingsPage() {
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
             <BrowsedGamesCard />
+            <StorageCard />
             <RecoveryCard />
             <DangerCard gate={settings.gate} />
             {typeof __LAG__ !== 'undefined' && __LAG__ && <LagCard />}
@@ -1238,7 +1239,8 @@ const PROVIDER_NAME: Record<string, string> = { chesscom: 'chess.com', lichess: 
 function size(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} kB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 /**
@@ -1338,6 +1340,89 @@ function BrowsedGamesCard() {
           </div>
         </>
       )}
+    </Card>
+  );
+}
+
+// --- Storage used ------------------------------------------------------------
+
+/** The areas /api/storage reports, in its order, with what each is called. */
+const STORAGE_AREAS: { key: string; label: string; section?: Section }[] = [
+  { key: 'games', label: 'Games', section: 'games' },
+  { key: 'studies', label: 'Studies', section: 'studies' },
+  { key: 'notes', label: 'Notes', section: 'notes' },
+  { key: 'books', label: 'Books', section: 'books' },
+  { key: 'puzzlebooks', label: 'Puzzle books' },
+  { key: 'puzzles', label: 'Puzzle progress' },
+  { key: 'repertoire', label: 'Repertoire' },
+  { key: 'sources', label: 'PGN sources' },
+  { key: 'gamesCache', label: 'Browsed games' },
+  { key: 'history', label: 'Document history' },
+  { key: 'refgames', label: 'Reference databases' },
+  { key: 'explorerCache', label: 'Explorer cache' },
+  { key: 'tablebaseCache', label: 'Tablebase cache' },
+];
+
+/**
+ * What the vault takes on disk, area by area.
+ *
+ * An inventory, like the browsed-games card above it — the answer to
+ * "what is using the space" for someone running this on a small box or a
+ * phone's worth of server. Nothing is cleared from here: each area that
+ * can be emptied has its own place (the library, the browsed-games card,
+ * the databases page), and a list of sizes is not the place to lose data.
+ */
+function StorageCard() {
+  const [areas, setAreas] = useState<Record<string, { bytes: number; files: number }> | null>(null);
+  useEffect(() => {
+    void api<{ areas: { key: string; bytes: number; files: number }[] }>('/api/storage')
+      .then((body) =>
+        setAreas(Object.fromEntries(body.areas.map((a) => [a.key, { bytes: a.bytes, files: a.files }]))),
+      )
+      .catch(() => setAreas({}));
+  }, []);
+  const total = Object.values(areas ?? {}).reduce((sum, a) => sum + a.bytes, 0);
+  return (
+    <Card icon={HardDrive} title={t('Storage used')}>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        {t(
+          'What each part of the app keeps on disk. Your own documents are at the top; the caches and reference data below are rebuilt or refetched when cleared from their own pages.',
+        )}
+      </p>
+      <ul className="divide-border border-border divide-y rounded-lg border">
+        {STORAGE_AREAS.map(({ key, label, section }) => {
+          const area = areas?.[key];
+          return (
+            <li key={key} className="flex items-baseline gap-2 px-3 py-2">
+              {section ? (
+                <button
+                  type="button"
+                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-base"
+                  onClick={() => navigate(section)}
+                >
+                  {t(label)}
+                </button>
+              ) : (
+                <p className="min-w-0 flex-1 truncate text-base">{t(label)}</p>
+              )}
+              {areas === null ? (
+                <Skeleton className="h-2.5 w-16" />
+              ) : (
+                <p className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                  {area ? size(area.bytes) : '—'}
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="flex items-center justify-between gap-2">
+        {areas === null ? (
+          <Skeleton className="h-2.5 w-24" />
+        ) : (
+          <span className="text-muted-foreground text-sm">{t('{size} in total', { size: size(total) })}</span>
+        )}
+      </div>
     </Card>
   );
 }
