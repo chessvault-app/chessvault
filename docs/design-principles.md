@@ -69,9 +69,11 @@ usage moved up a rung instead:
 | the one display figure | `text-2xl` | 24px |
 
 A magic `text-[…]` literal means a tier exists that nobody named: 81 of
-the 89 in the app were the same value, retyped at every call site. The
-two that remain are tile-corner glyphs, sized to a board square and not
-to type, which is the only excuse a literal has.
+the 89 in the app were the same value, retyped at every call site. Five
+remain in app code — two tile-corner glyphs sized to a board square, the
+heat map's cell labels, the result bar's digits, the PV peek's moves —
+each sized to the thing it sits on and not to type, which is the only
+excuse a literal has.
 
 Placeholders are what a scale change breaks. A skeleton line box must
 equal the real line-height, and line-heights do not all move together —
@@ -148,8 +150,11 @@ against the editor's own font size, not in the px it resolved to once.
   this shape because they take turns in one column. (The small-caps
   `label-caps` voice is gone with the old look.)
 - A panel's header is the registry's card header as a row (`PanelHeader`:
-  title, actions, `px-3 py-2`); it is no longer a fixed-height band, so
-  nothing else is sized against it.
+  title, actions, `px-3 py-2`). It has one floor — 44px, 52px on a coarse
+  pointer, the height an icon button gives it — so a header holding only
+  a switch, or nothing, is as tall as its neighbours and the title does
+  not jump when a phone's pane tabs switch; nothing else is sized against
+  it.
 - `wide` / `stacked` are orientation-based custom variants: side-by-side
   when the viewport is wide, single column otherwise. Stacked layouts
   lead with a page header (convention: header at top), wide layouts put
@@ -250,21 +255,21 @@ and `size="full"` a wide one on a desktop. On a phone every one of them
 is the bottom sheet. Anything that is not a single line is one of these
 rather than a panel that grows in place.
 
-Every one of them — and every `PanelHeader` — draws the same thin rule
-under its title. Windows once had no rule while panels did, which made
-the same app look like two.
+None of them — nor any `PanelHeader` — draws a rule under its title: the
+registry's card header and its dialog title row are both rule-less, and
+the two agree. (Windows once had no rule while panels did, which made
+the same app look like two; the panels' rule went with the old look.)
 
 The way out is a **Cancel**, stated in words, next to the thing it
 cancels. Escape and the scrim also close, but neither is advertised. A
 window whose changes apply as you make them (the filters) offers
 Cancel — restoring what was there when it opened — beside Done.
 
-The rule was once "never an X in the corner", and it has one exception
-now, because some windows have no button row for a Cancel to sit in: a
-list of settings (the engine's, the puzzle difficulty and theme picker)
-applies as you touch it and has nothing to confirm. Those get an X on
-**desktop only** — with no Cancel, the other two ways out are both
-invisible. A phone still shows none: the sheet drags away from anywhere
+The rule was once "never an X in the corner". Since every window became
+shadcn's Dialog, every titled window carries the registry's X on
+**desktop only** — a mouse has no gesture, and for a window with no
+button row (a list of settings, which applies as you touch it) it is the
+only visible way out. A phone still shows none: the sheet drags away from anywhere
 on itself, which is the gesture it was given instead.
 
 **A window may turn its own page rather than open another.** A sheet
@@ -349,7 +354,8 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
 - **`web/src/components/ui/` holds the registry's files, owned.** Button,
   Input, Textarea, Label, Field, InputGroup, Dialog, AlertDialog,
   DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup,
-  Toggle, Switch, Progress, Skeleton, Card, Separator — each the shape
+  Toggle, Switch, Progress, Skeleton, Card, Separator, Calendar, Sonner —
+  each the shape
   `npx shadcn add` writes (Radix underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius
   ladder, focus rings, the inverted tooltip, the ring-hairline card) and
@@ -370,7 +376,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   a near-black primary; 14.5 / 20.5 / 26.9 % on the dark side); the
   values are written as the app's OKLCH ladder in `index.css` with the
   hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
-  tinting them (Slate is the app's previous look) and there is no second
+  tinting them (Blue is the app's previous look) and there is no second
   palette. Two roles depart from the registry's numbers, both measured:
   `--accent` (the pressed, selected and highlighted fill) is a rung above
   `--muted` (the hover fill) instead of the same rung, because a pressed
@@ -380,9 +386,10 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   pill (`dark:bg-input/30 dark:border-input`) depends on: over the muted
   track an opaque grey at 30% was the track's own colour. The primary's lightness follows the accent knob: grey is the
   registry's near-black, a coloured accent sits mid-scale. Settings offers
-  shadcn's five base colours (Neutral, Stone, Zinc, Gray, Slate) as schemes
-  and a radius knob — `--radius`, the one number the corner ladder derives
-  from — beside the app's tinted schemes. What the ladder says that shadcn has no
+  the schemes as one dropdown in three groups — shadcn's five base colours
+  (Neutral, Stone, Zinc, Gray, Slate), the app's tinted ones, and High
+  contrast — and a radius knob, `--radius`, the one number the corner
+  ladder derives from. What the ladder says that shadcn has no
   word for keeps its own name in the same style: `surface-3`,
   the colour grammar (`good`/`warn`/`info`) and the board and eval
   colours; the ladder's own rungs (surface-3, surface-inset, text-subtle,

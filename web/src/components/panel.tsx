@@ -173,9 +173,9 @@ interface PanelHeaderProps {
 
 export function PanelHeader({ title, actions, actionsClassName, className }: PanelHeaderProps) {
   return (
-    // The rule under a title is the app's one way of separating a header
-    // from what it heads — panels and windows alike (lanph3re's call); the
-    // CardHeader draws it.
+    // No rule under the title: the registry's card header draws none, and
+    // neither does its dialog title row, so panels and windows agree (the
+    // old look's rule went with the old look).
     // min-h-11 (13 on touch): the height an icon button gives it — 28 on
     // a desktop, 36 on a coarse pointer — plus the padding, so
     // a header holding only a switch, or nothing, is as tall as its

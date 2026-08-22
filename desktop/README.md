@@ -41,7 +41,7 @@ carries:
   Right-click → Open does *not* clear this one.
 
 - **"…is from an unidentified developer."** The ad-hoc signature added in
-  0.4.1 (`desktop/adhoc-sign.mjs`). Right-click the app → **Open** →
+  0.4.1 (now part of `desktop/after-pack.mjs`). Right-click the app → **Open** →
   **Open**, once. The `xattr` line above works here too.
 
 Neither is a warning about the download. Both are macOS saying it cannot

@@ -82,9 +82,12 @@ matters.
   relaunches backgrounded PWAs from scratch. Every view is lazy, including
   the analysis board — the landing page must not pay for the engine, the
   explorer and the PGN parsers to draw a launcher — which is also why the
-  home page's customise sheet is the one thing on it that is lazy. It
-  currently loads
-  298 kB of JS: 217 kB of shell and 81 kB of translation dictionary.
+  home page's customise dialog is the one thing on it that is lazy. It
+  currently loads 513 kB of JS in Korean — 416 kB of shell across 39
+  chunks (the 220 kB entry, 90 kB of the component layer, 33 kB of
+  dialog) and 97 kB of dictionary — and 425 kB in English; measured on
+  the 0.4.7 build. The shell was 217 kB before the component layer came
+  in.
 
 ## Deployment model
 
