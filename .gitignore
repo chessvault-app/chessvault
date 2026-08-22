@@ -19,8 +19,11 @@ vault-backups/
 
 # Editor and agent scaffolding: whose machine runs what, not how the app
 # works. .claude/launch.json names a dev command and a port, which every
-# contributor already gets from package.json.
+# contributor already gets from package.json. skills-lock.json is the
+# `skills` CLI's record of what it copied into .claude/skills — the shadcn
+# skill, per CLAUDE.md — and belongs with it.
 .claude/
+skills-lock.json
 
 .DS_Store
 *.log

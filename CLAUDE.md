@@ -91,6 +91,12 @@ dialog or tooltip beside a Radix one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
 shared hooks in `web/src/hooks`. See "The component layer" in
 `docs/design-principles.md` for the token mapping and the focus-ring rule.
+An agent working here should have shadcn's own skill loaded — `npx
+skills add shadcn/ui -a claude-code --copy` puts it in `.claude/skills/`,
+which is not committed; it reads `components.json` and `npx shadcn info`
+and enforces the registry's composition rules (Field for forms,
+ToggleGroup for option sets, `data-icon` on button icons, no `dark:`
+colour overrides).
 
 **Class names speak the registry's vocabulary** (`bg-card`,
 `text-muted-foreground`, `border-input`, `bg-destructive`), with the
