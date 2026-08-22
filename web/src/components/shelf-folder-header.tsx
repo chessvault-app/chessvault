@@ -1,8 +1,8 @@
 import { Folder as FolderIcon, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { ActionMenu } from '@/components/action-menu';
-import { Button } from './Button';
-import { PromptSheet } from './PromptSheet';
+import { Button } from '@/components/ui/button';
+import { PromptDialog } from '@/components/prompt-dialog';
 import { t } from '@/lib/i18n';
 
 /**
@@ -45,7 +45,7 @@ export function ShelfFolderHeader({
         {folder}
       </button>
       {renaming && (
-        <PromptSheet
+        <PromptDialog
           label={t('Rename this collection')}
           initial={folder}
           onSubmit={(value) => {

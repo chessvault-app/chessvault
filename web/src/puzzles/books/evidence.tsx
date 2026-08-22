@@ -14,9 +14,9 @@ import { cn } from '@/lib/utils';
 import { useFloating } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 
-import { PaneTabs } from '@/ui/PaneTabs';
+import { PaneTabs } from '@/components/pane-tabs';
 
 import { t } from '@/lib/i18n';
 import {

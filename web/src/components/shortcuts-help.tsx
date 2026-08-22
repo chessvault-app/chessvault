@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Keyboard } from 'lucide-react';
-import { dialogOpen } from './dialogFocus';
+import { dialogOpen } from '@/hooks/dialog-focus';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 

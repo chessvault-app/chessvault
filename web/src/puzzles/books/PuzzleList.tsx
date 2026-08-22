@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 
 import { navigate } from '@/lib/router';
 
-import { Select } from '@/ui/Select';
+import { Select } from '@/components/ui/select';
 
-import { ProgressBar } from '@/ui/ProgressBar';
+import { ProgressBar } from '@/components/progress-bar';
 
 import { t } from '@/lib/i18n';
 import {

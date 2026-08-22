@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 

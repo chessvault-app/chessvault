@@ -11,14 +11,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { SkeletonTiles, useSlowLoad } from '@/ui/Skeleton';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { SkeletonTiles, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 
-import { Button } from '@/ui/Button';
-import { PageShell } from '@/ui/PageShell';
+import { Button } from '@/components/ui/button';
+import { PageShell } from '@/components/page-shell';
 
-import { ClearableInput } from '@/ui/Input';
+import { ClearableInput } from '@/components/text-fields';
 
 import { Suspense, lazy } from 'react';
 
@@ -327,7 +327,7 @@ export function BookPage({ slug }: { slug: string }) {
             <Plus className="size-3.5" />
             <span className="hidden wide:inline">{t('Add puzzle')}</span>
           </Button>
-          <ConfirmSheet
+          <ConfirmDialog
             icon={RotateCcw}
             triggerTone="danger"
             triggerTitle="Reset all progress in this book"

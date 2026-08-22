@@ -8,7 +8,7 @@ import {
   saveAndLeave,
   useLeaveAsk,
 } from '@/lib/leaveGuard';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
@@ -19,7 +19,7 @@ import { t } from '@/lib/i18n';
  * question is asked by the router, which does not know which view is up,
  * and a sheet owned by a view would have to survive that view leaving.
  *
- * ConfirmSheet is the wrong shape here — it draws its own trigger, and
+ * ConfirmDialog is the wrong shape here — it draws its own trigger, and
  * this one is opened by a navigation nobody clicked. The geometry is
  * borrowed from it though: full-width stacked buttons rather than a row,
  * because on a phone a row puts "save" and "throw away" a thumb's width
@@ -33,7 +33,7 @@ import { t } from '@/lib/i18n';
  * close control draws, which is what those gestures do: without one it was
  * the bare button between two that had icons.
  */
-export function LeaveSheet() {
+export function LeaveDialog() {
   const name = useLeaveAsk((s) => s.name);
   const busy = useLeaveAsk((s) => s.busy);
   const error = useLeaveAsk((s) => s.error);

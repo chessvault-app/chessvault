@@ -14,18 +14,18 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
-import { Button } from '@/ui/Button';
-import { KnightIcon } from '@/ui/KnightIcon';
-import { Segmented } from '@/ui/Segmented';
-import { CloudBoardArt } from '@/ui/CloudBoardArt';
+import { Button } from '@/components/ui/button';
+import { KnightIcon } from '@/components/knight-icon';
+import { Segmented } from '@/components/segmented';
+import { CloudBoardArt } from '@/components/cloud-board-art';
 
-import { Select } from '@/ui/Select';
-import { SearchInput } from '@/ui/Input';
-import { Field } from '@/ui/Field';
+import { Select } from '@/components/ui/select';
+import { SearchInput } from '@/components/text-fields';
+import { Field } from '@/components/ui/field';
 
-import { SkeletonFilterRow, SkeletonGameRows } from '@/ui/Skeleton';
+import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Panel, PanelHeader } from '@/components/panel';
 
 import { t } from '@/lib/i18n';
 import { GameRow, gameKey, type GameSummary, type Preview } from './shared';

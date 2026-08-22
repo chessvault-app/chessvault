@@ -1,10 +1,10 @@
 import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
-import { MiniBoard } from './MiniBoard';
-import { SwipeTrack, useSwipeRow } from './SwipeRow';
+import { MiniBoard } from '@/components/mini-board';
+import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { t } from '@/lib/i18n';
 
 /** Grid: cards side by side. List: one dense row each, no thumbnail. */

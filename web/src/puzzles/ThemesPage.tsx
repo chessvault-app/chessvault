@@ -2,12 +2,12 @@ import { Puzzle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
+import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
 import { navigate } from '@/lib/router';
-import { ChipRow } from '@/ui/ChipRow';
-import { SearchInput } from '@/ui/Input';
-import { Skeleton, SkeletonThemeCard, SkeletonThemeGroups, useSlowLoad } from '@/ui/Skeleton';
+import { ChipRow } from '@/components/chip-row';
+import { SearchInput } from '@/components/text-fields';
+import { Skeleton, SkeletonThemeCard, SkeletonThemeGroups, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 
 /**

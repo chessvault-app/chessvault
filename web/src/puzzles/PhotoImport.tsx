@@ -1,7 +1,7 @@
 import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   boardFeatures,

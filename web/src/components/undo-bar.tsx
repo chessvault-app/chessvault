@@ -1,6 +1,6 @@
 import { Undo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 
 /**

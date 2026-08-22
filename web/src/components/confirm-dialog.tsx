@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +34,7 @@ import { t } from '@/lib/i18n';
  * Callers interpolating a name still call t() themselves; translating an
  * already-translated string is a no-op.
  */
-export function ConfirmSheet({
+export function ConfirmDialog({
   icon: Icon,
   label,
   triggerTitle,

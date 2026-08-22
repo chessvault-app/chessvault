@@ -1,5 +1,5 @@
 import { History, Trash2 } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
@@ -18,10 +18,10 @@ import { t } from '@/lib/i18n';
  * the document may well be on a different device, looking at work they
  * had already decided against.
  *
- * Not built on ConfirmSheet: that draws its own trigger, and nothing was
+ * Not built on ConfirmDialog: that draws its own trigger, and nothing was
  * pressed to raise this.
  */
-export function RecoverySheet({
+export function RecoveryDialog({
   name,
   at,
   onRecover,

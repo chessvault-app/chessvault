@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { announce } from './announce';
+import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
 
 /** How long the undo stands before the deletion actually happens. */

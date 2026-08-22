@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { KnightIcon } from './KnightIcon';
+import { KnightIcon } from '@/components/knight-icon';
 
 /**
  * The pictures the empty states are built from.

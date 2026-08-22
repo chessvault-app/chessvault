@@ -24,8 +24,8 @@ import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
-import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
-import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
 import { useReview } from '@/store/review';
@@ -33,18 +33,18 @@ import { usePrefs } from '@/store/prefs';
 import { useStudy } from '@/store/study';
 import { fenKey } from '@/lib/fen';
 import { consumeJumpTarget } from './jumpTarget';
-import { Button } from '@/ui/Button';
-import { ClearableInput } from '@/ui/Input';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { MobileActionBar } from '@/ui/MobileActionBar';
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { PaneTabs } from '@/ui/PaneTabs';
-import { PromptSheet } from '@/ui/PromptSheet';
-import { RecoverySheet } from '@/ui/RecoverySheet';
-import { SaveControl } from '@/ui/SaveControl';
-import { DocumentHistory } from '@/ui/HistoryPanel';
-import { UndoBar } from '@/ui/UndoBar';
-import { useUndoable } from '@/ui/useUndoable';
+import { Button } from '@/components/ui/button';
+import { ClearableInput } from '@/components/text-fields';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { MobileActionBar } from '@/components/mobile-action-bar';
+import { Panel, PanelHeader } from '@/components/panel';
+import { PaneTabs } from '@/components/pane-tabs';
+import { PromptDialog } from '@/components/prompt-dialog';
+import { RecoveryDialog } from '@/components/recovery-dialog';
+import { SaveControl } from '@/components/save-control';
+import { DocumentHistory } from '@/components/history-panel';
+import { UndoBar } from '@/components/undo-bar';
+import { useUndoable } from '@/hooks/use-undoable';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
 
@@ -358,7 +358,7 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
       </div>
 
       {recovery && (
-        <RecoverySheet
+        <RecoveryDialog
           name={id.split('/').at(-1)!}
           at={recovery.at}
           onRecover={() => useStudy.getState().recover()}
@@ -611,7 +611,7 @@ function ChapterRow({
           <span className="text-muted-foreground flex h-8 min-w-0 flex-1 items-center truncate px-1.5 text-sm">
             {ownName}
           </span>
-          <PromptSheet
+          <PromptDialog
             label={t('Rename this chapter')}
             initial={ownName}
             onSubmit={(value) => {
@@ -697,7 +697,7 @@ function ChapterRow({
             <Pencil className="size-3" />
           </Button>
           {chapters.length > 1 && (
-            <ConfirmSheet
+            <ConfirmDialog
               icon={Trash2}
               triggerTitle={t(
                 childCount > 0

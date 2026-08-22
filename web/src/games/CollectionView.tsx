@@ -21,14 +21,15 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
-import { Button } from '@/ui/Button';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
 
-import { EmptyState } from '@/ui/EmptyState';
-import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
+import { EmptyState } from '@/components/empty-state';
+import { BookmarkArt, CollectionArt, NoMatchArt } from '@/components/empty-art';
 
-import { ClearableInput, SearchInput, Textarea } from '@/ui/Input';
+import { ClearableInput, SearchInput } from '@/components/text-fields';
+import { Textarea } from '@/components/ui/textarea';
 import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
@@ -44,14 +45,14 @@ import {
   type ResultFilter,
   type StructuredFilters,
 } from './GameFilters';
-import { Field } from '@/ui/Field';
+import { Field } from '@/components/ui/field';
 
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { CreateControl, FabSpacer } from '@/ui/Fab';
-import { UndoBar } from '@/ui/UndoBar';
-import { useUndoable } from '@/ui/useUndoable';
-import { SkeletonFilterRow, SkeletonGameRows } from '@/ui/Skeleton';
+import { CreateControl, FabSpacer } from '@/components/fab';
+import { UndoBar } from '@/components/undo-bar';
+import { useUndoable } from '@/hooks/use-undoable';
+import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
 
 import { t } from '@/lib/i18n';
 import { GamePreview, GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';

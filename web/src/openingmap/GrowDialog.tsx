@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { t } from '@/lib/i18n';
 import { MY_GAMES_SOURCE } from '@/repertoire/field';
 import { myFilterQuery } from '@/store/explorer';
-import { FilterChip } from '@/ui/FilterChip';
+import { FilterChip } from '@/components/filter-chip';
 import type { Speed } from '@shared/gameIndex';
-import { Button } from '@/ui/Button';
-import { Segmented } from '@/ui/Segmented';
+import { Button } from '@/components/ui/button';
+import { Segmented } from '@/components/segmented';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Skeleton } from '@/ui/Skeleton';
+import { Skeleton } from '@/components/skeletons';
 import type { OpeningMap, ResolvedNode } from './model';
 import { seedFromGames } from './seed';
 import { fieldMovesFor } from './useGaps';
@@ -61,7 +61,7 @@ const storedSpeeds = (): Speed[] => {
   }
 };
 
-export function GrowSheet({
+export function GrowDialog({
   map,
   facts,
   onApply,

@@ -6,13 +6,13 @@ import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 
-import { Button } from '@/ui/Button';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { ClearableInput, SearchInput } from '@/ui/Input';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { Skeleton } from '@/ui/Skeleton';
-import { Segmented } from '@/ui/Segmented';
+import { Panel, PanelHeader } from '@/components/panel';
+import { Skeleton } from '@/components/skeletons';
+import { Segmented } from '@/components/segmented';
 
 /**
  * The reference databases and the PGN collections they are built from.
@@ -494,7 +494,7 @@ function DbList({
           {/* Asked in a window rather than warned about in a tooltip: a
               title nobody reads was all that stood between a press and
               however many minutes of indexing. */}
-          <ConfirmSheet
+          <ConfirmDialog
             icon={Trash2}
             triggerClassName="shrink-0"
             triggerTitle="Delete this database"
@@ -546,7 +546,7 @@ function SourceList({
               only way in and the shell was the only way out. Disabled
               while a build runs: it is reading these files, and the
               server refuses it for the same reason. */}
-          <ConfirmSheet
+          <ConfirmDialog
             icon={Trash2}
             triggerClassName="shrink-0"
             disabled={deleteDisabled}

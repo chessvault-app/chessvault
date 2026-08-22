@@ -2,8 +2,8 @@ import { ChevronDown, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
-import { useCloseRequest } from './dialogFocus';
+import { Button } from '@/components/ui/button';
+import { useCloseRequest } from '@/hooks/dialog-focus';
 import { ActionMenu } from '@/components/action-menu';
 import { t } from '@/lib/i18n';
 

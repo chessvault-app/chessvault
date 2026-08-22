@@ -4,7 +4,7 @@ import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Panel, PanelHeader } from '@/components/panel';
 
 /**
  * The moves panel the trainers show while analysing: the engine docked

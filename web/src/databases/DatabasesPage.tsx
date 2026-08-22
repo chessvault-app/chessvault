@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { navigate } from '@/lib/router';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
+import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
 import { RefDbManager, RefDbManagerSkeleton, type RefDb } from './RefDbManager';
-import { useSlowLoad } from '@/ui/Skeleton';
+import { useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 
 /**

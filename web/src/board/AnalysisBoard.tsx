@@ -11,12 +11,12 @@ import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
 import { BOARD_MAX_W } from '@/board/boardSize';
-import { BOARD_WIDE_COLUMN } from '@/ui/layout';
+import { BOARD_WIDE_COLUMN } from '@/components/layout';
 import { publishBoardHeight } from './boardBlock.ts';
 import { playSound, soundForSan } from '@/board/sound';
 import { cn } from '@/lib/utils';
-import { ClearButton } from '@/ui/ClearButton';
-import { noAutofill, noAutofillClass } from '@/ui/Input';
+import { ClearButton } from '@/components/clear-button';
+import { noAutofill, noAutofillClass } from '@/components/ui/input';
 import { Board } from '@/board/Board';
 import { HeatMapOverlay } from '@/board/HeatMapOverlay';
 import { PromotionPicker } from '@/board/PromotionPicker';
@@ -27,9 +27,9 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useReview } from '@/store/review';
 import { useBookTags } from '@/lib/opening';
-import { Button } from '@/ui/Button';
-import { SideDot } from '@/ui/SideDot';
-import { dialogOpen } from '@/ui/dialogFocus';
+import { Button } from '@/components/ui/button';
+import { SideDot } from '@/components/side-dot';
+import { dialogOpen } from '@/hooks/dialog-focus';
 import { t } from '@/lib/i18n';
 
 /**

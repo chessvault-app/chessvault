@@ -8,7 +8,7 @@ import { usePrefs } from './prefs';
 import { forgetCollection } from '@/games/collection';
 // Type-only, so nothing of the component reaches this module at runtime —
 // the union simply lives beside the badge that renders it.
-import type { SaveState } from '@/ui/SaveControl';
+import type { SaveState } from '@/components/save-control';
 
 export interface StudyMeta {
   id: string;

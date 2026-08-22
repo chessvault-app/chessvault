@@ -28,24 +28,24 @@ import { BOARD_ANIM_MS, Board } from '@/board/Board';
 import { playSound } from '@/board/sound';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
-import { PaneTabs } from '@/ui/PaneTabs';
+import { PaneTabs } from '@/components/pane-tabs';
 import { mainlineFrom } from '@shared/tree';
 import { EngineBlock } from '@/engine/EnginePane';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { useWideLayout } from '@/lib/media';
-import { announce } from '@/ui/announce';
-import { Button } from '@/ui/Button';
+import { announce } from '@/lib/announce';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { MobileActionBar } from '@/ui/MobileActionBar';
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { Skeleton } from '@/ui/Skeleton';
+import { MobileActionBar } from '@/components/mobile-action-bar';
+import { Panel, PanelHeader } from '@/components/panel';
+import { Skeleton } from '@/components/skeletons';
 import { BooksView } from './BooksView';
 import { DashboardPage } from './DashboardPage';
 import { HubPage } from './HubPage';
@@ -825,7 +825,7 @@ function Trainer({
           to a couple of lines to keep a row nobody was reaching for on
           screen. They follow what they answer to instead. */}
       {/* justify-end, gap-2, the primary one LAST — the row every window
-          in this app ends on (ui/PromptSheet, and the repertoire's New
+          in this app ends on (ui/PromptDialog, and the repertoire's New
           game). A finished puzzle's row is read along a line and finishes
           on the action, which is why the link out to the game it came
           from leads and Next closes.

@@ -39,26 +39,26 @@ import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/utils';
-import { Button } from '@/ui/Button';
-import { MobileActionBar } from '@/ui/MobileActionBar';
+import { Button } from '@/components/ui/button';
+import { MobileActionBar } from '@/components/mobile-action-bar';
 import { rememberDrill, rememberedDrill } from '@/lib/training';
-import { PromptSheet } from '@/ui/PromptSheet';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { Field } from '@/ui/Field';
-import { InfoTip } from '@/ui/InfoTip';
-import { KingIcon } from '@/ui/KingIcon';
-import { Segmented } from '@/ui/Segmented';
-import { SideDot } from '@/ui/SideDot';
+import { PromptDialog } from '@/components/prompt-dialog';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { Field } from '@/components/ui/field';
+import { InfoTip } from '@/components/info-tip';
+import { KingIcon } from '@/components/king-icon';
+import { Segmented } from '@/components/segmented';
+import { SideDot } from '@/components/side-dot';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Panel, PanelHeader } from '@/components/panel';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
-import { PaneTabs } from '@/ui/PaneTabs';
+import { PaneTabs } from '@/components/pane-tabs';
 import { useWideLayout } from '@/lib/media';
 import { useEngine } from '@/store/engine';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
-import { Select } from '@/ui/Select';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { Select } from '@/components/ui/select';
 import { t } from '@/lib/i18n';
 
 /**
@@ -1301,7 +1301,7 @@ export function RepertoireView() {
               summary.gaps === 0 &&
               t('Every drilled position stands recalled.')}
           </p>
-          <ConfirmSheet
+          <ConfirmDialog
             icon={Eraser}
             triggerTitle="Forget the drill record — misses, gaps and recalls in every study"
             question="Forget the whole drill record, across all studies?"
@@ -1319,7 +1319,7 @@ export function RepertoireView() {
           on a phone, the side column's on a desktop.
 
           Not the row every dialog in this app ends on (justify-end,
-          gap-2, the primary one LAST — ui/PromptSheet), which is what
+          gap-2, the primary one LAST — ui/PromptDialog), which is what
           this was. A dialog's row is read along a line and finishes on
           the action; a panel that exists to be started is read top down,
           and the thing to press should be the first thing under what it
@@ -1775,7 +1775,7 @@ export function RepertoireView() {
           <DialogContent title="New game" icon={Settings2}>
             {setupFields}
             {/* justify-end, gap-2, the primary one LAST — the row every
-                window in this app ends on (ui/PromptSheet). Apply only
+                window in this app ends on (ui/PromptDialog). Apply only
                 closes: the fields have been writing straight through all
                 along, which is what puts the chosen opening on the board
                 behind the sheet. Cancel is the one that does work, by
@@ -1793,7 +1793,7 @@ export function RepertoireView() {
       )}
 
       {saveOpen && (
-        <PromptSheet
+        <PromptDialog
           label={t('Save line to study')}
           initial={`${t(template.name)} — ${new Date().toISOString().slice(0, 10)}`}
           submitLabel="Save"

@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Skeleton, SkeletonForm, useSlowLoad } from '@/ui/Skeleton';
+import { Skeleton, SkeletonForm, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
 import { Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Trash2, User, Volume2 } from 'lucide-react';
-import { Button } from '@/ui/Button';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
-import { Field } from '@/ui/Field';
-import { ClearableInput, Input } from '@/ui/Input';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
+import { Field } from '@/components/ui/field';
+import { ClearableInput } from '@/components/text-fields';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Select } from '@/ui/Select';
-import { SettingRow } from '@/ui/SettingRow';
-import { Switch } from '@/ui/Switch';
+import { Select } from '@/components/ui/select';
+import { SettingRow } from '@/components/setting-row';
+import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -1419,7 +1420,7 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
           </label>
         )}
         <Feedback note={note} />
-        {/* ConfirmSheet's row, to the letter, because this is the same
+        {/* ConfirmDialog's row, to the letter, because this is the same
             question and the most serious instance of it: stacked and not a
             row (a row puts them a thumb's width apart on a phone, which is
             the wrong geometry for a pair where one is irreversible and the

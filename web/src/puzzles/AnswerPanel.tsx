@@ -4,8 +4,8 @@ import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
 import { scrollRowIntoPanel } from '@/lib/scroll';
-import { Button } from '@/ui/Button';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Button } from '@/components/ui/button';
+import { Panel, PanelHeader } from '@/components/panel';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 

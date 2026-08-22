@@ -4,7 +4,7 @@ import { moveNumberLabel } from '@shared/tree';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
-import { ResultBar } from '@/ui/ResultBar';
+import { ResultBar } from '@/components/result-bar';
 
 /**
  * One row of "what the field plays here", in the two places that show it:

@@ -12,19 +12,19 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
-import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/ui/ShelfToolbar';
-import { PageShell } from '@/ui/PageShell';
-import { UndoBar } from '@/ui/UndoBar';
-import { useUndoable } from '@/ui/useUndoable';
-import { MoveToPopover } from '@/ui/MoveToPopover';
-import { PromptSheet } from '@/ui/PromptSheet';
-import { CreateControl, FabSpacer } from '@/ui/Fab';
-import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
-import { Button } from '@/ui/Button';
-import { EmptyState } from '@/ui/EmptyState';
-import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
+import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
+import { ShelfFolderHeader } from '@/components/shelf-folder-header';
+import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
+import { PageShell } from '@/components/page-shell';
+import { UndoBar } from '@/components/undo-bar';
+import { useUndoable } from '@/hooks/use-undoable';
+import { MoveToDialog } from '@/components/move-to-dialog';
+import { PromptDialog } from '@/components/prompt-dialog';
+import { CreateControl, FabSpacer } from '@/components/fab';
+import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
+import { BookmarkArt, CollectionArt, NoMatchArt } from '@/components/empty-art';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
@@ -349,7 +349,7 @@ function CreateMenu({ notes, onDone }: { notes: NoteMeta[]; onDone: () => Promis
           collection each ask for one name, and two different popovers for
           the same question was two things to learn. */}
       {mode && (
-        <PromptSheet
+        <PromptDialog
           label={t('New collection')}
           initial=""
           submitLabel={t('Create')}
@@ -525,7 +525,7 @@ function NoteCard({
       ]}
     >
       {renaming && (
-        <PromptSheet
+        <PromptDialog
           label={t('Rename this note')}
           initial={name}
           onSubmit={(value) => void rename(value)}
@@ -534,7 +534,7 @@ function NoteCard({
       )}
 
       {moving && (
-        <MoveToPopover
+        <MoveToDialog
           currentFolder={folder}
           folders={allFolders}
           onPick={(target) => {

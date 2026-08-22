@@ -22,15 +22,15 @@ import { Board, type BoardApi, type BoardPiece } from '@/board/Board';
 import { copyText } from '@/lib/clipboard';
 import { navigate, up } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
-import { Button } from '@/ui/Button';
-import { Field } from '@/ui/Field';
-import { Select } from '@/ui/Select';
-import { Segmented } from '@/ui/Segmented';
-import { Input } from '@/ui/Input';
-import { KingIcon } from '@/ui/KingIcon';
+import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/field';
+import { Select } from '@/components/ui/select';
+import { Segmented } from '@/components/segmented';
+import { Input } from '@/components/ui/input';
+import { KingIcon } from '@/components/king-icon';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { Panel, PanelHeader } from '@/components/panel';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
@@ -469,7 +469,7 @@ export function EditorView({
           </div>
         </Panel>
 
-        {/* The row every window in this app ends on (ui/PromptSheet):
+        {/* The row every window in this app ends on (ui/PromptDialog):
             justify-end, gap-2, the primary one LAST. Apply is the ONLY
             way a change made in here survives; see closeSheet. Only in
             the sheet — the wide layout's column is not a window, it is

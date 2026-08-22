@@ -6,8 +6,8 @@ import type { Template } from '@/puzzles/ocr/classify';
 import { Suspense, lazy } from 'react';
 
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
-import { Button } from '@/ui/Button';
-import { Textarea } from '@/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';

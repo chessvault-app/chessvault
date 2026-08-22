@@ -1,10 +1,10 @@
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import type { HomeLayout } from '@shared/homeLayout';
-import { Button } from '@/ui/Button';
-import { SettingRow } from '@/ui/SettingRow';
+import { Button } from '@/components/ui/button';
+import { SettingRow } from '@/components/setting-row';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Switch } from '@/ui/Switch';
-import { announce } from '@/ui/announce';
+import { Switch } from '@/components/ui/switch';
+import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination } from './destinations';
 import { resolveHomeLayout } from './layout';
@@ -34,7 +34,7 @@ import { resolveHomeLayout } from './layout';
  * drag-and-drop anywhere in this app and nothing to copy, and two buttons
  * are a keyboard and a screen reader's only way to do this at all.
  */
-export function CustomiseSheet({
+export function CustomiseDialog({
   layout,
   onChange,
   onReset,

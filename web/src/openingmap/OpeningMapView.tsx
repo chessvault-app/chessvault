@@ -16,18 +16,20 @@ import { useAnalysis } from '@/store/analysis';
 import { navigate, up } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
-import { MobileActionBar } from '@/ui/MobileActionBar';
+import { MobileActionBar } from '@/components/mobile-action-bar';
 import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
-import { Button } from '@/ui/Button';
-import { CanvasOverlay, CanvasShell } from '@/ui/CanvasShell';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { EmptyState } from '@/ui/EmptyState';
-import { CollectionArt } from '@/ui/EmptyArt';
-import { Field } from '@/ui/Field';
-import { ClearableInput, Input, SearchInput, Textarea } from '@/ui/Input';
-import { MiniBoard } from '@/ui/MiniBoard';
-import { Fab, type FabAction } from '@/ui/Fab';
-import { Select } from '@/ui/Select';
+import { Button } from '@/components/ui/button';
+import { CanvasOverlay, CanvasShell } from '@/components/canvas-shell';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { EmptyState } from '@/components/empty-state';
+import { CollectionArt } from '@/components/empty-art';
+import { Field } from '@/components/ui/field';
+import { ClearableInput, SearchInput } from '@/components/text-fields';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { MiniBoard } from '@/components/mini-board';
+import { Fab, type FabAction } from '@/components/fab';
+import { Select } from '@/components/ui/select';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { MapCanvas } from './MapCanvas';
 import { collectStudyTags, reachedMove, type NodeCoverage } from './coverage';
@@ -46,9 +48,9 @@ import {
   type ResolvedNode,
 } from './model';
 import { useOpeningMap } from './store';
-import { AddMoveSheet } from './AddMoveSheet';
+import { AddMoveDialog } from '@/openingmap/AddMoveDialog';
 import { FieldStats } from './FieldStats';
-import { GrowSheet } from './GrowSheet';
+import { GrowDialog } from '@/openingmap/GrowDialog';
 import { TagPicker } from './TagPicker';
 import type { NodeGaps } from './gaps';
 import { scopedEntries, useCoverage } from './useCoverage';
@@ -232,7 +234,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   // One way in, with two halves: the explorer-like list, and the field
   // at the foot of it for the move nobody has played yet — the whole
   // point of preparing it. Typing used to close this sheet and open a
-  // prompt on top of it; AddMoveSheet asks and answers both now.
+  // prompt on top of it; AddMoveDialog asks and answers both now.
   const [addTo, setAddTo] = useState<string | null>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [growFrom, setGrowFrom] = useState<string | null>(null);
@@ -361,7 +363,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   const opened = (
     <>
         {addTo !== null && map && resolved?.nodes.get(addTo) && (
-          <AddMoveSheet
+          <AddMoveDialog
             facts={resolved.nodes.get(addTo)!}
             coverage={coverage?.get(addTo)}
             source={field.source}
@@ -373,7 +375,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           />
         )}
         {growFrom !== null && map && resolved?.nodes.get(growFrom) && (
-          <GrowSheet
+          <GrowDialog
             map={map}
             facts={resolved.nodes.get(growFrom)!}
             onApply={(lines) =>
@@ -744,7 +746,7 @@ const ADD_ROW =
 /**
  * One column of the node panel's footer toolbar.
  *
- * Shared with the delete action, which is a ConfirmSheet rather than a
+ * Shared with the delete action, which is a ConfirmDialog rather than a
  * Button and takes this as its trigger's class list — so the five
  * columns keep one geometry instead of two that drift.
  *
@@ -758,7 +760,7 @@ const ADD_ROW =
  * glyphs on lanph3re's phone, on a row that measured perfectly under
  * every mouse.
  *
- * `[&_svg]:size-4` reaches ConfirmSheet's icon, which sets its own, and
+ * `[&_svg]:size-4` reaches ConfirmDialog's icon, which sets its own, and
  * `shrink-0` keeps any of them from being squeezed again.
  */
 const PANEL_ACTION =
@@ -1420,7 +1422,7 @@ function NodePanel({
           }}
         />
         {!isRoot && (
-          <ConfirmSheet
+          <ConfirmDialog
             icon={Trash2}
             label="Delete"
             triggerTitle={t('Delete this move')}

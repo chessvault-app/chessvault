@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import type { FieldMove } from '@/repertoire/field';
-import { Button } from '@/ui/Button';
-import { ClearableInput } from '@/ui/Input';
-import { MiniBoard } from '@/ui/MiniBoard';
+import { Button } from '@/components/ui/button';
+import { ClearableInput } from '@/components/text-fields';
+import { MiniBoard } from '@/components/mini-board';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import type { NodeCoverage } from './coverage';
 import { LIST, MoveCell, MoveResult, ROW, RowTail } from './FieldRow';
@@ -34,7 +34,7 @@ interface Row {
   childId: string | null;
 }
 
-export function AddMoveSheet({
+export function AddMoveDialog({
   facts,
   coverage,
   source,

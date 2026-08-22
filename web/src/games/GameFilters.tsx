@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Select } from '@/ui/Select';
-import { Button } from '@/ui/Button';
-import { Field } from '@/ui/Field';
-import { ClearableInput, DateInput } from '@/ui/Input';
+import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Field } from '@/components/ui/field';
+import { ClearableInput, DateInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';

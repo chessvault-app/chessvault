@@ -1,11 +1,11 @@
 import { ArrowDownWideNarrow, ArrowUpNarrowWide, Bookmark, LayoutGrid, List } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button } from './Button';
-import { SearchInput } from './Input';
-import { PageHeader } from './PageHeader';
-import { Segmented } from './Segmented';
-import { Select } from './Select';
-import type { ShelfLayout } from './ShelfCard';
+import { Button } from '@/components/ui/button';
+import { SearchInput } from '@/components/text-fields';
+import { PageHeader } from '@/components/page-header';
+import { Segmented } from '@/components/segmented';
+import { Select } from '@/components/ui/select';
+import type { ShelfLayout } from '@/components/shelf-card';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 

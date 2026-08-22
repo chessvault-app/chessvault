@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
-import { CoverParent } from '@/ui/coverParent';
-import { registerOpenDialog, soleTextField } from '@/ui/dialogFocus';
-import { useSheetCover } from '@/ui/sheetCover';
-import { useSheetDrag } from '@/ui/sheetDrag';
+import { CoverParent } from '@/hooks/cover-parent';
+import { registerOpenDialog, soleTextField } from '@/hooks/dialog-focus';
+import { useSheetCover } from '@/hooks/use-sheet-cover';
+import { useSheetDrag } from '@/hooks/use-sheet-drag';
 
 export { CoverParent };
 

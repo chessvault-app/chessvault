@@ -5,17 +5,17 @@ import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { usePrefs } from '@/store/prefs';
-import { Button } from '@/ui/Button';
-import { ClearableInput } from '@/ui/Input';
-import { RecoverySheet } from '@/ui/RecoverySheet';
-import { SaveControl, type SaveState } from '@/ui/SaveControl';
-import { DocumentHistory } from '@/ui/HistoryPanel';
-import { SkeletonDocument, useSlowLoad } from '@/ui/Skeleton';
-import { UndoBar } from '@/ui/UndoBar';
-import { useUndoable } from '@/ui/useUndoable';
+import { Button } from '@/components/ui/button';
+import { ClearableInput } from '@/components/text-fields';
+import { RecoveryDialog } from '@/components/recovery-dialog';
+import { SaveControl, type SaveState } from '@/components/save-control';
+import { DocumentHistory } from '@/components/history-panel';
+import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
+import { UndoBar } from '@/components/undo-bar';
+import { useUndoable } from '@/hooks/use-undoable';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
-import { MobileActionBar } from '@/ui/MobileActionBar';
+import { MobileActionBar } from '@/components/mobile-action-bar';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
 
@@ -43,7 +43,7 @@ export function NoteView({ id }: { id: string }) {
   const [loaded, setLoaded] = useState('');
   /**
    * A copy the vault was still holding — a session that ended without
-   * saving. Offered, never applied: see RecoverySheet.
+   * saving. Offered, never applied: see RecoveryDialog.
    */
   const [recovery, setRecovery] = useState<{ pgn: string; at: string } | null>(null);
   /**
@@ -411,7 +411,7 @@ function NoteEditor({
       <EditorContent editor={editor} className="min-h-0 flex-1" />
 
       {recovery && editor && (
-        <RecoverySheet
+        <RecoveryDialog
           name={id.split('/').at(-1)!}
           at={recovery.at}
           onRecover={() => {

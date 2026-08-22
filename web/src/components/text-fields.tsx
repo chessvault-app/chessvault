@@ -4,7 +4,7 @@ import { CalendarDays, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import type { InputProps } from '@/components/ui/input';
-import { ClearButton } from '@/ui/ClearButton';
+import { ClearButton } from '@/components/clear-button';
 import { t } from '@/lib/i18n';
 
 /**

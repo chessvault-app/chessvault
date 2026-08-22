@@ -1,7 +1,7 @@
 import { Check, Loader2, Save } from 'lucide-react';
 import { useEffect, useRef } from 'react';
-import { announce } from './announce';
-import { Button } from './Button';
+import { announce } from '@/lib/announce';
+import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 
 /**
@@ -28,7 +28,7 @@ export type SaveState = 'saved' | 'dirty' | 'saving' | 'error';
  * thing twice and put the destructive answer a thumb's width from the
  * safe one. The Save button's presence IS the unsaved state; there is no
  * state in which it shows and the document is clean. Discarding still
- * exists, on the way out (see LeaveSheet), where it is asked rather than
+ * exists, on the way out (see LeaveDialog), where it is asked rather than
  * clicked by accident.
  *
  * `Saved` and `Saving…` stay text: there is nothing to press. With

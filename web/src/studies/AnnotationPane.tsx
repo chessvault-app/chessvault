@@ -1,4 +1,4 @@
-import { Textarea } from '@/ui/Input';
+import { Textarea } from '@/components/ui/textarea';
 import { ChevronDown } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
@@ -6,9 +6,9 @@ import { NAG_GLYPH } from '@/analysis/notation';
 import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { autoFocusField } from '@/lib/media';
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { ChipRow } from '@/ui/ChipRow';
+import { ChipRow } from '@/components/chip-row';
 import { t } from '@/lib/i18n';
 
 /** Move-quality NAGs — one of these at most, like Lichess. */

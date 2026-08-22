@@ -1,8 +1,8 @@
 import { Bold, Code, Heading1, Heading2, Italic, List, ListOrdered, Quote, Strikethrough } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { Button } from '@/ui/Button';
-import { KnightIcon } from '@/ui/KnightIcon';
+import { Button } from '@/components/ui/button';
+import { KnightIcon } from '@/components/knight-icon';
 import { t } from '@/lib/i18n';
 
 /**

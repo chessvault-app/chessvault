@@ -1,4 +1,4 @@
-import { PageHeader } from '@/ui/PageHeader';
+import { PageHeader } from '@/components/page-header';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
 

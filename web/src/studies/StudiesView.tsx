@@ -19,24 +19,25 @@ import { navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
-import { Button } from '@/ui/Button';
-import { Select } from '@/ui/Select';
-import { ClearableInput, Textarea } from '@/ui/Input';
-import { Field } from '@/ui/Field';
+import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
+import { ClearableInput } from '@/components/text-fields';
+import { Textarea } from '@/components/ui/textarea';
+import { Field } from '@/components/ui/field';
 import { Globe, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { PromptSheet } from '@/ui/PromptSheet';
-import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
-import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
-import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/ui/ShelfToolbar';
-import { PageShell } from '@/ui/PageShell';
-import { UndoBar } from '@/ui/UndoBar';
-import { useUndoable } from '@/ui/useUndoable';
-import { CreateControl, FabSpacer } from '@/ui/Fab';
-import { SkeletonCards, useSlowLoad } from '@/ui/Skeleton';
-import { EmptyState } from '@/ui/EmptyState';
-import { BookmarkArt, CollectionArt, NoMatchArt } from '@/ui/EmptyArt';
-import { MoveToPopover } from '@/ui/MoveToPopover';
+import { PromptDialog } from '@/components/prompt-dialog';
+import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
+import { ShelfFolderHeader } from '@/components/shelf-folder-header';
+import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
+import { PageShell } from '@/components/page-shell';
+import { UndoBar } from '@/components/undo-bar';
+import { useUndoable } from '@/hooks/use-undoable';
+import { CreateControl, FabSpacer } from '@/components/fab';
+import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
+import { EmptyState } from '@/components/empty-state';
+import { BookmarkArt, CollectionArt, NoMatchArt } from '@/components/empty-art';
+import { MoveToDialog } from '@/components/move-to-dialog';
 import { StudyView } from './StudyView';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -390,7 +391,7 @@ function CreateMenu() {
           chrome for a question a popover answers. Import needs a PGN, a file
           picker and a chapter count — that is a window. */}
       {mode === 'folder' && (
-        <PromptSheet
+        <PromptDialog
           label={t('New collection')}
           initial=""
           submitLabel={t('Create')}
@@ -867,7 +868,7 @@ function StudyCard({
           a button. They are sheets now, like every other one-question
           window. */}
       {renaming && (
-        <PromptSheet
+        <PromptDialog
           label={t('Rename this study')}
           initial={name}
           onSubmit={(value) => void rename(value)}
@@ -876,7 +877,7 @@ function StudyCard({
       )}
 
       {moving && (
-        <MoveToPopover
+        <MoveToDialog
           currentFolder={folder}
           folders={allFolders}
           onPick={(target) => {

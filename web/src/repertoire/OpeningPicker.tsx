@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
-import { SearchInput } from '@/ui/Input';
+import { SearchInput } from '@/components/text-fields';
 import { t } from '@/lib/i18n';
 
 /** An entry in the openings catalogue: a name and the line that earns it.

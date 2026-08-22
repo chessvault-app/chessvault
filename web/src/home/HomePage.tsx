@@ -4,10 +4,10 @@ import { normaliseHomeLayout, type HomeLayout } from '@shared/homeLayout';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { api, apiErrorMessage } from '@/lib/api';
-import { Button } from '@/ui/Button';
-import { ListRow } from '@/ui/ListRow';
-import { Skeleton } from '@/ui/Skeleton';
-import { KnightIcon } from '@/ui/KnightIcon';
+import { Button } from '@/components/ui/button';
+import { ListRow } from '@/components/list-row';
+import { Skeleton } from '@/components/skeletons';
+import { KnightIcon } from '@/components/knight-icon';
 import { useDifficultyWord } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
@@ -17,8 +17,8 @@ import { chartedMoves, launcherColumns, resolveHomeLayout } from './layout';
 // itself is eager: Sheet brings a portal, the drag, the cover measurement
 // and the focus trap, and most launches never open it. The landing chunk
 // pays for what every launch draws and nothing else.
-const CustomiseSheet = lazy(() =>
-  import('./CustomiseSheet').then((m) => ({ default: m.CustomiseSheet })),
+const CustomiseDialog = lazy(() =>
+  import('@/home/CustomiseDialog').then((m) => ({ default: m.CustomiseDialog })),
 );
 
 /**
@@ -557,7 +557,7 @@ export function HomePage() {
             both groups rather than describing them. */}
         {editing && (
           <Suspense fallback={null}>
-            <CustomiseSheet
+            <CustomiseDialog
               layout={effective}
               onChange={save}
               onReset={() => save(null)}

@@ -1,8 +1,8 @@
 import { ChevronLeft, Lock, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Button } from '@/ui/Button';
-import { KnightIcon } from '@/ui/KnightIcon';
-import { Input } from '@/ui/Input';
+import { Button } from '@/components/ui/button';
+import { KnightIcon } from '@/components/knight-icon';
+import { Input } from '@/components/ui/input';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { t } from '@/lib/i18n';
 

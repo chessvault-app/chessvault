@@ -3,7 +3,7 @@ import type { Role } from 'chessops/types';
 import type { Color } from '@lichess-org/chessground/types';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { useDialogFocus } from '@/ui/dialogFocus';
+import { useDialogFocus } from '@/hooks/dialog-focus';
 
 const CHOICES: Role[] = ['queen', 'knight', 'rook', 'bishop'];
 

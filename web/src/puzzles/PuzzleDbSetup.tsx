@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 
 /**
  * Getting the puzzle database, from inside the app.

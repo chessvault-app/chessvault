@@ -3,15 +3,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
-import { Button } from '@/ui/Button';
-import { ListRow } from '@/ui/ListRow';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
-import { Select } from '@/ui/Select';
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { ProgressBar } from '@/ui/ProgressBar';
-import { Skeleton, SkeletonRows } from '@/ui/Skeleton';
+import { Button } from '@/components/ui/button';
+import { ListRow } from '@/components/list-row';
+import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
+import { Select } from '@/components/ui/select';
+import { Panel, PanelHeader } from '@/components/panel';
+import { ConfirmDialog } from '@/components/confirm-dialog';
+import { ProgressBar } from '@/components/progress-bar';
+import { Skeleton, SkeletonRows } from '@/components/skeletons';
 import { BANDS, bandOf } from './bands';
 import { PreviewEye, usePuzzlePreview } from './PuzzlePreview';
 import { t } from '@/lib/i18n';
@@ -387,7 +387,7 @@ export function DashboardPage() {
     anchored confirm, so it stays deliberate without a browser dialog. */
 function ResetButton({ onDone }: { onDone: () => void }) {
   return (
-    <ConfirmSheet
+    <ConfirmDialog
       icon={Eraser}
       triggerTone="danger"
       label={t('Reset')}

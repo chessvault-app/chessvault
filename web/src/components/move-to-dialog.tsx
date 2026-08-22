@@ -1,8 +1,8 @@
 import { Folder as FolderIcon, ChevronRight, FolderPlus } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
-import { ClearableInput } from './Input';
+import { Button } from '@/components/ui/button';
+import { ClearableInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
@@ -17,7 +17,7 @@ import { t } from '@/lib/i18n';
  * reason renaming is: an answer anchored to its row lands wherever that row
  * happens to be, which on a phone is often under the keyboard.
  */
-export function MoveToPopover({
+export function MoveToDialog({
   currentFolder,
   folders,
   onPick,

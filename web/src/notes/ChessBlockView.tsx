@@ -27,8 +27,8 @@ import { Board } from '@/board/Board';
 import { PromotionPicker } from '@/board/PromotionPicker';
 import { usePromotion } from '@/board/usePromotion';
 import { cn } from '@/lib/utils';
-import { Button } from '@/ui/Button';
-import { Textarea } from '@/ui/Input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { t } from '@/lib/i18n';
 
 interface BlockState {

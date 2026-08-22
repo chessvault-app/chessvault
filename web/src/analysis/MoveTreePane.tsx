@@ -3,7 +3,7 @@ import { ArrowUpToLine, BookOpen, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/utils';
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
 import { useReview } from '@/store/review';

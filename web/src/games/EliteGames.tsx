@@ -10,11 +10,11 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
-import { Button } from '@/ui/Button';
-import { PageShell } from '@/ui/PageShell';
+import { Button } from '@/components/ui/button';
+import { PageShell } from '@/components/page-shell';
 
-import { Select } from '@/ui/Select';
-import { SearchInput } from '@/ui/Input';
+import { Select } from '@/components/ui/select';
+import { SearchInput } from '@/components/text-fields';
 import {
   EMPTY_STRUCTURED_FILTERS,
   FilterRow,
@@ -24,10 +24,10 @@ import {
   type ResultFilter,
   type StructuredFilters,
 } from './GameFilters';
-import { Field } from '@/ui/Field';
-import { SideDot } from '@/ui/SideDot';
-import { SkeletonGameRows, useSlowLoad } from '@/ui/Skeleton';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Field } from '@/components/ui/field';
+import { SideDot } from '@/components/side-dot';
+import { SkeletonGameRows, useSlowLoad } from '@/components/skeletons';
+import { Panel, PanelHeader } from '@/components/panel';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';

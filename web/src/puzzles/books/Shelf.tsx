@@ -14,28 +14,28 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-import { SkeletonBookCards, useSlowLoad } from '@/ui/Skeleton';
+import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 
 import { ActionMenu } from '@/components/action-menu';
 
-import { Button } from '@/ui/Button';
-import { PageHeader } from '@/ui/PageHeader';
-import { PageShell } from '@/ui/PageShell';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
+import { PageShell } from '@/components/page-shell';
 
-import { SearchInput } from '@/ui/Input';
-import { Select } from '@/ui/Select';
-import { PromptSheet } from '@/ui/PromptSheet';
-import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
+import { SearchInput } from '@/components/text-fields';
+import { Select } from '@/components/ui/select';
+import { PromptDialog } from '@/components/prompt-dialog';
+import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 
-import { CreateControl, FabSpacer } from '@/ui/Fab';
-import { UndoBar } from '@/ui/UndoBar';
-import { useUndoable } from '@/ui/useUndoable';
+import { CreateControl, FabSpacer } from '@/components/fab';
+import { UndoBar } from '@/components/undo-bar';
+import { useUndoable } from '@/hooks/use-undoable';
 
 import { useImportJob } from '../importJob';
 import { clearCheckpoint, listCheckpoints, type CheckpointSummary } from '../importCheckpoint';
 
-import { ProgressBar } from '@/ui/ProgressBar';
+import { ProgressBar } from '@/components/progress-bar';
 
 import { t } from '@/lib/i18n';
 import {
@@ -608,7 +608,7 @@ function BookCard({
         </ActionMenu>
 
         {renaming && (
-          <PromptSheet
+          <PromptDialog
             label={t('Rename this book')}
             initial={book.title}
             onSubmit={(value) => void rename(value)}

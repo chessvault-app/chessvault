@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
-import { BOARD_WIDE_COLUMN, BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_WIDE_COLUMN, BOARD_WIDE_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { t } from '@/lib/i18n';
 
 /**

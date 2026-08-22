@@ -18,11 +18,11 @@ import {
   X,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { EngineBlock } from '@/engine/EnginePane';
-import { PaneTabs } from '@/ui/PaneTabs';
+import { PaneTabs } from '@/components/pane-tabs';
 import { useEngine } from '@/store/engine';
 
 import { parseFen } from 'chessops/fen';
@@ -55,13 +55,13 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
-import { announce } from '@/ui/announce';
-import { Button } from '@/ui/Button';
+import { announce } from '@/lib/announce';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { MobileActionBar } from '@/ui/MobileActionBar';
+import { MobileActionBar } from '@/components/mobile-action-bar';
 
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
+import { Panel, PanelHeader } from '@/components/panel';
+import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
 
 import { judgeBookMove, type BookSolution } from '../bookJudge';
 
@@ -651,7 +651,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           screen. It follows what it answers to instead.
 
           justify-end, gap-2, the primary one LAST — the row every window
-          in this app ends on (ui/PromptSheet), and what the other trainer
+          in this app ends on (ui/PromptDialog), and what the other trainer
           does. The primary used to LEAD and stretch across the row
           (lanph3re: a left-biased cluster looks unbalanced, centring is
           worse), which put Submit and Next puzzle at the opposite edge

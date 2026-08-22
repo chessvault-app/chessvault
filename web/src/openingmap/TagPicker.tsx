@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { pgnToChapters } from '@shared/pgn';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { Button } from '@/ui/Button';
-import { SearchInput } from '@/ui/Input';
-import { Segmented } from '@/ui/Segmented';
+import { Button } from '@/components/ui/button';
+import { SearchInput } from '@/components/text-fields';
+import { Segmented } from '@/components/segmented';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Skeleton, useSlowLoad } from '@/ui/Skeleton';
+import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import type { MapTag } from './model';
 
 /**
@@ -110,7 +110,7 @@ export function TagPicker({
     // `fill`: this is a PAGE of the details sheet it opens over — pick
     // what this node points at — so it takes that sheet's height rather
     // than shrinking to its own list and reading as a second, smaller
-    // window stacked on the first. The same call AddMoveSheet makes.
+    // window stacked on the first. The same call AddMoveDialog makes.
     <Dialog
       open
       onOpenChange={(open) => {

@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
-import { Button } from './Button';
-import { PageHeader } from './PageHeader';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 /**

@@ -11,15 +11,15 @@ import { Board } from '@/board/Board';
 import { cn } from '@/lib/utils';
 import { placeNear } from '@/lib/floating';
 
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 
-import { SideDot } from '@/ui/SideDot';
+import { SideDot } from '@/components/side-dot';
 
 import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
-import { useCloseRequest } from '@/ui/dialogFocus';
-import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
+import { useCloseRequest } from '@/hooks/dialog-focus';
+import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 
-import { PromptSheet } from '@/ui/PromptSheet';
+import { PromptDialog } from '@/components/prompt-dialog';
 
 import { t } from '@/lib/i18n';
 
@@ -304,7 +304,7 @@ export function GameRow({
         {/* The name is asked for in a sheet, like every other rename; the
             row keeps showing what it is called meanwhile. */}
         {renaming && (
-          <PromptSheet
+          <PromptDialog
             label={t('Rename this game')}
             initial={customName ?? docId(game)}
             onSubmit={(value) => onRename?.(value)}

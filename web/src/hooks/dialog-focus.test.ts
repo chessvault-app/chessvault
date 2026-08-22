@@ -39,7 +39,7 @@ beforeEach(async () => {
   // are module state, which is right for a page and wrong for a suite —
   // left shared, dialogs from an earlier test answer this one's Escape.
   vi.resetModules();
-  ({ pushCloser } = await import('./dialogFocus'));
+  ({ pushCloser } = await import('@/hooks/dialog-focus'));
 });
 
 afterEach(() => {

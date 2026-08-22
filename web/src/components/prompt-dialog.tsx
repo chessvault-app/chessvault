@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Button } from './Button';
-import { ClearableInput } from './Input';
+import { Button } from '@/components/ui/button';
+import { ClearableInput } from '@/components/text-fields';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -13,7 +13,7 @@ import { t } from '@/lib/i18n';
  * Cancel and the confirm — the shape of every "name this" question in the
  * app: a new study, a new note, a rename.
  */
-export function PromptSheet({
+export function PromptDialog({
   label,
   initial,
   submitLabel = 'Done',

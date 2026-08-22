@@ -27,15 +27,15 @@ import {
   type Speed,
   type TopGame,
 } from '@/store/explorer';
-import { Button } from '@/ui/Button';
-import { ResultBar } from '@/ui/ResultBar';
-import { Select } from '@/ui/Select';
-import { DateInput } from '@/ui/Input';
-import { FilterChip } from '@/ui/FilterChip';
-import { Panel, PanelHeader } from '@/ui/Panel';
+import { Button } from '@/components/ui/button';
+import { ResultBar } from '@/components/result-bar';
+import { Select } from '@/components/ui/select';
+import { DateInput } from '@/components/text-fields';
+import { FilterChip } from '@/components/filter-chip';
+import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { SideDot } from '@/ui/SideDot';
-import { Switch } from '@/ui/Switch';
+import { SideDot } from '@/components/side-dot';
+import { Switch } from '@/components/ui/switch';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
 

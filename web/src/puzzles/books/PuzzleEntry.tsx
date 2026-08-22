@@ -27,19 +27,19 @@ import { cn } from '@/lib/utils';
 
 import { navigate } from '@/lib/router';
 
-import { Button } from '@/ui/Button';
+import { Button } from '@/components/ui/button';
 
-import { Panel, PanelHeader } from '@/ui/Panel';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
-import { SideDot } from '@/ui/SideDot';
+import { Panel, PanelHeader } from '@/components/panel';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { SideDot } from '@/components/side-dot';
 
 import {
   harvestTemplates,
 } from '../ocr/classify';
 import { featuresFromImage, loadImage } from '../ocr/browser';
 
-import { PaneTabs } from '@/ui/PaneTabs';
-import { SkeletonBoard, useSlowLoad } from '@/ui/Skeleton';
+import { PaneTabs } from '@/components/pane-tabs';
+import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
 
 import { evaluateWhitePov, releaseAdjudicator } from '@/engine/adjudicate';
 
@@ -554,7 +554,7 @@ function SolutionRecorder({
         {error && <p className="text-destructive text-sm">{error}</p>}
 
         {/* Primary last, and Cancel beside it — the same order every
-            button row in the app uses (PromptSheet is the reference).
+            button row in the app uses (PromptDialog is the reference).
             Start over and Verify come first because they act on the line
             in the panel above; the last two are the ways out of it. */}
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
