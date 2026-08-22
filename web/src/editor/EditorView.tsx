@@ -23,6 +23,7 @@ import { copyText } from '@/lib/clipboard';
 import { navigate, up } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/ui/Button';
+import { Field } from '@/ui/Field';
 import { Select } from '@/ui/Select';
 import { Segmented } from '@/ui/Segmented';
 import { Input } from '@/ui/Input';
@@ -330,7 +331,7 @@ export function EditorView({
                 and that panel's own comment already says which shape is
                 right: Segmented is the track for one-of-these, not two
                 actions sitting side by side. */}
-            <Field label={t('Side to move')}>
+            <Field label="Side to move">
               <Segmented
                 value={state.turn}
                 onChange={(turn: Color) => patch({ turn })}
@@ -350,7 +351,7 @@ export function EditorView({
               />
             </Field>
 
-            <Field label={t('Castling rights')}>
+            <Field label="Castling rights">
               <div className="flex gap-1">
                 {(
                   [
@@ -390,7 +391,7 @@ export function EditorView({
               </div>
             </Field>
 
-            <Field label={t('En passant target')}>
+            <Field label="En passant target">
               <Select
                 value={state.epSquare ?? ''}
                 onChange={(v) => patch({ epSquare: v || null })}
@@ -410,14 +411,14 @@ export function EditorView({
             </Field>
 
             <div className="grid grid-cols-2 gap-2">
-              <Field label={t('Halfmove clock')}>
+              <Field label="Halfmove clock">
                 <NumberInput
                   value={state.halfmoves}
                   min={0}
                   onChange={(halfmoves) => patch({ halfmoves })}
                 />
               </Field>
-              <Field label={t('Move number')}>
+              <Field label="Move number">
                 <NumberInput
                   value={state.fullmoves}
                   min={1}
@@ -755,17 +756,6 @@ export function EditorView({
       )}
 
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="grid gap-1.5">
-      <span className="text-subtle text-xs label-caps">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }
 
