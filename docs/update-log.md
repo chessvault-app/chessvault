@@ -5,7 +5,10 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.4.7
+
+The app becomes a shadcn/ui project, and an import no longer needs
+watching.
 
 - **The app is a shadcn/ui project.** Every control is one of the
   registry's components — Button, Input, Dialog, DropdownMenu, Select,
@@ -55,9 +58,23 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   inheriting it from whoever's machine runs it, which is how the last set
   came out dark.
 
-## 0.4.7
-
-A release about not having to watch an import happen.
+- **Polish after the migration, measured on a phone.** The games panel's
+  source tabs are shadcn's own underlined Tabs (the classes that styled
+  them had never applied, so the registry's raised pill sat inside an
+  underline strip); study cards centre the board against the title
+  instead of pinning it to the top; every panel header is one height —
+  44px, 52px on a touch screen — so the title no longer jumps when the
+  phone's pane tabs switch between Moves, Engine, Chapters and Explorer;
+  the phone's action sheet lines its rows up under its title. Panels
+  stand their actions on shadcn's CardFooter: the puzzle and book
+  trainers, the repertoire, and the puzzle solution recorder, whose four
+  buttons used to float between the panel and the tab bar (its header
+  undo goes — Start over does it). Settings → Appearance's colour scheme
+  is a dropdown, grouped shadcn / Coloured / Contrast, like the rest of
+  the card. In the move list a sideline's moves flow on from its first
+  move the way lichess lays them out (the first move used to stand alone
+  on its line), and sidelines hang from right-angle branch guides — ├
+  while siblings follow, └ for the last — at every depth.
 
 - **"Try harder on boards that fail" uses the whole machine too.** The
   search it is named for was never the cost: on a failing board it is 33
