@@ -17,6 +17,7 @@ import { cachedCollection, forgetCollection, loadCollection } from './collection
 import { sanitizeSegment } from '@shared/vaultNames';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { useRovingTabs } from '@/ui/roving';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
@@ -195,6 +196,11 @@ export function CollectionView() {
   const [elite, setElite] = useState(false);
   /** Which of the two the column is showing. */
   const [source, setSource] = useState<SourceId>('archive');
+  const sourceTabs = useRovingTabs(
+    SOURCES.map((s) => s.id),
+    source,
+    setSource,
+  );
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
   // many items, so at lg the Add games button drew a chevron and a popover
   // to offer a single row. The list has to know the width, not just the
@@ -719,6 +725,7 @@ export function CollectionView() {
           <header
             role="tablist"
             aria-label={t('Where to find a game')}
+            {...sourceTabs.stripProps}
             className="border-line flex h-10 shrink-0 items-center gap-1 border-b px-2"
           >
             {SOURCES.map(({ id, label }) => {
@@ -729,6 +736,7 @@ export function CollectionView() {
                   type="button"
                   role="tab"
                   aria-selected={on}
+                  tabIndex={sourceTabs.tabIndex(id)}
                   onClick={() => setSource(id)}
                   // No icon, and not the header's uppercase micro-caps:
                   // measured, the pair came to 256px that way and this

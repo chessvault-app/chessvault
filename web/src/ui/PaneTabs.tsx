@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useRovingTabs } from './roving';
 import { t } from '@/lib/i18n';
 
 export interface PaneTab<T extends string> {
@@ -26,9 +27,15 @@ export function PaneTabs<T extends string>({
   onChange: (id: T) => void;
   className?: string;
 }) {
+  const roving = useRovingTabs(
+    tabs.map((tab) => tab.id),
+    value,
+    onChange,
+  );
   return (
     <div
       role="tablist"
+      {...roving.stripProps}
       className={cn(
         // p-px, not p-0.5: this row sits between a board and the panel
         // under it on the one screen with no vertical room to spare, and
@@ -46,6 +53,7 @@ export function PaneTabs<T extends string>({
             type="button"
             role="tab"
             aria-selected={tab.id === value}
+            tabIndex={roving.tabIndex(tab.id)}
             aria-label={t(tab.label)}
             title={t(tab.label)}
             onClick={() => onChange(tab.id)}

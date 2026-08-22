@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { useRovingTabs } from './roving';
 import { t } from '@/lib/i18n';
 
 export interface Segment<T extends string> {
@@ -76,10 +77,16 @@ export function Segmented<T extends string>({
       ? 'h-6 pointer-coarse:h-full rounded-[calc(var(--radius-lg)-3px)] px-1.5 text-sm'
       : 'h-7 pointer-coarse:h-full rounded-[calc(var(--radius-xl)-5px)] px-2.5 text-sm';
 
+  const roving = useRovingTabs(
+    segments.map((seg) => seg.value),
+    value,
+    onChange,
+  );
   return (
     <div
       role="tablist"
       aria-label={t(ariaLabel)}
+      {...roving.stripProps}
       className={cn('border-line bg-surface-inset flex shrink-0 items-center', box, className)}
     >
       {segments.map(({ value: id, label, title, accent }) => {
@@ -90,6 +97,7 @@ export function Segmented<T extends string>({
             type="button"
             role="tab"
             aria-selected={on}
+            tabIndex={roving.tabIndex(id)}
             title={title ? t(title) : undefined}
             onClick={() => onChange(id)}
             style={on && accent ? { color: accent } : undefined}
