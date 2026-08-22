@@ -176,7 +176,12 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
     // The rule under a title is the app's one way of separating a header
     // from what it heads — panels and windows alike (lanph3re's call); the
     // CardHeader draws it.
-    <CardHeader className={cn('flex shrink-0 flex-row items-center justify-between gap-2 px-3 py-2', className)}>
+    // min-h-11: the height an icon button gives it (28 + the padding), so
+    // a header holding only a switch, or nothing, is as tall as its
+    // neighbours. Measured before: Chapters 44, Engine 44, Explorer 36 —
+    // the title and its rule jumped 4px when the phone's pane tabs
+    // switched between them.
+    <CardHeader className={cn('flex min-h-11 shrink-0 flex-row items-center justify-between gap-2 px-3 py-2', className)}>
       {/* Translated HERE, not at every call site. A panel title is always
           user-facing, so a caller that forgets t() is a bug that renders
           fine in English and ships. Doing it once means it cannot be
