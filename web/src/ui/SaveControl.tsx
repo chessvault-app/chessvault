@@ -1,4 +1,6 @@
 import { Check, Loader2, Save } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { announce } from './announce';
 import { Button } from './Button';
 import { t } from '@/lib/i18n';
 
@@ -50,6 +52,21 @@ export function SaveControl({
   autoSaves?: boolean;
   onSave: () => void;
 }) {
+  /**
+   * A save that FAILED is said out loud; a save that worked is not.
+   *
+   * The control is text — "Saved", "Saving…" — and a screen reader hears
+   * none of it, which for a failure is the difference between retrying
+   * and losing the work. Not the happy path: with autosave the state
+   * cycles saving -> saved on every pause in typing, and announcing that
+   * would talk over the document being written.
+   */
+  const said = useRef<SaveState | null>(null);
+  useEffect(() => {
+    if (state === 'error' && said.current !== 'error') announce(t('Save failed'));
+    said.current = state;
+  }, [state]);
+
   if (state === 'saved') {
     return (
       <span className="text-subtle flex shrink-0 items-center gap-1 text-sm">

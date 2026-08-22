@@ -25,6 +25,10 @@ export function FilterChip({
   return (
     <button
       type="button"
+      // On or off is a colour and nothing else without this: a filter
+      // chip is a toggle, and a screen reader read every one of them the
+      // same whether it was filtering or not.
+      aria-pressed={active}
       title={title ? t(title) : undefined}
       onClick={onClick}
       className={cn(

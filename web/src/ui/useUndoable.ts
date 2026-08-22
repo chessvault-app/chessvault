@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { announce } from './announce';
+import { t } from '@/lib/i18n';
 
 /** How long the undo stands before the deletion actually happens. */
 const GRACE_MS = 4500;
@@ -91,6 +93,12 @@ export function useUndoable(): {
       // A second removal while one is pending commits the first: two undos
       // at once could only be one button, and it would be ambiguous.
       flush();
+      // Said, not just shown. The bar carried `role="status"`, which is
+      // unreliable on a node that mounts WITH its text — most screen
+      // readers announce a live region's later CHANGES, not the content
+      // it arrived holding. announce() writes into the app's one region,
+      // which is already there and already empty.
+      announce(t('Removed “{name}”', { name: label }));
       generation.current += 1;
       commitRef.current = commit;
       setPending({

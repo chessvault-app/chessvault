@@ -48,10 +48,12 @@ export function UndoBar({
         'bottom-[calc(4.5rem+env(safe-area-inset-bottom))] ' +
         'md:inset-x-auto md:bottom-6 md:right-6 md:px-0'
       }
-      // The one moment of feedback a deletion gives — announced, not
-      // just shown. role=status makes its appearance a polite live
-      // announcement without a dedicated region.
-      role="status"
+      // No role="status" here any more. It was meant to announce the
+      // bar's arrival, but a live region that mounts already holding its
+      // text is announced by almost nothing — a region is watched for
+      // CHANGES. useUndoable calls announce() instead, into the region
+      // the app keeps for exactly this, and two announcements of one
+      // deletion would be worse than the unreliable one.
       onPointerEnter={onHold}
       onPointerLeave={onRelease}
       onFocusCapture={onHold}
