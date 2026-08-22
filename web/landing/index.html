@@ -12,26 +12,46 @@
     <meta property="og:title" content="Chess Vault" />
     <meta property="og:description" content="Your chess, in plain files." />
     <meta property="og:image" content="shots/board.png" />
+    <meta name="color-scheme" content="light dark" />
     <style>
       /* Self-contained on purpose: a landing page that needs a build step is
-         a landing page that breaks when the build changes. The palette is
-         the app's own dark surface, so arriving at the demo is continuous. */
+         a landing page that breaks when the build changes.
+
+         THE DESIGN IS THE APP'S. The app is a shadcn/ui project and wears
+         the registry's neutral theme at rest (docs/design-principles.md,
+         "The component layer"): a white page, grey surfaces, a near-black
+         primary, hairline-ring cards, one radius every corner derives from.
+         This sheet is that theme written out by hand — the same token names
+         and the same values the registry ships, so clicking "Try the demo"
+         lands in an app that looks like the page that offered it. The page
+         follows the system's light/dark setting because the app does too:
+         the OLD page was dark and only dark, which was continuous with an
+         app whose default theme was dark, and is not any more. */
       :root {
-        --bg: oklch(21% 0.012 264);
-        --surface: oklch(25% 0.013 264);
-        --line: oklch(32% 0.014 264);
-        --fg: oklch(96% 0.004 264);
-        --muted: oklch(72% 0.012 264);
-        --subtle: oklch(58% 0.012 264);
-        --primary: oklch(72% 0.13 240);
-        --primary-ink: oklch(18% 0.03 240);
-        color-scheme: dark;
+        color-scheme: light;
+        /* shadcn's neutral theme, light. */
+        --background: oklch(100% 0 0);
+        --foreground: oklch(14.5% 0 0);
+        --card: oklch(100% 0 0);
+        --muted: oklch(97% 0 0);
+        --muted-foreground: oklch(55.6% 0 0);
+        --border: oklch(92.2% 0 0);
+        --primary: oklch(20.5% 0 0);
+        --primary-foreground: oklch(98.5% 0 0);
+        --ring: oklch(70.8% 0 0);
+        /* The card's hairline: ring-foreground/10, not the border colour —
+           the registry's nova card is a ring, and it is what makes a white
+           card read on a white page. */
+        --hairline: oklch(14.5% 0 0 / 10%);
+        /* One radius, and the ladder it implies: lg is the radius (buttons,
+           inputs), xl is a step up (cards), md a step down (the pills). */
+        --radius: 0.625rem;
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
 
         /* One spacing scale. Every margin, padding and gap below is a step
-           on it — the page was written with ad-hoc values (0.9, 1.15, 1.75,
-           2.5) and the mismatches were visible: cards padded differently
-           from download cards, headings spaced differently from each other,
-           sections not matching the hero. */
+           on it. */
         --s1: 0.25rem;
         --s2: 0.5rem;
         --s3: 0.75rem;
@@ -41,70 +61,113 @@
         --s7: 3rem;
         --s8: 4rem;
       }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          color-scheme: dark;
+          /* shadcn's neutral theme, dark: 14.5 / 20.5 / 26.9 %, as the app. */
+          --background: oklch(14.5% 0 0);
+          --foreground: oklch(98.5% 0 0);
+          --card: oklch(20.5% 0 0);
+          --muted: oklch(26.9% 0 0);
+          --muted-foreground: oklch(70.8% 0 0);
+          --border: oklch(100% 0 0 / 10%);
+          --primary: oklch(92.2% 0 0);
+          --primary-foreground: oklch(20.5% 0 0);
+          --ring: oklch(55.6% 0 0);
+          --hairline: oklch(98.5% 0 0 / 10%);
+        }
+      }
       * { box-sizing: border-box; }
       html { -webkit-text-size-adjust: 100%; }
       body {
         margin: 0;
-        background: var(--bg);
-        color: var(--fg);
-        font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+        background: var(--background);
+        color: var(--foreground);
+        font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
           "Helvetica Neue", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
         -webkit-font-smoothing: antialiased;
       }
       a { color: inherit; }
-      /* padding-INLINE, not the shorthand: every section also carries .wrap, and
-         a class beats an element selector — so `section { padding: … }` was
-         overwritten wholesale and the sections had no vertical padding at
-         all. Longhands on different axes cannot fight. */
-      /* ONE width for the whole page, feature rows included. They were 70rem
-         for a while, to put each half of a 50/50 row inside the 500–600px
-         a figure was being drawn for; 456px is the honest half of 62rem and
-         every section now starts and ends on the same two vertical lines,
-         which is worth more than the missing 64px. */
+      /* One focus ring, the registry's: ring-3 in ring/50, and no outline
+         of its own. */
+      :focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+      .btn:focus-visible { border-color: var(--ring); }
+
+      /* ONE width for the whole page, feature rows included, so every
+         section starts and ends on the same two vertical lines. */
       .wrap { max-width: 62rem; margin: 0 auto; padding-inline: var(--s4); }
 
-      header { padding-block: var(--s4); }
+      header { padding-block: var(--s3); border-bottom: 1px solid var(--border); }
       .bar { display: flex; align-items: center; gap: var(--s3); }
-      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 650; letter-spacing: -0.01em; }
-      .mark svg { width: 1.75rem; height: 1.75rem; color: var(--primary); }
+      .mark { display: flex; align-items: center; gap: var(--s2); font-weight: 600; letter-spacing: -0.01em; text-decoration: none; }
+      /* The app's mark: white on a black tile, in both themes — it takes
+         no side, like the favicon. */
+      .mark svg { width: 1.75rem; height: 1.75rem; border-radius: 0.45rem; background: oklch(14.5% 0 0); color: oklch(100% 0 0); padding: 0.2rem; }
+      @media (prefers-color-scheme: dark) {
+        .mark svg { box-shadow: 0 0 0 1px var(--hairline); }
+      }
+      .bar .spacer { margin-left: auto; }
+      /* The language switch is the registry's Tabs: a muted track, and the
+         chosen tab a raised pill on the card colour. */
       .lang {
-        margin-left: auto; display: flex; gap: var(--s1);
-        background: var(--surface); border: 1px solid var(--line);
-        border-radius: 0.6rem; padding: var(--s1);
+        display: inline-flex; gap: var(--s1); padding: 3px;
+        background: var(--muted); border-radius: var(--radius-lg);
       }
       .lang button {
-        font: inherit; font-size: 0.78rem; padding: var(--s1) var(--s3); border: 0;
-        border-radius: 0.45rem; background: transparent; color: var(--muted); cursor: pointer;
+        font: inherit; font-size: 0.8rem; line-height: 1; padding: 0.375rem 0.625rem; border: 1px solid transparent;
+        border-radius: var(--radius-md); background: transparent; color: var(--muted-foreground); cursor: pointer;
       }
-      .lang button[aria-pressed='true'] { background: var(--primary); color: var(--primary-ink); font-weight: 600; }
+      .lang button[aria-pressed='true'] { background: var(--card); color: var(--foreground); font-weight: 500; border-color: var(--hairline); box-shadow: 0 1px 2px oklch(0% 0 0 / 0.05); }
+      @media (prefers-color-scheme: dark) {
+        .lang button[aria-pressed='true'] { background: color-mix(in oklch, var(--foreground) 10%, transparent); border-color: var(--border); }
+      }
+
+      /* Buttons are shadcn's: `.btn` is the outline variant (border, page
+         colour, muted on hover) and `.btn.primary` the default one (a
+         near-black fill, a near-white face). Their height is the
+         registry's lg; the hero's pair get a size up, which the registry
+         has no name for because no app button needs it. */
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 0.375rem;
+        height: 2.25rem; padding-inline: 0.875rem; border-radius: var(--radius-lg); text-decoration: none;
+        font-size: 0.875rem; font-weight: 500; line-height: 1; white-space: nowrap;
+        border: 1px solid var(--border); background: var(--background); color: var(--foreground);
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+      }
+      .btn:hover { background: var(--muted); }
+      .btn:active { transform: translateY(1px); }
+      .btn.primary { background: var(--primary); color: var(--primary-foreground); border-color: transparent; }
+      .btn.primary:hover { background: color-mix(in oklch, var(--primary) 80%, transparent); }
+      @media (prefers-color-scheme: dark) {
+        .btn:not(.primary) { background: color-mix(in oklch, var(--foreground) 7%, transparent); }
+        .btn:not(.primary):hover { background: color-mix(in oklch, var(--foreground) 12%, transparent); }
+      }
 
       .hero { padding-block: var(--s8) var(--s7); text-align: center; }
-      h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.1; margin: 0 0 var(--s4); letter-spacing: -0.03em; }
-      .tagline { font-size: clamp(1.05rem, 2.4vw, 1.3rem); color: var(--muted); margin: 0 auto var(--s6); max-width: 34rem; }
+      h1 { font-size: clamp(2rem, 6vw, 3.25rem); line-height: 1.1; margin: 0 0 var(--s4); letter-spacing: -0.03em; font-weight: 600; }
+      .tagline { font-size: clamp(1.05rem, 2.4vw, 1.25rem); color: var(--muted-foreground); margin: 0 auto var(--s6); max-width: 36rem; }
       .cta { display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: center; }
-      .btn {
-        display: inline-flex; align-items: center; gap: var(--s2);
-        padding: var(--s3) var(--s5); border-radius: 0.7rem; text-decoration: none;
-        font-weight: 600; border: 1px solid var(--line); background: var(--surface);
-        transition: background 0.15s, border-color 0.15s;
-      }
-      .btn:hover { background: var(--line); }
-      .btn.primary { background: var(--primary); color: var(--primary-ink); border-color: transparent; }
-      .btn.primary:hover { filter: brightness(1.08); }
-      .note { color: var(--subtle); font-size: 0.82rem; margin-top: var(--s4); }
+      .cta .btn { height: 2.5rem; padding-inline: var(--s5); font-size: 0.9375rem; }
+      .note { color: var(--muted-foreground); font-size: 0.82rem; margin-top: var(--s4); }
 
+      /* Screenshots are shown in both themes: a `<picture>` picks the dark
+         capture under the same media query that picks the dark tokens, so
+         the app in the picture is the app the page is drawn in. */
       .shot { margin: var(--s7) 0 0; }
       .shot img {
-        width: 100%; height: auto; display: block; border-radius: 0.9rem;
-        border: 1px solid var(--line); box-shadow: 0 1.5rem 3rem oklch(0% 0 0 / 0.45);
+        width: 100%; height: auto; display: block; border-radius: var(--radius-xl);
+        box-shadow: 0 0 0 1px var(--hairline), 0 1.5rem 3rem oklch(0% 0 0 / 0.18);
       }
 
       section { padding-block: var(--s8); }
-      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: 0 0 var(--s5); }
+      section + section { border-top: 1px solid var(--border); }
+      h2 { font-size: clamp(1.35rem, 3vw, 1.75rem); letter-spacing: -0.02em; margin: 0 0 var(--s5); font-weight: 600; }
       .grid { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-      .card { background: var(--surface); border: 1px solid var(--line); border-radius: 0.9rem; padding: var(--s5); }
-      .card h3 { margin: 0 0 var(--s2); font-size: 1rem; }
-      .card p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+      /* The registry's card: the card fill, a hairline ring, rounded-xl,
+         no shadow. */
+      .card { background: var(--card); box-shadow: 0 0 0 1px var(--hairline); border-radius: var(--radius-xl); padding: var(--s5); }
+      .card h3 { margin: 0 0 var(--s2); font-size: 0.9375rem; font-weight: 600; }
+      .card p { margin: 0; color: var(--muted-foreground); font-size: 0.875rem; }
 
       /* The feature rows: one figure, one headline, one paragraph, the
          sides swapping every row so the page does not march down one edge.
@@ -117,38 +180,31 @@
          NOTHING IS CROPPED AND NOTHING IS CAPPED. These are screenshots of
          a working interface: `cover` would fill a frame by cutting the
          interface away, and a max-height does not cut but shrinks — which
-         on a tall panel is the same loss by a slower route, its text
-         reduced to texture. So the image keeps its own aspect at its own
-         height, and the only limit is width.
-
-         The card is what makes that safe to do. An image that no longer
-         has to fill a box leaves space around itself — a narrow panel in a
-         wide column, a wide map in a short one — and the space now belongs
-         to a surface with a border, a radius and a shadow, so it reads as
-         a frame rather than as a hole in the page.
+         on a tall panel is the same loss by a slower route. So the image
+         keeps its own aspect at its own height, and the only limit is
+         width. The card is what makes that safe: the space an image does
+         not fill belongs to a surface with a ring and a radius, so it
+         reads as a frame rather than as a hole in the page.
 
          `width: auto` and not `100%`: these are raster screenshots, and
-         stretching one past its own pixels only blurs it. A figure smaller
-         than the card sits at its own size, centred, and the card carries
-         the rest. `max-width` still names the 600px ceiling a figure was
-         drawn for, even though half of 62rem reaches it first. */
+         stretching one past its own pixels only blurs it. */
       .row { display: grid; gap: var(--s6); grid-template-columns: 1fr; align-items: center; }
       .row h2 { margin: 0 0 var(--s3); }
-      .row p { color: var(--muted); margin: 0; }
+      .row p { color: var(--muted-foreground); margin: 0; }
       .row figure {
         margin: 0; justify-self: center;
         display: flex; align-items: center; justify-content: center;
         width: 100%; max-width: 37.5rem; padding: var(--s3);
-        background: var(--surface); border: 1px solid var(--line);
-        border-radius: 1rem; box-shadow: 0 0.75rem 2rem oklch(0% 0 0 / 0.35);
+        background: var(--muted); box-shadow: 0 0 0 1px var(--hairline);
+        border-radius: var(--radius-xl);
       }
       .row figure img {
         display: block; width: auto; height: auto;
         max-width: 100%; object-fit: contain;
-        border-radius: 0.65rem;
+        border-radius: var(--radius-lg);
+        box-shadow: 0 0 0 1px var(--hairline);
       }
       @media (min-width: 48rem) {
-        /* Half and half, and the figure fills its half up to 600px. */
         .row { grid-template-columns: 1fr 1fr; gap: var(--s7); align-items: center; }
         .row.flip figure { order: 2; }
       }
@@ -159,68 +215,56 @@
          sat at three different heights. */
       .dl {
         display: flex; flex-direction: column;
-        background: var(--surface); border: 1px solid var(--line);
-        border-radius: 0.9rem; padding: var(--s5);
+        background: var(--card); box-shadow: 0 0 0 1px var(--hairline);
+        border-radius: var(--radius-xl); padding: var(--s5);
       }
-      .dl h3 { margin: 0 0 var(--s2); font-size: 1rem; }
-      .dl p { margin: 0 0 var(--s4); color: var(--muted); font-size: 0.88rem; }
+      .dl h3 { margin: 0 0 var(--s2); font-size: 0.9375rem; font-weight: 600; }
+      .dl p { margin: 0 0 var(--s4); color: var(--muted-foreground); font-size: 0.875rem; }
       .dl > :last-child { margin-top: auto; }
-      /* A card's call to action fills its width and matches the OS row's
-         size, so the two button cards line up instead of differing by the
-         few pixels a font-size apart costs. */
-      .dl > .btn { justify-content: center; font-size: 0.9rem; }
-      /* A .btn's own background is --surface, which is also the card's, so
-         inside a card it read as a bare outline. */
-      .dl .btn:not(.primary) { background: var(--bg); }
-      .dl .btn:not(.primary):hover { background: var(--line); }
+      .dl > .btn { justify-content: center; }
       /* One row, never wrapped. The three share the width equally and
          shrink together, so the card cannot be narrow enough to break the
-         line — a wrapped download row put one platform below the others
-         and made it look like an afterthought. */
+         line. */
       .os-row { display: flex; flex-wrap: nowrap; gap: var(--s2); }
       .btn.os {
         /* Basis auto, not 0: forcing three equal widths gave "Windows" the
            same share as "Linux", so the longest label overflowed while the
-           shortest had slack. Sizing to content and sharing the remainder
-           makes the row fit whenever the three labels together fit, which
-           is the only condition that actually matters. */
+           shortest had slack. */
         flex: 1 1 auto; min-width: 0; justify-content: center;
         gap: 0.35rem; padding-inline: var(--s2);
-        /* Shrinks with the viewport so the row never has to wrap. Measured,
-           not guessed: "Windows" — the longest of the three — needs 58px of
-           icon + gap + text at 0.9rem, and the narrowest share the grid can
-           give a button is 85px at the 62rem wrap and 75px on a 320px
-           phone. The floor is what keeps the second case inside. */
-        font-size: clamp(0.72rem, 0.636rem + 0.41vw, 0.9rem);
+        /* Shrinks with the viewport so the row never has to wrap. */
+        font-size: clamp(0.72rem, 0.636rem + 0.41vw, 0.875rem);
         white-space: nowrap;
       }
       .btn.os svg { width: 1em; height: 1em; flex: none; }
       code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85em;
-        background: var(--bg); border: 1px solid var(--line); border-radius: 0.35rem; padding: 0.1rem 0.35rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.85em;
+        background: var(--muted); border-radius: var(--radius-md); padding: 0.1rem 0.35rem;
       }
       pre {
-        background: var(--bg); border: 1px solid var(--line); border-radius: 0.6rem;
-        padding: var(--s3) var(--s4); overflow-x: auto; font-size: 0.85rem; margin: 0;
+        background: var(--muted); border-radius: var(--radius-lg);
+        padding: var(--s3) var(--s4); overflow-x: auto; font-size: 0.8rem; line-height: 1.55; margin: 0;
       }
-      pre code { background: none; border: 0; padding: 0; }
+      pre code { background: none; padding: 0; font-size: inherit; }
 
-      footer { border-top: 1px solid var(--line); padding-block: var(--s6) var(--s7); color: var(--subtle); font-size: 0.85rem; }
+      footer { border-top: 1px solid var(--border); padding-block: var(--s6) var(--s7); color: var(--muted-foreground); font-size: 0.85rem; }
+      footer p { margin: 0 0 var(--s2); }
       footer a { text-decoration: none; }
-      footer a:hover { text-decoration: underline; }
+      footer a:hover { text-decoration: underline; color: var(--foreground); }
     </style>
   </head>
   <body>
     <header>
       <div class="wrap bar">
         <span class="mark">
-          <!-- The app's mark: the hex from favicon.svg, in the page's own colour. -->
+          <!-- The app's mark: the hex from favicon.svg, white on its black tile. -->
           <svg viewBox="20 20 80 80" fill="currentColor" aria-hidden="true">
             <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" />
             <path d="M60 60 L60 24 L91 42 Z" />
           </svg>
           Chess Vault
         </span>
+        <span class="spacer"></span>
         <div class="lang" role="group" aria-label="Language">
           <button type="button" data-lang="en" aria-pressed="true">English</button>
           <button type="button" data-lang="ko" aria-pressed="false">한국어</button>
@@ -249,7 +293,10 @@
           The demo needs no install and no account — it runs entirely in your browser.
         </p>
         <div class="shot">
-          <img src="shots/board.png" alt="The analysis board with the engine and opening explorer" />
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="shots/board-dark.png" />
+            <img src="shots/board.png" alt="The analysis board with the engine and opening explorer" />
+          </picture>
         </div>
       </div>
 
@@ -308,10 +355,13 @@
       <section class="wrap">
         <div class="row">
           <figure>
-            <img
-              src="shots/opening-map.png"
-              alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
-            />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-dark.png" />
+              <img
+                src="shots/opening-map.png"
+                alt="The opening map: a white repertoire as a constellation of moves, each dot named by the opening catalogue and sized by how often the field plays it"
+              />
+            </picture>
           </figure>
           <div>
             <h2 data-ko="오프닝 맵">The opening map</h2>
@@ -328,10 +378,13 @@
       <section class="wrap">
         <div class="row flip">
           <figure>
-            <img
-              src="shots/opening-map-node.png"
-              alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
-            />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="shots/opening-map-node-dark.png" />
+              <img
+                src="shots/opening-map-node.png"
+                alt="One move's panel: the position, its catalogue name, how deep the linked studies prepare it, and the studies and notes tagged onto it"
+              />
+            </picture>
           </figure>
           <div>
             <h2 data-ko="수 하나하나가 무엇에 덮이는지 압니다">Every move knows what covers it</h2>
@@ -347,10 +400,13 @@
       <section class="wrap">
         <div class="row">
           <figure>
-            <img
-              src="shots/note-phone.png"
-              alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
-            />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="shots/note-phone-dark.png" />
+              <img
+                src="shots/note-phone.png"
+                alt="A note: markdown headings, a live board embedded in the text, and wiki-links to other documents"
+              />
+            </picture>
           </figure>
           <div>
             <h2 data-ko="파일이 곧 형식입니다">The files are the format</h2>
@@ -366,10 +422,13 @@
       <section class="wrap">
         <div class="row flip">
           <figure>
-            <img
-              src="shots/games-phone.png"
-              alt="The same game collection at phone width, with the bottom bar the app uses there"
-            />
+            <picture>
+              <source media="(prefers-color-scheme: dark)" srcset="shots/games-phone-dark.png" />
+              <img
+                src="shots/games-phone.png"
+                alt="The same game collection at phone width, with the bottom bar the app uses there"
+              />
+            </picture>
           </figure>
           <div>
             <h2 data-ko="원한다면, 어디서나">Or reach it from anywhere</h2>
