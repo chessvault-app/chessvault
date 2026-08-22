@@ -42,6 +42,10 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
   authApi: 'no password gate: the demo vault is a sample and lives in the tab',
   settingsApi: 'settings write a vault and secrets, neither of which exists here',
   puzzleBooksApi: 'book puzzles come from commercial PDFs and are not ours to publish',
+  booksApi:
+    'the library is the user\'s own PDFs, streamed to and from disk; the demo ' +
+    'answers /api/books with an empty shelf (see server.ts) and nothing to upload into',
+  storageApi: 'a disk inventory of a vault the demo does not have; Settings shows the demo card instead',
   lichessExplorerApi: 'proxying the explorer needs the deployment\'s Lichess token',
   lichessStudiesApi: 'importing a study needs that same token',
   vaultHistoryApi:

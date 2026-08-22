@@ -899,6 +899,41 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
   });
 
   /**
+   * Where every position sits in the book: page number, the diagram's box
+   * on that page, and the position with its side to move. For the book
+   * reader, which draws a board button on each printed diagram of the
+   * PDF this book was read from — the puzzles are positions it already
+   * knows, so those pages need no reading. Puzzles and drafts alike; an
+   * entry with no page, or a draft with no position, has nothing to
+   * place and is left out. Compact by design: no moves, no images.
+   */
+  api.get('/puzzlebooks/:slug/placements', (c) => {
+    const slug = c.req.param('slug');
+    if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
+    const pageNo = (file: string | undefined): number | null => {
+      const m = /^page(\d+)\./.exec(file ?? '');
+      return m ? Number(m[1]) : null;
+    };
+    const placements: {
+      id: string;
+      page: number;
+      rect?: BookEvidence['rect'];
+      fen: string;
+    }[] = [];
+    for (const p of readJson<BookPuzzle[]>(puzzlesPath(slug), [])) {
+      const page = pageNo(p.evidence?.page);
+      if (page === null || !p.fen) continue;
+      placements.push({ id: p.id, page, ...(p.evidence?.rect ? { rect: p.evidence.rect } : {}), fen: p.fen });
+    }
+    for (const d of readJson<Draft[]>(draftsPath(slug), [])) {
+      const page = pageNo(d.evidence?.page);
+      if (page === null || !d.fen) continue;
+      placements.push({ id: d.id, page, ...(d.evidence?.rect ? { rect: d.evidence.rect } : {}), fen: d.fen });
+    }
+    return c.json({ placements });
+  });
+
+  /**
    * One puzzle's evidence: the page it was printed on, where on that page
    * it sits, and the page its answer is on.
    *

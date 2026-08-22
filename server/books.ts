@@ -292,9 +292,11 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
     const size = stat.size;
     const headers: Record<string, string> = {
       'content-type': 'application/pdf',
-      // Private to the session; an hour is long enough for a reading
-      // sitting and the etag catches a replaced file before that.
-      'cache-control': 'private, max-age=3600',
+      // Revalidated on every open (no-cache is not no-store): the etag
+      // answers a reopened book with a 304, and a REPLACED file is seen
+      // at once rather than after the hour a max-age would have given the
+      // old one — which is exactly the case replace exists for.
+      'cache-control': 'private, no-cache',
       etag: `"${size}-${Math.round(stat.mtimeMs)}"`,
       'accept-ranges': 'bytes',
       'x-content-type-options': 'nosniff',
@@ -368,9 +370,11 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
   api.get('/books/:id/cover.jpg', (c) => {
     const id = c.req.param('id');
     if (!validBook(id) || !existsSync(coverPath(id))) return c.json({ error: 'no cover' }, 404);
+    // no-cache for the same reason as the PDF's: a replaced book brings a
+    // new cover, and the shelf should show it on the next visit.
     return c.body(new Uint8Array(readFileSync(coverPath(id))), 200, {
       'content-type': 'image/jpeg',
-      'cache-control': 'private, max-age=3600',
+      'cache-control': 'private, no-cache',
     });
   });
 
