@@ -1,7 +1,7 @@
 import { ChevronLeft, Lock, ShieldCheck } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { KnightIcon } from '@/components/knight-icon';
+import { BrandMark } from '@/components/brand-mark';
 import { Input } from '@/components/ui/input';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -109,10 +109,10 @@ export function PasswordGate({ children }: { children: ReactNode }) {
   return (
     <div className="bg-background text-foreground flex h-[100dvh] flex-col items-center justify-center p-6">
       <div className="flex w-full max-w-sm flex-col items-center">
-        {/* The same knight as the sidebar — the lock screen is the front
+        {/* The same mark as the sidebar — the lock screen is the front
             door, so it wears the brand, not a padlock. */}
         <div className="bg-primary text-primary-foreground mb-5 grid size-14 place-items-center rounded-2xl shadow-sm">
-          <KnightIcon className="size-8" />
+          <BrandMark className="size-8" />
         </div>
         <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
         <p className="text-muted-foreground mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>

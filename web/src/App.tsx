@@ -26,7 +26,7 @@ import { navigate, useRoute, type Section } from '@/lib/router';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
 import { Button } from '@/components/ui/button';
-import { KnightIcon } from '@/components/knight-icon';
+import { BrandMark } from '@/components/brand-mark';
 import { ShortcutsHelp } from '@/components/shortcuts-help';
 import { LeaveDialog } from '@/components/leave-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -345,8 +345,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         className="hover:bg-accent flex h-14 items-center gap-2.5 px-4 text-left transition-colors duration-100 lg:px-4"
       >
         <div className="bg-primary text-primary-foreground grid size-8 shrink-0 place-items-center rounded-lg">
-          {/* The cburnett knight — the same knight as on the board. */}
-          <KnightIcon className="size-5" />
+          <BrandMark className="size-5" />
         </div>
         <span className="hidden truncate text-base font-semibold tracking-tight lg:block">
           {t('Chess Vault')}

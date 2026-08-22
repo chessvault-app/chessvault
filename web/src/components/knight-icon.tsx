@@ -1,9 +1,9 @@
 /**
- * The cburnett knight — the same piece drawn on the board, the app icon
- * and the lock screen.
+ * The cburnett knight — the same piece drawn on the board.
  *
  * It was inlined in three places before this; it is one thing, and when
- * something needs to say "chess" rather than "grid" this is what it uses.
+ * something needs to say "chess" this is what it uses. The app's own mark
+ * is BrandMark, not this.
  */
 export function KnightIcon({ className }: { className?: string }) {
   return (

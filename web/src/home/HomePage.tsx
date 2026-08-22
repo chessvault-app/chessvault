@@ -7,7 +7,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { ListRow } from '@/components/list-row';
 import { Skeleton } from '@/components/skeletons';
-import { KnightIcon } from '@/components/knight-icon';
+import { BrandMark } from '@/components/brand-mark';
 import { useDifficultyWord } from '@/puzzles/bands';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type HomeCount } from './destinations';
@@ -360,7 +360,7 @@ export function HomePage() {
       <div className="w-full max-w-lg">
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <div className="bg-primary text-primary-foreground grid size-14 place-items-center rounded-2xl">
-            <KnightIcon className="size-9" />
+            <BrandMark className="size-9" />
           </div>
           <div>
             <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
