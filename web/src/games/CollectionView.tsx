@@ -49,7 +49,6 @@ import { Field } from '@/ui/Field';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Modal } from '@/ui/Modal';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
-import { ActionSheet } from '@/ui/ActionSheet';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
 import { SkeletonFilterRow, SkeletonGameRows } from '@/ui/Skeleton';
@@ -84,7 +83,6 @@ const CollectionRow = memo(function CollectionRow({
   onToggleBookmark,
   onRename,
   onStartRename,
-  onContext,
 }: {
   game: GameSummary;
   bookmarked: boolean;
@@ -96,7 +94,6 @@ const CollectionRow = memo(function CollectionRow({
   onToggleBookmark: (game: GameSummary) => void;
   onRename: (game: GameSummary, to: string) => void;
   onStartRename: (key: string) => void;
-  onContext: (game: GameSummary, x: number, y: number) => void;
 }) {
   // Through the scheme guard (see shared.tsx): a stored link that is not
   // http(s) offers no View online at all rather than a live window.open.
@@ -112,7 +109,7 @@ const CollectionRow = memo(function CollectionRow({
       onRename={(to) => onRename(game, to)}
       onOpen={() => onOpen(game)}
       onPreview={onPreview}
-      onContext={(x, y) => onContext(game, x, y)}
+      contextMenu
       actions={
         // The star is a CONTROL, so it lives where controls live:
         // in the hover tray on a desktop, and not on a phone at
@@ -258,8 +255,6 @@ export function CollectionView() {
   // Renaming, like notes and studies: a prompt sheet, and the doc id IS
   // the file name. An empty value is the sheet closing without an answer.
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
-  // Right-click opens the same actions the ⋯ offers, where the pointer is.
-  const [context, setContext] = useState<{ game: GameSummary; x: number; y: number } | null>(null);
   // The row goes at once; the DELETE waits for the undo to expire.
   const undoable = useUndoable();
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -324,8 +319,8 @@ export function CollectionView() {
   // through a ref to the LATEST handlers, so their identity never changes
   // while their closures stay fresh (a bookmark toggle used to re-render
   // every row in the list; now it re-renders the one that changed).
-  const rowHandlers = useRef({ dropGame, toggleBookmark, renameGame, openGame, setContext });
-  rowHandlers.current = { dropGame, toggleBookmark, renameGame, openGame, setContext };
+  const rowHandlers = useRef({ dropGame, toggleBookmark, renameGame, openGame });
+  rowHandlers.current = { dropGame, toggleBookmark, renameGame, openGame };
   const rowOpen = useCallback((g: GameSummary) => rowHandlers.current.openGame(g), []);
   const rowDrop = useCallback((g: GameSummary) => rowHandlers.current.dropGame(g), []);
   const rowBookmark = useCallback(
@@ -334,10 +329,6 @@ export function CollectionView() {
   );
   const rowRename = useCallback(
     (g: GameSummary, to: string) => void rowHandlers.current.renameGame(g, to),
-    [],
-  );
-  const rowContext = useCallback(
-    (g: GameSummary, x: number, y: number) => rowHandlers.current.setContext({ game: g, x, y }),
     [],
   );
 
@@ -700,7 +691,6 @@ export function CollectionView() {
                 onToggleBookmark={rowBookmark}
                 onRename={rowRename}
                 onStartRename={setRenamingKey}
-                onContext={rowContext}
               />
             ))}
           </ul>
@@ -810,27 +800,6 @@ export function CollectionView() {
         <Modal title="Elite games" onClose={() => setElite(false)} full className="max-sm:h-[88%]">
           <EliteGames />
         </Modal>
-      )}
-
-      {context && (
-        <ActionSheet
-          title={customName(context.game) ?? docId(context.game)}
-          point={{ x: context.x, y: context.y }}
-          onClose={() => setContext(null)}
-          actions={[
-            {
-              label: 'Rename',
-              icon: Pencil,
-              onSelect: () => setRenamingKey(gameKey(context.game)),
-            },
-            {
-              label: bookmarks.has(gameKey(context.game)) ? 'Remove bookmark' : 'Bookmark',
-              icon: Bookmark,
-              onSelect: () => void toggleBookmark(context.game),
-            },
-            { label: 'Remove', icon: Trash2, danger: true, onSelect: () => dropGame(context.game) },
-          ]}
-        />
       )}
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />

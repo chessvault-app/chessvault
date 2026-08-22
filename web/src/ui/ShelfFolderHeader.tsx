@@ -1,6 +1,6 @@
 import { Folder as FolderIcon, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { ActionSheet } from './ActionSheet';
+import { useState } from 'react';
+import { ActionMenu } from '@/components/action-menu';
 import { Button } from './Button';
 import { PromptSheet } from './PromptSheet';
 import { t } from '@/lib/i18n';
@@ -32,7 +32,6 @@ export function ShelfFolderHeader({
   const [renaming, setRenaming] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="group/folder flex h-6 items-center gap-1.5">
@@ -56,50 +55,47 @@ export function ShelfFolderHeader({
           onClose={() => setRenaming(false)}
         />
       )}
-      <Button
-        ref={trigger}
-        variant="ghost"
-        size="icon-sm"
-        title={t('More')}
-        active={menuOpen}
-        className="opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100"
-        onClick={() => setMenuOpen(true)}
-      >
-        <MoreHorizontal className="size-3" />
-      </Button>
-
-      {menuOpen && (
-        <ActionSheet
-          title={folder}
-          anchor={trigger}
-          onClose={() => setMenuOpen(false)}
-          actions={[
-            { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-            ...(empty
-              ? [
-                  {
-                    label: 'Delete this collection',
-                    icon: Trash2,
-                    danger: true,
-                    onSelect: () => {
-                      void onDelete().then((err) => {
-                        setFailure(err);
-                        // A refusal is worth reading once, not forever.
-                        if (err) setTimeout(() => setFailure(null), 5000);
-                      });
-                    },
+      <ActionMenu
+        title={folder}
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        actions={[
+          { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+          ...(empty
+            ? [
+                {
+                  label: 'Delete this collection',
+                  icon: Trash2,
+                  danger: true,
+                  onSelect: () => {
+                    void onDelete().then((err) => {
+                      setFailure(err);
+                      // A refusal is worth reading once, not forever.
+                      if (err) setTimeout(() => setFailure(null), 5000);
+                    });
                   },
-                ]
-              : []),
-          ]}
-        >
-          {!empty && (
+                },
+              ]
+            : []),
+        ]}
+        detail={
+          !empty && (
             <p className="text-subtle px-3 pb-2 text-sm">
               {t('Only empty collections can be deleted')}
             </p>
-          )}
-        </ActionSheet>
-      )}
+          )
+        }
+      >
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('More')}
+          active={menuOpen}
+          className="opacity-0 transition-opacity group-hover/folder:opacity-100 pointer-coarse:opacity-100"
+        >
+          <MoreHorizontal className="size-3" />
+        </Button>
+      </ActionMenu>
 
       {failure && <span className="text-destructive text-sm">{failure}</span>}
     </div>

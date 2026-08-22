@@ -15,7 +15,7 @@ import { Button } from '@/ui/Button';
 
 import { SideDot } from '@/ui/SideDot';
 
-import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
+import { ActionContextMenu, ActionMenu, type MenuAction } from '@/components/action-menu';
 import { useCloseRequest } from '@/ui/dialogFocus';
 import { SwipeTrack, useSwipeRow } from '@/ui/SwipeRow';
 
@@ -163,7 +163,7 @@ export function GameRow({
   onSwipeAway,
   onBookmark,
   bookmarked = false,
-  onContext,
+  contextMenu = false,
   menu,
   standing,
 }: {
@@ -179,7 +179,7 @@ export function GameRow({
    * the end of a 390px row left the two player names about half the width
    * they need.
    */
-  menu?: SheetAction[];
+  menu?: MenuAction[];
   /**
    * Controls that belong IN the hover tray — the bookmark star, and the
    * like. They fade in with the eye and the ⋯.
@@ -206,8 +206,12 @@ export function GameRow({
   /** Touch: swiping right marks it. Omitted where a row cannot be marked. */
   onBookmark?: () => void;
   bookmarked?: boolean;
-  /** Desktop: a right-click asks for the row's actions at the pointer. */
-  onContext?: (x: number, y: number) => void;
+  /**
+   * A right-click (or a long press) on the row opens the same verbs as
+   * the ⋯, at the pointer — the collection's rows, where those verbs are
+   * about the row itself. Off where the ⋯ is the row's only menu.
+   */
+  contextMenu?: boolean;
 }) {
   // The eye pops the final position. Fine pointers hover a popover beside
   // the row; coarse pointers TAP for a centred overlay (dismissed by its
@@ -215,7 +219,6 @@ export function GameRow({
   const swipe = useSwipeRow({ onRemove: () => onSwipeAway?.(), onBookmark });
   const coarse = isCoarsePointer;
   const row = useRef<HTMLLIElement>(null);
-  const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const showPreviewAt = (rect: DOMRect, viaTap: boolean): void => {
     if (!game.finalFen) return;
@@ -242,18 +245,37 @@ export function GameRow({
   // Through the scheme guard: a link that is not http(s) gets no anchor.
   const link = safeLink(game.link);
 
-  return (
+  // The ⋯ menu and the right-click menu are one list of verbs; the
+  // right-click keeps the items the ⋯ hides as duplicates of the tray,
+  // since a menu opened at the pointer has no tray beside it.
+  const title = customName ?? `${game.white} vs ${game.black}`;
+  const menuActions: MenuAction[] = [
+    // The preview the eye gives a mouse, for a finger — and ONLY for a
+    // finger: on a desktop the eye is on the row, two centimetres from
+    // the ⋯ that opened this, and a menu that repeats the icons beside it
+    // is a menu nobody reads. Anchored to the row rather than to the ⋯,
+    // because by the time it opens the sheet is gone and the row is what
+    // was being looked at.
+    ...(game.finalFen
+      ? [
+          {
+            label: 'Preview the board',
+            icon: Eye,
+            className: 'pointer-fine:hidden',
+            onSelect: () => {
+              const rect = row.current?.getBoundingClientRect();
+              if (rect) showPreviewAt(rect, true);
+            },
+          },
+        ]
+      : []),
+    ...(menu ?? []),
+  ];
+
+  const item = (
     <li
       ref={row}
       onClick={onOpen}
-      onContextMenu={
-        onContext
-          ? (e) => {
-              e.preventDefault();
-              onContext(e.clientX, e.clientY);
-            }
-          : undefined
-      }
       {...(onSwipeAway ? swipe.handlers : {})}
       // flex-wrap, with a floor under the text: everything to the right of
       // the names — result, eye, Add, ⋯, link — is shrink-0 by necessity,
@@ -415,20 +437,19 @@ export function GameRow({
         )}
         {actions}
         {menu && menu.length > 0 && (
-          <Button
-            ref={menuTrigger}
-            variant="ghost"
-            size="icon-sm"
-            title={t('Game actions')}
-            active={menuOpen}
-            className="shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(true);
-            }}
-          >
-            <MoreHorizontal className="size-3.5" />
-          </Button>
+          <ActionMenu title={title} actions={menuActions} open={menuOpen} onOpenChange={setMenuOpen}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Game actions')}
+              active={menuOpen}
+              className="shrink-0"
+              // A press on the ⋯ is the menu's, not the row's.
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
+          </ActionMenu>
         )}
       </div>
       {standing && (
@@ -437,36 +458,6 @@ export function GameRow({
         </div>
       )}
 
-      {menuOpen && menu && (
-        <ActionSheet
-          title={customName ?? `${game.white} vs ${game.black}`}
-          anchor={menuTrigger}
-          onClose={() => setMenuOpen(false)}
-          actions={[
-            // The preview the eye gives a mouse, for a finger — and ONLY
-            // for a finger: on a desktop the eye is on the row, two
-            // centimetres from the ⋯ that opened this, and a menu that
-            // repeats the icons beside it is a menu nobody reads. Anchored
-            // to the row rather than to the ⋯, because by the time it
-            // opens the sheet is gone and the row is what was being
-            // looked at.
-            ...(game.finalFen
-              ? [
-                  {
-                    label: 'Preview the board',
-                    icon: Eye,
-                    className: 'pointer-fine:hidden',
-                    onSelect: () => {
-                      const rect = row.current?.getBoundingClientRect();
-                      if (rect) showPreviewAt(rect, true);
-                    },
-                  },
-                ]
-              : []),
-            ...menu,
-          ]}
-        />
-      )}
       {/* Same container rule as the eye: in a narrow column this is 22px
           spent on a link out of the app, and the row it is taking them
           from is the reason anyone is looking. */}
@@ -486,6 +477,16 @@ export function GameRow({
         </a>
       )}
     </li>
+  );
+
+  if (!contextMenu || !menu || menu.length === 0) return item;
+  return (
+    <ActionContextMenu
+      title={title}
+      actions={menu.map(({ className: _hidden, ...action }) => action)}
+    >
+      {item}
+    </ActionContextMenu>
   );
 }
 

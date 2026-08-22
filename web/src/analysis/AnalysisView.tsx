@@ -19,7 +19,7 @@ import { useReview } from '@/store/review';
 import { Button } from '@/ui/Button';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { MobileActionBar } from '@/ui/MobileActionBar';
-import { ActionSheet, type SheetAction } from '@/ui/ActionSheet';
+import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { PaneTabs } from '@/ui/PaneTabs';
 import { UndoBar } from '@/ui/UndoBar';
@@ -439,7 +439,6 @@ export function MovesOverflow({
   onLoadPosition?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const trigger = useRef<HTMLButtonElement>(null);
   // Every caller's own Load position button is `max-md:hidden`, so the menu
   // row is the phone's stand-in for it, not a second copy of it: on a
   // desktop both were showing, one icon apart. A class cannot say this —
@@ -456,7 +455,7 @@ export function MovesOverflow({
   // Review needs something to review; the root having children is that.
   const hasMoves = useAnalysis((s) => getNode(s.tree, s.tree.rootId).children.length > 0);
 
-  const actions: SheetAction[] = [
+  const actions: MenuAction[] = [
     ...(onLoadPosition && phone
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),
@@ -484,7 +483,7 @@ export function MovesOverflow({
               capture(t('all moves'));
               clearMoves.clear();
             },
-          } as SheetAction,
+          } as MenuAction,
         ]
       : []),
     // Last and tinted: it throws the board away. Never offered in a
@@ -500,33 +499,25 @@ export function MovesOverflow({
               capture(t('all moves'));
               reset();
             },
-          } as SheetAction,
+          } as MenuAction,
         ]
       : []),
   ];
 
   return (
     <>
-      <Button
-        ref={trigger}
-        variant="ghost"
-        size="icon-sm"
-        // Not a phone-only control any more: FEN and PGN live in here
-        // since the row that used to hold them went away.
-        title={t('More')}
-        active={open}
-        onClick={() => setOpen(true)}
-      >
-        <MoreHorizontal className="size-3.5" />
-      </Button>
-      {open && (
-        <ActionSheet
-          title={t('Moves')}
-          anchor={trigger}
-          actions={actions}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      <ActionMenu title={t('Moves')} actions={actions} open={open} onOpenChange={setOpen}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          // Not a phone-only control any more: FEN and PGN live in here
+          // since the row that used to hold them went away.
+          title={t('More')}
+          active={open}
+        >
+          <MoreHorizontal className="size-3.5" />
+        </Button>
+      </ActionMenu>
       {undoable.pending && (
         <UndoBar
           label={undoable.pending.label}

@@ -1,8 +1,8 @@
 import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
-import { ActionSheet, type SheetAction } from './ActionSheet';
+import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { MiniBoard } from './MiniBoard';
 import { SwipeTrack, useSwipeRow } from './SwipeRow';
 import { t } from '@/lib/i18n';
@@ -52,7 +52,7 @@ export function ShelfCard({
   error?: string | null;
   /** What the ⋯ sheet is called; the title by default. */
   menuTitle?: string;
-  actions: SheetAction[];
+  actions: MenuAction[];
   onOpen: () => void;
   /** Touch: swiping the card's contents left removes it (undoably). */
   onSwipeAway: () => void;
@@ -60,7 +60,6 @@ export function ShelfCard({
   children?: ReactNode;
 }) {
   const swipe = useSwipeRow({ onRemove: onSwipeAway, onBookmark: onToggleMark });
-  const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   // Dimmed until the card is pointed at: a shelf of full-colour boards is
   // a wall of competing pictures, and the thumbnail is a reminder, not
@@ -183,34 +182,29 @@ export function ShelfCard({
               <Bookmark className={cn('size-3.5', marked && 'fill-current')} />
             </Button>
           )}
-          <Button
-            ref={menuTrigger}
-            variant="ghost"
-            size="icon-sm"
-            title={t('More')}
-            active={menuOpen}
-            className={cn(
-              'opacity-0 transition-opacity',
-              'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
-              menuOpen && 'opacity-100',
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(true);
-            }}
-          >
-            <MoreHorizontal className="size-3.5" />
-          </Button>
-        </div>
-
-        {menuOpen && (
-          <ActionSheet
+          <ActionMenu
             title={menuTitle ?? title}
-            anchor={menuTrigger}
-            onClose={() => setMenuOpen(false)}
             actions={actions}
-          />
-        )}
+            open={menuOpen}
+            onOpenChange={setMenuOpen}
+          >
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('More')}
+              active={menuOpen}
+              className={cn(
+                'opacity-0 transition-opacity',
+                'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+                menuOpen && 'opacity-100',
+              )}
+              // A press on the ⋯ is the menu's, not the card's.
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="size-3.5" />
+            </Button>
+          </ActionMenu>
+        </div>
 
         {children}
       </div>

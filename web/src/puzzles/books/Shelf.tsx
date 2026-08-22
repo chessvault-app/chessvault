@@ -9,7 +9,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { SkeletonBookCards, useSlowLoad } from '@/ui/Skeleton';
 import { navigate } from '@/lib/router';
 
-import { ActionSheet } from '@/ui/ActionSheet';
+import { ActionMenu } from '@/components/action-menu';
 
 import { Button } from '@/ui/Button';
 import { PageHeader } from '@/ui/PageHeader';
@@ -476,7 +476,6 @@ function BookCard({
   scan?: { page: number; pages: number; live: boolean };
 }) {
   const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
-  const menuTrigger = useRef<HTMLButtonElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
 
@@ -571,47 +570,42 @@ function BookCard({
           </span>
         </div>
 
-        <Button
-          ref={menuTrigger}
-          variant="ghost"
-          size="icon-sm"
-          title={t('More')}
-          active={menuOpen}
-          style={swipe.style}
-          className={cn(
-            'absolute right-2 top-2 opacity-0 transition-opacity',
-            'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
-            menuOpen && 'opacity-100',
-          )}
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpen(true);
-          }}
+        <ActionMenu
+          title={book.title}
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          actions={[
+            {
+              label: marked ? 'Remove bookmark' : 'Bookmark',
+              icon: Bookmark,
+              onSelect: onToggleMark,
+            },
+            { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+            {
+              label: 'Remove this book and its progress',
+              icon: Trash2,
+              danger: true,
+              onSelect: onRemove,
+            },
+          ]}
         >
-          <MoreHorizontal className="size-3.5" />
-        </Button>
-
-        {menuOpen && (
-          <ActionSheet
-            title={book.title}
-            anchor={menuTrigger}
-            onClose={() => setMenuOpen(false)}
-            actions={[
-              {
-                label: marked ? 'Remove bookmark' : 'Bookmark',
-                icon: Bookmark,
-                onSelect: onToggleMark,
-              },
-              { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-              {
-                label: 'Remove this book and its progress',
-                icon: Trash2,
-                danger: true,
-                onSelect: onRemove,
-              },
-            ]}
-          />
-        )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('More')}
+            active={menuOpen}
+            style={swipe.style}
+            className={cn(
+              'absolute right-2 top-2 opacity-0 transition-opacity',
+              'group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100',
+              menuOpen && 'opacity-100',
+            )}
+            // A press on the ⋯ is the menu's, not the card's.
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreHorizontal className="size-3.5" />
+          </Button>
+        </ActionMenu>
 
         {renaming && (
           <PromptSheet

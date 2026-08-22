@@ -2,9 +2,9 @@ import { ChevronDown, Plus, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ActionSheet } from './ActionSheet';
 import { Button } from './Button';
 import { useCloseRequest } from './dialogFocus';
+import { ActionMenu } from '@/components/action-menu';
 import { t } from '@/lib/i18n';
 
 export interface FabAction {
@@ -48,31 +48,28 @@ export function FabSpacer() {
  * on the screen for the button people press most.
  */
 export function CreateControl({ actions, label = 'Create' }: { actions: FabAction[]; label?: string }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const trigger = useRef<HTMLButtonElement>(null);
   const single = actions.length === 1 ? actions[0] : null;
+  const button = (
+    <Button
+      variant="default"
+      size="sm"
+      className="hidden md:inline-flex"
+      onClick={single ? single.onSelect : undefined}
+    >
+      <Plus className="mr-1 size-3.5" />
+      {single ? t(single.label) : t(label)}
+      {!single && <ChevronDown className="ml-1 size-3" />}
+    </Button>
+  );
 
   return (
     <>
-      <Button
-        ref={trigger}
-        variant="default"
-        size="sm"
-        className="hidden md:inline-flex"
-        onClick={() => (single ? single.onSelect() : setMenuOpen(true))}
-      >
-        <Plus className="mr-1 size-3.5" />
-        {single ? t(single.label) : t(label)}
-        {!single && <ChevronDown className="ml-1 size-3" />}
-      </Button>
-
-      {menuOpen && (
-        <ActionSheet
-          title={label}
-          anchor={trigger}
-          onClose={() => setMenuOpen(false)}
-          actions={actions.map((a) => ({ ...a }))}
-        />
+      {single ? (
+        button
+      ) : (
+        <ActionMenu title={label} actions={actions}>
+          {button}
+        </ActionMenu>
       )}
 
       <Fab actions={actions} label={label} className="md:hidden" />
