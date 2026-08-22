@@ -473,7 +473,14 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
     cursor = mainChildId;
   }
 
-  return <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5">{items}</div>;
+  // A fragment, not a flex box of its own: Line only ever renders inside
+  // VariationBranch, whose container is already the flex-wrap row, and as
+  // a box it was a single flex item the width of the whole line — too
+  // wide to sit beside the branch's first move, so "4... e6" stood alone
+  // on its line and the rest started under it. Lichess flows them; so
+  // does this now. The nested blocks and comments are basis-full either
+  // way.
+  return <>{items}</>;
 }
 
 /** A variation: its own first move, then the rest of that line. */
