@@ -96,7 +96,12 @@ skills add shadcn/ui -a claude-code --copy` puts it in `.claude/skills/`,
 which is not committed; it reads `components.json` and `npx shadcn info`
 and enforces the registry's composition rules (Field for forms,
 ToggleGroup for option sets, `data-icon` on button icons, no `dark:`
-colour overrides).
+colour overrides). The skill is guidance, written for any shadcn project;
+where it disagrees with this file or with behaviour that was measured here,
+this file wins. Two places it will point at are deliberate: the registry's
+own `dark:` classes inside `web/src/components/ui/` (its rule is aimed at
+app code), and the few icons sized `size-3.5` where a 16px icon was
+measured too large for its row.
 
 **Class names speak the registry's vocabulary** (`bg-card`,
 `text-muted-foreground`, `border-input`, `bg-destructive`), with the
