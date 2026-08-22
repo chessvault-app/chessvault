@@ -57,13 +57,18 @@ matters.
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
   override the vault/data locations; the server creates the vault
   skeleton on boot, so pointing it at an empty folder works.
-- **Web app** (`web/`, React + Vite + Tailwind v4 + zustand): everything
-  the user touches. Chess logic via `chessops`, boards via chessground,
-  notes via TipTap, engine via stockfish.js (WASM, threads). Talks to the
+- **Web app** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand):
+  everything the user touches. Chess logic via `chessops`, boards via
+  chessground, notes via TipTap, engine via stockfish.js (WASM, threads).
+  The component layer is shadcn's: the registry's files, owned and given
+  the app's face, under `web/src/components/ui` (Radix underneath), the
+  app's composites under `web/src/components`, the theme in shadcn's
+  token vocabulary derived from the app's OKLCH ladder (see
+  `docs/design-principles.md`, "The component layer"). Talks to the
   server over HTTP **only** — this is a hard rule that keeps every
   frontier (desktop, PWA, phone) a thin client. On phones a contextual
-  bottom bar (`web/src/ui/MobileActionBar.tsx`) hands the open page its
-  own controls in place of the global tabs.
+  bottom bar (`web/src/components/mobile-action-bar.tsx`) hands the open
+  page its own controls in place of the global tabs.
 - **Desktop** (`desktop/`, Electron): two modes chosen at launch —
   *remote client* (point at a server URL) or *self-hosted* (spawns the
   bundled server against a local folder). Because the UI is HTTP-only,

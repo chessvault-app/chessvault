@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * of content, not about the page, so pages of the same kind must agree.
  *
  * A width is NOT how a page picks its layout — it is how the scrolling
- * family, one of the three in `ui/layout.ts`, varies inside itself. Board
+ * family, one of the three in `components/layout.ts`, varies inside itself. Board
  * and canvas pages have no width to choose.
  *
  * - `wide`: layouts that split into columns or card grids and would

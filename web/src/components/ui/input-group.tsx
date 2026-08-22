@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
  * the border, and the keyboard ring. The global :focus-visible outline
  * would draw a square ring on the borderless input INSIDE the rounded box,
  * so the control turns it off (the one place in the app that may — see
- * ui/input for why nowhere else does) and the group draws the same ring
+ * components/ui/input for why nowhere else does) and the group draws the same ring
  * around the whole field with a `has-[]` variant.
  */
 const inputGroupVariants = cva(

@@ -5,6 +5,27 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The app is a shadcn/ui project.** Every control is one of the
+  registry's components — Button, Input, Dialog, DropdownMenu, Select,
+  Tooltip, Tabs, Switch and the rest, Radix underneath — owned in
+  `web/src/components/ui` and given the app's face, with nothing it had
+  learned on a device thrown away: every window is still a bottom sheet on
+  a phone that drags away from anywhere on itself, the back chevron still
+  turns a window's page, the keyboard band still holds, Android's Back
+  still closes the top layer. What changed for the keyboard and the screen
+  reader is for the better: one Escape closes one layer, topmost first;
+  focus returns to the control that opened a window even when its field
+  took the focus as it opened; tooltips show on keyboard focus; menus have
+  typeahead; the segmented choice is a radiogroup and the pane switcher a
+  real tablist. The theme speaks shadcn's token vocabulary, derived from
+  the app's own OKLCH ladder, so the hue, tint and contrast knobs keep
+  working and a component added from the registry tomorrow is themed the
+  moment it lands. Measured against a 44-shot grid of the app at two
+  widths and two themes: pixel-identical through every step outside the
+  pages that draw a different puzzle each load.
+
 ## 0.4.7
 
 A release about not having to watch an import happen.

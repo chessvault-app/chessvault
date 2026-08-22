@@ -98,7 +98,7 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
   // the list of lines scrolls inside the pane — so a scroll leaves it
   // pointing at whatever moved into that spot. Capture phase, because the
   // scrolling element is the list, not the window. Same treatment the
-  // title tooltips get in ui/tooltip.
+  // title tooltips get in components/ui/tooltip.
   useEffect(() => {
     if (!peek) return;
     document.addEventListener('scroll', close, true);

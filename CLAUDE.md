@@ -78,6 +78,25 @@ stays provable.
 Difficulty is a word — see `web/src/puzzles/bands.ts`. A rating is how the
 trainer picks a puzzle, not a verdict to hand back to whoever solved it.
 
+## UI components
+
+**The component layer is shadcn/ui, and the registry files are owned.**
+`web/src/components/ui/` holds the files `npx shadcn add` writes (Radix,
+`cva`, `data-slot`), each given the app's face and carrying its measured
+behaviour — the phone sheet, the page/layer chevron, the keyboard band,
+the sole-field focus, Android Back, the coarse-pointer sizes, `title` as
+a tooltip. Add a primitive with `npx shadcn add <name>` and then make it
+this app's; a hand-rolled popover, menu, dialog or tooltip beside a Radix
+one is two focus stacks on one page. Composites go in `web/src/components`,
+shared hooks in `web/src/hooks`. See "The component layer" in
+`docs/design-principles.md` for the token mapping and the focus-ring rule.
+
+**Class names speak the registry's vocabulary** (`bg-card`,
+`text-muted-foreground`, `border-input`, `bg-destructive`), with the
+app's extensions beside them (`surface-3`, `surface-inset`, `text-subtle`,
+`border-strong`, `good`/`warn`/`info`). Old names (`text-fg`,
+`bg-surface`, `border-line`, `text-bad`) are gone and must not return.
+
 ## Before cutting a release
 
 Both of these, every time, before the version is bumped:

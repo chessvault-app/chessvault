@@ -77,7 +77,7 @@ const selectTriggerVariants = cva(
         default: 'h-8 px-2.5 text-sm pointer-coarse:h-9',
       },
       /**
-       * Input-like (ui/input's sunken backdrop) instead of the raised menu
+       * Input-like (components/ui/input's sunken backdrop) instead of the raised menu
        * face. Inside a Field, where the control is a form answer beside
        * other form answers, it is sunken; in a toolbar or a settings row —
        * itself a sunken strip, where a sunken trigger would vanish — it is

@@ -417,7 +417,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   };
 
   // The verdict is a coloured line in the panel; say it out loud too
-  // (see ui/announce — same treatment as the Lichess trainer's verdicts).
+  // (see lib/announce — same treatment as the Lichess trainer's verdicts).
   useEffect(() => {
     if (phase === 'done') {
       announce(won ? t('Solved!') : helped ? t('Solved with help.') : t('Not this time.'));
@@ -651,7 +651,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
           screen. It follows what it answers to instead.
 
           justify-end, gap-2, the primary one LAST — the row every window
-          in this app ends on (ui/PromptDialog), and what the other trainer
+          in this app ends on (components/prompt-dialog), and what the other trainer
           does. The primary used to LEAD and stretch across the row
           (lanph3re: a left-biased cluster looks unbalanced, centring is
           worse), which put Submit and Next puzzle at the opposite edge

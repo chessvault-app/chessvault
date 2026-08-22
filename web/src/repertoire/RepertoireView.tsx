@@ -1319,7 +1319,7 @@ export function RepertoireView() {
           on a phone, the side column's on a desktop.
 
           Not the row every dialog in this app ends on (justify-end,
-          gap-2, the primary one LAST — ui/PromptDialog), which is what
+          gap-2, the primary one LAST — components/prompt-dialog), which is what
           this was. A dialog's row is read along a line and finishes on
           the action; a panel that exists to be started is read top down,
           and the thing to press should be the first thing under what it
@@ -1775,7 +1775,7 @@ export function RepertoireView() {
           <DialogContent title="New game" icon={Settings2}>
             {setupFields}
             {/* justify-end, gap-2, the primary one LAST — the row every
-                window in this app ends on (ui/PromptDialog). Apply only
+                window in this app ends on (components/prompt-dialog). Apply only
                 closes: the fields have been writing straight through all
                 along, which is what puts the chosen opening on the board
                 behind the sheet. Cancel is the one that does work, by

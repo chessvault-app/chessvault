@@ -1,15 +1,16 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { suppressNextClick } from '@/lib/suppressNextClick';
+import { useLayoutEffect, useState, type CSSProperties } from 'react';
 
 /**
  * Where a floating layer goes.
  *
- * Eight places in this app open a box next to something: the Select's
- * listbox, the row-actions popover, the opening picker, the `?` tip, the
- * title tooltip, and four peek cards. Every one of them worked out its
- * own coordinates, and they disagreed — three copies of the same
- * arithmetic across two files, and one popover with no horizontal clamp
- * at all, which is a list that runs off the right edge of the window.
+ * The hover peek cards — the final-position preview beside a game row,
+ * the engine line's board, a book puzzle's source crop — are placed by
+ * this. Every CONTROL that floats (Select's list, the row menus, the
+ * opening picker, the tips) is a Radix primitive now and placed by its
+ * popper; what is left here is the pure arithmetic for a card that is
+ * anchored to a measured rectangle and nothing else. Eight places once
+ * worked out their own coordinates and disagreed — three copies of the
+ * same arithmetic across two files, one with no horizontal clamp at all.
  *
  * The geometry is a pure function of two rectangles and a viewport, so
  * it is tested rather than eyeballed (floating.test.ts). Nothing here
@@ -221,71 +222,4 @@ export function useFloating(
       ? { position: 'fixed', top: placement.top, left: placement.left }
       : { position: 'fixed', top: 0, left: 0, visibility: 'hidden' },
   };
-}
-
-/**
- * Close a floating layer when the press lands outside it.
- *
- * mousedown AND touchstart, because iOS synthesizes no mouse event for a
- * document listener when a tap lands on dead space — without the touch
- * half, a tap outside could not dismiss. And a dismissing TAP may only
- * dismiss: its synthesized click is swallowed, or it presses whatever it
- * landed on as well. Three of the six hand-written versions of this had
- * that second half and three did not, which is how a tap on an iPad
- * could close the opening picker and pick an opening underneath it in
- * the same gesture.
- *
- * `inside` is everything a press may land in without dismissing — the
- * layer, and usually the control that opened it.
- */
-export function useDismiss(
-  active: boolean,
-  onDismiss: () => void,
-  inside: Array<RefObject<HTMLElement | null>>,
-  opts: {
-    /**
-     * What a scroll ANYWHERE ELSE means. A layer placed from a measured
-     * rectangle points at a stale position the moment the page moves
-     * under it, so 'close' is the default; 'ignore' is for a layer that
-     * is not anchored to anything. A scroll INSIDE the layer is never
-     * either — a long list scrolls itself.
-     */
-    scroll?: 'close' | 'ignore';
-    /** Called instead of closing, for a layer that follows its anchor. */
-    onScroll?: (e: Event) => void;
-  } = {},
-): void {
-  // Through a ref, so a caller may pass a fresh array and fresh closures
-  // every render without re-arming the listeners each time.
-  const latest = useRef({ onDismiss, inside, opts });
-  latest.current = { onDismiss, inside, opts };
-
-  useEffect(() => {
-    if (!active) return;
-    const within = (target: Node | null): boolean =>
-      target !== null && latest.current.inside.some((r) => r.current?.contains(target));
-
-    const onDown = (e: MouseEvent | TouchEvent): void => {
-      if (within(e.target as Node)) return;
-      latest.current.onDismiss();
-      if (e.type === 'touchstart') suppressNextClick();
-    };
-    const onScroll = (e: Event): void => {
-      if (within(e.target as Node)) return;
-      const { onScroll: follow, scroll = 'close' } = latest.current.opts;
-      if (follow) follow(e);
-      else if (scroll === 'close') latest.current.onDismiss();
-    };
-
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('touchstart', onDown);
-    // Capture: the thing that scrolls is usually a pane rather than the
-    // window, and a scroll event does not bubble.
-    document.addEventListener('scroll', onScroll, true);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('touchstart', onDown);
-      document.removeEventListener('scroll', onScroll, true);
-    };
-  }, [active]);
 }

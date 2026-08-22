@@ -128,7 +128,7 @@ sources.
 
 ## Deleting
 
-Both deletes ask first through `ConfirmSheet` — a centred window on a
+Both deletes ask first through `ConfirmDialog` — a centred window on a
 desktop, a bottom sheet on a phone. Nothing keeps a copy:
 there is no trash directory behind either route, so the question is the
 only thing in the way. Each question says what is *not* affected, because

@@ -428,7 +428,7 @@ export function RefDbManager({
 export function RefDbManagerSkeleton({ rows = 6 }: { rows?: number }) {
   return (
     <Panel flush className="min-h-0">
-      {/* Announced once, like every other skeleton here; ui/Skeleton's own
+      {/* Announced once, like every other skeleton here; components/skeletons' own
           wrapper is private to it. */}
       <div
         className="flex min-h-0 flex-1 flex-col"

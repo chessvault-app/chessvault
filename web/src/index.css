@@ -143,7 +143,7 @@
   --ui-contrast: 0;
 
   /* Width of the side column next to the board, and the only place it is
-     written down: ui/layout.ts spends it in BOARD_WIDE_SIDE, and the row's
+     written down: components/layout.ts spends it in BOARD_WIDE_SIDE, and the row's
      own cap below has to know it too. */
   --board-side: 27rem;
 
@@ -592,7 +592,7 @@
   }
 
   /* Except the box a dialog is, which is not a control.
-     `ui/dialogFocus` gives every window `tabindex="-1"` and focuses it on
+     `hooks/dialog-focus` gives every window `tabindex="-1"` and focuses it on
      open, so the keyboard lands inside rather than in the page behind —
      scripted focus, on a container nobody is meant to operate. Blink
      agrees and paints nothing; WebKit rings it, so on an iPhone every

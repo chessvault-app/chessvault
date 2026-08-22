@@ -1061,7 +1061,7 @@ function NodePanel({
           rows={3}
           className="resize-none"
           /* The panel's fallback field, not its purpose — see
-             soleTextField in ui/dialogFocus. Every other node's panel has
+             soleTextField in hooks/dialog-focus. Every other node's panel has
              a name and a depth above this, so the sole-field rule never
              looked at it; the START position has neither, which left the
              note as the only input in the window and opened the details

@@ -119,7 +119,7 @@ function Mark({ label, icon }: { label: string; icon: ReactNode }) {
 
 /**
  * The result split — the explorer's bar, which is now the app's only
- * one (ui/ResultBar). The map drew its own: thinner, unlabelled, and a
+ * one (components/result-bar). The map drew its own: thinner, unlabelled, and a
  * different grey for the draws, which made the same numbers two
  * pictures depending on which pane you happened to be reading.
  *

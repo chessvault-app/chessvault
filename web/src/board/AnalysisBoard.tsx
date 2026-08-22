@@ -307,7 +307,7 @@ function formatClock(seconds: number): string {
 /**
  * The editable player name, styled bare over the board rather than as an
  * Input, with the app's usual clear affordance: an X while the field is
- * focused and holds text (ui/Input's ClearableInput carries the same
+ * focused and holds text (components/text-fields' ClearableInput carries the same
  * rules, but its bordered chrome has no place on a name plate). Controlled
  * so the X is one state write; the caller's `key` resets it when a loaded
  * game brings its own names.

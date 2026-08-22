@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * The variants are the registry's names with this app's looks behind them,
  * and the sizes are this app's measured heights under shadcn-shaped names
  * — a `sm` button is 28px because a `sm` Input and a `sm` Select are, and a
- * toolbar is a row (see ui/Input for the scale). Two things the stock file
+ * toolbar is a row (see components/ui/input for the scale). Two things the stock file
  * does differently, on purpose:
  *
  *   - No `outline-none` and no ring utilities. Keyboard focus is the global

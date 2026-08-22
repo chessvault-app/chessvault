@@ -170,8 +170,8 @@ function Card({
  * descendant — so a row of theme swatches inside one meant that clicking
  * beside them silently pressed the first swatch and reset the colours to
  * default. A label points at one control; this points at several — which
- * is also why it cannot be ui/Field, whose label wires itself to one
- * child. The label voice matches ui/Field's so the two read as one form.
+ * is also why it cannot be components/ui/field, whose label wires itself to one
+ * child. The label voice matches components/ui/field's so the two read as one form.
  */
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (

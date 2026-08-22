@@ -825,7 +825,7 @@ function Trainer({
           to a couple of lines to keep a row nobody was reaching for on
           screen. They follow what they answer to instead. */}
       {/* justify-end, gap-2, the primary one LAST — the row every window
-          in this app ends on (ui/PromptDialog, and the repertoire's New
+          in this app ends on (components/prompt-dialog, and the repertoire's New
           game). A finished puzzle's row is read along a line and finishes
           on the action, which is why the link out to the game it came
           from leads and Next closes.

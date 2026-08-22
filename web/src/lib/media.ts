@@ -22,7 +22,7 @@ import { useEffect, useState } from 'react';
  * covered, and the sheet has to be scrolled or dismissed before it can be
  * looked at. The field is one tap away for anyone who wanted it.
  *
- * One carve-out, and it lives in ui/dialogFocus rather than here: a
+ * One carve-out, and it lives in hooks/dialog-focus rather than here: a
  * dialog whose ONLY input field is a text field was opened to type, and
  * takes the focus on every device, thumb or not. This gate is for the
  * fields in windows that are more than their field.

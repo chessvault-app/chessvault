@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/page-header';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 /**
- * The canvas page family — the third of the three named in `ui/layout.ts`.
+ * The canvas page family — the third of the three named in `components/layout.ts`.
  *
  * A canvas page is one surface that fills the viewport edge to edge, with
  * every piece of chrome floating ON it rather than framing it. The surface

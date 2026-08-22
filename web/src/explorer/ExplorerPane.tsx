@@ -156,7 +156,7 @@ export function ExplorerPane({
       //
       // The floor is where the panel STOPS shrinking, and it only started
       // doing that when Panel's default height became a cap it can yield
-      // (ui/Panel) — before, the inline `min-height: 0` that came with the
+      // (components/panel) — before, the inline `min-height: 0` that came with the
       // default height cancelled this line outright. A share as well as a
       // size, so that the floor itself always fits in the column.
       className={cn(className, enabled ? 'lg:min-h-[min(12rem,20%)]' : 'lg:min-h-0')}

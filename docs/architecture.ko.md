@@ -56,13 +56,17 @@ PGN이며, 퍼즐 진행 상황은 JSON 라인입니다. 이 앱은 Obsidian에�
   `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`로 보관함과 데이터 위치를 바꿀 수
   있고, 서버가 부팅할 때 보관함 뼈대를 만들어 주므로 빈 폴더를 가리켜도
   동작합니다.
-- **웹 앱** (`web/`, React + Vite + Tailwind v4 + zustand): 사용자가 만지는
-  모든 것. 체스 로직은 `chessops`, 보드는 chessground, 노트는 TipTap, 엔진은
-  stockfish.js(WASM, 스레드)를 씁니다. 서버와는 **오직** HTTP로만
-  주고받습니다 — 데스크톱, PWA, 휴대폰 등 모든 접점을 얇은 클라이언트로
-  붙들어 두는 강한 규칙입니다. 휴대폰에서는 상황에 따라 바뀌는 하단
-  바(`web/src/ui/MobileActionBar.tsx`)가 전역 탭을 치우고 그 자리에 열려
-  있는 페이지의 조작 버튼을 내놓습니다.
+- **웹 앱** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand):
+  사용자가 만지는 모든 것. 체스 로직은 `chessops`, 보드는 chessground, 노트는
+  TipTap, 엔진은 stockfish.js(WASM, 스레드)를 씁니다. 컴포넌트 층은 shadcn의
+  것입니다. 레지스트리의 파일을 가져와 이 앱의 얼굴을 입힌 것이
+  `web/src/components/ui`(밑은 Radix)에, 앱의 합성 컴포넌트가
+  `web/src/components`에 있고, 테마는 앱의 OKLCH 사다리에서 파생한 shadcn
+  토큰 어휘로 적혀 있습니다(`docs/design-principles.ko.md`의 "컴포넌트 층"
+  참고). 서버와는 **오직** HTTP로만 주고받습니다 — 데스크톱, PWA, 휴대폰 등
+  모든 접점을 얇은 클라이언트로 붙들어 두는 강한 규칙입니다. 휴대폰에서는
+  상황에 따라 바뀌는 하단 바(`web/src/components/mobile-action-bar.tsx`)가
+  전역 탭을 치우고 그 자리에 열려 있는 페이지의 조작 버튼을 내놓습니다.
 - **데스크톱** (`desktop/`, Electron): 실행할 때 고르는 두 가지 모드가
   있습니다 — *원격 클라이언트*(서버 URL을 가리킴) 또는 *자체 호스팅*(동봉한
   서버를 로컬 폴더에 대해 띄움). UI가 HTTP 전용이므로 React 코드에는 셸의

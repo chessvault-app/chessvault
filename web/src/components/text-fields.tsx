@@ -167,7 +167,7 @@ export function SearchInput({
           inputSize={inputSize}
           value={value}
           // Not `type` — every plain Input is type="search" here, for the
-          // autofill reasons in ui/input — so a REAL search box has to say
+          // autofill reasons in components/ui/input — so a REAL search box has to say
           // so itself. The dialog focus rule reads this: a window whose
           // only field is a search box was opened to browse what is under
           // the box, not to type in it, and must not open with the

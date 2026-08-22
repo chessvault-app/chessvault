@@ -21,6 +21,7 @@ Anything here travels with the app to whoever installs or visits it.
 | sql.js (static demo only) | `web/public/sqljs/` | MIT |
 | fzstd (reads the zstd puzzle dump) | npm, bundled into the puzzle builder | MIT |
 | lucide icons | npm, bundled | ISC |
+| Radix UI primitives (`radix-ui`), class-variance-authority, tw-animate-css — what the shadcn/ui component layer is built on; shadcn itself is a dev dependency (its variant sheet and CLI) | npm, bundled into `dist/` | MIT |
 | Pretendard, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | CC0-1.0 |
 | Bundled starter reference games (the strongest games of each opening, one Lichess Elite month) | `assets/refgames-*.sqlite`, copied into `data/refgames/` on first run | CC0-1.0, derived from the Lichess database |

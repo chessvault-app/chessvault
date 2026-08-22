@@ -469,7 +469,7 @@ export function EditorView({
           </div>
         </Panel>
 
-        {/* The row every window in this app ends on (ui/PromptDialog):
+        {/* The row every window in this app ends on (components/prompt-dialog):
             justify-end, gap-2, the primary one LAST. Apply is the ONLY
             way a change made in here survives; see closeSheet. Only in
             the sheet — the wide layout's column is not a window, it is

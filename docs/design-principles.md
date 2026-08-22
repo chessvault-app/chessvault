@@ -39,7 +39,7 @@ digit is also bold, tier marks also differ by icon shape.
 
 
 Contrast is measured against every background a token can land on —
-`--app-bg`, `--surface`, `--surface-2`, `--surface-3` — and not against
+`--background`, `--card`, `--muted`, `--surface-3` — and not against
 the page and the white surface alone. The quiet tiers passed on those
 two and failed on the raised and inset panels, which is where the gap
 is smallest: `--text-subtle` was 4.12:1 in light and 3.16:1 in dark
@@ -82,7 +82,7 @@ against the editor's own font size, not in the px it resolved to once.
 
 ## Layout rules
 
-- **A page belongs to one of three families**, listed in `ui/layout.ts`.
+- **A page belongs to one of three families**, listed in `components/layout.ts`.
   The family says what the page *is*; only the first has widths to pick
   from. A page that fits none of the three is a fourth family to be
   named there, not markup written inline — the opening map spent its
@@ -97,7 +97,7 @@ against the editor's own font size, not in the px it resolved to once.
   appears) and one safe-area-aware bottom inset come with it.
 - Board-family pages (Board, studies/games viewer, trainers,
   repertoire, editor) fit the viewport rather than scrolling, by the
-  shared shells in `ui/layout.ts` — one place, not eight copies. The
+  shared shells in `components/layout.ts` — one place, not eight copies. The
   row is 76rem up to about 1350px and then follows the window to a
   96rem ceiling, so a large monitor draws a large board. Two shells,
   because "fit the viewport" has two readings when stacked:
@@ -107,11 +107,11 @@ against the editor's own font size, not in the px it resolved to once.
   scrolls only where the column can no longer be squeezed — a short
   landscape window, where a floor on the column binds and the shell is
   what gives.
-- Canvas pages (the opening map) sit in `ui/CanvasShell`: the ordinary
+- Canvas pages (the opening map) sit in `components/canvas-shell`: the ordinary
   `PageHeader` on `PageShell`'s own gutters, an optional search row
   under it, and then one surface filling everything below, edge to
   edge. Inside that surface — not over the page — float the page's own
-  controls, a detail panel that becomes a Sheet on a phone, and
+  controls, a detail panel that becomes a bottom sheet on a phone, and
   `CanvasOverlay` for the centred empty and error states. A canvas
   page's Fab is phone-only, and its actions are one array the corner
   draws as icons and the Fab fans out as pills, the same
@@ -240,11 +240,15 @@ by the Board, studies/games, and the editor — only the destination
 differs. Modals use the same scrim + panel pattern, close on Escape and
 scrim-click.
 
-Three sizes, one look. `Sheet` is the small centred card every
-one-question window is built from; `PromptSheet` is Sheet plus a field
-(new study, new note, new book, every rename); `Modal` is the same card
-at window width for anything larger (import PGN, the PDF import, the
-explorer's filters). Anything that is not a single line is one of these
+Three sizes, one look — one component. Every window is shadcn's
+`Dialog` with the app's `DialogContent` (`components/ui/dialog`):
+`size="sm"` is the small centred card every one-question window is built
+from (a confirmation is `AlertDialog`, the same card with the alertdialog
+role); `PromptDialog` is that plus a field (new study, new note, new
+book, every rename); the default size is the same card at window width
+for anything larger (import PGN, the PDF import, the explorer's filters),
+and `size="full"` a wide one on a desktop. On a phone every one of them
+is the bottom sheet. Anything that is not a single line is one of these
 rather than a panel that grows in place.
 
 Every one of them — and every `PanelHeader` — draws the same thin rule
@@ -266,11 +270,12 @@ on itself, which is the gesture it was given instead.
 
 **A window may turn its own page rather than open another.** A sheet
 that needs to show a detail — the contents of one earlier version, say —
-sets `Sheet`'s `onBack` and replaces its own body, and the chevron in the
-top-left corner turns the page back. Escape and Android's Back go to the
-previous page, not out of the sheet. This is the same control, in the
-same corner, that `covered` already draws for a sheet standing over a
-window it has hidden, and the same one a `Modal`'s second page uses.
+sets `DialogContent`'s `onBack` and replaces its own body, and the
+chevron in the top-left corner turns the page back. Escape and Android's
+Back go to the previous page, not out of the sheet. This is the same
+control, in the same corner, that a small window grows once it has hidden
+the window it was opened over, and the same one a window's second page
+(a default-sized dialog written inside another) uses.
 
 Reach for it before a second sheet. Two stacked windows for one train of
 thought is a layer too many: the question underneath is still there,
@@ -286,15 +291,17 @@ file that is absent and asks nothing, because a question in front of an
 action with nothing to lose is how questions stop being read where they
 matter.
 
-The row-actions sheet (`ActionSheet`, the phone half of a row's ⋯) is
-the exception, and it proves the rule: it is a list of verbs with no
-button row of its own, so there is nowhere for a Cancel to sit that is
-not itself another verb. It carries a grab handle and nothing else, and
-the handle is honest — every sheet on a phone is pushed away by dragging
-it from anywhere on itself. It carried an X beside the handle for a
-while, from back when the drag was a promise the sheet did not keep.
+The row-actions sheet (`ActionMenu`'s phone half; on a desktop it is
+shadcn's DropdownMenu under the ⋯, and `ActionContextMenu` the same verbs
+at a right-click) is the exception, and it proves the rule: it is a list
+of verbs with no button row of its own, so there is nowhere for a Cancel
+to sit that is not itself another verb. It carries a grab handle and
+nothing else, and the handle is honest — every sheet on a phone is pushed
+away by dragging it from anywhere on itself. It carried an X beside the
+handle for a while, from back when the drag was a promise the sheet did
+not keep.
 
-Autofill is off in every field (`Input`, `TextArea`, or the exported
+Autofill is off in every field (`Input`, `Textarea`, or the exported
 `noAutofill` props for the few bare inputs). `autocomplete="off"` is not
 enough: Safari decides from the field's own words and offers to complete
 a "name" with a contact, so a plain text field is rendered as
@@ -311,7 +318,7 @@ closed.
 Refined, not repealed, and the refinement has a boundary that was found
 the hard way.
 
-**A transient dialog may live in the visual viewport.** `PromptSheet`
+**A transient dialog may live in the visual viewport.** `PromptDialog`
 centres inside `visualViewport` — the part of the page the keyboard has
 left visible — rather than pinning itself to the top. That moves the
 dialog, not the document underneath it. Only its padding responds and
@@ -334,6 +341,44 @@ for as long as you are editing must not.
 Any change here requires an on-device test loop — desktop cannot
 reproduce it, and the automated browser cannot either. The keyboard-bar
 palette looked correct on an iPad and was wrong on an iPhone.
+
+## The component layer
+
+The app is a shadcn/ui project (`components.json`: the radix-nova style,
+Tailwind v4, CSS variables). What that means here, and what it does not:
+
+- **`web/src/components/ui/` holds the registry's files, owned.** Button,
+  Input, Textarea, Label, Field, InputGroup, Dialog, AlertDialog,
+  DropdownMenu, ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup,
+  Toggle, Switch, Progress, Skeleton, Card, Separator — each the shape
+  `npx shadcn add` writes (Radix underneath, `cva` variants, `data-slot`),
+  each wearing this app's face and carrying this app's physics: every
+  window a bottom sheet on a phone, dragged away from anywhere on itself;
+  the page/layer distinction and the back chevron; the keyboard band; the
+  sole-text-field focus; Android Back through CloseWatcher; the coarse-
+  pointer sizes; `title` as a tooltip. The registry is the starting
+  point, not the spec — when a stock file and a measured behaviour
+  disagree, the file changes and says why at the top. Adding a component
+  is `npx shadcn add <name>` followed by giving it the app's face.
+- **`web/src/components/` holds the app's composites** (Panel, PageShell,
+  ShelfCard, ActionMenu, PromptDialog, the skeletons …), built from the
+  primitives; **`web/src/hooks/`** the window physics they share.
+- **The theme is the registry's vocabulary** — `bg-card`,
+  `text-muted-foreground`, `border-input`, `bg-destructive` — so a component
+  added tomorrow is themed the moment it lands. The roles are derived from
+  the app's own OKLCH ladder in `index.css` (`--card` and `--popover` are
+  both `--surface`), so the hue, tint and contrast knobs keep driving them
+  and there is no second palette. What the ladder says that shadcn has no
+  word for keeps its own name in the same style: `surface-3`,
+  `surface-inset`, `text-subtle`, `border-strong`, `good`/`warn`/`info`,
+  the board and eval colours. A preset theme pasted over `:root` would
+  override the roles but not the ladder they derive from, so the knobs in
+  Settings would stop reaching them — re-express a theme in the ladder.
+- **One focus ring.** Keyboard focus is the global `:focus-visible`
+  outline; the registry's per-component `ring-3 ring-ring/50` was dropped
+  from every file so there is one focus style on a page, not two. The one
+  place a control turns the outline off is the bare input inside an
+  InputGroup, whose group draws the ring for it.
 
 ## Process conventions
 

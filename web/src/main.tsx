@@ -44,7 +44,7 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 
 // The viewport is whatever index.html says and nothing rewrites it. iOS
-// auto-zoom is declined where it is caused instead — ui/Input gives its
+// auto-zoom is declined where it is caused instead — components/ui/input gives its
 // fields a 16px font on a coarse pointer — so there is no maximum-scale
 // cap for an audit to read as "this page disables zooming", and no user
 // agent sniffing to keep correct as devices change.

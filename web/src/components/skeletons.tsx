@@ -460,7 +460,7 @@ export function SkeletonBoard({
  * Labelled controls stacked in cards — the settings shape.
  *
  * Shaped against what Settings actually draws, which it was not: a card is
- * ui/SettingRow strips, each a bordered box holding a title at text-base
+ * components/setting-row strips, each a bordered box holding a title at text-base
  * over a blurb at text-sm, and this drew two bare bars in the open. The
  * card came out around 118px against the real 194, so the page grew by
  * about half a card each as the settings landed.

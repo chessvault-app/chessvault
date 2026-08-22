@@ -136,7 +136,7 @@ const TEXT_TYPES = new Set(['text', 'search', 'url', 'tel', 'email', 'password',
  * behaviour (the container takes focus, silently).
  *
  * A SEARCH box is the exception, and not by input type — every plain
- * Input is type="search" for autofill reasons (see ui/Input) — but by
+ * Input is type="search" for autofill reasons (see components/ui/input) — but by
  * SearchInput's own marker. A search field filters the content below
  * it: a window whose only field is one (the online archive's username
  * box, the elite games' player search) was opened to browse that
