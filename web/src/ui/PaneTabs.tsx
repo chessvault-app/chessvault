@@ -53,9 +53,9 @@ export function PaneTabs<T extends string>({
               // The active pill's corners are the track's, less the 1px
               // border and the 1px inset it sits inside — which is what
               // concentric means, and what `rounded-md` was not: this
-              // theme's --radius-lg is 14px while md is Tailwind's own
-              // 6px, so the track curved more than twice as hard as the
-              // pill in it. Unnoticeable while the row was 42px tall and
+              // theme's --radius-lg is 14px while md is 6px, so the
+              // track curved more than twice as hard as the pill in
+              // it. Unnoticeable while the row was 42px tall and
               // the corners were a small part of it; at 26px the track is
               // short enough to round into a capsule and the square-ish
               // pill inside it is the first thing you see. Derived from

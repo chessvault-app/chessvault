@@ -377,9 +377,32 @@
   --color-knob: var(--knob);
   --color-scrim: var(--scrim);
 
-  --radius-DEFAULT: var(--radius);
+  /* The corner ladder, every rung a fixed step from the one --radius on
+     :root, so moving that number moves the whole app and not half of it.
+
+     Only lg and xl were derived; sm, md and 2xl fell through to
+     Tailwind's own 4, 6 and 16px. The first two happened to be the
+     sizes wanted, but they were pinned, not derived. 2xl was simply
+     wrong: smaller than xl (16 < 18), so every phone bottom sheet
+     (`rounded-t-2xl`) had tighter corners than the desktop panel
+     (`rounded-xl`) it stands in for, and the 56px icon plates were
+     squarer than the 18px cards beside them. Now 4 / 6 / 14 / 18 / 22,
+     each written as the knob plus or minus its step.
+
+     Bare `rounded` is NOT on this ladder and cannot be put on it:
+     Tailwind resolves it from a theme key named `--radius` itself,
+     which this file keeps as a plain :root property rather than a
+     theme value — on purpose, since the 48 `rounded` call sites are
+     badges and move chips that want 4px, not the 10px knob. So `rounded`
+     is Tailwind's literal 0.25rem, the same size as `rounded-sm`; an
+     earlier `--radius-DEFAULT: var(--radius)` line here was never read
+     by any utility and is gone. A `@utility rounded` override does not
+     work either — Tailwind emits its own declaration after it. */
+  --radius-sm: calc(var(--radius) - 0.375rem);
+  --radius-md: calc(var(--radius) - 0.25rem);
   --radius-lg: calc(var(--radius) + 0.25rem);
   --radius-xl: calc(var(--radius) + 0.5rem);
+  --radius-2xl: calc(var(--radius) + 0.75rem);
 
   /* Three roles, deliberately not two.
 
