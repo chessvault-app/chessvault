@@ -133,7 +133,7 @@ export function TagPicker({
                 kind="tabs"
               />
               <SearchInput
-                className="flex-1"
+                className="min-w-0 flex-1"
                 // "Search studies", not "Filter": it wears a magnifier, it
                 // sits where every other search field in the app sits, and
                 // it does what they do — a field that looks like one thing
