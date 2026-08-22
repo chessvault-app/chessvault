@@ -735,7 +735,7 @@ function Trainer({
           )}
         >
           <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-          <span className="text-subtle shrink-0 text-xs font-semibold uppercase tracking-[0.08em]">
+          <span className="text-subtle shrink-0 text-xs label-caps">
             {t('Theme')}
           </span>
           <span className="text-fg ml-auto truncate text-sm font-medium">

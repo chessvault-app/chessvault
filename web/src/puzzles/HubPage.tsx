@@ -267,7 +267,7 @@ function SkeletonPanelHeading({ width, className }: { width: string; className?:
   return (
     <p
       className={cn(
-        'text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]',
+        'text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps',
         className,
       )}
     >
@@ -455,7 +455,7 @@ function EmptySlot({
 function WeakThemePanel({ weak }: { weak: WeakTheme }) {
   return (
     <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
         {t('Worth practising')}
       </p>
       <ListRow onClick={() => navigate('puzzles', 'theme', weak.theme)}>
@@ -486,7 +486,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
 function BookShelfPanel({ books }: { books: BookSummary[] }) {
   return (
     <div className="bg-surface border-line shrink-0 overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
         {t('Recently read')}
       </p>
       {books.map((b) => (
@@ -551,7 +551,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
     // every target in the same place. A section that appears only once it
     // has content also teaches nobody that it is there.
     <div className="bg-surface border-line flex min-h-[6.5rem] flex-1 flex-col overflow-hidden rounded-xl border">
-      <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle border-line shrink-0 border-b px-3 pb-1.5 pt-2 text-xs label-caps">
         {t('Puzzle history')}
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -1003,7 +1003,7 @@ function Hub() {
         {skeleton && <HubSkeletonCards fill={!historyBlock} />}
 
         {settled && solvedToday !== null && solvedToday > 0 && (
-          <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
+          <p className="text-subtle px-1 text-xs label-caps">
             {t('Solved today: {n}', { n: solvedToday })}
           </p>
         )}

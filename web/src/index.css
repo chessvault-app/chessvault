@@ -630,6 +630,27 @@
   }
 }
 
+/* The small-caps label voice: a panel header, a count row's tally, the
+   name over a group of settings. Thirty-one places wore it as the same
+   three classes retyped, and two had already drifted — one to 0.06em,
+   which is the kind of difference nobody sees and everybody inherits.
+   The letter-spacing in particular is a number, and a number belongs in
+   one place.
+
+   SIZE IS NOT IN HERE, deliberately. The voice is 12px in almost every
+   case, but the More page's section headings and a shelf's folder name
+   are the same voice at 14px, and a utility that set font-size would
+   fight `text-sm` at the call site — two utilities, one property, and
+   the winner decided by their order in the emitted stylesheet rather
+   than by the order they are written in the class attribute. Colour is
+   out for the same reason: every caller today wants --text-subtle and
+   says so. This sets only what the three classes agreed on. */
+@utility label-caps {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 /* ---------------------------------------------------------------------------
    Board theme.
 

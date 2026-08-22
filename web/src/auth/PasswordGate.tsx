@@ -128,7 +128,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label
                 htmlFor="gate-password"
-                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
+                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs label-caps"
               >
                 <Lock className="size-3" />
                 {t('Password')}
@@ -149,7 +149,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <>
               <label
                 htmlFor="gate-code"
-                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.08em]"
+                className="text-subtle mb-1.5 flex items-center gap-1.5 text-xs label-caps"
               >
                 <ShieldCheck className="size-3" />
                 {t('Authenticator code')}

@@ -155,7 +155,7 @@ export function GrowSheet({
         <span className="text-muted text-sm">{t('games')}</span>
       </div>
       <div className="flex flex-col gap-1.5">
-        <span className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
+        <span className="text-subtle text-xs label-caps">
           {t('From which games')}
         </span>
         <div className="flex flex-wrap items-center gap-1.5">

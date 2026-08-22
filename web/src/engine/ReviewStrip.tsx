@@ -98,7 +98,7 @@ export function ReviewStrip() {
     <div className="border-line shrink-0 border-t">
       {status === 'running' ? (
         <div className="flex items-center gap-2 px-3 py-2">
-          <span className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
+          <span className="text-subtle text-xs label-caps">
             {t('Reviewing')}
           </span>
           <div className="bg-surface-inset h-1.5 min-w-0 flex-1 overflow-hidden rounded-full">

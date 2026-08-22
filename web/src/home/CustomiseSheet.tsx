@@ -229,7 +229,7 @@ function Group({
 }) {
   return (
     <div className="flex flex-col gap-1" role="group" aria-label={label}>
-      <p className="text-subtle px-1 pt-1 text-xs font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle px-1 pt-1 text-xs label-caps">
         {label}
       </p>
       {/* A group that has emptied says so. A heading over nothing reads as

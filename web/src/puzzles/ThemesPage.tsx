@@ -244,7 +244,7 @@ export function ThemesPage() {
 function ThemeGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mb-4">
-      <h2 className="text-subtle mb-2 text-xs font-semibold uppercase tracking-[0.08em]">
+      <h2 className="text-subtle mb-2 text-xs label-caps">
         {title}
       </h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{children}</div>

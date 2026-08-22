@@ -636,7 +636,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
         {filterRow('border-t')}
         <div className="border-line shrink-0 border-t px-3 py-1 pr-1.5">
           <div className="flex min-h-6 items-center gap-2">
-            <span className="text-subtle min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-[0.08em]">
+            <span className="text-subtle min-w-0 flex-1 truncate text-xs label-caps">
               {count}
             </span>
             {dbControls}

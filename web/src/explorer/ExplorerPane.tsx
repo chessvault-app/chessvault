@@ -708,7 +708,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-subtle text-xs font-semibold uppercase tracking-[0.08em]">
+      <span className="text-subtle text-xs label-caps">
         {t(label)}
       </span>
       {/* Wrapping, not scrolling sideways: the window has the width now, and
@@ -836,7 +836,7 @@ function TopGamesList({
 
   return (
     <div className="border-line border-t px-1.5 pb-2">
-      <p className="text-subtle px-1.5 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+      <p className="text-subtle px-1.5 pb-1 pt-2 text-xs label-caps">
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">

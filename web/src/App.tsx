@@ -508,7 +508,7 @@ function MorePage() {
         <h1 className="px-1 text-xl font-semibold tracking-tight">{t('More')}</h1>
         {MORE_GROUPS.map(({ heading, items }) => (
           <div key={heading} className="flex flex-col gap-2">
-            <h2 className="text-subtle px-1 text-sm font-semibold uppercase tracking-[0.08em]">
+            <h2 className="text-subtle px-1 text-sm label-caps">
               {t(heading)}
             </h2>
             {items.map(({ section, param, label, icon: Icon, blurb }) => (

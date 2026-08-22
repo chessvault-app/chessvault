@@ -142,9 +142,12 @@ against the editor's own font size, not in the px it resolved to once.
   striping: with few rows, one tinted pill reads as a selection, not
   as alternation (the engine PVs learned this).
 - A list's **count row** leads with the tally in the small-caps label
-  voice (`text-xs font-semibold uppercase tracking-[0.08em]`)
-  and keeps its controls on the right — the elite and archive panels
-  share this shape because they take turns in one column.
+  voice (`label-caps`, the utility in `index.css`) and keeps its
+  controls on the right — the elite and archive panels share this shape
+  because they take turns in one column. The utility carries the
+  weight, the capitals and the letter-spacing and nothing else: the
+  size travels with the call site, because the same voice is `text-xs`
+  in a panel header and `text-sm` in a More-page heading.
 - Column header bands are `h-9`; with the column's `gap-3` this equals
   the board's `h-10` strip + `gap-2`, so panel tops align with the
   board across Studies/Games/Board/Puzzles.

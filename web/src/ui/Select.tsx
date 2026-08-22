@@ -428,7 +428,7 @@ export function Select({
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-xs font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-2 pb-0.5 pt-1.5 text-xs label-caps">
                   {t(group.label)}
                 </p>
               )}
@@ -500,7 +500,7 @@ export function Select({
           {groups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <p className="text-subtle px-2 pb-1 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-2 pb-1 pt-2 text-xs label-caps">
                   {t(group.label)}
                 </p>
               )}

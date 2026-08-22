@@ -641,7 +641,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           ].map((group, at) => (
             <div key={group.label ?? `group-${at}`} className="flex flex-col gap-1">
               {group.label && (
-                <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
+                <p className="text-subtle px-1 text-xs label-caps">
                   {group.label}
                 </p>
               )}
@@ -658,7 +658,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
           {databases.length > 0 && (
             <div className="flex flex-col gap-1">
-              <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
+              <p className="text-subtle px-1 text-xs label-caps">
                 {databases.length === 1 ? t('Reference database') : t('Reference databases')}
               </p>
               {/* A list of one is not a list. Most vaults mount a single
@@ -701,7 +701,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
               it was built, so the choice of database IS the field. */}
           {field.source === ONLINE_SOURCE && (
             <div className="flex flex-col gap-1">
-              <p className="text-subtle px-1 text-xs font-semibold uppercase tracking-[0.08em]">
+              <p className="text-subtle px-1 text-xs label-caps">
                 {t('Opponent strength')}
               </p>
               <Select

@@ -374,7 +374,7 @@ export function HomePage() {
             skeleton rows, so the page does not jump when it fills in. */}
         {effective.continueCard && data === null && expectedRows > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
               {t('Continue')}
             </p>
             {Array.from({ length: expectedRows }, (_, i) => (
@@ -399,7 +399,7 @@ export function HomePage() {
         )}
         {effective.continueCard && continueRows.length > 0 && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
-            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs font-semibold uppercase tracking-[0.08em]">
+            <p className="text-subtle border-line border-b px-3 pb-1.5 pt-2 text-xs label-caps">
               {t('Continue')}
             </p>
             {continueRows.map(({ icon: Icon, label, detail, go }) => (
@@ -416,7 +416,7 @@ export function HomePage() {
         {showChecklist && (
           <div className="bg-surface border-line mb-4 overflow-hidden rounded-xl border">
             <div className="border-line flex items-center border-b px-3 pb-1.5 pt-2">
-              <p className="text-subtle flex-1 text-xs font-semibold uppercase tracking-[0.08em]">
+              <p className="text-subtle flex-1 text-xs label-caps">
                 {t('Set up your vault')}
               </p>
               <Button
@@ -462,7 +462,7 @@ export function HomePage() {
             the sheet. Outside the grid deliberately: with every tile
             switched off there would otherwise be nothing left to press. */}
         <div className="mb-2 flex items-center px-1">
-          <p className="text-subtle flex-1 text-xs font-semibold uppercase tracking-[0.08em]">
+          <p className="text-subtle flex-1 text-xs label-caps">
             {t('Shortcuts')}
           </p>
           <Button

@@ -761,7 +761,7 @@ export function EditorView({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-1.5">
-      <span className="text-subtle text-xs font-semibold uppercase tracking-[0.06em]">
+      <span className="text-subtle text-xs label-caps">
         {label}
       </span>
       {children}
