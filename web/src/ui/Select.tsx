@@ -1,5 +1,5 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
@@ -131,6 +131,17 @@ export function Select({
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  /**
+   * The listbox's id, and a stem for its options'.
+   *
+   * Focus never leaves the trigger while the list is open — arrowing
+   * moves a highlight, not the caret — so without ids and
+   * aria-activedescendant there is nothing for a screen reader to
+   * announce, and stepping through the options was silent. The highlight
+   * was a colour and nothing else.
+   */
+  const listId = useId();
+  const optionId = (i: number): string => `${listId}-o${i}`;
   const inField = useContext(FieldContext);
   const sunken = inset ?? inField;
   const trigger = useRef<HTMLButtonElement>(null);
@@ -280,6 +291,12 @@ export function Select({
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActive((i) => Math.max(0, i - 1));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      setActive(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      setActive(Math.max(0, flat.length - 1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const opt = flat[active];
@@ -298,6 +315,8 @@ export function Select({
         aria-label={ariaLabel}
         aria-haspopup={phone ? 'dialog' : 'listbox'}
         aria-expanded={open}
+        aria-controls={open && !phone ? listId : undefined}
+        aria-activedescendant={open && !phone ? optionId(active) : undefined}
         onClick={() => (open ? setOpen(false) : show())}
         onKeyDown={onKeyDown}
         className={cn(
@@ -380,6 +399,7 @@ export function Select({
             list.current = node;
             popover.ref(node);
           }}
+          id={listId}
           role="listbox"
           aria-label={ariaLabel}
           style={{
@@ -410,6 +430,7 @@ export function Select({
                 return (
                   <button
                     key={option.value}
+                    id={optionId(i)}
                     type="button"
                     role="option"
                     aria-selected={option.value === value}
