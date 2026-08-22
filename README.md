@@ -30,7 +30,10 @@ went wrong — with the same `[[wiki-links]]` Obsidian uses, resolved
 across all three. Chess material is not a pile of separate documents; it
 is one connected body of work, and the links are what make it that.
 
-![Analysis board](docs/screenshots/board.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/board-dark.png">
+  <img alt="Analysis board" src="docs/screenshots/board.png">
+</picture>
 
 ## Features
 
@@ -60,7 +63,10 @@ is one connected body of work, and the links are what make it that.
   manual PGN import, and a searchable reference database of elite
   games.
 
-  ![Games](docs/screenshots/games.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/games-dark.png">
+    <img alt="Games" src="docs/screenshots/games.png">
+  </picture>
 
 - **Puzzles** — a lichess-themed trainer with difficulty bands and a
   progress dashboard, plus **book puzzles**: hand a scanned tactics
@@ -72,7 +78,10 @@ is one connected body of work, and the links are what make it that.
   you own, and the puzzles it yields stay in your vault — see [book
   imports and copyright](#book-imports-and-copyright).
 
-  ![Puzzle dashboard](docs/screenshots/dashboard.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark.png">
+    <img alt="Puzzle dashboard" src="docs/screenshots/dashboard.png">
+  </picture>
 
 - **Tools** — the interactive boards, grouped: the analysis **Board**,
   the position **Editor**, a shortcut into the opening **Explorer**, and
@@ -93,7 +102,10 @@ is one connected body of work, and the links are what make it that.
   have no answer for, and lights the line the field walks from whatever
   you select or search for ([how it works](docs/opening-map.md)).
 
-  ![Opening map](docs/screenshots/opening-map.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/opening-map-dark.png">
+    <img alt="Opening map" src="docs/screenshots/opening-map.png">
+  </picture>
 - **Your own games, in the explorer.** Alongside the reference databases and the
   Lichess databases, the explorer has a **My games** source: every game
   in the vault, answering *what have I played here, and how did it go* —

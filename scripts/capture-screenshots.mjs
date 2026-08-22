@@ -27,6 +27,25 @@ import { resolve } from 'node:path';
 const BASE = process.env.SHOT_BASE ?? 'http://localhost:8129';
 
 /**
+ * Every target is captured TWICE, once in each theme, as `<name>.png`
+ * (light) and `<name>-dark.png`. The app at rest is shadcn's neutral theme
+ * and follows the viewer's system setting, so the README (GitHub's
+ * `<picture>` + `prefers-color-scheme`) and the landing page (the same media
+ * query) show whichever matches the reader; a white screenshot on a dark
+ * page, or the reverse, is a picture of a different app from the one that
+ * opens when they click through.
+ *
+ * The theme is FORCED through the app's own persisted store, not left to
+ * the OS of whoever runs this script: the store's `system` default resolves
+ * through Electron's nativeTheme, which is why the previous set came out
+ * dark on one machine and would have come out light on the next.
+ */
+const THEMES = [
+  { suffix: '', prefs: { 'chess-vault:theme': '{"state":{"preference":"light"},"version":0}' } },
+  { suffix: '-dark', prefs: { 'chess-vault:theme': '{"state":{"preference":"dark"},"version":0}' } },
+];
+
+/**
  * `css` is the width the app lays out at — the smaller it is, the larger
  * the app's own text is relative to the frame, which is what decides
  * whether a shot survives being shown small.
@@ -61,7 +80,7 @@ const BASE = process.env.SHOT_BASE ?? 'http://localhost:8129';
 const TARGETS = [
   // README + the landing hero: the full desktop layout.
   { hash: '#/board', out: 'board.png', win: [1904, 996], css: 1100, wait: 'cg-board' },
-  { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-line' },
+  { hash: '#/games', out: 'games.png', win: [1904, 996], css: 1100, wait: '.divide-border' },
   { hash: '#/puzzles/dashboard', out: 'dashboard.png', win: [1904, 996], css: 1100, wait: 'ul' },
   // The whole repertoire at once — README and the landing page's map section.
   //
@@ -104,7 +123,7 @@ const TARGETS = [
     css: 390,
     wait: 'cg-board',
   },
-  { hash: '#/games', out: 'games-phone.png', win: [585, 780], css: 390, wait: '.divide-line' },
+  { hash: '#/games', out: 'games-phone.png', win: [585, 780], css: 390, wait: '.divide-border' },
   // One node's answer to "what is prepared here" — the half of the feature
   // a picture of the constellation cannot show. Whole, never cut: this
   // panel IS the figure, and a figure with its last rows sliced off is a
@@ -192,7 +211,14 @@ app.whenReady().then(async () => {
   // every shot silently shows yesterday's UI.
   await session.defaultSession.clearCache();
 
-  for (const { hash, out, win: [w, h], css, wait, settle = 0, select, crop, prefs = {} } of TARGETS) {
+  const shots = TARGETS.flatMap((target) =>
+    THEMES.map((theme) => ({
+      ...target,
+      out: target.out.replace(/\.png$/, `${theme.suffix}.png`),
+      prefs: { ...theme.prefs, ...(target.prefs ?? {}) },
+    })),
+  );
+  for (const { hash, out, win: [w, h], css, wait, settle = 0, select, crop, prefs } of shots) {
     const win = new BrowserWindow({
       width: w,
       height: h,

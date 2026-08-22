@@ -30,7 +30,10 @@ PGN, 마크다운, JSON — 어떤 편집기로도 열리고 어떤 백업 도�
 더미가 아니라 하나로 이어진 작업물이고, 그렇게 만들어 주는 것이 바로 이
 링크입니다.
 
-![분석 보드](docs/screenshots/board.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/board-dark.png">
+  <img alt="분석 보드" src="docs/screenshots/board.png">
+</picture>
 
 ## 기능
 
@@ -57,7 +60,10 @@ PGN, 마크다운, JSON — 어떤 편집기로도 열리고 어떤 백업 도�
   함께 넘겨 보는 chess.com / Lichess 기보, 직접 PGN 가져오기, 그리고 검색
   가능한 엘리트 게임 참고 데이터베이스입니다.
 
-  ![게임](docs/screenshots/games.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/games-dark.png">
+    <img alt="게임" src="docs/screenshots/games.png">
+  </picture>
 
 - **퍼즐** — 난이도 구간과 진행 대시보드를 갖춘 Lichess 테마 트레이너에 더해
   **책 퍼즐**이 있습니다. 스캔한 전술책 PDF를 가져오기(앱의 퍼즐 → 책 → 책
@@ -68,7 +74,10 @@ PGN, 마크다운, JSON — 어떤 편집기로도 열리고 어떤 백업 도�
   보관함에만 남습니다 — [책 가져오기와 저작권](#책-가져오기와-저작권)을 함께
   읽어 주세요.
 
-  ![퍼즐 대시보드](docs/screenshots/dashboard.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-dark.png">
+    <img alt="퍼즐 대시보드" src="docs/screenshots/dashboard.png">
+  </picture>
 
 - **도구** — 대화형 보드들을 묶어 놓은 곳입니다. 분석 **보드**, 포지션
   **편집기**, 오프닝 **탐색기**로 가는 지름길, 그리고 필드를 상대로 오프닝을
@@ -88,7 +97,10 @@ PGN, 마크다운, JSON — 어떤 편집기로도 열리고 어떤 백업 도�
   검색한 것에서부터 필드가 걷는 길을 밝힙니다([작동
   방식](docs/opening-map.ko.md)).
 
-  ![오프닝 맵](docs/screenshots/opening-map.png)
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/opening-map-dark.png">
+    <img alt="오프닝 맵" src="docs/screenshots/opening-map.png">
+  </picture>
 - **탐색기에서 보는 내 게임.** 참고 데이터베이스와 Lichess 데이터베이스 옆에
   **내 게임** 소스가 있습니다. 보관함의 모든 게임을 대상으로 *이 포지션에서
   나는 무엇을 뒀고 결과는 어땠는가*에 답하며, 내가 잡은 색, 승패, 시간제,
