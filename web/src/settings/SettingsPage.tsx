@@ -583,8 +583,8 @@ function AppearanceCard() {
       >
         <Switch
           checked={coordinates}
-          onToggle={() => setCoordinates(!coordinates)}
-          label={t('Board coordinates')}
+          onCheckedChange={() => setCoordinates(!coordinates)}
+          aria-label={t('Board coordinates')}
         />
       </SettingRow>
 
@@ -618,8 +618,8 @@ function DocumentsCard() {
       >
         <Switch
           checked={autosave}
-          onToggle={() => setAutosave(!autosave)}
-          label={t('Auto-save')}
+          onCheckedChange={() => setAutosave(!autosave)}
+          aria-label={t('Auto-save')}
         />
       </SettingRow>
     </Card>
@@ -662,7 +662,7 @@ function SoundCard() {
   return (
     <Card icon={Volume2} title={t('Sound')}>
       <SettingRow title={t('Move sounds')} blurb={t('Play a click on moves and captures.')}>
-        <Switch checked={sound} onToggle={() => setSound(!sound)} label={t('Move sounds')} />
+        <Switch checked={sound} onCheckedChange={() => setSound(!sound)} aria-label={t('Move sounds')} />
       </SettingRow>
 
       {/* Only where the browser has the API at all (Android, in practice).
@@ -672,8 +672,8 @@ function SoundCard() {
         <SettingRow title={t('Vibrate on moves')} blurb={t('One short tick when your piece lands.')}>
           <Switch
             checked={haptics}
-            onToggle={() => setHaptics(!haptics)}
-            label={t('Vibrate on moves')}
+            onCheckedChange={() => setHaptics(!haptics)}
+            aria-label={t('Vibrate on moves')}
           />
         </SettingRow>
       )}

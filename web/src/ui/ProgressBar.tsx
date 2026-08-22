@@ -1,11 +1,11 @@
-import { cn } from '@/lib/utils';
+import { Progress, ProgressIndicator } from '@/components/ui/progress';
 import { t } from '@/lib/i18n';
 
 /**
  * THE progress bar — every solved/failed fraction in the app uses this one
- * treatment: a bordered track that stays visible when empty, green solved
- * and red failed segments, and the counts in the tooltip rather than as
- * UI text.
+ * treatment: shadcn's Progress (Radix's progressbar role, the bordered
+ * track that stays visible when empty) with two fills, green solved and
+ * striped red failed, and the counts in the name rather than as UI text.
  */
 export function ProgressBar({
   total,
@@ -31,25 +31,22 @@ export function ProgressBar({
           left: total - solved - failed,
         });
   return (
-    <span
-      title={label}
+    <Progress
+      value={total > 0 ? Math.round((100 * (solved + failed)) / total) : 0}
       // The counts existed only in the hover title — nothing for touch,
-      // nothing for a screen reader. The title stays for the mouse; this
-      // is for everyone else.
-      role="img"
+      // nothing for a screen reader. The title stays for the mouse; the
+      // name is for everyone else.
+      title={label}
       aria-label={label}
-      className={cn(
-        'bg-surface-inset border-border-strong flex h-2 w-full overflow-hidden rounded-full border',
-        className,
-      )}
+      className={className}
     >
       {total > 0 && (
         <>
-          <span className="bg-nag-good h-full" style={{ width: `${(100 * solved) / total}%` }} />
+          <ProgressIndicator className="bg-nag-good" style={{ width: `${(100 * solved) / total}%` }} />
           {/* Striped, not just red: the two segments must differ by more
               than hue (the app's own colour-grammar rule). */}
-          <span
-            className="bg-nag-blunder h-full"
+          <ProgressIndicator
+            className="bg-nag-blunder"
             style={{
               width: `${(100 * failed) / total}%`,
               backgroundImage:
@@ -58,6 +55,6 @@ export function ProgressBar({
           />
         </>
       )}
-    </span>
+    </Progress>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 
@@ -112,12 +113,10 @@ export function Panel({
           : undefined;
 
   return (
-    <section
+    <Card
       ref={ref}
       style={style}
       className={cn(
-        'bg-card border-border rounded-xl border shadow-panel',
-        'flex flex-col',
         fit ? 'min-h-max overflow-visible' : 'min-h-0 overflow-hidden',
         !flush && 'p-3',
         className,
@@ -158,7 +157,7 @@ export function Panel({
           <div className="bg-border h-[3px] w-8 rounded-full" />
         </div>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -174,31 +173,21 @@ interface PanelHeaderProps {
 
 export function PanelHeader({ title, actions, actionsClassName, className }: PanelHeaderProps) {
   return (
-    <header
-      // The rule under a title is the app's one way of separating a header
-      // from what it heads — panels and windows alike (lanph3re's call).
-      className={cn(
-        'border-border flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3',
-        className,
-      )}
-    >
+    // The rule under a title is the app's one way of separating a header
+    // from what it heads — panels and windows alike (lanph3re's call); the
+    // CardHeader draws it.
+    <CardHeader className={className}>
       {/* Translated HERE, not at every call site. A panel title is always
           user-facing, so a caller that forgets t() is a bug that renders
           fine in English and ships. Doing it once means it cannot be
           forgotten; a caller that already translated passes Korean, and
           t() on a string with no entry returns it unchanged. */}
-      <h2 className="text-subtle min-w-0 flex-1 truncate text-xs label-caps">
-        {typeof title === 'string' ? t(title) : title}
-      </h2>
+      <CardTitle>{typeof title === 'string' ? t(title) : title}</CardTitle>
       {/* The actions take exactly their own width and the title takes the
           rest. They used to `grow` while the title merely `shrink`: on a
           phone the buttons — every one of them shrink-0 — overflowed their
           box and painted over the opening name instead of squeezing it. */}
-      {actions ? (
-        <div className={cn('flex shrink-0 items-center justify-end gap-1', actionsClassName)}>
-          {actions}
-        </div>
-      ) : null}
-    </header>
+      {actions ? <CardAction className={actionsClassName}>{actions}</CardAction> : null}
+    </CardHeader>
   );
 }

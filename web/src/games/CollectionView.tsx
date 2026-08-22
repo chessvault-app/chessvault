@@ -17,7 +17,7 @@ import { cachedCollection, forgetCollection, loadCollection } from './collection
 import { sanitizeSegment } from '@shared/vaultNames';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useRovingTabs } from '@/ui/roving';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
@@ -193,11 +193,6 @@ export function CollectionView() {
   const [elite, setElite] = useState(false);
   /** Which of the two the column is showing. */
   const [source, setSource] = useState<SourceId>('archive');
-  const sourceTabs = useRovingTabs(
-    SOURCES.map((s) => s.id),
-    source,
-    setSource,
-  );
   // Not a class: `lg:hidden` on a menu ITEM still leaves a menu of that
   // many items, so at lg the Add games button drew a chevron and a popover
   // to offer a single row. The list has to know the width, not just the
@@ -712,40 +707,34 @@ export function CollectionView() {
               two-storey control. Naming the panel is what a header does,
               so the live tab is the header's own rule, thickened and lit
               under the name that is showing. */}
-          <header
-            role="tablist"
-            aria-label={t('Where to find a game')}
-            {...sourceTabs.stripProps}
-            className="border-border flex h-10 shrink-0 items-center gap-1 border-b px-2"
-          >
-            {SOURCES.map(({ id, label }) => {
-              const on = source === id;
-              return (
-                <button
+          {/* shadcn's Tabs in the underline shape: the strip is the panel
+              header, with the live tab's name underlined in the accent. */}
+          <Tabs value={source} onValueChange={(v) => setSource(v as SourceId)} className="contents">
+            <TabsList
+              aria-label={t('Where to find a game')}
+              className="border-border flex h-10 shrink-0 items-center gap-1 rounded-none border-0 border-b bg-transparent p-0 px-2"
+            >
+              {SOURCES.map(({ id, label }) => (
+                <TabsTrigger
                   key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={on}
-                  tabIndex={sourceTabs.tabIndex(id)}
-                  onClick={() => setSource(id)}
+                  value={id}
                   // No icon, and not the header's uppercase micro-caps:
                   // measured, the pair came to 256px that way and this
                   // column is 210px wide at the narrowest lg. Plain text
                   // at text-sm is 178. min-w-0 so a longer translation
                   // truncates rather than pushing the second tab out.
                   className={cn(
-                    'relative flex h-10 min-w-0 items-center px-1.5 text-sm font-semibold',
-                    'transition-colors duration-100',
-                    on
-                      ? 'text-foreground after:bg-primary after:absolute after:inset-x-1 after:-bottom-px after:h-0.5 after:rounded-full'
-                      : 'text-subtle hover:text-foreground',
+                    'relative flex h-10 min-w-0 flex-none items-center justify-start rounded-none px-1.5 text-sm font-semibold',
+                    'text-subtle hover:text-foreground transition-colors duration-100',
+                    'data-active:bg-transparent data-active:text-foreground data-active:shadow-none',
+                    'data-active:after:bg-primary data-active:after:absolute data-active:after:inset-x-1 data-active:after:-bottom-px data-active:after:h-0.5 data-active:after:rounded-full',
                   )}
                 >
                   <span className="truncate">{t(label)}</span>
-                </button>
-              );
-            })}
-          </header>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
 
           {source === 'archive' ? (
             <ArchiveBrowser

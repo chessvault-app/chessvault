@@ -1,13 +1,11 @@
-import { cn } from '@/lib/utils';
+import { Toggle } from '@/components/ui/toggle';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { t } from '@/lib/i18n';
 
 /**
- * THE filter chip — one style for every filter row in the app.
- *
- * A string label is translated here rather than at each call site: filter
- * rows are built from `[id, label]` tuples in array literals, which is
- * exactly the shape a call-site t() keeps getting forgotten in. A
- * ReactNode label is passed through — the caller composed it and owns it.
+ * A filter that is on or off: shadcn's Toggle in the app's chip face
+ * (aria-pressed from Radix; the outlined pill that fills with the accent
+ * when it is on). `title` is a tooltip, as on Button.
  */
 export function FilterChip({
   label,
@@ -22,33 +20,17 @@ export function FilterChip({
   title?: string;
   onClick: () => void;
 }) {
-  return (
-    <button
-      type="button"
-      // On or off is a colour and nothing else without this: a filter
-      // chip is a toggle, and a screen reader read every one of them the
-      // same whether it was filtering or not.
-      aria-pressed={active}
-      title={title ? t(title) : undefined}
-      onClick={onClick}
-      className={cn(
-        // inline-flex so an icon-bearing label and the count share one
-        // centreline instead of fighting over baselines.
-        // nowrap AND shrink-0: a chip is its label. Letting chips shrink so
-        // one crowded row would fit made every chip inside a ChipRow — a
-        // scroller, where shrinking is exactly wrong — collapse to "X…" on
-        // the puzzles dashboard. A row that cannot fit its chips scrolls or
-        // wraps; the chip itself never shortens.
-        'inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-sm font-medium transition-colors',
-        // The same growth every small Button gets under a thumb.
-        'pointer-coarse:min-h-9 pointer-coarse:px-3',
-        active
-          ? 'bg-primary-soft border-primary/40 text-primary'
-          : 'border-border text-muted-foreground hover:border-border-strong',
-      )}
-    >
+  const chip = (
+    <Toggle variant="chip" size="none" pressed={active} onPressedChange={() => onClick()}>
       {typeof label === 'string' ? t(label) : label}
       {count !== undefined && <span className="ml-1 opacity-60">{count}</span>}
-    </button>
+    </Toggle>
+  );
+  if (!title) return chip;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{chip}</TooltipTrigger>
+      <TooltipContent>{t(title)}</TooltipContent>
+    </Tooltip>
   );
 }

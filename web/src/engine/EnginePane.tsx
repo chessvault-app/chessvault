@@ -167,8 +167,8 @@ export function EngineBlock({
             </Button>
             <Switch
               checked={enabled}
-              onToggle={toggle}
-              label={t('Engine on/off')}
+              onCheckedChange={toggle}
+              aria-label={t('Engine on/off')}
               title={enabled ? t('Turn the engine off') : t('Turn the engine on')}
             />
           </>

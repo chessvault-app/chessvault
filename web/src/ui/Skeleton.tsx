@@ -18,9 +18,8 @@ import { t } from '@/lib/i18n';
  *    and vanishes inside 200 ms reads as a glitch. Most loads here are
  *    fast enough that the right thing to show is nothing at all.
  */
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('bg-muted animate-pulse rounded-md', className)} />;
-}
+import { Skeleton } from '@/components/ui/skeleton';
+export { Skeleton };
 
 /**
  * Whether a wait has gone on long enough to be worth admitting to.

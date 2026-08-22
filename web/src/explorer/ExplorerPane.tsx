@@ -239,8 +239,8 @@ export function ExplorerPane({
             )}
             <Switch
               checked={enabled}
-              onToggle={toggle}
-              label={t('Explorer on/off')}
+              onCheckedChange={toggle}
+              aria-label={t('Explorer on/off')}
               title={enabled ? t('Hide the explorer') : t('Show the explorer')}
             />
           </>

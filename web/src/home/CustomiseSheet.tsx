@@ -211,7 +211,7 @@ function ToggleRow({
 }) {
   return (
     <SettingRow title={title} blurb={blurb}>
-      <Switch checked={checked} onToggle={onToggle} label={title} />
+      <Switch checked={checked} onCheckedChange={onToggle} aria-label={title} />
     </SettingRow>
   );
 }
@@ -280,7 +280,7 @@ function Row({
       <Icon className="text-muted-foreground size-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate text-base">{t(label)}</span>
       {children}
-      {onToggle && <Switch checked={checked ?? false} onToggle={onToggle} label={t(label)} />}
+      {onToggle && <Switch checked={checked ?? false} onCheckedChange={onToggle} aria-label={t(label)} />}
     </div>
   );
 }

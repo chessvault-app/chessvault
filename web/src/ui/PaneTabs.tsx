@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useRovingTabs } from './roving';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { t } from '@/lib/i18n';
 
 export interface PaneTab<T extends string> {
@@ -15,6 +15,10 @@ export interface PaneTab<T extends string> {
  * Small-screen pane switcher: on phones there is no room to stack every
  * panel under the board (see the lichess app), so exactly one shows at a
  * time. Desktop layouts never render this.
+ *
+ * shadcn's Tabs, whose list is the strip: Radix gives it the tablist role,
+ * the roving tab stop and the arrow keys. The root is `contents` so the
+ * strip itself is the box the caller lays out.
  */
 export function PaneTabs<T extends string>({
   tabs,
@@ -27,70 +31,31 @@ export function PaneTabs<T extends string>({
   onChange: (id: T) => void;
   className?: string;
 }) {
-  const roving = useRovingTabs(
-    tabs.map((tab) => tab.id),
-    value,
-    onChange,
-  );
   return (
-    <div
-      role="tablist"
-      {...roving.stripProps}
-      className={cn(
-        // p-px, not p-0.5: this row sits between a board and the panel
-        // under it on the one screen with no vertical room to spare, and
-        // the track's inset is only there to show the active pill sitting
-        // inside it — one pixel does that as well as two.
-        'bg-muted border-border flex shrink-0 gap-0.5 rounded-lg border p-px',
-        className,
-      )}
-    >
-      {tabs.map((tab) => {
-        const Icon = tab.icon;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={tab.id === value}
-            tabIndex={roving.tabIndex(tab.id)}
-            aria-label={t(tab.label)}
-            title={t(tab.label)}
-            onClick={() => onChange(tab.id)}
-            className={cn(
-              // The active pill's corners are the track's, less the 1px
-              // border and the 1px inset it sits inside — which is what
-              // concentric means, and what `rounded-md` was not: this
-              // theme's --radius-lg is 14px while md is 6px, so the
-              // track curved more than twice as hard as the pill in
-              // it. Unnoticeable while the row was 42px tall and
-              // the corners were a small part of it; at 26px the track is
-              // short enough to round into a capsule and the square-ish
-              // pill inside it is the first thing you see. Derived from
-              // the token rather than typed as 12px, so it stays true if
-              // the scale moves.
-              'flex flex-1 items-center justify-center whitespace-nowrap rounded-[calc(var(--radius-lg)_-_2px)] font-medium transition-colors duration-100',
+    <Tabs value={value} onValueChange={(id) => onChange(id as T)} className="contents">
+      {/* p-px, not p-0.5: this row sits between a board and the panel
+          under it on the one screen with no vertical room to spare. */}
+      <TabsList className={className}>
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              aria-label={t(tab.label)}
+              title={t(tab.label)}
               // An icon tab is its icon plus 4px, and no fixed height at
-              // all. It used to be h-9 on a coarse pointer — the height a
-              // standalone button gets for a thumb — which put 11px of air
-              // above and below a 14px glyph on the one screen where the
-              // board, this row and a panel are stacked together. These
-              // tabs are a third of the screen wide, so the target was
-              // never short of room; it was short of it vertically, in the
-              // panel underneath. Padding rather than a height so the row
-              // stays exactly its content plus the margin it needs to read
-              // as a button, whatever size the glyph becomes.
-              //
-              // Text tabs are the book pages, not the board ones, and keep
-              // their height: a label needs the line box a glyph does not.
-              Icon ? 'py-1' : 'h-7 text-sm pointer-coarse:h-8',
-              tab.id === value ? 'bg-card text-foreground shadow-control' : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
-          </button>
-        );
-      })}
-    </div>
+              // all: these tabs are a third of the screen wide, so the
+              // target was never short of room; it was short of it
+              // vertically, in the panel underneath. Text tabs keep their
+              // height: a label needs the line box a glyph does not.
+              className={cn(Icon ? 'py-1' : 'h-7 text-sm pointer-coarse:h-8')}
+            >
+              {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </Tabs>
   );
 }
