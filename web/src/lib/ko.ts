@@ -128,11 +128,11 @@ export const ko: Record<string, string> = {
   'Move number': '수 번호',
   'Legal position': '합법적인 포지션',
   'Move: drag pieces around the board': '이동: 기물을 끌어 옮깁니다',
-  'Erase: click a square to remove its piece': '지우기: 칸을 클릭하면 그 기물이 사라집니다',
+  'Erase: click a square to remove its piece': '지우개: 칸을 클릭하면 그 기물이 사라집니다',
   'Reset to the starting position': '시작 포지션으로 되돌리기',
   'Position details (side to move, castling, FEN)': '포지션 세부 정보 (차례, 캐슬링, FEN)',
   Move: '이동',
-  Erase: '지우기',
+  Erase: '지우개',
 
   // --- engine, review ------------------------------------------------------
   'Engine settings': '엔진 설정',
@@ -1498,7 +1498,7 @@ export const ko: Record<string, string> = {
   "Only the games in your collection, not every archived game": "보관함에 담은 게임만 봅니다. 전체 기보가 아닙니다",
   "From date": "시작일",
   "To date": "종료일",
-  "Clear": "지우기",
+  "Clear": "비우기",
   // The filter window's group headings. Close, Result and Games are already
   // above — one entry each, whatever screen asks for them.
   "Side": "색",
