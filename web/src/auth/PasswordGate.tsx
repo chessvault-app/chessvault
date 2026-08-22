@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { BrandMark } from '@/components/brand-mark';
 import { Input } from '@/components/ui/input';
-import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '@/components/ui/input-otp';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -159,9 +159,9 @@ export function PasswordGate({ children }: { children: ReactNode }) {
                 <ShieldCheck className="size-3" />
                 {t('Authenticator code')}
               </label>
-              {/* shadcn's InputOTP (lanph3re's call): six slots in two groups
-                  of three, the way the authenticator shows the code, and
-                  the sixth digit submits — a code is never longer, so
+              {/* shadcn's InputOTP (lanph3re's call): six slots in one run —
+                  no separator, lanph3re's call too — and the sixth digit
+                  submits — a code is never longer, so
                   there is nothing to press after it. Digits only, and
                   one-time-code lets iOS offer the code from Messages. */}
               <InputOTP
@@ -180,9 +180,6 @@ export function PasswordGate({ children }: { children: ReactNode }) {
                   <InputOTPSlot index={0} />
                   <InputOTPSlot index={1} />
                   <InputOTPSlot index={2} />
-                </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup>
                   <InputOTPSlot index={3} />
                   <InputOTPSlot index={4} />
                   <InputOTPSlot index={5} />
