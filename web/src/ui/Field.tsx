@@ -1,6 +1,19 @@
-import { cloneElement, isValidElement, useId, type ReactNode } from 'react';
+import { cloneElement, createContext, isValidElement, useId, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
+
+/**
+ * True inside a Field — "this control is part of a form".
+ *
+ * Read by controls that have a toolbar look and a form look, so the form
+ * look arrives with the label rather than with a prop each call site has
+ * to remember. Select is the case: it defaults to the raised menu face
+ * that suits a filter bar, and every Select on the settings page and in
+ * the new-game form sat beside sunken Inputs wearing it. A context rather
+ * than a prop set by cloneElement, because the control is often a level
+ * down — inside a flex row with a preview beside it.
+ */
+export const FieldContext = createContext(false);
 
 /**
  * A named control in a form.
@@ -39,14 +52,16 @@ export function Field({
     if (!children.props.id) control = cloneElement(children, { id: generated });
   }
   return (
-    <div className={cn('flex min-w-0 flex-col gap-1', className)}>
-      <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={target} className="text-subtle text-xs font-medium">
-          {t(label)}
-        </label>
-        {hint}
+    <FieldContext.Provider value={true}>
+      <div className={cn('flex min-w-0 flex-col gap-1', className)}>
+        <div className="flex items-baseline justify-between gap-2">
+          <label htmlFor={target} className="text-subtle text-xs font-medium">
+            {t(label)}
+          </label>
+          {hint}
+        </div>
+        {control}
       </div>
-      {control}
-    </div>
+    </FieldContext.Provider>
   );
 }

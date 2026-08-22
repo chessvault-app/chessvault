@@ -1,10 +1,11 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { useMediaQuery } from '@/lib/media';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useCloseRequest } from './dialogFocus';
+import { FieldContext } from './Field';
 import { Sheet } from './Sheet';
 import { t } from '@/lib/i18n';
 
@@ -77,7 +78,7 @@ export function Select({
   ariaLabel,
   size = 'md',
   align = 'start',
-  inset = false,
+  inset,
   mono = false,
   steady = false,
   prefix,
@@ -91,7 +92,13 @@ export function Select({
   size?: keyof typeof triggerSizes;
   /** Which trigger edge the popover hugs. */
   align?: 'start' | 'end';
-  /** Input-like trigger for form contexts (matches ui/Input's backdrop). */
+  /**
+   * Input-like trigger (ui/Input's sunken backdrop) instead of the raised
+   * menu face. Unset, it follows the surroundings: on inside a Field,
+   * where the control is a form answer beside other form answers, off in
+   * a toolbar or a SettingRow — which is itself a sunken strip, so a
+   * sunken trigger there would vanish into it. Pass it to overrule either.
+   */
   inset?: boolean;
   mono?: boolean;
   /**
@@ -136,6 +143,8 @@ export function Select({
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const inField = useContext(FieldContext);
+  const sunken = inset ?? inField;
   const trigger = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
   // Where the current touch started, to tell a tap from a list scroll.
@@ -319,7 +328,7 @@ export function Select({
         className={cn(
           'border-line text-fg flex min-w-0 shrink items-center gap-1 rounded-md border',
           'transition-colors duration-100',
-          inset ? 'bg-surface-inset focus:border-primary/50' : 'bg-surface-2 hover:bg-surface-3',
+          sunken ? 'bg-surface-inset focus:border-primary/50' : 'bg-surface-2 hover:bg-surface-3',
           triggerSizes[size],
           mono && 'font-mono',
           className,
