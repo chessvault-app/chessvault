@@ -97,7 +97,7 @@ export function ShelfCard({
           // it. A card that only changed its border read as selected; one
           // that rises reads as reachable.
           'transition-[border-color,box-shadow,transform] duration-150',
-          'hover:border-border-strong hover:shadow-md md:hover:-translate-y-px',
+          'hover:border-border hover:shadow-md md:hover:-translate-y-px',
           layout === 'grid' ? 'items-start px-4 py-3' : 'items-center px-3 py-2',
           // A bookmarked card says so before it is read: a warm edge down
           // the left. It is the WHOLE indicator now — the filled star that
@@ -120,7 +120,7 @@ export function ShelfCard({
         >
           {/* The board a note opens with, where it has one — the fastest
               way to tell two notes apart is to show what is in them. */}
-          {board ?? <Icon className="text-subtle size-4 shrink-0" strokeWidth={1.75} />}
+          {board ?? <Icon className="text-muted-foreground size-4 shrink-0" strokeWidth={1.75} />}
 
           <div className="min-w-0 flex-1">
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the
@@ -144,7 +144,7 @@ export function ShelfCard({
             {/* Three steps, not two: the name is the brightest thing on the
                 card, the stat line is the quietest, and the note's own
                 words sit between them. */}
-            <p className="text-subtle text-xs leading-4">{meta}</p>
+            <p className="text-muted-foreground text-xs leading-4">{meta}</p>
             {preview && layout === 'grid' && (
               <p className="text-muted-foreground mt-1 line-clamp-2 text-sm leading-[1.35rem] opacity-90">
                 {preview}

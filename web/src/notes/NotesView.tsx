@@ -16,7 +16,6 @@ import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
-import { UndoBar } from '@/components/undo-bar';
 import { useUndoable } from '@/hooks/use-undoable';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -286,15 +285,6 @@ function NoteList() {
         />
       )}
 
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
 
       <FabSpacer />
     </PageShell>
@@ -429,7 +419,7 @@ function GroupedNotes({
             />
           )}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-subtle px-1 text-sm">{t('Empty collection.')}</p>
+            <p className="text-muted-foreground px-1 text-sm">{t('Empty collection.')}</p>
           ) : (
             <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((note) => (

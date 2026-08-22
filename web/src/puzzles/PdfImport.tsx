@@ -368,7 +368,7 @@ export function PdfImport({
             were is the failure this exists to remove.
           */}
           {!mine && saved && (
-            <div className="border-primary/40 bg-primary-soft flex flex-col gap-2 rounded-lg border p-3">
+            <div className="border-primary/40 bg-muted flex flex-col gap-2 rounded-lg border p-3">
               <p className="text-foreground text-sm font-medium">
                 {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
                   page: saved.page,
@@ -421,7 +421,7 @@ export function PdfImport({
                   />
                   <span className="text-base">
                     {t(label)}
-                    <span className="text-subtle block text-sm">{t(blurb)}</span>
+                    <span className="text-muted-foreground block text-sm">{t(blurb)}</span>
                   </span>
                 </label>
               ))}
@@ -438,7 +438,7 @@ export function PdfImport({
               />
               <span>
                 {t('Ask the engine where the book cannot be read')}
-                <span className="text-subtle block">
+                <span className="text-muted-foreground block">
                   {t(
                     'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds a few seconds per hundred.',
                   )}
@@ -457,7 +457,7 @@ export function PdfImport({
               />
               <span>
                 {t('Try harder on boards that fail')}
-                <span className="text-subtle block">
+                <span className="text-muted-foreground block">
                   {t(
                     'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles, and the import may take longer.',
                   )}
@@ -473,8 +473,8 @@ export function PdfImport({
                 'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center',
                 'transition-colors',
                 pdfDrop.dragging
-                  ? 'border-primary bg-primary-soft'
-                  : 'border-border hover:border-border-strong hover:bg-accent',
+                  ? 'border-primary bg-muted'
+                  : 'border-border hover:border-border hover:bg-accent',
               )}
             >
               <input
@@ -488,7 +488,7 @@ export function PdfImport({
               />
               <span className="text-muted-foreground text-base">
                 {t('Choose the book’s PDF')}
-              <span className="text-subtle block text-sm">
+              <span className="text-muted-foreground block text-sm">
                   {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
                 </span>
               </span>
@@ -503,7 +503,7 @@ export function PdfImport({
             rather than only in a README nobody opens on the way here.
           */}
           {!mine && !saved && (
-            <p className="border-border bg-muted text-subtle rounded-lg border p-3 text-sm">
+            <p className="border-border bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
               <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
               {t(
                 'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
@@ -611,7 +611,7 @@ export function PdfImport({
                   )}
                 </p>
               )}
-              <p className="text-subtle pt-1">
+              <p className="text-muted-foreground pt-1">
                 {t('Answers found on {pages}.', {
                   pages:
                     solve.answerRanges.length > 0
@@ -628,7 +628,7 @@ export function PdfImport({
 
           {found.length > 0 && (
             <>
-              <p className="text-subtle text-sm">
+              <p className="text-muted-foreground text-sm">
                 {t('{n} diagrams found — untick any false positives, then add the rest as drafts.', {
                   n: found.length,
                 })}
@@ -680,7 +680,7 @@ export function PdfImport({
                   const mark = f.solved
                     ? { label: 'solved', cls: 'text-good' }
                     : f.fen === null
-                      ? { label: 'unread', cls: 'text-subtle' }
+                      ? { label: 'unread', cls: 'text-muted-foreground' }
                       : f.uncertain > 0
                         ? { label: t('{n} unsure', { n: f.uncertain }), cls: 'text-warn' }
                         : { label: 'read', cls: 'text-good' };
@@ -722,7 +722,7 @@ export function PdfImport({
                           {/* Once the printed numbers are worked out the row
                               leads with the number — but it keeps the page,
                               which is what you turn to in the actual book. */}
-                          <span className="text-subtle">
+                          <span className="text-muted-foreground">
                             {f.number === undefined
                               ? place[i]!.of > 1 && ` (${place[i]!.nth}/${place[i]!.of})`
                               : ` p.${f.page}`}
@@ -793,7 +793,7 @@ export function PdfImport({
               always here; Add appears once there is something to add. */}
           <div className="mt-1 flex items-center justify-end gap-2">
             {found.length > 0 && (
-              <span className="text-subtle mr-auto text-sm">
+              <span className="text-muted-foreground mr-auto text-sm">
                 {t('{n} selected', { n: selectedCount })}
                 {scanning ? t(' — still scanning') : ''}
               </span>

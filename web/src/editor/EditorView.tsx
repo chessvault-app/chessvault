@@ -442,7 +442,7 @@ export function EditorView({
               <CheckCircle2 className="text-good size-3.5 shrink-0" aria-label={t('Legal position')} />
             )}
             <code
-              className="text-subtle min-w-0 flex-1 truncate font-mono text-xs"
+              className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs"
               title={fen}
             >
               {fen}

@@ -29,7 +29,6 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 
 import { CreateControl, FabSpacer } from '@/components/fab';
-import { UndoBar } from '@/components/undo-bar';
 import { useUndoable } from '@/hooks/use-undoable';
 
 import { useImportJob } from '../importJob';
@@ -339,15 +338,6 @@ export function Shelf() {
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
     <PageShell width="medium" className="block">
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
         {/* The other shelves' two-row shape: the heading row carries what
             is ABOUT the shelf — filter, order, create — and the search
             gets a full-width line of its own underneath. The bookmark
@@ -413,7 +403,7 @@ export function Shelf() {
           shelfPending ? <SkeletonBookCards cards={books?.length || 4} /> : null
         ) : visibleBooks.length === 0 ? (
           <div className="bg-card flex flex-col items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-6 text-center">
-            <BookMarked className="text-subtle size-6" />
+            <BookMarked className="text-muted-foreground size-6" />
             <p className="text-muted-foreground text-base">
               {t(
                 "No puzzle books yet. Create one per paper book, then enter its puzzles from the board or import the book's own PDF — solutions and progress live here, not in the back of the book.",
@@ -510,7 +500,7 @@ function BookCard({
         className={cn(
           'bg-card border-border group relative flex h-full cursor-pointer items-stretch gap-3',
           'overflow-hidden rounded-xl border p-3 text-left transition-colors duration-100',
-          'hover:border-border-strong hover:bg-accent',
+          'hover:border-border hover:bg-accent',
           // The whole indicator that a book is kept, and it costs no width
           // — see the shelves and the games rows.
           marked && 'border-l-warn hover:border-l-warn border-l-2',
@@ -529,14 +519,14 @@ function BookCard({
             />
           ) : (
             <span className="bg-muted/50 border-border grid h-24 w-[4.5rem] shrink-0 place-items-center rounded-md border">
-              <BookMarked className="text-subtle group-hover:text-primary size-5 transition-colors" />
+              <BookMarked className="text-muted-foreground group-hover:text-primary size-5 transition-colors" />
             </span>
           )}
           <span className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
             {/* pr keeps a long title clear of the corner control */}
             <span className="min-w-0 pr-7">
               <span className="text-foreground block truncate text-base font-medium">{book.title}</span>
-              <span className="text-subtle block text-sm">
+              <span className="text-muted-foreground block text-sm">
                 {t('{n} puzzles', { n: book.puzzles })}
               </span>
             </span>

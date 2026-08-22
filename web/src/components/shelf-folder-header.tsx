@@ -35,7 +35,7 @@ export function ShelfFolderHeader({
 
   return (
     <div className="group/folder flex h-6 items-center gap-1.5">
-      <FolderIcon className="text-subtle size-3.5 shrink-0" />
+      <FolderIcon className="text-muted-foreground size-3.5 shrink-0" />
       <button
         type="button"
         onDoubleClick={() => setRenaming(true)}
@@ -80,7 +80,7 @@ export function ShelfFolderHeader({
         ]}
         detail={
           !empty && (
-            <p className="text-subtle px-3 pb-2 text-sm">
+            <p className="text-muted-foreground px-3 pb-2 text-sm">
               {t('Only empty collections can be deleted')}
             </p>
           )

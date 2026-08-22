@@ -16,7 +16,7 @@ export function CloudBoardArt({ className }: { className?: string }) {
     <svg
       viewBox="0 0 96 76"
       fill="none"
-      className={cn('text-subtle', className)}
+      className={cn('text-muted-foreground', className)}
       aria-hidden
       role="presentation"
     >

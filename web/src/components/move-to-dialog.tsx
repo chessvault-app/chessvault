@@ -54,14 +54,14 @@ export function MoveToDialog({
                 'text-left text-base transition-colors duration-100',
               )}
             >
-              <FolderIcon className="text-subtle size-3.5 shrink-0" />
+              <FolderIcon className="text-muted-foreground size-3.5 shrink-0" />
               <span className="min-w-0 flex-1 truncate">{target || t('(no collection)')}</span>
               {/* These rows read as a list of places, not as a list of things
                   to press. The chevron says the row goes somewhere, and it
                   sharpens under the pointer rather than appearing from
                   nowhere — an icon that materialises on hover moves the text
                   it sits beside. */}
-              <ChevronRight className="text-subtle size-3.5 shrink-0 opacity-40 transition-opacity duration-100 group-hover:opacity-100" />
+              <ChevronRight className="text-muted-foreground size-3.5 shrink-0 opacity-40 transition-opacity duration-100 group-hover:opacity-100" />
             </button>
           ))}
         </div>

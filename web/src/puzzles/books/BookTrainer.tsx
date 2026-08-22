@@ -449,7 +449,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     const missing = book !== null && solutions !== null && (index < 0 || !answer);
     if (missing) {
       return (
-        <div className="text-subtle grid h-full place-items-center text-base">
+        <div className="text-muted-foreground grid h-full place-items-center text-base">
           {t('That puzzle does not exist.')}
         </div>
       );

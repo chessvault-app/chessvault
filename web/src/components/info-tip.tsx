@@ -30,7 +30,7 @@ export function InfoTip({ label, children }: { label: string; children: ReactNod
             // (it sits inline against a label and would shove it), and the
             // invisible inset takes the thumb's target to 44px.
             className={cn(
-              'text-subtle hover:text-foreground relative grid size-5 place-items-center rounded-full transition-colors duration-100',
+              'text-muted-foreground hover:text-foreground relative grid size-5 place-items-center rounded-full transition-colors duration-100',
               'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
             )}
             onClick={() => {

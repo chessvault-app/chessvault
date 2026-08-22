@@ -43,8 +43,6 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl } from '@/components/save-control';
 import { DocumentHistory } from '@/components/history-panel';
-import { UndoBar } from '@/components/undo-bar';
-import { useUndoable } from '@/hooks/use-undoable';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
 
@@ -82,7 +80,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
   const [loadOpen, setLoadOpen] = useState(false);
   const editing = useStudy((s) => s.editing);
   const setEditing = useStudy((s) => s.setEditing);
-  const undoable = useUndoable();
   const recovery = useStudy((s) => s.recovery);
   // Subscribed, not read: turning autosave on in Settings has to reach the
   // header of a study that is already open.
@@ -367,16 +364,6 @@ export function StudyView({ id, kind = 'study' }: { id: string; kind?: 'study' |
         />
       )}
 
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          message={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
 
       {/* Phones: move navigation in the bottom bar (see AnalysisView). */}
       <MobileActionBar>
@@ -447,7 +434,7 @@ function TitleEditor({
         title={failure ?? id}
         className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
       >
-        {folder && <span className="text-subtle">{folder} / </span>}
+        {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}
         {failure ? ` — ${failure}` : ''}
       </h1>
@@ -645,7 +632,7 @@ function ChapterRow({
             'flex h-8 min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-sm',
             'transition-colors duration-100',
             index === chapterIndex
-              ? 'bg-primary-soft text-primary font-semibold'
+              ? 'bg-muted text-primary font-semibold'
               : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
@@ -671,12 +658,12 @@ function ChapterRow({
           ) : (
             <span className="size-3 shrink-0" />
           )}
-          <span className="text-subtle w-4 shrink-0 text-right font-mono text-xs">
+          <span className="text-muted-foreground w-4 shrink-0 text-right font-mono text-xs">
             {index + 1}
           </span>
           <span className="truncate">{ownName}</span>
           {isFolded && childCount > 0 && (
-            <span className="text-subtle shrink-0 font-mono text-xs">+{childCount}</span>
+            <span className="text-muted-foreground shrink-0 font-mono text-xs">+{childCount}</span>
           )}
         </button>
       )}

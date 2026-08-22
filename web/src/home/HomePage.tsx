@@ -364,7 +364,7 @@ export function HomePage() {
           </div>
           <div>
             <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
-            <p className="text-subtle text-base">{t('Your chess, in plain files.')}</p>
+            <p className="text-muted-foreground text-base">{t('Your chess, in plain files.')}</p>
           </div>
         </div>
 
@@ -404,10 +404,10 @@ export function HomePage() {
             </p>
             {continueRows.map(({ icon: Icon, label, detail, go }) => (
               <ListRow key={label + detail} divided onClick={go} className="text-sm">
-                <Icon className="text-subtle size-3.5 shrink-0" />
+                <Icon className="text-muted-foreground size-3.5 shrink-0" />
                 <span className="text-foreground min-w-0 flex-1 truncate font-medium">{label}</span>
-                <span className="text-subtle shrink-0">{detail}</span>
-                <ChevronRight className="text-subtle size-3.5 shrink-0" />
+                <span className="text-muted-foreground shrink-0">{detail}</span>
+                <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
               </ListRow>
             ))}
           </div>
@@ -443,16 +443,16 @@ export function HomePage() {
                 {step.done ? (
                   <Check className="text-good size-3.5 shrink-0" />
                 ) : (
-                  <span className="border-border-strong size-3.5 shrink-0 rounded-full border" />
+                  <span className="border-border size-3.5 shrink-0 rounded-full border" />
                 )}
                 <span
                   className={
-                    step.done ? 'text-subtle min-w-0 flex-1 line-through' : 'text-foreground min-w-0 flex-1'
+                    step.done ? 'text-muted-foreground min-w-0 flex-1 line-through' : 'text-foreground min-w-0 flex-1'
                   }
                 >
                   {step.label}
                 </span>
-                {!step.done && <ChevronRight className="text-subtle size-3.5 shrink-0" />}
+                {!step.done && <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />}
               </ListRow>
             ))}
           </div>
@@ -487,12 +487,12 @@ export function HomePage() {
               onClick={() => navigate(...nav)}
               className="bg-card hover:-strong hover:bg-accent group flex flex-col items-start gap-2 rounded-xl ring-1 ring-foreground/10 p-3.5 text-left transition-colors duration-100"
             >
-              <Icon className="text-subtle group-hover:text-primary size-4.5 transition-colors" />
+              <Icon className="text-muted-foreground group-hover:text-primary size-4.5 transition-colors" />
               <span>
                 <span className="text-foreground block text-base font-medium">
                   {t(label)}
                   {count !== undefined && data?.counts[count] !== undefined ? (
-                    <span className="text-subtle font-mono text-sm font-normal">
+                    <span className="text-muted-foreground font-mono text-sm font-normal">
                       {' '}
                       · {compact.format(data.counts[count]!)}
                     </span>
@@ -505,7 +505,7 @@ export function HomePage() {
                     )
                   )}
                 </span>
-                <span className="text-subtle block text-sm leading-snug">{t(blurb)}</span>
+                <span className="text-muted-foreground block text-sm leading-snug">{t(blurb)}</span>
               </span>
             </button>
           ))}

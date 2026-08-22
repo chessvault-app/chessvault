@@ -237,7 +237,7 @@ export function PuzzleEntry({
           ) : draft ? (
             <aside className="border-border flex w-72 shrink-0 flex-col gap-2 overflow-y-auto border-r p-4">
               <img src={draft.imageUrl} alt={t('book diagram')} className="border-border rounded-md border" />
-              <p className="text-subtle text-sm leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {t('The diagram from the book — make the board match it, then record the solution.')}
               </p>
             </aside>
@@ -493,7 +493,7 @@ function SolutionRecorder({
           </p>
           <div className="flex flex-wrap items-baseline gap-x-1 gap-y-0.5 p-3 text-base">
             {line.length === 0 ? (
-              <p className="text-subtle text-sm">
+              <p className="text-muted-foreground text-sm">
                 {t("No moves yet. The first move you play is the puzzle's first move to find.")}
               </p>
             ) : (
@@ -504,7 +504,7 @@ function SolutionRecorder({
                 return (
                   <span key={i} className="flex items-baseline gap-0.5 font-mono text-sm">
                     {i % 2 === 0 ? (
-                      <span className="text-subtle">
+                      <span className="text-muted-foreground">
                         {Math.floor(i / 2) + 1}
                         {solverSide === 'black' && i === 0 ? '…' : '.'}
                       </span>
@@ -521,7 +521,7 @@ function SolutionRecorder({
                         className={cn(
                           'rounded-sm px-1 transition-colors duration-100',
                           wildcards.has(i)
-                            ? 'bg-primary-soft text-primary'
+                            ? 'bg-muted text-primary'
                             : 'hover:bg-accent',
                         )}
                       >
@@ -536,7 +536,7 @@ function SolutionRecorder({
             )}
           </div>
           {line.length > 1 && (
-            <p className="text-subtle border-border border-t px-3 py-1.5 text-xs">
+            <p className="text-muted-foreground border-border border-t px-3 py-1.5 text-xs">
               {t('Tip: click an opponent move to mark it “any move” (the book’s ~).')}
             </p>
           )}

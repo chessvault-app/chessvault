@@ -343,7 +343,7 @@ export function RefDbManager({
             thing here that takes minutes, so it says so from the top
             rather than from under whichever tab started it. */}
         {running && (
-          <p className="border-border text-subtle flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
+          <p className="border-border text-muted-foreground flex shrink-0 items-center gap-2 border-b px-3 py-2 font-mono text-xs">
             <Loader2 className="size-3.5 shrink-0 animate-spin" />
             <span className="min-w-0 truncate">{status?.log?.at(-1) ?? '…'}</span>
           </p>
@@ -359,7 +359,7 @@ export function RefDbManager({
             capped, is what keeps the Build bar below in view. */}
         <div className="min-h-0 flex-1 overflow-y-auto">
           {shownCount === 0 ? (
-            empty && <p className="text-subtle px-3 py-6 text-center text-sm leading-relaxed">{empty}</p>
+            empty && <p className="text-muted-foreground px-3 py-6 text-center text-sm leading-relaxed">{empty}</p>
           ) : (
             list
           )}
@@ -370,7 +370,7 @@ export function RefDbManager({
             to index. */}
         {tab === 'sources' && pickedCount > 0 && (
           <div className="border-border flex shrink-0 items-center gap-2 border-t px-3 py-2">
-            <span className="text-subtle min-w-0 flex-1 truncate text-sm">
+            <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm">
               {t('{n} selected', { n: pickedCount })}
             </span>
             <Button
@@ -485,7 +485,7 @@ function DbList({
           <span className="text-foreground min-w-0 flex-1 truncate font-medium" title={d.sources}>
             {d.name}
           </span>
-          <span className="text-subtle shrink-0">
+          <span className="text-muted-foreground shrink-0">
             {t('{n} games', { n: d.games.toLocaleString() })} · {mb(d.bytes)}
           </span>
           {/* Built before the position index existed: the explorer
@@ -539,7 +539,7 @@ function SourceList({
               onChange={(e) => onToggle(s.name, e.target.checked)}
             />
             <span className="text-foreground min-w-0 flex-1 truncate">{s.name}</span>
-            <span className="text-subtle shrink-0">{mb(s.bytes)}</span>
+            <span className="text-muted-foreground shrink-0">{mb(s.bytes)}</span>
           </label>
           {/* Uploading is how a phone gets a file onto the server, so
               deleting one has to be possible there too — the app was the
@@ -605,7 +605,7 @@ function UploadWindow({
             'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-sm',
             'transition-colors duration-100',
             drop.dragging
-              ? 'border-primary bg-primary-soft text-primary'
+              ? 'border-primary bg-muted text-primary'
               : 'border-border hover:border-primary/40 hover:bg-accent',
           )}
         >
@@ -631,13 +631,13 @@ function UploadWindow({
             <>
               <Upload className="size-6" />
               <span className="text-foreground text-base font-medium">{t('Choose .pgn files')}</span>
-              <span className="text-subtle leading-relaxed">
+              <span className="text-muted-foreground leading-relaxed">
                 {t('Or drop them anywhere in this box')}
               </span>
             </>
           )}
         </label>
-        <p className="text-subtle text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
             'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.',
           )}
@@ -689,7 +689,7 @@ function BuildWindow({
           onKeyDown={(e) => e.key === 'Enter' && onBuild(name)}
           placeholder={t('Name — “{name}” if blank', { name: derived })}
         />
-        <p className="text-subtle text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
             'Building keeps going if you leave the page. A build under an existing name replaces that database.',
           )}

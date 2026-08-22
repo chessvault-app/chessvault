@@ -68,7 +68,7 @@ export function RecoveryDialog({
             ? t('“{name}” has changes from {when} that were never saved.', { name, when: stamp })
             : t('“{name}” has changes that were never saved.', { name })}
         </p>
-        <p className="text-subtle text-sm">
+        <p className="text-muted-foreground text-sm">
           {t('Restoring brings them back unsaved, so you can look before you keep them.')}
         </p>
 

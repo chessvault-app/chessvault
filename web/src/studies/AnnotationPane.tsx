@@ -190,7 +190,7 @@ export function AnnotationPane({
             {draft ? (
               <span className="text-foreground line-clamp-2 whitespace-pre-wrap">{draft}</span>
             ) : (
-              <span className="text-subtle">{placeholder}</span>
+              <span className="text-muted-foreground">{placeholder}</span>
             )}
           </button>
         ) : (
@@ -268,7 +268,7 @@ function NagButton({
         'h-6 min-w-6 rounded-sm px-1 font-mono text-sm font-semibold transition-colors duration-100',
         'pointer-coarse:h-8 pointer-coarse:min-w-8',
         active
-          ? 'bg-primary-soft text-primary'
+          ? 'bg-muted text-primary'
           : 'text-muted-foreground hover:bg-accent hover:text-foreground',
       )}
     >

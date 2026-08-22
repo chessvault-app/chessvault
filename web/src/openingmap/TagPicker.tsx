@@ -190,7 +190,7 @@ export function TagPicker({
                         <Icon className="text-muted-foreground size-4 shrink-0" />
                         <span className="text-foreground min-w-0 flex-1 truncate text-base">{row.id}</span>
                         {tagged(wholeTag) && (
-                          <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>
+                          <span className="text-muted-foreground shrink-0 text-sm">{t('Linked')}</span>
                         )}
                       </button>
                       {kind === 'study' && (row.chapters ?? 1) > 1 && (
@@ -230,7 +230,7 @@ export function TagPicker({
                   >
                     <BookOpen className="text-muted-foreground size-4 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate text-base">{name}</span>
-                    {tagged(tag) && <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>}
+                    {tagged(tag) && <span className="text-muted-foreground shrink-0 text-sm">{t('Linked')}</span>}
                   </button>
                 );
               })}

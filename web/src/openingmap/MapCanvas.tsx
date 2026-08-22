@@ -1060,7 +1060,7 @@ export function MapCanvas({
                         ? 'var(--color-foreground)'
                         : planned
                           ? 'var(--color-surface-3)'
-                          : (onMain ?? 'var(--color-border-strong)')
+                          : (onMain ?? 'var(--color-border)')
                   }
                   fillOpacity={planned ? 0.6 : onMain ? 1 : 0.92}
                   stroke={

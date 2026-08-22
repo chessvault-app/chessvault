@@ -216,7 +216,7 @@ export function GrowDialog({
                 </p>
               ))}
               {tips.length > 8 && (
-                <p className="text-subtle text-sm">{t('and {n} more', { n: tips.length - 8 })}</p>
+                <p className="text-muted-foreground text-sm">{t('and {n} more', { n: tips.length - 8 })}</p>
               )}
             </div>
           </>

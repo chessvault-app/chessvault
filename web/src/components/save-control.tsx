@@ -69,7 +69,7 @@ export function SaveControl({
 
   if (state === 'saved') {
     return (
-      <span className="text-subtle flex shrink-0 items-center gap-1 text-sm">
+      <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-sm">
         <Check className="size-3.5" /> {t('Saved')}
       </span>
     );
@@ -84,7 +84,7 @@ export function SaveControl({
   // and the PUT behind it: work in hand, nothing to decide.
   if (state === 'saving' || (state === 'dirty' && autoSaves)) {
     return (
-      <span className="text-subtle flex shrink-0 items-center gap-1 text-sm">
+      <span className="text-muted-foreground flex shrink-0 items-center gap-1 text-sm">
         <Loader2 className="size-3.5 animate-spin" /> {t('Saving…')}
       </span>
     );

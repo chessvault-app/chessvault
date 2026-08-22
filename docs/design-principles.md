@@ -42,7 +42,7 @@ Contrast is measured against every background a token can land on —
 `--background`, `--card`, `--muted`, `--surface-3` — and not against
 the page and the white surface alone. The quiet tiers passed on those
 two and failed on the raised and inset panels, which is where the gap
-is smallest: `--text-subtle` was 4.12:1 in light and 3.16:1 in dark
+is smallest: the then third text tier, `--text-subtle`, was 4.12:1 in light and 3.16:1 in dark
 before anyone measured the third and fourth. Small text needs 4.5:1 on
 all of them. When a tier darkens to reach it, the tier above darkens
 too — two quiet greys that meet at the same lightness are one grey.
@@ -374,8 +374,9 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   palette. The primary's lightness follows the accent knob: grey is the
   registry's near-black, a coloured accent sits mid-scale. What the ladder says that shadcn has no
   word for keeps its own name in the same style: `surface-3`,
-  `surface-inset`, `text-subtle`, `border-strong`, `good`/`warn`/`info`,
-  the board and eval colours. A preset theme pasted over `:root` would
+  the colour grammar (`good`/`warn`/`info`) and the board and eval
+  colours; the ladder's own rungs (surface-3, surface-inset, text-subtle,
+  border-strong) are variables, not utilities. A preset theme pasted over `:root` would
   override the roles but not the ladder they derive from, so the knobs in
   Settings would stop reaching them — re-express a theme in the ladder.
 - **One focus ring, the registry's.** Components draw shadcn's

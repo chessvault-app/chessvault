@@ -143,7 +143,7 @@ export function MoveTreePane({ className }: { className?: string }) {
           />
         )}
         {isEmpty && (
-          <p className="text-subtle px-3 py-6 text-center text-sm">
+          <p className="text-muted-foreground px-3 py-6 text-center text-sm">
             {t('Play a move on the board, or load a FEN or PGN.')}
           </p>
         )}
@@ -218,7 +218,7 @@ export function MainlineTable({
         key={`row-${number}-${typeof white === 'object' && white ? white.id : 'w'}-${typeof black === 'object' && black ? black.id : 'b'}`}
         className="border-border/60 grid grid-cols-[2rem_1fr_1fr] border-b"
       >
-        <span className="bg-muted/60 border-border/60 text-subtle flex items-center justify-center border-r font-mono text-xs">
+        <span className="bg-muted/60 border-border/60 text-muted-foreground flex items-center justify-center border-r font-mono text-xs">
           {number}
         </span>
         <MoveCell entry={white} cursorId={cursorId} onSelect={onSelect} bookIds={bookIds} />
@@ -322,7 +322,7 @@ function MoveCell({
 }) {
   if (entry === null) return <span />;
   if (entry === 'ellipsis') {
-    return <span className="text-subtle flex items-center px-3 py-1">…</span>;
+    return <span className="text-muted-foreground flex items-center px-3 py-1">…</span>;
   }
   const { id, node } = entry;
   const active = id === cursorId;
@@ -436,7 +436,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
         <p
           key={`${mainChildId}-comment`}
           className={cn(
-            'text-subtle border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
+            'text-muted-foreground border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
           )}
         >
@@ -454,7 +454,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
             'my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5',
             'border-border/70 border-l-2 pl-2',
             // Deeper variations dim further so the parent line stays readable.
-            'text-subtle text-sm',
+            'text-muted-foreground text-sm',
           )}
         >
           <VariationBranch
@@ -510,7 +510,7 @@ function VariationBranch({
       {node.comment && (
         <p
           className={cn(
-            'text-subtle border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
+            'text-muted-foreground border-border my-1 basis-full break-words whitespace-pre-line border-l-2 pl-2 italic',
             annotation.variation,
           )}
         >
@@ -543,7 +543,7 @@ interface MoveChipProps {
 function MoveChip({ label, number, nags, hasComment, active, book = false, onClick }: MoveChipProps) {
   return (
     <span className="inline-flex items-baseline gap-1">
-      {number && <span className="text-subtle font-mono text-xs">{number}</span>}
+      {number && <span className="text-muted-foreground font-mono text-xs">{number}</span>}
       <button
         type="button"
         onClick={onClick}

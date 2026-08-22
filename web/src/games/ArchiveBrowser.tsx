@@ -773,7 +773,7 @@ export function ArchiveBrowser({
               {recents.map((who) => (
                 <span
                   key={who}
-                  className="border-border text-muted-foreground hover:border-border-strong hover:text-foreground group/recent flex w-fit shrink-0 items-center rounded-full border pl-2.5 transition-colors duration-100"
+                  className="border-border text-muted-foreground hover:border-border hover:text-foreground group/recent flex w-fit shrink-0 items-center rounded-full border pl-2.5 transition-colors duration-100"
                 >
                   <button
                     type="button"
@@ -790,7 +790,7 @@ export function ArchiveBrowser({
                     title={t('Forget this search')}
                     aria-label={t('Forget this search')}
                     onClick={() => forgetRecent(who)}
-                    className="text-subtle hover:text-destructive grid size-6 shrink-0 place-items-center rounded-full transition-colors duration-100"
+                    className="text-muted-foreground hover:text-destructive grid size-6 shrink-0 place-items-center rounded-full transition-colors duration-100"
                   >
                     <X className="size-3" />
                   </button>
@@ -990,7 +990,7 @@ export function ArchiveBrowser({
               <span
                 className={cn(
                   'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
-                  picked.size > 0 ? 'bg-primary-soft text-primary' : 'bg-accent text-subtle',
+                  picked.size > 0 ? 'bg-muted text-primary' : 'bg-accent text-muted-foreground',
                 )}
               >
                 {t('{n} selected', { n: picked.size })}
@@ -1079,8 +1079,8 @@ export function ArchiveBrowser({
               that used to be a minute of waiting before anything showed. */}
           {month === ALL_MONTHS && cursor < months.length && (
             <li ref={moreSentinel} className="flex items-center justify-center gap-2 p-3">
-              <Loader2 className="text-subtle size-4 animate-spin" />
-              <span className="text-subtle text-sm">
+              <Loader2 className="text-muted-foreground size-4 animate-spin" />
+              <span className="text-muted-foreground text-sm">
                 {t('Loading older games…')}
               </span>
             </li>
@@ -1095,7 +1095,7 @@ export function ArchiveBrowser({
         // longer than its box — and the reassuring half ("Select all new
         // still takes every one") was the half nobody finished reading.
         <p
-          className="text-subtle border-border flex items-center gap-1.5 border-t px-3 py-2 text-xs"
+          className="text-muted-foreground border-border flex items-center gap-1.5 border-t px-3 py-2 text-xs"
           title={t('Showing the first {shown} of {total}. Select all new still takes every one.', {
             shown: MAX_ROWS,
             total: visibleMonthGames.length,

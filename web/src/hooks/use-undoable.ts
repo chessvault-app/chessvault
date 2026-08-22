@@ -1,144 +1,83 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
 
-/** How long the undo stands before the deletion actually happens. */
+/**
+ * How long an undo is offered. Long enough to read a sentence and press a
+ * button, short enough that a removal is not left hanging over the list
+ * for somebody who has already moved on. Sonner pauses it while the
+ * pointer or the keyboard focus is on the toast — a grace period that
+ * expires under the cursor takes the button away mid-press, and a
+ * screen-reader user needs longer than 4.5 s.
+ */
 const GRACE_MS = 4500;
 
 /**
- * How long the toast takes to leave, matching `.animate-sink`.
+ * The undo that stands in for a confirmation.
  *
- * It stays mounted for this long after it is finished with — a toast that
- * rose into place and then vanished between two frames read as a glitch
- * rather than as an end.
- */
-const EXIT_MS = 160;
-
-export interface Undoable {
-  /** What was removed, for the message: "Removed “x”". */
-  label: string;
-  /** On its way out: still mounted, no longer offering anything. */
-  leaving: boolean;
-  undo: () => void;
-}
-
-/**
- * Remove now, ask never, undo for a few seconds.
- *
- * The confirmation dialog was protecting the wrong moment. It interrupts
- * every deletion — including the many that are deliberate — to guard
- * against the rare one that was a slip, and it cannot help at all once you
- * have answered it. This inverts that: the row disappears immediately, and
- * the request that would make it permanent is held back until the undo
- * expires. Undoing means the vault was never touched.
- *
- * A pending deletion is flushed if the page is being left, because a
- * promise to delete that never runs is a file that quietly came back.
+ * A removal happens at once on screen (the caller hides the row) and is
+ * COMMITTED only when the offer expires: "Removed “x” · Undo" in shadcn's
+ * toast (components/ui/sonner), undo puts the row back and nothing was
+ * ever sent. Leaving the page commits — a removal that was shown must not
+ * silently un-happen because the offer was still up.
  */
 export function useUndoable(): {
-  pending: Undoable | null;
-  /** `commit` runs when the grace period ends; `undo` puts the row back. */
+  /**
+   * `commit` runs when the offer expires; `undo` when it is taken. A second
+   * removal while one is pending commits the first at once — the list is
+   * already showing it gone, and two offers at once is a question with two
+   * answers.
+   */
   remove: (label: string, commit: () => void, undo?: () => void) => void;
-  undo: () => void;
-  /** Pointer or focus is ON the toast: stop the clock — a timer that runs
-      out under the cursor takes the button away mid-press. */
-  hold: () => void;
-  /** …and wind it up again, in full, when they leave. */
-  release: () => void;
 } {
-  const [pending, setPending] = useState<Undoable | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const exit = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const commitRef = useRef<(() => void) | null>(null);
-  // Which toast is on screen. A removal that arrives during another's exit
-  // animation must not be cleared by that exit's timer.
-  const generation = useRef(0);
-
-  /** Start the toast leaving, and unmount it when it has. */
-  const fade = useCallback(() => {
-    const mine = generation.current;
-    setPending((p) => (p && !p.leaving ? { ...p, leaving: true } : p));
-    if (exit.current) clearTimeout(exit.current);
-    exit.current = setTimeout(() => {
-      setPending((p) => (generation.current === mine ? null : p));
-    }, EXIT_MS);
-  }, []);
+  const pending = useRef<{ id: string | number; commit: () => void } | null>(null);
 
   const flush = useCallback(() => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-    commitRef.current?.();
-    commitRef.current = null;
-    fade();
-  }, [fade]);
+    const p = pending.current;
+    if (!p) return;
+    pending.current = null;
+    p.commit();
+    toast.dismiss(p.id);
+  }, []);
 
   useEffect(() => {
-    const onLeave = (): void => {
-      // Not a place to be clever: the browser gives a page a moment on
-      // pagehide, and a fetch already in flight is the caller's business.
-      commitRef.current?.();
-      commitRef.current = null;
-    };
-    window.addEventListener('pagehide', onLeave);
+    window.addEventListener('pagehide', flush);
     return () => {
-      window.removeEventListener('pagehide', onLeave);
-      onLeave();
-      if (timer.current) clearTimeout(timer.current);
-      if (exit.current) clearTimeout(exit.current);
+      window.removeEventListener('pagehide', flush);
+      // Unmounting commits: the closure that knows how to delete belongs
+      // to a page that is going, and an offer that outlives it could not
+      // be honoured.
+      flush();
     };
-  }, []);
+  }, [flush]);
 
   const remove = useCallback(
     (label: string, commit: () => void, undo?: () => void) => {
-      // A second removal while one is pending commits the first: two undos
-      // at once could only be one button, and it would be ambiguous.
       flush();
-      // Said, not just shown. The bar carried `role="status"`, which is
-      // unreliable on a node that mounts WITH its text — most screen
-      // readers announce a live region's later CHANGES, not the content
-      // it arrived holding. announce() writes into the app's one region,
-      // which is already there and already empty.
-      announce(t('Removed “{name}”', { name: label }));
-      generation.current += 1;
-      commitRef.current = commit;
-      setPending({
-        label,
-        leaving: false,
-        undo: () => {
-          if (timer.current) clearTimeout(timer.current);
-          timer.current = null;
-          commitRef.current = null;
-          fade();
-          undo?.();
+      const message = t('Removed “{name}”', { name: label });
+      announce(message);
+      const entry = { id: 0 as string | number, commit };
+      entry.id = toast(message, {
+        duration: GRACE_MS,
+        action: {
+          label: t('Undo'),
+          onClick: () => {
+            if (pending.current === entry) pending.current = null;
+            undo?.();
+          },
+        },
+        // The offer expired unanswered: the removal is real now.
+        onAutoClose: () => {
+          if (pending.current !== entry) return;
+          pending.current = null;
+          commit();
         },
       });
-      timer.current = setTimeout(flush, GRACE_MS);
+      pending.current = entry;
     },
-    [flush, fade],
+    [flush],
   );
 
-  const hold = useCallback(() => {
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
-  }, []);
-
-  const release = useCallback(() => {
-    // Only if there is still something to commit — releasing after the
-    // undo was pressed must not resurrect the deletion.
-    if (commitRef.current && !timer.current) timer.current = setTimeout(flush, GRACE_MS);
-  }, [flush]);
-
-  // A toast that is fading has already committed; pressing Undo through the
-  // last frames of its animation must not put the row back.
-  return {
-    pending,
-    remove,
-    undo: () => {
-      if (pending && !pending.leaving) pending.undo();
-    },
-    hold,
-    release,
-  };
+  return { remove };
 }

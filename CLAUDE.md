@@ -94,8 +94,8 @@ shared hooks in `web/src/hooks`. See "The component layer" in
 
 **Class names speak the registry's vocabulary** (`bg-card`,
 `text-muted-foreground`, `border-input`, `bg-destructive`), with the
-app's extensions beside them (`surface-3`, `surface-inset`, `text-subtle`,
-`border-strong`, `good`/`warn`/`info`). Old names (`text-fg`,
+app's colour grammar beside them (`good`/`warn`/`info`, the board and
+eval colours). Old names (`text-fg`, `text-subtle`, `bg-surface-3`,
 `bg-surface`, `border-line`, `text-bad`) are gone and must not return.
 
 ## Before cutting a release

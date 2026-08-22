@@ -241,7 +241,7 @@ function Group({
       </p>
       {/* A group that has emptied says so. A heading over nothing reads as
           a page that failed to draw. */}
-      {count === 0 ? <p className="text-subtle px-1 pb-1 text-sm">{empty}</p> : children}
+      {count === 0 ? <p className="text-muted-foreground px-1 pb-1 text-sm">{empty}</p> : children}
     </div>
   );
 }

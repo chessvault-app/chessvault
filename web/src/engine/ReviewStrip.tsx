@@ -107,7 +107,7 @@ export function ReviewStrip() {
               style={{ width: `${Math.round(progress * 100)}%` }}
             />
           </div>
-          <span className="text-subtle w-9 text-right font-mono text-xs tabular-nums">
+          <span className="text-muted-foreground w-9 text-right font-mono text-xs tabular-nums">
             {Math.round(progress * 100)}%
           </span>
         </div>
@@ -222,7 +222,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
           y1={GRAPH_H / 2}
           x2={GRAPH_W}
           y2={GRAPH_H / 2}
-          stroke="var(--color-border-strong)"
+          stroke="var(--color-border)"
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
         />
@@ -260,7 +260,7 @@ function EvalGraph({ points }: { points: GraphPoint[] }) {
                       ? 'bg-nag-dubious size-2 rounded-full'
                       : p.book
                         ? 'bg-nag-book size-1 rounded-full'
-                        : 'bg-border-strong size-1 rounded-full',
+                        : 'bg-border size-1 rounded-full',
                 i === cursorIndex && 'ring-primary ring-2',
               )}
             />
@@ -278,15 +278,15 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
       <span className="text-foreground w-12 font-mono font-semibold tabular-nums">
         {summary.accuracy.toFixed(1)}%
       </span>
-      <span className="text-subtle font-mono text-xs tabular-nums">
+      <span className="text-muted-foreground font-mono text-xs tabular-nums">
         {summary.acpl} acpl
       </span>
-      <span className="text-subtle ml-auto flex gap-2 font-mono text-xs tabular-nums">
+      <span className="text-muted-foreground ml-auto flex gap-2 font-mono text-xs tabular-nums">
         <span
           title={t('Book moves — known opening theory, not judged')}
           className={cn(
             'flex items-center gap-0.5',
-            summary.bookMoves === 0 ? 'text-subtle/50' : 'text-subtle',
+            summary.bookMoves === 0 ? 'text-muted-foreground/50' : 'text-muted-foreground',
           )}
         >
           {summary.bookMoves}
@@ -303,7 +303,7 @@ function SummaryRow({ side, summary }: { side: 'white' | 'black'; summary: SideS
 
 function Judged({ count, glyph, className }: { count: number; glyph: string; className: string }) {
   return (
-    <span className={cn(count === 0 ? 'text-subtle/50' : className)}>
+    <span className={cn(count === 0 ? 'text-muted-foreground/50' : className)}>
       {count}
       {glyph}
     </span>

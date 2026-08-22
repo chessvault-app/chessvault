@@ -323,7 +323,7 @@ function DialogContent({
             // A BOTTOM SHEET on a phone, whatever the window is: rising from
             // the thumb's own edge, stopping short of the top, with the
             // same 1.25rem floor under its last row.
-            'max-sm:rounded-t-2xl max-sm:pb-[calc(1.25rem+var(--safe-b))]',
+            'max-sm:rounded-t-lg max-sm:pb-[calc(1.25rem+var(--safe-b))]',
             small
               ? cn(
                   // The lower of two ceilings: the sheet this one was opened

@@ -179,7 +179,7 @@ export function DashboardPage() {
                 <div key={band.label} className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
                   <span className="text-muted-foreground text-sm">{t(band.label)}</span>
                   <ProgressBar total={inBand.length} solved={wins} failed={losses} showEmpty />
-                  <span className="text-subtle w-16 text-right font-mono text-xs tabular-nums">
+                  <span className="text-muted-foreground w-16 text-right font-mono text-xs tabular-nums">
                     {inBand.length > 0 ? `${wins}/${inBand.length}` : '—'}
                   </span>
                 </div>
@@ -243,7 +243,7 @@ export function DashboardPage() {
             />
             {books.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
-                <BookMarked className="text-subtle size-6" strokeWidth={1.5} />
+                <BookMarked className="text-muted-foreground size-6" strokeWidth={1.5} />
                 <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
                   {t(
                     'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.',
@@ -264,7 +264,7 @@ export function DashboardPage() {
                     className="text-sm"
                   >
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">{b.title}</span>
-                    <span className="text-subtle shrink-0 font-mono tabular-nums">
+                    <span className="text-muted-foreground shrink-0 font-mono tabular-nums">
                       {b.solved}/{b.puzzles}
                     </span>
                     <ProgressBar
@@ -273,7 +273,7 @@ export function DashboardPage() {
                       failed={b.failed}
                       className="w-24 shrink-0"
                     />
-                    <ChevronRight className="text-subtle size-3.5 shrink-0" />
+                    <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
                   </ListRow>
                 </li>
               ))}
@@ -339,7 +339,7 @@ export function DashboardPage() {
           {history === null ? (
             <SkeletonRows rows={5} />
           ) : puzzles.length === 0 ? (
-            <p className="text-subtle px-3 py-3 text-sm">
+            <p className="text-muted-foreground px-3 py-3 text-sm">
               {t(
                 history.length === 0
                   ? 'No attempts yet — go solve something.'
@@ -362,11 +362,11 @@ export function DashboardPage() {
                       <X className="text-destructive size-3.5 shrink-0" aria-label={t('failed')} />
                     )}
                     <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
-                    <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
+                    <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
                     {/* ml-auto is this list's own layout, not the eye's. */}
                     <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
                     <span
-                      className="text-subtle w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
+                      className="text-muted-foreground w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
                       title={formatWhen(h.at)}
                     >
                       {formatAgo(h.at)}
@@ -393,7 +393,7 @@ function ResetButton({ onDone }: { onDone: () => void }) {
       label={t('Reset')}
       triggerTitle="Wipe attempts, history and the review pool"
       // Position only. A colour here would land AFTER the variant in
-      // cn() and win: text-subtle was doing exactly that, which is why
+      // cn() and win: text-muted-foreground was doing exactly that, which is why
       // the one button meant to read as destructive was grey.
       triggerClassName="ml-auto"
       question="Wipe all attempts, history and the review pool?"

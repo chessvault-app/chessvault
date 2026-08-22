@@ -102,7 +102,7 @@ export function SettingsPage() {
             <SoundCard />
             <DocumentsCard />
             <Card icon={Info} title={t('This is a demo')}>
-              <p className="text-subtle text-sm leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {t(
                   'Everything you change here lives in this browser tab and disappears when you reload. Your profile, password, two-factor authentication, the Lichess token and the vault itself need a server of your own — install the app or host it, and this page becomes the real thing.',
                 )}
@@ -128,7 +128,7 @@ export function SettingsPage() {
         )}
 
         {!isDemo() && (
-          <p className="text-subtle text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             {/* `break-all`: a path is one unbroken word to the line breaker —
                 a Windows one has no break opportunity at all, backslashes
                 included — so it ran straight out of the paragraph and the
@@ -176,7 +176,7 @@ function Card({
 function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1" role="group" aria-label={label}>
-      <span className="text-subtle text-xs font-medium">{label}</span>
+      <span className="text-muted-foreground text-xs font-medium">{label}</span>
       {children}
     </div>
   );
@@ -225,7 +225,7 @@ function ProfileCard({ settings, onSaved }: { settings: Settings; onSaved: () =>
           <ClearableInput inputSize="lg" value={lichess} onChange={(e) => setLichess(e.target.value)} placeholder={t('your Lichess handle')} autoCapitalize="none" />
         </Field>
       </div>
-      <p className="text-subtle text-sm">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
+      <p className="text-muted-foreground text-sm">{t('Usernames pre-fill the archive browser on the Games page.')}</p>
       <div className="flex items-center gap-3">
         <Button variant="default" onClick={() => void save()}>{t('Save profile')}</Button>
         <Feedback note={note} />
@@ -330,7 +330,7 @@ function VersionCard() {
           how a desktop app sat on 0.1.0 while its own settings page
           appeared to say otherwise. */}
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-        <dt className="text-subtle">{t('Server')}</dt>
+        <dt className="text-muted-foreground">{t('Server')}</dt>
         <dd className="text-foreground font-mono">{server ?? '—'}</dd>
         {/* Which BUILD, not which release. The version only moves once per
             release, so between releases it cannot tell a just-deployed app
@@ -342,20 +342,20 @@ function VersionCard() {
             page had settled. */}
         {build === null && server === null ? (
           <>
-            <dt className="text-subtle">{t('Built')}</dt>
+            <dt className="text-muted-foreground">{t('Built')}</dt>
             <dd className="flex h-4 items-center">
               <Skeleton className="h-2.5 w-32" />
             </dd>
           </>
         ) : build ? (
           <>
-            <dt className="text-subtle">{t('Built')}</dt>
+            <dt className="text-muted-foreground">{t('Built')}</dt>
             <dd className="text-foreground font-mono">{build}</dd>
           </>
         ) : null}
         {app && (
           <>
-            <dt className="text-subtle">{t('Desktop app')}</dt>
+            <dt className="text-muted-foreground">{t('Desktop app')}</dt>
             <dd className="text-foreground font-mono">{app}</dd>
           </>
         )}
@@ -392,7 +392,7 @@ function VersionCard() {
           ship with the build (web/vite.licenses.ts) so a copy that was
           conveyed carries them, rather than pointing at a repository the
           reader may never open. */}
-      <p className="text-subtle text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t('Free software under the GPL-3.0.')}{' '}
         <a
           className="text-primary underline underline-offset-2"
@@ -507,8 +507,8 @@ function AppearanceCard() {
                 className={cn(
                   'flex items-center gap-1.5 rounded-md border px-2 py-1 text-sm transition-colors duration-100',
                   schemeId === preset.id
-                    ? 'border-primary/60 bg-primary-soft text-primary'
-                    : 'border-border text-muted-foreground hover:border-border-strong hover:text-foreground',
+                    ? 'border-primary/60 bg-muted text-primary'
+                    : 'border-border text-muted-foreground hover:border-border hover:text-foreground',
                 )}
               >
                 <span
@@ -804,7 +804,7 @@ function SignOutBlock() {
   return (
     <div className="flex flex-col gap-3">
       <span className="text-base font-medium">{t('Sign out')}</span>
-      <p className="text-subtle text-sm">
+      <p className="text-muted-foreground text-sm">
         {t('Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.')}
       </p>
       <div className="flex items-center gap-3">
@@ -844,7 +844,7 @@ function PasswordBlock({ gate }: { gate: boolean }) {
     <div className="flex flex-col gap-3">
       <span className="text-base font-medium">{gate ? t('Change app password') : t('Set an app password')}</span>
       {!gate && (
-        <p className="text-subtle text-sm">
+        <p className="text-muted-foreground text-sm">
           {t('No password is set — anyone who can reach this server sees everything. Setting one turns the lock screen on.')}
         </p>
       )}
@@ -929,7 +929,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
           {t('Two-factor authentication')}
           <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-xs font-semibold">{t('On')}</span>
         </div>
-        <p className="text-subtle text-sm">{t('Turning it off needs a current code from your authenticator app.')}</p>
+        <p className="text-muted-foreground text-sm">{t('Turning it off needs a current code from your authenticator app.')}</p>
         <div className="flex items-center gap-2">
           <Input
             inputSize="lg"
@@ -954,7 +954,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       <span className="text-base font-medium">{t('Two-factor authentication')}</span>
       {!enroll ? (
         <>
-          <p className="text-subtle text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('Adds a 6-digit authenticator code (Google Authenticator, 1Password, Aegis…) to the lock screen.')}{' '}
             {settings.gate ? '' : t('Set an app password first.')}
           </p>
@@ -965,11 +965,11 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
         </>
       ) : (
         <>
-          <p className="text-subtle text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('Scan with your authenticator app, then enter the code it shows. Nothing is saved until the code checks out.')}
           </p>
           <img src={enroll.qr} alt={t('TOTP enrolment QR code')} className="size-40 rounded-lg bg-white p-1.5" />
-          <p className="text-subtle break-all text-sm">
+          <p className="text-muted-foreground break-all text-sm">
             Manual entry key: <span className="font-mono">{enroll.secret}</span>
           </p>
           <div className="flex items-center gap-2">
@@ -1031,7 +1031,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
       {/* One sentence, one string. Assembling it around the link left the
           tail in English while the head was Korean, and no translator can
           fix a sentence that is three fragments in the source. */}
-      <p className="text-subtle text-sm">
+      <p className="text-muted-foreground text-sm">
         {t('Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes, then paste it here — it is stored in the vault and never shown again.')}
       </p>
       <a
@@ -1064,7 +1064,7 @@ function LichessCard({ settings, onChanged }: { settings: Settings; onChanged: (
             type="button"
             onClick={() => setShow((v) => !v)}
             title={show ? 'Hide token' : 'Show token'}
-            className="text-subtle hover:text-foreground absolute inset-y-0 right-0 grid w-9 place-items-center"
+            className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 grid w-9 place-items-center"
           >
             {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
@@ -1160,14 +1160,14 @@ function RecoveryCard() {
 
   return (
     <Card icon={History} title={t('Deleted documents')}>
-      <p className="text-subtle text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
           'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.',
         )}
       </p>
 
       {gone?.length === 0 && (
-        <p className="text-subtle text-sm">{t('Nothing is missing.')}</p>
+        <p className="text-muted-foreground text-sm">{t('Nothing is missing.')}</p>
       )}
 
       {gone && gone.length > 0 && (
@@ -1179,7 +1179,7 @@ function RecoveryCard() {
             >
               <span className="min-w-0">
                 <span className="text-foreground block truncate text-sm">{item.id}</span>
-                <span className="text-subtle text-xs">
+                <span className="text-muted-foreground text-xs">
                   {t('{kind} · deleted {when}', {
                     kind: kindLabel(item.kind),
                     when: formatWhen(item.at),
@@ -1284,7 +1284,7 @@ function BrowsedGamesCard() {
 
   return (
     <Card icon={HardDrive} title={t('Browsed games')}>
-      <p className="text-subtle text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t(
           'Months you have browsed are kept so they open again instantly and work offline. Nothing here is in your collection — a game you kept was copied — so clearing this only means downloading a month again next time you look at it.',
         )}
@@ -1316,7 +1316,7 @@ function BrowsedGamesCard() {
         </>
       )}
       {players !== null && players.length === 0 && (
-        <p className="text-subtle text-sm">{t('Nothing cached yet.')}</p>
+        <p className="text-muted-foreground text-sm">{t('Nothing cached yet.')}</p>
       )}
       {players !== null && players.length > 0 && (
         <>
@@ -1324,7 +1324,7 @@ function BrowsedGamesCard() {
             {players.map((p) => (
               <li key={`${p.provider}/${p.user}`} className="flex items-baseline gap-2 px-3 py-2">
                 <p className="min-w-0 flex-1 truncate text-base">{p.user}</p>
-                <p className="text-subtle shrink-0 text-sm">
+                <p className="text-muted-foreground shrink-0 text-sm">
                   {PROVIDER_NAME[p.provider] ?? p.provider} · {t('{n} months', { n: p.months })} ·{' '}
                   {size(p.bytes)}
                 </p>
@@ -1332,7 +1332,7 @@ function BrowsedGamesCard() {
             ))}
           </ul>
           <div className="flex items-center justify-between gap-2">
-            <span className="text-subtle text-sm">{t('{size} in total', { size: size(total) })}</span>
+            <span className="text-muted-foreground text-sm">{t('{size} in total', { size: size(total) })}</span>
             <Button variant="ghost" disabled={busy} onClick={() => void clear()}>
               {t('Clear all')}
             </Button>
@@ -1349,7 +1349,7 @@ function DangerCard({ gate }: { gate: boolean }) {
 
   return (
     <Card icon={Trash2} title={t('Danger zone')}>
-      <p className="text-subtle text-sm leading-relaxed">
+      <p className="text-muted-foreground text-sm leading-relaxed">
         {t('Wipe every game, study, note, puzzle and imported book from the vault — including its change history. The app password, 2FA and tokens survive. There is no undo; if the vault matters, back it up first.')}
       </p>
       <div className="flex items-center gap-2">

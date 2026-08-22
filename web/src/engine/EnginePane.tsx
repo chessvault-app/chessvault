@@ -131,7 +131,7 @@ export function EngineBlock({
                 >
                   {formatScore(score)}
                 </span>
-                <span className="text-subtle font-mono normal-case tracking-normal">
+                <span className="text-muted-foreground font-mono normal-case tracking-normal">
                   {t('depth')} {top.depth}
                   {top.selDepth ? `/${top.selDepth}` : ''}
                   {finished ? '' : '…'}
@@ -236,7 +236,7 @@ export function EngineBlock({
                   : t('The game ends here — there is nothing left to search.')}
               </li>
             ) : visibleLines.length === 0 ? (
-              <li className="text-subtle px-3 py-1 text-sm">{t('Thinking…')}</li>
+              <li className="text-muted-foreground px-3 py-1 text-sm">{t('Thinking…')}</li>
             ) : (
               visibleLines.map((line) => (
                 <PvRow
@@ -317,7 +317,7 @@ function CurrentLine() {
         )}
       >
         {numbered && (
-          <span className="text-subtle mr-0.5 font-mono">
+          <span className="text-muted-foreground mr-0.5 font-mono">
             {moveNumberLabel(node.ply, blackFirst)}
           </span>
         )}
@@ -384,13 +384,13 @@ function CurrentLine() {
       // Negative margins because the chips carry their own padding: the
       // bracket has to sit against the move, not a gap away from it.
       out.push(
-        <span key={`${alt}-(`} className="text-subtle -mr-1 text-sm">
+        <span key={`${alt}-(`} className="text-muted-foreground -mr-1 text-sm">
           (
         </span>,
       );
       emit(out, alt);
       out.push(
-        <span key={`${alt}-)`} className="text-subtle -ml-1 text-sm">
+        <span key={`${alt}-)`} className="text-muted-foreground -ml-1 text-sm">
           )
         </span>,
       );
@@ -566,7 +566,7 @@ function Slider({
         <span className="text-muted-foreground">{label}</span>
         <span className="text-foreground font-mono tabular-nums">
           {format ? format(value) : value}
-          {hint ? <span className="text-subtle ml-1 font-sans">{hint}</span> : null}
+          {hint ? <span className="text-muted-foreground ml-1 font-sans">{hint}</span> : null}
         </span>
       </span>
       <input

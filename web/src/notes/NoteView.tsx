@@ -11,8 +11,6 @@ import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl, type SaveState } from '@/components/save-control';
 import { DocumentHistory } from '@/components/history-panel';
 import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
-import { UndoBar } from '@/components/undo-bar';
-import { useUndoable } from '@/hooks/use-undoable';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { MobileActionBar } from '@/components/mobile-action-bar';
@@ -197,7 +195,6 @@ function NoteEditor({
    */
   const front = useRef(frontMatter);
   front.current = frontMatter;
-  const undoable = useUndoable();
   // Subscribed, not read: turning autosave on in Settings has to reach the
   // header of a note that is already open.
   const autosave = usePrefs((p) => p.autosave);
@@ -435,16 +432,6 @@ function NoteEditor({
         />
       )}
 
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          message={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
       {/* While editing, the note owns the bottom of the phone: the global
           tabs are pushed above the keyboard by iOS and eat the room the
           note needs. Claiming the bar (with nothing in it) hides them. */}
@@ -507,7 +494,7 @@ function NoteTitle({ id }: { id: string }) {
         title={failure ?? id}
         className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
       >
-        {folder && <span className="text-subtle">{folder} / </span>}
+        {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}
       </h1>
     </>

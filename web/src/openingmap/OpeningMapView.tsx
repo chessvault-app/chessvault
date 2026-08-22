@@ -395,7 +395,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       meta={
         <>
           <span className="text-muted-foreground text-sm">{color === 'white' ? t('White') : t('Black')}</span>
-          <span className="text-subtle text-sm">
+          <span className="text-muted-foreground text-sm">
             {saveState === 'saving'
               ? t('Saving…')
               : saveState === 'dirty'
@@ -542,7 +542,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                   ? t('Start position')
                   : `${moveNumberLabel(selectedFacts.ply)} ${selectedFacts.mapNode.san ?? ''}`}
               </span>
-              <span className="text-subtle block truncate text-sm">
+              <span className="text-muted-foreground block truncate text-sm">
                 {labels.get(selected) ?? t('Tap for details')}
               </span>
             </button>
@@ -820,7 +820,7 @@ function PickRow({
       className={cn(
         'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-base transition-colors duration-100',
         picked
-          ? 'border-primary/40 bg-primary-soft text-primary font-medium'
+          ? 'border-primary/40 bg-muted text-primary font-medium'
           : 'border-border text-foreground hover:bg-accent',
       )}
     >
@@ -987,7 +987,7 @@ function NodePanel({
         )}
         <div className="min-w-0">
           <p className="text-foreground text-base font-semibold">{title}</p>
-          {lineName && !isRoot && <p className="text-subtle truncate text-sm">{lineName}</p>}
+          {lineName && !isRoot && <p className="text-muted-foreground truncate text-sm">{lineName}</p>}
           {coverage?.covered && (
             <p className="text-muted-foreground text-sm">
               {t('Prepared {plies} plies deep, {lines} lines', {
@@ -1040,7 +1040,7 @@ function NodePanel({
           </Field>
           <Field
             label="Intended depth"
-            hint={<span className="text-subtle text-xs">{t('full moves')}</span>}
+            hint={<span className="text-muted-foreground text-xs">{t('full moves')}</span>}
           >
             <Input
               type="number"
@@ -1188,7 +1188,7 @@ function NodePanel({
         <Field
           label="Games that left here"
           hint={
-            <span className="text-subtle text-xs">
+            <span className="text-muted-foreground text-xs">
               {t('{n} games', { n: deviations.length })}
             </span>
           }
@@ -1218,7 +1218,7 @@ function NodePanel({
                       {t('Kept')}
                     </span>
                   )}
-                  <span className="text-subtle shrink-0 text-sm">{d.result}</span>
+                  <span className="text-muted-foreground shrink-0 text-sm">{d.result}</span>
                   <span
                     className={d.userDeviated ? 'text-warn shrink-0 text-sm font-medium' : 'text-muted-foreground shrink-0 text-sm font-medium'}
                     title={d.userDeviated ? t('You left the book with this move') : t('They left the book with this move')}
@@ -1264,7 +1264,7 @@ function NodePanel({
               );
             })}
             {deviations.length > 4 && (
-              <p className="text-subtle px-1 text-sm">{t('and {n} more', { n: deviations.length - 4 })}</p>
+              <p className="text-muted-foreground px-1 text-sm">{t('and {n} more', { n: deviations.length - 4 })}</p>
             )}
           </div>
         </Field>
@@ -1273,7 +1273,7 @@ function NodePanel({
       {chartable.length > 0 && (
         <Field
           label="Prepared, not on the map"
-          hint={<span className="text-subtle text-xs">{t('tap to add')}</span>}
+          hint={<span className="text-muted-foreground text-xs">{t('tap to add')}</span>}
         >
           <div className="flex flex-wrap gap-1.5">
             {chartable.map((san) => (

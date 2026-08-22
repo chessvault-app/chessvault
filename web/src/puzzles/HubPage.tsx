@@ -213,7 +213,7 @@ function PuzzleCard({
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
         <span className="text-foreground text-base font-medium">{title}</span>
-        {detail && <span className="text-subtle text-sm leading-snug">{detail}</span>}
+        {detail && <span className="text-muted-foreground text-sm leading-snug">{detail}</span>}
         {/* Whose move — the one thing you cannot read off a thumbnail
             fast, and the thing lichess puts under every one of these.
             Deliberately NOT a flex row: `items-center` would centre the
@@ -226,7 +226,7 @@ function PuzzleCard({
           {side === 'white' ? t('White to play') : t('Black to play')}
         </span>
       </span>
-      <ChevronRight className="text-subtle size-4 shrink-0 self-center" />
+      <ChevronRight className="text-muted-foreground size-4 shrink-0 self-center" />
     </button>
   );
 }
@@ -404,9 +404,9 @@ function EmptySlot({
       />
       <span className="flex min-w-0 flex-1 flex-col justify-center gap-1">
         <span className="text-muted-foreground text-base font-medium">{title}</span>
-        {detail && <span className="text-subtle text-sm leading-snug">{detail}</span>}
+        {detail && <span className="text-muted-foreground text-sm leading-snug">{detail}</span>}
       </span>
-      {go && <ChevronRight className="text-subtle size-4 shrink-0 self-center" />}
+      {go && <ChevronRight className="text-muted-foreground size-4 shrink-0 self-center" />}
     </>
   );
   // PuzzleCard's geometry exactly; only the hover and the press differ.
@@ -459,7 +459,7 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
         {t('Worth practising')}
       </p>
       <ListRow onClick={() => navigate('puzzles', 'theme', weak.theme)}>
-        <span className="bg-muted text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+        <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
           <Puzzle className="size-3.5" />
         </span>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -474,10 +474,10 @@ function WeakThemePanel({ weak }: { weak: WeakTheme }) {
             showEmpty
           />
         </span>
-        <span className="text-subtle shrink-0 font-mono text-xs tabular-nums">
+        <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
           {weak.wins}/{weak.attempts}
         </span>
-        <ChevronRight className="text-subtle size-3.5 shrink-0" />
+        <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
       </ListRow>
     </div>
   );
@@ -500,7 +500,7 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
               className="border-border h-10 w-7 shrink-0 rounded-sm border object-cover"
             />
           ) : (
-            <span className="bg-muted text-subtle grid h-10 w-7 shrink-0 place-items-center rounded-sm">
+            <span className="bg-muted text-muted-foreground grid h-10 w-7 shrink-0 place-items-center rounded-sm">
               <BookMarked className="size-3.5" />
             </span>
           )}
@@ -508,10 +508,10 @@ function BookShelfPanel({ books }: { books: BookSummary[] }) {
             <span className="text-foreground truncate text-sm font-medium">{b.title}</span>
             <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty />
           </span>
-          <span className="text-subtle shrink-0 font-mono text-xs tabular-nums">
+          <span className="text-muted-foreground shrink-0 font-mono text-xs tabular-nums">
             {b.solved}/{b.puzzles}
           </span>
-          <ChevronRight className="text-subtle size-3.5 shrink-0" />
+          <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
         </ListRow>
       ))}
     </div>
@@ -556,7 +556,7 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
       </p>
       <div className="min-h-0 flex-1 overflow-y-auto">
       {attempts.length === 0 && (
-        <p className="text-subtle px-3 py-2.5 text-sm">
+        <p className="text-muted-foreground px-3 py-2.5 text-sm">
           {t('Nothing solved yet — the puzzles you attempt turn up here.')}
         </p>
       )}
@@ -588,10 +588,10 @@ function HistoryPanel({ attempts }: { attempts: HistoryEntry[] }) {
               and whitespace-nowrap makes the wrap impossible rather than
               merely unlikely. */}
           <span className="text-foreground w-16 shrink-0 font-mono">#{h.id}</span>
-          <span className="text-subtle w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
+          <span className="text-muted-foreground w-14 shrink-0">{t(bandOf(h.puzzleRating))}</span>
           <PreviewEye eye={preview.eyeProps(h.id)} className="ml-auto" />
           <span
-            className="text-subtle w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
+            className="text-muted-foreground w-20 shrink-0 whitespace-nowrap text-right tabular-nums"
             title={formatWhen(h.at)}
           >
             {formatAgo(h.at)}

@@ -315,14 +315,14 @@ export function PhotoImport({
         className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
       >
         {dragOver && (
-          <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
+          <div className="bg-muted/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
             <p className="text-primary text-base font-semibold">{t('Drop the image')}</p>
           </div>
         )}
 
         {!img ? (
           <>
-            <label className="border-border hover:border-border-strong hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+            <label className="border-border hover:border-border hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
               <input
                 type="file"
                 accept="image/*"
@@ -334,7 +334,7 @@ export function PhotoImport({
               />
               <span className="text-muted-foreground text-base">
                 Choose an image of the diagram
-                <span className="text-subtle block text-sm">{t('a screenshot or scan works best')}</span>
+                <span className="text-muted-foreground block text-sm">{t('a screenshot or scan works best')}</span>
               </span>
             </label>
             <div className="flex items-center gap-2">
@@ -342,13 +342,13 @@ export function PhotoImport({
                 <ClipboardPaste className="size-3.5" />
                 {t('Paste image')}
               </Button>
-              <span className="text-subtle text-sm">{t('or press Ctrl+V — dropping a file here works too')}</span>
+              <span className="text-muted-foreground text-sm">{t('or press Ctrl+V — dropping a file here works too')}</span>
             </div>
             {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
           </>
         ) : (
           <>
-            <p className="text-subtle text-sm">
+            <p className="text-muted-foreground text-sm">
               {t('Drag the four handles onto the corners of the diagram.')}
             </p>
             <canvas

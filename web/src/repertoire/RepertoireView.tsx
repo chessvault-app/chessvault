@@ -191,7 +191,7 @@ function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
     // top edge against 20px).
     <div className="flex h-6 w-full items-center gap-2 px-0.5">
       <SideDot side={side} />
-      <span className={cn('min-w-0 flex-1 truncate text-base', toMove ? 'text-foreground font-medium' : 'text-subtle')}>
+      <span className={cn('min-w-0 flex-1 truncate text-base', toMove ? 'text-foreground font-medium' : 'text-muted-foreground')}>
         {side === 'white' ? t('White') : t('Black')}
       </span>
     </div>
@@ -1189,7 +1189,7 @@ export function RepertoireView() {
         <div className="border-border flex flex-col gap-1 rounded-lg border p-2">
           <span className="text-muted-foreground text-sm font-medium">{t('From the opening map')}</span>
           <p className="text-foreground text-sm">{mapDrill.label}</p>
-          <p className="text-subtle text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
           </p>
           <Button
@@ -1273,14 +1273,14 @@ export function RepertoireView() {
       {/* A disabled Start with no word is a riddle; the reason
           is one line. */}
       {needsToken && (
-        <p className="text-subtle text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {t(
             'The Lichess database needs an API token. Add one in Settings, or pick a reference database instead.',
           )}
         </p>
       )}
       {mode === 'drill' && drillChapter && !drillReady && (
-        <p className="text-subtle text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {wholeStudy
             ? t('This study has no moves yet — nothing to drill.')
             : t('This chapter has no moves yet — nothing to drill.')}
@@ -1292,7 +1292,7 @@ export function RepertoireView() {
           record can still be wiped. */}
       {mode === 'drill' && summary && summary.attempted > 0 && (
         <div className="flex items-center gap-2">
-          <p className="text-subtle min-w-0 flex-1 text-sm leading-relaxed">
+          <p className="text-muted-foreground min-w-0 flex-1 text-sm leading-relaxed">
             {summary.review.length > 0 &&
               t('{n} positions to review', { n: summary.review.length })}
             {summary.review.length > 0 && summary.gaps > 0 && ' · '}
@@ -1395,9 +1395,9 @@ export function RepertoireView() {
         'border-border border px-3 py-2.5 text-left transition-colors duration-100',
       )}
     >
-      <Settings2 className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+      <Settings2 className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors" />
       <span className="text-foreground min-w-0 flex-1 text-sm">{setupTerms}</span>
-      <ChevronRight className="text-subtle size-3.5 shrink-0" />
+      <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
     </button>
   );
 
@@ -1520,7 +1520,7 @@ export function RepertoireView() {
         </p>
       )}
       {gapNote && phase !== 'ended' && (
-        <p className="text-subtle text-sm leading-relaxed">{gapNote}</p>
+        <p className="text-muted-foreground text-sm leading-relaxed">{gapNote}</p>
       )}
       {/* The dependency arrow, pointed back: Settings knows it
           powers this, but this error never said Settings was
@@ -1545,7 +1545,7 @@ export function RepertoireView() {
           paragraph the panel made every visit re-read is exactly what
           that InfoTip was cut out of. */}
       {phase === 'idle' && (
-        <p className="text-subtle text-sm leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {t('Practise an opening against real games')}
         </p>
       )}

@@ -125,11 +125,11 @@ export function FinalAssessment({
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center gap-2">
           <span className="text-foreground flex min-w-[3.75rem] items-center font-mono text-xl font-semibold tabular-nums">
-            {score ? formatScore(score) : <Loader2 className="text-subtle size-4 animate-spin" />}
+            {score ? formatScore(score) : <Loader2 className="text-muted-foreground size-4 animate-spin" />}
           </span>
           <EvalBar score={score} orientation="horizontal" className="flex-1" />
         </div>
-        <p className="text-subtle min-h-[0.875rem] text-xs leading-none">
+        <p className="text-muted-foreground min-h-[0.875rem] text-xs leading-none">
           {verdict || settled ? '' : t('Evaluating the position…')}
         </p>
       </div>

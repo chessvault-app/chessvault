@@ -75,7 +75,7 @@ export function SourcePane({
       {tab === 'diagram' && evidence.page ? (
         <>
           <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={shown - 32} />
-          <p className="text-subtle text-sm leading-relaxed">
+          <p className="text-muted-foreground text-sm leading-relaxed">
             {t('The book’s own scan — make the board match it.')}
           </p>
         </>
@@ -165,7 +165,7 @@ export function SolutionsView({
           >
             <ChevronLeft className="size-3.5" />
           </Button>
-          <span className="text-subtle flex-1 text-center font-mono text-xs">
+          <span className="text-muted-foreground flex-1 text-center font-mono text-xs">
             {index + 1} / {pages.length}
           </span>
           <Button
@@ -285,7 +285,7 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
         }}
         className="grid size-full place-items-center"
       >
-        <Eye className="text-subtle group-hover:text-foreground size-3.5 transition-colors pointer-coarse:size-4.5" />
+        <Eye className="text-muted-foreground group-hover:text-foreground size-3.5 transition-colors pointer-coarse:size-4.5" />
       </button>
       {shown &&
         box &&

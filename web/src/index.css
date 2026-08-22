@@ -391,18 +391,11 @@
   --color-ring: var(--ring);
 
   /* The app's extensions — what shadcn has no word for, named in its
-     style: subtle is the third text tier under muted-foreground;
-     border-strong the heavier rule; primary-hover and primary-soft are
-     real tokens rather than a `/90` and a `/10` of primary because their
-     contrast was measured. (The ladder's surface-3 and surface-inset rungs
-     still exist as variables — the skeleton grid and a few strips read
-     them — but are no utilities: everything on the page uses muted and
-     accent.) */
+     style. The ladder's extra rungs (surface-3, surface-inset, text-subtle,
+     border-strong, primary-hover, primary-soft) still exist as variables
+     but are no utilities: everything on the page speaks the registry's
+     vocabulary above. */
   --color-background-accent: var(--background-accent);
-  --color-subtle: var(--text-subtle);
-  --color-border-strong: var(--border-strong);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-soft: var(--primary-soft);
 
   /* The colour grammar (docs/design-principles.md): green, amber and blue
      each mean one thing; destructive above is the red. */
@@ -1131,57 +1124,6 @@ cg-board square.check {
   }
 }
 
-.bar-sweep {
-  animation: sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-/* The undo toast arriving: a short rise with the fade, so it reads as
-   having just appeared rather than as something always there that went
-   unnoticed. Motion-averse users get the fade alone. */
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-rise {
-  animation: rise 160ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* And leaving again. Without it the toast vanished between two frames,
-   which reads as a glitch rather than as the offer having expired — the
-   arrival was animated and the departure was not. `forwards` holds the
-   last frame for the few ms before it actually unmounts. */
-@keyframes sink {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(0.5rem);
-  }
-}
-
-.animate-sink {
-  animation: sink 160ms cubic-bezier(0.4, 0, 1, 1) forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-rise {
-    animation: none;
-  }
-
-  .animate-sink {
-    animation: none;
-    opacity: 0;
-  }
-}
 
 /* The app shell and every floating layer, pinned to the band that can
    actually be seen — but ONLY while the keyboard is up.

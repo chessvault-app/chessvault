@@ -533,14 +533,14 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                   <span className="text-foreground block truncate text-base">
                     <SideDot side="white" className="mr-1.5 inline-block align-[-1px]" />
                     <span className="font-semibold">{g.white}</span>{' '}
-                    <span className="text-subtle text-sm">{g.white_elo}</span>
+                    <span className="text-muted-foreground text-sm">{g.white_elo}</span>
                   </span>
                   <span className="text-foreground block truncate text-base">
                     <SideDot side="black" className="mr-1.5 inline-block align-[-1px]" />
                     <span className="font-semibold">{g.black}</span>{' '}
-                    <span className="text-subtle text-sm">{g.black_elo}</span>
+                    <span className="text-muted-foreground text-sm">{g.black_elo}</span>
                   </span>
-                  <span className="text-subtle block truncate text-sm">
+                  <span className="text-muted-foreground block truncate text-sm">
                     {g.eco ? <OpeningTag eco={g.eco} name={g.opening} /> : g.opening}
                     {(g.eco || g.opening) && g.date ? ' · ' : ''}
                     {g.date ?? ''}
@@ -609,8 +609,8 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
           ))}
           {rows.length < total && (
             <li ref={sentinel} className="flex items-center justify-center gap-2 p-3">
-              <Loader2 className="text-subtle size-4 animate-spin" />
-              <span className="text-subtle text-sm">{t('Loading older games…')}</span>
+              <Loader2 className="text-muted-foreground size-4 animate-spin" />
+              <span className="text-muted-foreground text-sm">{t('Loading older games…')}</span>
             </li>
           )}
       </ul>

@@ -133,19 +133,19 @@ function HistorySheet({
           className="gap-3"
           fill
         >
-          <p className="text-subtle text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('This is what “{name}” held {when}.', { name, when: formatAgo(chosen.at) })}
           </p>
 
           {preview === null ? (
             <Skeleton className="min-h-24 flex-1" />
           ) : (
-            <pre className="bg-muted text-subtle min-h-0 flex-1 overflow-auto rounded-sm p-2 font-mono text-xs whitespace-pre-wrap">
+            <pre className="bg-muted text-muted-foreground min-h-0 flex-1 overflow-auto rounded-sm p-2 font-mono text-xs whitespace-pre-wrap">
               {preview}
             </pre>
           )}
 
-          <p className="text-subtle shrink-0 text-sm">
+          <p className="text-muted-foreground shrink-0 text-sm">
             {t('The version you have now is kept too, so you can come back to it here.')}
           </p>
 
@@ -180,7 +180,7 @@ function HistorySheet({
         className="gap-3"
         fill
       >
-        <p className="text-subtle text-sm">
+        <p className="text-muted-foreground text-sm">
           {t('Every change to “{name}” is kept automatically. Pick a time to look at it.', { name })}
         </p>
 
@@ -188,7 +188,7 @@ function HistorySheet({
           // Said plainly and without alarm: a vault with no history is not a
           // broken vault, and the recovery screen is the last place to make
           // somebody think something is wrong.
-          <p className="text-subtle text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('This vault is not keeping a history, so there is nothing earlier to show.')}
           </p>
         )}
@@ -202,7 +202,7 @@ function HistorySheet({
         )}
 
         {versions?.length === 0 && (
-          <p className="text-subtle text-sm">
+          <p className="text-muted-foreground text-sm">
             {t('This is the only version so far — nothing has changed since it was created.')}
           </p>
         )}
@@ -219,7 +219,7 @@ function HistorySheet({
                   {/* The relative time answers "is this the one?"; the exact
                       one settles it when two are minutes apart. */}
                   <span className="text-foreground text-sm">{formatAgo(version.at)}</span>
-                  <span className="text-subtle text-xs">{formatWhen(version.at)}</span>
+                  <span className="text-muted-foreground text-xs">{formatWhen(version.at)}</span>
                 </button>
               </li>
             ))}

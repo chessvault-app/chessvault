@@ -269,7 +269,7 @@ function ConnectionLabel() {
   const host = location.hostname;
   const local = host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.');
   return (
-    <span className="text-subtle hidden truncate text-sm lg:block" title={location.origin}>
+    <span className="text-muted-foreground hidden truncate text-sm lg:block" title={location.origin}>
       {!online ? t('Offline') : local ? t('This machine') : host}
     </span>
   );
@@ -321,7 +321,7 @@ function SubNavItem({
       className={cn(
         'flex h-8 items-center gap-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
         'justify-center lg:justify-start lg:pl-[2.35rem] lg:pr-3',
-        active ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-accent hover:text-foreground',
+        active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
       )}
     >
       <Icon className="size-3.5 shrink-0" />
@@ -375,7 +375,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
                   ? // Fill, outline and rail together: on the darker page
                     // the soft fill alone was close enough to the sidebar
                     // that the current section had to be looked for.
-                    'bg-primary-soft text-primary ring-primary/30 font-semibold ring-1 ring-inset'
+                    'bg-muted text-primary ring-primary/30 font-semibold ring-1 ring-inset'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
@@ -414,7 +414,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
-            inTools(active) ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            inTools(active) ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {inTools(active) && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
@@ -440,7 +440,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           className={cn(
             'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-base font-medium',
             'transition-colors duration-150 justify-center lg:justify-start',
-            active === 'databases' ? 'bg-primary-soft text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            active === 'databases' ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
           {active === 'databases' && <span className="bg-primary absolute left-0 h-5 w-[3px] rounded-r-full" />}
@@ -460,7 +460,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             className={cn(
               'grid size-9 place-items-center rounded-lg transition-colors duration-100',
               active === 'settings'
-                ? 'bg-primary-soft text-primary'
+                ? 'bg-muted text-primary'
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground',
             )}
           >
@@ -526,7 +526,7 @@ function MorePage() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-base font-medium">{t(label)}</div>
-                  <div className="text-subtle text-sm">{t(blurb)}</div>
+                  <div className="text-muted-foreground text-sm">{t(blurb)}</div>
                 </div>
               </button>
             ))}
@@ -577,7 +577,7 @@ function MobileNav({ active }: { active: Section }) {
             className={cn(
               'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
               'transition-colors duration-150',
-              isActive ? 'text-primary' : 'text-subtle',
+              isActive ? 'text-primary' : 'text-muted-foreground',
             )}
           >
             <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
@@ -592,7 +592,7 @@ function MobileNav({ active }: { active: Section }) {
         className={cn(
           'flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium',
           'transition-colors duration-150',
-          inMore ? 'text-primary' : 'text-subtle',
+          inMore ? 'text-primary' : 'text-muted-foreground',
         )}
       >
         <Ellipsis className="size-[1.15rem]" strokeWidth={inMore ? 2.4 : 2} />
@@ -624,7 +624,7 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
     return (
       <div className="grid h-full place-items-center p-8">
         <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-          <div className="bg-muted text-subtle grid size-14 place-items-center rounded-2xl">
+          <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
             <Wrench className="size-6" strokeWidth={1.75} />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">{t('Something went wrong')}</h1>
@@ -650,7 +650,7 @@ function Placeholder({ section }: { section: Section }) {
   return (
     <div className="grid h-full place-items-center p-8">
       <div className="flex max-w-sm flex-col items-center gap-3 text-center">
-        <div className="bg-muted text-subtle grid size-14 place-items-center rounded-2xl">
+        <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
           <Swords className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className="text-xl font-semibold tracking-tight capitalize">{section}</h1>

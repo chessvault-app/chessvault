@@ -463,7 +463,7 @@ function ScanPanel({
       className={cn(
         'mb-3 block w-full rounded-xl border p-6 text-center transition-colors duration-100',
         live
-          ? 'border-primary/40 bg-primary-soft/40 hover:bg-primary-soft/60'
+          ? 'border-primary/40 bg-muted/40 hover:bg-muted/60'
           : 'border-warn/40 bg-warn/5 hover:bg-warn/10',
       )}
     >
@@ -499,7 +499,7 @@ function ScanPanel({
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="text-subtle mt-3 text-sm">
+      <p className="text-muted-foreground mt-3 text-sm">
         {live ? t('Press to watch it, or to pause.') : t('Press to carry on from page {page}.', { page: page + 1 })}
       </p>
     </button>

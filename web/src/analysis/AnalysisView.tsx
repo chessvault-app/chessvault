@@ -22,7 +22,6 @@ import { MobileActionBar } from '@/components/mobile-action-bar';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Panel, PanelHeader } from '@/components/panel';
 import { PaneTabs } from '@/components/pane-tabs';
-import { UndoBar } from '@/components/undo-bar';
 import { useUndoable } from '@/hooks/use-undoable';
 import { MoveTreePane, SidelinesToggle } from './MoveTreePane';
 import { LoadPositionButton } from './PositionLoader';
@@ -282,7 +281,7 @@ function BoardPageHeader({ explorer = false }: { explorer?: boolean }) {
  *
  * Deleting a move (and everything after it) was the only one-tap,
  * no-confirm, no-undo destruction in the app — while every shelf row got
- * an UndoBar. The tree is in memory, so undo is a snapshot: capture
+ * an undo toast. The tree is in memory, so undo is a snapshot: capture
  * before the act, put it back if asked. Same treatment as the shelves,
  * same toast.
  */
@@ -340,7 +339,7 @@ export function MoveActions({
   const deleteNode = useAnalysis((s) => s.deleteNode);
   const reset = useAnalysis((s) => s.reset);
   const clearMoves = useClearMoves(allowClear, allowReset);
-  const { undoable, capture } = useTreeUndo();
+  const { capture } = useTreeUndo();
 
   const node = getNode(tree, cursorId);
   const atRoot = node.parentId === null;
@@ -393,15 +392,6 @@ export function MoveActions({
           <RotateCcw className="size-3.5" />
         </Button>
       )}
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
     </>
   );
 }
@@ -448,7 +438,7 @@ export function MovesOverflow({
   const cursorId = useAnalysis((s) => s.cursorId);
   const reset = useAnalysis((s) => s.reset);
   const clearMoves = useClearMoves(allowClear, allowReset);
-  const { undoable, capture } = useTreeUndo();
+  const { capture } = useTreeUndo();
   const exportPgn = useAnalysis((s) => s.exportPgn);
   const runReview = useReview((s) => s.run);
   const reviewing = useReview((s) => s.status) === 'running';
@@ -518,15 +508,6 @@ export function MovesOverflow({
           <MoreHorizontal className="size-3.5" />
         </Button>
       </ActionMenu>
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
     </>
   );
 }

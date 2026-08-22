@@ -127,7 +127,7 @@ export function FieldStats({
        */
       hint={
         <span
-          className="text-subtle text-xs"
+          className="text-muted-foreground text-xs"
           title={
             gaps
               ? t('Games whose reply your map charts or a linked study prepares.')
@@ -209,7 +209,7 @@ export function FieldStats({
                     // invisible inset takes the target to 38px on a coarse
                     // pointer and moves nothing.
                     className={cn(
-                      'text-subtle hover:text-foreground relative shrink-0',
+                      'text-muted-foreground hover:text-foreground relative shrink-0',
                       'pointer-coarse:before:absolute pointer-coarse:before:-inset-3 pointer-coarse:before:content-[""]',
                     )}
                   >
@@ -225,7 +225,7 @@ export function FieldStats({
             — it was setting that column's width for the whole table and
             pushing every bar an inch to the right. */}
         {rows.length > SHOWN && (
-          <p className="text-subtle col-span-3 px-2 pt-1 text-sm">
+          <p className="text-muted-foreground col-span-3 px-2 pt-1 text-sm">
             {t('and {n} rarer moves', { n: rows.length - SHOWN })}
           </p>
         )}

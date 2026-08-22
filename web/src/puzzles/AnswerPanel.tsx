@@ -77,7 +77,7 @@ export function AnswerPanel({
         // item itself was a 48px floor that `min-h-0` could not undo — the
         // shrink stopped 7px early and the toolbar wore it.
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <p className="text-subtle px-3 py-6 text-center text-sm">{emptyText}</p>
+          <p className="text-muted-foreground px-3 py-6 text-center text-sm">{emptyText}</p>
         </div>
       ) : (
         <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto text-base leading-relaxed">

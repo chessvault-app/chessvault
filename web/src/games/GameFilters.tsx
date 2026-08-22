@@ -288,7 +288,7 @@ export function StructuredFiltersWindow({
           </div>
           {/* The outcome is the player's, so it needs one. */}
           {draft.outcome !== 'any' && !draft.player.trim() && (
-            <p className="text-subtle mt-1 text-sm">{t('Won or lost by whom? Name a player above.')}</p>
+            <p className="text-muted-foreground mt-1 text-sm">{t('Won or lost by whom? Name a player above.')}</p>
           )}
         </Field>
 
@@ -322,7 +322,7 @@ export function StructuredFiltersWindow({
               aria-label={t('From date')}
               className="w-[9.5rem]"
             />
-            <span className="text-subtle" aria-hidden>
+            <span className="text-muted-foreground" aria-hidden>
               –
             </span>
             <DateInput

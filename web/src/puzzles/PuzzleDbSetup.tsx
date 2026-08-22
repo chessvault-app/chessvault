@@ -99,20 +99,20 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                   : t('Building the database')}
             </p>
 
-            <span className="bg-muted/50 border-border-strong flex h-2 w-full overflow-hidden rounded-full border">
+            <span className="bg-muted/50 border-border flex h-2 w-full overflow-hidden rounded-full border">
               <span
                 className={cn(
                   'bg-primary h-full',
                   // Nothing to measure against: a segment that sweeps the
                   // track says "working" without claiming a percentage. A
                   // part-filled static bar would be read as one.
-                  fraction === null && 'bar-sweep w-1/4',
+                  fraction === null && 'w-1/4 animate-[sweep_1.6s_cubic-bezier(0.4,0,0.2,1)_infinite]',
                 )}
                 style={fraction === null ? undefined : { width: `${100 * fraction}%` }}
               />
             </span>
 
-            <p className="text-subtle font-mono text-xs">
+            <p className="text-muted-foreground font-mono text-xs">
               {phase === 'downloading'
                 ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
                 : phase === 'indexing'
@@ -120,7 +120,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                   : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })}
             </p>
 
-            <p className="text-subtle text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {t('This keeps running if you leave the page. It takes a few minutes.')}
             </p>
           </>

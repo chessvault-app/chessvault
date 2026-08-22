@@ -156,7 +156,7 @@ export function SearchInput({
     >
       <InputGroup inputSize={inputSize} className="min-w-0 flex-1">
         <InputGroupAddon>
-          <Search className="text-subtle pointer-events-none size-3.5" />
+          <Search className="text-muted-foreground pointer-events-none size-3.5" />
         </InputGroupAddon>
         <InputGroupInput
           ref={(node) => {
@@ -240,7 +240,7 @@ export function DateInput({ className, inputSize = 'md', ...props }: InputProps)
   return (
     <InputGroup inputSize={inputSize} className={cn('inline-flex w-auto', className)}>
       <InputGroupAddon>
-        <CalendarDays className="text-subtle pointer-events-none size-3.5" />
+        <CalendarDays className="text-muted-foreground pointer-events-none size-3.5" />
       </InputGroupAddon>
       <InputGroupInput type="date" inputSize={inputSize} className="w-full pl-1.5" {...props} />
     </InputGroup>

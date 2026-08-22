@@ -31,7 +31,6 @@ import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
 import { PageShell } from '@/components/page-shell';
-import { UndoBar } from '@/components/undo-bar';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl, FabSpacer } from '@/components/fab';
 import { SkeletonCards, useSlowLoad } from '@/components/skeletons';
@@ -218,15 +217,6 @@ function StudyList() {
         />
       )}
 
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
 
       <FabSpacer />
     </PageShell>
@@ -630,8 +620,8 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           </Button>
         </div>
       </Field>
-      {note && <p className="text-subtle text-sm">{note}</p>}
-      {list && list.length === 0 && <p className="text-subtle text-sm">{t('No studies found.')}</p>}
+      {note && <p className="text-muted-foreground text-sm">{note}</p>}
+      {list && list.length === 0 && <p className="text-muted-foreground text-sm">{t('No studies found.')}</p>}
       {list && list.length > 0 && (
         <>
           {/* The count is on the label line rather than in the list, so the
@@ -640,7 +630,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
           <Field
             label="Studies to import"
             hint={
-              <span className="text-subtle text-sm">
+              <span className="text-muted-foreground text-sm">
                 {t('{n} of {total} selected', { n: checked.size, total: list.length })}
               </span>
             }
@@ -745,7 +735,7 @@ function GroupedStudies({
         <section key={folder || '(root)'} className="flex flex-col gap-2">
           {folder && <FolderHeader folder={folder} empty={groups.get(folder)!.length === 0} />}
           {groups.get(folder)!.length === 0 ? (
-            <p className="text-subtle px-1 text-sm">{t('Empty collection.')}</p>
+            <p className="text-muted-foreground px-1 text-sm">{t('Empty collection.')}</p>
           ) : (
             // Up to three abreast: two from sm, three from xl, one on a
             // phone. The cards are a fixed height and read left to right,

@@ -228,7 +228,7 @@ function ActionSheetBody({
               className,
             )}
           >
-            <Icon className={cn('size-4 shrink-0', !danger && 'text-subtle')} />
+            <Icon className={cn('size-4 shrink-0', !danger && 'text-muted-foreground')} />
             {t(label)}
           </button>
         ))}

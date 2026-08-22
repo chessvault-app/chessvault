@@ -272,7 +272,7 @@ export function ExplorerPane({
           <div className="border-border flex h-8 shrink-0 items-center gap-2 border-b px-3">
             {lineOpening ? (
               <>
-                <span className="text-subtle shrink-0 font-mono text-xs font-semibold">
+                <span className="text-muted-foreground shrink-0 font-mono text-xs font-semibold">
                   {lineOpening.eco}
                 </span>
                 <span
@@ -283,11 +283,11 @@ export function ExplorerPane({
                 </span>
               </>
             ) : (
-              <span className="text-subtle text-sm">
+              <span className="text-muted-foreground text-sm">
                 {node.ply === 0 ? t('Starting position') : t('Out of book')}
               </span>
             )}
-            {loading && <Loader2 className="text-subtle ml-auto size-3 shrink-0 animate-spin" />}
+            {loading && <Loader2 className="text-muted-foreground ml-auto size-3 shrink-0 animate-spin" />}
           </div>
 
 
@@ -327,7 +327,7 @@ export function ExplorerPane({
           ) : (
             <div className={cn('min-h-0 overflow-y-auto', !fresh && 'opacity-60')}>
               {moves.length === 0 && fresh ? (
-                <p className="text-subtle px-3 py-3 text-sm">
+                <p className="text-muted-foreground px-3 py-3 text-sm">
                   {mine
                     ? filtered
                       ? t('None of your games reached this position under these filters.')
@@ -363,7 +363,7 @@ export function ExplorerPane({
                     <button
                       type="button"
                       onClick={() => setAllMoves((v) => !v)}
-                      className="text-subtle hover:text-foreground w-full px-3 py-1 text-left text-xs transition-colors duration-100"
+                      className="text-muted-foreground hover:text-foreground w-full px-3 py-1 text-left text-xs transition-colors duration-100"
                     >
                       {allMoves ? 'Show fewer moves' : `Show all ${moves.length} moves`}
                     </button>
@@ -437,7 +437,7 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
           aria-label={t('From date')}
           className="w-[9.5rem]"
         />
-        <span className="text-subtle" aria-hidden>
+        <span className="text-muted-foreground" aria-hidden>
           –
         </span>
         <DateInput
@@ -530,7 +530,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
         )}
       </p>
       {state === 'running' ? (
-        <p className="text-subtle flex items-center gap-2 font-mono text-xs">
+        <p className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
           <Loader2 className="size-3.5 shrink-0 animate-spin" />
           <span className="min-w-0 truncate">{line ?? '…'}</span>
         </p>
@@ -658,7 +658,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
           aria-label={t('From date')}
           className="w-[9.5rem]"
         />
-        <span className="text-subtle" aria-hidden>
+        <span className="text-muted-foreground" aria-hidden>
           –
         </span>
         <DateInput
@@ -671,7 +671,7 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
 
       {/* The count is what makes the filters legible: it says what the row
           above just did to the corpus the explorer is answering from. */}
-      <div className="text-subtle mt-1 flex items-center gap-2 text-sm">
+      <div className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
         {stats && (
           <span className="mr-auto tabular-nums">
             {hasMyFilters(filters)
@@ -871,11 +871,11 @@ function TopGamesList({
                 <span className="min-w-0 flex-1 truncate">
                   <SideDot side="white" className="mr-1 inline-block size-2 align-[-1px]" />
                   <span className="text-foreground">{g.white}</span>
-                  <span className="text-subtle font-mono text-xs"> {g.whiteElo || ''} </span>
-                  <span className="text-subtle">v</span>
+                  <span className="text-muted-foreground font-mono text-xs"> {g.whiteElo || ''} </span>
+                  <span className="text-muted-foreground">v</span>
                   <SideDot side="black" className="mx-1 inline-block size-2 align-[-1px]" />
                   <span className="text-foreground">{g.black}</span>
-                  <span className="text-subtle font-mono text-xs"> {g.blackElo || ''}</span>
+                  <span className="text-muted-foreground font-mono text-xs"> {g.blackElo || ''}</span>
                 </span>
                 <ResultBadge result={g.result} />
               </button>
@@ -885,7 +885,7 @@ function TopGamesList({
                   target="_blank"
                   rel="noreferrer"
                   title={`${gameUrl} (needs internet)`}
-                  className="text-subtle hover:text-foreground shrink-0 p-1"
+                  className="text-muted-foreground hover:text-foreground shrink-0 p-1"
                 >
                   <ExternalLink className="size-3" />
                 </a>
@@ -898,7 +898,7 @@ function TopGamesList({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-subtle hover:text-foreground w-full px-1.5 pt-1 text-left text-xs"
+          className="text-muted-foreground hover:text-foreground w-full px-1.5 pt-1 text-left text-xs"
         >
           {expanded ? t('Show fewer') : t('Show all {n}', { n: games.length })}
         </button>

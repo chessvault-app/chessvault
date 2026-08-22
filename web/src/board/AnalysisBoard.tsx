@@ -345,7 +345,7 @@ function NameField({
           // No outline-none: this is a bare input with no border to tint,
           // so the global :focus-visible ring is the only sign the name is
           // being edited. rounded-md gives that ring Input's own corners.
-          'text-foreground placeholder:text-subtle w-full min-w-0 truncate rounded-md bg-transparent text-base font-medium',
+          'text-foreground placeholder:text-muted-foreground w-full min-w-0 truncate rounded-md bg-transparent text-base font-medium',
           showClear && 'pr-6',
           noAutofillClass,
         )}
@@ -418,12 +418,12 @@ function PlayerBar({
       ) : (
         <span className="text-foreground min-w-0 truncate text-base font-medium">{name}</span>
       )}
-      {elo && <span className="text-subtle text-sm">{elo}</span>}
+      {elo && <span className="text-muted-foreground text-sm">{elo}</span>}
       {clock !== undefined && (
         <span
           className={cn(
             'ml-auto rounded-sm px-1.5 py-0.5 font-mono text-sm tabular-nums',
-            toMove ? 'bg-primary-soft text-primary font-semibold' : 'text-muted-foreground',
+            toMove ? 'bg-muted text-primary font-semibold' : 'text-muted-foreground',
           )}
         >
           {formatClock(clock)}

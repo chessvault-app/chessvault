@@ -174,7 +174,7 @@ export function CanvasShell({
                   Named as well as marked, because a panel filling the
                   height no longer sits obviously beside its selection. */}
               <div className="border-border flex shrink-0 items-center gap-2 border-b px-4 py-2">
-                <p className="text-subtle min-w-0 flex-1 truncate text-sm">{t(panel.label)}</p>
+                <p className="text-muted-foreground min-w-0 flex-1 truncate text-sm">{t(panel.label)}</p>
                 <Button
                   variant="ghost"
                   size="icon-sm"

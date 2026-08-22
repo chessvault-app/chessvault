@@ -4,6 +4,7 @@ import { App } from './App';
 import { initTheme, watchSystemTheme } from './store/theme';
 import { initPrefs } from './store/prefs';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
@@ -68,6 +69,8 @@ createRoot(container).render(
   <StrictMode>
     <TooltipProvider>
       <App />
+      {/* The one toaster: the undo offer (hooks/use-undoable) posts into it. */}
+      <Toaster />
     </TooltipProvider>
   </StrictMode>,
 );

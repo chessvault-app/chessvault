@@ -76,7 +76,7 @@ export function PuzzleGrid({
                     ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
                     : last === 'loss'
                       ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                      : 'bg-card border-border text-muted-foreground hover:border-border-strong hover:bg-accent',
+                      : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
                 )}
               >
                 {p.number ?? i + 1}
@@ -396,7 +396,7 @@ export function PuzzleList({
                   ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
                   : state === 'failed'
                     ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                    : 'bg-card border-border text-muted-foreground hover:border-border-strong hover:bg-accent',
+                    : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
               )}
             >
               {p.number ?? ordinalOf.get(p.id)}
@@ -419,7 +419,7 @@ export function PuzzleList({
         {window_.bottom > 0 && <div style={{ gridColumn: '1/-1', height: window_.bottom }} />}
       </div>
       {visible.length === 0 && (
-        <p className="text-subtle px-3 py-6 text-center text-sm">{t('Nothing matches these filters.')}</p>
+        <p className="text-muted-foreground px-3 py-6 text-center text-sm">{t('Nothing matches these filters.')}</p>
       )}
     </>
   );

@@ -59,7 +59,7 @@ export function ChipRow({
   };
 
   const arrow =
-    'bg-card/95 border-border text-subtle hover:text-foreground absolute top-1/2 z-10 grid size-6 -translate-y-1/2 place-items-center rounded-full border shadow-sm transition-colors pointer-coarse:hidden';
+    'bg-card/95 border-border text-muted-foreground hover:text-foreground absolute top-1/2 z-10 grid size-6 -translate-y-1/2 place-items-center rounded-full border shadow-sm transition-colors pointer-coarse:hidden';
 
   return (
     <div className={cn('relative min-w-0', className)}>

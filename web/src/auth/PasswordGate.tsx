@@ -115,7 +115,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
           <KnightIcon className="size-8" />
         </div>
         <h1 className="text-foreground text-2xl font-semibold tracking-tight">{t('Chess Vault')}</h1>
-        <p className="text-subtle mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
+        <p className="text-muted-foreground mb-6 mt-1 text-base">{t('Your chess, in plain files.')}</p>
 
         <form
           className="bg-card border-border w-full rounded-2xl border p-6 shadow-sm"
@@ -185,14 +185,14 @@ export function PasswordGate({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={backToPassword}
-              className="text-subtle hover:text-foreground mx-auto mt-3 flex items-center gap-1 text-sm"
+              className="text-muted-foreground hover:text-foreground mx-auto mt-3 flex items-center gap-1 text-sm"
             >
               <ChevronLeft className="size-3" />
               {t('Use a different password')}
             </button>
           )}
         </form>
-        <p className="text-subtle mt-6 text-center text-sm">
+        <p className="text-muted-foreground mt-6 text-center text-sm">
           {t('Private instance — every game, study and puzzle here lives in plain files on its owner’s server.')}
         </p>
       </div>

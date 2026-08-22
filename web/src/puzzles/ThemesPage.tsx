@@ -234,7 +234,7 @@ export function ThemesPage() {
               leftovers.length === 0 &&
               GROUPS.every(
                 (g) => g.themes.filter((th) => byName.has(th) && matches(th)).length === 0,
-              ) && <p className="text-subtle text-sm">{t('No theme matches it.')}</p>}
+              ) && <p className="text-muted-foreground text-sm">{t('No theme matches it.')}</p>}
           </>
         )}
     </PageShell>
@@ -278,22 +278,22 @@ function ThemeCard({
         'group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left',
         'transition-colors duration-100',
         highlight
-          ? 'bg-primary-soft border-primary/30 hover:border-primary/60'
-          : 'bg-card border-border hover:border-border-strong hover:bg-accent',
+          ? 'bg-muted border-primary/30 hover:border-primary/60'
+          : 'bg-card border-border hover:border-border hover:bg-accent',
         className,
       )}
     >
       <Icon
         className={cn(
           'size-4 shrink-0 transition-colors',
-          highlight ? 'text-primary' : 'text-subtle group-hover:text-primary',
+          highlight ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
         )}
       />
       <span className="min-w-0 flex-1">
         <span className={cn('block truncate text-sm font-medium', highlight ? 'text-primary' : 'text-foreground')}>
           {label}
         </span>
-        <span className="text-subtle block font-mono text-xs">
+        <span className="text-muted-foreground block font-mono text-xs">
           {pending ? (
             // A zero that becomes six million is a number the page stated
             // and then took back; the placeholder says nothing instead.

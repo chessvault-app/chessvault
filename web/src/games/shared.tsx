@@ -341,7 +341,7 @@ export function GameRow({
                   {game.white}
                 </span>
                 {game.whiteElo ? (
-                  <span className="text-subtle shrink-0 text-sm tabular-nums">{game.whiteElo}</span>
+                  <span className="text-muted-foreground shrink-0 text-sm tabular-nums">{game.whiteElo}</span>
                 ) : null}
                 {game.annotated && (
                   <NotebookPen className="text-info size-3 shrink-0" aria-label={t('Annotated')} />
@@ -358,7 +358,7 @@ export function GameRow({
                   {game.black}
                 </span>
                 {game.blackElo ? (
-                  <span className="text-subtle shrink-0 text-sm tabular-nums">{game.blackElo}</span>
+                  <span className="text-muted-foreground shrink-0 text-sm tabular-nums">{game.blackElo}</span>
                 ) : null}
               </p>
             </>
@@ -369,7 +369,7 @@ export function GameRow({
           {/* Opening first, date, then who played — the order every plain
               row leads with (players are its title lines), so a renamed
               game's detail reads the same left to right. */}
-          <p className="text-subtle truncate text-sm" title={openingLabel}>
+          <p className="text-muted-foreground truncate text-sm" title={openingLabel}>
             {game.opening ? (
               <OpeningTag eco={game.opening.eco} name={game.opening.name} />
             ) : game.eco ? (
@@ -471,7 +471,7 @@ export function GameRow({
           rel="noreferrer"
           title={t('View on chess.com (needs internet)')}
           onClick={(e) => e.stopPropagation()}
-          className="text-subtle hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
+          className="text-muted-foreground hover:text-foreground shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 pointer-coarse:opacity-100 @max-[21.5rem]/arc:hidden"
         >
           <ExternalLink className="size-3.5" />
         </a>

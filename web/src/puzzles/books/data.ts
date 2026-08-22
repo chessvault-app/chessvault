@@ -292,6 +292,6 @@ export const PROVENANCE_META = {
     label: 'Draft',
     title: 'Imported diagram awaiting a solution — open it to enter one',
     icon: Pencil,
-    iconClass: 'text-subtle',
+    iconClass: 'text-muted-foreground',
   },
 } as const;

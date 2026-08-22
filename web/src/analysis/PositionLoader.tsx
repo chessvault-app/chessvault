@@ -245,7 +245,7 @@ export function LoadPositionForm({
       {/* The photo half of the ONE load dialog (lanph3re's call): click,
           drop, or paste an image; the corner-adjust flow takes over. */}
       <label
-        className="border-border hover:border-border-strong text-subtle flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors"
+        className="border-border hover:border-border text-muted-foreground flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed p-4 text-center text-sm transition-colors"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();

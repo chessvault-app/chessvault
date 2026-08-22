@@ -96,7 +96,7 @@ export function usePuzzlePreview(): {
   };
 
   const eyeProps = (id: string) => ({
-    className: 'text-subtle hover:text-foreground size-3.5 shrink-0',
+    className: 'text-muted-foreground hover:text-foreground size-3.5 shrink-0',
     'aria-label': t('Preview the position'),
     onMouseEnter: (e: React.MouseEvent) => {
       if (!window.matchMedia('(pointer: coarse)').matches) void show(id, e.currentTarget);

@@ -50,7 +50,6 @@ import { Field } from '@/components/ui/field';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CreateControl, FabSpacer } from '@/components/fab';
-import { UndoBar } from '@/components/undo-bar';
 import { useUndoable } from '@/hooks/use-undoable';
 import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
 
@@ -726,7 +725,7 @@ export function CollectionView() {
                   // truncates rather than pushing the second tab out.
                   className={cn(
                     'relative flex h-10 min-w-0 flex-none items-center justify-start rounded-none px-1.5 text-sm font-semibold',
-                    'text-subtle hover:text-foreground transition-colors duration-100',
+                    'text-muted-foreground hover:text-foreground transition-colors duration-100',
                     'data-active:bg-transparent data-active:text-foreground data-active:shadow-none',
                     'data-active:after:bg-primary data-active:after:absolute data-active:after:inset-x-1 data-active:after:-bottom-px data-active:after:h-0.5 data-active:after:rounded-full',
                   )}
@@ -803,15 +802,6 @@ export function CollectionView() {
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
 
-      {undoable.pending && (
-        <UndoBar
-          label={undoable.pending.label}
-          leaving={undoable.pending.leaving}
-          onUndo={undoable.undo}
-          onHold={undoable.hold}
-          onRelease={undoable.release}
-        />
-      )}
 
       <FabSpacer />
     </PageShell>
@@ -960,7 +950,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
           aria-expanded={detailsOpen}
-          className="text-subtle hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
+          className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
         >
           <ChevronRight
             className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}

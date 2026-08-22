@@ -84,7 +84,7 @@ export function PromotionPicker({
             }}
             className={cn(
               'relative aspect-square w-full cursor-pointer border-none p-0',
-              'bg-card/95 hover:bg-primary-soft transition-colors duration-100',
+              'bg-card/95 hover:bg-muted transition-colors duration-100',
               'shadow-lg',
             )}
           >

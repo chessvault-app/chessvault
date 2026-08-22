@@ -27,7 +27,7 @@ function KnightPlate({ badge, glow }: { badge: ReactNode; glow: string }) {
         aria-hidden
       />
       <div className="border-border bg-muted/60 absolute inset-0 -z-10 rounded-2xl border" aria-hidden />
-      <KnightIcon className="text-subtle size-12 opacity-70" />
+      <KnightIcon className="text-muted-foreground size-12 opacity-70" />
       {/* Bottom-right, overlapping the plate's edge, so the two read as
           one object rather than as an icon with a sticker beside it. */}
       <div className="absolute -bottom-1.5 -right-1.5">{badge}</div>
@@ -77,7 +77,7 @@ export function CollectionArt() {
     <KnightPlate
       glow="radial-gradient(circle, var(--color-primary) 0%, transparent 70%)"
       badge={
-        <Badge className="bg-primary-soft">
+        <Badge className="bg-muted">
           <svg viewBox="0 0 24 24" className="text-primary size-4" fill="currentColor" aria-hidden>
             <path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z" />
           </svg>

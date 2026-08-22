@@ -87,7 +87,7 @@ export function PvMoves({
           {i > 0 && ' '}
           {ply.numbered && (
             <>
-              <span className="text-subtle font-mono">{ply.label}</span>{' '}
+              <span className="text-muted-foreground font-mono">{ply.label}</span>{' '}
             </>
           )}
           <button

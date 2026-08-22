@@ -20,7 +20,7 @@ export function SettingRow({
     <div className="border-border bg-muted/50 flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
       <div className="min-w-0">
         <div className="text-base font-medium">{title}</div>
-        <div className="text-subtle text-sm">{blurb}</div>
+        <div className="text-muted-foreground text-sm">{blurb}</div>
       </div>
       {/* The control keeps its own width and the words give way, not the
           other way round. A row is a label and a control competing for one

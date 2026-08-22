@@ -657,7 +657,7 @@ function Trainer({
   ) : (
     <Panel flush className="shrink-0">
       <PanelHeader title={t('Moves')} />
-      <p className="text-subtle px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
+      <p className="text-muted-foreground px-3 py-2.5 text-sm">{t('Finding a puzzle…')}</p>
     </Panel>
   );
   /**
@@ -700,7 +700,7 @@ function Trainer({
       actions={
         <>
           {puzzle && phase === 'done' && (
-            <span className="text-subtle font-mono text-xs">#{puzzle.id}</span>
+            <span className="text-muted-foreground font-mono text-xs">#{puzzle.id}</span>
           )}
           <Button
             variant="ghost"
@@ -736,14 +736,14 @@ function Trainer({
               'border-border border px-3 py-2.5 text-left transition-colors duration-100',
             )}
           >
-            <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+            <LayoutGrid className="text-muted-foreground group-hover:text-primary size-3.5 shrink-0 transition-colors" />
             <span className="text-muted-foreground shrink-0 text-sm font-medium">
               {t('Theme')}
             </span>
             <span className="text-foreground ml-auto truncate text-sm font-medium">
               {theme ? themeLabel(theme) : t('All themes')}
             </span>
-            <ChevronRight className="text-subtle size-3.5 shrink-0" />
+            <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
           </button>
         </DialogContent>
       </Dialog>
@@ -779,11 +779,11 @@ function Trainer({
                 picks puzzles, not a verdict to hand back to whoever
                 just solved one. The dashboard has always shown it
                 this way; this panel had not. */}
-            <dt className="text-subtle">{t('Difficulty')}</dt>
+            <dt className="text-muted-foreground">{t('Difficulty')}</dt>
             <dd className="text-foreground">{t(bandOf(puzzle.rating))}</dd>
-            <dt className="text-subtle">{t('Played')}</dt>
+            <dt className="text-muted-foreground">{t('Played')}</dt>
             <dd className="text-foreground font-mono">{puzzle.plays.toLocaleString()}</dd>
-            <dt className="text-subtle">{t('Themes')}</dt>
+            <dt className="text-muted-foreground">{t('Themes')}</dt>
             <dd className="flex flex-wrap gap-1">
               {puzzle.themes.split(' ').map((t) => (
                 <span
@@ -1038,7 +1038,7 @@ function Trainer({
           <span className="min-w-0 flex-1" />
           {/* How the session is going — words and counts, never a rating. */}
           {mode === 'fresh' && solvedToday !== null && (
-            <span className="text-subtle shrink-0 text-sm tabular-nums">
+            <span className="text-muted-foreground shrink-0 text-sm tabular-nums">
               {t('Solved today: {n}', { n: solvedToday })}
               {(meta?.user.streak ?? 0) > 1 && ` · ${t('Run: {n}', { n: meta!.user.streak })}`}
             </span>
@@ -1178,7 +1178,7 @@ function DifficultyChip({
         {difficulty === 'any' ? t('Any difficulty') : t(label)}
         {theme && ` · ${themeLabel(theme)}`}
       </span>
-      <ChevronRight className="text-subtle ml-auto size-3.5 shrink-0" />
+      <ChevronRight className="text-muted-foreground ml-auto size-3.5 shrink-0" />
     </Button>
   );
 }
