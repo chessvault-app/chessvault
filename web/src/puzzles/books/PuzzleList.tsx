@@ -391,12 +391,14 @@ export function PuzzleList({
               className={cn(
                 // content-visibility: ~1,000 offscreen tiles skip render
                 // work entirely — phones feel it.
-                'relative flex aspect-square items-center justify-center rounded-lg border font-mono text-base font-semibold transition-colors duration-100 [content-visibility:auto]',
+                'relative flex aspect-square items-center justify-center rounded-lg font-mono text-base font-semibold ring-1 transition-colors duration-100 [content-visibility:auto]',
+                // The ring card, with the state in the ring: the colour
+                // grammar's green and red, a glyph beside each (below).
                 state === 'solved'
-                  ? 'bg-nag-good/15 border-nag-good/40 text-nag-good'
+                  ? 'bg-nag-good/15 ring-nag-good/40 text-nag-good'
                   : state === 'failed'
-                    ? 'bg-nag-blunder/15 border-nag-blunder/40 text-nag-blunder'
-                    : 'bg-card border-border text-muted-foreground hover:border-border hover:bg-accent',
+                    ? 'bg-nag-blunder/15 ring-nag-blunder/40 text-nag-blunder'
+                    : 'bg-card ring-foreground/10 text-muted-foreground hover:bg-accent',
               )}
             >
               {p.number ?? ordinalOf.get(p.id)}

@@ -841,6 +841,7 @@ export const ko: Record<string, string> = {
   Gray: '그레이',
   Blue: '블루',
   Corners: '모서리',
+  Default: '기본',
   Square: '각진',
   'Move the king two squares (g1)': '킹을 두 칸 옮기기 (g1)',
   'Move the king onto the rook (h1)': '킹을 룩 위로 옮기기 (h1)',

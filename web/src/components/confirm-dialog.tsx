@@ -10,6 +10,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { t } from '@/lib/i18n';
@@ -103,6 +104,9 @@ export function ConfirmDialog({
         >
           <AlertDialogContent>
             <AlertDialogHeader>
+              <AlertDialogMedia className="bg-destructive/10 text-destructive">
+                <Icon />
+              </AlertDialogMedia>
               <AlertDialogTitle>{t(confirmLabel)}</AlertDialogTitle>
               <AlertDialogDescription>{t(question)}</AlertDialogDescription>
             </AlertDialogHeader>
@@ -112,7 +116,6 @@ export function ConfirmDialog({
                   loses nothing. */}
               <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
               <AlertDialogAction variant="destructive" onClick={onConfirm}>
-                <Icon />
                 {t(confirmLabel)}
               </AlertDialogAction>
             </AlertDialogFooter>

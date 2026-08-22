@@ -563,7 +563,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
                 <Button
                   variant="ghost"
                   size="icon-sm"
-                  title={t('Preview the final position')}
+                  aria-label={t('Preview the final position')}
                   onMouseEnter={(e) => {
                     if (!coarse()) void showPreview(g, e.currentTarget);
                   }}

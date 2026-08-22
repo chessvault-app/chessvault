@@ -72,10 +72,26 @@ function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.C
  * top). `vv-band`: while the keyboard is up this is pinned to the band that
  * can be seen rather than to the layout viewport iOS has just shifted.
  */
-function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+function DialogOverlay({
+  className,
+  onClick,
+  onPointerDown,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
+      // A press on the scrim closes the window (Radix, from a pointerdown
+      // listener on the document — which is why the pointerdown itself is
+      // NOT stopped here: React would stop the native event at the portal's
+      // root and Radix would never hear it). The CLICK must go no further:
+      // React bubbles through portals, and a window written inside a shelf
+      // card would hand the click to the card, which opens — a rename
+      // dismissed by a tap beside it opened the study it was renaming.
+      onClick={(e) => {
+        onClick?.(e);
+        e.stopPropagation();
+      }}
       className={cn(
         'vv-band fixed inset-0 isolate z-50 flex justify-center bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs',
         'sm:data-open:animate-in sm:data-open:fade-in-0',

@@ -405,7 +405,7 @@ export function GameRow({
           <Button
             variant="ghost"
             size="icon-sm"
-            title={t('Preview the final position')}
+            aria-label={t('Preview the final position')}
             // Gone in a narrow list as well as on a phone. In the games
             // column it is 28px of hover convenience taken off the player
             // names, which are the row. 21.5rem is where the row stops

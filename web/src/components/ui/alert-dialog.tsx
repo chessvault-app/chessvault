@@ -54,7 +54,10 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof 
   return (
     <DialogHeader
       data-slot="alert-dialog-header"
-      className={cn('grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center sm:place-items-start sm:text-left', className)}
+      className={cn(
+        'grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]',
+        className,
+      )}
       {...props}
     />
   );
@@ -65,16 +68,42 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof 
  * the action on top on a phone (col-reverse) — the press that cannot be
  * undone is not a thumb's width from the way out — and a row on a desktop.
  */
-function AlertDialogFooter(props: React.ComponentProps<typeof DialogFooter>) {
-  return <DialogFooter data-slot="alert-dialog-footer" {...props} />;
+function AlertDialogFooter({ className, ...props }: React.ComponentProps<typeof DialogFooter>) {
+  return (
+    <DialogFooter
+      data-slot="alert-dialog-footer"
+      className={cn('group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2', className)}
+      {...props}
+    />
+  );
 }
 
-function AlertDialogTitle(props: React.ComponentProps<typeof DialogTitle>) {
-  return <DialogTitle data-slot="alert-dialog-title" {...props} />;
+/** The icon over the question — the registry's media block: a tinted square, the icon inside. */
+function AlertDialogMedia({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="alert-dialog-media"
+      className={cn(
+        "bg-muted mb-2 inline-flex size-10 items-center justify-center rounded-md sm:group-data-[size=default]/alert-dialog-content:row-span-2 *:[svg:not([class*='size-'])]:size-6",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
-function AlertDialogDescription(props: React.ComponentProps<typeof DialogDescription>) {
-  return <DialogDescription data-slot="alert-dialog-description" {...props} />;
+function AlertDialogTitle({ className, ...props }: React.ComponentProps<typeof DialogTitle>) {
+  return (
+    <DialogTitle
+      data-slot="alert-dialog-title"
+      className={cn('sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2', className)}
+      {...props}
+    />
+  );
+}
+
+function AlertDialogDescription({ className, ...props }: React.ComponentProps<typeof DialogDescription>) {
+  return <DialogDescription data-slot="alert-dialog-description" className={cn('text-balance md:text-pretty', className)} {...props} />;
 }
 
 /**
@@ -130,6 +159,7 @@ export {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
   AlertDialogTrigger,
 };

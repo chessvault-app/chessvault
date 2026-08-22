@@ -8,7 +8,16 @@ import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Select } from '@/components/ui/select';
 import { SettingRow } from '@/components/setting-row';
 import { Switch } from '@/components/ui/switch';
@@ -1405,62 +1414,52 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
     setTimeout(() => window.location.reload(), 900);
   };
 
-  // The shared Modal, not a hand-rolled layer: this was the one dialog in
-  // Settings with no Escape, no focus management and no phone-sheet form.
-  // The most destructive question in the app should behave like every
-  // other window, only more so.
+  // The registry's destructive alert dialog, the same shape as every other
+  // confirmation here, only more so: the most destructive question in the
+  // app behaves like every other window. The action is a plain Button
+  // rather than AlertDialogAction, because the window has to stay up to
+  // show a wrong password or the wipe's own failure.
   return (
-    <Dialog
+    <AlertDialog
       open
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DialogContent title="Wipe the entire vault?" icon={Trash2}>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
-        </p>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogMedia className="bg-destructive/10 text-destructive">
+            <Trash2 />
+          </AlertDialogMedia>
+          <AlertDialogTitle>{t('Wipe the entire vault?')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         {gate && (
-          <label className="flex flex-col gap-1">
-            <span className="text-muted-foreground text-sm font-medium">{t('Confirm your app password')}</span>
+          <Field label="Confirm your app password">
             <Input
               autoFocus
-              inputSize="lg"
               type="password"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !busy && password !== '' && void wipe()}
             />
-          </label>
+          </Field>
         )}
         <Feedback note={note} />
-        {/* ConfirmDialog's row, to the letter, because this is the same
-            question and the most serious instance of it: stacked and not a
-            row (a row puts them a thumb's width apart on a phone, which is
-            the wrong geometry for a pair where one is irreversible and the
-            other is the way out), full width each with a real gap between
-            them, the destructive one on TOP and FILLED — the tinted danger
-            style belongs to the trigger that opens this question, which is
-            Wipe all data on the card behind — and Cancel plainly secondary
-            under it. Not justify-end: that is the row a WINDOW ends on, and
-            it is right for Save and Apply, not for this. */}
-        <div className="mt-1 flex flex-col gap-2">
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
           <Button
-            variant="destructive-solid"
-            size="default"
-            className="w-full justify-center"
+            variant="destructive"
             disabled={busy || (gate && password === '')}
             onClick={() => void wipe()}
           >
-            <Trash2 className="size-3.5" />
             {busy ? t('Wiping…') : t('Wipe everything')}
           </Button>
-          <Button variant="secondary" size="default" className="w-full justify-center" onClick={onClose}>
-            {t('Cancel')}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
