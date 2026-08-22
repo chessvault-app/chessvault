@@ -47,11 +47,18 @@ describe('vault backup', () => {
     expect(shown).toBe('second\n');
   });
 
-  it('excludes sources/ and survives restarts', async () => {
+  it('excludes sources/ and the library PDFs, and survives restarts', async () => {
     dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
     mkdirSync(join(dir, 'sources'));
     writeFileSync(join(dir, 'sources', 'big.pgn'), 'x'.repeat(1024));
     writeFileSync(join(dir, 'games.json'), '{}\n');
+    // A library book: its PDF is the user's own copy of a book, megabytes
+    // that never change, and a history repo that swallowed one would keep
+    // it forever. Its metadata is small and does belong.
+    mkdirSync(join(dir, 'books', 'b0123456789abcdef'), { recursive: true });
+    writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.pdf'), '%PDF-1.4 x'.repeat(100));
+    writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.pdf.part'), '%PDF-1.4');
+    writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.json'), '{"title":"x"}\n');
     backup = await startVaultBackup(dir, 50);
     const files = execFileSync(
       'git',
@@ -60,6 +67,8 @@ describe('vault backup', () => {
     );
     expect(files).toContain('games.json');
     expect(files).not.toContain('big.pgn');
+    expect(files).toContain('books/b0123456789abcdef/book.json');
+    expect(files).not.toContain('book.pdf');
 
     // Second start reuses the repo instead of re-initialising.
     await backup.stop();

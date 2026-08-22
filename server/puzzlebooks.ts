@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
+import { isLibraryBookId, libraryBookHasPdf } from './books.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
 
@@ -244,8 +245,19 @@ export function bookDirFor(title: string, dir: string = BOOKS_DIR): string {
   return made;
 }
 
-export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
+export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Hono {
   const bookDir = (slug: string): string => resolve(dir, slug);
+  /**
+   * The library book holding this puzzle book's PDF, if it still does.
+   * The link is a one-way pointer written when the importer files the
+   * PDF; removing the library book leaves it dangling, and a dangling
+   * pointer is reported as no pointer rather than as an error — the
+   * puzzle book is whole without its PDF.
+   */
+  const linkedPdf = (book: { pdfBook?: string }): string | null =>
+    typeof book.pdfBook === 'string' && libraryBookHasPdf(book.pdfBook, libraryDir)
+      ? book.pdfBook
+      : null;
   const puzzlesPath = (slug: string): string => resolve(bookDir(slug), 'puzzles.json');
   const progressPath = (slug: string): string => resolve(bookDir(slug), 'progress.json');
   const ocrPath = (slug: string): string => resolve(bookDir(slug), 'ocr.json');
@@ -397,7 +409,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
       .filter((e) => e.isDirectory())
       .map((e) => {
         const slug = e.name;
-        const book = readJson<{ title?: string; createdAt?: string }>(
+        const book = readJson<{ title?: string; createdAt?: string; pdfBook?: string }>(
           resolve(bookDir(slug), 'book.json'),
           {},
         );
@@ -406,6 +418,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
           slug,
           title: book.title ?? slug,
           createdAt: book.createdAt ?? null,
+          pdfBook: linkedPdf(book),
           puzzles: tally.puzzles,
           solved: tally.solved,
           failed: tally.failed,
@@ -454,16 +467,32 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   api.patch('/puzzlebooks/:slug', async (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
-    const body = (await c.req.json().catch(() => ({}))) as { title?: string };
+    const body = (await c.req.json().catch(() => ({}))) as {
+      title?: string;
+      pdfBook?: string | null;
+    };
+    const path = resolve(bookDir(slug), 'book.json');
+    const book = readJson<{ title?: string; createdAt?: string; pdfBook?: string }>(path, {});
     // NFC: a title typed on a Mac and the same title typed on Windows are
     // different strings until they are normalised, and the shelf would
     // show two books wearing one name.
-    const title = body.title?.trim().normalize('NFC');
+    const title = body.title === undefined ? book.title : body.title.trim().normalize('NFC');
     if (!title) return c.json({ error: 'a book needs a title' }, 400);
-    const path = resolve(bookDir(slug), 'book.json');
-    const book = readJson<{ title?: string; createdAt?: string }>(path, {});
-    writeJson(path, { ...book, title });
-    return c.json({ slug, title });
+    // The library book holding this book's PDF (see linkedPdf). Set by the
+    // importer after it files the upload; null unlinks.
+    let pdfBook = book.pdfBook;
+    if (body.pdfBook === null) pdfBook = undefined;
+    else if (body.pdfBook !== undefined) {
+      if (typeof body.pdfBook !== 'string' || !isLibraryBookId(body.pdfBook)) {
+        return c.json({ error: 'not a library book' }, 400);
+      }
+      pdfBook = body.pdfBook;
+    }
+    const next: { title?: string; createdAt?: string; pdfBook?: string } = { ...book, title };
+    if (pdfBook) next.pdfBook = pdfBook;
+    else delete next.pdfBook;
+    writeJson(path, next);
+    return c.json({ slug, title, pdfBook: linkedPdf(next) });
   });
 
   api.delete('/puzzlebooks/:slug', (c) => {
@@ -515,10 +544,14 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR): Hono {
   api.get('/puzzlebooks/:slug', (c) => {
     const slug = c.req.param('slug');
     if (!validBook(slug)) return c.json({ error: 'unknown book' }, 404);
-    const book = readJson<{ title?: string }>(resolve(bookDir(slug), 'book.json'), {});
+    const book = readJson<{ title?: string; pdfBook?: string }>(
+      resolve(bookDir(slug), 'book.json'),
+      {},
+    );
     return c.json({
       slug,
       title: book.title ?? slug,
+      pdfBook: linkedPdf(book),
       // What the grid needs, and nothing else. Opening a book downloads
       // every puzzle in it to draw tiles with numbers on them, so the
       // positions, solutions, evidence and timestamps are all left out —

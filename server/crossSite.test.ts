@@ -75,6 +75,46 @@ describe('crossSiteGuard', () => {
     expect(res.status).toBe(200);
   });
 
+  it('leaves the streaming book uploads alone, and nothing that merely looks like them', async () => {
+    const app = makeApp();
+    app.post('/api/books', (c) => c.json({ ok: true }));
+    app.put('/api/books/:id/pdf', (c) => c.json({ ok: true }));
+    app.put('/api/books/:id/cover', (c) => c.json({ ok: true }));
+    const pdf = { 'content-type': 'application/pdf' };
+    expect(
+      (await app.request('/api/books', { method: 'POST', headers: pdf, body: '%PDF-' })).status,
+    ).toBe(200);
+    expect(
+      (
+        await app.request('/api/books/b0123456789abcdef/pdf', {
+          method: 'PUT',
+          headers: pdf,
+          body: '%PDF-',
+        })
+      ).status,
+    ).toBe(200);
+    // A sibling JSON route keeps the content-type check.
+    expect(
+      (
+        await app.request('/api/books/b0123456789abcdef/cover', {
+          method: 'PUT',
+          headers: { 'content-type': 'text/plain' },
+          body: 'x',
+        })
+      ).status,
+    ).toBe(415);
+    // Check 1 still covers the exempted routes.
+    expect(
+      (
+        await app.request('/api/books', {
+          method: 'POST',
+          headers: { ...pdf, 'sec-fetch-site': 'cross-site' },
+          body: '%PDF-',
+        })
+      ).status,
+    ).toBe(403);
+  });
+
   it('pins Host to loopback names when loopback-bound', async () => {
     const app = makeApp({ loopbackOnly: true });
     for (const host of ['127.0.0.1:8788', 'localhost:8788', '[::1]:8788']) {

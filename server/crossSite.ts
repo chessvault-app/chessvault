@@ -35,8 +35,21 @@ import type { MiddlewareHandler } from 'hono';
 
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
 
-/** Non-JSON by design: the PGN source upload streams raw bytes. */
-const RAW_BODY_PATHS = new Set(['/api/sources']);
+/**
+ * Non-JSON by design: the routes that stream a file's raw bytes to disk —
+ * the PGN source upload and the book library's PDF upload and replace.
+ *
+ * One predicate, exported, because two middlewares have to agree on this
+ * list: this guard's content-type check, and the API-wide body cap in
+ * index.ts, which would buffer a streamed upload whole to measure it. Two
+ * copies of the list would drift the first time a route was added to one.
+ */
+const LIBRARY_PDF = /^\/api\/books\/b[0-9a-f]{16}\/pdf$/;
+export function isRawBodyPath(method: string, path: string): boolean {
+  if (method === 'POST') return path === '/api/sources' || path === '/api/books';
+  if (method === 'PUT') return LIBRARY_PDF.test(path);
+  return false;
+}
 
 const STATE_CHANGING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
@@ -52,7 +65,7 @@ export function crossSiteGuard(opts: { loopbackOnly?: boolean } = {}): Middlewar
         return c.json({ error: 'unrecognized host' }, 403);
       }
     }
-    if (STATE_CHANGING.has(c.req.method) && !RAW_BODY_PATHS.has(c.req.path)) {
+    if (STATE_CHANGING.has(c.req.method) && !isRawBodyPath(c.req.method, c.req.path)) {
       const type = c.req.header('content-type');
       if (type !== undefined && !type.toLowerCase().includes('application/json')) {
         return c.json({ error: 'expected application/json' }, 415);

@@ -9,7 +9,8 @@ import { networkInterfaces } from 'node:os';
 import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
 import { authApi, migratePlaintextPassword, requireAuth } from './auth.ts';
-import { crossSiteGuard } from './crossSite.ts';
+import { booksApi } from './books.ts';
+import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
@@ -157,15 +158,17 @@ app.use('/api/*', crossSiteGuard({ loopbackOnly: LOOPBACK_BIND }));
 // 32 MB clears the largest legitimate case (a book's draft batch) with room
 // to spare; the per-route byte checks refine it.
 //
-// One exemption: the PGN source upload is streamed to disk precisely
-// because an elite month is hundreds of megabytes, and this middleware
-// broke it two ways — a declared Content-Length over the cap 413s the
-// route outright, and a chunked body is BUFFERED WHOLE to measure it,
-// defeating the streaming on the 2 GB box the route exists to protect.
-// The route enforces its own cap on the bytes as they stream past.
+// Exempt: the routes that stream a file to disk — the PGN source upload
+// (an elite month is hundreds of megabytes) and the book library's PDFs.
+// This middleware broke the first two ways — a declared Content-Length
+// over the cap 413s the route outright, and a chunked body is BUFFERED
+// WHOLE to measure it, defeating the streaming on the 2 GB box the route
+// exists to protect. Each such route enforces its own cap on the bytes
+// as they stream past. The list is crossSite.ts's, so the content-type
+// exemption and this one cannot disagree.
 const apiBodyCap = bodyLimit({ maxSize: 32 * 1024 * 1024 });
 app.use('/api/*', (c, next) =>
-  c.req.method === 'POST' && c.req.path === '/api/sources' ? next() : apiBodyCap(c, next),
+  isRawBodyPath(c.req.method, c.req.path) ? next() : apiBodyCap(c, next),
 );
 
 // Auth first: its own routes stay reachable while everything /api after
@@ -205,6 +208,7 @@ app.route(
 
 app.route('/api', lichessExplorerApi());
 app.route('/api', puzzleBooksApi());
+app.route('/api', booksApi());
 app.route('/api', settingsApi());
 app.route('/api', lichessStudiesApi());
 

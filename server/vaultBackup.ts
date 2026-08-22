@@ -78,7 +78,7 @@ export async function startVaultBackup(
   if (existsSync(gitDir)) {
     writeFileSync(
       resolve(gitDir, 'info', 'exclude'),
-      `${HISTORY_DIR_NAME}/\nsources/\nconfig.json\nsessions.json\n*.swp\n`,
+      `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
     );
     // Untrack them if an earlier version committed either; --ignore-unmatch
     // makes this a no-op once clean. Leaves the working files intact.
@@ -89,6 +89,7 @@ export async function startVaultBackup(
       '--ignore-unmatch',
       'config.json',
       'sessions.json',
+      'books/*/book.pdf',
     ]).catch(() => undefined);
   }
 
