@@ -120,7 +120,11 @@ export function TagPicker({
       <DialogContent size="sm" title={t('Link a game, study or note')} fill>
         {scoping === null ? (
           <>
-            <div className="flex items-center gap-2">
+            {/* Two rows, not one: in a 384px card the three tabs left the
+                search field ~160px, shorter than the names it filters, and
+                the field is the part that takes typing. The tabs sit above
+                it, still the thing that says which list is under both. */}
+            <div className="flex flex-col gap-2">
               <Segmented
                 value={kind}
                 onChange={setKind}
@@ -133,13 +137,13 @@ export function TagPicker({
                 kind="tabs"
               />
               <SearchInput
-                className="min-w-0 flex-1"
+                className="w-full"
                 // "Search studies", not "Filter": it wears a magnifier, it
                 // sits where every other search field in the app sits, and
                 // it does what they do — a field that looks like one thing
                 // and is labelled another makes the reader decide which to
                 // believe. Naming what it searches is the shelves' own
-                // wording, and it follows the segmented control, which is
+                // wording, and it sits under the segmented control, which is
                 // the only thing that says which list is under it.
                 placeholder={t(KINDS[kind].search)}
                 value={filter}
