@@ -82,11 +82,24 @@ export function MiniBoard({
               <span
                 className="leading-none"
                 style={{
-                  color: piece === piece.toUpperCase() ? '#ffffff' : '#0b0b0d',
+                  // The theme-invariant chess colours, which exist for
+                  // exactly this and which this board was the last place
+                  // not to use: "the colour of the black pieces" is a fact
+                  // about chess, so a side dot in a game row and a piece
+                  // here are the same two colours by construction rather
+                  // than by two people picking a hex.
+                  color:
+                    piece === piece.toUpperCase() ? 'var(--side-white)' : 'var(--side-black)',
                   // An 8px piece has no interior left to distinguish it by,
                   // so the two colours are told apart by fill against an
                   // outline in the other colour. Without it a white knight
                   // on a light square is a smudge.
+                  //
+                  // NOT --side-white-line / --side-black-line, which look
+                  // like they belong here and do not: those are 40% and 50%
+                  // borders drawn along the edge of a swatch, and at this
+                  // size the outline is a halo the glyph is read against —
+                  // it needs the near-opaque alpha it has.
                   textShadow:
                     piece === piece.toUpperCase()
                       ? '0 0 1.5px rgba(0,0,0,0.95), 0 0 0.5px rgba(0,0,0,0.95)'
