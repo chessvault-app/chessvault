@@ -66,7 +66,7 @@ function hasSidelines(tree: MoveTree): boolean {
  * that use it pad differently.
  */
 const BRANCH_ELBOW =
-  "before:border-border/70 before:absolute before:top-0 before:w-2 before:rounded-bl-sm before:border-b-2 before:border-l-2 before:content-['']";
+  "before:border-border/70 before:absolute before:top-0 before:w-3 before:rounded-bl-sm before:border-b-2 before:border-l-2 before:content-['']";
 const BRANCH_CONTINUES =
   "after:border-border/70 after:absolute after:top-0 after:border-l-2 after:content-['']";
 
@@ -308,7 +308,7 @@ export function MainlineTable({
             // continuing vertical runs to the row's bottom, which is the
             // next sibling's top.
             className={cn(
-              'border-border/60 relative border-b py-1 pr-2 pl-6',
+              'border-border/60 relative border-b py-1 pr-2 pl-7',
               BRANCH_ELBOW,
               'before:left-3 before:h-3.5',
               !last && BRANCH_CONTINUES,
@@ -484,7 +484,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
         <div
           key={`var-${variationId}`}
           className={cn(
-            'relative my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5 pl-4',
+            'relative my-1 flex basis-full flex-wrap items-baseline gap-x-1 gap-y-0.5 pl-5',
             // The branch guide, as on the table's own sideline rows (see
             // BRANCH_ELBOW). No padding here, so the first line's middle
             // is at 10px; the continuing vertical reaches 4px past the
