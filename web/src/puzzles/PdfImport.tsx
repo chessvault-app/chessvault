@@ -2,6 +2,7 @@ import { Eye, FileUp, Loader2, Pause, Play } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api, apiErrorMessage } from '@/lib/api';
+import { replaceBookPdf, suggestTitle, uploadBook } from '@/books/data';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -89,36 +90,25 @@ function PeekCrop({
  * or browsing elsewhere doesn't stop it, classification runs in a worker,
  * and the book page shows live progress with a way back here.
  */
-/**
- * A book's name, read off its PDF's filename.
- *
- * "chess-evolution_1.pdf" is how a scan arrives; "chess evolution 1" is a
- * title. Underscores and dots are separator noise; hyphens can be real
- * (a year range) so they stay.
- */
-export function suggestTitle(file: File): string | null {
-  const title = file.name
-    .replace(/\.pdf$/i, '')
-    .replace(/[_.]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 80)
-    .trim();
-  return title.length > 0 ? title : null;
-}
-
 export function PdfImport({
   slug,
+  title,
   templates,
   existing,
+  pdfBook,
   onDone,
   onClose,
   onSuggestName,
 }: {
   slug: string;
+  /** The book's title, which the library copy of its PDF is filed under. */
+  title: string;
   templates: Template[];
   /** Puzzles and drafts already in the book — 0 means a first import. */
   existing: number;
+  /** The library book already holding this book's PDF, if any: a new file
+      replaces it there rather than filing a second copy. */
+  pdfBook: string | null;
   onDone: () => void;
   onClose: () => void;
   /**
@@ -131,6 +121,9 @@ export function PdfImport({
   const job = useImportJob();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  /** Why the PDF did not make it into the library, if it did not. The
+      scan is unaffected, so this is a note, not the error line. */
+  const [libraryNote, setLibraryNote] = useState<string | null>(null);
   // Re-importing a book that already has content is a real choice, so it
   // is asked rather than assumed. Imported puzzles are keyed by their
   // printed number, so updating in place genuinely updates them.
@@ -199,6 +192,30 @@ export function PdfImport({
       setPreparing(false);
     }
     job.start(slug, file, templates, { repair, engine });
+    // The PDF itself goes to the library, so the book can be READ and not
+    // only solved — the same file this scan is about to read, filed once.
+    // Not awaited: the scan is the point of this window, and a library
+    // that is full or unreachable must not hold it up. A failure is a line
+    // under the progress, not an error.
+    void (async () => {
+      try {
+        if (pdfBook) {
+          await replaceBookPdf(pdfBook, file);
+          return;
+        }
+        const id = await uploadBook(file, { title: suggestTitle(file) ?? title });
+        await api(`/api/puzzlebooks/${encodeURIComponent(slug)}`, {
+          method: 'PATCH',
+          json: { pdfBook: id },
+        });
+      } catch (e) {
+        setLibraryNote(
+          t('The PDF could not be kept in the library: {reason}', {
+            reason: apiErrorMessage(e),
+          }),
+        );
+      }
+    })();
   };
 
   // A book's PDF is the one file this window exists for, so the whole
@@ -625,6 +642,7 @@ export function PdfImport({
           )}
           {mine && job.error && <p className="text-destructive text-sm">{job.error}</p>}
           {saveError && <p className="text-destructive text-sm">{saveError}</p>}
+          {libraryNote && <p className="text-muted-foreground text-sm">{libraryNote}</p>}
 
           {found.length > 0 && (
             <>

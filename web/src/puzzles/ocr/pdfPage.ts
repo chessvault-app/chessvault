@@ -80,6 +80,47 @@ export async function renderPdfPage(
   return { page, canvas };
 }
 
+/**
+ * A shelf-sized JPEG of a rendered page: what a book's cover is made of,
+ * on the puzzle shelf and in the library alike. 480 wide is the widest a
+ * shelf card draws one.
+ */
+export function thumbnailDataUrl(page: HTMLCanvasElement, width = 480): string {
+  const h = Math.round((page.height / page.width) * width);
+  const thumb = document.createElement('canvas');
+  thumb.width = width;
+  thumb.height = h;
+  thumb.getContext('2d')!.drawImage(page, 0, 0, width, h);
+  return thumb.toDataURL('image/jpeg', 0.82);
+}
+
+/**
+ * Open a picked file once and learn what the upload path wants to know:
+ * how many pages it has and what its first page looks like. Pages is 0
+ * when the file does not open as a PDF at all; the cover is null when the
+ * file opened but its first page would not render.
+ */
+export async function inspectPdf(file: File): Promise<{ pages: number; cover: string | null }> {
+  try {
+    const pdfjs = await loadPdfjs();
+    const task = pdfjs.getDocument({ data: await file.arrayBuffer(), ...PDF_OPTIONS });
+    const pdf = await task.promise;
+    const pages = pdf.numPages;
+    let cover: string | null = null;
+    if (pages > 0) {
+      try {
+        cover = thumbnailDataUrl((await renderPdfPage(pdf, 1)).canvas);
+      } catch {
+        cover = null;
+      }
+    }
+    await task.destroy();
+    return { pages, cover };
+  } catch {
+    return { pages: 0, cover: null };
+  }
+}
+
 /** One diagram's place on its page, in render pixels. */
 export interface Rect {
   x: number;

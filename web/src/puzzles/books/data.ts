@@ -23,6 +23,8 @@ export interface BookSummary {
   solved: number;
   failed: number;
   cover?: boolean;
+  /** The library book holding this book's PDF, while it still does. */
+  pdfBook?: string | null;
 }
 
 /**
@@ -84,6 +86,8 @@ export interface BookDraft {
 export interface BookDetail {
   slug: string;
   title: string;
+  /** The library book holding this book's PDF, while it still does. */
+  pdfBook?: string | null;
   puzzles: BookPuzzle[];
   progress: Record<string, PuzzleProgress>;
   drafts?: BookDraft[];

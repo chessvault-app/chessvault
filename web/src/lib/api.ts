@@ -95,6 +95,55 @@ export async function api<T = unknown>(
 }
 
 /**
+ * Send a file's raw bytes, reporting progress as they go.
+ *
+ * XMLHttpRequest rather than fetch for one reason: fetch has no upload
+ * progress, and a 300 MB scan going up from a phone with nothing moving
+ * on screen is a dialog that looks dead. Everything else matches api() —
+ * the same error envelope, the same 401 relock, the same offline line.
+ */
+export function apiUpload<T = unknown>(
+  url: string,
+  file: Blob,
+  options: {
+    method?: 'POST' | 'PUT';
+    contentType?: string;
+    onProgress?: (sent: number, total: number) => void;
+    signal?: AbortSignal;
+  } = {},
+): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open(options.method ?? 'POST', url);
+    xhr.setRequestHeader('content-type', options.contentType ?? 'application/octet-stream');
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) options.onProgress?.(e.loaded, e.total);
+    };
+    const fail = (status: number, message: string): void => reject(new ApiError(status, message));
+    xhr.onerror = () =>
+      fail(0, navigator.onLine ? t('vault server unreachable') : t('no internet connection'));
+    xhr.onabort = () => fail(0, t('Upload cancelled'));
+    xhr.onload = () => {
+      if (xhr.status === 401) onUnauthorized?.();
+      let body: unknown = undefined;
+      try {
+        body = xhr.responseText ? JSON.parse(xhr.responseText) : undefined;
+      } catch {
+        body = undefined;
+      }
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const error = (body as { error?: string } | undefined)?.error;
+        fail(xhr.status, error ?? t('Request failed ({status})', { status: xhr.status }));
+        return;
+      }
+      resolve(body as T);
+    };
+    options.signal?.addEventListener('abort', () => xhr.abort(), { once: true });
+    xhr.send(file);
+  });
+}
+
+/**
  * The error's message when it is an ApiError, a generic line otherwise.
  *
  * Translated HERE rather than at the call site. The server's own error

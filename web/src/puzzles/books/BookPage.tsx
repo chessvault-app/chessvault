@@ -341,8 +341,10 @@ export function BookPage({ slug }: { slug: string }) {
           <Suspense fallback={null}>
         <PdfImport
             slug={slug}
+            title={book?.title ?? ''}
             templates={templates}
             existing={(book?.puzzles.length ?? 0) + (book?.drafts?.length ?? 0)}
+            pdfBook={book?.pdfBook ?? null}
             onDone={() => {
               setImporting(false);
               void load();

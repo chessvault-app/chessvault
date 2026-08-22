@@ -1625,4 +1625,13 @@ export const ko: Record<string, string> = {
   'no version to restore': '복원할 버전이 없습니다',
   'Every version of every document is kept automatically. Anything deleted can be brought back here; an open document keeps its own earlier versions under the clock in its header.':
     '모든 문서의 모든 버전이 자동으로 보관됩니다. 삭제된 문서는 여기서 되살릴 수 있고, 열려 있는 문서의 이전 버전은 그 문서 머리글의 시계 아이콘에 있습니다.',
+
+  // --- books: the library and the reader -----------------------------------
+  'Upload cancelled': '업로드가 취소되었습니다',
+  'The PDF could not be kept in the library: {reason}':
+    'PDF를 서재에 보관하지 못했습니다: {reason}',
+  'that PDF is too big (300 MB cap)': 'PDF가 너무 큽니다 (최대 300 MB)',
+  'that file is not a PDF': 'PDF 파일이 아닙니다',
+  'no such page': '그런 페이지가 없습니다',
+  'not a library book': '서재의 책이 아닙니다',
 };
