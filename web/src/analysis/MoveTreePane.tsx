@@ -3,6 +3,7 @@ import { ArrowUpToLine, BookOpen, GitBranch } from 'lucide-react';
 import { blackToMoveAtRoot, getNode, isOnMainline, moveNumberLabel, pathTo } from '@shared/tree';
 import type { MoveNode, MoveTree, NodeId } from '@shared/types';
 import { cn } from '@/lib/cn';
+import { Button } from '@/ui/Button';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { useAnalysis } from '@/store/analysis';
 import { useReview } from '@/store/review';
@@ -73,20 +74,17 @@ export function SidelinesToggle() {
   const branching = useMemo(() => hasSidelines(tree), [tree]);
   if (!branching) return null;
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      active={on}
       onClick={toggle}
       aria-pressed={on}
       title={on ? t('Showing the current line only') : t('Show the current line only')}
       aria-label={on ? t('Showing the current line only') : t('Show the current line only')}
-      className={cn(
-        'grid size-7 shrink-0 place-items-center rounded-md pointer-coarse:size-9',
-        'transition-colors duration-100',
-        on ? 'bg-primary-soft text-primary' : 'text-subtle hover:bg-surface-2 hover:text-fg',
-      )}
     >
       <GitBranch className="size-3.5" />
-    </button>
+    </Button>
   );
 }
 

@@ -1,7 +1,7 @@
 import { Bold, Code, Heading1, Heading2, Italic, List, ListOrdered, Quote, Strikethrough } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
-import { cn } from '@/lib/cn';
+import { Button } from '@/ui/Button';
 import { KnightIcon } from '@/ui/KnightIcon';
 import { t } from '@/lib/i18n';
 
@@ -147,9 +147,11 @@ export function EditorPalette({
       {ACTIONS.map((action) => {
         const on = action.active(editor);
         return (
-          <button
+          <Button
             key={action.id}
-            type="button"
+            variant="ghost"
+            size="icon-sm"
+            active={on}
             title={t(action.label)}
             aria-label={t(action.label)}
             aria-pressed={on}
@@ -159,13 +161,9 @@ export function EditorPalette({
               e.preventDefault();
               action.run(editor);
             }}
-            className={cn(
-              'grid size-8 shrink-0 place-items-center rounded-md transition-colors duration-100 pointer-coarse:size-9',
-              on ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-2 hover:text-fg',
-            )}
           >
             <action.icon className="size-4" />
-          </button>
+          </Button>
         );
       })}
     </div>
