@@ -284,16 +284,25 @@ export function MainlineTable({
         out.push(
           <div
             key={`var-${variationId}`}
-            className="border-border/60 text-muted-foreground flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-b py-1 pl-6 pr-2 text-sm"
+            // A branch line down the left, the same bar the nested blocks
+            // inside Line draw (lanph3re's call): indent alone said "not
+            // the mainline", the bar says "a branch off it" — and a
+            // sideline with its own sidelines now reads as one tree, bar
+            // inside bar, instead of a bare first level over barred
+            // deeper ones. The bar is the inner box's border so it runs
+            // the height of every wrapped line; the row keeps the rule.
+            className="border-border/60 border-b py-1 pr-2 pl-3"
           >
-            <VariationBranch
-              tree={tree}
-              startId={variationId}
-              cursorId={cursorId}
-              onSelect={onSelect}
-              keep={keep}
-              bookIds={bookIds}
-            />
+            <div className="border-border/70 text-muted-foreground flex flex-wrap items-baseline gap-x-1 gap-y-0.5 border-l-2 pl-2 text-sm">
+              <VariationBranch
+                tree={tree}
+                startId={variationId}
+                cursorId={cursorId}
+                onSelect={onSelect}
+                keep={keep}
+                bookIds={bookIds}
+              />
+            </div>
           </div>,
         );
       }
