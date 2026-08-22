@@ -1,6 +1,6 @@
 import { History, Trash2 } from 'lucide-react';
 import { Button } from './Button';
-import { Sheet } from './Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
 /**
@@ -56,32 +56,39 @@ export function RecoverySheet({
   return (
     // Dismissing by Escape, Back or the scrim leaves the swap where it is
     // — the answer that loses nothing, and the offer comes back next time.
-    <Sheet label={t('Unsaved changes were found')} onClose={onDefer} className="gap-3">
-      <p className="text-foreground text-base">
-        {stamp
-          ? t('“{name}” has changes from {when} that were never saved.', { name, when: stamp })
-          : t('“{name}” has changes that were never saved.', { name })}
-      </p>
-      <p className="text-subtle text-sm">
-        {t('Restoring brings them back unsaved, so you can look before you keep them.')}
-      </p>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onDefer();
+      }}
+    >
+      <DialogContent size="sm" title={t('Unsaved changes were found')} className="gap-3">
+        <p className="text-foreground text-base">
+          {stamp
+            ? t('“{name}” has changes from {when} that were never saved.', { name, when: stamp })
+            : t('“{name}” has changes that were never saved.', { name })}
+        </p>
+        <p className="text-subtle text-sm">
+          {t('Restoring brings them back unsaved, so you can look before you keep them.')}
+        </p>
 
-      {/* "Changes", not "them", on both — this sheet and the leave question
-          are the same question about the same thing, and answering one
-          should not need a different vocabulary from answering the other.
-          A clock rewinding rather than a life ring: the fact that decides
-          the answer is WHEN the copy was parked, which the sentence above
-          leads with, and nothing here is a rescue from a disaster. */}
-      <div className="mt-1 flex flex-col gap-2">
-        <Button variant="default" size="default" className="w-full justify-center" onClick={onRecover}>
-          <History className="size-3.5" />
-          {t('Restore changes')}
-        </Button>
-        <Button variant="destructive" size="default" className="w-full justify-center" onClick={onDismiss}>
-          <Trash2 className="size-3.5" />
-          {t('Discard changes')}
-        </Button>
-      </div>
-    </Sheet>
+        {/* "Changes", not "them", on both — this sheet and the leave question
+            are the same question about the same thing, and answering one
+            should not need a different vocabulary from answering the other.
+            A clock rewinding rather than a life ring: the fact that decides
+            the answer is WHEN the copy was parked, which the sentence above
+            leads with, and nothing here is a rescue from a disaster. */}
+        <div className="mt-1 flex flex-col gap-2">
+          <Button variant="default" size="default" className="w-full justify-center" onClick={onRecover}>
+            <History className="size-3.5" />
+            {t('Restore changes')}
+          </Button>
+          <Button variant="destructive" size="default" className="w-full justify-center" onClick={onDismiss}>
+            <Trash2 className="size-3.5" />
+            {t('Discard changes')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

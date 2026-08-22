@@ -5,7 +5,7 @@ import { Select } from '@/ui/Select';
 import { Button } from '@/ui/Button';
 import { Field } from '@/ui/Field';
 import { ClearableInput, DateInput } from '@/ui/Input';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
@@ -234,122 +234,129 @@ export function StructuredFiltersWindow({
   const patch = (part: Partial<StructuredFilters>): void => setDraft((d) => ({ ...d, ...part }));
 
   return (
-    <Modal title="Filter games" icon={SlidersHorizontal} onClose={onClose}>
-      <Field label="Player">
-        <div className="flex gap-2">
-          <ClearableInput
-            // Desktop only — the mouse saves a click; a thumb gets the
-            // keyboard over a window that is six fields to be READ, and
-            // this window opens as a page of the list it filters.
-            autoFocus={autoFocusField()}
-            inputSize="sm"
-            value={draft.player}
-            onChange={(e) => patch({ player: e.target.value })}
-            placeholder={t('Any player')}
-            className="min-w-0 flex-1"
-          />
-          <Select
-            value={draft.side}
-            onValueChange={(v) => patch({ side: v as StructuredFilters['side'] })}
-            ariaLabel={t('Side')}
-            size="sm"
-            groups={[
-              {
-                options: [
-                  { value: 'any', label: t('Either side') },
-                  { value: 'white', label: t('As White') },
-                  { value: 'black', label: t('As Black') },
-                ],
-              },
-            ]}
-          />
-          <Select
-            value={draft.outcome}
-            onValueChange={(v) => patch({ outcome: v as StructuredFilters['outcome'] })}
-            ariaLabel={t('Outcome')}
-            size="sm"
-            groups={[
-              {
-                options: [
-                  { value: 'any', label: t('Any outcome') },
-                  { value: 'won', label: t('Won') },
-                  { value: 'lost', label: t('Lost') },
-                  { value: 'drawn', label: t('Drew') },
-                ],
-              },
-            ]}
-          />
-        </div>
-        {/* The outcome is the player's, so it needs one. */}
-        {draft.outcome !== 'any' && !draft.player.trim() && (
-          <p className="text-subtle mt-1 text-sm">{t('Won or lost by whom? Name a player above.')}</p>
-        )}
-      </Field>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Filter games" icon={SlidersHorizontal}>
+        <Field label="Player">
+          <div className="flex gap-2">
+            <ClearableInput
+              // Desktop only — the mouse saves a click; a thumb gets the
+              // keyboard over a window that is six fields to be READ, and
+              // this window opens as a page of the list it filters.
+              autoFocus={autoFocusField()}
+              inputSize="sm"
+              value={draft.player}
+              onChange={(e) => patch({ player: e.target.value })}
+              placeholder={t('Any player')}
+              className="min-w-0 flex-1"
+            />
+            <Select
+              value={draft.side}
+              onValueChange={(v) => patch({ side: v as StructuredFilters['side'] })}
+              ariaLabel={t('Side')}
+              size="sm"
+              groups={[
+                {
+                  options: [
+                    { value: 'any', label: t('Either side') },
+                    { value: 'white', label: t('As White') },
+                    { value: 'black', label: t('As Black') },
+                  ],
+                },
+              ]}
+            />
+            <Select
+              value={draft.outcome}
+              onValueChange={(v) => patch({ outcome: v as StructuredFilters['outcome'] })}
+              ariaLabel={t('Outcome')}
+              size="sm"
+              groups={[
+                {
+                  options: [
+                    { value: 'any', label: t('Any outcome') },
+                    { value: 'won', label: t('Won') },
+                    { value: 'lost', label: t('Lost') },
+                    { value: 'drawn', label: t('Drew') },
+                  ],
+                },
+              ]}
+            />
+          </div>
+          {/* The outcome is the player's, so it needs one. */}
+          {draft.outcome !== 'any' && !draft.player.trim() && (
+            <p className="text-subtle mt-1 text-sm">{t('Won or lost by whom? Name a player above.')}</p>
+          )}
+        </Field>
 
-      <Field label="Opening or ECO">
-        <ClearableInput
-          inputSize="sm"
-          value={draft.opening}
-          onChange={(e) => patch({ opening: e.target.value })}
-          placeholder={t('Najdorf, B90…')}
-          className="w-full"
-        />
-      </Field>
-
-      {showEvent && (
-        <Field label="Tournament">
+        <Field label="Opening or ECO">
           <ClearableInput
             inputSize="sm"
-            value={draft.event}
-            onChange={(e) => patch({ event: e.target.value })}
-            placeholder={t('Any event')}
+            value={draft.opening}
+            onChange={(e) => patch({ opening: e.target.value })}
+            placeholder={t('Najdorf, B90…')}
             className="w-full"
           />
         </Field>
-      )}
 
-      <Field label="Played between">
-        <div className="flex items-center gap-2">
-          <DateInput
-            value={draft.from}
-            onChange={(e) => patch({ from: e.target.value })}
-            aria-label={t('From date')}
-            className="w-[9.5rem]"
-          />
-          <span className="text-subtle" aria-hidden>
-            –
-          </span>
-          <DateInput
-            value={draft.to}
-            onChange={(e) => patch({ to: e.target.value })}
-            aria-label={t('To date')}
-            className="w-[9.5rem]"
-          />
+        {showEvent && (
+          <Field label="Tournament">
+            <ClearableInput
+              inputSize="sm"
+              value={draft.event}
+              onChange={(e) => patch({ event: e.target.value })}
+              placeholder={t('Any event')}
+              className="w-full"
+            />
+          </Field>
+        )}
+
+        <Field label="Played between">
+          <div className="flex items-center gap-2">
+            <DateInput
+              value={draft.from}
+              onChange={(e) => patch({ from: e.target.value })}
+              aria-label={t('From date')}
+              className="w-[9.5rem]"
+            />
+            <span className="text-subtle" aria-hidden>
+              –
+            </span>
+            <DateInput
+              value={draft.to}
+              onChange={(e) => patch({ to: e.target.value })}
+              aria-label={t('To date')}
+              className="w-[9.5rem]"
+            />
+          </div>
+        </Field>
+
+        {extraFields}
+
+        <div className="mt-1 flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mr-auto"
+            onClick={() => {
+              setDraft(EMPTY_STRUCTURED_FILTERS);
+              onClear?.();
+            }}
+          >
+            {t('Clear filters')}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button variant="default" size="sm" onClick={() => onApply(draft)}>
+            {t('Apply')}
+          </Button>
         </div>
-      </Field>
-
-      {extraFields}
-
-      <div className="mt-1 flex items-center justify-end gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mr-auto"
-          onClick={() => {
-            setDraft(EMPTY_STRUCTURED_FILTERS);
-            onClear?.();
-          }}
-        >
-          {t('Clear filters')}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {t('Cancel')}
-        </Button>
-        <Button variant="default" size="sm" onClick={() => onApply(draft)}>
-          {t('Apply')}
-        </Button>
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 }
 

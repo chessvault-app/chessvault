@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Keyboard } from 'lucide-react';
 import { dialogOpen } from './dialogFocus';
-import { Modal } from './Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
 /**
@@ -41,17 +41,24 @@ export function ShortcutsHelp() {
 
   if (!open) return null;
   return (
-    <Modal title="Keyboard shortcuts" icon={Keyboard} onClose={() => setOpen(false)}>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-        {SHORTCUTS.map(({ keys, what }) => (
-          <span key={keys} className="contents">
-            <dt className="bg-muted border-border justify-self-start rounded-sm border px-1.5 py-0.5 font-mono">
-              {keys}
-            </dt>
-            <dd className="text-muted-foreground self-center">{t(what)}</dd>
-          </span>
-        ))}
-      </dl>
-    </Modal>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) setOpen(false);
+      }}
+    >
+      <DialogContent title="Keyboard shortcuts" icon={Keyboard}>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+          {SHORTCUTS.map(({ keys, what }) => (
+            <span key={keys} className="contents">
+              <dt className="bg-muted border-border justify-self-start rounded-sm border px-1.5 py-0.5 font-mono">
+                {keys}
+              </dt>
+              <dd className="text-muted-foreground self-center">{t(what)}</dd>
+            </span>
+          ))}
+        </dl>
+      </DialogContent>
+    </Dialog>
   );
 }

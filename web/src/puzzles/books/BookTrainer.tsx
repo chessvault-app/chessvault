@@ -57,7 +57,7 @@ import { useAnalysis } from '@/store/analysis';
 
 import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
@@ -596,13 +596,16 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         being solved off the screen. On a phone it is a bottom
         sheet. */}
     {showNav && (
-      <Modal
-        title="All puzzles in this book"
-        icon={LayoutGrid}
-        onClose={() => setShowNav(false)}
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) setShowNav(false);
+        }}
       >
-        <PuzzleGrid slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
-      </Modal>
+        <DialogContent title="All puzzles in this book" icon={LayoutGrid}>
+          <PuzzleGrid slug={slug} puzzles={book.puzzles} progress={book.progress} currentId={puzzleId} />
+        </DialogContent>
+      </Dialog>
     )}
     {/* `grow` so the body owns the panel's full height rather than
         stopping at its text, and `overflow-y-auto` so that the height is

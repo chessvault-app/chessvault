@@ -6,7 +6,7 @@ import { t } from '@/lib/i18n';
 import { Button } from '@/ui/Button';
 import { SearchInput } from '@/ui/Input';
 import { Segmented } from '@/ui/Segmented';
-import { Sheet } from '@/ui/Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton, useSlowLoad } from '@/ui/Skeleton';
 import type { MapTag } from './model';
 
@@ -111,126 +111,133 @@ export function TagPicker({
     // what this node points at — so it takes that sheet's height rather
     // than shrinking to its own list and reading as a second, smaller
     // window stacked on the first. The same call AddMoveSheet makes.
-    <Sheet label={t('Link a game, study or note')} onClose={onClose} fill>
-      {scoping === null ? (
-        <>
-          <div className="flex items-center gap-2">
-            <Segmented
-              value={kind}
-              onChange={setKind}
-              segments={[
-                { value: 'game', label: t('Games') },
-                { value: 'study', label: t('Studies') },
-                { value: 'note', label: t('Notes') },
-              ]}
-              ariaLabel="What to link"
-              kind="tabs"
-            />
-            <SearchInput
-              className="flex-1"
-              // "Search studies", not "Filter": it wears a magnifier, it
-              // sits where every other search field in the app sits, and
-              // it does what they do — a field that looks like one thing
-              // and is labelled another makes the reader decide which to
-              // believe. Naming what it searches is the shelves' own
-              // wording, and it follows the segmented control, which is
-              // the only thing that says which list is under it.
-              placeholder={t(KINDS[kind].search)}
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            />
-          </div>
-          {/* Grows into whatever the sheet has, capped only where the
-              sheet is a window rather than a page: on a phone `fill` has
-              made the card as tall as its parent, and a list that stopped
-              at 20rem would leave the bottom third of it empty. */}
-          <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
-            {rows[kind] === null ? (
-              // The shelf that is coming: an icon beside a name, on the
-              // same 36px row the real ones keep so the list does not
-              // re-space itself as it lands.
-              listPending ? (
-                <div role="status" aria-label={t('Loading')} aria-live="polite">
-                  {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => (
-                    <div key={i} className="flex min-h-9 items-center gap-1">
-                      <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
-                        <Skeleton className="size-4 shrink-0 rounded-sm" />
-                        <Skeleton className={`h-3 ${w}`} />
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent size="sm" title={t('Link a game, study or note')} fill>
+        {scoping === null ? (
+          <>
+            <div className="flex items-center gap-2">
+              <Segmented
+                value={kind}
+                onChange={setKind}
+                segments={[
+                  { value: 'game', label: t('Games') },
+                  { value: 'study', label: t('Studies') },
+                  { value: 'note', label: t('Notes') },
+                ]}
+                ariaLabel="What to link"
+                kind="tabs"
+              />
+              <SearchInput
+                className="flex-1"
+                // "Search studies", not "Filter": it wears a magnifier, it
+                // sits where every other search field in the app sits, and
+                // it does what they do — a field that looks like one thing
+                // and is labelled another makes the reader decide which to
+                // believe. Naming what it searches is the shelves' own
+                // wording, and it follows the segmented control, which is
+                // the only thing that says which list is under it.
+                placeholder={t(KINDS[kind].search)}
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+              />
+            </div>
+            {/* Grows into whatever the sheet has, capped only where the
+                sheet is a window rather than a page: on a phone `fill` has
+                made the card as tall as its parent, and a list that stopped
+                at 20rem would leave the bottom third of it empty. */}
+            <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
+              {rows[kind] === null ? (
+                // The shelf that is coming: an icon beside a name, on the
+                // same 36px row the real ones keep so the list does not
+                // re-space itself as it lands.
+                listPending ? (
+                  <div role="status" aria-label={t('Loading')} aria-live="polite">
+                    {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => (
+                      <div key={i} className="flex min-h-9 items-center gap-1">
+                        <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
+                          <Skeleton className="size-4 shrink-0 rounded-sm" />
+                          <Skeleton className={`h-3 ${w}`} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : null
-            ) : list.length === 0 ? (
-              <p className="text-muted-foreground px-2 py-4 text-center text-sm">
-                {t('Nothing here matches.')}
-              </p>
-            ) : (
-              list.map((row) => {
-                const wholeTag: MapTag = { kind, id: row.id };
-                const Icon = KINDS[kind].icon;
-                return (
-                  // One height for every row, whether or not it carries
-                  // a Chapter button: a study row stood a touch target
-                  // taller than a note row, so switching the segmented
-                  // control above shuffled the whole list's rhythm.
-                  <div key={row.id} className="flex min-h-9 items-center gap-1">
-                    <button
-                      type="button"
-                      disabled={tagged(wholeTag)}
-                      onClick={() => onPick(wholeTag)}
-                      className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
-                    >
-                      <Icon className="text-muted-foreground size-4 shrink-0" />
-                      <span className="text-foreground min-w-0 flex-1 truncate text-base">{row.id}</span>
-                      {tagged(wholeTag) && (
-                        <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>
-                      )}
-                    </button>
-                    {kind === 'study' && (row.chapters ?? 1) > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        title={t('Link one chapter')}
-                        onClick={() => void openScoping(row.id)}
-                      >
-                        <BookOpen className="size-3.5" /> {t('Chapter')}
-                      </Button>
-                    )}
+                    ))}
                   </div>
+                ) : null
+              ) : list.length === 0 ? (
+                <p className="text-muted-foreground px-2 py-4 text-center text-sm">
+                  {t('Nothing here matches.')}
+                </p>
+              ) : (
+                list.map((row) => {
+                  const wholeTag: MapTag = { kind, id: row.id };
+                  const Icon = KINDS[kind].icon;
+                  return (
+                    // One height for every row, whether or not it carries
+                    // a Chapter button: a study row stood a touch target
+                    // taller than a note row, so switching the segmented
+                    // control above shuffled the whole list's rhythm.
+                    <div key={row.id} className="flex min-h-9 items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={tagged(wholeTag)}
+                        onClick={() => onPick(wholeTag)}
+                        className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
+                      >
+                        <Icon className="text-muted-foreground size-4 shrink-0" />
+                        <span className="text-foreground min-w-0 flex-1 truncate text-base">{row.id}</span>
+                        {tagged(wholeTag) && (
+                          <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>
+                        )}
+                      </button>
+                      {kind === 'study' && (row.chapters ?? 1) > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title={t('Link one chapter')}
+                          onClick={() => void openScoping(row.id)}
+                        >
+                          <BookOpen className="size-3.5" /> {t('Chapter')}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={() => setScoping(null)}>
+                <ChevronLeft className="size-3.5" />
+              </Button>
+              <p className="text-foreground min-w-0 truncate text-base font-medium">{scoping.id}</p>
+            </div>
+            <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
+              {scoping.chapters.map((name) => {
+                const tag: MapTag = { kind: 'study', id: scoping.id, chapter: name };
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    disabled={tagged(tag)}
+                    onClick={() => onPick(tag)}
+                    className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
+                  >
+                    <BookOpen className="text-muted-foreground size-4 shrink-0" />
+                    <span className="text-foreground min-w-0 flex-1 truncate text-base">{name}</span>
+                    {tagged(tag) && <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>}
+                  </button>
                 );
-              })
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" title={t('Back')} onClick={() => setScoping(null)}>
-              <ChevronLeft className="size-3.5" />
-            </Button>
-            <p className="text-foreground min-w-0 truncate text-base font-medium">{scoping.id}</p>
-          </div>
-          <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
-            {scoping.chapters.map((name) => {
-              const tag: MapTag = { kind: 'study', id: scoping.id, chapter: name };
-              return (
-                <button
-                  key={name}
-                  type="button"
-                  disabled={tagged(tag)}
-                  onClick={() => onPick(tag)}
-                  className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
-                >
-                  <BookOpen className="text-muted-foreground size-4 shrink-0" />
-                  <span className="text-foreground min-w-0 flex-1 truncate text-base">{name}</span>
-                  {tagged(tag) && <span className="text-subtle shrink-0 text-sm">{t('Linked')}</span>}
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
-    </Sheet>
+              })}
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

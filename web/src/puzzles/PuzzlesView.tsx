@@ -42,7 +42,7 @@ import { useEngine } from '@/store/engine';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/ui/announce';
 import { Button } from '@/ui/Button';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { MobileActionBar } from '@/ui/MobileActionBar';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Skeleton } from '@/ui/Skeleton';
@@ -718,32 +718,35 @@ function Trainer({
         thing a trainer must not do to the position being solved. On
         a phone it is a bottom sheet. */}
     {showDifficulty && mode === 'fresh' && (
-      <Modal
-        title="Puzzle settings"
-        icon={Settings2}
-        onClose={() => setShowDifficulty(false)}
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) setShowDifficulty(false);
+        }}
       >
-        <DifficultyRow active={difficulty} onPick={pickDifficulty} />
-        {/* Theme picker folded in beside difficulty — both answer
-            "which puzzles", so they share the one window. */}
-        <button
-          type="button"
-          onClick={() => navigate('puzzles', 'themes')}
-          className={cn(
-            'bg-muted hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
-            'border-border border px-3 py-2.5 text-left transition-colors duration-100',
-          )}
-        >
-          <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-          <span className="text-subtle shrink-0 text-xs label-caps">
-            {t('Theme')}
-          </span>
-          <span className="text-foreground ml-auto truncate text-sm font-medium">
-            {theme ? themeLabel(theme) : t('All themes')}
-          </span>
-          <ChevronRight className="text-subtle size-3.5 shrink-0" />
-        </button>
-      </Modal>
+        <DialogContent title="Puzzle settings" icon={Settings2}>
+          <DifficultyRow active={difficulty} onPick={pickDifficulty} />
+          {/* Theme picker folded in beside difficulty — both answer
+              "which puzzles", so they share the one window. */}
+          <button
+            type="button"
+            onClick={() => navigate('puzzles', 'themes')}
+            className={cn(
+              'bg-muted hover:bg-surface-3 group flex w-full items-center gap-2 rounded-md',
+              'border-border border px-3 py-2.5 text-left transition-colors duration-100',
+            )}
+          >
+            <LayoutGrid className="text-subtle group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+            <span className="text-subtle shrink-0 text-xs label-caps">
+              {t('Theme')}
+            </span>
+            <span className="text-foreground ml-auto truncate text-sm font-medium">
+              {theme ? themeLabel(theme) : t('All themes')}
+            </span>
+            <ChevronRight className="text-subtle size-3.5 shrink-0" />
+          </button>
+        </DialogContent>
+      </Dialog>
     )}
     {/* `grow` so the body owns the panel's full height rather than
         stopping at its text, and `overflow-y-auto` so that the height is

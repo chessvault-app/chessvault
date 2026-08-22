@@ -49,7 +49,7 @@ import { InfoTip } from '@/ui/InfoTip';
 import { KingIcon } from '@/ui/KingIcon';
 import { Segmented } from '@/ui/Segmented';
 import { SideDot } from '@/ui/SideDot';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { AnalysisBoard } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
@@ -1766,23 +1766,30 @@ export function RepertoireView() {
           desktop stands them in its column, and rendering both would be
           the same fields twice, sharing one set of state. */}
       {setupOpen && !wide && phase === 'idle' && (
-        <Modal title="New game" icon={Settings2} onClose={cancelSetup}>
-          {setupFields}
-          {/* justify-end, gap-2, the primary one LAST — the row every
-              window in this app ends on (ui/PromptSheet). Apply only
-              closes: the fields have been writing straight through all
-              along, which is what puts the chosen opening on the board
-              behind the sheet. Cancel is the one that does work, by
-              putting back what was there when the sheet opened. */}
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" size="sm" onClick={cancelSetup}>
-              {t('Cancel')}
-            </Button>
-            <Button variant="default" size="sm" onClick={applySetup}>
-              {t('Apply')}
-            </Button>
-          </div>
-        </Modal>
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) cancelSetup();
+          }}
+        >
+          <DialogContent title="New game" icon={Settings2}>
+            {setupFields}
+            {/* justify-end, gap-2, the primary one LAST — the row every
+                window in this app ends on (ui/PromptSheet). Apply only
+                closes: the fields have been writing straight through all
+                along, which is what puts the chosen opening on the board
+                behind the sheet. Cancel is the one that does work, by
+                putting back what was there when the sheet opened. */}
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" size="sm" onClick={cancelSetup}>
+                {t('Cancel')}
+              </Button>
+              <Button variant="default" size="sm" onClick={applySetup}>
+                {t('Apply')}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {saveOpen && (

@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Button } from './Button';
 import { ClearableInput } from './Input';
-import { Sheet } from './Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
@@ -51,30 +51,37 @@ export function PromptSheet({
     onSubmit(draft.trim());
   };
   return (
-    <Sheet label={label} onClose={onClose}>
-      {extra}
-      <ClearableInput
-        autoFocus={autoFocusField()}
-        value={draft}
-        onFocus={(e) => e.target.select()}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-          if (e.key === 'Escape') onClose();
-        }}
-      />
-      {error && <p className="text-destructive text-sm">{error}</p>}
-      <div className="flex justify-end gap-2">
-        {/* A way out that is not the scrim. Tapping outside works, but a
-            dialog asking for one value should say so rather than expect
-            you to know. */}
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {t('Cancel')}
-        </Button>
-        <Button variant="default" size="sm" disabled={!draft.trim()} onClick={submit}>
-          {t(submitLabel)}
-        </Button>
-      </div>
-    </Sheet>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent size="sm" title={label}>
+        {extra}
+        <ClearableInput
+          autoFocus={autoFocusField()}
+          value={draft}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') submit();
+            if (e.key === 'Escape') onClose();
+          }}
+        />
+        {error && <p className="text-destructive text-sm">{error}</p>}
+        <div className="flex justify-end gap-2">
+          {/* A way out that is not the scrim. Tapping outside works, but a
+              dialog asking for one value should say so rather than expect
+              you to know. */}
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button variant="default" size="sm" disabled={!draft.trim()} onClick={submit}>
+            {t(submitLabel)}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -8,7 +8,7 @@ import { Suspense, lazy } from 'react';
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
 import { Button } from '@/ui/Button';
 import { Textarea } from '@/ui/Input';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
@@ -304,14 +304,21 @@ function LoadDialog({
   }, [onClose]);
 
   return (
-    <Modal title="Load position" onClose={onClose} onBack={onBack} className="sm:max-w-md">
-      <LoadPositionForm
-        loadText={loadText}
-        onDone={onClose}
-        onCancel={onClose}
-        onImage={onImage}
-      />
-      {children}
-    </Modal>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Load position" onBack={onBack} className="sm:max-w-md">
+        <LoadPositionForm
+          loadText={loadText}
+          onDone={onClose}
+          onCancel={onClose}
+          onImage={onImage}
+        />
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 }

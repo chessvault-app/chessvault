@@ -47,7 +47,7 @@ import {
 import { Field } from '@/ui/Field';
 
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CreateControl, FabSpacer } from '@/ui/Fab';
 import { UndoBar } from '@/ui/UndoBar';
 import { useUndoable } from '@/ui/useUndoable';
@@ -762,23 +762,25 @@ export function CollectionView() {
           the reader's thumb as they did. Given the height it ends up at,
           it opens at it. */}
       {browsing && (
-        <Modal
-          title="Online archives"
-          onClose={() => setBrowsing(false)}
-          full
-          className="max-sm:h-[88%]"
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setBrowsing(false);
+          }}
         >
-          {/* Unframed here too: the window's own title bar already says
-              Online archives, and the panel said it again directly under
-              it. A window that names itself twice is a window with a
-              wasted line and a reader wondering what the difference is. */}
-          <ArchiveBrowser
-            place="window"
-            collectionKeys={collectionKeys}
-            onCollected={() => void load()}
-            onPreview={setPreview}
-          />
-        </Modal>
+          <DialogContent title="Online archives" className="max-sm:h-[88%]" size="full">
+            {/* Unframed here too: the window's own title bar already says
+                Online archives, and the panel said it again directly under
+                it. A window that names itself twice is a window with a
+                wasted line and a reader wondering what the difference is. */}
+            <ArchiveBrowser
+              place="window"
+              collectionKeys={collectionKeys}
+              onCollected={() => void load()}
+              onPreview={setPreview}
+            />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* A HEIGHT, not a cap. This window is a list of 280,000 games: it
@@ -786,9 +788,16 @@ export function CollectionView() {
           content-sized sheet grew under the reader's thumb as it did.
           Given the height it is going to end up at, it opens at it. */}
       {elite && (
-        <Modal title="Elite games" onClose={() => setElite(false)} full className="max-sm:h-[88%]">
-          <EliteGames />
-        </Modal>
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setElite(false);
+          }}
+        >
+          <DialogContent title="Elite games" className="max-sm:h-[88%]" size="full">
+            <EliteGames />
+          </DialogContent>
+        </Dialog>
       )}
 
       <GamePreview preview={preview} onClose={() => setPreview(null)} />
@@ -908,170 +917,176 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
   };
 
   return (
-    <Modal
-      title="Import a game"
-      onClose={onCancel}
-      full
-      // Full screen on a phone; on a desktop a plain centred window of the
-      // width a form of this shape wants — a 4xl sheet was mostly margin.
-      className="sm:max-w-[37.5rem]"
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
     >
-      <Textarea
-        autoFocus={autoFocusField()}
-        ref={pgnField}
-        value={pgn}
-        onChange={(e) => {
-          setPgn(e.target.value);
-          readHeaders(e.target.value);
-        }}
-        // The paste is read directly as well as through onChange: a paste
-        // is the moment the headers arrive, and reading them here means
-        // the fields are filled before the change has even settled.
-        onPaste={(e) => {
-          const text = e.clipboardData.getData('text');
-          if (text.includes('[')) readHeaders(text);
-        }}
-        onFocus={scrollFocusIntoView}
-        rows={6}
-        spellCheck={false}
-        placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}
-        className="w-full resize-none font-mono placeholder:font-sans"
-      />
-
-      {/* Everything a pasted PGN already knows lives behind one line. It
-          opens itself when a paste fills something in, so what was read
-          off the text is seen rather than taken on trust. */}
-      <button
-        type="button"
-        onClick={() => setDetailsOpen((v) => !v)}
-        aria-expanded={detailsOpen}
-        className="text-subtle hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
+      <DialogContent
+        title="Import a game"
+        // Full screen on a phone; on a desktop a plain centred window of the
+        // width a form of this shape wants — a 4xl sheet was mostly margin.
+        className="sm:max-w-[37.5rem]"
+        size="full"
       >
-        <ChevronRight
-          className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}
+        <Textarea
+          autoFocus={autoFocusField()}
+          ref={pgnField}
+          value={pgn}
+          onChange={(e) => {
+            setPgn(e.target.value);
+            readHeaders(e.target.value);
+          }}
+          // The paste is read directly as well as through onChange: a paste
+          // is the moment the headers arrive, and reading them here means
+          // the fields are filled before the change has even settled.
+          onPaste={(e) => {
+            const text = e.clipboardData.getData('text');
+            if (text.includes('[')) readHeaders(text);
+          }}
+          onFocus={scrollFocusIntoView}
+          rows={6}
+          spellCheck={false}
+          placeholder={t('Paste a PGN \u2014 or just moves: 1. e4 e5 2. Nf3 \u2026')}
+          className="w-full resize-none font-mono placeholder:font-sans"
         />
-        {t('Advanced details')}
-      </button>
 
-      {detailsOpen && (
-        <div className="flex flex-col gap-2">
-          {/* Paired left to right on every screen, not just a desktop: a
-              name and a rating are short, and a column of six full-width
-              boxes was three screenfuls of a form that fits in one and a
-              half. Measured at 390px, every placeholder fits the 158px a
-              half-column leaves — once the event stopped calling itself a
-              tournament as well, which it was at 157 of them. */}
-          <div className="grid grid-cols-2 gap-2">
-            <ClearableInput
-              value={white}
-              onChange={(e) => setWhite(e.target.value)}
-              onFocus={scrollFocusIntoView}
-              placeholder={t('White (optional)')}
-            />
-            <ClearableInput
-              value={black}
-              onChange={(e) => setBlack(e.target.value)}
-              onFocus={scrollFocusIntoView}
-              placeholder={t('Black (optional)')}
-            />
-            <ClearableInput
-              value={whiteElo}
-              onChange={(e) => setWhiteElo(e.target.value)}
-              onFocus={scrollFocusIntoView}
-              placeholder={t('White rating')}
-              inputMode="numeric"
-            />
-            <ClearableInput
-              value={blackElo}
-              onChange={(e) => setBlackElo(e.target.value)}
-              onFocus={scrollFocusIntoView}
-              placeholder={t('Black rating')}
-              inputMode="numeric"
-            />
-            <ClearableInput
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              onFocus={scrollFocusIntoView}
-              placeholder={t('Date, e.g. 2026-08-08')}
-            />
-            <ClearableInput
-              value={event}
-              onChange={(e) => setEvent(e.target.value)}
-              onFocus={scrollFocusIntoView}
-              placeholder={t('Event (optional)')}
-            />
+        {/* Everything a pasted PGN already knows lives behind one line. It
+            opens itself when a paste fills something in, so what was read
+            off the text is seen rather than taken on trust. */}
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((v) => !v)}
+          aria-expanded={detailsOpen}
+          className="text-subtle hover:text-foreground flex items-center gap-1.5 self-start text-sm transition-colors duration-100"
+        >
+          <ChevronRight
+            className={cn('size-3.5 transition-transform duration-150', detailsOpen && 'rotate-90')}
+          />
+          {t('Advanced details')}
+        </button>
+
+        {detailsOpen && (
+          <div className="flex flex-col gap-2">
+            {/* Paired left to right on every screen, not just a desktop: a
+                name and a rating are short, and a column of six full-width
+                boxes was three screenfuls of a form that fits in one and a
+                half. Measured at 390px, every placeholder fits the 158px a
+                half-column leaves — once the event stopped calling itself a
+                tournament as well, which it was at 157 of them. */}
+            <div className="grid grid-cols-2 gap-2">
+              <ClearableInput
+                value={white}
+                onChange={(e) => setWhite(e.target.value)}
+                onFocus={scrollFocusIntoView}
+                placeholder={t('White (optional)')}
+              />
+              <ClearableInput
+                value={black}
+                onChange={(e) => setBlack(e.target.value)}
+                onFocus={scrollFocusIntoView}
+                placeholder={t('Black (optional)')}
+              />
+              <ClearableInput
+                value={whiteElo}
+                onChange={(e) => setWhiteElo(e.target.value)}
+                onFocus={scrollFocusIntoView}
+                placeholder={t('White rating')}
+                inputMode="numeric"
+              />
+              <ClearableInput
+                value={blackElo}
+                onChange={(e) => setBlackElo(e.target.value)}
+                onFocus={scrollFocusIntoView}
+                placeholder={t('Black rating')}
+                inputMode="numeric"
+              />
+              <ClearableInput
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                onFocus={scrollFocusIntoView}
+                placeholder={t('Date, e.g. 2026-08-08')}
+              />
+              <ClearableInput
+                value={event}
+                onChange={(e) => setEvent(e.target.value)}
+                onFocus={scrollFocusIntoView}
+                placeholder={t('Event (optional)')}
+              />
+            </div>
+
+            {/* Segmented, not a dropdown: four states, all visible at once.
+                Auto is the default and stays quiet — a blue chip beside a
+                blue Add button made the form look like it had two answers
+                waiting. */}
+            <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
+              {(
+                [
+                  ['', 'Auto', 'Result from the pasted moves'],
+                  ['1-0', '1-0', 'White won'],
+                  ['0-1', '0-1', 'Black won'],
+                  ['1/2-1/2', '\u00bd-\u00bd', 'Draw'],
+                ] as const
+              ).map(([value, label, hint]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant="secondary"
+                  active={result === value}
+                  title={t(hint)}
+                  className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
+                  onClick={() => setResult(value)}
+                >
+                  {t(label)}
+                </Button>
+              ))}
+            </div>
           </div>
-
-          {/* Segmented, not a dropdown: four states, all visible at once.
-              Auto is the default and stays quiet — a blue chip beside a
-              blue Add button made the form look like it had two answers
-              waiting. */}
-          <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
-            {(
-              [
-                ['', 'Auto', 'Result from the pasted moves'],
-                ['1-0', '1-0', 'White won'],
-                ['0-1', '0-1', 'Black won'],
-                ['1/2-1/2', '\u00bd-\u00bd', 'Draw'],
-              ] as const
-            ).map(([value, label, hint]) => (
-              <Button
-                key={value}
-                size="sm"
-                variant="secondary"
-                active={result === value}
-                title={t(hint)}
-                className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
-                onClick={() => setResult(value)}
-              >
-                {t(label)}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {failure && <p className="text-destructive text-sm">{failure}</p>}
-
-      {/* Sticky, so the only way to submit is never scrolled away — this
-          form is long enough with Advanced open that it now scrolls, and
-          a submit at the end of a scroll is a submit you have to go and
-          find.
-
-          Full-bleed and bordered, because a sticky bar that is merely
-          bg-card reads as a mistake the moment content passes UNDER
-          it: half a field showing to the left of the buttons, the rest
-          hidden, no line to say which is which. -mx-3 px-3 takes it to
-          both edges of the window's own padding, the rule says where it
-          starts, and z-10 keeps it over anything that scrolls beneath. */}
-      <div
-        className={cn(
-          'bg-card border-border sticky z-10 -mx-3 flex justify-end gap-2 border-t px-3 pt-2',
-          // The bar reaches the window's own bottom edge and carries the
-          // home-indicator clearance itself. Left to the window, that
-          // clearance was a strip of empty surface UNDER the bar — about
-          // 100px of nothing between the buttons and the bottom of the
-          // screen. Sticking it that much lower and padding itself by the
-          // same amount puts the background where the padding was and the
-          // buttons where they always were.
-          'bottom-[calc(-0.75rem-var(--safe-b))]',
-          'pb-[calc(1rem+var(--safe-b))]',
-          // And it eats the window's bottom padding in flow as well as
-          // when stuck. Sticky only sticks while there is something to
-          // scroll; with a form short enough to fit, the bar sat in the
-          // ordinary flow and its clearance was ADDED to the window's own
-          // — two indicators' worth of nothing under the buttons.
-          '-mb-[calc(0.75rem+var(--safe-b))]',
         )}
-      >
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          {t('Cancel')}
-        </Button>
-        <Button variant="default" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
-          <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
-          {t('Add to collection')}
-        </Button>
-      </div>
-    </Modal>
+
+        {failure && <p className="text-destructive text-sm">{failure}</p>}
+
+        {/* Sticky, so the only way to submit is never scrolled away — this
+            form is long enough with Advanced open that it now scrolls, and
+            a submit at the end of a scroll is a submit you have to go and
+            find.
+
+            Full-bleed and bordered, because a sticky bar that is merely
+            bg-card reads as a mistake the moment content passes UNDER
+            it: half a field showing to the left of the buttons, the rest
+            hidden, no line to say which is which. -mx-3 px-3 takes it to
+            both edges of the window's own padding, the rule says where it
+            starts, and z-10 keeps it over anything that scrolls beneath. */}
+        <div
+          className={cn(
+            'bg-card border-border sticky z-10 -mx-3 flex justify-end gap-2 border-t px-3 pt-2',
+            // The bar reaches the window's own bottom edge and carries the
+            // home-indicator clearance itself. Left to the window, that
+            // clearance was a strip of empty surface UNDER the bar — about
+            // 100px of nothing between the buttons and the bottom of the
+            // screen. Sticking it that much lower and padding itself by the
+            // same amount puts the background where the padding was and the
+            // buttons where they always were.
+            'bottom-[calc(-0.75rem-var(--safe-b))]',
+            'pb-[calc(1rem+var(--safe-b))]',
+            // And it eats the window's bottom padding in flow as well as
+            // when stuck. Sticky only sticks while there is something to
+            // scroll; with a form short enough to fit, the bar sat in the
+            // ordinary flow and its clearance was ADDED to the window's own
+            // — two indicators' worth of nothing under the buttons.
+            '-mb-[calc(0.75rem+var(--safe-b))]',
+          )}
+        >
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            {t('Cancel')}
+          </Button>
+          <Button variant="default" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
+            <Plus className="mr-1 size-3.5 pointer-coarse:size-4.5" strokeWidth={2.5} />
+            {t('Add to collection')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

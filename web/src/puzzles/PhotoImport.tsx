@@ -2,7 +2,7 @@ import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/ui/Button';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   boardFeatures,
   grayscaleFrom,
@@ -302,143 +302,149 @@ export function PhotoImport({
     // own Escape listener instead of the platform's close request. It is
     // dismissible the way the rest are now, scrim and drag included, which
     // the hand-rolled version deliberately was not.
-    <Modal
-      title="Position from an image"
-      icon={ImageUp}
-      onClose={onClose}
-      fill
-      className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
     >
-      {dragOver && (
-        <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
-          <p className="text-primary text-base font-semibold">{t('Drop the image')}</p>
-        </div>
-      )}
-
-      {!img ? (
-        <>
-          <label className="border-border hover:border-border-strong hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) pick(file);
-              }}
-            />
-            <span className="text-muted-foreground text-base">
-              Choose an image of the diagram
-              <span className="text-subtle block text-sm">{t('a screenshot or scan works best')}</span>
-            </span>
-          </label>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
-              <ClipboardPaste className="size-3.5" />
-              {t('Paste image')}
-            </Button>
-            <span className="text-subtle text-sm">{t('or press Ctrl+V — dropping a file here works too')}</span>
+      <DialogContent
+        title="Position from an image"
+        icon={ImageUp}
+        fill
+        className={cn('relative sm:max-w-[38rem]', dragOver && 'border-primary')}
+      >
+        {dragOver && (
+          <div className="bg-primary-soft/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
+            <p className="text-primary text-base font-semibold">{t('Drop the image')}</p>
           </div>
-          {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
-        </>
-      ) : (
-        <>
-          <p className="text-subtle text-sm">
-            {t('Drag the four handles onto the corners of the diagram.')}
-          </p>
-          <canvas
-            ref={canvasRef}
-            className="mx-auto max-w-full touch-none rounded-md"
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={() => (dragging.current = null)}
-          />
-          {/* The one thing here that is a setting rather than a verb, so
-              it stays by the board it describes; the verbs are together
-              in the corner. */}
-          <label className="text-muted-foreground flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              checked={blackAtBottom}
-              onChange={(e) => {
-                setBlackAtBottom(e.target.checked);
-                setReading(null);
-              }}
-            />
-            {t('Black at the bottom')}
-          </label>
-          {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
-        </>
-      )}
+        )}
 
-      {reading && (
-        <div
-          className={cn(
-            'rounded-lg border p-3 text-sm leading-relaxed',
-            reading.fen ? 'border-border bg-surface-inset/50' : 'border-info/40 bg-info/10',
-          )}
-        >
-          {reading.fen === null ? (
-            <p className="text-muted-foreground">
-              First diagram of this book — nothing to match against yet. Set
-              the position up by hand; confirming it teaches the app this
-              book&rsquo;s piece font, and the next images will read themselves.
+        {!img ? (
+          <>
+            <label className="border-border hover:border-border-strong hover:bg-accent grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) pick(file);
+                }}
+              />
+              <span className="text-muted-foreground text-base">
+                Choose an image of the diagram
+                <span className="text-subtle block text-sm">{t('a screenshot or scan works best')}</span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => void pasteFromClipboard()}>
+                <ClipboardPaste className="size-3.5" />
+                {t('Paste image')}
+              </Button>
+              <span className="text-subtle text-sm">{t('or press Ctrl+V — dropping a file here works too')}</span>
+            </div>
+            {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
+          </>
+        ) : (
+          <>
+            <p className="text-subtle text-sm">
+              {t('Drag the four handles onto the corners of the diagram.')}
             </p>
-          ) : (
-            <>
-              <p className="text-foreground font-mono text-xs">{reading.fen.split(' ')[0]}</p>
-              {reading.uncertain.length > 0 && (
-                <p className="text-nag-dubious mt-1">
-                  Check by eye: {reading.uncertain.join(', ')}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      )}
+            <canvas
+              ref={canvasRef}
+              className="mx-auto max-w-full touch-none rounded-md"
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={() => (dragging.current = null)}
+            />
+            {/* The one thing here that is a setting rather than a verb, so
+                it stays by the board it describes; the verbs are together
+                in the corner. */}
+            <label className="text-muted-foreground flex items-center gap-1.5 text-sm">
+              <input
+                type="checkbox"
+                checked={blackAtBottom}
+                onChange={(e) => {
+                  setBlackAtBottom(e.target.checked);
+                  setReading(null);
+                }}
+              />
+              {t('Black at the bottom')}
+            </label>
+            {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
+          </>
+        )}
 
-      {/* The verbs, in the corner every window in the app keeps them.
-          They were scattered: Read position led a row of links up beside
-          the checkbox, and Cancel lived INSIDE the result panel, which
-          only exists after a read — so before one there was no stated way
-          out at all, and after one there were two button rows.
+        {reading && (
+          <div
+            className={cn(
+              'rounded-lg border p-3 text-sm leading-relaxed',
+              reading.fen ? 'border-border bg-surface-inset/50' : 'border-info/40 bg-info/10',
+            )}
+          >
+            {reading.fen === null ? (
+              <p className="text-muted-foreground">
+                First diagram of this book — nothing to match against yet. Set
+                the position up by hand; confirming it teaches the app this
+                book&rsquo;s piece font, and the next images will read themselves.
+              </p>
+            ) : (
+              <>
+                <p className="text-foreground font-mono text-xs">{reading.fen.split(' ')[0]}</p>
+                {reading.uncertain.length > 0 && (
+                  <p className="text-nag-dubious mt-1">
+                    Check by eye: {reading.uncertain.join(', ')}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
-          One primary, whose word follows the stage: a reading is about
-          the quad it was read from, so moving a handle or flipping the
-          board drops it and the button offers the read again.
+        {/* The verbs, in the corner every window in the app keeps them.
+            They were scattered: Read position led a row of links up beside
+            the checkbox, and Cancel lived INSIDE the result panel, which
+            only exists after a read — so before one there was no stated way
+            out at all, and after one there were two button rows.
 
-          mt-auto sinks the row to the bottom edge of a sheet that is
-          taller than its content, which a full-height one always is. On a
-          desktop the card is sm:h-auto — no spare room, nothing to sink
-          through — so it simply follows the image. */}
-      {img && (
-        <div className="mt-auto flex justify-end gap-2 pt-1">
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            {t('Cancel')}
-          </Button>
-          {reading ? (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() =>
-                onApply({
-                  fen: reading.fen,
-                  features: reading.features,
-                  blackAtBottom,
-                })
-              }
-            >
-              {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
+            One primary, whose word follows the stage: a reading is about
+            the quad it was read from, so moving a handle or flipping the
+            board drops it and the button offers the read again.
+
+            mt-auto sinks the row to the bottom edge of a sheet that is
+            taller than its content, which a full-height one always is. On a
+            desktop the card is sm:h-auto — no spare room, nothing to sink
+            through — so it simply follows the image. */}
+        {img && (
+          <div className="mt-auto flex justify-end gap-2 pt-1">
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              {t('Cancel')}
             </Button>
-          ) : (
-            <Button variant="default" size="sm" onClick={() => void read()}>
-              <ScanSearch className="size-3.5" />
-              {t('Read position')}
-            </Button>
-          )}
-        </div>
-      )}
-    </Modal>
+            {reading ? (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() =>
+                  onApply({
+                    fen: reading.fen,
+                    features: reading.features,
+                    blackAtBottom,
+                  })
+                }
+              >
+                {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
+              </Button>
+            ) : (
+              <Button variant="default" size="sm" onClick={() => void read()}>
+                <ScanSearch className="size-3.5" />
+                {t('Read position')}
+              </Button>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

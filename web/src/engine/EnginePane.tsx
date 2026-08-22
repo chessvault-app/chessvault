@@ -7,7 +7,7 @@ import { useEngine } from '@/store/engine';
 import { useExplain } from '@/store/explain';
 import { Button } from '@/ui/Button';
 import { PanelHeader } from '@/ui/Panel';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Switch } from '@/ui/Switch';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
@@ -185,9 +185,16 @@ export function EngineBlock({
           until you have started the thing it configures is a button that
           looks broken. */}
       {showSettings && (
-        <Modal title="Engine settings" icon={Settings2} onClose={() => setShowSettings(false)}>
-          <EngineSettings />
-        </Modal>
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setShowSettings(false);
+          }}
+        >
+          <DialogContent title="Engine settings" icon={Settings2}>
+            <EngineSettings />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* NOT gated on `enabled`, which is the whole point: a start that

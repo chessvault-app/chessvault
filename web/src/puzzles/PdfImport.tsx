@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/ui/Button';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/ui/Skeleton';
 import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
@@ -352,466 +352,473 @@ export function PdfImport({
   // width; it is a list of one-line rows now, and at 4xl each row was a
   // label, an icon, and thirty empty characters before its verdict.
   return (
-    <Modal title="Import a book PDF" icon={FileUp} onClose={onClose}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Import a book PDF" icon={FileUp}>
 
-        {/*
-          An interrupted scan is offered back before anything else. It is
-          the only thing on this window that is about work already done,
-          and asking someone to find the PDF again — and wait through the
-          pages they already waited through — to get back to where they
-          were is the failure this exists to remove.
-        */}
-        {!mine && saved && (
-          <div className="border-primary/40 bg-primary-soft flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-foreground text-sm font-medium">
-              {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
-                page: saved.page,
-                pages: saved.pages,
-                n: saved.diagrams,
-              })}
+          {/*
+            An interrupted scan is offered back before anything else. It is
+            the only thing on this window that is about work already done,
+            and asking someone to find the PDF again — and wait through the
+            pages they already waited through — to get back to where they
+            were is the failure this exists to remove.
+          */}
+          {!mine && saved && (
+            <div className="border-primary/40 bg-primary-soft flex flex-col gap-2 rounded-lg border p-3">
+              <p className="text-foreground text-sm font-medium">
+                {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
+                  page: saved.page,
+                  pages: saved.pages,
+                  n: saved.diagrams,
+                })}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => job.resume(slug, templates, { repair, engine })}
+                >
+                  {t('Carry on from page {page}', { page: saved.page + 1 })}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    void clearCheckpoint(slug);
+                    setSaved(null);
+                  }}
+                >
+                  {t('Start the book again')}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!mine && !saved && existing > 0 && (
+            <div className="border-border bg-muted flex flex-col gap-2 rounded-lg border p-3">
+              <p className="text-foreground text-sm font-medium">
+                {t('This book already holds {n} puzzles. What should the import do with them?', {
+                  n: existing,
+                })}
+              </p>
+              {(
+                [
+                  ['update', 'Update in place', 'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.'],
+                  ['rebuild', 'Clear and rebuild', 'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.'],
+                ] as const
+              ).map(([value, label, blurb]) => (
+                <label key={value} className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="radio"
+                    name="reimport-mode"
+                    checked={mode === value}
+                    onChange={() => setMode(value)}
+                    className="mt-0.5"
+                  />
+                  <span className="text-base">
+                    {t(label)}
+                    <span className="text-subtle block text-sm">{t(blurb)}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {!mine && (
+            <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={engine}
+                onChange={(e) => setEngine(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                {t('Ask the engine where the book cannot be read')}
+                <span className="text-subtle block">
+                  {t(
+                    'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds a few seconds per hundred.',
+                  )}
+                </span>
+              </span>
+            </label>
+          )}
+
+          {!mine && (
+            <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={repair}
+                onChange={(e) => setRepair(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                {t('Try harder on boards that fail')}
+                <span className="text-subtle block">
+                  {t(
+                    'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles, and the import may take longer.',
+                  )}
+                </span>
+              </span>
+            </label>
+          )}
+
+          {!mine && !saved && (
+            <label
+              {...pdfDrop.handlers}
+              className={cn(
+                'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center',
+                'transition-colors',
+                pdfDrop.dragging
+                  ? 'border-primary bg-primary-soft'
+                  : 'border-border hover:border-border-strong hover:bg-accent',
+              )}
+            >
+              <input
+                type="file"
+                accept="application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void begin(file);
+                }}
+              />
+              <span className="text-muted-foreground text-base">
+                {t('Choose the book’s PDF')}
+              <span className="text-subtle block text-sm">
+                  {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
+                </span>
+              </span>
+            </label>
+          )}
+
+          {/*
+            Copyright, said where the decision is actually made.
+            The reader only ever opens a file it was handed and nothing it
+            produces leaves the machine — but a scan of a book still in
+            copyright is a copy of it, and that belongs next to the picker
+            rather than only in a README nobody opens on the way here.
+          */}
+          {!mine && !saved && (
+            <p className="border-border bg-muted text-subtle rounded-lg border p-3 text-sm">
+              <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
+              {t(
+                'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
+              )}
             </p>
-            <div className="flex flex-wrap gap-2">
+          )}
+
+          {preparing && (
+            <p className="text-muted-foreground flex items-center gap-2 text-base">
+              <Loader2 className="size-4 animate-spin" />
+              {/* Covers both halves of the preparation: the readability
+                  probe every path runs, and the clear a rebuild adds. */}
+              {t('checking the PDF')}
+            </p>
+          )}
+          {scanning && (
+            <div className="flex items-center gap-2">
+              <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-base">
+                <Loader2 className="size-4 shrink-0 animate-spin" />
+                <span className="truncate">
+                  {t('page {page}/{pages} — {n} diagrams so far', {
+                    page: job.page,
+                    pages: job.pages || '…',
+                    n: found.length,
+                  })}
+                </span>
+              </p>
+              {/* Stopping is safe: the page just finished is on disk, so this
+                  is the same state a crash would have left, and the same
+                  button brings it back. */}
+              <Button variant="secondary" size="sm" className="shrink-0" onClick={() => job.pause()}>
+                <Pause className="size-3.5" />
+                {t('Pause')}
+              </Button>
+            </div>
+          )}
+          {paused && (
+            <div className="border-warn/40 bg-warn/5 flex flex-wrap items-center gap-2 rounded-lg border p-3">
+              <p className="text-foreground min-w-0 flex-1 text-sm">
+                {t('Paused at page {page} of {pages}. Nothing is lost.', {
+                  page: job.page,
+                  pages: job.pages,
+                })}
+              </p>
               <Button
                 variant="default"
                 size="sm"
                 onClick={() => job.resume(slug, templates, { repair, engine })}
               >
-                {t('Carry on from page {page}', { page: saved.page + 1 })}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  void clearCheckpoint(slug);
-                  setSaved(null);
-                }}
-              >
-                {t('Start the book again')}
+                <Play className="size-3.5" />
+                {t('Carry on')}
               </Button>
             </div>
-          </div>
-        )}
-
-        {!mine && !saved && existing > 0 && (
-          <div className="border-border bg-muted flex flex-col gap-2 rounded-lg border p-3">
-            <p className="text-foreground text-sm font-medium">
-              {t('This book already holds {n} puzzles. What should the import do with them?', {
-                n: existing,
-              })}
+          )}
+          {reading && (
+            <p className="text-muted-foreground flex items-center gap-2 text-base">
+              <Loader2 className="size-4 animate-spin" />
+              {job.engineAt
+                ? t('checking positions the book’s answers did not fit ({done} of {total})', {
+                    done: job.engineAt.done,
+                    total: job.engineAt.total,
+                  })
+                : t("reading the book’s solutions")}
             </p>
-            {(
-              [
-                ['update', 'Update in place', 'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.'],
-                ['rebuild', 'Clear and rebuild', 'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.'],
-              ] as const
-            ).map(([value, label, blurb]) => (
-              <label key={value} className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="radio"
-                  name="reimport-mode"
-                  checked={mode === value}
-                  onChange={() => setMode(value)}
-                  className="mt-0.5"
-                />
-                <span className="text-base">
-                  {t(label)}
-                  <span className="text-subtle block text-sm">{t(blurb)}</span>
-                </span>
-              </label>
-            ))}
-          </div>
-        )}
+          )}
+          {solve && (
+            <div
+              className={cn(
+                'rounded-lg border p-3 text-sm',
+                solve.confident ? 'border-good/40 bg-good/5' : 'border-warn/40 bg-warn/5',
+              )}
+            >
+              <p className="text-foreground text-base font-medium">
+                {t('{n} puzzles imported with their solutions', { n: solve.solved })}
+              </p>
+              <p className="text-muted-foreground pt-1">
+                {solve.confident
+                  ? t('Each one replays the move the book prints, from the position on the page.')
+                  : t(
+                      'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.',
+                    )}
+                {solve.repaired > 0 &&
+                  ` ${t('{n} had a square misread, found by the book’s own solution.', { n: solve.repaired })}`}
+                {solve.unresolved > 0 &&
+                  ` ${t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })}`}
+                {solve.saveFailed > 0 &&
+                  ` ${t('{n} solved puzzles could not be saved — they are kept below as drafts.', { n: solve.saveFailed })}`}
+              </p>
+              {solve.engine && solve.engine.corroborated + solve.engine.only + solve.engine.unverified > 0 && (
+                <p className="text-muted-foreground pt-1">
+                  {t(
+                    '{n} more came from the engine, where the book’s own answer could not be read.',
+                    {
+                      n:
+                        solve.engine.corroborated + solve.engine.only + solve.engine.unverified,
+                    },
+                  )}{' '}
+                  {t(
+                    '{corroborated} of those play to the squares the book printed, {only} were solved with nothing legible to check against, and {unverified} are a position and a side with no winning line found.',
+                    {
+                      corroborated: solve.engine.corroborated,
+                      only: solve.engine.only,
+                      unverified: solve.engine.unverified,
+                    },
+                  )}
+                </p>
+              )}
+              <p className="text-subtle pt-1">
+                {t('Answers found on {pages}.', {
+                  pages:
+                    solve.answerRanges.length > 0
+                      ? solve.answerRanges
+                          .map(([a, b]) => (a === b ? `p.${a}` : `p.${a}–${b}`))
+                          .join(', ')
+                      : t('no page we could identify'),
+                })}
+              </p>
+            </div>
+          )}
+          {mine && job.error && <p className="text-destructive text-sm">{job.error}</p>}
+          {saveError && <p className="text-destructive text-sm">{saveError}</p>}
 
-        {!mine && (
-          <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={engine}
-              onChange={(e) => setEngine(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              {t('Ask the engine where the book cannot be read')}
-              <span className="text-subtle block">
-                {t(
-                  'Positions whose printed solution would not replay are searched instead, and imported labelled by how much is known — highest where the engine’s line lands on the squares the book printed. Adds a few seconds per hundred.',
-                )}
-              </span>
-            </span>
-          </label>
-        )}
-
-        {!mine && (
-          <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={repair}
-              onChange={(e) => setRepair(e.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              {t('Try harder on boards that fail')}
-              <span className="text-subtle block">
-                {t(
-                  'Re-reads each position whose printed solution would not replay, looking for a single misread square. On a 1,000-puzzle book this recovered about 26 more puzzles, and the import may take longer.',
-                )}
-              </span>
-            </span>
-          </label>
-        )}
-
-        {!mine && !saved && (
-          <label
-            {...pdfDrop.handlers}
-            className={cn(
-              'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center',
-              'transition-colors',
-              pdfDrop.dragging
-                ? 'border-primary bg-primary-soft'
-                : 'border-border hover:border-border-strong hover:bg-accent',
-            )}
-          >
-            <input
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void begin(file);
-              }}
-            />
-            <span className="text-muted-foreground text-base">
-              {t('Choose the book’s PDF')}
-            <span className="text-subtle block text-sm">
-                {t('every page is scanned for diagrams; nothing leaves this machine — and you can keep using the app while it runs')}
-              </span>
-            </span>
-          </label>
-        )}
-
-        {/*
-          Copyright, said where the decision is actually made.
-          The reader only ever opens a file it was handed and nothing it
-          produces leaves the machine — but a scan of a book still in
-          copyright is a copy of it, and that belongs next to the picker
-          rather than only in a README nobody opens on the way here.
-        */}
-        {!mine && !saved && (
-          <p className="border-border bg-muted text-subtle rounded-lg border p-3 text-sm">
-            <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
-            {t(
-              'Crops, page images and solutions stay in your vault and are never published — they remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
-            )}
-          </p>
-        )}
-
-        {preparing && (
-          <p className="text-muted-foreground flex items-center gap-2 text-base">
-            <Loader2 className="size-4 animate-spin" />
-            {/* Covers both halves of the preparation: the readability
-                probe every path runs, and the clear a rebuild adds. */}
-            {t('checking the PDF')}
-          </p>
-        )}
-        {scanning && (
-          <div className="flex items-center gap-2">
-            <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-base">
-              <Loader2 className="size-4 shrink-0 animate-spin" />
-              <span className="truncate">
-                {t('page {page}/{pages} — {n} diagrams so far', {
-                  page: job.page,
-                  pages: job.pages || '…',
+          {found.length > 0 && (
+            <>
+              <p className="text-subtle text-sm">
+                {t('{n} diagrams found — untick any false positives, then add the rest as drafts.', {
                   n: found.length,
                 })}
-              </span>
-            </p>
-            {/* Stopping is safe: the page just finished is on disk, so this
-                is the same state a crash would have left, and the same
-                button brings it back. */}
-            <Button variant="secondary" size="sm" className="shrink-0" onClick={() => job.pause()}>
-              <Pause className="size-3.5" />
-              {t('Pause')}
-            </Button>
-          </div>
-        )}
-        {paused && (
-          <div className="border-warn/40 bg-warn/5 flex flex-wrap items-center gap-2 rounded-lg border p-3">
-            <p className="text-foreground min-w-0 flex-1 text-sm">
-              {t('Paused at page {page} of {pages}. Nothing is lost.', {
-                page: job.page,
-                pages: job.pages,
-              })}
-            </p>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => job.resume(slug, templates, { repair, engine })}
-            >
-              <Play className="size-3.5" />
-              {t('Carry on')}
-            </Button>
-          </div>
-        )}
-        {reading && (
-          <p className="text-muted-foreground flex items-center gap-2 text-base">
-            <Loader2 className="size-4 animate-spin" />
-            {job.engineAt
-              ? t('checking positions the book’s answers did not fit ({done} of {total})', {
-                  done: job.engineAt.done,
-                  total: job.engineAt.total,
-                })
-              : t("reading the book’s solutions")}
-          </p>
-        )}
-        {solve && (
-          <div
-            className={cn(
-              'rounded-lg border p-3 text-sm',
-              solve.confident ? 'border-good/40 bg-good/5' : 'border-warn/40 bg-warn/5',
-            )}
-          >
-            <p className="text-foreground text-base font-medium">
-              {t('{n} puzzles imported with their solutions', { n: solve.solved })}
-            </p>
-            <p className="text-muted-foreground pt-1">
-              {solve.confident
-                ? t('Each one replays the move the book prints, from the position on the page.')
-                : t(
-                    'Too few solutions replayed for this to be trusted — treat these as a starting point and check them.',
-                  )}
-              {solve.repaired > 0 &&
-                ` ${t('{n} had a square misread, found by the book’s own solution.', { n: solve.repaired })}`}
-              {solve.unresolved > 0 &&
-                ` ${t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })}`}
-              {solve.saveFailed > 0 &&
-                ` ${t('{n} solved puzzles could not be saved — they are kept below as drafts.', { n: solve.saveFailed })}`}
-            </p>
-            {solve.engine && solve.engine.corroborated + solve.engine.only + solve.engine.unverified > 0 && (
-              <p className="text-muted-foreground pt-1">
-                {t(
-                  '{n} more came from the engine, where the book’s own answer could not be read.',
-                  {
-                    n:
-                      solve.engine.corroborated + solve.engine.only + solve.engine.unverified,
-                  },
-                )}{' '}
-                {t(
-                  '{corroborated} of those play to the squares the book printed, {only} were solved with nothing legible to check against, and {unverified} are a position and a side with no winning line found.',
-                  {
-                    corroborated: solve.engine.corroborated,
-                    only: solve.engine.only,
-                    unverified: solve.engine.unverified,
-                  },
-                )}
+                {found.every((f) => f.fen === null) &&
+                  ` ${t('Positions are unread for now: confirming the first draft teaches this book’s font.')}`}
               </p>
-            )}
-            <p className="text-subtle pt-1">
-              {t('Answers found on {pages}.', {
-                pages:
-                  solve.answerRanges.length > 0
-                    ? solve.answerRanges
-                        .map(([a, b]) => (a === b ? `p.${a}` : `p.${a}–${b}`))
-                        .join(', ')
-                    : t('no page we could identify'),
-              })}
-            </p>
-          </div>
-        )}
-        {mine && job.error && <p className="text-destructive text-sm">{job.error}</p>}
-        {saveError && <p className="text-destructive text-sm">{saveError}</p>}
-
-        {found.length > 0 && (
-          <>
-            <p className="text-subtle text-sm">
-              {t('{n} diagrams found — untick any false positives, then add the rest as drafts.', {
-                n: found.length,
-              })}
-              {found.every((f) => f.fen === null) &&
-                ` ${t('Positions are unread for now: confirming the first draft teaches this book’s font.')}`}
-            </p>
-            {/*
-              A LIST, not a wall of crops.
-              Thumbnails at this size say only "something board-shaped was
-              cut out here" — not whether it was read, or read correctly,
-              which is the thing worth knowing while a book is being taken
-              apart. So each row states what became of that diagram, and
-              the crop is one press away for the rows where the answer
-              looks wrong. It also stops a thousand-diagram scan holding a
-              thousand decoded bitmaps: only an opened row decodes.
-            */}
-            <ul
-              ref={listRef}
-              className="border-border divide-border max-h-72 divide-y overflow-y-auto rounded-lg border"
-              /*
-                A peek pinned to where a row USED to be is worse than
-                none, and this list moves on its own: each page that
-                lands re-anchors the scroll. Dropping the peek on every
-                scroll made it flicker away mid-scan — the one time
-                someone is watching it — so it FOLLOWS its row instead,
-                and is dropped only once that row has left the box.
-              */
-              onScroll={(e) => {
-                const list = e.currentTarget;
-                // Only a scroll we did not cause says anything about
-                // whether the reader still wants the end. Within a row's
-                // height of it counts as at it: the exact bottom is a
-                // moving target while the list grows under the scroll.
-                if (Math.abs(list.scrollTop - pinnedAt.current) > 1) {
-                  stuck.current = list.scrollHeight - list.scrollTop - list.clientHeight < 28;
-                }
-                setPeek((p) => {
-                  if (!p) return p;
-                  const row = list.querySelector(`[data-row="${p.i}"]`);
-                  if (!row) return null;
-                  const r = row.getBoundingClientRect();
-                  const box = list.getBoundingClientRect();
-                  if (r.bottom < box.top + 4 || r.top > box.bottom - 4) return null;
-                  return { i: p.i, top: r.top, left: r.left, right: r.right };
-                });
-              }}
-            >
-              {found.map((f, i) => {
-                const mark = f.solved
-                  ? { label: 'solved', cls: 'text-good' }
-                  : f.fen === null
-                    ? { label: 'unread', cls: 'text-subtle' }
-                    : f.uncertain > 0
-                      ? { label: t('{n} unsure', { n: f.uncertain }), cls: 'text-warn' }
-                      : { label: 'read', cls: 'text-good' };
-                return (
-                  <li
-                    key={i}
-                    // A row that has never been on screen is skipped by
-                    // content-visibility, and without an intrinsic size it
-                    // is skipped as ZERO HIGH — so a list of a thousand
-                    // reported a fraction of its real height, and every
-                    // jump to the end landed short. 41px is the row; once
-                    // one has been laid out `auto` uses what it measured,
-                    // including the taller rows with a crop open.
-                    className="[content-visibility:auto] [contain-intrinsic-size:auto_41px]"
-                  >
-                    <div
-                      data-row={i}
-                      className={cn(
-                        'flex items-center gap-2 py-1.5 pl-2 text-sm transition-colors duration-100',
-                        // pr-4, not pr-2: the mark sat against the
-                        // scrollbar, which on Windows is a solid gutter
-                        // rather than an overlay, and "3개 불확실" read as
-                        // though it were part of it.
-                        'pr-4',
-                        peek?.i === i && 'bg-muted',
-                      )}
+              {/*
+                A LIST, not a wall of crops.
+                Thumbnails at this size say only "something board-shaped was
+                cut out here" — not whether it was read, or read correctly,
+                which is the thing worth knowing while a book is being taken
+                apart. So each row states what became of that diagram, and
+                the crop is one press away for the rows where the answer
+                looks wrong. It also stops a thousand-diagram scan holding a
+                thousand decoded bitmaps: only an opened row decodes.
+              */}
+              <ul
+                ref={listRef}
+                className="border-border divide-border max-h-72 divide-y overflow-y-auto rounded-lg border"
+                /*
+                  A peek pinned to where a row USED to be is worse than
+                  none, and this list moves on its own: each page that
+                  lands re-anchors the scroll. Dropping the peek on every
+                  scroll made it flicker away mid-scan — the one time
+                  someone is watching it — so it FOLLOWS its row instead,
+                  and is dropped only once that row has left the box.
+                */
+                onScroll={(e) => {
+                  const list = e.currentTarget;
+                  // Only a scroll we did not cause says anything about
+                  // whether the reader still wants the end. Within a row's
+                  // height of it counts as at it: the exact bottom is a
+                  // moving target while the list grows under the scroll.
+                  if (Math.abs(list.scrollTop - pinnedAt.current) > 1) {
+                    stuck.current = list.scrollHeight - list.scrollTop - list.clientHeight < 28;
+                  }
+                  setPeek((p) => {
+                    if (!p) return p;
+                    const row = list.querySelector(`[data-row="${p.i}"]`);
+                    if (!row) return null;
+                    const r = row.getBoundingClientRect();
+                    const box = list.getBoundingClientRect();
+                    if (r.bottom < box.top + 4 || r.top > box.bottom - 4) return null;
+                    return { i: p.i, top: r.top, left: r.left, right: r.right };
+                  });
+                }}
+              >
+                {found.map((f, i) => {
+                  const mark = f.solved
+                    ? { label: 'solved', cls: 'text-good' }
+                    : f.fen === null
+                      ? { label: 'unread', cls: 'text-subtle' }
+                      : f.uncertain > 0
+                        ? { label: t('{n} unsure', { n: f.uncertain }), cls: 'text-warn' }
+                        : { label: 'read', cls: 'text-good' };
+                  return (
+                    <li
+                      key={i}
+                      // A row that has never been on screen is skipped by
+                      // content-visibility, and without an intrinsic size it
+                      // is skipped as ZERO HIGH — so a list of a thousand
+                      // reported a fraction of its real height, and every
+                      // jump to the end landed short. 41px is the row; once
+                      // one has been laid out `auto` uses what it measured,
+                      // including the taller rows with a crop open.
+                      className="[content-visibility:auto] [contain-intrinsic-size:auto_41px]"
                     >
-                      <input
-                        type="checkbox"
-                        checked={f.selected}
-                        onChange={() => job.toggle(i)}
-                        aria-label={t('Keep this diagram')}
-                        className="accent-primary shrink-0"
-                      />
-                      <span className="w-24 shrink-0 font-mono text-xs">
-                        <span className="text-foreground">
-                          {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
-                        </span>
-                        {/* Once the printed numbers are worked out the row
-                            leads with the number — but it keeps the page,
-                            which is what you turn to in the actual book. */}
-                        <span className="text-subtle">
-                          {f.number === undefined
-                            ? place[i]!.of > 1 && ` (${place[i]!.nth}/${place[i]!.of})`
-                            : ` p.${f.page}`}
-                        </span>
-                      </span>
-                      {/* The eye is the whole preview control: it opens
-                          the crop on a press, and — for a pointer that
-                          can hover — shows it on the way past. Hovering
-                          the ROW fired it while the pointer was merely
-                          crossing the list to reach something else. */}
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        active={preview === i}
-                        title={t('Show the scan')}
-                        onClick={() => setPreview(preview === i ? null : i)}
-                        onMouseEnter={(e) => {
-                          if (!hoverable) return;
-                          const row = e.currentTarget.closest('[data-row]');
-                          if (!row) return;
-                          // The ROW's rect, not the button's: the crop
-                          // belongs to the whole line, and the follow-on-
-                          // scroll below re-reads the same element.
-                          const r = row.getBoundingClientRect();
-                          setPeek({ i, top: r.top, left: r.left, right: r.right });
-                        }}
-                        onMouseLeave={() => setPeek((p) => (p?.i === i ? null : p))}
+                      <div
+                        data-row={i}
+                        className={cn(
+                          'flex items-center gap-2 py-1.5 pl-2 text-sm transition-colors duration-100',
+                          // pr-4, not pr-2: the mark sat against the
+                          // scrollbar, which on Windows is a solid gutter
+                          // rather than an overlay, and "3개 불확실" read as
+                          // though it were part of it.
+                          'pr-4',
+                          peek?.i === i && 'bg-muted',
+                        )}
                       >
-                        <Eye className="size-3.5" />
-                      </Button>
-                      <span className={cn('ml-auto shrink-0 text-xs', mark.cls)}>
-                        {t(mark.label)}
-                      </span>
-                    </div>
-                    {preview === i && (
-                      <div className="px-2 pb-2">
-                        <img
-                          src={f.dataUrl}
-                          alt={`page ${f.page}`}
-                          loading="lazy"
-                          decoding="async"
-                          className="border-border mx-auto w-44 rounded-sm border"
+                        <input
+                          type="checkbox"
+                          checked={f.selected}
+                          onChange={() => job.toggle(i)}
+                          aria-label={t('Keep this diagram')}
+                          className="accent-primary shrink-0"
                         />
+                        <span className="w-24 shrink-0 font-mono text-xs">
+                          <span className="text-foreground">
+                            {f.number === undefined ? `p.${f.page}` : `#${f.number}`}
+                          </span>
+                          {/* Once the printed numbers are worked out the row
+                              leads with the number — but it keeps the page,
+                              which is what you turn to in the actual book. */}
+                          <span className="text-subtle">
+                            {f.number === undefined
+                              ? place[i]!.of > 1 && ` (${place[i]!.nth}/${place[i]!.of})`
+                              : ` p.${f.page}`}
+                          </span>
+                        </span>
+                        {/* The eye is the whole preview control: it opens
+                            the crop on a press, and — for a pointer that
+                            can hover — shows it on the way past. Hovering
+                            the ROW fired it while the pointer was merely
+                            crossing the list to reach something else. */}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          active={preview === i}
+                          title={t('Show the scan')}
+                          onClick={() => setPreview(preview === i ? null : i)}
+                          onMouseEnter={(e) => {
+                            if (!hoverable) return;
+                            const row = e.currentTarget.closest('[data-row]');
+                            if (!row) return;
+                            // The ROW's rect, not the button's: the crop
+                            // belongs to the whole line, and the follow-on-
+                            // scroll below re-reads the same element.
+                            const r = row.getBoundingClientRect();
+                            setPeek({ i, top: r.top, left: r.left, right: r.right });
+                          }}
+                          onMouseLeave={() => setPeek((p) => (p?.i === i ? null : p))}
+                        >
+                          <Eye className="size-3.5" />
+                        </Button>
+                        <span className={cn('ml-auto shrink-0 text-xs', mark.cls)}>
+                          {t(mark.label)}
+                        </span>
                       </div>
-                    )}
+                      {preview === i && (
+                        <div className="px-2 pb-2">
+                          <img
+                            src={f.dataUrl}
+                            alt={`page ${f.page}`}
+                            loading="lazy"
+                            decoding="async"
+                            className="border-border mx-auto w-44 rounded-sm border"
+                          />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+                {/* The board being read right now. Same row shape as the rest,
+                    so the list does not jump when it turns into a real one. */}
+                {scanning && (
+                  <li className="flex items-center gap-2 py-1.5 pl-2 pr-4">
+                    <Skeleton className="size-3.5 shrink-0 rounded-sm" />
+                    <Skeleton className="h-3 w-24 shrink-0" />
+                    <Skeleton className="size-5 shrink-0 rounded-md" />
+                    <Skeleton className="ml-auto h-3 w-10 shrink-0" />
                   </li>
-                );
-              })}
-              {/* The board being read right now. Same row shape as the rest,
-                  so the list does not jump when it turns into a real one. */}
-              {scanning && (
-                <li className="flex items-center gap-2 py-1.5 pl-2 pr-4">
-                  <Skeleton className="size-3.5 shrink-0 rounded-sm" />
-                  <Skeleton className="h-3 w-24 shrink-0" />
-                  <Skeleton className="size-5 shrink-0 rounded-md" />
-                  <Skeleton className="ml-auto h-3 w-10 shrink-0" />
-                </li>
-              )}
-            </ul>
-            {/* The hovered row's crop, floating beside the list. */}
-            {peek && found[peek.i] && <PeekCrop f={found[peek.i]!} at={peek} />}
-          </>
-        )}
+                )}
+              </ul>
+              {/* The hovered row's crop, floating beside the list. */}
+              {peek && found[peek.i] && <PeekCrop f={found[peek.i]!} at={peek} />}
+            </>
+          )}
 
-        {/* The footer is NOT part of the results: it used to be, so a window
-            that had not scanned anything yet — or was still scanning its
-            first page — had no button at all, and no X either. Cancel is
-            always here; Add appears once there is something to add. */}
-        <div className="mt-1 flex items-center justify-end gap-2">
-          {found.length > 0 && (
-            <span className="text-subtle mr-auto text-sm">
-              {t('{n} selected', { n: selectedCount })}
-              {scanning ? t(' — still scanning') : ''}
-            </span>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            title={scanning ? t('The scan keeps running') : undefined}
-            onClick={onClose}
-          >
-            {t(scanning ? 'Hide' : 'Cancel')}
-          </Button>
-          {found.length > 0 && (
+          {/* The footer is NOT part of the results: it used to be, so a window
+              that had not scanned anything yet — or was still scanning its
+              first page — had no button at all, and no X either. Cancel is
+              always here; Add appears once there is something to add. */}
+          <div className="mt-1 flex items-center justify-end gap-2">
+            {found.length > 0 && (
+              <span className="text-subtle mr-auto text-sm">
+                {t('{n} selected', { n: selectedCount })}
+                {scanning ? t(' — still scanning') : ''}
+              </span>
+            )}
             <Button
-              variant="default"
+              variant="ghost"
               size="sm"
-              disabled={saving || scanning || selectedCount === 0}
-              onClick={() => void save()}
+              title={scanning ? t('The scan keeps running') : undefined}
+              onClick={onClose}
             >
-              {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
-              {t('Add {n} as drafts', { n: selectedCount })}
+              {t(scanning ? 'Hide' : 'Cancel')}
             </Button>
-          )}
-        </div>
-    </Modal>
+            {found.length > 0 && (
+              <Button
+                variant="default"
+                size="sm"
+                disabled={saving || scanning || selectedCount === 0}
+                onClick={() => void save()}
+              >
+                {saving && <Loader2 className="mr-1 size-3.5 animate-spin" />}
+                {t('Add {n} as drafts', { n: selectedCount })}
+              </Button>
+            )}
+          </div>
+      </DialogContent>
+    </Dialog>
   );
 }

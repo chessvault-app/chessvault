@@ -33,7 +33,7 @@ import { Select } from '@/ui/Select';
 import { DateInput } from '@/ui/Input';
 import { FilterChip } from '@/ui/FilterChip';
 import { Panel, PanelHeader } from '@/ui/Panel';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { SideDot } from '@/ui/SideDot';
 import { Switch } from '@/ui/Switch';
 import { t } from '@/lib/i18n';
@@ -248,16 +248,23 @@ export function ExplorerPane({
       />
 
       {showFilters && (
-        <Modal title="Filters" icon={SlidersHorizontal} onClose={() => closeFilters(true)}>
-          {/* Every chip applies as it is tapped, so there is nothing to
-              confirm — but a window still needs a stated way out, and it
-              belongs on the same line as Clear rather than below it. */}
-          {mine ? (
-            <MyGamesFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
-          ) : (
-            <RefDbFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
-          )}
-        </Modal>
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeFilters(true);
+          }}
+        >
+          <DialogContent title="Filters" icon={SlidersHorizontal}>
+            {/* Every chip applies as it is tapped, so there is nothing to
+                confirm — but a window still needs a stated way out, and it
+                belongs on the same line as Clear rather than below it. */}
+            {mine ? (
+              <MyGamesFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
+            ) : (
+              <RefDbFilterBar onCancel={() => closeFilters(true)} onDone={() => closeFilters(false)} />
+            )}
+          </DialogContent>
+        </Dialog>
       )}
 
       {!enabled ? null : (

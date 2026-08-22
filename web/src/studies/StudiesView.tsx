@@ -24,7 +24,7 @@ import { Select } from '@/ui/Select';
 import { ClearableInput, Textarea } from '@/ui/Input';
 import { Field } from '@/ui/Field';
 import { Globe, Loader2 } from 'lucide-react';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { PromptSheet } from '@/ui/PromptSheet';
 import { ShelfCard, type ShelfLayout } from '@/ui/ShelfCard';
 import { ShelfFolderHeader } from '@/ui/ShelfFolderHeader';
@@ -373,9 +373,16 @@ function CreateMenu() {
       {mode === 'lichess' && (
         // Same width as the PGN window: two ways in to the same shelf that
         // opened at two different sizes looked like two different features.
-        <Modal title="Import from Lichess" onClose={() => setMode(null)} full className="sm:max-w-lg">
-          <LichessImportForm folders={folders} onClose={() => setMode(null)} />
-        </Modal>
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setMode(null);
+          }}
+        >
+          <DialogContent title="Import from Lichess" className="sm:max-w-lg" size="full">
+            <LichessImportForm folders={folders} onClose={() => setMode(null)} />
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* A new study or collection asks for one name, so it gets the prompt
@@ -398,118 +405,124 @@ function CreateMenu() {
         // The width every import window is: full screen on a phone, and a
         // single readable column on a desktop rather than the 4xl sheet
         // `full` gives by default, which for three fields was mostly margin.
-        <Modal
-          title="Import PGN as study"
-          onClose={() => setMode(null)}
-          full
-          className={cn(
-            'sm:max-w-lg',
-            pgnDrop.dragging && 'outline-primary outline-dashed outline-2 outline-offset-[-6px]',
-          )}
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setMode(null);
+          }}
         >
-          {/*
-            The whole window takes the drop, not just the button: a file
-            dragged at a dialog is aimed at the dialog, and the browser's
-            default is to navigate to it — which threw the app away and
-            displayed the PGN.
-            `contents` so this wrapper carries the handlers without adding
-            a box to the window's layout; drag events bubble to it either
-            way, and the highlight goes on the Modal itself.
-          */}
-          <div className="contents" {...pgnDrop.handlers}>
-          {folders.length > 0 && (
-            <Field label="Target collection">
-              <Select
-                value={folder}
-                onValueChange={setFolder}
-                ariaLabel={t('Target collection')}
-                groups={[
-                  {
-                    options: [
-                      { value: '', label: t('(no collection)') },
-                      ...folders.map((f) => ({ value: f, label: f })),
-                    ],
-                  },
-                ]}
+          <DialogContent
+            title="Import PGN as study"
+            className={cn(
+                        'sm:max-w-lg',
+                        pgnDrop.dragging && 'outline-primary outline-dashed outline-2 outline-offset-[-6px]',
+                      )}
+            size="full"
+          >
+            {/*
+              The whole window takes the drop, not just the button: a file
+              dragged at a dialog is aimed at the dialog, and the browser's
+              default is to navigate to it — which threw the app away and
+              displayed the PGN.
+              `contents` so this wrapper carries the handlers without adding
+              a box to the window's layout; drag events bubble to it either
+              way, and the highlight goes on the Modal itself.
+            */}
+            <div className="contents" {...pgnDrop.handlers}>
+            {folders.length > 0 && (
+              <Field label="Target collection">
+                <Select
+                  value={folder}
+                  onValueChange={setFolder}
+                  ariaLabel={t('Target collection')}
+                  groups={[
+                    {
+                      options: [
+                        { value: '', label: t('(no collection)') },
+                        ...folders.map((f) => ({ value: f, label: f })),
+                      ],
+                    },
+                  ]}
+                />
+              </Field>
+            )}
+            <Field label="Study title">
+              <ClearableInput
+                autoFocus={autoFocusField()}
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  autoNamed.current = false;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void submit(name);
+                  if (e.key === 'Escape') setMode(null);
+                }}
+                placeholder={t('Study name')}
               />
             </Field>
-          )}
-          <Field label="Study title">
-            <ClearableInput
-              autoFocus={autoFocusField()}
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                autoNamed.current = false;
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void submit(name);
-                if (e.key === 'Escape') setMode(null);
-              }}
-              placeholder={t('Study name')}
-            />
-          </Field>
-          {/* The chapter count belongs on the PGN's own label line, beside
-              what it is counting — under the field it read as a message
-              about the window. */}
-          <Field
-            label="PGN"
-            hint={
-              pgnText.trim() ? (
-                <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-destructive')}>
-                  {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
-                </span>
-              ) : null
-            }
-          >
-            {/* The shared Textarea, not a hand-rolled one: it is where the
-                autofill-off attributes live, and this is the field iOS was
-                offering to complete with a contact. */}
-            <Textarea
-              value={pgnText}
-              onChange={(e) => takePgn(e.target.value)}
-              placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
-              spellCheck={false}
-              className="h-28 w-full resize-none p-2 font-mono"
-            />
-            {/* Under the field it belongs to, left-aligned with it: it is
-                the other way to fill that box, not an action of the window,
-                and it sat in a row of its own arguing with Cancel/Import. */}
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-1 self-start"
-              onClick={() => filePick.current?.click()}
+            {/* The chapter count belongs on the PGN's own label line, beside
+                what it is counting — under the field it read as a message
+                about the window. */}
+            <Field
+              label="PGN"
+              hint={
+                pgnText.trim() ? (
+                  <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-destructive')}>
+                    {chapterCount > 0 ? t('{n} chapters', { n: chapterCount }) : t('not parseable')}
+                  </span>
+                ) : null
+              }
             >
-              <FileUp className="mr-1 size-3.5" />
-              {t('Choose file')}
-            </Button>
-          </Field>
-          <input
-            ref={filePick}
-            type="file"
-            accept=".pgn,application/x-chess-pgn,text/plain"
-            className="hidden"
-            onChange={(e) => void pickFile(e.target.files?.[0])}
-          />
-          {failure && <p className="text-destructive text-sm">{failure}</p>}
-          {/* mt-1 on top of the window's own gap-3: the fields are a group,
-              and what commits them should not look like another one. */}
-          <div className="mt-1 flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
-              {t('Cancel')}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              disabled={!name.trim() || chapterCount === 0}
-              onClick={() => void submit(name)}
-            >
-              {t('Import')}
-            </Button>
-          </div>
-          </div>
-        </Modal>
+              {/* The shared Textarea, not a hand-rolled one: it is where the
+                  autofill-off attributes live, and this is the field iOS was
+                  offering to complete with a contact. */}
+              <Textarea
+                value={pgnText}
+                onChange={(e) => takePgn(e.target.value)}
+                placeholder={t('Paste a PGN here — a Lichess study export imports with all its chapters, comments and arrows.')}
+                spellCheck={false}
+                className="h-28 w-full resize-none p-2 font-mono"
+              />
+              {/* Under the field it belongs to, left-aligned with it: it is
+                  the other way to fill that box, not an action of the window,
+                  and it sat in a row of its own arguing with Cancel/Import. */}
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-1 self-start"
+                onClick={() => filePick.current?.click()}
+              >
+                <FileUp className="mr-1 size-3.5" />
+                {t('Choose file')}
+              </Button>
+            </Field>
+            <input
+              ref={filePick}
+              type="file"
+              accept=".pgn,application/x-chess-pgn,text/plain"
+              className="hidden"
+              onChange={(e) => void pickFile(e.target.files?.[0])}
+            />
+            {failure && <p className="text-destructive text-sm">{failure}</p>}
+            {/* mt-1 on top of the window's own gap-3: the fields are a group,
+                and what commits them should not look like another one. */}
+            <div className="mt-1 flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setMode(null)}>
+                {t('Cancel')}
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                disabled={!name.trim() || chapterCount === 0}
+                onClick={() => void submit(name)}
+              >
+                {t('Import')}
+              </Button>
+            </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

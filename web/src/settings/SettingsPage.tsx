@@ -7,7 +7,7 @@ import { PageHeader } from '@/ui/PageHeader';
 import { PageShell } from '@/ui/PageShell';
 import { Field } from '@/ui/Field';
 import { ClearableInput, Input } from '@/ui/Input';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Select } from '@/ui/Select';
 import { SettingRow } from '@/ui/SettingRow';
 import { Switch } from '@/ui/Switch';
@@ -1394,50 +1394,57 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
   // The most destructive question in the app should behave like every
   // other window, only more so.
   return (
-    <Modal title="Wipe the entire vault?" icon={Trash2} onClose={onClose}>
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
-      </p>
-      {gate && (
-        <label className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-sm font-medium">{t('Confirm your app password')}</span>
-          <Input
-            autoFocus
-            inputSize="lg"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !busy && password !== '' && void wipe()}
-          />
-        </label>
-      )}
-      <Feedback note={note} />
-      {/* ConfirmSheet's row, to the letter, because this is the same
-          question and the most serious instance of it: stacked and not a
-          row (a row puts them a thumb's width apart on a phone, which is
-          the wrong geometry for a pair where one is irreversible and the
-          other is the way out), full width each with a real gap between
-          them, the destructive one on TOP and FILLED — the tinted danger
-          style belongs to the trigger that opens this question, which is
-          Wipe all data on the card behind — and Cancel plainly secondary
-          under it. Not justify-end: that is the row a WINDOW ends on, and
-          it is right for Save and Apply, not for this. */}
-      <div className="mt-1 flex flex-col gap-2">
-        <Button
-          variant="destructive-solid"
-          size="default"
-          className="w-full justify-center"
-          disabled={busy || (gate && password === '')}
-          onClick={() => void wipe()}
-        >
-          <Trash2 className="size-3.5" />
-          {busy ? t('Wiping…') : t('Wipe everything')}
-        </Button>
-        <Button variant="secondary" size="default" className="w-full justify-center" onClick={onClose}>
-          {t('Cancel')}
-        </Button>
-      </div>
-    </Modal>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Wipe the entire vault?" icon={Trash2}>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
+        </p>
+        {gate && (
+          <label className="flex flex-col gap-1">
+            <span className="text-muted-foreground text-sm font-medium">{t('Confirm your app password')}</span>
+            <Input
+              autoFocus
+              inputSize="lg"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !busy && password !== '' && void wipe()}
+            />
+          </label>
+        )}
+        <Feedback note={note} />
+        {/* ConfirmSheet's row, to the letter, because this is the same
+            question and the most serious instance of it: stacked and not a
+            row (a row puts them a thumb's width apart on a phone, which is
+            the wrong geometry for a pair where one is irreversible and the
+            other is the way out), full width each with a real gap between
+            them, the destructive one on TOP and FILLED — the tinted danger
+            style belongs to the trigger that opens this question, which is
+            Wipe all data on the card behind — and Cancel plainly secondary
+            under it. Not justify-end: that is the row a WINDOW ends on, and
+            it is right for Save and Apply, not for this. */}
+        <div className="mt-1 flex flex-col gap-2">
+          <Button
+            variant="destructive-solid"
+            size="default"
+            className="w-full justify-center"
+            disabled={busy || (gate && password === '')}
+            onClick={() => void wipe()}
+          >
+            <Trash2 className="size-3.5" />
+            {busy ? t('Wiping…') : t('Wipe everything')}
+          </Button>
+          <Button variant="secondary" size="default" className="w-full justify-center" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

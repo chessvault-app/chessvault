@@ -9,7 +9,7 @@ import {
   useLeaveAsk,
 } from '@/lib/leaveGuard';
 import { Button } from './Button';
-import { Sheet } from './Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
 /**
@@ -80,55 +80,62 @@ export function LeaveSheet() {
   if (!name) return null;
 
   return (
-    <Sheet label={t('Unsaved changes')} onClose={cancelLeave} className="gap-3">
-      <p className="text-foreground text-base">
-        {t('You have unsaved changes in “{name}”. Would you like to save before leaving?', {
-          name,
-        })}
-      </p>
-      {error && <p className="text-destructive text-sm">{t(error)}</p>}
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) cancelLeave();
+      }}
+    >
+      <DialogContent size="sm" title={t('Unsaved changes')} className="gap-3">
+        <p className="text-foreground text-base">
+          {t('You have unsaved changes in “{name}”. Would you like to save before leaving?', {
+            name,
+          })}
+        </p>
+        {error && <p className="text-destructive text-sm">{t(error)}</p>}
 
-      {/* Three answers, three weights, in the order they should be
-          considered: save, back out, throw away. Discard sat in the middle
-          when it was the tinted `danger` variant, which put the one
-          irreversible answer directly under the thumb aiming for Save and
-          gave it more ink than the harmless one. */}
-      <div className="mt-1 flex flex-col gap-2">
-        <Button
-          variant="default"
-          size="default"
-          disabled={busy}
-          className="w-full justify-center"
-          onClick={() => void saveAndLeave()}
-        >
-          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
-          {t(busy ? 'Saving…' : 'Save')}
-        </Button>
-        <Button
-          variant="secondary"
-          size="default"
-          disabled={busy}
-          className="w-full justify-center"
-          onClick={cancelLeave}
-        >
-          <X className="size-3.5" />
-          {t('Cancel')}
-        </Button>
-        {/* Red text on no panel at all — quieter than every `danger`
-            trigger in the app, deliberately. Losing work is the one answer
-            here that cannot be undone, so it should cost a deliberate look
-            to find, not sit level with the other two. */}
-        <Button
-          variant="ghost"
-          size="default"
-          disabled={busy}
-          className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive w-full justify-center"
-          onClick={discardAndLeave}
-        >
-          <Trash2 className="size-3.5" />
-          {t('Discard changes')}
-        </Button>
-      </div>
-    </Sheet>
+        {/* Three answers, three weights, in the order they should be
+            considered: save, back out, throw away. Discard sat in the middle
+            when it was the tinted `danger` variant, which put the one
+            irreversible answer directly under the thumb aiming for Save and
+            gave it more ink than the harmless one. */}
+        <div className="mt-1 flex flex-col gap-2">
+          <Button
+            variant="default"
+            size="default"
+            disabled={busy}
+            className="w-full justify-center"
+            onClick={() => void saveAndLeave()}
+          >
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+            {t(busy ? 'Saving…' : 'Save')}
+          </Button>
+          <Button
+            variant="secondary"
+            size="default"
+            disabled={busy}
+            className="w-full justify-center"
+            onClick={cancelLeave}
+          >
+            <X className="size-3.5" />
+            {t('Cancel')}
+          </Button>
+          {/* Red text on no panel at all — quieter than every `danger`
+              trigger in the app, deliberately. Losing work is the one answer
+              here that cannot be undone, so it should cost a deliberate look
+              to find, not sit level with the other two. */}
+          <Button
+            variant="ghost"
+            size="default"
+            disabled={busy}
+            className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive w-full justify-center"
+            onClick={discardAndLeave}
+          >
+            <Trash2 className="size-3.5" />
+            {t('Discard changes')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

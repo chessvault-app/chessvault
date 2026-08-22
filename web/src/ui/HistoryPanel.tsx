@@ -4,7 +4,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 import { Button } from './Button';
-import { Sheet } from './Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from './Skeleton';
 
 /**
@@ -120,96 +120,115 @@ function HistorySheet({
   // --- Page two: one version, and the offer to go back to it -------------
   if (chosen) {
     return (
-      <Sheet
-        label={formatWhen(chosen.at)}
-        onClose={onClose}
-        onBack={() => setChosen(null)}
-        className="gap-3"
-        fill
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
       >
-        <p className="text-subtle text-sm">
-          {t('This is what “{name}” held {when}.', { name, when: formatAgo(chosen.at) })}
-        </p>
-
-        {preview === null ? (
-          <Skeleton className="min-h-24 flex-1" />
-        ) : (
-          <pre className="bg-muted text-subtle min-h-0 flex-1 overflow-auto rounded-sm p-2 font-mono text-xs whitespace-pre-wrap">
-            {preview}
-          </pre>
-        )}
-
-        <p className="text-subtle shrink-0 text-sm">
-          {t('The version you have now is kept too, so you can come back to it here.')}
-        </p>
-
-        <Button
-          variant="destructive"
-          size="default"
-          className="w-full shrink-0 justify-center"
-          disabled={busy || preview === null}
-          onClick={() => void restore(chosen)}
+        <DialogContent
+          size="sm"
+          title={formatWhen(chosen.at)}
+          onBack={() => setChosen(null)}
+          className="gap-3"
+          fill
         >
-          <RotateCcw className="size-3.5" />
-          {t('Restore this version')}
-        </Button>
+          <p className="text-subtle text-sm">
+            {t('This is what “{name}” held {when}.', { name, when: formatAgo(chosen.at) })}
+          </p>
 
-        {error && <p className="text-destructive shrink-0 text-sm">{error}</p>}
-      </Sheet>
+          {preview === null ? (
+            <Skeleton className="min-h-24 flex-1" />
+          ) : (
+            <pre className="bg-muted text-subtle min-h-0 flex-1 overflow-auto rounded-sm p-2 font-mono text-xs whitespace-pre-wrap">
+              {preview}
+            </pre>
+          )}
+
+          <p className="text-subtle shrink-0 text-sm">
+            {t('The version you have now is kept too, so you can come back to it here.')}
+          </p>
+
+          <Button
+            variant="destructive"
+            size="default"
+            className="w-full shrink-0 justify-center"
+            disabled={busy || preview === null}
+            onClick={() => void restore(chosen)}
+          >
+            <RotateCcw className="size-3.5" />
+            {t('Restore this version')}
+          </Button>
+
+          {error && <p className="text-destructive shrink-0 text-sm">{error}</p>}
+        </DialogContent>
+      </Dialog>
     );
   }
 
   // --- Page one: when this document was saved ----------------------------
   return (
-    <Sheet label={t('Earlier versions')} onClose={onClose} className="gap-3" fill>
-      <p className="text-subtle text-sm">
-        {t('Every change to “{name}” is kept automatically. Pick a time to look at it.', { name })}
-      </p>
-
-      {unavailable && (
-        // Said plainly and without alarm: a vault with no history is not a
-        // broken vault, and the recovery screen is the last place to make
-        // somebody think something is wrong.
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        size="sm"
+        title={t('Earlier versions')}
+        className="gap-3"
+        fill
+      >
         <p className="text-subtle text-sm">
-          {t('This vault is not keeping a history, so there is nothing earlier to show.')}
+          {t('Every change to “{name}” is kept automatically. Pick a time to look at it.', { name })}
         </p>
-      )}
 
-      {!unavailable && versions === null && (
-        <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-9" />
-          <Skeleton className="h-9" />
-          <Skeleton className="h-9" />
-        </div>
-      )}
+        {unavailable && (
+          // Said plainly and without alarm: a vault with no history is not a
+          // broken vault, and the recovery screen is the last place to make
+          // somebody think something is wrong.
+          <p className="text-subtle text-sm">
+            {t('This vault is not keeping a history, so there is nothing earlier to show.')}
+          </p>
+        )}
 
-      {versions?.length === 0 && (
-        <p className="text-subtle text-sm">
-          {t('This is the only version so far — nothing has changed since it was created.')}
-        </p>
-      )}
+        {!unavailable && versions === null && (
+          <div className="flex flex-col gap-1.5">
+            <Skeleton className="h-9" />
+            <Skeleton className="h-9" />
+            <Skeleton className="h-9" />
+          </div>
+        )}
 
-      {versions && versions.length > 0 && (
-        <ul className="min-h-0 flex-1 overflow-y-auto">
-          {versions.map((version) => (
-            <li key={version.sha}>
-              <button
-                type="button"
-                className="hover:bg-accent/60 flex w-full items-baseline gap-2 rounded-sm px-2 py-2 text-left"
-                onClick={() => void choose(version)}
-              >
-                {/* The relative time answers "is this the one?"; the exact
-                    one settles it when two are minutes apart. */}
-                <span className="text-foreground text-sm">{formatAgo(version.at)}</span>
-                <span className="text-subtle text-xs">{formatWhen(version.at)}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+        {versions?.length === 0 && (
+          <p className="text-subtle text-sm">
+            {t('This is the only version so far — nothing has changed since it was created.')}
+          </p>
+        )}
 
-      {error && <p className="text-destructive text-sm">{error}</p>}
-    </Sheet>
+        {versions && versions.length > 0 && (
+          <ul className="min-h-0 flex-1 overflow-y-auto">
+            {versions.map((version) => (
+              <li key={version.sha}>
+                <button
+                  type="button"
+                  className="hover:bg-accent/60 flex w-full items-baseline gap-2 rounded-sm px-2 py-2 text-left"
+                  onClick={() => void choose(version)}
+                >
+                  {/* The relative time answers "is this the one?"; the exact
+                      one settles it when two are minutes apart. */}
+                  <span className="text-foreground text-sm">{formatAgo(version.at)}</span>
+                  <span className="text-subtle text-xs">{formatWhen(version.at)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {error && <p className="text-destructive text-sm">{error}</p>}
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -2,7 +2,13 @@ import { useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './Button';
-import { Sheet } from './Sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog';
 import { t } from '@/lib/i18n';
 
 /**
@@ -85,51 +91,38 @@ export function ConfirmSheet({
           draws its label in the quiet style every other window's title
           uses, which is not where a question you must answer belongs. */}
       {open && (
-        <Sheet alert label={t(confirmLabel)} onClose={() => setOpen(false)} className="gap-3">
-          <p className="text-foreground text-base">{t(question)}</p>
-          {/*
-            Stacked, not a row, and the destructive one on top.
-            A row of two puts them a thumb's width apart on a phone, which
-            is the wrong geometry for a pair where one is irreversible and
-            the other is the way out. Full width each, with a real gap
-            between them, so the press that cannot be undone cannot be the
-            one you meant to make somewhere else.
-            The confirm is FILLED rather than tinted — the tinted danger
-            style belongs to triggers that merely open this question — and
-            it names its action ("Reset all progress"), because "Confirm"
-            answers a question you have already stopped reading.
-          */}
-          <div className="mt-1 flex flex-col gap-2">
-            <Button
-              variant="destructive-solid"
-              size="default"
-              className="w-full justify-center"
-              onClick={() => {
-                setOpen(false);
-                onConfirm();
-              }}
-            >
-              <Icon className="size-3.5" />
-              {t(confirmLabel)}
-            </Button>
-            {/* Cancel takes the focus, not the destructive verb above it.
-                A confirmation opens under the keyboard on the answer that
-                loses nothing: Enter on a window that just appeared must
-                not be the press that cannot be taken back. (ui/dialogFocus
-                focuses the container when a window has no single text
-                field, which is right for a window to be read and wrong
-                for one to be answered.) */}
-            <Button
-              autoFocus
-              variant="secondary"
-              size="default"
-              className="w-full justify-center"
-              onClick={() => setOpen(false)}
-            >
-              {t('Cancel')}
-            </Button>
-          </div>
-        </Sheet>
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setOpen(false);
+          }}
+        >
+          <AlertDialogContent title={t(confirmLabel)} className="gap-3">
+            <p className="text-foreground text-base">{t(question)}</p>
+            {/*
+              Stacked, not a row, and the destructive one on top.
+              A row of two puts them a thumb's width apart on a phone, which
+              is the wrong geometry for a pair where one is irreversible and
+              the other is the way out. Full width each, with a real gap
+              between them, so the press that cannot be undone cannot be the
+              one you meant to make somewhere else.
+              The confirm is FILLED rather than tinted — the tinted danger
+              style belongs to triggers that merely open this question — and
+              it names its action ("Reset all progress"), because "Confirm"
+              answers a question you have already stopped reading.
+            */}
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={onConfirm}>
+                <Icon className="size-3.5" />
+                {t(confirmLabel)}
+              </AlertDialogAction>
+              {/* Cancel takes the focus, not the destructive verb above it:
+                  AlertDialogCancel autofocuses. A confirmation opens under
+                  the keyboard on the answer that loses nothing. */}
+              <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
     </>
   );

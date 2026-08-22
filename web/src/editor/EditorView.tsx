@@ -28,7 +28,7 @@ import { Select } from '@/ui/Select';
 import { Segmented } from '@/ui/Segmented';
 import { Input } from '@/ui/Input';
 import { KingIcon } from '@/ui/KingIcon';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/ui/layout';
 import { EvalBarSlot } from '@/engine/EvalBar';
@@ -711,48 +711,62 @@ export function EditorView({
           on a phone and this only ever opens on one (`wide:hidden` on the
           button that opens it). */}
       {sheetOpen && (
-        <Modal title="Position" onClose={() => closeSheet(false)}>
-          {positionPanels('sheet')}
-          {/* The second page, written inside the first: Modal parks this
-              sheet behind it, wires the back chevron to onClose and holds
-              the height. Nothing here says any of that. */}
-          {loadPage && (
-            <Modal title="Load position" onClose={() => setLoadPage(false)}>
-              <LoadPositionForm
-                loadText={loadText}
-                // The loaded position IS the answer, so this commits —
-                // there is nothing of the draft left to keep or discard.
-                onDone={() => closeSheet(true)}
-                onCancel={() => setLoadPage(false)}
-                onImage={(file) => {
-                  setPhotoFile(file);
-                  void builtinTemplates()
-                    .then(setPhotoTemplates)
-                    .catch(() => setPhotoTemplates([]));
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeSheet(false);
+          }}
+        >
+          <DialogContent title="Position">
+            {positionPanels('sheet')}
+            {/* The second page, written inside the first: Modal parks this
+                sheet behind it, wires the back chevron to onClose and holds
+                the height. Nothing here says any of that. */}
+            {loadPage && (
+              <Dialog
+                open
+                onOpenChange={(open) => {
+                  if (!open) setLoadPage(false);
                 }}
-              />
-              {/* And the THIRD page, inside the second. It was a sibling
-                  window with `hidden` wired by hand at both levels; as a
-                  page it parks the load form itself, and its back chevron
-                  lands on the form you left rather than two pages back at
-                  Position. */}
-              {photoTemplates !== null && (
-                <Suspense fallback={null}>
-                  <PhotoImport
-                    templates={photoTemplates}
-                    initialFile={photoFile ?? undefined}
-                    onApply={(reading) => {
-                      if (reading.fen) applyImageFen(reading.fen);
-                      setPhotoTemplates(null);
-                      closeSheet(true);
+              >
+                <DialogContent title="Load position">
+                  <LoadPositionForm
+                    loadText={loadText}
+                    // The loaded position IS the answer, so this commits —
+                    // there is nothing of the draft left to keep or discard.
+                    onDone={() => closeSheet(true)}
+                    onCancel={() => setLoadPage(false)}
+                    onImage={(file) => {
+                      setPhotoFile(file);
+                      void builtinTemplates()
+                        .then(setPhotoTemplates)
+                        .catch(() => setPhotoTemplates([]));
                     }}
-                    onClose={() => setPhotoTemplates(null)}
                   />
-                </Suspense>
-              )}
-            </Modal>
-          )}
-        </Modal>
+                  {/* And the THIRD page, inside the second. It was a sibling
+                      window with `hidden` wired by hand at both levels; as a
+                      page it parks the load form itself, and its back chevron
+                      lands on the form you left rather than two pages back at
+                      Position. */}
+                  {photoTemplates !== null && (
+                    <Suspense fallback={null}>
+                      <PhotoImport
+                        templates={photoTemplates}
+                        initialFile={photoFile ?? undefined}
+                        onApply={(reading) => {
+                          if (reading.fen) applyImageFen(reading.fen);
+                          setPhotoTemplates(null);
+                          closeSheet(true);
+                        }}
+                        onClose={() => setPhotoTemplates(null)}
+                      />
+                    </Suspense>
+                  )}
+                </DialogContent>
+              </Dialog>
+            )}
+          </DialogContent>
+        </Dialog>
       )}
 
     </div>

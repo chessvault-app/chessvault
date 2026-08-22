@@ -5,7 +5,7 @@ import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { Button } from './Button';
 import { PageHeader } from './PageHeader';
-import { Sheet } from './Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 /**
  * The canvas page family — the third of the three named in `ui/layout.ts`.
@@ -117,9 +117,16 @@ export function CanvasShell({
             // a move with games under it and a third for a bare one, and
             // its footer — the row of things you can do — landed
             // somewhere different each time you opened it.
-            <Sheet label={panel.label} onClose={panel.onClose} fill>
-              {panel.content}
-            </Sheet>
+            <Dialog
+              open
+              onOpenChange={(open) => {
+                if (!open) panel.onClose();
+              }}
+            >
+              <DialogContent size="sm" title={panel.label} fill>
+                {panel.content}
+              </DialogContent>
+            </Dialog>
           ) : (
             <aside
               // The Sheet half of this pair announces itself by its label;

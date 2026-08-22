@@ -9,7 +9,7 @@ import { t } from '@/lib/i18n';
 import { Button } from '@/ui/Button';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { ClearableInput, SearchInput } from '@/ui/Input';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Panel, PanelHeader } from '@/ui/Panel';
 import { Skeleton } from '@/ui/Skeleton';
 import { Segmented } from '@/ui/Segmented';
@@ -591,52 +591,59 @@ function UploadWindow({
   });
 
   return (
-    <Modal title="Upload PGN collections" icon={Upload} onClose={onClose}>
-      <label
-        {...drop.handlers}
-        className={cn(
-          'text-muted-foreground flex min-h-40 cursor-pointer flex-col items-center justify-center',
-          'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-sm',
-          'transition-colors duration-100',
-          drop.dragging
-            ? 'border-primary bg-primary-soft text-primary'
-            : 'border-border hover:border-primary/40 hover:bg-accent',
-        )}
-      >
-        <input
-          type="file"
-          accept=".pgn"
-          multiple
-          className="hidden"
-          disabled={uploading !== null}
-          onChange={(e) => {
-            onFiles(e.target.files ?? []);
-            e.target.value = '';
-          }}
-        />
-        {uploading ? (
-          <>
-            <Loader2 className="size-6 animate-spin" />
-            <span className="min-w-0 max-w-full truncate">
-              {t('Uploading {name}…', { name: uploading })}
-            </span>
-          </>
-        ) : (
-          <>
-            <Upload className="size-6" />
-            <span className="text-foreground text-base font-medium">{t('Choose .pgn files')}</span>
-            <span className="text-subtle leading-relaxed">
-              {t('Or drop them anywhere in this box')}
-            </span>
-          </>
-        )}
-      </label>
-      <p className="text-subtle text-sm leading-relaxed">
-        {t(
-          'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.',
-        )}
-      </p>
-    </Modal>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Upload PGN collections" icon={Upload}>
+        <label
+          {...drop.handlers}
+          className={cn(
+            'text-muted-foreground flex min-h-40 cursor-pointer flex-col items-center justify-center',
+            'gap-2 rounded-lg border border-dashed px-4 py-8 text-center text-sm',
+            'transition-colors duration-100',
+            drop.dragging
+              ? 'border-primary bg-primary-soft text-primary'
+              : 'border-border hover:border-primary/40 hover:bg-accent',
+          )}
+        >
+          <input
+            type="file"
+            accept=".pgn"
+            multiple
+            className="hidden"
+            disabled={uploading !== null}
+            onChange={(e) => {
+              onFiles(e.target.files ?? []);
+              e.target.value = '';
+            }}
+          />
+          {uploading ? (
+            <>
+              <Loader2 className="size-6 animate-spin" />
+              <span className="min-w-0 max-w-full truncate">
+                {t('Uploading {name}…', { name: uploading })}
+              </span>
+            </>
+          ) : (
+            <>
+              <Upload className="size-6" />
+              <span className="text-foreground text-base font-medium">{t('Choose .pgn files')}</span>
+              <span className="text-subtle leading-relaxed">
+                {t('Or drop them anywhere in this box')}
+              </span>
+            </>
+          )}
+        </label>
+        <p className="text-subtle text-sm leading-relaxed">
+          {t(
+            'A collection is any .pgn of games — a Lichess Elite month, a Lumbra export. Uploads stream, so a large one keeps going while you watch it.',
+          )}
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -664,32 +671,39 @@ function BuildWindow({
   const derived = only?.replace(/\.pgn$/i, '') ?? 'refgames';
 
   return (
-    <Modal title="Build a database" icon={Database} onClose={onClose}>
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
-      </p>
-      <ClearableInput
-        inputSize="sm"
-        value={name}
-        autoFocus
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && onBuild(name)}
-        placeholder={t('Name — “{name}” if blank', { name: derived })}
-      />
-      <p className="text-subtle text-sm leading-relaxed">
-        {t(
-          'Building keeps going if you leave the page. A build under an existing name replaces that database.',
-        )}
-      </p>
-      <div className="mt-1 flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {t('Cancel')}
-        </Button>
-        <Button variant="default" size="sm" onClick={() => onBuild(name)}>
-          <Database className="size-3.5" />
-          {t('Build')}
-        </Button>
-      </div>
-    </Modal>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent title="Build a database" icon={Database}>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          {t('Indexing {n} collections into one searchable database of whole games.', { n: count })}
+        </p>
+        <ClearableInput
+          inputSize="sm"
+          value={name}
+          autoFocus
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onBuild(name)}
+          placeholder={t('Name — “{name}” if blank', { name: derived })}
+        />
+        <p className="text-subtle text-sm leading-relaxed">
+          {t(
+            'Building keeps going if you leave the page. A build under an existing name replaces that database.',
+          )}
+        </p>
+        <div className="mt-1 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button variant="default" size="sm" onClick={() => onBuild(name)}>
+            <Database className="size-3.5" />
+            {t('Build')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -2,7 +2,7 @@ import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import type { HomeLayout } from '@shared/homeLayout';
 import { Button } from '@/ui/Button';
 import { SettingRow } from '@/ui/SettingRow';
-import { Sheet } from '@/ui/Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Switch } from '@/ui/Switch';
 import { announce } from '@/ui/announce';
 import { t } from '@/lib/i18n';
@@ -94,106 +94,113 @@ export function CustomiseSheet({
   };
 
   return (
-    <Sheet label={t('Customise home')} onClose={onClose}>
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        {t('Switch a destination off to keep it as a button under the grid, or hide it to take it off home altogether. The sidebar still reaches everything.')}
-      </p>
-
-      <ToggleRow
-        title={t('Continue')}
-        blurb={t('Where you left off, above everything else.')}
-        checked={layout.continueCard}
-        onToggle={() => onChange({ ...layout, continueCard: !layout.continueCard })}
-      />
-      <ToggleRow
-        title={t('Set up your vault')}
-        blurb={t('The first steps for a new vault. It leaves once they are all done.')}
-        checked={layout.checklist}
-        onToggle={() => onChange({ ...layout, checklist: !layout.checklist })}
-      />
-
-      {/* No scroller of its own. Sheet's body already scrolls, so capping
-          this at max-h-72 made a second one inside the first — which held
-          the two card switches and the paragraph above them permanently on
-          screen while only the destinations moved. Nothing here is worth
-          pinning: the switches are two rows among fourteen, and a short
-          list in a tall sheet was scrolling in a box while the sheet
-          around it had room to spare. */}
-      <div className="flex flex-col gap-1">
-        <Group label={t('On the grid')} empty={t('Nothing — every destination is a button below.')} count={tiles.length}>
-          {tiles.map((entry, i) => (
-            // Keyed by id, not position: React then MOVES the row that
-            // moved, and the focus ring travels with it — keyed by index,
-            // a second press would reorder the row that took its place.
-            <Row key={entry.id} entry={entry} checked onToggle={() => demote(entry)}>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={i === 0}
-                title={t('Move up')}
-                aria-label={t('Move {name} up', { name: t(entry.label) })}
-                onClick={() => move(i, -1)}
-              >
-                <ChevronUp className="size-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={i === tiles.length - 1}
-                title={t('Move down')}
-                aria-label={t('Move {name} down', { name: t(entry.label) })}
-                onClick={() => move(i, 1)}
-              >
-                <ChevronDown className="size-3.5" />
-              </Button>
-              <HideButton entry={entry} onHide={() => hide(entry)} />
-            </Row>
-          ))}
-        </Group>
-
-        <Group label={t('In the row below')} empty={t('Nothing — every destination is a tile.')} count={launchers.length}>
-          {launchers.map((entry) => (
-            <Row key={entry.id} entry={entry} checked={false} onToggle={() => promote(entry)}>
-              <HideButton entry={entry} onHide={() => hide(entry)} />
-            </Row>
-          ))}
-        </Group>
-
-        <Group
-          label={t('Off the page')}
-          empty={t('Nothing — every destination is on home.')}
-          count={hidden.length}
-        >
-          {hidden.map((entry) => (
-            // No switch: a switch offers two states, and this row is in
-            // neither of them. One button, and it says where it goes.
-            <Row key={entry.id} entry={entry}>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t('Bring back')}
-                aria-label={t('Bring {name} back', { name: t(entry.label) })}
-                onClick={() => unhide(entry)}
-              >
-                <Eye className="size-3.5" />
-              </Button>
-            </Row>
-          ))}
-        </Group>
-      </div>
-
-      {error !== null && (
-        <p className="text-destructive text-sm" role="status">
-          {error}
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent size="sm" title={t('Customise home')}>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          {t('Switch a destination off to keep it as a button under the grid, or hide it to take it off home altogether. The sidebar still reaches everything.')}
         </p>
-      )}
 
-      <div className="flex justify-end">
-        <Button variant="ghost" size="sm" onClick={onReset}>
-          {t('Reset to default')}
-        </Button>
-      </div>
-    </Sheet>
+        <ToggleRow
+          title={t('Continue')}
+          blurb={t('Where you left off, above everything else.')}
+          checked={layout.continueCard}
+          onToggle={() => onChange({ ...layout, continueCard: !layout.continueCard })}
+        />
+        <ToggleRow
+          title={t('Set up your vault')}
+          blurb={t('The first steps for a new vault. It leaves once they are all done.')}
+          checked={layout.checklist}
+          onToggle={() => onChange({ ...layout, checklist: !layout.checklist })}
+        />
+
+        {/* No scroller of its own. Sheet's body already scrolls, so capping
+            this at max-h-72 made a second one inside the first — which held
+            the two card switches and the paragraph above them permanently on
+            screen while only the destinations moved. Nothing here is worth
+            pinning: the switches are two rows among fourteen, and a short
+            list in a tall sheet was scrolling in a box while the sheet
+            around it had room to spare. */}
+        <div className="flex flex-col gap-1">
+          <Group label={t('On the grid')} empty={t('Nothing — every destination is a button below.')} count={tiles.length}>
+            {tiles.map((entry, i) => (
+              // Keyed by id, not position: React then MOVES the row that
+              // moved, and the focus ring travels with it — keyed by index,
+              // a second press would reorder the row that took its place.
+              <Row key={entry.id} entry={entry} checked onToggle={() => demote(entry)}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={i === 0}
+                  title={t('Move up')}
+                  aria-label={t('Move {name} up', { name: t(entry.label) })}
+                  onClick={() => move(i, -1)}
+                >
+                  <ChevronUp className="size-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={i === tiles.length - 1}
+                  title={t('Move down')}
+                  aria-label={t('Move {name} down', { name: t(entry.label) })}
+                  onClick={() => move(i, 1)}
+                >
+                  <ChevronDown className="size-3.5" />
+                </Button>
+                <HideButton entry={entry} onHide={() => hide(entry)} />
+              </Row>
+            ))}
+          </Group>
+
+          <Group label={t('In the row below')} empty={t('Nothing — every destination is a tile.')} count={launchers.length}>
+            {launchers.map((entry) => (
+              <Row key={entry.id} entry={entry} checked={false} onToggle={() => promote(entry)}>
+                <HideButton entry={entry} onHide={() => hide(entry)} />
+              </Row>
+            ))}
+          </Group>
+
+          <Group
+            label={t('Off the page')}
+            empty={t('Nothing — every destination is on home.')}
+            count={hidden.length}
+          >
+            {hidden.map((entry) => (
+              // No switch: a switch offers two states, and this row is in
+              // neither of them. One button, and it says where it goes.
+              <Row key={entry.id} entry={entry}>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  title={t('Bring back')}
+                  aria-label={t('Bring {name} back', { name: t(entry.label) })}
+                  onClick={() => unhide(entry)}
+                >
+                  <Eye className="size-3.5" />
+                </Button>
+              </Row>
+            ))}
+          </Group>
+        </div>
+
+        {error !== null && (
+          <p className="text-destructive text-sm" role="status">
+            {error}
+          </p>
+        )}
+
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={onReset}>
+            {t('Reset to default')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

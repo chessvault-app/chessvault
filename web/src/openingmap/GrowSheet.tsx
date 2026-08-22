@@ -7,7 +7,7 @@ import { FilterChip } from '@/ui/FilterChip';
 import type { Speed } from '@shared/gameIndex';
 import { Button } from '@/ui/Button';
 import { Segmented } from '@/ui/Segmented';
-import { Sheet } from '@/ui/Sheet';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Skeleton } from '@/ui/Skeleton';
 import type { OpeningMap, ResolvedNode } from './model';
 import { seedFromGames } from './seed';
@@ -139,98 +139,105 @@ export function GrowSheet({
   }, [lines]);
 
   return (
-    <Sheet label={t('Grow from my games')} onClose={onClose}>
-      <div className="flex items-center gap-2">
-        <span className="text-muted-foreground text-sm">{t('Chart moves seen in at least')}</span>
-        <Segmented
-          value={floor}
-          onChange={setFloor}
-          segments={[
-            { value: '2', label: '2' },
-            { value: '5', label: '5' },
-            { value: '10', label: '10' },
-          ]}
-          ariaLabel="Games floor"
-          // Three numerals inside a sentence: the track keeps them one
-          // question rather than three little buttons. See `look`.
-          look="track"
-        />
-        <span className="text-muted-foreground text-sm">{t('games')}</span>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <span className="text-subtle text-xs label-caps">
-          {t('From which games')}
-        </span>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {SPEEDS.map(({ id, label }) => (
-            <FilterChip
-              key={id}
-              label={t(label)}
-              active={speeds.includes(id)}
-              onClick={() => toggleSpeed(id)}
-            />
-          ))}
-          <FilterChip
-            label={t('Kept only')}
-            title="Only the games in your collection, not every archived game"
-            active={collectionOnly}
-            onClick={() =>
-              setCollectionOnly((on) => {
-                localStorage.setItem(COLLECTION_KEY, on ? '0' : '1');
-                return !on;
-              })
-            }
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent size="sm" title={t('Grow from my games')}>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-sm">{t('Chart moves seen in at least')}</span>
+          <Segmented
+            value={floor}
+            onChange={setFloor}
+            segments={[
+              { value: '2', label: '2' },
+              { value: '5', label: '5' },
+              { value: '10', label: '10' },
+            ]}
+            ariaLabel="Games floor"
+            // Three numerals inside a sentence: the track keeps them one
+            // question rather than three little buttons. See `look`.
+            look="track"
           />
+          <span className="text-muted-foreground text-sm">{t('games')}</span>
         </div>
-      </div>
-      {lines === null ? (
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-4" />
-          <Skeleton className="h-4" />
-        </div>
-      ) : lines.length === 0 ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {reach === 0
-            ? facts.parentId === null
-              ? t(
-                  'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.',
-                )
-              : t('None of your games reach this position.')
-            : t('Your games do not reach this position often enough — lower the floor, or play more.')}
-        </p>
-      ) : (
-        <>
-          <p className="text-foreground text-sm font-medium">
-            {t('{n} moves to chart, ending in {k} lines', { n: lines.length, k: tips.length })}
-          </p>
-          <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
-            {tips.slice(0, 8).map((l) => (
-              <p key={l.join(' ')} className="text-muted-foreground truncate text-sm">
-                {line(l)}
-              </p>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-subtle text-xs label-caps">
+            {t('From which games')}
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {SPEEDS.map(({ id, label }) => (
+              <FilterChip
+                key={id}
+                label={t(label)}
+                active={speeds.includes(id)}
+                onClick={() => toggleSpeed(id)}
+              />
             ))}
-            {tips.length > 8 && (
-              <p className="text-subtle text-sm">{t('and {n} more', { n: tips.length - 8 })}</p>
-            )}
+            <FilterChip
+              label={t('Kept only')}
+              title="Only the games in your collection, not every archived game"
+              active={collectionOnly}
+              onClick={() =>
+                setCollectionOnly((on) => {
+                  localStorage.setItem(COLLECTION_KEY, on ? '0' : '1');
+                  return !on;
+                })
+              }
+            />
           </div>
-        </>
-      )}
-      <div className="mt-1 flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          {t('Cancel')}
-        </Button>
-        <Button
-          variant="default"
-          size="sm"
-          disabled={!lines || lines.length === 0}
-          onClick={() => {
-            onApply(lines!);
-            onClose();
-          }}
-        >
-          <Sparkles className="size-3.5" /> {t('Chart them')}
-        </Button>
-      </div>
-    </Sheet>
+        </div>
+        {lines === null ? (
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-4" />
+            <Skeleton className="h-4" />
+          </div>
+        ) : lines.length === 0 ? (
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {reach === 0
+              ? facts.parentId === null
+                ? t(
+                    'None of your games are indexed yet. Collect some on the Games page — from an online archive or a PGN — and this will have something to read.',
+                  )
+                : t('None of your games reach this position.')
+              : t('Your games do not reach this position often enough — lower the floor, or play more.')}
+          </p>
+        ) : (
+          <>
+            <p className="text-foreground text-sm font-medium">
+              {t('{n} moves to chart, ending in {k} lines', { n: lines.length, k: tips.length })}
+            </p>
+            <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
+              {tips.slice(0, 8).map((l) => (
+                <p key={l.join(' ')} className="text-muted-foreground truncate text-sm">
+                  {line(l)}
+                </p>
+              ))}
+              {tips.length > 8 && (
+                <p className="text-subtle text-sm">{t('and {n} more', { n: tips.length - 8 })}</p>
+              )}
+            </div>
+          </>
+        )}
+        <div className="mt-1 flex justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            {t('Cancel')}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            disabled={!lines || lines.length === 0}
+            onClick={() => {
+              onApply(lines!);
+              onClose();
+            }}
+          >
+            <Sparkles className="size-3.5" /> {t('Chart them')}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

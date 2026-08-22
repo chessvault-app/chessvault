@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useAnalysis } from '@/store/analysis';
 import { autoFocusField } from '@/lib/media';
 import { Button } from '@/ui/Button';
-import { Modal } from '@/ui/Modal';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChipRow } from '@/ui/ChipRow';
 import { t } from '@/lib/i18n';
 
@@ -214,32 +214,36 @@ export function AnnotationPane({
           area. Modal is a bottom sheet on a phone, and this only opens on
           one. */}
       {sheet && coarse && (
-        <Modal
-          title={placeholder}
-          onClose={() => {
-            setSheet(false);
-            flush();
-          }}
-        >
-          <Textarea
-            autoFocus={autoFocusField()}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            rows={4}
-            className="w-full resize-none leading-relaxed"
-          />
-          <Button
-            variant="default"
-            size="sm"
-            className="self-end"
-            onClick={() => {
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) {
               setSheet(false);
               flush();
-            }}
-          >
-            {t('Done')}
-          </Button>
-        </Modal>
+            }
+          }}
+        >
+          <DialogContent title={placeholder}>
+            <Textarea
+              autoFocus={autoFocusField()}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              rows={4}
+              className="w-full resize-none leading-relaxed"
+            />
+            <Button
+              variant="default"
+              size="sm"
+              className="self-end"
+              onClick={() => {
+                setSheet(false);
+                flush();
+              }}
+            >
+              {t('Done')}
+            </Button>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
