@@ -84,6 +84,12 @@ const ASSETS: { name: string; version: string; license: string; url: string; fil
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/pirouetti', file: 'AGPL-3.0.txt' },
   { name: 'fantasy, spatial, celtic (piece sets)', version: '—', license: 'MIT',
     url: 'https://github.com/maurimo/chess-art', file: 'MIT-chess-art.txt' },
+  // The component layer's SOURCE, not a package: `npx shadcn add` writes the
+  // registry's files into web/src/components/ui and they ship in every
+  // bundle, while the `shadcn` package that wrote them is a dev dependency
+  // the dependency walk never sees. MIT wants its notice in all copies.
+  { name: 'shadcn/ui (component sources in web/src/components/ui)', version: '—', license: 'MIT',
+    url: 'https://github.com/shadcn-ui/ui', file: 'MIT-shadcn.txt' },
   { name: 'kiwen-suwi (piece set)', version: '—', license: 'CC-BY-4.0',
     url: 'https://github.com/lichess-org/lila/tree/master/public/piece/kiwen-suwi', file: 'CC-BY-4.0.txt' },
   { name: 'mpchess (piece set)', version: '—', license: 'GPL-3.0-or-later',

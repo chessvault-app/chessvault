@@ -21,13 +21,15 @@ Anything here travels with the app to whoever installs or visits it.
 | sql.js (static demo only) | `web/public/sqljs/` | MIT |
 | fzstd (reads the zstd puzzle dump) | npm, bundled into the puzzle builder | MIT |
 | lucide icons | npm, bundled | ISC |
-| Radix UI primitives (`radix-ui`), class-variance-authority, tw-animate-css — what the shadcn/ui component layer is built on; shadcn itself is a dev dependency (its variant sheet and CLI) | npm, bundled into `dist/` | MIT |
+| shadcn/ui component sources (what `npx shadcn add` writes into `web/src/components/ui/`, owned and reshaped here) | `web/src/components/ui/`, bundled into `dist/` | MIT |
+| Radix UI primitives (`radix-ui`), tw-animate-css — what the shadcn/ui component layer is built on; the `shadcn` CLI itself is a dev dependency | npm, bundled into `dist/` | MIT |
+| class-variance-authority (the component layer's variant sheet) | npm, bundled into `dist/` | Apache-2.0 |
 | Pretendard, JetBrains Mono | npm, bundled as woff2 | OFL-1.1 |
 | ECO opening names | `scripts/vendor/chess-openings/*.tsv` | CC0-1.0 |
 | Bundled starter reference games (the strongest games of each opening, one Lichess Elite month) | `assets/refgames-*.sqlite`, copied into `data/refgames/` on first run | CC0-1.0, derived from the Lichess database |
 | Lichess puzzles | `data/puzzles.sqlite`, demo subset | CC0-1.0 |
 | Reference games | `data/refgames/`, demo subset | CC0-1.0, derived from the Lichess database |
-| ~150 other npm packages (the build regenerates the exact list) | bundled or shipped beside the server | MIT, ISC, BSD-2-Clause, Apache-2.0, Python-2.0, BlueOak-1.0.0 |
+| ~220 other npm packages (the build regenerates the exact list) | bundled or shipped beside the server | MIT, ISC, BSD-2-Clause, 0BSD, Apache-2.0, Python-2.0, BlueOak-1.0.0 |
 | Electron, and with it Chromium and Node | desktop installer only | MIT, plus 773 components listed in `LICENSES.chromium.html` |
 
 The npm list is generated from `node_modules` at build time, so it cannot go
