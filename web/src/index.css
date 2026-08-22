@@ -578,24 +578,6 @@
     background: var(--surface-2);
   }
 
-  /* Delegated tooltips (ui/tooltip.ts): themed replacement for the slow
-     native title bubble. Fixed-position, pointer-transparent, above every
-     popover layer. */
-  .app-tooltip {
-    position: fixed;
-    z-index: 100;
-    pointer-events: none;
-    max-width: 20rem;
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 0.375rem;
-    background: var(--surface);
-    color: var(--muted-foreground);
-    font-size: 0.75rem;
-    line-height: 1.4;
-    box-shadow: var(--shadow-pop);
-  }
-
   /* Native <select> popups inherit the control's font — a text-sm mono
      control makes an unreadable dropdown list. Options get their own size. */
   option {

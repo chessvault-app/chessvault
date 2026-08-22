@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { initTheme, watchSystemTheme } from './store/theme';
 import { initPrefs } from './store/prefs';
-import { installTooltips } from './ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
@@ -61,10 +61,13 @@ startPixelGridTracking();
 
 const container = document.getElementById('root');
 if (!container) throw new Error('#root missing from index.html');
-installTooltips(container);
 
+// One tooltip provider for the app: the delay, and the skip-delay that
+// lets a pointer sweep along a toolbar without waiting at each button.
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <TooltipProvider>
+      <App />
+    </TooltipProvider>
   </StrictMode>,
 );

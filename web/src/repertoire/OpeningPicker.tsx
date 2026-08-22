@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { useDismiss, useFloating, type Box } from '@/lib/floating';
-import { autoFocusField } from '@/lib/media';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { SearchInput } from '@/ui/Input';
-import { useCloseRequest } from '@/ui/dialogFocus';
-import { Sheet } from '@/ui/Sheet';
 import { t } from '@/lib/i18n';
 
 /** An entry in the openings catalogue: a name and the line that earns it.
@@ -80,15 +78,15 @@ function loadCatalogue(): Promise<OpeningTemplate[]> {
 /**
  * Pick an opening to spar from.
  *
- * Two shapes for two pointers. On a phone it is the app's own Sheet —
+ * Two shapes for two pointers. On a phone it is the app's own sheet —
  * rising from the bottom with the drag, the scrim and the Escape every
- * other window has. On a desktop it is a combobox: the list drops
+ * other window has. On a desktop it is shadcn's Popover: the list drops
  * anchored under the field itself (portalled past the Panel's clipping,
- * like every floating layer here), capped in height with the search
- * pinned above the scroll — so the board stays on screen while an
- * opening is being chosen, instead of disappearing behind a centred
- * card. lanph3re's report: the modal covered the board and broke the
- * visual context.
+ * placed inside the window by Radix, flipping above only when below has
+ * no room), capped in height with the search pinned above the scroll —
+ * so the board stays on screen while an opening is being chosen, instead
+ * of disappearing behind a centred card. lanph3re's report: the modal
+ * covered the board and broke the visual context.
  */
 export function OpeningPicker({
   value,
@@ -100,13 +98,9 @@ export function OpeningPicker({
   const [all, setAll] = useState<OpeningTemplate[] | null>(() => catalogue);
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
-  /** The field's rectangle when the popover opened; null means the sheet. */
-  const [anchor, setAnchor] = useState<Box | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  /** As wide as the field, and never so narrow that a name is unreadable. */
-  const width = Math.max(anchor?.width ?? 0, 288);
-  const pop = useFloating(anchor, { side: 'bottom', align: 'start', gap: 4, margin: 12 });
+  // The popover on a desktop, the sheet on a phone — decided live, the
+  // way every other two-shaped control here decides.
+  const wide = useMediaQuery('(min-width: 40rem)');
 
   useEffect(() => {
     let cancelled = false;
@@ -140,73 +134,30 @@ export function OpeningPicker({
     setOpen(false);
   };
 
-  /**
-   * Open under the field on a desktop, as a sheet otherwise.
-   *
-   * The anchor is read once, when it opens — the same rule ActionSheet
-   * follows — and the list prefers to hang BELOW the field, flipping
-   * above only when the field is near the bottom and there is more room
-   * over it. Height is capped so the whole thing stays inside the
-   * viewport and the list scrolls instead.
-   */
-  const openPicker = (): void => {
-    setQuery('');
-    // The anchor is read once, when it opens — the same rule ActionSheet
-    // follows. Everything else (which side, the clamp, the cap) is
-    // lib/floating's from the popover's own measured size, where it used
-    // to be four lines of arithmetic here that no test ever saw.
-    const rect = window.matchMedia('(min-width: 40rem)').matches
-      ? triggerRef.current?.getBoundingClientRect()
-      : undefined;
-    setAnchor(rect ?? null);
-    setOpen(true);
+  const setOpenFresh = (next: boolean): void => {
+    if (next) setQuery('');
+    setOpen(next);
   };
 
-  /**
-   * The popover has no scrim, so it dismisses itself: a press outside it
-   * (a press on the field again just closes it), and a close request.
-   *
-   * It used to listen for `pointerdown` alone and swallow nothing. On a
-   * touch device wide enough to get the popover rather than the sheet —
-   * an iPad — that is a tap which closes the picker AND presses whatever
-   * was under it, because the synthesized click still lands. useDismiss
-   * does the touchstart-and-suppress dance every other popover in the
-   * app already did.
-   *
-   * Escape moves to useCloseRequest with it, which also answers Android's
-   * Back gesture and, since dialogFocus grew a stack, closes only the
-   * topmost layer.
-   */
-  useDismiss(open && anchor !== null, () => setOpen(false), [popoverRef, triggerRef]);
-  useCloseRequest(() => setOpen(false), open && anchor !== null);
+  const trigger = (
+    <button
+      type="button"
+      onClick={wide ? undefined : () => setOpenFresh(!open)}
+      className={cn(
+        'border-border bg-surface-inset text-foreground flex h-9 min-w-0 items-center rounded-md border',
+        'px-2.5 text-left text-sm transition-colors duration-100',
+        'hover:border-primary/40',
+      )}
+    >
+      <span className="min-w-0 flex-1 truncate">
+        {/* t() so "Start position" translates; real opening names are
+            proper nouns and pass through untouched. */}
+        {value.eco ? `${value.eco}  ${value.name}` : t(value.name)}
+      </span>
+    </button>
+  );
 
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={() => {
-          if (open) {
-            setOpen(false);
-            return;
-          }
-          openPicker();
-        }}
-        className={cn(
-          'border-border bg-surface-inset text-foreground flex h-9 min-w-0 items-center rounded-md border',
-          'px-2.5 text-left text-sm transition-colors duration-100',
-          'hover:border-primary/40',
-        )}
-      >
-        <span className="min-w-0 flex-1 truncate">
-          {/* t() so "Start position" translates; real opening names are
-              proper nouns and pass through untouched. */}
-          {value.eco ? `${value.eco}  ${value.name}` : t(value.name)}
-        </span>
-      </button>
-
-      {open &&
-        (() => {
+  const body = ((): { searchBox: React.ReactNode; list: React.ReactNode } => {
           // One search box and one list, whichever container they open in.
           // A real SearchInput: it filters the list live, so it gets the
           // X and Cancel every other live filter carries. Desktop-only
@@ -263,46 +214,47 @@ export function OpeningPicker({
             </ul>
           );
 
-          if (!anchor) {
-            return (
-              <Sheet label={t('Opening')} onClose={() => setOpen(false)} className="gap-2">
-                {searchBox}
-                {list}
-              </Sheet>
-            );
-          }
+          return { searchBox, list };
+        })();
 
-          // Portalled past the Panel: a Panel clips its children, and a
-          // floating layer has no business living inside the thing it
-          // floats over (see ActionSheet).
-          return createPortal(
-            <div
-              ref={(node) => {
-                popoverRef.current = node;
-                pop.ref(node);
-              }}
-              role="dialog"
-              aria-label={t('Opening')}
-              style={{
-                ...pop.style,
-                width,
-                // 384 is as tall as this wants to be; less where the room
-                // is less, and the catalogue scrolls inside it.
-                maxHeight: Math.min(384, pop.placement?.room ?? 384),
-              }}
-              className={cn(
-                'bg-card border-border pointer-events-auto z-50 flex flex-col overflow-hidden rounded-lg border',
-                'shadow-pop',
-              )}
-            >
-              {/* Above the scroll, not inside it: the search stays put
-                  while the catalogue scrolls under it. */}
-              <div className="border-border shrink-0 border-b p-2">{searchBox}</div>
-              <div className="flex min-h-0 flex-1 flex-col p-1">{list}</div>
-            </div>,
-            document.body,
-          );
-        })()}
-    </>
+  if (!wide) {
+    return (
+      <>
+        {trigger}
+        {open && (
+          <Dialog
+            open
+            onOpenChange={(next) => {
+              if (!next) setOpen(false);
+            }}
+          >
+            <DialogContent size="sm" title={t('Opening')} className="gap-2">
+              {body.searchBox}
+              {body.list}
+            </DialogContent>
+          </Dialog>
+        )}
+      </>
+    );
+  }
+
+  // As wide as the field, and never so narrow that a name is unreadable;
+  // 384 is as tall as this wants to be, less where the room is less, and
+  // the catalogue scrolls inside it. Radix's popper publishes both numbers.
+  return (
+    <Popover open={open} onOpenChange={setOpenFresh}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        collisionPadding={12}
+        aria-label={t('Opening')}
+        className="flex w-[max(var(--radix-popover-trigger-width),18rem)] max-h-[min(24rem,var(--radix-popover-content-available-height))] flex-col gap-0 overflow-hidden p-0"
+      >
+        {/* Above the scroll, not inside it: the search stays put while the
+            catalogue scrolls under it. */}
+        <div className="border-border shrink-0 border-b p-2">{body.searchBox}</div>
+        <div className="flex min-h-0 flex-1 flex-col p-1">{body.list}</div>
+      </PopoverContent>
+    </Popover>
   );
 }

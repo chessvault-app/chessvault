@@ -3,6 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * shadcn's Button, owned.
@@ -99,10 +100,11 @@ function Button({
   asChild = false,
   active = false,
   type = 'button',
+  title,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot.Root : 'button';
-  return (
+  const button = (
     <Comp
       data-slot="button"
       data-variant={variant}
@@ -111,11 +113,9 @@ function Button({
       // form submits it, and almost nothing here is a submit.
       {...(asChild ? {} : { type })}
       // An icon-only button's title doubles as its accessible name unless
-      // one was given. These buttons were named by `title` alone, and the
-      // styled-tooltip system REMOVES title while its tip is showing — so
-      // the name used to vanish exactly when the control was pointed at.
-      // aria-label stays put.
-      aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : props.title)}
+      // one was given: the tooltip below is what a pointer sees, and the
+      // name is what a screen reader and voice control get.
+      aria-label={props['aria-label'] ?? (hasTextContent(props.children) ? undefined : title)}
       data-active={active || undefined}
       className={cn(
         buttonVariants({ variant, size }),
@@ -124,6 +124,17 @@ function Button({
       )}
       {...props}
     />
+  );
+  // `title` is a tooltip, the shadcn way: Radix's Tooltip in the app's
+  // face, on hover and on keyboard focus, never on touch — instead of the
+  // browser's slow, unthemable bubble. The attribute itself is not set:
+  // two tips for one control would be the worst of both.
+  if (title === undefined) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent>{title}</TooltipContent>
+    </Tooltip>
   );
 }
 
