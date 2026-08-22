@@ -9,6 +9,8 @@
  * touch there is no hover, and the native behaviour (nothing) is right.
  */
 
+import { placeNear } from '@/lib/floating';
+
 const DELAY_MS = 400;
 
 export function installTooltips(root: HTMLElement): void {
@@ -43,13 +45,18 @@ export function installTooltips(root: HTMLElement): void {
     tip.className = 'app-tooltip';
     tip.textContent = text;
     document.body.appendChild(tip);
-    const a = anchor.getBoundingClientRect();
+    // Centred under the anchor, above it where there is no room, and
+    // inside the window either way — the same placement every popover in
+    // the app gets, from lib/floating rather than from four lines here.
+    // The tip is in the DOM already, so its size is a measurement.
     const t = tip.getBoundingClientRect();
-    const x = Math.min(Math.max(4, a.left + a.width / 2 - t.width / 2), innerWidth - t.width - 4);
-    // Below the anchor; above when there is no room.
-    const y = a.bottom + 6 + t.height > innerHeight - 4 ? a.top - t.height - 6 : a.bottom + 6;
-    tip.style.left = `${x}px`;
-    tip.style.top = `${y}px`;
+    const at = placeNear(
+      anchor.getBoundingClientRect(),
+      { width: t.width, height: t.height },
+      { side: 'bottom', align: 'center', gap: 6, margin: 4 },
+    );
+    tip.style.left = `${at.left}px`;
+    tip.style.top = `${at.top}px`;
   };
 
   root.addEventListener('mouseover', (e) => {

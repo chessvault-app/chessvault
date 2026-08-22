@@ -1,7 +1,8 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useFloating } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { useCloseRequest, useDialogFocus } from './dialogFocus';
 import { useSheetDrag } from './sheetDrag';
@@ -65,19 +66,26 @@ export function ActionSheet({
   const [wide] = useState(() => window.matchMedia('(min-width: 40rem)').matches);
   const popover = wide && (at !== null || rect !== null);
 
-  // Where the popover's top edge goes. It starts under the anchor (or at
-  // the pointer) and is clamped to the viewport once the real height is
-  // known — a ⋯ on the last card of a long shelf used to open a menu
-  // whose rows were below the bottom of the screen. Measured once,
-  // before paint, so nothing visibly jumps and nothing re-anchors later.
+  // Under the anchor, or at the pointer, and inside the window either
+  // way — a ⋯ on the last card of a long shelf used to open a menu whose
+  // rows were below the bottom of the screen. This file measured itself
+  // before paint to fix that, and lib/floating is that same trick
+  // generalised, so the local copy goes: the height comes from the same
+  // measurement and the horizontal clamp comes free with it.
+  //
+  // A context menu opens AT the pointer, which is an anchor with no size.
   const dialogEl = useRef<HTMLDivElement | null>(null);
-  const [top, setTop] = useState(() => (at ? at.y : rect ? rect.bottom + 4 : 0));
-  useLayoutEffect(() => {
-    if (!popover || !dialogEl.current) return;
-    const height = dialogEl.current.offsetHeight;
-    setTop((desired) => Math.max(8, Math.min(desired, window.innerHeight - height - 8)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const anchorBox = at
+    ? { top: at.y, bottom: at.y, left: at.x, right: at.x, width: 0, height: 0 }
+    : rect;
+  const float = useFloating(popover ? anchorBox : null, {
+    side: 'bottom',
+    // At the pointer the menu opens to the RIGHT of it, the way a context
+    // menu does; off a ⋯ it hangs from the trigger's right edge, which is
+    // what kept it inside the card it belongs to.
+    align: at ? 'start' : 'end',
+    gap: at ? 0 : 4,
+  });
 
   // Escape, and Android's Back gesture with it — see useCloseRequest.
   useCloseRequest(onClose);
@@ -115,25 +123,10 @@ export function ActionSheet({
         ref={(node) => {
           focusRef(node);
           dialogEl.current = node;
-          if (!popover) drag.ref(node);
+          if (popover) float.ref(node);
+          else drag.ref(node);
         }}
-        style={
-          !popover
-            ? drag.style
-            : at
-              ? // A context menu opens AT the pointer, kept inside the
-                // window so a right-click near an edge is still readable.
-                {
-                  position: 'fixed',
-                  top,
-                  left: Math.min(at.x, window.innerWidth - 232),
-                }
-              : {
-                  position: 'fixed',
-                  top,
-                  right: Math.max(8, window.innerWidth - rect!.right),
-                }
-        }
+        style={!popover ? drag.style : float.style}
         className={cn(
           'bg-surface border-line border p-2 shadow-pop',
           popover

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom';
 
 import { cn } from '@/lib/cn';
+import { useFloating } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 
 import { Button } from '@/ui/Button';
@@ -192,11 +193,6 @@ export function SolutionsView({
  * used, never in a lookup popup. Rects are page fractions; the crop is
  * plain pixel math once the image's natural size is known.
  */
-/** How much room under the eye a peek wants before it opens downwards: the
-    crop is 252px wide and a diagram crop runs about that tall again, plus
-    the box's own padding. Under this, and only then, it opens upwards. */
-const PEEK_NEEDS_BELOW = 300;
-
 /** The book-scan peek beside a puzzle: hovers open on a mouse, and TAPS open
     on touch (the hover-only version did nothing on a phone). Tap the eye again
     or anywhere else to close.
@@ -261,8 +257,11 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
       window.removeEventListener('resize', drop);
     };
   }, [shown]);
-  const below = box ? window.innerHeight - box.bottom : 0;
-  const up = box ? below < PEEK_NEEDS_BELOW && box.top > below : false;
+  // Under the eye, above it where there is no room, hugging its right
+  // edge and inside the window — from lib/floating, which measures the
+  // peek rather than guessing at 300px of it. That guess is what the
+  // constant above was: a stand-in for a height nobody had.
+  const float = useFloating(box, { side: 'bottom', align: 'end', gap: 4 });
   return (
     <span
       ref={anchor}
@@ -292,15 +291,10 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
         box &&
         createPortal(
           <span
+            ref={float.ref}
             aria-hidden
-            style={{
-              // Hugging the eye's right edge, but never past the window's
-              // own — a peek beside a control near the right rail would
-              // otherwise trade a panel's clipping for the screen's.
-              right: Math.max(8, window.innerWidth - box.right),
-              ...(up ? { bottom: window.innerHeight - box.top + 4 } : { top: box.bottom + 4 }),
-            }}
-            className="pointer-events-none fixed z-50 block"
+            style={float.style}
+            className="pointer-events-none z-50 block"
           >
             <span className="bg-surface border-line block rounded-xl border p-2 shadow-pop">
               <SourceCrop
