@@ -109,6 +109,18 @@ against the editor's own font size, not in the px it resolved to once.
   scrolls only where the column can no longer be squeezed — a short
   landscape window, where a floor on the column binds and the shell is
   what gives.
+- Two pages are **workbenches**: a pane beside a board-family body —
+  the puzzle corrector (the book's scan beside the editor) and the book
+  reader (the PDF beside the analysis board). The pane is
+  `components/resizable-pane` — a drag grip, a width remembered per use,
+  a cap so a width dragged out on a big monitor cannot squeeze the board
+  off a small one — and at `stacked` the two become `PaneTabs`, the
+  board kept mounted behind the other tab. What sits beside the board
+  is the board family's own shell, so the board is the size it is
+  everywhere else. The reader's hotspots follow the same rule as every
+  hover-revealed thing: a small button in the diagram's corner, always
+  visible, larger under a coarse pointer, and a popover — never a guess
+  — where the page did not say who is to move.
 - Canvas pages (the opening map) sit in `components/canvas-shell`: the ordinary
   `PageHeader` on `PageShell`'s own gutters, an optional search row
   under it, and then one surface filling everything below, edge to

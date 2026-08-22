@@ -5,6 +5,38 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## 0.4.8
+
+A library of your chess books, read beside a board.
+
+- **Books.** A new top-level section: upload any chess book as a PDF —
+  strategy, a games collection, an opening book, a puzzle book — and read
+  it in the app, in a resizable pane beside the analysis board, the moves
+  panel and the position loader; on a phone, as Book and Board tabs with
+  the bottom bar turning pages on one and stepping moves on the other.
+  The file lives in your vault (`vault/books/<id>/`, never in the history
+  repo) and is served with byte ranges, so a page costs its own bytes and
+  the book is never held whole in a phone's memory. The reader keeps your
+  page per book, on the server, so it follows you between devices. Cards
+  show the file's size and where you stopped; rename, replace the file,
+  and remove from the card's menu or the reader's header.
+- **Every printed diagram is a tap from the board.** The reader draws a
+  small board button on each diagram of the page. Where a puzzle book was
+  read from this same PDF, the puzzle's own position and side to move
+  land on the board directly; anywhere else the page is read once with
+  the importer's own detector and CellNet, cached on the server per page,
+  and the button asks White or Black to move rather than guessing.
+- **The importer files the PDF it scans.** Importing a puzzle book puts
+  the PDF in the library too and links the puzzle book to it, so the book
+  page offers Read; removing the library book leaves the puzzle book and
+  its progress untouched. With a library called Books, the puzzle shelf
+  under Puzzles is now "Puzzle books" everywhere it is named.
+- **Settings shows storage used, area by area.** Games, studies, notes,
+  books, puzzle books, puzzle progress, repertoire, PGN sources, the
+  browsed-games cache, document history, reference databases and the
+  explorer and tablebase caches, with a total — an inventory, cleared
+  from each area's own page.
+
 ## 0.4.7
 
 The app becomes a shadcn/ui project, and an import no longer needs

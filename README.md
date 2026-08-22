@@ -68,9 +68,14 @@ is one connected body of work, and the links are what make it that.
     <img alt="Games" src="docs/screenshots/games.png">
   </picture>
 
+- **Books** — a library of your chess books: upload any PDF and read it
+  in the app, in a pane beside the analysis board, with a board button on
+  every printed diagram that sets that position up. The file stays in
+  your vault and is served with byte ranges; your page is kept per book.
+
 - **Puzzles** — a lichess-themed trainer with difficulty bands and a
   progress dashboard, plus **book puzzles**: hand a scanned tactics
-  book PDF to the importer (in the app: Puzzles → Books → Import a
+  book PDF to the importer (in the app: Puzzles → Puzzle books → Import a
   book) and an ML pipeline reads the diagrams,
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
@@ -488,8 +493,8 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
 
 ## Importing a book from a shell (optional)
 
-Importing a PDF is something the app does — Puzzles → Books → Import a
-book — and nothing about it needs a terminal. If you live in one anyway,
+Importing a PDF is something the app does — Puzzles → Puzzle books →
+Import a book — and nothing about it needs a terminal. If you live in one anyway,
 the same import can be driven from `scripts/ml/`, which buys you two
 things the app does not have: reads and engine answers cached to disk, so
 a second run over a book you have already imported is seconds, and
@@ -527,10 +532,11 @@ covers it, including how to bootstrap that config from the book itself.
 ## Book imports and copyright
 
 The book reader only ever opens a PDF you hand it. No book is bundled
-with the app, none is fetched by it, and nothing it reads is uploaded:
-the crops, the page images and the puzzles all land in your vault, on
-your own machine, and the vault is gitignored so none of it can be
-committed by accident.
+with the app, none is fetched by it, and nothing it reads is uploaded
+anywhere but your own server: the PDF itself (in the library), the crops,
+the page images and the puzzles all land in your vault, on your own
+machine, and the vault is gitignored so none of it can be committed by
+accident.
 
 That is a privacy property, not a licence. A scan of a book still in
 copyright is a copy of that book, and whether you may make one, keep one

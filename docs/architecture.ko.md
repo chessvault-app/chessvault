@@ -21,6 +21,9 @@ vault/
   puzzlebooks/<id>/                  (b + 16진수 16자리, 제목은 book.json에)
     book.json  puzzles.json  drafts.json  progress.json  ocr.json
     diagrams/  *.jpg          (근거 스캔, 표지)
+  books/<id>/                        (서재: 체스판 옆에서 읽는 PDF)
+    book.pdf   book.json  reading.json  cover.jpg  diagrams.json
+                          (book.pdf은 .history.git에서 제외)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (드릴 기록)
                       map.json       (오프닝 맵, 색마다 트리 하나)
