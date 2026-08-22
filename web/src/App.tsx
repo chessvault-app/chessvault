@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookMarked,
   BookOpen,
+  BookText,
   Database,
   Compass,
   Ellipsis,
@@ -45,6 +46,7 @@ const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ 
 const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
 const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
 const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
+const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })));
 // HomePage is EAGER (imported above), alone among the routes. With no
 // launch screen, iOS drops its startup image at the app's first paint —
 // and when home was a lazy chunk, that first paint was the shell around
@@ -72,6 +74,10 @@ const NAV: { section: Section; label: string; icon: typeof Swords }[] = [
   { section: 'games', label: 'Games', icon: BookOpen },
   { section: 'studies', label: 'Studies', icon: Library },
   { section: 'notes', label: 'Notes', icon: NotebookPen },
+  // Books is a collection like the three above it, so it is a sidebar
+  // row; like the opening map it also appears in More, which is what
+  // keeps it OFF the phone's bottom bar (see the filter note above).
+  { section: 'books', label: 'Books', icon: BookText },
   { section: 'puzzles', label: 'Puzzles', icon: Puzzle },
   { section: 'openingmap', label: 'Opening map', icon: Network },
 ];
@@ -208,6 +214,8 @@ function Shell() {
           <NotesView params={params} />
         ) : section === 'puzzles' ? (
           <PuzzlesView params={params} />
+        ) : section === 'books' ? (
+          <BooksView params={params} />
         ) : section === 'repertoire' ? (
           <RepertoireView />
         ) : section === 'openingmap' ? (
@@ -296,7 +304,9 @@ function MobileBottom({ active }: { active: Section }) {
     the dashboard and the trainer already link it where it's relevant. */
 const PUZZLE_SUBNAV = [
   { param: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { param: 'books', label: 'Books', icon: BookMarked },
+  // "Puzzle books", not "Books": the library of PDFs is Books, a section
+  // of its own, and this is the shelf of puzzles read out of them.
+  { param: 'books', label: 'Puzzle books', icon: BookMarked },
   { param: 'themes', label: 'Themes', icon: LayoutGrid },
 ] as const;
 
@@ -487,6 +497,12 @@ const MORE_GROUPS: {
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Compass, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: SwatchBook, blurb: 'Practise an opening against real games' },
       { section: 'openingmap', label: 'Opening map', icon: Network, blurb: 'See your opening preparation as a tree' },
+    ],
+  },
+  {
+    heading: 'Library',
+    items: [
+      { section: 'books', label: 'Books', icon: BookText, blurb: 'Read your chess books beside a board' },
     ],
   },
   {

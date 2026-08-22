@@ -3,11 +3,13 @@ import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 
 // Named for the page each one IS. Two were not: `analysis` drew a page
 // the whole app calls the Board, and `books` was the opening-books page
-// long enough ago that books have since been retired — it is Databases,
-// and `#/puzzles/books` is the sub-route that really is about books. Both
-// renamed with no alias, so a bookmark on either old hash lands on Home
-// the way any unknown hash does (see parse).
-export const SECTIONS = ['home', 'board', 'editor', 'studies', 'notes', 'games', 'puzzles', 'repertoire', 'openingmap', 'databases', 'settings', 'more'] as const;
+// long enough ago that books have since been retired — it is Databases.
+// Both renamed with no alias, so a bookmark on either old hash lands on
+// Home the way any unknown hash does (see parse). `books` is back as a
+// section, and now it IS books: the library of PDFs you read beside a
+// board. (`#/puzzles/books` is the puzzle shelf, which is a different
+// thing and says so in its own title.)
+export const SECTIONS = ['home', 'board', 'editor', 'studies', 'notes', 'games', 'books', 'puzzles', 'repertoire', 'openingmap', 'databases', 'settings', 'more'] as const;
 export type Section = (typeof SECTIONS)[number];
 
 const isSection = (v: string): v is Section => (SECTIONS as readonly string[]).includes(v);

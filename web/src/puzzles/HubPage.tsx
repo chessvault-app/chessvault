@@ -1137,7 +1137,7 @@ function Hub() {
             {(
               [
                 ['Themes', LayoutGrid, false, () => navigate('puzzles', 'themes')],
-                ['Books', BookMarked, false, () => navigate('puzzles', 'books')],
+                ['Puzzle books', BookMarked, false, () => navigate('puzzles', 'books')],
                 ['Dashboard', BarChart3, false, () => navigate('puzzles', 'dashboard')],
                 [
                   ready ? 'Train' : 'Set up',

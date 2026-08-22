@@ -1,4 +1,5 @@
 import {
+  BookText,
   ChevronLeft,
   FileUp,
   ScanSearch,
@@ -317,6 +318,19 @@ export function BookPage({ slug }: { slug: string }) {
             >
               {rereading ? <Loader2 className="size-3.5 animate-spin" /> : <ScanSearch className="size-3.5" />}
               <span className="hidden wide:inline">{t('Read diagrams')}</span>
+            </Button>
+          )}
+          {/* The PDF this book was read from, when the library still has
+              it: reading is the library's job, so this only goes there. */}
+          {book?.pdfBook && (
+            <Button
+              variant="secondary"
+              size="sm"
+              title={t('Read the book')}
+              onClick={() => navigate('books', book.pdfBook!)}
+            >
+              <BookText className="size-3.5" />
+              <span className="hidden wide:inline">{t('Read')}</span>
             </Button>
           )}
           <Button variant="secondary" size="sm" title={t('Import a book PDF')} onClick={() => setImporting(true)}>
