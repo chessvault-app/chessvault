@@ -131,10 +131,8 @@ const splashSvg = (w, h, { bg, fg }) => {
   <rect width="${w}" height="${h}" fill="${bg}"/>
   <g transform="translate(${(w - logo) / 2}, ${(h - logo) / 2}) scale(${logo / 80})" fill="${fg}">
     <g transform="translate(-20 -20)">
-      <circle cx="35" cy="35" r="9.5"/><circle cx="60" cy="35" r="9.5"/><circle cx="85" cy="35" r="9.5"/>
-      <circle cx="35" cy="60" r="9.5"/><circle cx="85" cy="60" r="9.5"/>
-      <circle cx="35" cy="85" r="9.5"/><circle cx="60" cy="85" r="9.5"/><circle cx="85" cy="85" r="9.5"/>
-      <circle cx="60" cy="60" r="7.75" fill="none" stroke="${fg}" stroke-width="3.5"/>
+      <path d="M60 24 L91 42 V78 L60 96 L29 78 V42 Z" fill="none" stroke="${fg}" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M60 60 L60 24 L91 42 Z"/>
     </g>
   </g>
 </svg>`;
