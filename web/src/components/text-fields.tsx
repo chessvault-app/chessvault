@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { CalendarDays, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
@@ -8,12 +8,11 @@ import { ClearButton } from '@/components/clear-button';
 import { t } from '@/lib/i18n';
 
 /**
- * The three fields the app reaches for that are more than an Input — each
+ * The two fields the app reaches for that are more than an Input — each
  * an InputGroup (shadcn's field-with-things-in-it) with its own things:
  *
  *   ClearableInput — an X that empties it, while there is something to empty.
  *   SearchInput    — the magnifier, the X, and on touch a Cancel beside it.
- *   DateInput      — a date with a badge that says so.
  */
 
 function emptyField(el: HTMLInputElement, then: 'stay' | 'leave'): void {
@@ -226,23 +225,5 @@ export function SearchInput({
         {t('Cancel')}
       </button>
     </span>
-  );
-}
-
-/**
- * A date field that says so.
- *
- * `type="date"` draws its own picker button on desktop Chrome and nothing
- * at all on iOS, where an empty one reads as a blank box — so the leading
- * badge is the only thing that names it on the device most likely to see it.
- */
-export function DateInput({ className, inputSize = 'md', ...props }: InputProps) {
-  return (
-    <InputGroup inputSize={inputSize} className={cn('inline-flex w-auto', className)}>
-      <InputGroupAddon>
-        <CalendarDays className="text-muted-foreground pointer-events-none size-3.5" />
-      </InputGroupAddon>
-      <InputGroupInput type="date" inputSize={inputSize} className="w-full pl-1.5" {...props} />
-    </InputGroup>
   );
 }

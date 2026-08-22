@@ -126,7 +126,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
     <div
       ref={card}
       style={{ top: preview.top, left: preview.left }}
-      className="bg-popover ring-foreground/10 $1 ring-1 $2"
+      className="bg-popover ring-foreground/10 pointer-events-none fixed z-50 w-44 rounded-lg p-1 shadow-lg ring-1"
     >
       <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-sm" />
     </div>

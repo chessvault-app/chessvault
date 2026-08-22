@@ -30,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ResultBar } from '@/components/result-bar';
 import { Select } from '@/components/ui/select';
-import { DateInput } from '@/components/text-fields';
+import { DatePicker } from '@/components/date-picker';
 import { FilterChip } from '@/components/filter-chip';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -431,18 +431,18 @@ function RefDbFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: ()
       </FilterGroup>
 
       <FilterGroup label="Played between">
-        <DateInput
+        <DatePicker
           value={filters.from ?? ''}
-          onChange={(e) => setFilters({ from: e.target.value || undefined })}
+          onValueChange={(v) => setFilters({ from: v || undefined })}
           aria-label={t('From date')}
           className="w-[9.5rem]"
         />
         <span className="text-muted-foreground" aria-hidden>
           –
         </span>
-        <DateInput
+        <DatePicker
           value={filters.to ?? ''}
-          onChange={(e) => setFilters({ to: e.target.value || undefined })}
+          onValueChange={(v) => setFilters({ to: v || undefined })}
           aria-label={t('To date')}
           className="w-[9.5rem]"
         />
@@ -652,18 +652,18 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
       </FilterGroup>
 
       <FilterGroup label="Played between">
-        <DateInput
+        <DatePicker
           value={filters.from ?? ''}
-          onChange={(e) => setFilters({ from: e.target.value || undefined })}
+          onValueChange={(v) => setFilters({ from: v || undefined })}
           aria-label={t('From date')}
           className="w-[9.5rem]"
         />
         <span className="text-muted-foreground" aria-hidden>
           –
         </span>
-        <DateInput
+        <DatePicker
           value={filters.to ?? ''}
-          onChange={(e) => setFilters({ to: e.target.value || undefined })}
+          onValueChange={(v) => setFilters({ to: v || undefined })}
           aria-label={t('To date')}
           className="w-[9.5rem]"
         />

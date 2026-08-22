@@ -22,6 +22,7 @@ import { autoFocusField, useMediaQuery } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
+import { Segmented } from '@/components/segmented';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 
@@ -1007,32 +1008,23 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
               />
             </div>
 
-            {/* Segmented, not a dropdown: four states, all visible at once.
-                Auto is the default and stays quiet — a blue chip beside a
-                blue Add button made the form look like it had two answers
-                waiting. */}
-            <div className="flex gap-1" role="radiogroup" aria-label={t('Result')}>
-              {(
-                [
-                  ['', 'Auto', 'Result from the pasted moves'],
-                  ['1-0', '1-0', 'White won'],
-                  ['0-1', '0-1', 'Black won'],
-                  ['1/2-1/2', '\u00bd-\u00bd', 'Draw'],
-                ] as const
-              ).map(([value, label, hint]) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant="secondary"
-                  active={result === value}
-                  title={t(hint)}
-                  className="min-w-0 flex-1 whitespace-nowrap px-0 font-mono"
-                  onClick={() => setResult(value)}
-                >
-                  {t(label)}
-                </Button>
-              ))}
-            </div>
+            {/* Segmented, not a dropdown: four states, all visible at once,
+                and the chosen one filled. '' (Auto) is not a value Radix's
+                ToggleGroup can hold, so it travels as 'auto'. */}
+            <Segmented
+              value={result === '' ? 'auto' : result}
+              onChange={(v) => setResult(v === 'auto' ? '' : v)}
+              ariaLabel={t('Result')}
+              size="sm"
+              even
+              className="w-full font-mono"
+              segments={[
+                { value: 'auto', label: t('Auto'), title: 'Result from the pasted moves' },
+                { value: '1-0', label: '1-0', title: 'White won' },
+                { value: '0-1', label: '0-1', title: 'Black won' },
+                { value: '1/2-1/2', label: '\u00bd-\u00bd', title: 'Draw' },
+              ]}
+            />
           </div>
         )}
 

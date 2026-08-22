@@ -332,7 +332,8 @@ function DialogContent({
             // The registry's card. overscroll-contain: a scroll this window
             // cannot use is its own business. [&>*]:shrink-0: children keep
             // their size and the WINDOW scrolls.
-            'bg-popover text-popover-foreground ring-foreground/10 flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-0 text-sm ring-1 outline-none [&>*]:shrink-0',
+            'bg-popover text-popover-foreground ring-foreground/10 flex w-full flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
+            title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
             // A BOTTOM SHEET on a phone, whatever the window is: rising from
             // the thumb's own edge, stopping short of the top, with the
             // same 1.25rem floor under its last row.
@@ -360,6 +361,17 @@ function DialogContent({
           )}
           {...props}
         >
+          {title === undefined && phone && (
+            // No title row, but still a sheet on a phone: the grabber and
+            // the drag handle it stands for. Composed-by-hand windows
+            // (AlertDialog) put their own header under it.
+            <div
+              className="bg-popover sticky top-0 z-10 -mx-4 px-4 pt-3 pb-0 max-sm:touch-none max-sm:select-none"
+              {...drag.handlers}
+            >
+              <div className="bg-border mx-auto h-1 w-9 cursor-grab rounded-full" aria-hidden />
+            </div>
+          )}
           {title !== undefined && (
             // The title row. Pinned to the top of the card, which scrolls:
             // a ten-row list is taller than the sheet holding it, and a way

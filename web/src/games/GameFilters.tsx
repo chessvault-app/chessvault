@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
-import { ClearableInput, DateInput } from '@/components/text-fields';
+import { ClearableInput } from '@/components/text-fields';
+import { DatePicker } from '@/components/date-picker';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -316,18 +317,18 @@ export function StructuredFiltersWindow({
 
         <Field label="Played between">
           <div className="flex items-center gap-2">
-            <DateInput
+            <DatePicker
               value={draft.from}
-              onChange={(e) => patch({ from: e.target.value })}
+              onValueChange={(v) => patch({ from: v })}
               aria-label={t('From date')}
               className="w-[9.5rem]"
             />
             <span className="text-muted-foreground" aria-hidden>
               –
             </span>
-            <DateInput
+            <DatePicker
               value={draft.to}
-              onChange={(e) => patch({ to: e.target.value })}
+              onValueChange={(v) => patch({ to: v })}
               aria-label={t('To date')}
               className="w-[9.5rem]"
             />

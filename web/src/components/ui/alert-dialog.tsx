@@ -31,13 +31,33 @@ function AlertDialogTrigger(props: React.ComponentProps<typeof DialogTrigger>) {
   return <DialogTrigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
-/** A small window by default: a question is a sentence and two buttons. */
-function AlertDialogContent({ size = 'sm', ...props }: DialogContentProps) {
-  return <DialogContent data-slot="alert-dialog-content" alert size={size} {...props} />;
+/**
+ * A small window by default: a question is a sentence and two buttons.
+ * Composed by hand, the registry's way — AlertDialogHeader with the title
+ * and the description, then the footer — rather than with Dialog's title
+ * row: a question you must answer belongs in the body, not in the quiet
+ * strip every other window is named in.
+ */
+function AlertDialogContent({ size = 'sm', className, ...props }: DialogContentProps) {
+  return (
+    <DialogContent
+      data-slot="alert-dialog-content"
+      alert
+      size={size}
+      className={cn('group/alert-dialog-content', className)}
+      {...props}
+    />
+  );
 }
 
-function AlertDialogHeader(props: React.ComponentProps<typeof DialogHeader>) {
-  return <DialogHeader data-slot="alert-dialog-header" {...props} />;
+function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof DialogHeader>) {
+  return (
+    <DialogHeader
+      data-slot="alert-dialog-header"
+      className={cn('grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center sm:place-items-start sm:text-left', className)}
+      {...props}
+    />
+  );
 }
 
 /**
@@ -58,14 +78,15 @@ function AlertDialogDescription(props: React.ComponentProps<typeof DialogDescrip
 }
 
 /**
- * The press that answers the question. Filled red by default here — every
- * confirmation in this app guards something destructive, and it should
- * name its action ("Reset all progress"), because "Confirm" answers a
+ * The press that answers the question — the registry's `default`, and
+ * `variant="destructive"` (the tint) for the confirmations that guard a
+ * removal, the way the registry's own destructive example does it. It
+ * should name its action ("Reset all progress"): "Confirm" answers a
  * question you have already stopped reading.
  */
 function AlertDialogAction({
   className,
-  variant = 'destructive-solid',
+  variant = 'default',
   size = 'default',
   ...props
 }: React.ComponentProps<typeof Button>) {

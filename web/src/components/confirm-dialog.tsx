@@ -7,7 +7,10 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { t } from '@/lib/i18n';
 
@@ -87,9 +90,10 @@ export function ConfirmDialog({
         {label && t(label)}
       </Button>
 
-      {/* The verb titles the window and the question is its body: Sheet
-          draws its label in the quiet style every other window's title
-          uses, which is not where a question you must answer belongs. */}
+      {/* The registry's destructive alert dialog: the verb as the title, the
+          question as the description, Cancel and the tinted destructive
+          action in the footer — stacked with the action on top on a phone,
+          a row on a desktop. */}
       {open && (
         <AlertDialog
           open
@@ -97,29 +101,20 @@ export function ConfirmDialog({
             if (!open) setOpen(false);
           }}
         >
-          <AlertDialogContent title={t(confirmLabel)} className="gap-3">
-            <p className="text-foreground text-base">{t(question)}</p>
-            {/*
-              Stacked, not a row, and the destructive one on top.
-              A row of two puts them a thumb's width apart on a phone, which
-              is the wrong geometry for a pair where one is irreversible and
-              the other is the way out. Full width each, with a real gap
-              between them, so the press that cannot be undone cannot be the
-              one you meant to make somewhere else.
-              The confirm is FILLED rather than tinted — the tinted danger
-              style belongs to triggers that merely open this question — and
-              it names its action ("Reset all progress"), because "Confirm"
-              answers a question you have already stopped reading.
-            */}
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t(confirmLabel)}</AlertDialogTitle>
+              <AlertDialogDescription>{t(question)}</AlertDialogDescription>
+            </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogAction onClick={onConfirm}>
-                <Icon className="size-3.5" />
+              {/* Cancel takes the focus (AlertDialogCancel autofocuses): a
+                  confirmation opens under the keyboard on the answer that
+                  loses nothing. */}
+              <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={onConfirm}>
+                <Icon />
                 {t(confirmLabel)}
               </AlertDialogAction>
-              {/* Cancel takes the focus, not the destructive verb above it:
-                  AlertDialogCancel autofocuses. A confirmation opens under
-                  the keyboard on the answer that loses nothing. */}
-              <AlertDialogCancel>{t('Cancel')}</AlertDialogCancel>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

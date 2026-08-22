@@ -31,7 +31,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   and cards. Settings → Appearance gained shadcn's own knobs: its five base
   colours (Neutral, Stone, Zinc, Gray, Slate) as schemes beside the app's
   tinted ones, and a corner-radius setting (square, small, default, large)
-  that every corner in the app derives from.
+  that every corner in the app derives from. Date filters are the registry's
+  date picker (a calendar in a popover, in the app's language); every
+  confirmation is the registry's destructive alert dialog.
 
 ## 0.4.7
 
