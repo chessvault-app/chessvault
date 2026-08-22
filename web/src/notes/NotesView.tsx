@@ -214,7 +214,7 @@ function NoteList() {
           <SkeletonCards
             cards={5}
             layout={view.layout}
-            gridClassName="grid grid-cols-1 gap-3 lg:grid-cols-2"
+            gridClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
           />
         ) : null
       ) : /* Nothing in the vault at all — no note at any depth (the listing
@@ -431,7 +431,7 @@ function GroupedNotes({
           {groups.get(folder)!.length === 0 ? (
             <p className="text-subtle px-1 text-sm">{t('Empty collection.')}</p>
           ) : (
-            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 lg:grid-cols-2' : 'flex flex-col gap-1.5'}>
+            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
               {groups.get(folder)!.map((note) => (
                 <NoteCard
                   key={note.id}
