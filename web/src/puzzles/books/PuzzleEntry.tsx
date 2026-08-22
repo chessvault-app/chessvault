@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
 
 import { Panel, PanelHeader } from '@/components/panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
@@ -540,61 +541,66 @@ function SolutionRecorder({
               {t('Tip: click an opponent move to mark it “any move” (the book’s ~).')}
             </p>
           )}
+
+          {/* Verify's verdicts and a failed save, in the panel they are
+              about, above its footer. */}
+          {verdicts && (
+            <div className="border-border border-t px-3 py-2 text-sm">
+              {verdicts.map((note, i) => (
+                <p key={i} className={note.startsWith('Engine agrees') ? 'text-good' : 'text-warn'}>
+                  {note}
+                </p>
+              ))}
+            </div>
+          )}
+          {error && <p className="text-destructive border-border border-t px-3 py-2 text-sm">{error}</p>}
+
+          {/* The panel's footer (shadcn's CardFooter), not a loose row under
+              it: the four verbs all act on the line in this panel, and a row
+              floating between the panel and the phone's tab bar read as the
+              page's, not the panel's. Primary last, and Cancel beside it —
+              the same order every button row in the app uses (PromptDialog
+              is the reference). Start over and Verify come first because
+              they act on the line; the last two are the ways out of it. */}
+          <CardFooter className="mt-auto flex-wrap justify-end gap-2 px-3 py-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={line.length === 0}
+              onClick={() => {
+                setLine([]);
+                setWildcards(new Set());
+                setVerdicts(null);
+              }}
+            >
+              <RotateCcw className="size-3.5" />
+              {t('Start over')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={line.length === 0 || verifying}
+              title={t('Ask Stockfish whether every solver move really wins')}
+              onClick={() => void verify()}
+            >
+              {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
+              {t('Verify')}
+            </Button>
+            {/* What the back chevron in the removed header used to do. */}
+            <Button variant="secondary" size="sm" onClick={onBack}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              disabled={line.length === 0 || saving}
+              onClick={() => void save()}
+            >
+              {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+              {t('Save puzzle')}
+            </Button>
+          </CardFooter>
         </Panel>
-
-        {verdicts && (
-          <div className="bg-card shrink-0 rounded-xl ring-1 ring-foreground/10 p-3 text-sm">
-            {verdicts.map((note, i) => (
-              <p key={i} className={note.startsWith('Engine agrees') ? 'text-good' : 'text-warn'}>
-                {note}
-              </p>
-            ))}
-          </div>
-        )}
-        {error && <p className="text-destructive text-sm">{error}</p>}
-
-        {/* Primary last, and Cancel beside it — the same order every
-            button row in the app uses (PromptDialog is the reference).
-            Start over and Verify come first because they act on the line
-            in the panel above; the last two are the ways out of it. */}
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={line.length === 0}
-            onClick={() => {
-              setLine([]);
-              setWildcards(new Set());
-              setVerdicts(null);
-            }}
-          >
-            <RotateCcw className="size-3.5" />
-            {t('Start over')}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={line.length === 0 || verifying}
-            title={t('Ask Stockfish whether every solver move really wins')}
-            onClick={() => void verify()}
-          >
-            {verifying ? <Loader2 className="size-3.5 animate-spin" /> : <Eye className="size-3.5" />}
-            {t('Verify')}
-          </Button>
-          {/* What the back chevron in the removed header used to do. */}
-          <Button variant="secondary" size="sm" onClick={onBack}>
-            {t('Cancel')}
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            disabled={line.length === 0 || saving}
-            onClick={() => void save()}
-          >
-            {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-            {t('Save puzzle')}
-          </Button>
-        </div>
       </div>
     </div>
   );
