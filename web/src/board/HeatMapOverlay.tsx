@@ -58,7 +58,7 @@ export function HeatMapOverlay({
           >
             <span
               className={cn(
-                'rounded px-1 font-mono text-[9px] leading-tight font-semibold tabular-nums shadow-control',
+                'rounded-sm px-1 font-mono text-[9px] leading-tight font-semibold tabular-nums shadow-control',
                 bucketClass(info.value, info.piece),
               )}
             >

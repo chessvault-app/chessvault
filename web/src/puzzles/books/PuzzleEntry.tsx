@@ -519,7 +519,7 @@ function SolutionRecorder({
                             : 'Click to accept ANY move here (the book\u2019s K~)',
                         )}
                         className={cn(
-                          'rounded px-1 transition-colors duration-100',
+                          'rounded-sm px-1 transition-colors duration-100',
                           wildcards.has(i)
                             ? 'bg-primary-soft text-primary'
                             : 'hover:bg-surface-2',

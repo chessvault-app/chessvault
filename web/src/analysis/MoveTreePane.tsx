@@ -549,7 +549,7 @@ function MoveChip({ label, number, nags, hasComment, active, book = false, onCli
         onClick={onClick}
         data-active={active}
         className={cn(
-          'rounded px-1 py-px font-medium transition-colors duration-100',
+          'rounded-sm px-1 py-px font-medium transition-colors duration-100',
           'hover:bg-surface-3',
           active && 'bg-primary text-primary-fg hover:bg-primary',
         )}

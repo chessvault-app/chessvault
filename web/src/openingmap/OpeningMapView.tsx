@@ -414,7 +414,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             aria-label={t('Search moves and opening names')}
             // No backdrop of its own. SearchInput puts `className` on its
             // WRAPPER, which is square, so a translucent fill there
-            // painted a phantom rectangle behind the rounded field and
+            // painted a phantom rectangle behind the rounded-sm field and
             // around its clear button. It was there for a header that
             // floated over the canvas; the header sits above the canvas
             // now and the page's own background is behind it.
@@ -1203,7 +1203,7 @@ function NodePanel({
                       column, not a badge. */}
                   {d.collection && (
                     <span
-                      className="bg-surface-2 text-muted shrink-0 rounded px-1.5 py-0.5 text-xs"
+                      className="bg-surface-2 text-muted shrink-0 rounded-sm px-1.5 py-0.5 text-xs"
                       title={t('In your collection')}
                     >
                       {t('Kept')}

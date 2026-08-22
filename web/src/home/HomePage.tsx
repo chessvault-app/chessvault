@@ -382,7 +382,7 @@ export function HomePage() {
                 key={i}
                 className="border-line flex w-full items-center gap-2.5 border-b px-3 py-2 text-sm last:border-b-0"
               >
-                <Skeleton className="size-3.5 shrink-0 rounded" />
+                <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                 {/* The row's height comes from an INVISIBLE real text line,
                     not a fixed-height bar: iOS sizes this text line 1pt
                     shorter than desktop engines do, and a `h-4` bar was

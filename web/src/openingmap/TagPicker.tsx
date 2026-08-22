@@ -153,7 +153,7 @@ export function TagPicker({
                   {['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-1/2'].map((w, i) => (
                     <div key={i} className="flex min-h-9 items-center gap-1">
                       <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
-                        <Skeleton className="size-4 shrink-0 rounded" />
+                        <Skeleton className="size-4 shrink-0 rounded-sm" />
                         <Skeleton className={`h-3 ${w}`} />
                       </div>
                     </div>

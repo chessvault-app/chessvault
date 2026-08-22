@@ -140,7 +140,7 @@ export function usePuzzlePreview(): {
           orientation={preview.orientation}
           viewOnly
           coordinates={false}
-          className="rounded"
+          className="rounded-sm"
         />
       </div>
     </>

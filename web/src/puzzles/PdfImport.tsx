@@ -73,7 +73,7 @@ function PeekCrop({
         // A crop is usually about square, but a two-column page can hand
         // over a tall one; height is capped so it cannot run off the
         // bottom of the window it is floating over.
-        className="block max-h-[45vh] w-52 rounded object-contain"
+        className="block max-h-[45vh] w-52 rounded-sm object-contain"
       />
     </div>,
     document.body,
@@ -758,7 +758,7 @@ export function PdfImport({
                           alt={`page ${f.page}`}
                           loading="lazy"
                           decoding="async"
-                          className="border-line mx-auto w-44 rounded border"
+                          className="border-line mx-auto w-44 rounded-sm border"
                         />
                       </div>
                     )}

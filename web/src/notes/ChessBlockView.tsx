@@ -316,7 +316,7 @@ function MoveStrip({
           type="button"
           onClick={() => onSelect(id)}
           className={cn(
-            'rounded px-1 py-0.5 font-mono text-sm transition-colors duration-100',
+            'rounded-sm px-1 py-0.5 font-mono text-sm transition-colors duration-100',
             id === cursorId
               ? 'bg-primary text-primary-fg'
               : path.has(id)

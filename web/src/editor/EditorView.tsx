@@ -705,7 +705,7 @@ export function EditorView({
       </div>
 
       {/* The app's own window, not a second one hand-rolled here. This was
-          a scrim and a rounded box built in place, from before there was a
+          a scrim and a rounded-sm box built in place, from before there was a
           shared sheet — so it had no grab handle, no drag, no keyboard
           band and its own idea of the safe area. Modal is a bottom sheet
           on a phone and this only ever opens on one (`wide:hidden` on the

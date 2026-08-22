@@ -80,7 +80,7 @@ export function MoveCell({
           // negative margins so the padding it needs to look like a pill
           // costs the row no width.
           linked &&
-            'group-hover:bg-primary-soft -mx-1 rounded px-1 transition-colors duration-100',
+            'group-hover:bg-primary-soft -mx-1 rounded-sm px-1 transition-colors duration-100',
         )}
       >
         {moveNumberLabel(ply)} {san}

@@ -785,7 +785,7 @@ function Trainer({
               {puzzle.themes.split(' ').map((t) => (
                 <span
                   key={t}
-                  className="bg-surface-2 text-muted rounded px-1.5 py-0.5 text-xs"
+                  className="bg-surface-2 text-muted rounded-sm px-1.5 py-0.5 text-xs"
                 >
                   {themeLabel(t)}
                 </span>

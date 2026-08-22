@@ -159,7 +159,7 @@ export function PvPeek({
         viewOnly
         coordinates={false}
         lastMove={peek.ply.squares}
-        className="rounded"
+        className="rounded-sm"
       />
       {/* The label, always — including on Black's moves, where the line
           itself prints none. On the board there is no line to read the

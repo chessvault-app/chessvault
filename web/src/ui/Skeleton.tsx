@@ -132,7 +132,7 @@ export function SkeletonCards({
                 shorter than the text beside it, so a document without one
                 makes no difference to the height. */}
             <Skeleton
-              className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded')}
+              className={cn('shrink-0', grid ? 'size-16 rounded-md' : 'size-4 rounded-sm')}
             />
             <div className="min-w-0 flex-1">
               {/* Title on a 24px line, then the quiet stat line on 16. */}
@@ -224,7 +224,7 @@ export function SkeletonThemeCard({ className }: { className?: string }) {
         className,
       )}
     >
-      <Skeleton className="size-4 shrink-0 rounded" />
+      <Skeleton className="size-4 shrink-0 rounded-sm" />
       <div className="min-w-0 flex-1">
         {/* A name at text-sm on a 20px line, over a count on 16. */}
         <div className="flex h-5 items-center">
@@ -482,7 +482,7 @@ export function SkeletonForm({ groups = 3, className }: { groups?: number; class
         <div key={g} className="border-line bg-surface rounded-xl border p-4">
           {/* The card's heading: an icon beside a title, on a 24px line. */}
           <div className="mb-3 flex h-6 items-center gap-2">
-            <Skeleton className="size-4 shrink-0 rounded" />
+            <Skeleton className="size-4 shrink-0 rounded-sm" />
             <Skeleton className="h-3 w-28" />
           </div>
           <div className="flex flex-col gap-3">
@@ -570,7 +570,7 @@ export function SkeletonGameRows({ rows = 6, className }: { rows?: number; class
             </div>
           </div>
           <Skeleton className="h-3 w-8 shrink-0" />
-          <Skeleton className="size-7 shrink-0 rounded pointer-coarse:size-9" />
+          <Skeleton className="size-7 shrink-0 rounded-sm pointer-coarse:size-9" />
           <Skeleton className="h-6 w-16 shrink-0" />
         </div>
       ))}

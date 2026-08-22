@@ -311,7 +311,7 @@ function HubSkeletonBookRow() {
           <Skeleton className="h-1.5 w-full rounded-full" />
         </div>
         <Skeleton className="h-2.5 w-8 shrink-0" />
-        <Skeleton className="size-3.5 shrink-0 rounded" />
+        <Skeleton className="size-3.5 shrink-0 rounded-sm" />
       </div>
     </div>
   );
@@ -1126,7 +1126,7 @@ function Hub() {
                 key={i}
                 className="border-line bg-surface flex h-16 flex-col items-center justify-center gap-1 rounded-xl border"
               >
-                <Skeleton className="size-5 rounded" />
+                <Skeleton className="size-5 rounded-sm" />
                 <Skeleton className="h-2.5 w-12" />
               </div>
             ))}

@@ -57,7 +57,7 @@ export function Segmented<T extends string>({
   className?: string;
 }) {
   // Concentric radii, or the lit segment reads as clipped: a child corner
-  // rounded MORE than the space left inside the parent's own curve pushes
+  // rounded-sm MORE than the space left inside the parent's own curve pushes
   // through it, and the difference shows first at the top-left. The rule
   // is child = parent − border − padding, so the two sizes carry matched
   // sets rather than one radius reused at both.

@@ -128,7 +128,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
       style={{ top: preview.top, left: preview.left }}
       className="border-line bg-surface pointer-events-none fixed z-50 w-44 rounded-lg border p-1 shadow-pop"
     >
-      <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded" />
+      <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-sm" />
     </div>
   );
 }
@@ -523,7 +523,7 @@ export function ResultScore({
     <span
       title={fmtResult(result)}
       className={cn(
-        'w-11 shrink-0 rounded px-1 py-0.5 text-center font-mono text-xs font-semibold',
+        'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-semibold',
         'tabular-nums leading-4',
         tone,
       )}
@@ -549,7 +549,7 @@ export function OpeningTag({ eco, name }: { eco: string; name?: string | null })
   return (
     <>
       <span
-        className="mr-1.5 inline-block shrink-0 rounded px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
+        className="mr-1.5 inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4"
         // Lightness and chroma from the theme (index.css), hue from the
         // ECO letter: the same tag was written once for the dark page and
         // was a pale wash on the light one.

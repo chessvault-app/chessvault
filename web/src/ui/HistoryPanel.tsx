@@ -134,7 +134,7 @@ function HistorySheet({
         {preview === null ? (
           <Skeleton className="min-h-24 flex-1" />
         ) : (
-          <pre className="bg-surface-2 text-subtle min-h-0 flex-1 overflow-auto rounded p-2 font-mono text-xs whitespace-pre-wrap">
+          <pre className="bg-surface-2 text-subtle min-h-0 flex-1 overflow-auto rounded-sm p-2 font-mono text-xs whitespace-pre-wrap">
             {preview}
           </pre>
         )}
@@ -195,7 +195,7 @@ function HistorySheet({
             <li key={version.sha}>
               <button
                 type="button"
-                className="hover:bg-surface-2/60 flex w-full items-baseline gap-2 rounded px-2 py-2 text-left"
+                className="hover:bg-surface-2/60 flex w-full items-baseline gap-2 rounded-sm px-2 py-2 text-left"
                 onClick={() => void choose(version)}
               >
                 {/* The relative time answers "is this the one?"; the exact

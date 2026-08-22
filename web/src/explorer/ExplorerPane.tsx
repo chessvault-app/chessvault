@@ -905,7 +905,7 @@ function ResultBadge({ result }: { result: string }) {
   return (
     <span
       className={cn(
-        'shrink-0 rounded px-1 py-px font-mono text-xs font-semibold',
+        'shrink-0 rounded-sm px-1 py-px font-mono text-xs font-semibold',
         result === '1-0' && 'bg-eval-white text-on-eval-white',
         result === '0-1' && 'bg-eval-black text-on-eval-black',
         result !== '1-0' && result !== '0-1' && 'bg-surface-3 text-muted',

@@ -206,7 +206,7 @@ export function EngineBlock({
       {enabled && !error && (
         <>
           {/* Alternating tint down the lines, full-bleed like the game
-              lists' stripe — as inset rounded pills the one tinted row
+              lists' stripe — as inset rounded-sm pills the one tinted row
               read as a selection, not as zebra (lanph3re's report). On
               the li, not the button, so hover still paints over it. */}
           <ul
@@ -302,7 +302,7 @@ function CurrentLine() {
         type="button"
         onClick={() => setCursor(id)}
         className={cn(
-          'rounded px-1 py-0.5 text-sm transition-colors duration-100',
+          'rounded-sm px-1 py-0.5 text-sm transition-colors duration-100',
           // The one you are on carries the accent, the same way a hovered
           // ply in a variation above does — one grammar for "this move" in
           // the whole panel.

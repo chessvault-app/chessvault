@@ -422,7 +422,7 @@ function PlayerBar({
       {clock !== undefined && (
         <span
           className={cn(
-            'ml-auto rounded px-1.5 py-0.5 font-mono text-sm tabular-nums',
+            'ml-auto rounded-sm px-1.5 py-0.5 font-mono text-sm tabular-nums',
             toMove ? 'bg-primary-soft text-primary font-semibold' : 'text-muted',
           )}
         >

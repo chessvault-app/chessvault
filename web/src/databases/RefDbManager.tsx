@@ -478,7 +478,7 @@ function DbList({
         // eye rather than a measurement — nothing in the row above is at
         // 17 (the magnifier starts at 21, its placeholder at 41). The
         // scale's neighbours are 16 and 20, and lanph3re asked for this
-        // one, so it is written as itself rather than rounded to look
+        // one, so it is written as itself rather than rounded-sm to look
         // principled.
         <li key={d.name} className="flex items-center gap-2 py-1.5 pl-[17px] pr-1.5 text-sm">
           <span className="text-fg min-w-0 flex-1 truncate font-medium" title={d.sources}>

@@ -220,7 +220,7 @@ export function DashboardPage() {
                       <Skeleton className="h-2.5 w-10" />
                     </div>
                     <Skeleton className="h-1.5 w-24 shrink-0 rounded-full" />
-                    <Skeleton className="size-3.5 shrink-0 rounded" />
+                    <Skeleton className="size-3.5 shrink-0 rounded-sm" />
                   </div>
                 ))}
               </Panel>
