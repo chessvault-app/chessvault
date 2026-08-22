@@ -8,10 +8,23 @@
  * And `block: 'nearest'` stops the moment the row's own box is in view,
  * which leaves the annotation printed underneath it still cut off — the
  * comment is the reason you are looking.
+ *
+ * The row's place is measured with bounding rects, not `offsetTop`.
+ * `offsetTop` is relative to the nearest POSITIONED ancestor, and the
+ * sideline rows are `relative` (their branch guides are pseudo-elements
+ * hung on them), so a move inside one reported a few pixels instead of
+ * its place in the list — and every step into a sideline scrolled the
+ * panel back to the top (lanph3re's report). Rects are relative to the
+ * viewport for both boxes, so the difference is the row's place in the
+ * panel whatever sits between them.
  */
 export function scrollRowIntoPanel(panel: HTMLElement | null, row: HTMLElement | null): void {
   if (!panel || !row) return;
-  const top = row.offsetTop - panel.offsetTop;
+  const top =
+    row.getBoundingClientRect().top -
+    panel.getBoundingClientRect().top -
+    panel.clientTop +
+    panel.scrollTop;
   const bottom = top + row.offsetHeight;
   const view = panel.clientHeight;
   // A margin below the row, so whatever is written under it comes too.
