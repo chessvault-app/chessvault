@@ -7,14 +7,15 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { cn } from '@/lib/utils';
 import { useFloating } from '@/lib/floating';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 
 import { Button } from '@/components/ui/button';
+import { ResizablePane } from '@/components/resizable-pane';
+import { usePinchZoom, ZOOM_MAX, ZOOM_MIN } from '@/hooks/use-pinch-zoom';
 
 import { PaneTabs } from '@/components/pane-tabs';
 
@@ -48,74 +49,39 @@ export function SourcePane({
   maxWidth?: number;
 }) {
   const [tab, setTab] = useState<'diagram' | 'solutions'>('diagram');
-  const [width, setWidth] = useState<number>(() => {
-    const stored = Number(localStorage.getItem(SOURCE_PANE_WIDTH_KEY));
-    return Number.isFinite(stored) && stored > 0 ? stored : SOURCE_PANE_DEFAULT_W;
-  });
-  const shown = Math.max(280, Math.min(width, maxWidth ?? width));
-  const drag = useRef<{ x: number; w: number } | null>(null);
-  useEffect(() => {
-    if (width === SOURCE_PANE_DEFAULT_W) localStorage.removeItem(SOURCE_PANE_WIDTH_KEY);
-    else localStorage.setItem(SOURCE_PANE_WIDTH_KEY, String(Math.round(width)));
-  }, [width]);
   return (
-    <div className="flex min-h-0 shrink-0">
-      <aside className="flex flex-col gap-2 overflow-y-auto p-4" style={{ width: shown }}>
-      {hasSolutions(evidence) && (
-        <PaneTabs
-          className="mb-1"
-          tabs={[
-            { id: 'diagram' as const, label: 'Diagram' },
-            { id: 'solutions' as const, label: 'Solutions' },
-          ]}
-          value={tab}
-          onChange={setTab}
-        />
-      )}
-      {tab === 'diagram' && evidence.page ? (
+    <ResizablePane
+      storageKey={SOURCE_PANE_WIDTH_KEY}
+      defaultWidth={SOURCE_PANE_DEFAULT_W}
+      maxWidth={maxWidth}
+      className="flex flex-col gap-2 overflow-y-auto p-4"
+    >
+      {(shown) => (
         <>
-          <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={shown - 32} />
-          <p className="text-muted-foreground text-sm leading-relaxed">
-            {t('The book’s own scan — make the board match it.')}
-          </p>
+          {hasSolutions(evidence) && (
+            <PaneTabs
+              className="mb-1"
+              tabs={[
+                { id: 'diagram' as const, label: 'Diagram' },
+                { id: 'solutions' as const, label: 'Solutions' },
+              ]}
+              value={tab}
+              onChange={setTab}
+            />
+          )}
+          {tab === 'diagram' && evidence.page ? (
+            <>
+              <SourceCrop slug={slug} page={evidence.page} rect={evidence.rect} width={shown - 32} />
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {t('The book’s own scan — make the board match it.')}
+              </p>
+            </>
+          ) : tab === 'solutions' && hasSolutions(evidence) ? (
+            <SolutionsView slug={slug} evidence={evidence} width={shown - 32} />
+          ) : null}
         </>
-      ) : tab === 'solutions' && hasSolutions(evidence) ? (
-        <SolutionsView slug={slug} evidence={evidence} width={shown - 32} />
-      ) : null}
-      </aside>
-      <div
-        title={t('Drag to resize · double-click to reset')}
-        onDoubleClick={() => {
-          drag.current = null;
-          setWidth(SOURCE_PANE_DEFAULT_W);
-        }}
-        onPointerDown={(e) => {
-          e.preventDefault();
-          // From the width on SCREEN, not the stored one — dragging a
-          // clamped pane must not jump to where the big monitor left it.
-          drag.current = { x: e.clientX, w: shown };
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!drag.current || (e.buttons & 1) === 0) return;
-          const next = drag.current.w + e.clientX - drag.current.x;
-          setWidth(
-            Math.min(Math.max(next, 280), Math.min(820, maxWidth ?? Infinity, window.innerWidth * 0.55)),
-          );
-        }}
-        onPointerUp={() => {
-          drag.current = null;
-        }}
-        className={cn(
-          'border-border/60 hover:bg-accent flex w-2.5 shrink-0 touch-none',
-          'cursor-col-resize items-center justify-center border-l transition-colors',
-        )}
-      >
-        {/* The grip, centred on the divider line — same idiom as the
-            panels' bottom-edge resize. */}
-        <div className="bg-border h-8 w-[3px] rounded-full" />
-      </div>
-    </div>
+      )}
+    </ResizablePane>
   );
 }
 
@@ -312,76 +278,6 @@ export function EvidencePeek({ slug, page, rect }: { slug: string; page: string;
         )}
     </span>
   );
-}
-
-/** Live width of a rendered element (ResizeObserver) — the stacked
-    evidence views size to their actual container, not a guess from
-    window.innerWidth that left dead space beside the box. A CALLBACK ref:
-    the measured pane mounts only when its tab is active, so a static ref
-    bound once on mount would never see it. */
-export function useElementWidth(): [(el: HTMLDivElement | null) => void, number] {
-  const [width, setWidth] = useState(0);
-  const ro = useRef<ResizeObserver | null>(null);
-  const attach = useCallback((el: HTMLDivElement | null) => {
-    ro.current?.disconnect();
-    ro.current = null;
-    if (!el) return;
-    const observer = new ResizeObserver(() => setWidth(el.clientWidth));
-    observer.observe(el);
-    setWidth(el.clientWidth);
-    ro.current = observer;
-  }, []);
-  return [attach, width];
-}
-
-const ZOOM_MIN = 0.75;
-const ZOOM_MAX = 3;
-
-/**
- * Two-finger pinch on `ref` multiplies the zoom. A NATIVE non-passive
- * touchmove listener: React's own is passive, so preventDefault would be
- * ignored and the page would scroll/zoom underneath the gesture.
- */
-function usePinchZoom(
-  ref: React.RefObject<HTMLDivElement | null>,
-  apply: (factor: number) => void,
-  /** Include anything that swaps the DOM node under the ref (e.g. the
-      crop/full-page toggle) — the listeners must move to the new element. */
-  rebind?: unknown,
-): void {
-  const applyRef = useRef(apply);
-  applyRef.current = apply;
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let last: number | null = null;
-    const dist = (t: TouchList): number =>
-      Math.hypot(t[0]!.clientX - t[1]!.clientX, t[0]!.clientY - t[1]!.clientY);
-    const onStart = (e: TouchEvent): void => {
-      if (e.touches.length === 2) last = dist(e.touches);
-    };
-    const onMove = (e: TouchEvent): void => {
-      if (e.touches.length !== 2 || last === null) return;
-      e.preventDefault();
-      const d = dist(e.touches);
-      if (d > 0 && last > 0) applyRef.current(d / last);
-      last = d;
-    };
-    const onEnd = (): void => {
-      last = null;
-    };
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: false });
-    el.addEventListener('touchend', onEnd);
-    el.addEventListener('touchcancel', onEnd);
-    return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onEnd);
-      el.removeEventListener('touchcancel', onEnd);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, rebind]);
 }
 
 /**

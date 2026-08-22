@@ -56,13 +56,8 @@ import {
   usePuzzleEvidence,
 } from './data';
 import { useWideLayout } from '@/lib/media';
-import {
-  SourceCrop,
-  SourcePane,
-  SolutionsView,
-  hasSolutions,
-  useElementWidth,
-} from './evidence';
+import { SourceCrop, SourcePane, SolutionsView, hasSolutions } from './evidence';
+import { useElementWidth } from '@/hooks/use-element-width';
 
 /** Load the puzzle, then reuse the standard entry flow to replace it. */
 export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string }) {
