@@ -1144,7 +1144,7 @@ export function RepertoireView() {
       <Field label="Source">
         <Select
           value={source}
-          onChange={setSource}
+          onValueChange={setSource}
           ariaLabel={t('Where replies come from')}
           steady
           groups={[
@@ -1176,7 +1176,7 @@ export function RepertoireView() {
         <Field label="Rating">
           <Select
             value={band}
-            onChange={setBand}
+            onValueChange={setBand}
             ariaLabel={t('Opponent strength')}
             steady
             groups={[{ options: RATING_BANDS.map((b) => ({ value: b.ratings, label: b.label })) }]}
@@ -1211,7 +1211,7 @@ export function RepertoireView() {
             <Field label="Study">
               <Select
                 value={drillStudy}
-                onChange={setDrillStudy}
+                onValueChange={setDrillStudy}
                 ariaLabel={t('Study to drill')}
                 steady
                 groups={[
@@ -1223,7 +1223,7 @@ export function RepertoireView() {
               <Field label="Chapter">
                 <Select
                   value={chapterPick}
-                  onChange={setChapterPick}
+                  onValueChange={setChapterPick}
                   ariaLabel={t('Chapter to drill')}
                   steady
                   groups={[

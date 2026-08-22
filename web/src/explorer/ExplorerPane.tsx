@@ -170,7 +170,7 @@ export function ExplorerPane({
             {enabled && (
               <Select
                 value={book ?? ''}
-                onChange={selectBook}
+                onValueChange={selectBook}
                 ariaLabel={t('Explorer source')}
                 size="sm"
                 align="end"

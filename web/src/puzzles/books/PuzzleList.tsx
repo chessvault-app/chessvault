@@ -316,7 +316,7 @@ export function PuzzleList({
       <div className="mb-2 flex items-center gap-2">
         <Select
           value={stateFilter}
-          onChange={(v) => setStateFilter(v as typeof stateFilter)}
+          onValueChange={(v) => setStateFilter(v as typeof stateFilter)}
           ariaLabel={t('Filter by state')}
           size="sm"
           prefix="Status"
@@ -339,7 +339,7 @@ export function PuzzleList({
         {tiers.size > 0 && (
           <Select
             value={tierFilter}
-            onChange={(v) => setTierFilter(v)}
+            onValueChange={(v) => setTierFilter(v)}
             ariaLabel={t('Filter by how the puzzle was verified')}
             size="sm"
             prefix="Fidelity"

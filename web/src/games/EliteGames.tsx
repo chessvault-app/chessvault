@@ -432,7 +432,7 @@ export function EliteGames({ variant = 'window' }: { variant?: 'page' | 'window'
       {dbs.length > 1 && (
         <Select
           value={curDb ?? ''}
-          onChange={setCurDb}
+          onValueChange={setCurDb}
           ariaLabel={t('Reference database')}
           size="sm"
           align="end"

@@ -362,7 +362,7 @@ export function Shelf() {
               {bookmarkToggle('hidden sm:inline-flex')}
               <Select
                 value={view.sort}
-                onChange={(value) => view.setSort(value as BookSort)}
+                onValueChange={(value) => view.setSort(value as BookSort)}
                 ariaLabel={t('Sort by')}
                 size="sm"
                 align="end"

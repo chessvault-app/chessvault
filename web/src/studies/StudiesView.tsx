@@ -421,7 +421,7 @@ function CreateMenu() {
             <Field label="Target collection">
               <Select
                 value={folder}
-                onChange={setFolder}
+                onValueChange={setFolder}
                 ariaLabel={t('Target collection')}
                 groups={[
                   {
@@ -656,7 +656,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
             <Field label="Target collection">
               <Select
                 value={folder}
-                onChange={setFolder}
+                onValueChange={setFolder}
                 ariaLabel={t('Target collection')}
                 groups={[
                   {

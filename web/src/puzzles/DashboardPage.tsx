@@ -299,7 +299,7 @@ export function DashboardPage() {
           <div className="border-border flex items-center gap-1.5 border-b px-3 py-2">
             <Select
               value={resultFilter}
-              onChange={(v) => setResultFilter(v as ResultFilter)}
+              onValueChange={(v) => setResultFilter(v as ResultFilter)}
               ariaLabel={t('Filter by outcome')}
               size="sm"
               prefix="Status"
@@ -316,7 +316,7 @@ export function DashboardPage() {
             />
             <Select
               value={bandFilter}
-              onChange={(v) => setBandFilter(v as BandFilter)}
+              onValueChange={(v) => setBandFilter(v as BandFilter)}
               ariaLabel={t('Filter by difficulty')}
               size="sm"
               prefix="Difficulty"

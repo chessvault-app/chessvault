@@ -182,7 +182,7 @@ export function ShelfToolbar({
             {bookmark('hidden sm:inline-flex')}
             <Select
               value={sort}
-              onChange={(value) => onSort(value as ShelfSort)}
+              onValueChange={(value) => onSort(value as ShelfSort)}
               ariaLabel={t('Sort by')}
               size="sm"
               align="end"

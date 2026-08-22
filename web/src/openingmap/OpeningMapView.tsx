@@ -679,7 +679,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                   // naming a database while "my games" is ticked above
                   // would be showing a choice nobody has made.
                   value={pickedDatabase}
-                  onChange={(name) => pickField({ ...field, source: name })}
+                  onValueChange={(name) => pickField({ ...field, source: name })}
                   ariaLabel={t('Reference database')}
                   className="w-full"
                   fill
@@ -706,7 +706,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
               </p>
               <Select
                 value={field.ratings}
-                onChange={(ratings) => pickField({ ...field, ratings })}
+                onValueChange={(ratings) => pickField({ ...field, ratings })}
                 ariaLabel={t('Opponent strength')}
                 className="w-full"
                 fill

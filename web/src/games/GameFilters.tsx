@@ -46,7 +46,7 @@ export function SideSelect({
   return (
     <Select
       value={value}
-      onChange={(v) => onChange(v as SideFilter)}
+      onValueChange={(v) => onChange(v as SideFilter)}
       ariaLabel={t('Side')}
       size="sm"
       className="min-w-0 flex-1"
@@ -73,7 +73,7 @@ export function ResultSelect({
   return (
     <Select
       value={value}
-      onChange={(v) => onChange(v as ResultFilter)}
+      onValueChange={(v) => onChange(v as ResultFilter)}
       ariaLabel={t('Outcome')}
       size="sm"
       className="min-w-0 flex-1"
@@ -103,7 +103,7 @@ export function StrengthSelect({
   return (
     <Select
       value={String(value)}
-      onChange={(v) => onChange(Number(v))}
+      onValueChange={(v) => onChange(Number(v))}
       ariaLabel={t('Strength')}
       size="sm"
       className="min-w-0 flex-1"
@@ -140,7 +140,7 @@ export function OwnershipSelect({
   return (
     <Select
       value={value}
-      onChange={(v) => onChange(v as OwnershipFilter)}
+      onValueChange={(v) => onChange(v as OwnershipFilter)}
       ariaLabel={t('Whose games')}
       size="sm"
       className="min-w-0 flex-1"
@@ -181,7 +181,7 @@ export function NotesSelect({
   return (
     <Select
       value={value}
-      onChange={(v) => onChange(v as NotesFilter)}
+      onValueChange={(v) => onChange(v as NotesFilter)}
       ariaLabel={t('Notes')}
       size="sm"
       className="min-w-0 flex-1"
@@ -250,7 +250,7 @@ export function StructuredFiltersWindow({
           />
           <Select
             value={draft.side}
-            onChange={(v) => patch({ side: v as StructuredFilters['side'] })}
+            onValueChange={(v) => patch({ side: v as StructuredFilters['side'] })}
             ariaLabel={t('Side')}
             size="sm"
             groups={[
@@ -265,7 +265,7 @@ export function StructuredFiltersWindow({
           />
           <Select
             value={draft.outcome}
-            onChange={(v) => patch({ outcome: v as StructuredFilters['outcome'] })}
+            onValueChange={(v) => patch({ outcome: v as StructuredFilters['outcome'] })}
             ariaLabel={t('Outcome')}
             size="sm"
             groups={[

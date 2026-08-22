@@ -278,7 +278,7 @@ function LagCard() {
       >
         <Select
           value={lag}
-          onChange={choose}
+          onValueChange={choose}
           ariaLabel={t('Artificial latency')}
           steady
           groups={[
@@ -471,7 +471,7 @@ function AppearanceCard() {
       <Field label="App language">
         <Select
           value={getLang()}
-          onChange={(v) => setLang(v as Lang)}
+          onValueChange={(v) => setLang(v as Lang)}
           ariaLabel={t('App language')}
           groups={[{ options: LANGS.map((l) => ({ value: l.id, label: l.label })) }]}
         />
@@ -480,7 +480,7 @@ function AppearanceCard() {
       <Field label="App theme">
         <Select
           value={theme}
-          onChange={(v) => setTheme(v as ThemePreference)}
+          onValueChange={(v) => setTheme(v as ThemePreference)}
           ariaLabel={t('App theme')}
           groups={[{ options: [
             { value: 'system', label: 'Follow system' },
@@ -537,7 +537,7 @@ function AppearanceCard() {
           <BoardPreview theme={boardTheme} />
           <Select
             value={boardTheme}
-            onChange={(v) => setBoardTheme(v as BoardTheme)}
+            onValueChange={(v) => setBoardTheme(v as BoardTheme)}
             ariaLabel={t('Board theme')}
             className="flex-1"
             groups={[{ options: BOARD_THEMES.map(({ id, label }) => ({ value: id, label })) }]}
@@ -548,7 +548,7 @@ function AppearanceCard() {
       <Field label="Castling">
         <Select
           value={castleStyle}
-          onChange={(v) => setCastleStyle(v as CastleStyle)}
+          onValueChange={(v) => setCastleStyle(v as CastleStyle)}
           ariaLabel={t('How to castle')}
           groups={[{ options: CASTLE_STYLES.map(({ id, label }) => ({ value: id, label })) }]}
         />
@@ -557,7 +557,7 @@ function AppearanceCard() {
       <Field label="Pieces">
         <Select
           value={pieces}
-          onChange={(v) => setPieces(v as PieceSet)}
+          onValueChange={(v) => setPieces(v as PieceSet)}
           ariaLabel={t('Piece set')}
           groups={[{ options: PIECE_SETS.map(({ id, label }) => ({ value: id, label })) }]}
         />
@@ -571,7 +571,7 @@ function AppearanceCard() {
       <Field label="Annotation size">
         <Select
           value={annotationSize}
-          onChange={(v) => setAnnotationSize(v as AnnotationSize)}
+          onValueChange={(v) => setAnnotationSize(v as AnnotationSize)}
           ariaLabel={t('Annotation size')}
           groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
         />
@@ -703,7 +703,7 @@ function SoundCard() {
       <Field label="Move sound">
         <Select
           value={moveSound}
-          onChange={(v) => {
+          onValueChange={(v) => {
             setMoveSound(v);
             previewSound('move', v);
           }}
@@ -715,7 +715,7 @@ function SoundCard() {
       <Field label="Capture sound">
         <Select
           value={captureSound}
-          onChange={(v) => {
+          onValueChange={(v) => {
             setCaptureSound(v);
             previewSound('capture', v);
           }}

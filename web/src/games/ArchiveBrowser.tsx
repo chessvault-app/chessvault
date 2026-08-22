@@ -826,7 +826,7 @@ export function ArchiveBrowser({
         <FilterRow className="border-t">
           <Select
             value={month}
-            onChange={(m) => void loadMonth(m)}
+            onValueChange={(m) => void loadMonth(m)}
             ariaLabel={t('Archive month')}
             size="sm"
             className="min-w-0 flex-1"

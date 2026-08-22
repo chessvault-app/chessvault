@@ -394,7 +394,7 @@ export function EditorView({
             <Field label="En passant target">
               <Select
                 value={state.epSquare ?? ''}
-                onChange={(v) => patch({ epSquare: v || null })}
+                onValueChange={(v) => patch({ epSquare: v || null })}
                 ariaLabel={t('En passant target')}
                 inset
                 mono
