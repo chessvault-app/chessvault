@@ -1585,7 +1585,12 @@ export function RepertoireView() {
   </Panel>
   );
   const movesPanel = analysing ? (
-    <AnalysisMovesPanel engine={wide} />
+    // The same floor and the same flex as the puzzle and book trainers'
+    // copies. Left at the panel's own default — `min-h-min flex-1` — its
+    // minimum height was the whole move list, so once a line ran long the
+    // panel refused to shrink and pushed the Game panel under the column's
+    // bottom edge, where it was cut off mid-sentence.
+    <AnalysisMovesPanel engine={wide} className="min-h-32 flex-auto" />
   ) : (
   <AnswerPanel
     // Takes the column's spare height, so the panel under it sits on the
