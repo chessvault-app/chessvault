@@ -213,9 +213,11 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           <>
             <SidelinesToggle />
             <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
+            {/* Stacked only: at wide these two live on the board's toolbar. */}
             <Button
               variant="ghost"
               size="icon-sm"
+              className="wide:hidden"
               title={t('Fix this position in the editor')}
               onClick={() => setEditing(boardFen)}
             >
@@ -224,6 +226,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             <Button
               variant="ghost"
               size="icon-sm"
+              className="wide:hidden"
               title={t('Open on the board page')}
               onClick={() => {
                 useAnalysis.setState({ handoff: true });
@@ -287,33 +290,52 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     <ReaderHeader
       title={book?.title ?? ''}
       onBack={() => up('books')}
-      menu={
-        <>
-          {wide && (
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={panelHidden ? t('Show the moves panel') : t('Hide the moves panel')}
-              aria-pressed={panelHidden}
-              onClick={() => setPanelHidden((v) => !v)}
-            >
-              {panelHidden ? (
-                <PanelRightOpen className="size-3.5" />
-              ) : (
-                <PanelRightClose className="size-3.5" />
-              )}
-            </Button>
-          )}
-          {book && <ReaderMenu book={book} onChanged={() => void load(true)} />}
-        </>
-      }
+      menu={book ? <ReaderMenu book={book} onChanged={() => void load(true)} /> : null}
     />
+  );
+
+  // The board side's toolbar at wide — the same band as the PDF's, over
+  // the board region: the panel toggle, the editor and the board page.
+  // It takes the slot the board's player strip would have had (the reader
+  // never loads a game), so the board top meets the page top beside it.
+  const boardBar = (
+    <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 wide:mt-4 wide:mb-3">
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={panelHidden ? t('Show the moves panel') : t('Hide the moves panel')}
+        aria-pressed={panelHidden}
+        onClick={() => setPanelHidden((v) => !v)}
+      >
+        {panelHidden ? <PanelRightOpen className="size-3.5" /> : <PanelRightClose className="size-3.5" />}
+      </Button>
+      <span className="bg-border mx-1 h-4 w-px" />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={t('Fix this position in the editor')}
+        onClick={() => setEditing(boardFen)}
+      >
+        <SquarePen className="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={t('Open on the board page')}
+        onClick={() => {
+          useAnalysis.setState({ handoff: true });
+          navigate('board');
+        }}
+      >
+        <Grid3x3 className="size-3.5" />
+      </Button>
+    </div>
   );
 
   // Board and its navigation only, the panel put away.
   const boardOnly = (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
-      <AnalysisBoard />
+    <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
+      <AnalysisBoard strip={false} />
       <div className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W)}>
         <BoardControls keyboard={false} className="-my-1" />
       </div>
@@ -335,17 +357,19 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           >
             {(shownW) => pdfPane(shownW, false)}
           </ResizablePane>
-          <div ref={region} className="min-h-0 min-w-0 flex-1">
-            {editor ||
-              (panelHidden ? (
-                boardOnly
-              ) : stackBoard ? (
+          <div ref={region} className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {editor || (
+              <>
+                {boardBar}
+                {panelHidden ? (
+                  boardOnly
+                ) : stackBoard ? (
                 // Not enough room beside the PDF for board and panel
                 // side by side: the panel goes under the board and the
                 // column scrolls. The board column gives up its wide:flex-1
                 // here — in a column it would take the height the panel
                 // needs.
-                <div className="flex h-full min-h-0 flex-col gap-3 p-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
                   {/* The board column stays a DIRECT flex item of this
                       definite-height column — a block wrapper around it
                       broke the chain of definite sizes and the eval bar's
@@ -354,7 +378,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                       eval slot + gap + board (20px on the left), so 20px of
                       right padding centres the BOARD in the column, with the
                       panel below taking the same two insets. */}
-                  <AnalysisBoard />
+                  <AnalysisBoard strip={false} />
                   <div className={cn('mx-auto flex min-h-0 w-full flex-1 flex-col gap-3 wide:px-5', BOARD_MAX_W)}>
                     {/* The nav under the board, where the board page puts it
                         on a portrait tablet: the moves panel's copy would go
@@ -375,16 +399,20 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                   </div>
                 </div>
               ) : (
-                <div className={BOARD_HELD_SHELL}>
-                  <AnalysisBoard />
+                // The shell's h-full becomes flex-1 under the toolbar, and its
+                // top padding goes: the toolbar band already holds the board
+                // 64px down, on the page's line.
+                <div className={cn(BOARD_HELD_SHELL, 'h-auto min-h-0 flex-1 wide:pt-0')}>
+                  <AnalysisBoard strip={false} />
                   <div
                     className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden ${BOARD_WIDE_SIDE}`}
                   >
-                    <div className="hidden h-9 shrink-0 wide:block" />
                     {movesPanel()}
                   </div>
                 </div>
-              ))}
+              )}
+              </>
+            )}
           </div>
         </div>
       </div>

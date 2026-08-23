@@ -40,8 +40,16 @@ import { t } from '@/lib/i18n';
 export function AnalysisBoard({
   editablePlayers = false,
   drawShapes = true,
+  strip = true,
 }: {
   editablePlayers?: boolean;
+  /**
+   * The fixed-height strip over the board at `wide`, where a game's player
+   * bar sits. Held open even when empty so the board top stays put as a
+   * game loads — except where the page has a band of its own in that
+   * slot and never a game (the book reader), which passes false.
+   */
+  strip?: boolean;
   /**
    * Whether arrows and circles drawn on the board are kept.
    *
@@ -175,15 +183,17 @@ export function AnalysisBoard({
         {/* Stacked, the bar goes here — in the row the name above the board
             occupies, and instead of it. See EvalBarRow. */}
         <EvalBarRow fen={node.fen} />
-        <div
-          className={cn(
-            'w-full items-end wide:flex wide:h-10',
-            hasGame || editablePlayers ? 'flex' : 'hidden wide:flex',
-            engineOn && 'stacked:hidden',
-          )}
-        >
-          <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
-        </div>
+        {(strip || hasGame || editablePlayers) && (
+          <div
+            className={cn(
+              'w-full items-end wide:flex wide:h-10',
+              hasGame || editablePlayers ? 'flex' : 'hidden wide:flex',
+              engineOn && 'stacked:hidden',
+            )}
+          >
+            <PlayerBar side={orientation === 'white' ? 'black' : 'white'} editable={editablePlayers} />
+          </div>
+        )}
         <div className="flex w-full items-stretch gap-2">
           {/* The eval bar sits beside the board in every layout (lanph3re's
               call): on phones it costs a sliver of board width but stays a
