@@ -313,7 +313,13 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // moves and the engine are the board page's, one press away; what the
   // reader beside a book wants is the position and a way through it.
   const boardOnly = (
-    <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
+    <div className="flex h-full min-h-0 flex-col gap-3 px-4 pb-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:w-full wide:[&>*:first-child]:mx-auto wide:[&>*:first-child]:pr-5">
+      {/* The board column is capped (board-col-cap) to what the board can
+          use, and as a flex-none item of this column it sat at the left of
+          a wider region. An explicit full width (still under the cap) and
+          auto margins centre it — and the board, once the eval slot's 20px
+          is paid back on the right — on the nav's centre line below.
+          (self-center would un-stretch it and collapse it to nothing.) */}
       <AnalysisBoard strip={false} />
       <div className={cn('mx-auto w-full wide:px-5', BOARD_MAX_W)}>
         <BoardControls keyboard={false} className="-my-1" />
