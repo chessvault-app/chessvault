@@ -452,6 +452,10 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
       <ConfirmDialog
         icon={Trash2}
         triggerTitle={t('Remove from library')}
+        // The bin in the destructive colour: it is the one thing in this
+        // header that loses something, and it should look it.
+        triggerClassName="text-destructive hover:text-destructive"
+
         question={t('Remove “{title}” from the library? The PDF is deleted; any puzzle book read from it is kept.', {
           title: book.title,
         })}
