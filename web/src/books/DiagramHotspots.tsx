@@ -198,6 +198,7 @@ export function DiagramHotspots({
   diagrams,
   known = [],
   rotation = 0,
+  direct = false,
   onSet,
   onEdit,
 }: {
@@ -207,6 +208,9 @@ export function DiagramHotspots({
   known?: KnownDiagram[];
   /** How the page is turned; the boxes turn with it. */
   rotation?: 0 | 90 | 180 | 270;
+  /** A read position goes straight to the board, White to move, with no
+      chooser — a phone's one tap; the side is the board's to change. */
+  direct?: boolean;
   /** Called after a position lands on the board. */
   onSet?: () => void;
   /** Open the position in the editor instead — for a diagram the reader
@@ -245,12 +249,18 @@ export function DiagramHotspots({
             className={cn('absolute shadow-md', 'pointer-coarse:size-9')}
             style={style}
             title={t('Set up this position')}
-            onClick={s.sure ? () => set(s.fen) : undefined}
+            onClick={
+              s.sure
+                ? () => set(s.fen)
+                : direct
+                  ? () => set(`${s.fen.split(' ')[0] ?? s.fen} w - - 0 1`)
+                  : undefined
+            }
           >
             <Grid3x3 className="size-3.5" />
           </Button>
         );
-        if (s.sure) return <span key={s.key}>{button}</span>;
+        if (s.sure || direct) return <span key={s.key}>{button}</span>;
         return (
           <SideToMovePopover key={s.key} fen={s.fen} onSet={set} onEdit={onEdit}>
             {button}

@@ -139,13 +139,14 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they
       // answer with a `studies` list.
-      const [studies, notes, games, puzzles, settings, books, map] = await Promise.all([
+      const [studies, notes, games, puzzles, settings, books, library, map] = await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
         grab('/api/games/docs'),
         grab('/api/puzzles/meta'),
         grab('/api/settings'),
         grab('/api/puzzlebooks'),
+        grab('/api/books'),
         // The whole map document, which is affordable here: it is a
         // skeleton of SAN and links, capped at 5000 nodes and 1 MB, with
         // no positions in it.
@@ -195,6 +196,9 @@ export function HomePage() {
         notes: docs(notes),
         games: docs(games),
       };
+      // The library: how many books are on the shelf, once there are any.
+      const shelf = (library as { books?: unknown[] } | null)?.books;
+      if (Array.isArray(shelf) && shelf.length > 0) counts.books = shelf.length;
       // YOUR solves — a personal number like every other tile's, not the
       // size of the Lichess pool.
       const wins = meta?.user?.wins;

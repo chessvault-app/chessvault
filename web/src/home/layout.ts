@@ -28,6 +28,7 @@ export const HOME_ENTRY_IDS = [
   'studies',
   'notes',
   'games',
+  'books',
   'puzzles',
   'openingmap',
   'repertoire',

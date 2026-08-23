@@ -1,6 +1,7 @@
 import {
   BookMarked,
   BookOpen,
+  BookText,
   Compass,
   Database,
   Grid3x3,
@@ -34,7 +35,7 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
 
 /** Which personal count a tile shows. Absent means a tool: no number, and
     no skeleton reserving room for one. */
-export type HomeCount = 'studies' | 'notes' | 'games' | 'puzzles' | 'openingmap';
+export type HomeCount = 'studies' | 'notes' | 'games' | 'books' | 'puzzles' | 'openingmap';
 
 export interface Destination {
   id: HomeEntryId;
@@ -126,6 +127,14 @@ const BY_ID: Record<HomeEntryId, Destination> = {
     blurb: 'Reference game databases, built from uploaded PGNs',
     icon: Database,
     nav: ['databases'],
+  },
+  books: {
+    id: 'books',
+    label: 'Books',
+    blurb: 'Read your chess books beside a board',
+    icon: BookText,
+    nav: ['books'],
+    count: 'books',
   },
   puzzlebooks: {
     id: 'puzzlebooks',

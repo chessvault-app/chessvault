@@ -35,6 +35,7 @@ import { ResizablePane } from '@/components/resizable-pane';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
@@ -185,6 +186,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           diagrams={diagramsOn(n)}
           known={known.get(n) ?? []}
           rotation={rotation}
+          // A phone: one tap puts the position on the board and turns to
+          // it — no chooser in between; the side to move is the board's
+          // and the editor's to change.
+          direct={!wide}
           onSet={() => {
             if (!wide) setTab('board');
           }}
@@ -636,7 +641,11 @@ function PdfPane({
   onVisible: (pages: number[]) => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
-  usePinchZoom(viewport, bumpZoom);
+  // Rebound when the document arrives: the viewport is the scroller's
+  // element, which is only rendered once there is a document to scroll —
+  // bound at mount alone, the listeners went on nothing and a pinch on a
+  // phone did nothing.
+  usePinchZoom(viewport, bumpZoom, doc);
   const slow = useSlowLoad(doc === null && error === null);
   // The page's width at zoom 1: the pane less the header's inset a side.
   // On a phone, the viewport's own content width — measured, so the
@@ -796,7 +805,7 @@ function PdfPane({
         <Button variant="ghost" size={size} onClick={onRotate} title={t('Rotate the page')}>
           <RotateCw className={icon} />
         </Button>
-        <SearchPopover search={search} size={size} icon={icon} />
+        <SearchPopover search={search} size={size} icon={icon} sheet={compact} />
       </div>
     </>
   );
@@ -848,28 +857,32 @@ function SearchPopover({
   search,
   size,
   icon,
+  sheet = false,
 }: {
   search: PdfSearch;
   size: 'icon' | 'icon-sm';
   icon: string;
+  /** A phone: the box is a bottom sheet (the app's Dialog), not a popover
+      hanging off a button in the bottom bar. */
+  sheet?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(search.query);
   const active = search.query.trim().length > 0;
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size={size}
-          title={t('Search the book')}
-          aria-pressed={active}
-          className={cn(active && 'text-primary')}
-        >
-          <Search className={icon} />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="flex w-72 flex-col gap-2 p-2">
+  const trigger = (
+    <Button
+      variant="ghost"
+      size={size}
+      title={t('Search the book')}
+      aria-pressed={active}
+      className={cn(active && 'text-primary')}
+      onClick={sheet ? () => setOpen(true) : undefined}
+    >
+      <Search className={icon} />
+    </Button>
+  );
+  const body = (
+    <>
         <form
           className="flex items-center gap-1"
           onSubmit={(e) => {
@@ -922,6 +935,32 @@ function SearchPopover({
             </Button>
           )}
         </div>
+    </>
+  );
+  if (sheet) {
+    return (
+      <>
+        {trigger}
+        {open && (
+          <Dialog
+            open
+            onOpenChange={(next) => {
+              if (!next) setOpen(false);
+            }}
+          >
+            <DialogContent size="sm" title={t('Search the book')} icon={Search}>
+              {body}
+            </DialogContent>
+          </Dialog>
+        )}
+      </>
+    );
+  }
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent align="end" className="flex w-72 flex-col gap-2 p-2">
+        {body}
       </PopoverContent>
     </Popover>
   );
