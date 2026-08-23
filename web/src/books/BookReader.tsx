@@ -243,7 +243,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           the force-stacked box below, whose `wide:` classes are off. Inset
           only at wide: stacked, it sits in the board shell's own padding,
           flush like the reader's row there. */}
-      <div className="flex h-9 shrink-0 items-center gap-2 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
+      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
         <Button variant="ghost" size="icon-sm" title={t('Back to the board')} onClick={() => setEditing(null)}>
           <ChevronLeft className="size-3.5" />
         </Button>
