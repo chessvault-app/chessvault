@@ -27,9 +27,13 @@ A library of your chess books, read beside a board.
   the importer's own detector and CellNet, cached on the server per page,
   and the button asks White or Black to move rather than guessing — or
   opens the position in the editor, for a diagram it misread; the board's
-  own header has the same way out for whatever is on it. The reader fits
-  the page to the pane's width or shows the whole page on one toggle,
-  and goes to a page by number.
+  own header has the same way out for whatever is on it. The book scrolls
+  as one column, page after page, with only the pages in view rendered;
+  the reader fits the page to the pane's width or shows the whole page on
+  one toggle, and goes to a page by number. Beside the PDF, the moves
+  panel sits next to the board where there is room and under it where
+  there is not; on a phone the reader is the Board page's own shape —
+  board on top, then Book, Moves and Engine as panes.
 - **The importer files the PDF it scans.** Importing a puzzle book puts
   the PDF in the library too and links the puzzle book to it, so the book
   page offers Read; removing the library book leaves the puzzle book and
