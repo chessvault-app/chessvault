@@ -53,6 +53,28 @@ const pool: PoolWorker[] = [];
 const queue: Job[] = [];
 let nextId = 0;
 
+/**
+ * How many jobs are holding the pool open. Two jobs can share it — a
+ * puzzle import and a library book's diagram pass — and either finishing
+ * must not terminate workers the other still has boards out with, which
+ * is what releasePool() does to a queue: the boards come back unread.
+ * A job that takes a lease keeps the pool alive until it lets go; the
+ * release is idempotent, since the importer releases from two places.
+ */
+let leases = 0;
+
+/** Hold the pool open; returns the release, which releases once. */
+export function leasePool(): () => void {
+  leases++;
+  let held = true;
+  return () => {
+    if (!held) return;
+    held = false;
+    leases--;
+    releasePool();
+  };
+}
+
 /** Boot a worker. Lazy, so the chunk only loads when a scan starts. */
 function spawn(): PoolWorker {
   const entry: PoolWorker = {
@@ -113,6 +135,7 @@ function submit(board: Gray, detail: boolean, settle: Job['settle']): void {
  * nobody ever resolves would hang the import rather than degrade it.
  */
 export function releasePool(): void {
+  if (leases > 0) return;
   for (const job of queue.splice(0)) job.settle(null);
   for (const entry of pool.splice(0)) {
     entry.job?.settle(null);

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import { loadCellNet, classifyBoardNet } from '@/puzzles/ocr/cellnet';
+import { classifyInWorker, leasePool, yieldToUi } from '@/puzzles/ocr/cellnetPool';
 import { loadPdfjs, PDF_OPTIONS, readDiagramsOnPage, renderPdfPage } from '@/puzzles/ocr/pdfPage';
 
 import { loadBooks, loadDiagrams, pdfUrl, saveDiagrams, type PageDiagramRecord } from './data';
@@ -30,8 +30,6 @@ export interface DiagramJobState {
   start: (bookId: string) => Promise<void>;
 }
 
-const pause = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
-
 export const useDiagramJob = create<DiagramJobState>()((set, get) => ({
   bookId: null,
   page: 0,
@@ -52,19 +50,19 @@ export const useDiagramJob = create<DiagramJobState>()((set, get) => ({
         ...PDF_OPTIONS,
       });
       const doc = await task.promise;
+      // The boards go to the importer's CellNet pool (ocr/cellnetPool.ts):
+      // one board is ~950 ms of inference, a puzzle page has eight, and on
+      // the main thread a page took five seconds; the pool reads them side
+      // by side. The lease keeps the workers alive while the book runs and
+      // hands them back after — a phone should not keep six of them.
+      const release = leasePool();
       try {
         set({ pages: doc.numPages });
-        const net = await loadCellNet();
         for (let n = 1; n <= doc.numPages; n++) {
           set({ page: n });
           if (done[String(n)]) continue;
           const { canvas } = await renderPdfPage(doc, n);
-          const found = await readDiagramsOnPage(
-            canvas,
-            async (board) => (net ? classifyBoardNet(net, board) : null),
-            [],
-            pause,
-          );
+          const found = await readDiagramsOnPage(canvas, classifyInWorker, [], yieldToUi);
           const records: PageDiagramRecord[] = found.map((d) => ({
             rect: {
               x: d.rect.x / canvas.width,
@@ -75,9 +73,10 @@ export const useDiagramJob = create<DiagramJobState>()((set, get) => ({
             fen: d.fen && d.uncertain <= 4 ? d.fen : null,
           }));
           saveDiagrams(bookId, n, records);
-          await pause();
+          await yieldToUi();
         }
       } finally {
+        release();
         await task.destroy();
       }
       set({ status: 'done' });

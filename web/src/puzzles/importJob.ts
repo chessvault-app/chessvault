@@ -24,8 +24,8 @@ import type { Template } from './ocr/classify';
 import {
   classifyDetailInWorker,
   classifyInWorker,
+  leasePool,
   POOL_SIZE,
-  releasePool,
   yieldToUi,
   type DetailedReading,
 } from './ocr/cellnetPool';
@@ -308,6 +308,9 @@ async function uploadCover(slug: string, page: HTMLCanvasElement): Promise<void>
   }
 }
 
+/** The running scan's hold on the worker pool, kept across a pause. */
+let scanLease: (() => void) | null = null;
+
 async function scan(
   file: File,
   templates: Template[],
@@ -317,6 +320,9 @@ async function scan(
   /** A scan to continue, or null to start the book from page one. */
   saved: ImportCheckpoint | null,
 ): Promise<void> {
+  // The pool is held for the whole scan — and across a pause, which keeps
+  // the lease: resuming is a second call here, not a second lease.
+  scanLease ??= leasePool();
   try {
     const pdfjs = await loadPdfjs();
     const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer(), ...PDF_OPTIONS }).promise;
@@ -458,7 +464,10 @@ async function scan(
   } finally {
     // A paused scan keeps its workers: it is about to carry on, and
     // rebuilding them costs the model again. Anything else is over.
-    if (get().status !== 'paused') releasePool();
+    if (get().status !== 'paused') {
+      scanLease?.();
+      scanLease = null;
+    }
   }
 }
 
@@ -674,7 +683,8 @@ async function readSolutions(
   // an import, and on a phone it is the one that decides whether it
   // survives. The scan's own release stays where it is: it is what covers
   // the paths that never reach here, and running twice releases nothing.
-  releasePool();
+  scanLease?.();
+  scanLease = null;
   const solved = [...result.puzzles, ...repaired];
   solved.sort((a, b) => a.number - b.number);
 
