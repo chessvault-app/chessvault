@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getNode } from '@shared/tree';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
+import { BOARD_MAX_W } from '@/board/boardSize';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
@@ -316,18 +317,24 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                 // needs.
                 <div className="flex h-full min-h-0 flex-col gap-3 p-3 wide:[&>*:first-child]:flex-none">
                   <AnalysisBoard />
-                  <PaneTabs
-                    value={sideTab}
-                    onChange={setSideTab}
-                    tabs={[
-                      { id: 'moves', label: t('Moves'), icon: ListOrdered },
-                      { id: 'engine', label: 'Engine', icon: Cpu },
-                    ]}
-                  />
-                  {movesPanel(cn('min-h-0', sideTab !== 'moves' && 'hidden'), false)}
-                  <Panel flush className={cn('min-h-0 flex-1', sideTab !== 'engine' && 'hidden')}>
-                    <EngineBlock standalone />
-                  </Panel>
+                  {/* The same width and centring as the board's own block,
+                      inset by the eval bar's slot and gap (w-3 + gap-2) on
+                      the left, so the switcher and the panel sit exactly
+                      under the BOARD rather than under slot-and-board. */}
+                  <div className={cn('mx-auto flex min-h-0 w-full flex-1 flex-col gap-3 wide:pl-5', BOARD_MAX_W)}>
+                    <PaneTabs
+                      value={sideTab}
+                      onChange={setSideTab}
+                      tabs={[
+                        { id: 'moves', label: t('Moves'), icon: ListOrdered },
+                        { id: 'engine', label: 'Engine', icon: Cpu },
+                      ]}
+                    />
+                    {movesPanel(cn('min-h-0', sideTab !== 'moves' && 'hidden'), false)}
+                    <Panel flush className={cn('min-h-0 flex-1', sideTab !== 'engine' && 'hidden')}>
+                      <EngineBlock standalone />
+                    </Panel>
+                  </div>
                 </div>
               ) : (
                 <div className={BOARD_HELD_SHELL}>

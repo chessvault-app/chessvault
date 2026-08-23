@@ -287,47 +287,50 @@ export function PdfScroller({
 
   // Tell the reader where it is — once per change, and never for a page
   // the reader itself just asked for.
-  // null until the first page asked for has been scrolled to: the
-  // reader's opening page must win over the "page 1" a fresh viewport
-  // would otherwise report first.
+  // The page the reader is known to be on, and the page it has asked for
+  // but not yet reached. Scrolling to a slot can be refused while the
+  // column is still short (pages sized by a guess, slots not yet laid
+  // out) — so a request stays pending, is re-issued every render, and is
+  // only done when the viewport actually sits on it. Until then nothing
+  // the scroll reader sees is believed: a fresh viewport says "page 1"
+  // before it has been moved anywhere.
   const reported = useRef<number | null>(null);
+  const target = useRef<number | null>(pageNo > 0 ? pageNo : null);
   useEffect(() => {
-    if (view.height === 0 || reported.current === null) return;
-    if (current !== reported.current) {
+    if (pageNo > 0 && pageNo !== reported.current) target.current = pageNo;
+  }, [pageNo]);
+  // The first page's real shape, or a zoom: the page being read keeps its
+  // place, which means asking for it again at its new offset.
+  useEffect(() => {
+    if (baseAspect !== null && reported.current !== null) target.current = reported.current;
+  }, [baseAspect]);
+  const lastZoom = useRef(zoom);
+  useEffect(() => {
+    if (lastZoom.current === zoom) return;
+    lastZoom.current = zoom;
+    if (reported.current !== null) target.current = reported.current;
+  }, [zoom]);
+  useEffect(() => {
+    const p = target.current;
+    const el = viewportRef.current;
+    if (p === null || !el || pages === 0) return;
+    const top = tops[p - 1] ?? 0;
+    el.scrollTo({ top });
+    const reachable = top <= el.scrollHeight - el.clientHeight + 1;
+    if (reachable && Math.abs(el.scrollTop - top) < 2) {
+      target.current = null;
+      reported.current = p;
+    }
+  });
+  useEffect(() => {
+    if (view.height === 0 || target.current !== null) return;
+    if (reported.current !== null && current !== reported.current) {
       reported.current = current;
       onPageChange(current);
     }
     // onPageChange is a setter; the page is what matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, view.height]);
-
-  // A page asked for from outside (route, buttons, go-to): scroll there.
-  useEffect(() => {
-    if (pageNo === reported.current || pages === 0) return;
-    reported.current = pageNo;
-    viewportRef.current?.scrollTo({ top: tops[pageNo - 1] ?? 0 });
-    // tops change with zoom/aspects; the page is the signal.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageNo, pages]);
-
-  // The first page's shape arrives after the first scroll was placed by
-  // a guess; put the page being read back where it belongs.
-  useEffect(() => {
-    if (baseAspect === null || reported.current === null) return;
-    viewportRef.current?.scrollTo({ top: tops[reported.current - 1] ?? 0 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baseAspect]);
-
-  // A zoom keeps the page being read in place.
-  const lastZoom = useRef(zoom);
-  useEffect(() => {
-    if (lastZoom.current === zoom) return;
-    lastZoom.current = zoom;
-    const el = viewportRef.current;
-    if (!el || reported.current === null) return;
-    el.scrollTo({ top: tops[reported.current - 1] ?? 0 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom]);
 
   const from = Math.max(1, first - RENDER_MARGIN);
   const to = Math.min(pages, last + RENDER_MARGIN);
