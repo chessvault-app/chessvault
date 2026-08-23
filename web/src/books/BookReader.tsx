@@ -4,6 +4,10 @@ import {
   ChevronRight,
   FileUp,
   Grid3x3,
+  Hash,
+  Maximize2,
+  MoveHorizontal,
+  SquarePen,
   Trash2,
   ZoomIn,
   ZoomOut,
@@ -13,18 +17,21 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnalysisBoard, BoardControls } from '@/board/AnalysisBoard';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
+import { getNode } from '@shared/tree';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { NoMatchArt } from '@/components/empty-art';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { PaneTabs } from '@/components/pane-tabs';
+import { PromptDialog } from '@/components/prompt-dialog';
 import { ResizablePane } from '@/components/resizable-pane';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useElementWidth } from '@/hooks/use-element-width';
-import { usePinchZoom, ZOOM_MAX, ZOOM_MIN } from '@/hooks/use-pinch-zoom';
+import { EditorView } from '@/editor/EditorView';
+import { usePinchZoom, ZOOM_MAX } from '@/hooks/use-pinch-zoom';
 import { apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useWideLayout } from '@/lib/media';
@@ -61,6 +68,10 @@ import { PdfPage, useBookPdf } from './pdfViewer';
 
 const PANE_KEY = 'vault:panel-w:book-reader';
 const PANE_DEFAULT_W = 520;
+/** Lower than the evidence viewers' floor: a whole tall page in a short
+    pane is a quarter of its fit-to-width size, and "fit the page" must
+    be able to get there. */
+const ZOOM_MIN = 0.25;
 
 export function BookReader({ id, page }: { id: string; page?: string }) {
   const wide = useWideLayout();
@@ -122,10 +133,22 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const bumpZoom = (f: number): void =>
     setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
 
+  // The editor in the board's place, for a diagram the reader misread or
+  // a position to adjust: opened from a hotspot's chooser with the read
+  // position, or from the board's own header with what is on it now.
+  const [editing, setEditing] = useState<string | null>(null);
+  const boardFen = useAnalysis((s) => getNode(s.tree, s.cursorId).fen);
+  const loadFen = useAnalysis((s) => s.loadFen);
+  const openEditor = (fen: string): void => {
+    setEditing(fen);
+    if (!wide) setTab('board');
+  };
+
   const known = useKnownDiagrams(id);
   const diagrams = usePageDiagrams(id, doc, pageNo);
 
   const [tab, setTab] = useState<'book' | 'board'>('book');
+  const [goingTo, setGoingTo] = useState(false);
   const [stackedPane, stackedPaneW] = useElementWidth();
   const [wideRow, wideRowW] = useElementWidth();
 
@@ -146,13 +169,42 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       compact={compact}
       goTo={goTo}
       bumpZoom={bumpZoom}
+      setZoom={setZoom}
+      onGoTo={() => setGoingTo(true)}
       overlay={
-        <DiagramHotspots diagrams={diagrams} known={known.get(pageNo) ?? []} onSet={onSet} />
+        <DiagramHotspots
+          diagrams={diagrams}
+          known={known.get(pageNo) ?? []}
+          onSet={onSet}
+          onEdit={openEditor}
+        />
       }
     />
   );
 
-  const boardSide = (
+  const boardSide = editing !== null ? (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-9 shrink-0 items-center gap-2 px-3">
+        <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
+          <ChevronLeft data-icon="inline-start" />
+          {t('Back to the board')}
+        </Button>
+        <span className="text-muted-foreground truncate text-sm">
+          {t('Fix the position, then use it on the board.')}
+        </span>
+      </div>
+      <div className="min-h-0 flex-1">
+        <EditorView
+          key={editing}
+          initialFen={editing}
+          useLabel={t('Use on the board')}
+          onUse={(fen) => {
+            if (loadFen(fen)) setEditing(null);
+          }}
+        />
+      </div>
+    </div>
+  ) : (
     <div className={BOARD_HELD_SHELL}>
       <AnalysisBoard />
       <div
@@ -160,6 +212,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       >
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">
           <LoadPositionButton />
+          <Button variant="ghost" size="sm" onClick={() => openEditor(boardFen)} title={t('Fix this position in the editor')}>
+            <SquarePen data-icon="inline-start" />
+            {t('Edit position')}
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -243,9 +299,15 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             <Button variant="ghost" size="icon" disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
               <ChevronLeft className="size-[1.1rem]" />
             </Button>
-            <span className="text-muted-foreground min-w-[5rem] text-center text-sm tabular-nums">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground min-w-[5rem] tabular-nums"
+              title={t('Go to page')}
+              onClick={() => setGoingTo(true)}
+            >
               {pages > 0 ? `${pageNo} / ${pages}` : pageNo}
-            </span>
+            </Button>
             <Button variant="ghost" size="icon" disabled={pages > 0 && pageNo >= pages} onClick={() => goTo(pageNo + 1)} title={t('Next page')}>
               <ChevronRight className="size-[1.1rem]" />
             </Button>
@@ -256,10 +318,28 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
               <ZoomIn className="size-[1.1rem]" />
             </Button>
           </div>
-        ) : (
-          <BoardControls keyboard={false} className="py-1.5" />
+        ) : editing !== null ? null : (
+          <div className="flex flex-1 items-center">
+            <BoardControls keyboard={false} className="flex-1 py-1.5" />
+            <Button variant="ghost" size="icon" title={t('Edit position')} onClick={() => openEditor(boardFen)}>
+              <SquarePen className="size-[1.1rem]" />
+            </Button>
+          </div>
         )}
       </MobileActionBar>
+      {goingTo && (
+        <PromptDialog
+          label={t('Go to page')}
+          initial={String(pageNo || 1)}
+          submitLabel="Go"
+          onSubmit={(value) => {
+            setGoingTo(false);
+            const n = Number(value);
+            if (Number.isFinite(n)) goTo(n);
+          }}
+          onClose={() => setGoingTo(false)}
+        />
+      )}
     </div>
   );
 }
@@ -408,6 +488,8 @@ function PdfPane({
   compact,
   goTo,
   bumpZoom,
+  setZoom,
+  onGoTo,
   overlay,
 }: {
   doc: ReturnType<typeof useBookPdf>['doc'];
@@ -421,6 +503,9 @@ function PdfPane({
   compact: boolean;
   goTo: (n: number) => void;
   bumpZoom: (f: number) => void;
+  setZoom: (z: number) => void;
+  /** Open the go-to-page prompt. */
+  onGoTo: () => void;
   overlay: React.ReactNode;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
@@ -429,6 +514,51 @@ function PdfPane({
   const slow = useSlowLoad(doc === null && error === null);
   // The page's width at zoom 1: the pane less its padding.
   const pageW = Math.max(0, width - 24);
+  // Fit the whole page: the zoom at which the page's height fills the
+  // viewport. Needs the viewport's height and the page's shape, both
+  // measured as they come; the toggle remembers the zoom it set so it can
+  // tell "fit the page" from a zoom the buttons reached on their own.
+  const [vpH, setVpH] = useState(0);
+  useEffect(() => {
+    const el = viewport.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setVpH(el.clientHeight));
+    ro.observe(el);
+    setVpH(el.clientHeight);
+    return () => ro.disconnect();
+  }, []);
+  const [aspect, setAspect] = useState<number | null>(null);
+  // Never past the width fit: "the whole page" means all of it on screen,
+  // and a tall pane would otherwise zoom IN to fill its height and push
+  // the page's sides off.
+  const fitZoomFor = (height: number): number | null =>
+    aspect && pageW > 0 && height > 0
+      ? Math.min(1, Math.max(ZOOM_MIN, (height - 24) / (pageW * aspect)))
+      : null;
+  const fitPageZoom = fitZoomFor(vpH);
+  const fitted = fitPageZoom !== null && Math.abs(zoom - fitPageZoom) < 0.005;
+  const toggleFit = (): void => {
+    if (fitted) {
+      setZoom(1);
+      return;
+    }
+    // From the element itself, not the observed height: a resize the
+    // observer has not reported yet (a background tab gets none) must
+    // not fit the page to a viewport that is gone.
+    const live = fitZoomFor(viewport.current?.clientHeight ?? vpH);
+    if (live !== null) setZoom(live);
+  };
+  const fitButton = (size: 'icon' | 'icon-sm', iconClass: string) => (
+    <Button
+      variant="ghost"
+      size={size}
+      disabled={fitPageZoom === null}
+      title={fitted ? t('Fit the width') : t('Fit the whole page')}
+      onClick={toggleFit}
+    >
+      {fitted ? <MoveHorizontal className={iconClass} /> : <Maximize2 className={iconClass} />}
+    </Button>
+  );
   // Back to the top on a page turn, where reading continues.
   useEffect(() => {
     viewport.current?.scrollTo({ top: 0 });
@@ -482,28 +612,45 @@ function PdfPane({
             <Button variant="ghost" size="icon-sm" disabled={pages > 0 && pageNo >= pages} onClick={() => goTo(pageNo + 1)} title={t('Next page')}>
               <ChevronRight className="size-3.5" />
             </Button>
+            <Button variant="ghost" size="icon-sm" onClick={onGoTo} title={t('Go to page')}>
+              <Hash className="size-3.5" />
+            </Button>
             <span className="flex-1" />
+            {fitButton('icon-sm', 'size-3.5')}
             <Button variant="ghost" size="icon-sm" disabled={zoom <= ZOOM_MIN} onClick={() => bumpZoom(1 / 1.25)} title={t('Zoom out')}>
               <ZoomOut className="size-3.5" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground w-12 tabular-nums"
-              onClick={() => bumpZoom(1 / zoom)}
-              title={t('Reset zoom')}
-            >
-              {Math.round(zoom * 100)}%
-            </Button>
+            {/* The percentage only where the row has room for it; a narrow
+                pane keeps the buttons and wraps nothing. */}
+            {width >= 420 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground w-12 tabular-nums"
+                onClick={() => setZoom(1)}
+                title={t('Reset zoom')}
+              >
+                {Math.round(zoom * 100)}%
+              </Button>
+            )}
             <Button variant="ghost" size="icon-sm" disabled={zoom >= ZOOM_MAX} onClick={() => bumpZoom(1.25)} title={t('Zoom in')}>
               <ZoomIn className="size-3.5" />
             </Button>
           </>
         )}
         {compact && (
-          <span className="text-muted-foreground text-sm">
-            {t('Tap a diagram’s board button to set it up.')}
-          </span>
+          <>
+            {fitButton('icon-sm', 'size-3.5')}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground w-12 tabular-nums"
+              onClick={() => setZoom(1)}
+              title={t('Reset zoom')}
+            >
+              {Math.round(zoom * 100)}%
+            </Button>
+          </>
         )}
       </div>
       <div
@@ -521,7 +668,14 @@ function PdfPane({
           />
         ) : doc && pageNo > 0 && pageW > 0 ? (
           <div className="flex min-h-full justify-center p-3">
-            <PdfPage doc={doc} pageNo={pageNo} width={pageW} zoom={zoom} overlay={overlay} />
+            <PdfPage
+              doc={doc}
+              pageNo={pageNo}
+              width={pageW}
+              zoom={zoom}
+              overlay={overlay}
+              onSize={({ w, h }) => setAspect(h / w)}
+            />
           </div>
         ) : slow ? (
           <div className="flex min-h-full justify-center p-3">

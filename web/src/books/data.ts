@@ -106,9 +106,15 @@ const query = (params: Record<string, string | number | null | undefined>): stri
  */
 export async function uploadBook(
   file: File,
-  options: { title: string; onProgress?: (sent: number, total: number) => void },
+  options: {
+    title: string;
+    /** The file already opened by the caller (the upload window shows
+        the cover before asking); spares a second open. */
+    inspected?: { pages: number; cover: string | null };
+    onProgress?: (sent: number, total: number) => void;
+  },
 ): Promise<string> {
-  const { pages, cover } = await inspectPdf(file);
+  const { pages, cover } = options.inspected ?? (await inspectPdf(file));
   const made = await apiUpload<{ id: string }>(
     `/api/books?${query({ title: options.title, name: file.name, pages: pages || null })}`,
     file,

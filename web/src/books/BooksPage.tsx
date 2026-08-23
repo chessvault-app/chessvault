@@ -34,10 +34,9 @@ import {
   removeBook,
   renameBook,
   replaceBookPdf,
-  suggestTitle,
-  uploadBook,
   type LibraryBook,
 } from './data';
+import { UploadBookDialog } from './UploadBookDialog';
 
 /**
  * The library: every PDF that has been uploaded to read. Any chess book —
@@ -79,56 +78,13 @@ export function BooksPage() {
     void load();
   }, [load]);
 
-  // An upload in flight: its name and how far along. One at a time; a
-  // handful dropped together queue behind it.
-  const [uploading, setUploading] = useState<{ name: string; pct: number } | null>(null);
-  const queue = useRef<File[]>([]);
-  const pump = useCallback(async (): Promise<void> => {
-    if (uploading) return;
-    const file = queue.current.shift();
-    if (!file) return;
-    if (!byExtension('.pdf')(file)) {
-      setError(t('{name} is not a PDF.', { name: file.name }));
-      void pump();
-      return;
-    }
-    if (file.size > MAX_PDF_BYTES) {
-      setError(
-        t('{name} is too big — the limit is {mb} MB.', {
-          name: file.name,
-          mb: MAX_PDF_BYTES / (1024 * 1024),
-        }),
-      );
-      void pump();
-      return;
-    }
-    setError(null);
-    setUploading({ name: file.name, pct: 0 });
-    try {
-      await uploadBook(file, {
-        title: suggestTitle(file) ?? t('Untitled book'),
-        onProgress: (sent, total) =>
-          setUploading({ name: file.name, pct: Math.round((sent / total) * 100) }),
-      });
-      await load();
-    } catch (e) {
-      setError(apiErrorMessage(e));
-    } finally {
-      setUploading(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [load, uploading]);
-  useEffect(() => {
-    if (!uploading && queue.current.length > 0) void pump();
-  }, [uploading, pump]);
-  const enqueue = (files: File[]): void => {
-    queue.current.push(...files);
-    void pump();
-  };
-  const fileInput = useRef<HTMLInputElement>(null);
+  // The upload window: open empty from the button, or already holding
+  // the PDF that was dropped on the shelf. One book at a time — the
+  // window shows the book back and asks before anything goes up.
+  const [adding, setAdding] = useState<{ file: File | null } | null>(null);
   const drop = useFileDrop({
     accept: byExtension('.pdf'),
-    onFiles: (files) => enqueue(files),
+    onFiles: ([first]) => setAdding({ file: first ?? null }),
     onReject: () => setError(t('Drop a PDF here.')),
   });
 
@@ -161,25 +117,23 @@ export function BooksPage() {
       {/* The drop target is the page's content column: a PDF let go
           anywhere on the shelf is an upload. */}
       <div {...drop.handlers} className="contents">
-      <input
-        ref={fileInput}
-        type="file"
-        accept="application/pdf"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          const files = Array.from(e.target.files ?? []);
-          e.target.value = '';
-          enqueue(files);
-        }}
-      />
+      {adding && (
+        <UploadBookDialog
+          initialFile={adding.file}
+          onClose={() => setAdding(null)}
+          onUploaded={() => {
+            setAdding(null);
+            void load();
+          }}
+        />
+      )}
       <div className="mb-4 flex flex-col gap-2.5">
         <PageHeader
           title={t('Books')}
           actions={
             <CreateControl
               actions={[
-                { label: 'Upload PDF', icon: Upload, onSelect: () => fileInput.current?.click() },
+                { label: 'Upload PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
               ]}
             />
           }
@@ -193,12 +147,6 @@ export function BooksPage() {
         />
       </div>
 
-      {uploading && (
-        <p className="text-primary mb-3 flex items-center gap-2 text-sm">
-          <Loader2 className="size-3.5 shrink-0 animate-spin" />
-          {t('Uploading {name} — {pct}%', { name: uploading.name, pct: uploading.pct })}
-        </p>
-      )}
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
       {books === null ? (
@@ -219,7 +167,7 @@ export function BooksPage() {
               : t('No book matches that search.')}
           </p>
           {books.length === 0 && (
-            <Button variant="default" size="sm" onClick={() => fileInput.current?.click()}>
+            <Button variant="default" size="sm" onClick={() => setAdding({ file: null })}>
               <Upload className="mr-1 size-3.5" />
               {t('Upload PDF')}
             </Button>

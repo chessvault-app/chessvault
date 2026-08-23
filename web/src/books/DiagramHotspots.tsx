@@ -129,6 +129,7 @@ export function DiagramHotspots({
   diagrams,
   known = [],
   onSet,
+  onEdit,
 }: {
   /** What was read off this page; null while it is being read. */
   diagrams: PageDiagramRecord[] | null;
@@ -136,6 +137,9 @@ export function DiagramHotspots({
   known?: KnownDiagram[];
   /** Called after a position lands on the board. */
   onSet?: () => void;
+  /** Open the position in the editor instead — for a diagram the reader
+      misread, or one to adjust before playing. */
+  onEdit?: (fen: string) => void;
 }) {
   const loadFen = useAnalysis((s) => s.loadFen);
   const set = (fen: string): void => {
@@ -158,11 +162,19 @@ export function DiagramHotspots({
           left: `calc(${(s.rect.x + s.rect.w) * 100}% - 1.75rem)`,
           top: `calc(${s.rect.y * 100}% + 0.25rem)`,
         };
+        // See-through: the corner it sits in may hold the diagram's
+        // number, a side-to-move mark or a caption, and a solid button
+        // hid them. Opaque again under the pointer, when it is the thing
+        // being looked at.
         const button = (
           <Button
-            variant="secondary"
+            variant="ghost"
             size="icon-sm"
-            className={cn('absolute shadow-md', 'pointer-coarse:size-9')}
+            className={cn(
+              'absolute border border-foreground/15 bg-background/35 text-foreground/80 shadow-sm backdrop-blur-[1px]',
+              'hover:bg-background hover:text-foreground focus-visible:bg-background',
+              'pointer-coarse:size-9',
+            )}
             style={style}
             title={t('Set up this position')}
             onClick={s.sure ? () => set(s.fen) : undefined}
@@ -172,7 +184,7 @@ export function DiagramHotspots({
         );
         if (s.sure) return <span key={s.key}>{button}</span>;
         return (
-          <SideToMovePopover key={s.key} fen={s.fen} onSet={set}>
+          <SideToMovePopover key={s.key} fen={s.fen} onSet={set} onEdit={onEdit}>
             {button}
           </SideToMovePopover>
         );
@@ -189,10 +201,12 @@ export function DiagramHotspots({
 function SideToMovePopover({
   fen,
   onSet,
+  onEdit,
   children,
 }: {
   fen: string;
   onSet: (fen: string) => void;
+  onEdit?: (fen: string) => void;
   children: React.ReactElement;
 }) {
   const [open, setOpen] = useState(false);
@@ -211,6 +225,19 @@ function SideToMovePopover({
         <Button variant="ghost" size="sm" className="justify-start" onClick={() => choose('b')}>
           {t('Black to move')}
         </Button>
+        {onEdit && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="justify-start"
+            onClick={() => {
+              setOpen(false);
+              onEdit(`${placement} w - - 0 1`);
+            }}
+          >
+            {t('Edit position…')}
+          </Button>
+        )}
       </PopoverContent>
     </Popover>
   );
