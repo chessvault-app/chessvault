@@ -301,17 +301,16 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
                 // column scrolls. The board column gives up its wide:flex-1
                 // here — in a column it would take the height the panel
                 // needs.
-                <div className="flex h-full min-h-0 flex-col gap-3 p-4">
-                  {/* The board's block is eval slot + gap + board (w-3 +
-                      gap-2 = 20px on the left). Padded by the same on the
-                      right, the BOARD is centred in the column; the panel
-                      below takes the block's width and centring with both
-                      insets, so it sits exactly under the board. The
-                      wrapper also keeps the board column from taking the
-                      column's height (its wide:flex-1 is for a row). */}
-                  <div className="shrink-0 wide:pr-5">
-                    <AnalysisBoard />
-                  </div>
+                <div className="flex h-full min-h-0 flex-col gap-3 p-4 wide:[&>*:first-child]:flex-none wide:[&>*:first-child]:pr-5">
+                  {/* The board column stays a DIRECT flex item of this
+                      definite-height column — a block wrapper around it
+                      broke the chain of definite sizes and the eval bar's
+                      h-full collapsed to its 2px border. Its wide:flex-1 is
+                      for a row, so it is flex-none here; and its block is
+                      eval slot + gap + board (20px on the left), so 20px of
+                      right padding centres the BOARD in the column, with the
+                      panel below taking the same two insets. */}
+                  <AnalysisBoard />
                   <div className={cn('mx-auto flex min-h-0 w-full flex-1 flex-col gap-3 wide:px-5', BOARD_MAX_W)}>
                     <PaneTabs
                       value={sideTab}
