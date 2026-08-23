@@ -26,8 +26,12 @@ A library of your chess books, read beside a board.
   land on the board directly; anywhere else the book's pages are read
   once with the importer's own detector and CellNet worker pool — when
   the book arrives, as a background job, or from the card's "Read
-  diagrams" (which also carries on a pass that was interrupted, since
-  pages already read are skipped) — and kept on the server per page. A
+  diagrams" — and kept on the server per page. The pass is mandatory and
+  resumable: a book opened before it is through has it started, or
+  carried on from the pages already read, with its progress shown over
+  the page; books asked for together are read one after another. A
+  puzzle book imported from its PDF is not read twice — the import's own
+  scan files every page's diagrams in the library copy as it goes. A
   322-page puzzle book reads in about three minutes on a 12-core machine;
   the first cut read boards one at a time on the main thread and took
   five seconds a page. The button asks White or Black to move

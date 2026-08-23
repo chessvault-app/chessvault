@@ -208,7 +208,6 @@ export function PdfScroller({
   pageNo,
   onPageChange,
   overlayFor,
-  onVisible,
   viewportRef,
   onKeyDown,
   className,
@@ -225,9 +224,6 @@ export function PdfScroller({
   onPageChange: (page: number) => void;
   /** The hotspot layer for a rendered page. */
   overlayFor: (page: number) => ReactNode;
-  /** Which pages are rendered right now — the diagram reader wants to
-      know which pages to read. */
-  onVisible?: (pages: number[]) => void;
   viewportRef: React.RefObject<HTMLDivElement | null>;
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   className?: string;
@@ -373,10 +369,6 @@ export function PdfScroller({
     for (let n = from; n <= to; n++) list.push(n);
     return list;
   }, [from, to]);
-  useEffect(() => {
-    onVisible?.(rendered);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rendered]);
 
   return (
     <div

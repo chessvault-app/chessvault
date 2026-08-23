@@ -191,7 +191,7 @@ export function PdfImport({
     } finally {
       setPreparing(false);
     }
-    job.start(slug, file, templates, { repair, engine });
+    job.start(slug, file, templates, { repair, engine, libraryBook: pdfBook });
     // The PDF itself goes to the library, so the book can be READ and not
     // only solved — the same file this scan is about to read, filed once.
     // Not awaited: the scan is the point of this window, and a library
@@ -208,6 +208,9 @@ export function PdfImport({
           method: 'PATCH',
           json: { pdfBook: id },
         });
+        // The scan under way is the read of this PDF; its pages go to the
+        // library book from here on, the ones already read right now.
+        if (useImportJob.getState().slug === slug) useImportJob.getState().fileDiagramsIn(id);
       } catch (e) {
         setLibraryNote(
           t('The PDF could not be kept in the library: {reason}', {
@@ -397,7 +400,7 @@ export function PdfImport({
                 <Button
                   variant="default"
                   size="sm"
-                  onClick={() => job.resume(slug, templates, { repair, engine })}
+                  onClick={() => job.resume(slug, templates, { repair, engine, libraryBook: pdfBook })}
                 >
                   {t('Carry on from page {page}', { page: saved.page + 1 })}
                 </Button>
@@ -568,7 +571,7 @@ export function PdfImport({
               <Button
                 variant="default"
                 size="sm"
-                onClick={() => job.resume(slug, templates, { repair, engine })}
+                onClick={() => job.resume(slug, templates, { repair, engine, libraryBook: pdfBook })}
               >
                 <Play className="size-3.5" />
                 {t('Carry on')}

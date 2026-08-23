@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { useImportJob } from '@/puzzles/importJob';
 import { classifyInWorker, leasePool, yieldToUi } from '@/puzzles/ocr/cellnetPool';
 import { loadPdfjs, PDF_OPTIONS, readDiagramsOnPage, renderPdfPage } from '@/puzzles/ocr/pdfPage';
 
@@ -17,7 +18,15 @@ import { loadBooks, loadDiagrams, pdfUrl, saveDiagrams, type PageDiagramRecord }
  *
  * A BACKGROUND job, like the puzzle importer's: it runs in the page while
  * the shelf is browsed and reports its progress; one at a time, because
- * a second one would share the main thread with the first.
+ * a second one would share the main thread with the first — a book asked
+ * for while another is being read waits its turn.
+ *
+ * And a MANDATORY one: every book on the shelf is read, and the reader
+ * starts (or carries on) the pass for a book it opens that is not read
+ * through yet, showing the progress over the page. Nothing is read twice:
+ * the puzzle importer's scan of the same PDF files its pages here as it
+ * goes (importJob.ts, `libraryBook`), and a book under that scan is left
+ * to it.
  */
 
 export interface DiagramJobState {
@@ -26,7 +35,9 @@ export interface DiagramJobState {
   pages: number;
   status: 'idle' | 'running' | 'done' | 'failed';
   error: string | null;
-  /** Start reading `bookId`; a no-op while another book is being read. */
+  /** Books waiting their turn, in the order they were asked for. */
+  queue: string[];
+  /** Read `bookId` — now, or after the book being read and any queued before it. */
   start: (bookId: string) => Promise<void>;
 }
 
@@ -36,8 +47,16 @@ export const useDiagramJob = create<DiagramJobState>()((set, get) => ({
   pages: 0,
   status: 'idle',
   error: null,
+  queue: [],
   start: async (bookId) => {
-    if (get().status === 'running') return;
+    const { status, queue } = get();
+    if (status === 'running') {
+      if (get().bookId !== bookId && !queue.includes(bookId)) set({ queue: [...queue, bookId] });
+      return;
+    }
+    // The importer reading this very PDF files every page here itself.
+    const scan = useImportJob.getState();
+    if (scan.status === 'scanning' && scan.libraryBook === bookId) return;
     set({ bookId, page: 0, pages: 0, status: 'running', error: null });
     try {
       const book = (await loadBooks(true)).find((b) => b.id === bookId);
@@ -60,7 +79,7 @@ export const useDiagramJob = create<DiagramJobState>()((set, get) => ({
         set({ pages: doc.numPages });
         for (let n = 1; n <= doc.numPages; n++) {
           set({ page: n });
-          if (done[String(n)]) continue;
+          if (done.has(n)) continue;
           const { canvas } = await renderPdfPage(doc, n);
           const found = await readDiagramsOnPage(canvas, classifyInWorker, [], yieldToUi);
           const records: PageDiagramRecord[] = found.map((d) => ({
@@ -82,6 +101,11 @@ export const useDiagramJob = create<DiagramJobState>()((set, get) => ({
       set({ status: 'done' });
     } catch (e) {
       set({ status: 'failed', error: (e as Error).message });
+    }
+    const [next, ...rest] = get().queue;
+    if (next) {
+      set({ queue: rest });
+      void get().start(next);
     }
   },
 }));

@@ -4,6 +4,7 @@ import {
   ChevronRight,
   FileUp,
   Grid3x3,
+  Loader2,
   Maximize2,
   MoveHorizontal,
   RotateCcw,
@@ -157,8 +158,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const loadFen = useAnalysis((s) => s.loadFen);
 
   const known = useKnownDiagrams(id);
-  const [shown, setShown] = useState<number[]>([]);
-  const diagramsOn = usePageDiagrams(id, doc, shown);
+  const diagramsOn = usePageDiagrams(id, doc);
+  // The book's diagram pass, while it is this book's: shown over the page.
+  const job = useDiagramJob();
+  const reading = job.bookId === id && job.status === 'running' ? job : null;
 
   const [tab, setTab] = useState<'book' | 'board'>('book');
   // The board-over-panel arrangement beside the PDF: one pane at a time
@@ -219,7 +222,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       bumpZoom={bumpZoom}
       setZoom={setZoom}
       overlayFor={overlayFor}
-      onVisible={setShown}
+      reading={reading}
     />
   );
 
@@ -616,7 +619,7 @@ function PdfPane({
   bumpZoom,
   setZoom,
   overlayFor,
-  onVisible,
+  reading,
 }: {
   doc: ReturnType<typeof useBookPdf>['doc'];
   error: string | null;
@@ -638,7 +641,8 @@ function PdfPane({
   bumpZoom: (f: number) => void;
   setZoom: (z: number) => void;
   overlayFor: (page: number) => React.ReactNode;
-  onVisible: (pages: number[]) => void;
+  /** The diagram pass over this book, while it runs: a line over the page. */
+  reading: { page: number; pages: number } | null;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   // Rebound when the document arrives: the viewport is the scroller's
@@ -824,6 +828,12 @@ function PdfPane({
   return (
     <>
       {compact ? toolbarInto && createPortal(toolbar, toolbarInto) : toolbar}
+      {reading && (
+        <div className="text-muted-foreground flex h-7 shrink-0 items-center justify-center gap-1.5 text-xs">
+          <Loader2 className="size-3 shrink-0 animate-spin" />
+          {t('Reading diagrams — page {page} of {pages}', { page: reading.page, pages: reading.pages })}
+        </div>
+      )}
       {error ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <EmptyState
@@ -843,7 +853,6 @@ function PdfPane({
           pageNo={pageNo}
           onPageChange={onScrolledTo}
           overlayFor={overlayFor}
-          onVisible={onVisible}
           viewportRef={viewport}
           onKeyDown={onKey}
         />

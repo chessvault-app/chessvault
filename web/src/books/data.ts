@@ -154,6 +154,8 @@ export async function replaceBookPdf(
       json: { image: cover },
     }).catch(() => undefined);
   }
+  // A different file's pages: the server dropped its record, so does this.
+  diagramMemory.delete(id);
   forgetLibrary();
 }
 
@@ -164,6 +166,7 @@ export async function renameBook(id: string, title: string): Promise<void> {
 
 export async function removeBook(id: string): Promise<void> {
   await api(`/api/books/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  diagramMemory.delete(id);
   forgetLibrary();
 }
 
@@ -179,18 +182,41 @@ export function saveReadingPage(id: string, page: number): void {
     .catch(() => undefined);
 }
 
-export async function loadDiagrams(id: string): Promise<Record<string, PageDiagramRecord[]>> {
+/**
+ * Every book's read pages, in memory, by page: the diagram job writes here
+ * as it reads and the reader reads from here, so a page the job has just
+ * finished shows its buttons without a round trip, and a page read once
+ * is not read again by either. Seeded from the server the first time a
+ * book is asked about.
+ */
+const diagramMemory = new Map<string, Map<number, PageDiagramRecord[]>>();
+
+/** A book's read pages — the live map, not a copy. */
+export function diagramsOf(id: string): Map<number, PageDiagramRecord[]> {
+  let map = diagramMemory.get(id);
+  if (!map) {
+    map = new Map();
+    diagramMemory.set(id, map);
+  }
+  return map;
+}
+
+/** The server's record of a book's pages, folded into `diagramsOf(id)`. */
+export async function loadDiagrams(id: string): Promise<Map<number, PageDiagramRecord[]>> {
+  const map = diagramsOf(id);
   try {
     const body = await api<{ pages: Record<string, PageDiagramRecord[]> }>(
       `/api/books/${encodeURIComponent(id)}/diagrams`,
     );
-    return body.pages;
+    for (const [k, v] of Object.entries(body.pages)) map.set(Number(k), v);
   } catch {
-    return {};
+    // Offline: what is in memory is what there is.
   }
+  return map;
 }
 
 export function saveDiagrams(id: string, page: number, diagrams: PageDiagramRecord[]): void {
+  diagramsOf(id).set(page, diagrams);
   void api(`/api/books/${encodeURIComponent(id)}/diagrams/${page}`, {
     method: 'PUT',
     json: { diagrams },

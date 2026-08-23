@@ -1,17 +1,16 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Grid3x3 } from 'lucide-react';
-import { cloneElement, useEffect, useRef, useState } from 'react';
+import { cloneElement, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
-import { loadCellNet, classifyBoardNet } from '@/puzzles/ocr/cellnet';
-import { readDiagramsOnPage, renderPdfPage } from '@/puzzles/ocr/pdfPage';
 import { useAnalysis } from '@/store/analysis';
 
-import { loadDiagrams, saveDiagrams, type PageDiagramRecord } from './data';
+import { diagramsOf, loadDiagrams, type PageDiagramRecord } from './data';
+import { useDiagramJob } from './diagramJob';
 
 /**
  * The diagrams printed on the page being read, as things you can tap.
@@ -38,93 +37,39 @@ const overlaps = (a: PageDiagramRecord['rect'], b: PageDiagramRecord['rect']): b
   return inter > 0.5 * Math.min(a.w * a.h, b.w * b.h);
 };
 
-const pause = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
-
 /**
- * The diagrams on the pages being shown, from the server's cache when it
- * has them and read off the page when it does not. Reading happens after
- * a page is on screen — the scroller says which pages are rendered — one
- * page at a time, and is dropped, not awaited, when the page scrolls
- * away. Returns a lookup: null for a page not yet read.
+ * The diagrams of a book's pages, as read: from the shared memory
+ * (books/data.ts), which the diagram job fills as it goes. A book opened
+ * before its pass is through has the pass started — or carried on, since
+ * pages already read are skipped — and this re-renders as each page
+ * lands, so the buttons appear under the reader while it reads.
  */
 export function usePageDiagrams(
   id: string,
   doc: PDFDocumentProxy | null,
-  shown: number[],
 ): (page: number) => PageDiagramRecord[] | null {
-  const cache = useRef<Map<number, PageDiagramRecord[]> | null>(null);
-  const [version, bump] = useState(0);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
-
-  // The cache, once per book.
   useEffect(() => {
     let live = true;
-    cache.current = null;
     setLoadedFor(null);
-    void loadDiagrams(id).then((pages) => {
-      if (!live) return;
-      const map = new Map<number, PageDiagramRecord[]>();
-      for (const [k, v] of Object.entries(pages)) map.set(Number(k), v);
-      cache.current = map;
-      setLoadedFor(id);
+    void loadDiagrams(id).then(() => {
+      if (live) setLoadedFor(id);
     });
     return () => {
       live = false;
     };
   }, [id]);
 
-  // The first shown page the cache has no answer for, read now; the next
-  // one when this one lands (`version` moves and the effect runs again).
-  const shownKey = shown.join(',');
-  useEffect(() => {
-    const map = cache.current;
-    if (!doc || loadedFor !== id || !map) return;
-    const pageNo = shown.find((n) => !map.has(n));
-    if (pageNo === undefined) return;
-    let live = true;
-    // Only once the scroll has settled: reading a page is a render at
-    // detection size and CellNet on the main thread, and doing it for
-    // every page that flashes past is what made scrolling wait.
-    const timer = setTimeout(() => void (async () => {
-      try {
-        const net = await loadCellNet();
-        if (!live) return;
-        const { canvas } = await renderPdfPage(doc, pageNo);
-        if (!live) return;
-        const found = await readDiagramsOnPage(
-          canvas,
-          async (board) => (net ? classifyBoardNet(net, board) : null),
-          [],
-          pause,
-        );
-        if (!live) return;
-        const records: PageDiagramRecord[] = found.map((d) => ({
-          rect: {
-            x: d.rect.x / canvas.width,
-            y: d.rect.y / canvas.height,
-            w: d.rect.w / canvas.width,
-            h: d.rect.h / canvas.height,
-          },
-          // A read with many doubtful cells is not a position worth
-          // offering; the box is still recorded so the page is not re-read.
-          fen: d.fen && d.uncertain <= 4 ? d.fen : null,
-        }));
-        map.set(pageNo, records);
-        saveDiagrams(id, pageNo, records);
-        bump((n) => n + 1);
-      } catch {
-        // A page that will not read is a page without hotspots.
-      }
-    })(), 600);
-    return () => {
-      live = false;
-      clearTimeout(timer);
-    };
-    // shownKey stands in for the array's contents.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, id, shownKey, loadedFor, version]);
+  // Every page the job finishes is a re-render; that is all the
+  // subscription is for — the pages themselves come from the memory.
+  useDiagramJob((s) => (s.bookId === id && s.status === 'running' ? s.page : 0));
 
-  const map = cache.current;
+  useEffect(() => {
+    if (!doc || loadedFor !== id) return;
+    if (diagramsOf(id).size < doc.numPages) void useDiagramJob.getState().start(id);
+  }, [doc, id, loadedFor]);
+
+  const map = loadedFor === id ? diagramsOf(id) : null;
   return (page: number) => map?.get(page) ?? null;
 }
 

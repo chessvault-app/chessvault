@@ -21,6 +21,7 @@ import { repairBoard } from '@shared/bookRepair';
 import { learnGlyphHints, readGlyph, type GlyphSample } from '@shared/bookGlyphs';
 import { answerPages, type ReadBoard } from '@shared/bookConfigSearch';
 import type { Template } from './ocr/classify';
+import { saveDiagrams, type PageDiagramRecord } from '@/books/data';
 import {
   classifyDetailInWorker,
   classifyInWorker,
@@ -99,6 +100,13 @@ export interface ImportOptions {
    * is the whole reason the offline pipeline grew these tiers.
    */
   engine?: boolean;
+  /**
+   * The library book this PDF is filed as (books/data.ts), when it is
+   * known at the start: every page's diagrams go to it as they are read,
+   * so the reader has them with no second pass over the same file. A
+   * book filed during the scan arrives through `fileDiagramsIn`.
+   */
+  libraryBook?: string | null;
 }
 
 /** What the solve stage concluded, for the dialog to show. */
@@ -141,6 +149,15 @@ interface ImportJobState {
   start: (slug: string, file: File, templates: Template[], options?: ImportOptions) => void;
   /** Continue a scan a reload, a crash, or a pause interrupted. */
   resume: (slug: string, templates: Template[], options?: ImportOptions) => void;
+  /**
+   * The library book this scan's PDF was just filed as: the pages read
+   * so far go to it now, and every page after as it is read. The read
+   * is one and the same — the importer's per-page pass IS the reader's
+   * diagram job (ocr/pdfPage.ts) — so it is done once, here.
+   */
+  fileDiagramsIn: (libraryBook: string) => void;
+  /** Where this scan's diagrams are being filed, or null. */
+  libraryBook: string | null;
   /** Stop after the page being read, keeping the checkpoint. */
   pause: () => void;
   /** Give up on a book's scan entirely — the book itself is going away. */
@@ -212,11 +229,27 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
   // fighting over this one store — progress flipping between books, the
   // first job still saving to its captured slug, and whichever finished
   // last clobbering the other's terminal state.
+  libraryBook: null,
+  fileDiagramsIn: (libraryBook) => {
+    set({ libraryBook });
+    // Every page read so far, including the ones that printed no diagram:
+    // a page the library has no record of is a page still to read. `page`
+    // is included: it may be done and past its own filing (it stays the
+    // current page through the checkpoint write), and if it is still under
+    // the reader the loop files the full list after this, and last wins.
+    const { found, page } = get();
+    const byPage = new Map<number, FoundDiagram[]>();
+    for (let n = 1; n <= page; n++) byPage.set(n, []);
+    for (const d of found) byPage.get(d.page)?.push(d);
+    for (const [n, list] of byPage) saveDiagrams(libraryBook, n, diagramRecords(list));
+  },
+
   start: (slug, file, templates, options) => {
     const { status } = get();
     if (status === 'scanning' || status === 'reading') return;
     set({
       slug,
+      libraryBook: options?.libraryBook ?? null,
       status: 'scanning',
       page: 0,
       pages: 0,
@@ -236,6 +269,7 @@ export const useImportJob = create<ImportJobState>((set, get) => ({
       if (!saved) return;
       set({
         slug,
+        libraryBook: options?.libraryBook ?? null,
         status: 'scanning',
         page: saved.page,
         pages: saved.pages,
@@ -389,6 +423,10 @@ async function scan(
       // pages that printed one, and only until the upload.
       if (rects.length > 0) pageImages.set(pageNo, pageJpeg(canvas));
       set({ found: [...results] });
+      // The reader's copy of this page, when the PDF is in the library —
+      // the same rule the diagram job applies (books/diagramJob.ts).
+      const libraryBook = get().libraryBook;
+      if (libraryBook) saveDiagrams(libraryBook, pageNo, diagramRecords(results.slice(pageStart)));
       // The page is done, so record it. Awaited rather than fired and
       // forgotten: a put that is still in flight when the tab dies is a
       // checkpoint that does not exist, and one page of writing is cheap
@@ -469,6 +507,17 @@ async function scan(
       scanLease = null;
     }
   }
+}
+
+/**
+ * A page's diagrams as the library keeps them: rects in page fractions
+ * (they already are) and a FEN only when the read was sure enough — the
+ * rule books/diagramJob.ts applies, so a book read either way is the same.
+ */
+function diagramRecords(found: FoundDiagram[]): PageDiagramRecord[] {
+  return found.flatMap((d) =>
+    d.rect ? [{ rect: d.rect, fen: d.fen && d.uncertain <= 4 ? d.fen : null }] : [],
+  );
 }
 
 /** What one rendered page contributed to the vision half. */
