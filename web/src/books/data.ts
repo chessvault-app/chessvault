@@ -53,10 +53,13 @@ export const MAX_PDF_BYTES = 300 * 1024 * 1024;
  */
 export const libraryMemory = {
   books: null as LibraryBook[] | null,
+  /** The covers were decoded once; coming back need not wait for them. */
+  coversDecoded: false,
 };
 
 export function forgetLibrary(): void {
   libraryMemory.books = null;
+  libraryMemory.coversDecoded = false;
 }
 
 export async function loadBooks(force = false): Promise<LibraryBook[]> {

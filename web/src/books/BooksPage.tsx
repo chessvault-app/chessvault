@@ -120,7 +120,46 @@ export function BooksPage() {
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const undoable = useUndoable();
-  const pending = useSlowLoad(books === null);
+  /**
+   * The shelf waits for its covers, as the puzzle shelf does: the list is
+   * a kilobyte and the covers are separate images, so the cards would
+   * appear and then fill with pictures one at a time. Decoding them first
+   * costs a moment and arrives whole — bounded, because a cover is a
+   * nicety: if the images are slow or missing the shelf draws anyway.
+   */
+  const [coversReady, setCoversReady] = useState(
+    libraryMemory.books !== null && libraryMemory.coversDecoded,
+  );
+  useEffect(() => {
+    if (books === null) return;
+    if (books.length === 0) {
+      setCoversReady(true);
+      return;
+    }
+    let live = true;
+    const covers = books
+      .filter((b) => b.cover)
+      .map(
+        (b) =>
+          new Promise<void>((done) => {
+            const img = new Image();
+            img.onload = () => done();
+            img.onerror = () => done();
+            img.src = coverUrl(b.id, b.bytes);
+          }),
+      );
+    void Promise.race([Promise.all(covers), new Promise((r) => setTimeout(r, 2000))]).then(() => {
+      if (!live) return;
+      libraryMemory.coversDecoded = true;
+      setCoversReady(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [books]);
+  // Nothing at all for the first moment: a shelf that arrives in 30 ms
+  // should not flash a skeleton on its way in.
+  const pending = useSlowLoad(books === null || !coversReady);
   const view = useLibrarySort();
 
   // Bookmarks, kept in the vault beside the books — the same store and the
@@ -289,8 +328,8 @@ export function BooksPage() {
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
 
-      {books === null ? (
-        pending ? <SkeletonBookCards cards={4} /> : null
+      {books === null || !coversReady ? (
+        pending ? <SkeletonBookCards cards={books?.length || 4} /> : null
       ) : visible.length === 0 ? (
         <div
           className={cn(
