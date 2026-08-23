@@ -2,6 +2,8 @@ import {
   ArrowDownWideNarrow,
   ArrowUpNarrowWide,
   BookMarked,
+  Loader2,
+  ScanSearch,
   BookOpen,
   BookText,
   Bookmark,
@@ -39,6 +41,7 @@ import {
   type LibraryBook,
 } from './data';
 import { UploadBookDialog } from './UploadBookDialog';
+import { useDiagramJob } from './diagramJob';
 
 /**
  * The library: every PDF that has been uploaded to read. Any chess book —
@@ -265,9 +268,12 @@ export function BooksPage() {
         <UploadBookDialog
           initialFile={adding.file}
           onClose={() => setAdding(null)}
-          onUploaded={() => {
+          onUploaded={(id) => {
             setAdding(null);
             void load();
+            // The book's diagrams are read now, once, in the background —
+            // not page by page under the reader's scroll.
+            void useDiagramJob.getState().start(id);
           }}
         />
       )}
@@ -396,6 +402,8 @@ function BookCard({
 }) {
   const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
   const [menuOpen, setMenuOpen] = useState(false);
+  const job = useDiagramJob();
+  const reading = job.bookId === book.id && job.status === 'running';
   const [renaming, setRenaming] = useState(false);
   const [replacing, setReplacing] = useState(false);
   const open = (): void => navigate('books', book.id);
@@ -461,10 +469,18 @@ function BookCard({
                 {where ? ` · ${where}` : ''}
               </span>
             </span>
-            <span className="text-muted-foreground flex items-center gap-1.5 text-sm">
-              <BookOpen className="size-3 shrink-0" />
-              {book.lastPage ? t('Carry on reading') : t('Read')}
-              {book.puzzleBook && (
+            <span className={cn('flex items-center gap-1.5 text-sm', reading ? 'text-primary' : 'text-muted-foreground')}>
+              {reading ? (
+                <Loader2 className="size-3 shrink-0 animate-spin" />
+              ) : (
+                <BookOpen className="size-3 shrink-0" />
+              )}
+              {reading
+                ? t('Reading diagrams — page {page} of {pages}', { page: job.page, pages: job.pages })
+                : book.lastPage
+                  ? t('Carry on reading')
+                  : t('Read')}
+              {book.puzzleBook && !reading && (
                 // Read into the puzzle shelf: the same mark that shelf wears,
                 // so the two halves of one book recognise each other.
                 <span
@@ -500,6 +516,15 @@ function BookCard({
               onSelect: onToggleMark,
             },
             { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+            ...(job.status !== 'running'
+              ? [
+                  {
+                    label: 'Read diagrams',
+                    icon: ScanSearch,
+                    onSelect: () => void useDiagramJob.getState().start(book.id),
+                  },
+                ]
+              : []),
             { label: 'Replace PDF…', icon: FileUp, onSelect: () => setReplacing(true) },
             { label: 'Remove from library', icon: Trash2, danger: true, onSelect: onRemove },
           ]}
@@ -533,9 +558,10 @@ function BookCard({
           <UploadBookDialog
             replace={{ id: book.id, title: book.title }}
             onClose={() => setReplacing(false)}
-            onUploaded={() => {
+            onUploaded={(id) => {
               setReplacing(false);
               onChanged();
+              void useDiagramJob.getState().start(id);
             }}
           />
         )}

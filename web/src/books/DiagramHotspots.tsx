@@ -1,8 +1,9 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Grid3x3 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { cloneElement, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -81,7 +82,10 @@ export function usePageDiagrams(
     const pageNo = shown.find((n) => !map.has(n));
     if (pageNo === undefined) return;
     let live = true;
-    void (async () => {
+    // Only once the scroll has settled: reading a page is a render at
+    // detection size and CellNet on the main thread, and doing it for
+    // every page that flashes past is what made scrolling wait.
+    const timer = setTimeout(() => void (async () => {
       try {
         const net = await loadCellNet();
         if (!live) return;
@@ -111,9 +115,10 @@ export function usePageDiagrams(
       } catch {
         // A page that will not read is a page without hotspots.
       }
-    })();
+    })(), 600);
     return () => {
       live = false;
+      clearTimeout(timer);
     };
     // shownKey stands in for the array's contents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,6 +203,7 @@ export function DiagramHotspots({
   diagrams,
   known = [],
   rotation = 0,
+  sheet = false,
   onSet,
   onEdit,
 }: {
@@ -207,6 +213,8 @@ export function DiagramHotspots({
   known?: KnownDiagram[];
   /** How the page is turned; the boxes turn with it. */
   rotation?: 0 | 90 | 180 | 270;
+  /** A phone: the chooser is the app's bottom sheet, not a popover. */
+  sheet?: boolean;
   /** Called after a position lands on the board. */
   onSet?: () => void;
   /** Open the position in the editor instead — for a diagram the reader
@@ -257,6 +265,7 @@ export function DiagramHotspots({
             key={s.key}
             fen={s.fen}
             suggested={s.sure ? (s.fen.split(' ')[1] === 'b' ? 'b' : 'w') : null}
+            sheet={sheet}
             onSet={set}
             onEdit={onEdit}
           >
@@ -276,6 +285,7 @@ export function DiagramHotspots({
 function SideToMovePopover({
   fen,
   suggested,
+  sheet = false,
   onSet,
   onEdit,
   children,
@@ -284,6 +294,8 @@ function SideToMovePopover({
   /** The side a puzzle book gave this position, when it did: listed
       first and marked; choosing it keeps the book's whole FEN. */
   suggested: 'w' | 'b' | null;
+  /** A phone: a bottom sheet rather than a popover off the button. */
+  sheet?: boolean;
   onSet: (fen: string) => void;
   onEdit?: (fen: string) => void;
   children: React.ReactElement;
@@ -295,31 +307,63 @@ function SideToMovePopover({
     onSet(side === suggested ? fen : `${placement} ${side} - - 0 1`);
   };
   const sides: ('w' | 'b')[] = suggested === 'b' ? ['b', 'w'] : ['w', 'b'];
+  const choices = (
+    <>
+      {sides.map((side) => (
+        <Button
+          key={side}
+          variant="ghost"
+          size={sheet ? 'lg' : 'sm'}
+          className="justify-start"
+          onClick={() => choose(side)}
+        >
+          {side === 'w' ? t('White to move') : t('Black to move')}
+          {side === suggested && (
+            <span className="text-muted-foreground">{t('(as in the book)')}</span>
+          )}
+        </Button>
+      ))}
+      {onEdit && (
+        <Button
+          variant="ghost"
+          size={sheet ? 'lg' : 'sm'}
+          className="justify-start"
+          onClick={() => {
+            setOpen(false);
+            onEdit(`${placement} w - - 0 1`);
+          }}
+        >
+          {t('Edit position…')}
+        </Button>
+      )}
+    </>
+  );
+  if (sheet) {
+    return (
+      <>
+        {cloneElement(children as React.ReactElement<{ onClick?: () => void }>, {
+          onClick: () => setOpen(true),
+        })}
+        {open && (
+          <Dialog
+            open
+            onOpenChange={(next) => {
+              if (!next) setOpen(false);
+            }}
+          >
+            <DialogContent size="sm" title={t('Who is to move?')} icon={Grid3x3}>
+              <div className="flex flex-col gap-1">{choices}</div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </>
+    );
+  }
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align="end" className="flex w-auto flex-col gap-1 p-1.5">
-        {sides.map((side) => (
-          <Button key={side} variant="ghost" size="sm" className="justify-start" onClick={() => choose(side)}>
-            {side === 'w' ? t('White to move') : t('Black to move')}
-            {side === suggested && (
-              <span className="text-muted-foreground">{t('(as in the book)')}</span>
-            )}
-          </Button>
-        ))}
-        {onEdit && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="justify-start"
-            onClick={() => {
-              setOpen(false);
-              onEdit(`${placement} w - - 0 1`);
-            }}
-          >
-            {t('Edit position…')}
-          </Button>
-        )}
+        {choices}
       </PopoverContent>
     </Popover>
   );

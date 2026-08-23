@@ -115,13 +115,19 @@ export function PdfPage({
   useEffect(() => {
     if (width <= 0) return;
     let live = true;
-    void (async () => {
+    // A beat before rendering: a page that scrolls past in a flick is
+    // mounted and unmounted inside this, and never costs a raster.
+    const timer = setTimeout(() => void (async () => {
       const page = await doc.getPage(pageNo);
       if (!live) return;
       const base = page.getViewport({ scale: 1, rotation });
       const cssW = Math.max(1, Math.round(width * zoom));
       const cssH = Math.max(1, Math.round((base.height / base.width) * cssW));
-      let ratio = Math.min(window.devicePixelRatio || 1, 2);
+      // Device pixels: up to 2× on a fine pointer, 1.5× on a touch screen —
+      // a scan at a phone's width is legible at 1.5× and the raster is
+      // half the pixels of 2×, which is what scrolling waits on.
+      const coarse = matchMedia('(pointer: coarse)').matches;
+      let ratio = Math.min(window.devicePixelRatio || 1, coarse ? 1.5 : 2);
       if (cssW * cssH * ratio * ratio > MAX_CANVAS_PIXELS) {
         ratio = Math.sqrt(MAX_CANVAS_PIXELS / (cssW * cssH));
       }
@@ -152,9 +158,10 @@ export function PdfPage({
       canvas.getContext('2d')!.drawImage(off, 0, 0);
       setSize({ w: cssW, h: cssH });
       onSize?.({ w: cssW, h: cssH });
-    })();
+    })(), 120);
     return () => {
       live = false;
+      clearTimeout(timer);
     };
     // onSize is a callback identity the caller may not memoise; the size
     // is reported whenever a render lands, which is what it is for.

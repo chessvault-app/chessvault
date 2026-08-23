@@ -55,6 +55,7 @@ import {
   usePageDiagrams,
   type KnownDiagram,
 } from './DiagramHotspots';
+import { useDiagramJob } from './diagramJob';
 import { usePdfSearch, type PdfSearch } from './pdfSearch';
 import { PdfScroller, useBookPdf, type Rotation } from './pdfViewer';
 import { UploadBookDialog } from './UploadBookDialog';
@@ -186,6 +187,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           diagrams={diagramsOn(n)}
           known={known.get(n) ?? []}
           rotation={rotation}
+          sheet={!wide}
           onSet={() => {
             if (!wide) setTab('board');
           }}
@@ -542,11 +544,13 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
         <UploadBookDialog
           replace={{ id: book.id, title: book.title }}
           onClose={() => setReplacing(false)}
-          onUploaded={() => {
+          onUploaded={(id) => {
             setReplacing(false);
             // The shelf row's size changes with the file, and the PDF's URL
-            // is versioned by it — so a fresh row is a fresh document.
+            // is versioned by it — so a fresh row is a fresh document. Its
+            // diagrams are read again, now, in the background.
             onChanged();
+            void useDiagramJob.getState().start(id);
           }}
         />
       )}
@@ -677,6 +681,7 @@ function PdfPane({
       ? Math.min(1, Math.max(ZOOM_MIN, (height - 24) / (pageW * aspect)))
       : null;
   const [vpH, setVpH] = useState(0);
+  const hasViewport = pageW > 0;
   useEffect(() => {
     const el = viewport.current;
     if (!el) return;
@@ -688,7 +693,10 @@ function PdfPane({
     ro.observe(el);
     read();
     return () => ro.disconnect();
-  }, [doc]);
+    // The viewport is the scroller's element, rendered only once there is
+    // a document AND a width — on a phone the width arrives after the
+    // document, so the observer must be bound when the scroller is.
+  }, [doc, hasViewport]);
   const fitPageZoom = fitZoomFor(vpH);
   const fitted = fitPageZoom !== null && fitPageZoom < 1 && Math.abs(zoom - fitPageZoom) < 0.005;
   const toggleFit = (): void => {
@@ -763,16 +771,24 @@ function PdfPane({
         <Button variant="ghost" size={size} disabled={pages > 0 && pageNo >= pages} onClick={() => goTo(pageNo + 1)} title={t('Next page')}>
           <ChevronRight className={icon} />
         </Button>
-        {!compact && <span className="bg-border mx-1 h-4 w-px" />}
-        <Button
-          variant="ghost"
-          size={size}
-          disabled={fitPageZoom === null || (fitPageZoom >= 1 && !fitted)}
-          title={fitted ? t('Fit the width') : t('Fit the whole page')}
-          onClick={toggleFit}
-        >
-          {fitted ? <MoveHorizontal className={icon} /> : <Maximize2 className={icon} />}
-        </Button>
+        {/* Fit the whole page only where a page can be taller than its
+            viewport at the width fit — a desktop pane. A portrait phone
+            already shows the whole page at that width, so the button sat
+            disabled there; pinch is the phone's zoom. */}
+        {!compact && (
+          <>
+            <span className="bg-border mx-1 h-4 w-px" />
+            <Button
+              variant="ghost"
+              size={size}
+              disabled={fitPageZoom === null || (fitPageZoom >= 1 && !fitted)}
+              title={fitted ? t('Fit the width') : t('Fit the whole page')}
+              onClick={toggleFit}
+            >
+              {fitted ? <MoveHorizontal className={icon} /> : <Maximize2 className={icon} />}
+            </Button>
+          </>
+        )}
         {/* Zoom buttons only where there is no pinch: a phone's bar has
             room for page, fit, rotate and search at touch size, and no
             more — the measured row overflowed the screen with them. */}

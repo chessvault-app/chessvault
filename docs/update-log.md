@@ -23,9 +23,11 @@ A library of your chess books, read beside a board.
 - **Every printed diagram is a tap from the board.** The reader draws a
   small board button on each diagram of the page. Where a puzzle book was
   read from this same PDF, the puzzle's own position and side to move
-  land on the board directly; anywhere else the page is read once with
-  the importer's own detector and CellNet, cached on the server per page,
-  and the button asks White or Black to move rather than guessing — or
+  land on the board directly; anywhere else the book's pages are read
+  once with the importer's own detector and CellNet — when the book
+  arrives, as a background job, or from the card's "Read diagrams" — and
+  kept on the server per page, and the button asks White or Black to move
+  rather than guessing — or
   opens the position in the editor, for a diagram it misread; the board's
   own header has the same way out for whatever is on it. The book scrolls
   as one column, page after page, with only the pages in view rendered;
