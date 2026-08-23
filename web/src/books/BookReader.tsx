@@ -400,8 +400,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
  * The app's page header on PageShell's own insets — 16px, 24 from md —
  * and the toolbars, page and board under it keep the same inset, so the
  * chevron, the page's left edge and the bin stand on one line. The band
- * under it (wide:mt-4) is the shell's gap-4. The chevron shows on a
- * desktop as well: the sidebar names Books, not this book.
+ * under it (wide:mt-4) is the shell's gap-4. The chevron is a phone's,
+ * as on every page: on a desktop the reader is a top-level page, reached
+ * and left through the sidebar's Books.
  */
 function ReaderHeader({
   title,
@@ -421,7 +422,6 @@ function ReaderHeader({
         className="min-w-0 flex-1"
         title={title}
         back={onBack}
-        backVisible="always"
         truncate
         actions={menu}
       />
