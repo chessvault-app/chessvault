@@ -391,10 +391,10 @@ function ReaderHeader({
   menu?: React.ReactNode;
 }) {
   return (
-    // Each side on the inset of what sits under it: the PDF pane's 12px on
-    // the left (toolbar, page), the board row's 16px on the right (the
-    // shared shell's wide:p-4); stacked, both are the shell's 12.
-    <div className="flex h-12 shrink-0 items-center gap-2 px-3 wide:pr-4">
+    // px-4 both sides, the workbench convention (the puzzle corrector's
+    // header, the board row's wide:p-4); the PDF pane's toolbar and page
+    // keep the same 16px so the left lines up too.
+    <div className="flex h-12 shrink-0 items-center gap-2 px-4">
       <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
         <ChevronLeft className="size-3.5" />
       </Button>
@@ -530,8 +530,8 @@ function PdfPane({
   const viewport = useRef<HTMLDivElement>(null);
   usePinchZoom(viewport, bumpZoom);
   const slow = useSlowLoad(doc === null && error === null);
-  // The page's width at zoom 1: the pane less its padding.
-  const pageW = Math.max(0, width - 24);
+  // The page's width at zoom 1: the pane less 16px a side, the header's inset.
+  const pageW = Math.max(0, width - 32);
   // Fit the whole page: the zoom at which the first page's height fills
   // the viewport — never past the width fit ("the whole page" means all
   // of it on screen; a tall pane would otherwise zoom IN). Read from the
@@ -599,7 +599,7 @@ function PdfPane({
           60px down its column (p-3, its h-10 strip, gap-2), so the
           viewport — the line the page is cut on when it scrolls, and the
           top edge of a page just turned to — starts on the board's line. */}
-      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-3 wide:mb-3 wide:h-12">
+      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 wide:mb-3 wide:h-12">
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>
