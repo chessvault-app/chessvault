@@ -244,13 +244,10 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           only at wide: stacked, it sits in the board shell's own padding,
           flush like the reader's row there. */}
       <div className="flex h-9 shrink-0 items-center gap-2 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
-        <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-          <ChevronLeft data-icon="inline-start" />
-          {t('Back to the board')}
+        <Button variant="ghost" size="icon-sm" title={t('Back to the board')} onClick={() => setEditing(null)}>
+          <ChevronLeft className="size-3.5" />
         </Button>
-        <span className="text-muted-foreground truncate text-sm">
-          {t('Fix the position, then use it on the board.')}
-        </span>
+        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{t('Edit position')}</h1>
       </div>
       <div className={cn('min-h-0 flex-1', stackEditor && 'force-stacked')}>
         <EditorView
