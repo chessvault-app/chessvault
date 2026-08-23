@@ -186,10 +186,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           diagrams={diagramsOn(n)}
           known={known.get(n) ?? []}
           rotation={rotation}
-          // A phone: one tap puts the position on the board and turns to
-          // it — no chooser in between; the side to move is the board's
-          // and the editor's to change.
-          direct={!wide}
           onSet={() => {
             if (!wide) setTab('board');
           }}

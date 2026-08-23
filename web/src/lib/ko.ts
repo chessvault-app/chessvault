@@ -1697,6 +1697,7 @@ export const ko: Record<string, string> = {
   'Book title': '책 제목',
   'Set up this position': '이 포지션을 판에 놓기',
   'White to move': '백 차례',
+  '(as in the book)': '(책대로)',
   'Black to move': '흑 차례',
   'That book is not in the library': '서재에 없는 책입니다',
   'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 서재에서 남아 있는 책을 확인하세요.',

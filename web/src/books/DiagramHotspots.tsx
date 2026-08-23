@@ -198,7 +198,6 @@ export function DiagramHotspots({
   diagrams,
   known = [],
   rotation = 0,
-  direct = false,
   onSet,
   onEdit,
 }: {
@@ -208,9 +207,6 @@ export function DiagramHotspots({
   known?: KnownDiagram[];
   /** How the page is turned; the boxes turn with it. */
   rotation?: 0 | 90 | 180 | 270;
-  /** A read position goes straight to the board, White to move, with no
-      chooser — a phone's one tap; the side is the board's to change. */
-  direct?: boolean;
   /** Called after a position lands on the board. */
   onSet?: () => void;
   /** Open the position in the editor instead — for a diagram the reader
@@ -249,20 +245,21 @@ export function DiagramHotspots({
             className={cn('absolute shadow-md', 'pointer-coarse:size-9')}
             style={style}
             title={t('Set up this position')}
-            onClick={
-              s.sure
-                ? () => set(s.fen)
-                : direct
-                  ? () => set(`${s.fen.split(' ')[0] ?? s.fen} w - - 0 1`)
-                  : undefined
-            }
           >
             <Grid3x3 className="size-3.5" />
           </Button>
         );
-        if (s.sure || direct) return <span key={s.key}>{button}</span>;
+        // Every tap asks who is to move — a diagram alone does not say, and
+        // even a position a puzzle book knows is worth a glance: its side
+        // is listed first and marked, one tap away.
         return (
-          <SideToMovePopover key={s.key} fen={s.fen} onSet={set} onEdit={onEdit}>
+          <SideToMovePopover
+            key={s.key}
+            fen={s.fen}
+            suggested={s.sure ? (s.fen.split(' ')[1] === 'b' ? 'b' : 'w') : null}
+            onSet={set}
+            onEdit={onEdit}
+          >
             {button}
           </SideToMovePopover>
         );
@@ -278,11 +275,15 @@ export function DiagramHotspots({
  */
 function SideToMovePopover({
   fen,
+  suggested,
   onSet,
   onEdit,
   children,
 }: {
   fen: string;
+  /** The side a puzzle book gave this position, when it did: listed
+      first and marked; choosing it keeps the book's whole FEN. */
+  suggested: 'w' | 'b' | null;
   onSet: (fen: string) => void;
   onEdit?: (fen: string) => void;
   children: React.ReactElement;
@@ -291,18 +292,21 @@ function SideToMovePopover({
   const placement = fen.split(' ')[0] ?? fen;
   const choose = (side: 'w' | 'b'): void => {
     setOpen(false);
-    onSet(`${placement} ${side} - - 0 1`);
+    onSet(side === suggested ? fen : `${placement} ${side} - - 0 1`);
   };
+  const sides: ('w' | 'b')[] = suggested === 'b' ? ['b', 'w'] : ['w', 'b'];
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align="end" className="flex w-auto flex-col gap-1 p-1.5">
-        <Button variant="ghost" size="sm" className="justify-start" onClick={() => choose('w')}>
-          {t('White to move')}
-        </Button>
-        <Button variant="ghost" size="sm" className="justify-start" onClick={() => choose('b')}>
-          {t('Black to move')}
-        </Button>
+        {sides.map((side) => (
+          <Button key={side} variant="ghost" size="sm" className="justify-start" onClick={() => choose(side)}>
+            {side === 'w' ? t('White to move') : t('Black to move')}
+            {side === suggested && (
+              <span className="text-muted-foreground">{t('(as in the book)')}</span>
+            )}
+          </Button>
+        ))}
         {onEdit && (
           <Button
             variant="ghost"
