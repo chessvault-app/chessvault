@@ -152,6 +152,20 @@ describe('books api', () => {
     expect(list.books[0].cover).toBe(true);
   });
 
+  it('bookmarks a book, and forgets the mark with the book', async () => {
+    expect((await (await app.request('/api/books/bookmarks')).json()).ids).toEqual([]);
+    const on = await json('/api/books/bookmarks/toggle', 'POST', { id });
+    expect(on.status).toBe(200);
+    expect((await on.json()).bookmarked).toBe(true);
+    expect((await (await app.request('/api/books/bookmarks')).json()).ids).toEqual([id]);
+    expect((await json('/api/books/bookmarks/toggle', 'POST', { id: 'bnotabook' })).status).toBe(404);
+    const off = await json('/api/books/bookmarks/toggle', 'POST', { id });
+    expect((await off.json()).bookmarked).toBe(false);
+    expect((await (await app.request('/api/books/bookmarks')).json()).ids).toEqual([]);
+    // Marked again, so the delete at the end of the suite can drop it.
+    await json('/api/books/bookmarks/toggle', 'POST', { id });
+  });
+
   it('renames', async () => {
     const res = await json(`/api/books/${id}`, 'PATCH', { title: '  My System, 2nd ed.  ' });
     expect(res.status).toBe(200);
@@ -219,6 +233,7 @@ describe('books api', () => {
 
   it('is gone once deleted', async () => {
     expect(existsSync(join(dir, id))).toBe(false);
+    expect((await (await app.request('/api/books/bookmarks')).json()).ids).toEqual([]);
     expect((await app.request(`/api/books/${id}/pdf`)).status).toBe(404);
     expect((await app.request('/api/books/bnotanidatall/pdf')).status).toBe(404);
     const list = await (await app.request('/api/books')).json();

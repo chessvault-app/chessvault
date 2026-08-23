@@ -145,6 +145,22 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
 
   const validBook = (id: string): boolean => isLibraryBookId(id) && existsSync(metaPath(id));
 
+  // Bookmarks, kept in the vault beside the books — the same store and
+  // the same reasoning as the puzzle shelf's.
+  const marksPath = resolve(dir, '.bookmarks.json');
+  const readMarks = (): string[] => {
+    try {
+      const parsed = JSON.parse(readFileSync(marksPath, 'utf-8')) as { ids?: string[] };
+      return Array.isArray(parsed.ids) ? parsed.ids : [];
+    } catch {
+      return [];
+    }
+  };
+  const writeMarks = (ids: string[]): void => {
+    mkdirSync(dir, { recursive: true });
+    writeJson(marksPath, { ids });
+  };
+
   /**
    * Stream an uploaded PDF into `book.pdf`, beside the target then renamed,
    * so a dropped connection leaves a .part rather than a truncated PDF
@@ -203,6 +219,23 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
   };
 
   const api = new Hono();
+
+  // Before `/books/:id`: "bookmarks" is not a book id, but the order says
+  // so rather than relying on the id check to say so for it.
+  api.get('/books/bookmarks', (c) => c.json({ ids: readMarks() }));
+
+  api.post('/books/bookmarks/toggle', async (c) => {
+    const body = await c.req.json<{ id?: string }>().catch(() => null);
+    const id = body?.id?.trim();
+    if (!id || !validBook(id)) return c.json({ error: 'unknown book' }, 404);
+    const ids = readMarks();
+    const at = ids.indexOf(id);
+    const bookmarked = at < 0;
+    if (bookmarked) ids.unshift(id);
+    else ids.splice(at, 1);
+    writeMarks(ids);
+    return c.json({ id, bookmarked });
+  });
 
   api.get('/books', (c) => {
     if (!existsSync(dir)) return c.json({ books: [] });
@@ -334,6 +367,8 @@ export function booksApi(dir: string = BOOKS_DIR): Hono {
     const id = c.req.param('id');
     if (!validBook(id)) return c.json({ error: 'unknown book' }, 404);
     rmSync(bookDir(id), { recursive: true, force: true });
+    const marks = readMarks();
+    if (marks.includes(id)) writeMarks(marks.filter((m) => m !== id));
     return c.json({ ok: true });
   });
 

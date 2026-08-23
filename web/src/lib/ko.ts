@@ -1683,6 +1683,7 @@ export const ko: Record<string, string> = {
   'a better file behind “{title}” — the old one is replaced, your page is kept':
     '“{title}”의 더 나은 파일 — 이전 파일은 바뀌고, 읽던 쪽은 그대로입니다',
   'Opening…': '여는 중…',
+  'Last read': '최근 읽은 순',
   'Book title': '책 제목',
   'Set up this position': '이 포지션을 판에 놓기',
   'White to move': '백 차례',

@@ -1,6 +1,9 @@
 import {
+  ArrowDownWideNarrow,
+  ArrowUpNarrowWide,
   BookOpen,
   BookText,
+  Bookmark,
   FileUp,
   MoreHorizontal,
   Pencil,
@@ -18,8 +21,9 @@ import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { SearchInput } from '@/components/text-fields';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { useUndoable } from '@/hooks/use-undoable';
-import { apiErrorMessage } from '@/lib/api';
+import { api, apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 import { navigate } from '@/lib/router';
@@ -47,6 +51,61 @@ import { UploadBookDialog } from './UploadBookDialog';
  * uploads it, as does the button.
  */
 
+/**
+ * How the library is ordered. Remembered on the device, like the other
+ * shelves' view settings; a new sort starts in its own natural direction.
+ */
+type LibrarySort = 'title' | 'added' | 'size' | 'read';
+type LibraryDir = 'asc' | 'desc';
+
+const LIBRARY_SORTS: { value: LibrarySort; label: string }[] = [
+  { value: 'title', label: 'Title' },
+  { value: 'added', label: 'Added' },
+  { value: 'size', label: 'Size' },
+  { value: 'read', label: 'Last read' },
+];
+
+const NATURAL: Record<LibrarySort, LibraryDir> = {
+  title: 'asc',
+  added: 'desc',
+  size: 'desc',
+  read: 'desc',
+};
+
+function useLibrarySort(): {
+  sort: LibrarySort;
+  setSort: (sort: LibrarySort) => void;
+  dir: LibraryDir;
+  setDir: (dir: LibraryDir) => void;
+} {
+  const key = 'chess-vault:shelf-library';
+  const [state, setState] = useState<{ sort: LibrarySort; dir: LibraryDir }>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
+        sort: LibrarySort;
+        dir: LibraryDir;
+      }>;
+      const sort = LIBRARY_SORTS.some((s) => s.value === saved.sort) ? saved.sort! : 'added';
+      return { sort, dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : NATURAL[sort] };
+    } catch {
+      return { sort: 'added', dir: NATURAL.added };
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {
+      /* private mode — the shelf just forgets between visits */
+    }
+  }, [state]);
+  return {
+    sort: state.sort,
+    setSort: (sort) => setState({ sort, dir: NATURAL[sort] }),
+    dir: state.dir,
+    setDir: (dir) => setState((prev) => ({ ...prev, dir })),
+  };
+}
+
 /** Bytes as a shelf would say them. */
 export function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -61,6 +120,42 @@ export function BooksPage() {
   const [query, setQuery] = useState('');
   const undoable = useUndoable();
   const pending = useSlowLoad(books === null);
+  const view = useLibrarySort();
+
+  // Bookmarks, kept in the vault beside the books — the same store and the
+  // same reasoning as the other shelves.
+  const [marked, setMarked] = useState<Set<string>>(new Set());
+  const [markedOnly, setMarkedOnly] = useState(false);
+  useEffect(() => {
+    void api<{ ids: string[] } | undefined>('/api/books/bookmarks')
+      .then((body) => setMarked(new Set(body?.ids ?? [])))
+      .catch(() => {});
+  }, []);
+  const toggleMark = async (id: string): Promise<void> => {
+    setMarked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    // Optimistic: the set above is already flipped, so a failure here is
+    // swallowed rather than allowed to escape as an unhandled rejection.
+    await api('/api/books/bookmarks/toggle', { method: 'POST', json: { id } }).catch(() => {});
+  };
+  // The same switch in both its homes — see ShelfToolbar's bookmark.
+  const bookmarkToggle = (className: string): React.ReactNode => (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={markedOnly}
+      aria-pressed={markedOnly}
+      title={markedOnly ? t('Show all') : t('Show bookmarked only')}
+      className={cn('shrink-0', className)}
+      onClick={() => setMarkedOnly((v) => !v)}
+    >
+      <Bookmark className={cn('size-3.5', markedOnly && 'fill-warn text-warn')} />
+    </Button>
+  );
 
   const load = useCallback(async (force = true): Promise<void> => {
     try {
@@ -105,9 +200,21 @@ export function BooksPage() {
   };
 
   const needle = query.trim().toLowerCase();
-  const visible = (books ?? []).filter(
-    (b) => !hidden.has(b.id) && (!needle || b.title.toLowerCase().includes(needle)),
-  );
+  const flip = view.dir === 'desc' ? -1 : 1;
+  const visible = (books ?? [])
+    .filter(
+      (b) =>
+        !hidden.has(b.id) &&
+        (!markedOnly || marked.has(b.id)) &&
+        (!needle || b.title.toLowerCase().includes(needle)),
+    )
+    .sort((a, b) => {
+      // Ascending comparisons; `flip` turns the whole order over.
+      if (view.sort === 'added') return flip * (a.addedAt ?? '').localeCompare(b.addedAt ?? '');
+      if (view.sort === 'size') return flip * (a.bytes - b.bytes);
+      if (view.sort === 'read') return flip * ((a.lastPage ?? 0) - (b.lastPage ?? 0));
+      return flip * a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    });
 
   return (
     <PageShell width="medium" className="block">
@@ -128,20 +235,55 @@ export function BooksPage() {
         <PageHeader
           title={t('Books')}
           actions={
-            <CreateControl
-              actions={[
-                { label: 'Upload PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
-              ]}
-            />
+            <>
+              {bookmarkToggle('hidden sm:inline-flex')}
+              <Select
+                value={view.sort}
+                onValueChange={(value) => view.setSort(value as LibrarySort)}
+                ariaLabel={t('Sort by')}
+                size="sm"
+                align="end"
+                steady
+                className="hidden shrink-0 sm:flex"
+                groups={[
+                  { options: LIBRARY_SORTS.map(({ value, label }) => ({ value, label: t(label) })) },
+                ]}
+              />
+              <Button
+                variant="secondary"
+                size="icon-sm"
+                title={
+                  view.dir === 'asc'
+                    ? t('Ascending — press for descending')
+                    : t('Descending — press for ascending')
+                }
+                className="hidden shrink-0 sm:inline-flex"
+                onClick={() => view.setDir(view.dir === 'asc' ? 'desc' : 'asc')}
+              >
+                {view.dir === 'asc' ? (
+                  <ArrowUpNarrowWide className="size-3.5" />
+                ) : (
+                  <ArrowDownWideNarrow className="size-3.5" />
+                )}
+              </Button>
+              <CreateControl
+                actions={[
+                  { label: 'Upload PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
+                ]}
+              />
+            </>
           }
         />
-        <SearchInput
-          inputSize="sm"
-          value={query}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-          placeholder={t('Search books…')}
-          className="min-w-0 flex-1"
-        />
+        <div className="flex items-center gap-2">
+          <SearchInput
+            inputSize="sm"
+            value={query}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+            placeholder={t('Search books…')}
+            className="min-w-0 flex-1"
+          />
+          {bookmarkToggle('sm:hidden')}
+        </div>
       </div>
 
       {error && <p className="text-destructive mb-3 text-sm">{error}</p>}
@@ -181,6 +323,8 @@ export function BooksPage() {
             <BookCard
               key={b.id}
               book={b}
+              marked={marked.has(b.id)}
+              onToggleMark={() => void toggleMark(b.id)}
               onRemove={() => remove(b)}
               onChanged={() => void load()}
               onError={setError}
@@ -197,16 +341,20 @@ export function BooksPage() {
 
 function BookCard({
   book,
+  marked,
+  onToggleMark,
   onRemove,
   onChanged,
   onError,
 }: {
   book: LibraryBook;
+  marked: boolean;
+  onToggleMark: () => void;
   onRemove: () => void;
   onChanged: () => void;
   onError: (message: string) => void;
 }) {
-  const swipe = useSwipeRow({ onRemove });
+  const swipe = useSwipeRow({ onRemove, onBookmark: onToggleMark });
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [replacing, setReplacing] = useState(false);
@@ -245,9 +393,12 @@ function BookCard({
           'bg-card border-border group relative flex h-full cursor-pointer items-stretch gap-3',
           'overflow-hidden rounded-xl border p-3 text-left transition-colors duration-100',
           'hover:border-border hover:bg-accent',
+          // The whole indicator that a book is kept, and it costs no width
+          // — see the shelves and the games rows.
+          marked && 'border-l-warn hover:border-l-warn border-l-2',
         )}
       >
-        <SwipeTrack dx={swipe.dx} bookmarked={false} />
+        <SwipeTrack dx={swipe.dx} bookmarked={marked} />
         <div className="flex min-w-0 flex-1 items-stretch gap-3" style={swipe.style}>
           {book.cover ? (
             <img
@@ -283,6 +434,11 @@ function BookCard({
           onOpenChange={setMenuOpen}
           actions={[
             { label: 'Read', icon: BookOpen, onSelect: open },
+            {
+              label: marked ? 'Remove bookmark' : 'Bookmark',
+              icon: Bookmark,
+              onSelect: onToggleMark,
+            },
             { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
             { label: 'Replace PDF…', icon: FileUp, onSelect: () => setReplacing(true) },
             { label: 'Remove from library', icon: Trash2, danger: true, onSelect: onRemove },
