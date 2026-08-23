@@ -314,10 +314,10 @@ export function PdfScroller({
     const p = target.current;
     const el = viewportRef.current;
     if (p === null || !el || pages === 0) return;
-    // To the gap above the page, not the page's own edge: the page keeps a
-    // breath of margin over it, and its top edge lands where the board's
-    // does in the column beside it (see the reader's toolbar height).
-    const top = Math.max(0, (tops[p - 1] ?? 0) - PAGE_GAP);
+    // The page's own edge at the viewport's top: the viewport starts on
+    // the board's line beside it (see the reader's toolbar), so a page
+    // turned to shares the board's top edge.
+    const top = tops[p - 1] ?? 0;
     el.scrollTo({ top });
     const reachable = top <= el.scrollHeight - el.clientHeight + 1;
     if (reachable && Math.abs(el.scrollTop - top) < 2) {

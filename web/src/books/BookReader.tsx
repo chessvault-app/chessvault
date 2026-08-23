@@ -391,7 +391,10 @@ function ReaderHeader({
   menu?: React.ReactNode;
 }) {
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 px-4">
+    // px-3, not the px-4 other workbench headers wear: everything under this
+    // row — the PDF toolbar, the page, the board column — sits on a 12px
+    // inset, and the chevron and the bin should share their edge.
+    <div className="flex h-12 shrink-0 items-center gap-2 px-3">
       <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
         <ChevronLeft className="size-3.5" />
       </Button>
@@ -591,11 +594,12 @@ function PdfPane({
   const size = compact ? 'icon' : 'icon-sm';
   return (
     <>
-      {/* One group, centred: what the page is and how it is shown. h-12 at
-          wide: the board beside this pane sits 60px down its column (p-3,
-          its h-10 strip, gap-2), and this row plus the scroller's 12px
-          page gap puts the first page's top edge on the same line. */}
-      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-3 wide:h-12">
+      {/* One group, centred: what the page is and how it is shown. At wide,
+          h-12 plus a 12px margin under it: the board beside this pane sits
+          60px down its column (p-3, its h-10 strip, gap-2), so the
+          viewport — the line the page is cut on when it scrolls, and the
+          top edge of a page just turned to — starts on the board's line. */}
+      <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-3 wide:mb-3 wide:h-12">
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>

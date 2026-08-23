@@ -500,14 +500,11 @@ const MORE_GROUPS: {
     ],
   },
   {
-    heading: 'Library',
-    items: [
-      { section: 'books', label: 'Books', icon: BookText, blurb: 'Read your chess books beside a board' },
-    ],
-  },
-  {
     heading: 'App',
     items: [
+      // Books is a sidebar row on a desktop; here it sits with the app's
+      // other pages rather than under a heading of its own.
+      { section: 'books', label: 'Books', icon: BookText, blurb: 'Read your chess books beside a board' },
       { section: 'databases', label: 'Databases', icon: Database, blurb: 'Reference game databases, built from uploaded PGNs' },
       { section: 'settings', label: 'Settings', icon: Settings, blurb: 'Password, 2FA, themes, tokens' },
     ],
