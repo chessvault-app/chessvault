@@ -179,6 +179,47 @@ describe('books api', () => {
     expect((await json(`/api/books/${id}`, 'PATCH', { title: '' })).status).toBe(400);
   });
 
+  it('files books in collections: create, list, move books, rename, delete only when empty', async () => {
+    // An empty collection exists once created, and is listed.
+    expect((await json('/api/books/folders', 'POST', { name: ' Endgames ' })).status).toBe(200);
+    expect((await json('/api/books/folders', 'POST', { name: '../x' })).status).toBe(400);
+    let list = await (await app.request('/api/books')).json();
+    expect(list.folders).toEqual(['Endgames']);
+    expect(list.books[0].collection).toBeNull();
+
+    // A book filed in it, and one uploaded straight into another.
+    expect((await json(`/api/books/${id}`, 'PATCH', { collection: 'Endgames' })).status).toBe(200);
+    const other = await (await upload('title=Openings%20book&collection=Openings', PDF)).json();
+    list = await (await app.request('/api/books')).json();
+    expect(list.folders).toEqual(['Endgames', 'Openings']);
+    expect(list.books.find((b: { id: string }) => b.id === id).collection).toBe('Endgames');
+    expect(list.books.find((b: { id: string }) => b.id === other.id).collection).toBe('Openings');
+    expect((await json(`/api/books/${id}`, 'PATCH', { collection: '../x' })).status).toBe(400);
+    expect((await json(`/api/books/${id}`, 'PATCH', {})).status).toBe(400);
+
+    // Renaming a collection carries its books along.
+    const moved = await json('/api/books/folders/move', 'POST', { from: 'Endgames', to: 'Endings' });
+    expect(moved.status).toBe(200);
+    expect((await json('/api/books/folders/move', 'POST', { from: 'Endings', to: 'Openings' })).status).toBe(409);
+    expect((await json('/api/books/folders/move', 'POST', { from: 'Nope', to: 'X' })).status).toBe(404);
+    list = await (await app.request('/api/books')).json();
+    expect(list.folders).toEqual(['Endings', 'Openings']);
+    expect(list.books.find((b: { id: string }) => b.id === id).collection).toBe('Endings');
+
+    // Deleting refuses a collection with a book in it; back on the shelf, it goes.
+    expect((await app.request('/api/books/folders/Endings', { method: 'DELETE' })).status).toBe(409);
+    expect((await json(`/api/books/${id}`, 'PATCH', { collection: null })).status).toBe(200);
+    expect((await app.request('/api/books/folders/Endings', { method: 'DELETE' })).status).toBe(200);
+    // A collection a book was filed in stays when the book goes, until deleted.
+    await app.request(`/api/books/${other.id}`, { method: 'DELETE' });
+    list = await (await app.request('/api/books')).json();
+    expect(list.folders).toEqual(['Openings']);
+    expect((await app.request('/api/books/folders/Openings', { method: 'DELETE' })).status).toBe(200);
+    list = await (await app.request('/api/books')).json();
+    expect(list.folders).toEqual([]);
+    expect(list.books.find((b: { id: string }) => b.id === id).collection).toBeNull();
+  });
+
   it('replaces the file, dropping the diagram cache and a page past the new end', async () => {
     const shorter = Buffer.concat([Buffer.from('%PDF-1.7\n'), Buffer.alloc(100, 0x42)]);
     const res = await app.request(`/api/books/${id}/pdf?pages=5`, {

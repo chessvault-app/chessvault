@@ -48,6 +48,13 @@ A library of your chess books, read beside a board.
   panel sits next to the board where there is room and under it where
   there is not; on a phone the reader is the Board page's own shape —
   board on top, then Book, Moves and Engine as panes.
+- **Books file into collections**, as studies and notes do: a heading
+  per collection on the shelf, the shelf's own books first; "New
+  collection" under Create, "Move to a collection" on a card, a target
+  collection in the upload window, and the heading's menu to rename or
+  (once empty) delete. A collection is a name on the book, not a folder
+  on disk, so a book's id — and the puzzle book pointing at it — never
+  moves.
 - **The importer files the PDF it scans.** Importing a puzzle book puts
   the PDF in the library too and links the puzzle book to it, so the book
   page offers Read; removing the library book leaves the puzzle book and

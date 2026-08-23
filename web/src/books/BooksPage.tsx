@@ -8,6 +8,8 @@ import {
   BookText,
   Bookmark,
   FileUp,
+  Folder as FolderIcon,
+  FolderInput,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -17,9 +19,11 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ActionMenu } from '@/components/action-menu';
 import { CreateControl, FabSpacer } from '@/components/fab';
+import { MoveToDialog } from '@/components/move-to-dialog';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
+import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { SkeletonBookCards, useSlowLoad } from '@/components/skeletons';
 import { SwipeTrack, useSwipeRow } from '@/components/swipe-row';
 import { SearchInput } from '@/components/text-fields';
@@ -34,10 +38,14 @@ import { cn } from '@/lib/utils';
 
 import {
   coverUrl,
+  createCollection,
   libraryMemory,
   loadBooks,
+  moveBook,
   removeBook,
+  removeCollection,
   renameBook,
+  renameCollection,
   type LibraryBook,
 } from './data';
 import { UploadBookDialog } from './UploadBookDialog';
@@ -52,7 +60,10 @@ import { useDiagramJob } from './diagramJob';
  * The same shape as the other shelves — the header carries what is about
  * the shelf, the search has its own line, a card's verbs are behind its
  * ⋯ and a swipe removes (undoably). Dropping a PDF anywhere on the page
- * uploads it, as does the button.
+ * uploads it, as does the button. Books file into collections as studies
+ * and notes do — a heading per collection, the shelf's own books first —
+ * with the same heading menu (rename, delete when empty) and the same
+ * "Move to a collection" on the card.
  */
 
 /**
@@ -119,6 +130,7 @@ export function fileSize(bytes: number): string {
 
 export function BooksPage() {
   const [books, setBooks] = useState<LibraryBook[] | null>(libraryMemory.books);
+  const [folders, setFolders] = useState<string[]>(libraryMemory.folders);
   const [error, setError] = useState<string | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
@@ -203,6 +215,7 @@ export function BooksPage() {
   const load = useCallback(async (force = true): Promise<void> => {
     try {
       setBooks(await loadBooks(force));
+      setFolders(libraryMemory.folders);
       setError(null);
     } catch (e) {
       setBooks((prev) => prev ?? []);
@@ -217,6 +230,7 @@ export function BooksPage() {
   // the PDF that was dropped on the shelf. One book at a time — the
   // window shows the book back and asks before anything goes up.
   const [adding, setAdding] = useState<{ file: File | null } | null>(null);
+  const [newFolder, setNewFolder] = useState(false);
   const drop = useFileDrop({
     accept: byExtension('.pdf'),
     onFiles: ([first]) => setAdding({ file: first ?? null }),
@@ -258,15 +272,63 @@ export function BooksPage() {
       if (view.sort === 'read') return flip * ((a.lastPage ?? 0) - (b.lastPage ?? 0));
       return flip * a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
     });
+  // Grouped by collection, the shelf's own books first, then the
+  // collections by name — every collection listed, so an empty one shows
+  // (except under a search or the bookmark filter, which list only what
+  // they found). The order inside a group is the chosen one.
+  const groups = new Map<string, LibraryBook[]>();
+  groups.set('', []);
+  if (!needle && !markedOnly) for (const f of folders) groups.set(f, []);
+  for (const b of visible) {
+    const key = b.collection ?? '';
+    const list = groups.get(key);
+    if (list) list.push(b);
+    else groups.set(key, [b]);
+  }
+  const groupNames = [...groups.keys()].sort((a, b) =>
+    a === '' ? -1 : b === '' ? 1 : a.localeCompare(b),
+  );
+  const shownGroups = groupNames.filter((g) => g === '' ? groups.get('')!.length > 0 || groupNames.length === 1 : true);
+  const cardsOf = (list: LibraryBook[]) =>
+    list.map((b) => (
+      <BookCard
+        key={b.id}
+        book={b}
+        folders={folders}
+        marked={marked.has(b.id)}
+        onToggleMark={() => void toggleMark(b.id)}
+        onRemove={() => remove(b)}
+        onChanged={() => void load()}
+        onError={setError}
+      />
+    ));
 
   return (
     <PageShell width="medium" className="block">
       {/* The drop target is the page's content column: a PDF let go
           anywhere on the shelf is an upload. */}
       <div {...drop.handlers} className="contents">
+      {newFolder && (
+        <PromptDialog
+          label={t('New collection')}
+          initial=""
+          submitLabel="Create"
+          onSubmit={(value) => {
+            setNewFolder(false);
+            if (value.trim()) {
+              void createCollection(value.trim()).then((err) => {
+                if (err) setError(t(err));
+                else void load();
+              });
+            }
+          }}
+          onClose={() => setNewFolder(false)}
+        />
+      )}
       {adding && (
         <UploadBookDialog
           initialFile={adding.file}
+          folders={folders}
           onClose={() => setAdding(null)}
           onUploaded={(id) => {
             setAdding(null);
@@ -315,6 +377,7 @@ export function BooksPage() {
               <CreateControl
                 actions={[
                   { label: 'Upload PDF', icon: Upload, onSelect: () => setAdding({ file: null }) },
+                  { label: 'New collection', icon: FolderIcon, onSelect: () => setNewFolder(true) },
                 ]}
               />
             </>
@@ -336,7 +399,7 @@ export function BooksPage() {
 
       {books === null || !coversReady ? (
         pending ? <SkeletonBookCards cards={books?.length || 4} /> : null
-      ) : visible.length === 0 ? (
+      ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
         <div
           className={cn(
             'bg-card flex flex-col items-center gap-3 rounded-xl ring-1 ring-foreground/10 p-6 text-center',
@@ -359,24 +422,40 @@ export function BooksPage() {
           )}
         </div>
       ) : (
-        <ul
+        <div
           className={cn(
-            'grid grid-cols-1 gap-3 rounded-xl sm:grid-cols-2',
+            'flex flex-col gap-4 rounded-xl',
             drop.dragging && 'ring-primary ring-2 ring-offset-4 ring-offset-background',
           )}
         >
-          {visible.map((b) => (
-            <BookCard
-              key={b.id}
-              book={b}
-              marked={marked.has(b.id)}
-              onToggleMark={() => void toggleMark(b.id)}
-              onRemove={() => remove(b)}
-              onChanged={() => void load()}
-              onError={setError}
-            />
+          {shownGroups.map((folder) => (
+            <section key={folder || '(root)'} className="flex flex-col gap-2">
+              {folder && (
+                <ShelfFolderHeader
+                  folder={folder}
+                  empty={groups.get(folder)!.length === 0}
+                  onRename={(next) =>
+                    renameCollection(folder, next).then((e) => {
+                      if (!e) void load();
+                      return e && t(e);
+                    })
+                  }
+                  onDelete={() =>
+                    removeCollection(folder).then((e) => {
+                      if (!e) void load();
+                      return e && t(e);
+                    })
+                  }
+                />
+              )}
+              {groups.get(folder)!.length === 0 ? (
+                <p className="text-muted-foreground px-1 text-sm">{t('Empty collection.')}</p>
+              ) : (
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">{cardsOf(groups.get(folder)!)}</ul>
+              )}
+            </section>
           ))}
-        </ul>
+        </div>
       )}
 
       <FabSpacer />
@@ -387,6 +466,7 @@ export function BooksPage() {
 
 function BookCard({
   book,
+  folders,
   marked,
   onToggleMark,
   onRemove,
@@ -394,6 +474,8 @@ function BookCard({
   onError,
 }: {
   book: LibraryBook;
+  /** Every collection, for "Move to a collection". */
+  folders: string[];
   marked: boolean;
   onToggleMark: () => void;
   onRemove: () => void;
@@ -405,6 +487,7 @@ function BookCard({
   const job = useDiagramJob();
   const reading = job.bookId === book.id && job.status === 'running';
   const [renaming, setRenaming] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [replacing, setReplacing] = useState(false);
   const open = (): void => navigate('books', book.id);
 
@@ -516,6 +599,7 @@ function BookCard({
               onSelect: onToggleMark,
             },
             { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+            { label: 'Move to a collection', icon: FolderInput, onSelect: () => setMoving(true) },
             ...(job.status !== 'running'
               ? [
                   {
@@ -552,6 +636,19 @@ function BookCard({
             initial={book.title}
             onSubmit={(value) => void rename(value)}
             onClose={() => setRenaming(false)}
+          />
+        )}
+        {moving && (
+          <MoveToDialog
+            currentFolder={book.collection ?? ''}
+            folders={folders}
+            onPick={(target) => {
+              setMoving(false);
+              void moveBook(book.id, target || null)
+                .then(onChanged)
+                .catch((e) => onError(apiErrorMessage(e)));
+            }}
+            onClose={() => setMoving(false)}
           />
         )}
         {replacing && (

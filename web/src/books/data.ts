@@ -1,4 +1,4 @@
-import { api, apiUpload } from '@/lib/api';
+import { api, apiErrorMessage, apiUpload } from '@/lib/api';
 import { inspectPdf } from '@/puzzles/ocr/pdfPage';
 
 /**
@@ -20,6 +20,8 @@ export interface LibraryBook {
   addedAt: string | null;
   lastPage: number | null;
   cover: boolean;
+  /** The collection the book is filed in; null: the shelf itself. */
+  collection: string | null;
   /** The puzzle book read from this PDF, when there is one. */
   puzzleBook?: { slug: string; title: string } | null;
 }
@@ -53,6 +55,8 @@ export const MAX_PDF_BYTES = 300 * 1024 * 1024;
  */
 export const libraryMemory = {
   books: null as LibraryBook[] | null,
+  /** Every collection, in use or created empty; with the list. */
+  folders: [] as string[],
   /** The covers were decoded once; coming back need not wait for them. */
   coversDecoded: false,
 };
@@ -64,9 +68,53 @@ export function forgetLibrary(): void {
 
 export async function loadBooks(force = false): Promise<LibraryBook[]> {
   if (!force && libraryMemory.books) return libraryMemory.books;
-  const body = await api<{ books: LibraryBook[] }>('/api/books');
+  const body = await api<{ books: LibraryBook[]; folders?: string[] }>('/api/books');
   libraryMemory.books = body.books;
+  libraryMemory.folders = body.folders ?? [];
   return body.books;
+}
+
+/**
+ * Collections — the same idea as the studies and notes shelves', a name
+ * a book is filed under. Each call resolves to an error to show, or null.
+ */
+export async function createCollection(name: string): Promise<string | null> {
+  try {
+    await api('/api/books/folders', { method: 'POST', json: { name } });
+    forgetLibrary();
+    return null;
+  } catch (e) {
+    return apiErrorMessage(e);
+  }
+}
+
+export async function renameCollection(from: string, to: string): Promise<string | null> {
+  try {
+    await api('/api/books/folders/move', { method: 'POST', json: { from, to } });
+    forgetLibrary();
+    return null;
+  } catch (e) {
+    return apiErrorMessage(e);
+  }
+}
+
+export async function removeCollection(name: string): Promise<string | null> {
+  try {
+    await api(`/api/books/folders/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    forgetLibrary();
+    return null;
+  } catch (e) {
+    return apiErrorMessage(e);
+  }
+}
+
+/** File a book in a collection; '' or null puts it back on the shelf. */
+export async function moveBook(id: string, collection: string | null): Promise<void> {
+  await api(`/api/books/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    json: { collection: collection || null },
+  });
+  forgetLibrary();
 }
 
 /**
@@ -113,6 +161,8 @@ export async function uploadBook(
   file: File,
   options: {
     title: string;
+    /** The collection to file it in, if any. */
+    collection?: string | null;
     /** The file already opened by the caller (the upload window shows
         the cover before asking); spares a second open. */
     inspected?: { pages: number; cover: string | null };
@@ -121,7 +171,7 @@ export async function uploadBook(
 ): Promise<string> {
   const { pages, cover } = options.inspected ?? (await inspectPdf(file));
   const made = await apiUpload<{ id: string }>(
-    `/api/books?${query({ title: options.title, name: file.name, pages: pages || null })}`,
+    `/api/books?${query({ title: options.title, name: file.name, pages: pages || null, collection: options.collection || null })}`,
     file,
     { method: 'POST', contentType: 'application/pdf', onProgress: options.onProgress },
   );

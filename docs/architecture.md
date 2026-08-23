@@ -21,9 +21,11 @@ vault/
   puzzlebooks/<id>/                  (b + 16 hex; the title lives in book.json)
     book.json  puzzles.json  drafts.json  progress.json  ocr.json
     diagrams/  *.jpg          (evidence scans, cover)
+  books/.collections.json            (the library's collections, by name)
   books/<id>/                        (the library: a PDF you read beside a board)
     book.pdf   book.json  reading.json  cover.jpg  diagrams.json
-                          (book.pdf is excluded from .history.git)
+                          (book.json names the book's collection, if any;
+                           book.pdf is excluded from .history.git)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (drill history)
                       map.json       (the opening map, one tree per colour)

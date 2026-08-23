@@ -17,6 +17,7 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
+import { validId } from '../shared/vaultNames.ts';
 
 /**
  * The book library — the PDFs a user uploads to READ in the app, beside a
@@ -24,7 +25,7 @@ import { VAULT } from './paths.ts';
  * Vault data, one directory per book:
  *
  *   vault/books/<id>/book.pdf       the file itself, served with Range
- *   vault/books/<id>/book.json      { title, name, pages, addedAt }
+ *   vault/books/<id>/book.json      { title, name, pages, addedAt, collection? }
  *   vault/books/<id>/reading.json   { page, at }   where the reader left off
  *   vault/books/<id>/cover.jpg      page 1, rendered by the client
  *   vault/books/<id>/diagrams.json  { [page]: [{ rect, fen }] }
@@ -38,6 +39,14 @@ import { VAULT } from './paths.ts';
  * The folder is an id — `b` and sixteen hex characters — for the reasons
  * puzzlebooks.ts records: a title is something people change, and an id
  * is something nothing can be left pointing at.
+ *
+ * Collections, as the studies and notes shelves have them, are a name on
+ * the book (`collection` in book.json), not a directory: the id stays put
+ * whatever shelf the book is filed on, so the puzzle book pointing at it
+ * never loses it. The names that exist are the ones in use plus the ones
+ * created empty, kept in vault/books/.collections.json so an empty
+ * collection survives until it is deleted; the same names are valid as
+ * a study's folder (shared/vaultNames.ts).
  *
  * diagrams.json is a cache the reader fills as it goes: the diagrams it
  * found on a page and the position it read off each, so the hotspot that
@@ -74,6 +83,8 @@ interface BookMeta {
   /** Page count as the client read it; null when it could not. */
   pages: number | null;
   addedAt: string;
+  /** The collection the book is filed in; absent: the shelf itself. */
+  collection?: string;
 }
 
 interface Reading {
@@ -147,6 +158,36 @@ export function booksApi(
   const diagramsPath = (id: string): string => resolve(bookDir(id), 'diagrams.json');
 
   const validBook = (id: string): boolean => isLibraryBookId(id) && existsSync(metaPath(id));
+
+  /** The collections created on purpose, empty or not. */
+  const foldersPath = resolve(dir, '.collections.json');
+  const readFolders = (): string[] => {
+    const list = readJson<unknown>(foldersPath, []);
+    return Array.isArray(list) ? list.filter((f): f is string => typeof f === 'string') : [];
+  };
+  const writeFolders = (folders: string[]): void => {
+    mkdirSync(dir, { recursive: true });
+    writeJson(foldersPath, [...new Set(folders)].sort());
+  };
+  const bookIds = (): string[] =>
+    existsSync(dir)
+      ? readdirSync(dir, { withFileTypes: true })
+          .filter((e) => e.isDirectory() && validBook(e.name))
+          .map((e) => e.name)
+      : [];
+  const collectionOf = (id: string): string | null => {
+    const c = readJson<Partial<BookMeta>>(metaPath(id), {}).collection;
+    return typeof c === 'string' && c ? c : null;
+  };
+  /** Every collection: the created ones and the ones books are in. */
+  const allFolders = (): string[] => {
+    const set = new Set(readFolders());
+    for (const id of bookIds()) {
+      const c = collectionOf(id);
+      if (c) set.add(c);
+    }
+    return [...set].sort();
+  };
 
   /**
    * Which puzzle book, if any, was read from each library book — the
@@ -263,12 +304,10 @@ export function booksApi(
   });
 
   api.get('/books', (c) => {
-    if (!existsSync(dir)) return c.json({ books: [] });
+    if (!existsSync(dir)) return c.json({ books: [], folders: [] });
     const linked = puzzleBooksByPdf();
-    const books = readdirSync(dir, { withFileTypes: true })
-      .filter((e) => e.isDirectory() && validBook(e.name))
-      .map((e) => {
-        const id = e.name;
+    const books = bookIds()
+      .map((id) => {
         const meta = readJson<Partial<BookMeta>>(metaPath(id), {});
         const hasPdf = existsSync(pdfPath(id));
         return {
@@ -280,12 +319,53 @@ export function booksApi(
           addedAt: meta.addedAt ?? null,
           lastPage: lastPage(id),
           cover: existsSync(coverPath(id)),
+          collection: typeof meta.collection === 'string' && meta.collection ? meta.collection : null,
           // The puzzle book read from this PDF, when there is one.
           puzzleBook: linked.get(id) ?? null,
         };
       })
       .sort((a, b) => (b.addedAt ?? '').localeCompare(a.addedAt ?? ''));
-    return c.json({ books });
+    return c.json({ books, folders: allFolders() });
+  });
+
+  // Collections. The same verbs as the studies shelf's, so the two shelves
+  // read alike: create, rename, delete — and delete refuses a collection
+  // that still holds a book, because nothing is removed by side effect.
+  api.post('/books/folders', async (c) => {
+    const body = await c.req.json<{ name?: string }>().catch(() => null);
+    const name = body?.name?.trim().normalize('NFC');
+    if (!name || !validId(name)) return c.json({ error: 'invalid collection name' }, 400);
+    writeFolders([...readFolders(), name]);
+    return c.json({ folder: name });
+  });
+
+  api.post('/books/folders/move', async (c) => {
+    const body = await c.req.json<{ from?: string; to?: string }>().catch(() => null);
+    const from = body?.from?.trim().normalize('NFC');
+    const to = body?.to?.trim().normalize('NFC');
+    if (!from || !to || !validId(from) || !validId(to)) {
+      return c.json({ error: 'invalid collection name' }, 400);
+    }
+    if (!allFolders().includes(from)) return c.json({ error: 'no such collection' }, 404);
+    if (allFolders().includes(to)) return c.json({ error: 'a collection with that name exists' }, 409);
+    for (const id of bookIds()) {
+      if (collectionOf(id) !== from) continue;
+      const meta = readJson<Partial<BookMeta>>(metaPath(id), {});
+      writeJson(metaPath(id), { ...meta, collection: to });
+    }
+    writeFolders(readFolders().map((f) => (f === from ? to : f)));
+    return c.json({ moved: to });
+  });
+
+  api.delete('/books/folders/:name{.+}', (c) => {
+    const name = c.req.param('name').normalize('NFC');
+    if (!validId(name)) return c.json({ error: 'invalid collection name' }, 400);
+    if (!allFolders().includes(name)) return c.json({ error: 'no such collection' }, 404);
+    if (bookIds().some((id) => collectionOf(id) === name)) {
+      return c.json({ error: 'collection is not empty — move or remove its books first' }, 409);
+    }
+    writeFolders(readFolders().filter((f) => f !== name));
+    return c.json({ deleted: name });
   });
 
   /**
@@ -309,6 +389,13 @@ export function booksApi(
     };
     const name = c.req.query('name')?.trim();
     if (name) meta.name = name.slice(0, 200);
+    const collection = c.req.query('collection')?.trim().normalize('NFC');
+    if (collection && validId(collection)) {
+      meta.collection = collection;
+      // Filing a book in a new collection creates it, as a study's path
+      // does; it stays when the book leaves, until it is deleted.
+      writeFolders([...readFolders(), collection]);
+    }
     writeJson(metaPath(id), meta);
     return c.json({ id, bytes: statSync(pdfPath(id)).size, pages: meta.pages });
   });
@@ -380,15 +467,35 @@ export function booksApi(
     return c.body(whole, 200, { ...headers, 'content-length': String(size) });
   });
 
+  // Rename, or file in a collection (null: back on the shelf itself).
   api.patch('/books/:id', async (c) => {
     const id = c.req.param('id');
     if (!validBook(id)) return c.json({ error: 'unknown book' }, 404);
-    const body = (await c.req.json().catch(() => ({}))) as { title?: string };
-    const title = body.title?.trim().normalize('NFC');
-    if (!title) return c.json({ error: 'a book needs a title' }, 400);
+    const body = (await c.req.json().catch(() => ({}))) as {
+      title?: string;
+      collection?: string | null;
+    };
     const meta = readJson<Partial<BookMeta>>(metaPath(id), {});
-    writeJson(metaPath(id), { ...meta, title });
-    return c.json({ id, title });
+    const next: Partial<BookMeta> = { ...meta };
+    if (body.title !== undefined) {
+      const title = body.title?.trim().normalize('NFC');
+      if (!title) return c.json({ error: 'a book needs a title' }, 400);
+      next.title = title;
+    }
+    if (body.collection !== undefined) {
+      if (body.collection === null || body.collection === '') delete next.collection;
+      else {
+        const collection = body.collection.trim().normalize('NFC');
+        if (!validId(collection)) return c.json({ error: 'invalid collection name' }, 400);
+        next.collection = collection;
+        writeFolders([...readFolders(), collection]);
+      }
+    }
+    if (body.title === undefined && body.collection === undefined) {
+      return c.json({ error: 'nothing to change' }, 400);
+    }
+    writeJson(metaPath(id), next);
+    return c.json({ id, title: next.title, collection: next.collection ?? null });
   });
 
   api.delete('/books/:id', (c) => {

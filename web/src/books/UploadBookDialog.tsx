@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
@@ -26,6 +27,7 @@ import { fileSize } from './BooksPage';
 export function UploadBookDialog({
   initialFile,
   replace,
+  folders,
   onClose,
   onUploaded,
 }: {
@@ -33,6 +35,8 @@ export function UploadBookDialog({
   /** Replacing the file behind an existing book, rather than adding one:
       the title is the book's and stays; the file goes where the old was. */
   replace?: { id: string; title: string };
+  /** The collections a new book can be filed in; none: no chooser. */
+  folders?: string[];
   onClose: () => void;
   /** The book's id, once the file is on the shelf. */
   onUploaded: (id: string) => void;
@@ -40,6 +44,7 @@ export function UploadBookDialog({
   const [file, setFile] = useState<File | null>(initialFile ?? null);
   const [looked, setLooked] = useState<{ pages: number; cover: string | null } | null>(null);
   const [title, setTitle] = useState('');
+  const [collection, setCollection] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
 
@@ -91,6 +96,7 @@ export function UploadBookDialog({
       }
       const id = await uploadBook(file, {
         title: title.trim() || t('Untitled book'),
+        collection: collection || null,
         inspected: looked,
         onProgress,
       });
@@ -167,6 +173,24 @@ export function UploadBookDialog({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && looked && progress === null) void upload();
                     }}
+                  />
+                </label>
+              )}
+              {!replace && folders && folders.length > 0 && (
+                <label className="flex flex-col gap-1">
+                  <span className="text-muted-foreground text-sm">{t('Target collection')}</span>
+                  <Select
+                    value={collection}
+                    onValueChange={setCollection}
+                    ariaLabel={t('Target collection')}
+                    groups={[
+                      {
+                        options: [
+                          { value: '', label: t('(no collection)') },
+                          ...folders.map((f) => ({ value: f, label: f })),
+                        ],
+                      },
+                    ]}
                   />
                 </label>
               )}

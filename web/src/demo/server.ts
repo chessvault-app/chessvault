@@ -140,7 +140,7 @@ function buildApp(): Hono {
   // is the truth here. A 404 would be equally true and would crash the
   // page, which is the difference between honest and useful.
   app.get('/api/puzzlebooks', (c) => c.json({ books: [] }));
-  app.get('/api/books', (c) => c.json({ books: [] }));
+  app.get('/api/books', (c) => c.json({ books: [], folders: [] }));
 
   // Anything the demo has no answer for says so, rather than falling
   // through to the page's own HTML and failing as a JSON parse error.
