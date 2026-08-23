@@ -749,7 +749,7 @@ function PdfPane({
         <Button variant="ghost" size={size} disabled={pages > 0 && pageNo >= pages} onClick={() => goTo(pageNo + 1)} title={t('Next page')}>
           <ChevronRight className={icon} />
         </Button>
-        <span className="bg-border mx-1 h-4 w-px" />
+        {!compact && <span className="bg-border mx-1 h-4 w-px" />}
         <Button
           variant="ghost"
           size={size}
@@ -759,24 +759,31 @@ function PdfPane({
         >
           {fitted ? <MoveHorizontal className={icon} /> : <Maximize2 className={icon} />}
         </Button>
-        <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => bumpZoom(1 / 1.25)} title={t('Zoom out')}>
-          <ZoomOut className={icon} />
-        </Button>
-        {width >= 420 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground w-12 tabular-nums"
-            onClick={() => setZoom(1)}
-            title={t('Reset zoom')}
-          >
-            {Math.round(zoom * 100)}%
-          </Button>
+        {/* Zoom buttons only where there is no pinch: a phone's bar has
+            room for page, fit, rotate and search at touch size, and no
+            more — the measured row overflowed the screen with them. */}
+        {!compact && (
+          <>
+            <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => bumpZoom(1 / 1.25)} title={t('Zoom out')}>
+              <ZoomOut className={icon} />
+            </Button>
+            {width >= 420 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground w-12 tabular-nums"
+                onClick={() => setZoom(1)}
+                title={t('Reset zoom')}
+              >
+                {Math.round(zoom * 100)}%
+              </Button>
+            )}
+            <Button variant="ghost" size={size} disabled={zoom >= ZOOM_MAX} onClick={() => bumpZoom(1.25)} title={t('Zoom in')}>
+              <ZoomIn className={icon} />
+            </Button>
+            <span className="bg-border mx-1 h-4 w-px" />
+          </>
         )}
-        <Button variant="ghost" size={size} disabled={zoom >= ZOOM_MAX} onClick={() => bumpZoom(1.25)} title={t('Zoom in')}>
-          <ZoomIn className={icon} />
-        </Button>
-        <span className="bg-border mx-1 h-4 w-px" />
         <Button variant="ghost" size={size} onClick={onRotate} title={t('Rotate the page')}>
           <RotateCw className={icon} />
         </Button>
