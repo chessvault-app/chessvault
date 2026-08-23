@@ -5,7 +5,6 @@ import {
   Cpu,
   FileUp,
   Grid3x3,
-  Hash,
   ListOrdered,
   Maximize2,
   MoveHorizontal,
@@ -29,10 +28,10 @@ import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { Panel, PanelHeader } from '@/components/panel';
 import { PaneTabs } from '@/components/pane-tabs';
-import { PromptDialog } from '@/components/prompt-dialog';
 import { ResizablePane } from '@/components/resizable-pane';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { EditorView } from '@/editor/EditorView';
 import { EngineBlock } from '@/engine/EnginePane';
 import { useElementWidth } from '@/hooks/use-element-width';
@@ -156,7 +155,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // The board-over-panel arrangement beside the PDF: one pane at a time
   // under the board, as the phone does, rather than a panel that scrolls.
   const [sideTab, setSideTab] = useState<'moves' | 'engine'>('moves');
-  const [goingTo, setGoingTo] = useState(false);
   const [loadOpen, setLoadOpen] = useState(false);
   const [stackedPane, stackedPaneW] = useElementWidth();
   const [wideRow, wideRowW] = useElementWidth();
@@ -185,7 +183,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       onScrolledTo={setPageNo}
       bumpZoom={bumpZoom}
       setZoom={setZoom}
-      onGoTo={() => setGoingTo(true)}
       overlayFor={overlayFor}
       onVisible={setShown}
     />
@@ -278,20 +275,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     />
   );
 
-  const gotoDialog = goingTo && (
-    <PromptDialog
-      label={t('Go to page')}
-      initial={String(pageNo || 1)}
-      submitLabel="Go"
-      onSubmit={(value) => {
-        setGoingTo(false);
-        const n = Number(value);
-        if (Number.isFinite(n)) goTo(n);
-      }}
-      onClose={() => setGoingTo(false)}
-    />
-  );
-
   if (wide) {
     return (
       <div className="mx-auto flex h-full min-h-0 w-full max-w-[96rem] flex-col">
@@ -349,7 +332,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
               ))}
           </div>
         </div>
-        {gotoDialog}
       </div>
     );
   }
@@ -389,7 +371,6 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       <MobileActionBar>
         <BoardControls keyboard={false} className="py-1.5" />
       </MobileActionBar>
-      {gotoDialog}
     </div>
   );
 }
@@ -518,7 +499,6 @@ function PdfPane({
   onScrolledTo,
   bumpZoom,
   setZoom,
-  onGoTo,
   overlayFor,
   onVisible,
 }: {
@@ -536,8 +516,6 @@ function PdfPane({
   onScrolledTo: (n: number) => void;
   bumpZoom: (f: number) => void;
   setZoom: (z: number) => void;
-  /** Open the go-to-page prompt. */
-  onGoTo: () => void;
   overlayFor: (page: number) => React.ReactNode;
   onVisible: (pages: number[]) => void;
 }) {
@@ -602,6 +580,9 @@ function PdfPane({
     run();
   };
   const icon = compact ? 'size-[1.1rem]' : 'size-3.5';
+  // The page number is a field: typing one and pressing Enter goes there,
+  // which is the go-to every reader knows without a label.
+  const [typed, setTyped] = useState<string | null>(null);
   const size = compact ? 'icon' : 'icon-sm';
   return (
     <>
@@ -610,16 +591,30 @@ function PdfPane({
         <Button variant="ghost" size={size} disabled={pageNo <= 1} onClick={() => goTo(pageNo - 1)} title={t('Previous page')}>
           <ChevronLeft className={icon} />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground min-w-[4.5rem] tabular-nums"
+        <Input
+          inputSize="sm"
+          inputMode="numeric"
+          className="w-12 text-center tabular-nums"
+          value={typed ?? String(pageNo || 1)}
+          aria-label={t('Go to page')}
           title={t('Go to page')}
-          onClick={onGoTo}
-        >
-          {pages > 0 ? `${pageNo || 1} / ${pages}` : pageNo || 1}
-          <Hash className="size-3 opacity-60" />
-        </Button>
+          onFocus={(e) => e.currentTarget.select()}
+          onChange={(e) => setTyped(e.target.value)}
+          onBlur={() => {
+            if (typed !== null && typed.trim() !== '') goTo(Number(typed));
+            setTyped(null);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+            if (e.key === 'Escape') {
+              setTyped(null);
+              e.currentTarget.blur();
+            }
+          }}
+        />
+        <span className="text-muted-foreground px-1 text-sm tabular-nums">
+          {pages > 0 ? `/ ${pages}` : ''}
+        </span>
         <Button variant="ghost" size={size} disabled={pages > 0 && pageNo >= pages} onClick={() => goTo(pageNo + 1)} title={t('Next page')}>
           <ChevronRight className={icon} />
         </Button>
