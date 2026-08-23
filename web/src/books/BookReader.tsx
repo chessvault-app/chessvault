@@ -400,9 +400,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
  * The app's page header on PageShell's own insets — 16px, 24 from md —
  * and the toolbars, page and board under it keep the same inset, so the
  * chevron, the page's left edge and the bin stand on one line. The band
- * under it (wide:mt-4) is the shell's gap-4. The chevron is a phone's,
- * as on every page: on a desktop the reader is a top-level page, reached
- * and left through the sidebar's Books.
+ * under it (wide:mt-4) is the shell's gap-4. A top-level page's header
+ * on a desktop, chevron included (the sidebar names Books, not this
+ * book); on a phone the leaf row the board pages wear — see `flush`.
  */
 function ReaderHeader({
   title,
@@ -413,15 +413,31 @@ function ReaderHeader({
   title: string;
   onBack: () => void;
   menu?: React.ReactNode;
-  /** Inside the stacked board shell, which pads the page itself. */
+  /**
+   * Inside the stacked board shell (a phone), which pads the page itself:
+   * the row the board-family leaf pages open with there — chevron, a
+   * text-base title, the actions — rather than the top-level header.
+   */
   flush?: boolean;
 }) {
+  if (flush) {
+    return (
+      <div className="flex shrink-0 items-center gap-2">
+        <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
+          <ChevronLeft className="size-3.5" />
+        </Button>
+        <h1 className="text-foreground min-w-0 flex-1 truncate text-base font-semibold">{title}</h1>
+        {menu}
+      </div>
+    );
+  }
   return (
-    <div className={cn('flex shrink-0 items-center', !flush && 'px-4 pt-4 md:px-6 md:pt-6')}>
+    <div className="flex shrink-0 items-center px-4 pt-4 md:px-6 md:pt-6">
       <PageHeader
         className="min-w-0 flex-1"
         title={title}
         back={onBack}
+        backVisible="always"
         truncate
         actions={menu}
       />

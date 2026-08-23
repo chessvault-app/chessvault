@@ -16,6 +16,7 @@ import { t } from '@/lib/i18n';
 export function PageHeader({
   title,
   back,
+  backVisible = 'phone',
   truncate = false,
   description,
   meta,
@@ -25,6 +26,12 @@ export function PageHeader({
   title: string;
   /** Where the phone's back chevron goes; omit on top-level pages. */
   back?: () => void;
+  /**
+   * `always` on a leaf the sidebar cannot name — one book, one document —
+   * where a desktop needs the chevron too; `phone` (the default) for the
+   * pages the sidebar reaches, where a desktop never shows it.
+   */
+  backVisible?: 'phone' | 'always';
   /** A title that is a user's own name for something and may run long:
       one line, cut with an ellipsis, rather than wrapping the row. */
   truncate?: boolean;
@@ -51,7 +58,7 @@ export function PageHeader({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="md:hidden"
+          className={backVisible === 'phone' ? 'md:hidden' : undefined}
           title={t('Back')}
           onClick={back}
         >
