@@ -2,10 +2,8 @@ import {
   BookText,
   ChevronLeft,
   ChevronRight,
-  Cpu,
   FileUp,
   Grid3x3,
-  ListOrdered,
   Maximize2,
   MoveHorizontal,
   SquarePen,
@@ -34,7 +32,6 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EditorView } from '@/editor/EditorView';
-import { EngineBlock } from '@/engine/EnginePane';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX } from '@/hooks/use-pinch-zoom';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -144,7 +141,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const [shown, setShown] = useState<number[]>([]);
   const diagramsOn = usePageDiagrams(id, doc, shown);
 
-  const [tab, setTab] = useState<'book' | 'moves' | 'engine'>('book');
+  const [tab, setTab] = useState<'book' | 'board'>('book');
   // The board-over-panel arrangement beside the PDF: one pane at a time
   // under the board, as the phone does, rather than a panel that scrolls.
   const [loadOpen, setLoadOpen] = useState(false);
@@ -159,6 +156,9 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     <DiagramHotspots
       diagrams={diagramsOn(n)}
       known={known.get(n) ?? []}
+      onSet={() => {
+        if (!wide) setTab('board');
+      }}
       onEdit={setEditing}
     />
   );
@@ -185,9 +185,8 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // The moves panel: the Board page's, with the position loader and the
   // editor in its header — the reader's two ways of putting a position on
   // the board that did not come from a diagram.
-  const movesPanel = (className?: string, engineDocked = true, nav = true) => (
+  const movesPanel = (className?: string, nav = true) => (
     <Panel flush className={cn('min-h-0 flex-1', className)}>
-      {engineDocked && <EngineBlock />}
       <PanelHeader
         title={t('Moves')}
         actions={
@@ -357,41 +356,44 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     );
   }
 
-  // Stacked: the board page's own shape, the book as one of the panes.
+  // Stacked (a phone): one thing at a time. The switcher under the header
+  // turns the page between the book, filling the screen, and the board
+  // with its moves under it — never both; the bottom bar is the board's
+  // and only shows with it.
   return (
     <div className={BOARD_HELD_SHELL}>
       {header(true)}
       {editor || (
         <>
-          <AnalysisBoard />
+          <PaneTabs
+            value={tab}
+            onChange={setTab}
+            tabs={[
+              { id: 'book', label: t('Book'), icon: BookText },
+              { id: 'board', label: t('Board'), icon: Grid3x3 },
+            ]}
+          />
           <div
-            className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+            ref={stackedPane}
+            className={cn('flex min-h-0 flex-1 flex-col', tab !== 'book' && 'hidden')}
           >
-            <PaneTabs
-              value={tab}
-              onChange={setTab}
-              tabs={[
-                { id: 'book', label: t('Book'), icon: BookText },
-                { id: 'moves', label: t('Moves'), icon: ListOrdered },
-                { id: 'engine', label: 'Engine', icon: Cpu },
-              ]}
-            />
+            {pdfPane(stackedPaneW, true)}
+          </div>
+          <div className={cn('flex min-h-0 flex-1 flex-col gap-2', tab !== 'board' && 'hidden')}>
+            <AnalysisBoard />
             <div
-              ref={stackedPane}
-              className={cn('flex min-h-0 flex-1 flex-col', tab !== 'book' && 'hidden')}
+              className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:min-h-40 stacked:gap-2 ${BOARD_WIDE_SIDE}`}
             >
-              {pdfPane(stackedPaneW, true)}
+              {movesPanel()}
             </div>
-            {movesPanel(cn(tab !== 'moves' && 'hidden'), false)}
-            <Panel flush className={cn('min-h-0 flex-1', tab !== 'engine' && 'hidden')}>
-              <EngineBlock standalone />
-            </Panel>
           </div>
         </>
       )}
-      <MobileActionBar>
-        <BoardControls keyboard={false} className="py-1.5" />
-      </MobileActionBar>
+      {tab === 'board' && !editor && (
+        <MobileActionBar>
+          <BoardControls keyboard={false} className="py-1.5" />
+        </MobileActionBar>
+      )}
     </div>
   );
 }
