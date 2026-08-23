@@ -6,7 +6,9 @@ import {
   Grid3x3,
   Loader2,
   Maximize2,
+  MoreHorizontal,
   MoveHorizontal,
+  Percent,
   RotateCcw,
   RotateCw,
   Search,
@@ -24,6 +26,7 @@ import { BOARD_MAX_W } from '@/board/boardSize';
 import { MoveActions, MovesOverflow } from '@/analysis/AnalysisView';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { LoadPositionButton } from '@/analysis/PositionLoader';
+import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { EmptyState } from '@/components/empty-state';
 import { NoMatchArt } from '@/components/empty-art';
@@ -768,6 +771,40 @@ function PdfPane({
   // which is the go-to every reader knows without a label.
   const [typed, setTyped] = useState<string | null>(null);
   const size = compact ? 'icon' : 'icon-sm';
+  // A narrow pane cannot hold the whole row: the page field is the one
+  // thing that must not squash, so the view controls fold into a "…"
+  // menu — a dropdown at wide, the bottom sheet on a phone (ActionMenu).
+  // Search stays out: it is the one verb after turning the page. On a
+  // phone the bar is always the short row; at a desktop pane it folds
+  // under 520 px, where the measured row began to eat the field.
+  const fold = compact || width < 520;
+  const [moreOpen, setMoreOpen] = useState(false);
+  const more: MenuAction[] = fold
+    ? [
+        ...(!compact
+          ? [
+              ...(fitPageZoom !== null && (fitPageZoom < 1 || fitted)
+                ? [
+                    {
+                      label: fitted ? 'Fit the width' : 'Fit the whole page',
+                      icon: fitted ? MoveHorizontal : Maximize2,
+                      onSelect: toggleFit,
+                    },
+                  ]
+                : []),
+              { label: 'Zoom in', icon: ZoomIn, onSelect: () => bumpZoom(1.25) },
+              { label: 'Zoom out', icon: ZoomOut, onSelect: () => bumpZoom(1 / 1.25) },
+              { label: 'Reset zoom', icon: Percent, onSelect: () => setZoom(1) },
+            ]
+          : []),
+        { label: 'Rotate the page', icon: RotateCw, onSelect: onRotate },
+        {
+          label: hotspots ? 'Hide the diagram buttons' : 'Show the diagram buttons',
+          icon: Grid3x3,
+          onSelect: onToggleHotspots,
+        },
+      ]
+    : [];
   const toolbar = (
     <>
       {/* One group, centred: what the page is and how it is shown. The same
@@ -818,7 +855,7 @@ function PdfPane({
             viewport at the width fit — a desktop pane. A portrait phone
             already shows the whole page at that width, so the button sat
             disabled there; pinch is the phone's zoom. */}
-        {!compact && (
+        {!fold && (
           <>
             <span className="bg-border mx-1 h-4 w-px" />
             <Button
@@ -835,7 +872,7 @@ function PdfPane({
         {/* Zoom buttons only where there is no pinch: a phone's bar has
             room for page, fit, rotate and search at touch size, and no
             more — the measured row overflowed the screen with them. */}
-        {!compact && (
+        {!fold && (
           <>
             <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => bumpZoom(1 / 1.25)} title={t('Zoom out')}>
               <ZoomOut className={icon} />
@@ -857,20 +894,31 @@ function PdfPane({
             <span className="bg-border mx-1 h-4 w-px" />
           </>
         )}
-        <Button variant="ghost" size={size} onClick={onRotate} title={t('Rotate the page')}>
-          <RotateCw className={icon} />
-        </Button>
-        <Button
-          variant="ghost"
-          size={size}
-          aria-pressed={hotspots}
-          className={cn(hotspots && 'text-primary')}
-          onClick={onToggleHotspots}
-          title={hotspots ? t('Hide the diagram buttons') : t('Show the diagram buttons')}
-        >
-          <Grid3x3 className={icon} />
-        </Button>
+        {!fold && (
+          <>
+            <Button variant="ghost" size={size} onClick={onRotate} title={t('Rotate the page')}>
+              <RotateCw className={icon} />
+            </Button>
+            <Button
+              variant="ghost"
+              size={size}
+              aria-pressed={hotspots}
+              className={cn(hotspots && 'text-primary')}
+              onClick={onToggleHotspots}
+              title={hotspots ? t('Hide the diagram buttons') : t('Show the diagram buttons')}
+            >
+              <Grid3x3 className={icon} />
+            </Button>
+          </>
+        )}
         <SearchPopover search={search} size={size} icon={icon} sheet={compact} />
+        {more.length > 0 && (
+          <ActionMenu title={t('Page')} actions={more} open={moreOpen} onOpenChange={setMoreOpen}>
+            <Button variant="ghost" size={size} title={t('More')} active={moreOpen}>
+              <MoreHorizontal className={icon} />
+            </Button>
+          </ActionMenu>
+        )}
       </div>
     </>
   );
