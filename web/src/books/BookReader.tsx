@@ -40,7 +40,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
-import { usePinchZoom, ZOOM_MAX } from '@/hooks/use-pinch-zoom';
+import { usePinchZoom, ZOOM_MAX, type PinchLive, type PinchPoint } from '@/hooks/use-pinch-zoom';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useMediaQuery, useWideLayout } from '@/lib/media';
@@ -84,6 +84,8 @@ const PANE_DEFAULT_W = 520;
     pane is a quarter of its fit-to-width size, and "fit the page" must
     be able to get there. */
 const ZOOM_MIN = 0.25;
+/** Whether the diagram buttons are drawn; remembered on the device. */
+const HOTSPOTS_KEY = 'vault:reader:hotspots';
 export function BookReader({ id, page }: { id: string; page?: string }) {
   const wide = useWideLayout();
   const [book, setBook] = useState<LibraryBook | null | undefined>(undefined);
@@ -141,8 +143,21 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   );
 
   const [zoom, setZoom] = useState(1);
-  const bumpZoom = (f: number): void =>
+  // Where the next zoom holds still (a pinch's centre); the scroller
+  // reads it. Null: the viewport's centre, which is what a button means.
+  const zoomAnchor = useRef<PinchPoint | null>(null);
+  const bumpZoom = (f: number, at?: PinchPoint): void => {
+    zoomAnchor.current = at ?? null;
     setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
+  };
+  // The diagram buttons can be put away: some books print a diagram's
+  // caption or number where the button sits, and the reader wants to see it.
+  const [hotspots, setHotspots] = useState(() => localStorage.getItem(HOTSPOTS_KEY) !== 'off');
+  const toggleHotspots = (): void =>
+    setHotspots((on) => {
+      localStorage.setItem(HOTSPOTS_KEY, on ? 'off' : 'on');
+      return !on;
+    });
   // A quarter turn at a time, for a scan that came in sideways.
   const [rotation, setRotation] = useState<Rotation>(0);
   const rotate = (): void => setRotation((r) => (((r + 90) % 360) as Rotation));
@@ -186,16 +201,18 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             rotation={rotation}
           />
         )}
-        <DiagramHotspots
-          diagrams={diagramsOn(n)}
-          known={known.get(n) ?? []}
-          rotation={rotation}
-          sheet={!wide}
-          onSet={() => {
-            if (!wide) setTab('board');
-          }}
-          onEdit={setEditing}
-        />
+        {hotspots && (
+          <DiagramHotspots
+            diagrams={diagramsOn(n)}
+            known={known.get(n) ?? []}
+            rotation={rotation}
+            sheet={!wide}
+            onSet={() => {
+              if (!wide) setTab('board');
+            }}
+            onEdit={setEditing}
+          />
+        )}
       </>
     );
   };
@@ -221,8 +238,11 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
       onScrolledTo={setPageNo}
       bumpZoom={bumpZoom}
       setZoom={setZoom}
+      zoomAnchor={zoomAnchor}
       overlayFor={overlayFor}
       reading={reading}
+      hotspots={hotspots}
+      onToggleHotspots={toggleHotspots}
     />
   );
 
@@ -618,8 +638,11 @@ function PdfPane({
   onScrolledTo,
   bumpZoom,
   setZoom,
+  zoomAnchor,
   overlayFor,
   reading,
+  hotspots,
+  onToggleHotspots,
 }: {
   doc: ReturnType<typeof useBookPdf>['doc'];
   error: string | null;
@@ -638,18 +661,34 @@ function PdfPane({
   goTo: (n: number) => void;
   /** The page the scroller arrived at on its own. */
   onScrolledTo: (n: number) => void;
-  bumpZoom: (f: number) => void;
+  bumpZoom: (f: number, at?: PinchPoint) => void;
   setZoom: (z: number) => void;
+  zoomAnchor: React.RefObject<PinchPoint | null>;
   overlayFor: (page: number) => React.ReactNode;
   /** The diagram pass over this book, while it runs: a line over the page. */
   reading: { page: number; pages: number } | null;
+  /** Whether the diagram buttons are drawn over the pages. */
+  hotspots: boolean;
+  onToggleHotspots: () => void;
 }) {
   const viewport = useRef<HTMLDivElement>(null);
   // Rebound when the document arrives: the viewport is the scroller's
   // element, which is only rendered once there is a document to scroll —
   // bound at mount alone, the listeners went on nothing and a pinch on a
   // phone did nothing.
-  usePinchZoom(viewport, bumpZoom, doc);
+  // A pinch is previewed as a CSS scale of the column and committed once
+  // when the fingers lift (use-pinch-zoom.ts); the preview is clamped to
+  // what the commit will allow, so the page does not grow past the limit
+  // and snap back.
+  const [pinch, setPinch] = useState<PinchLive | null>(null);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  usePinchZoom(viewport, bumpZoom, doc, (p) => {
+    if (!p) return setPinch(null);
+    const z = zoomRef.current;
+    const scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * p.scale)) / z;
+    setPinch({ ...p, scale });
+  });
   const slow = useSlowLoad(doc === null && error === null);
   // The page's width at zoom 1: the pane less the header's inset a side.
   // On a phone, the viewport's own content width — measured, so the
@@ -821,6 +860,16 @@ function PdfPane({
         <Button variant="ghost" size={size} onClick={onRotate} title={t('Rotate the page')}>
           <RotateCw className={icon} />
         </Button>
+        <Button
+          variant="ghost"
+          size={size}
+          aria-pressed={hotspots}
+          className={cn(hotspots && 'text-primary')}
+          onClick={onToggleHotspots}
+          title={hotspots ? t('Hide the diagram buttons') : t('Show the diagram buttons')}
+        >
+          <Grid3x3 className={icon} />
+        </Button>
         <SearchPopover search={search} size={size} icon={icon} sheet={compact} />
       </div>
     </>
@@ -854,6 +903,8 @@ function PdfPane({
           onPageChange={onScrolledTo}
           overlayFor={overlayFor}
           viewportRef={viewport}
+          zoomAnchor={zoomAnchor}
+          pinch={pinch}
           onKeyDown={onKey}
         />
       ) : (

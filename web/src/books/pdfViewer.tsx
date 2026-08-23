@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { useSlowLoad } from '@/components/skeletons';
 
+import type { PinchLive, PinchPoint } from '@/hooks/use-pinch-zoom';
 import { cn } from '@/lib/utils';
 import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
 
@@ -208,7 +209,9 @@ const RENDER_MARGIN = 1;
  * page's own once it has rendered. The page "being read" is the slot
  * under the top third of the viewport; the caller hears of it as it
  * changes, and can ask for a page, which scrolls the slot into place. A
- * zoom keeps the page that was being read where it was.
+ * zoom keeps the point of the page under the fingers — or, from a button,
+ * under the viewport's centre — where it was; it used to put the page
+ * being read back at the top, which made every zoom a jump.
  */
 export function PdfScroller({
   doc,
@@ -220,6 +223,8 @@ export function PdfScroller({
   onPageChange,
   overlayFor,
   viewportRef,
+  zoomAnchor,
+  pinch = null,
   onKeyDown,
   className,
 }: {
@@ -236,6 +241,12 @@ export function PdfScroller({
   /** The hotspot layer for a rendered page. */
   overlayFor: (page: number) => ReactNode;
   viewportRef: React.RefObject<HTMLDivElement | null>;
+  /** Where the next zoom change should hold still, relative to the
+      viewport; read and cleared when the zoom changes. Null: its centre. */
+  zoomAnchor?: React.RefObject<PinchPoint | null>;
+  /** A pinch under way: the column is scaled about its centre by CSS,
+      and nothing is re-rastered until the zoom itself changes. */
+  pinch?: PinchLive | null;
   onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
   className?: string;
 }) {
@@ -331,8 +342,20 @@ export function PdfScroller({
   const lastZoom = useRef(zoom);
   useEffect(() => {
     if (lastZoom.current === zoom) return;
+    const ratio = zoom / lastZoom.current;
     lastZoom.current = zoom;
-    if (reported.current !== null) target.current = reported.current;
+    const el = viewportRef.current;
+    if (!el) return;
+    // The column's slots are laid out at the new size by now; the point
+    // that was under the anchor is `ratio` times as far down the column.
+    // (The gaps between pages do not scale — a few pixels, not worth a
+    // second pass.) While a page is still being asked for, that wins.
+    if (target.current !== null) return;
+    const a = zoomAnchor?.current ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 };
+    if (zoomAnchor) zoomAnchor.current = null;
+    el.scrollTop = (el.scrollTop + a.y) * ratio - a.y;
+    el.scrollLeft = (el.scrollLeft + a.x) * ratio - a.x;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom]);
   // A rotation too: every slot changes height, and the page being read
   // must be asked for again at its new offset before the scroll reader
@@ -394,7 +417,24 @@ export function PdfScroller({
         className,
       )}
     >
-      <div className="relative mx-auto" style={{ height: total, width: pageW }}>
+      <div
+        className="relative mx-auto"
+        style={{
+          height: total,
+          width: pageW,
+          // A pinch in progress: scaled about the point under the fingers,
+          // which the commit then holds still, so the column does not move
+          // when the transform comes off. The column sits centred when it
+          // is narrower than the viewport, so its origin is offset by that.
+          ...(pinch && viewportRef.current
+            ? {
+                transform: `scale(${pinch.scale})`,
+                transformOrigin: `${pinch.x - Math.max(0, (viewportRef.current.clientWidth - pageW) / 2) + viewportRef.current.scrollLeft}px ${pinch.y + viewportRef.current.scrollTop}px`,
+                willChange: 'transform',
+              }
+            : null),
+        }}
+      >
         {rendered.map((n) => (
           <div
             key={n}

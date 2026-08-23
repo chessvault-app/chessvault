@@ -40,7 +40,11 @@ A library of your chess books, read beside a board.
   own header has the same way out for whatever is on it. The book scrolls
   as one column, page after page, with only the pages in view rendered;
   the reader fits the page to the pane's width or shows the whole page on
-  one toggle, and goes to a page by number. Beside the PDF, the moves
+  one toggle, and goes to a page by number; a pinch on a phone follows
+  the fingers and re-rasters once when they lift, and every zoom holds
+  the point under them (or under the pane's centre) still instead of
+  jumping to the page's top. The diagram buttons can be hidden from the
+  toolbar, for books that print a caption where they sit. Beside the PDF, the moves
   panel sits next to the board where there is room and under it where
   there is not; on a phone the reader is the Board page's own shape —
   board on top, then Book, Moves and Engine as panes.

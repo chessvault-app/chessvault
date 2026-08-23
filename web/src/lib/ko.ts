@@ -1701,6 +1701,8 @@ export const ko: Record<string, string> = {
   'Set up this position': '이 포지션을 판에 놓기',
   'White to move': '백 차례',
   'Opening the book…': '책을 여는 중…',
+  'Hide the diagram buttons': '다이어그램 버튼 숨기기',
+  'Show the diagram buttons': '다이어그램 버튼 보이기',
   'Who is to move?': '누구 차례인가요?',
   'Reading diagrams — page {page} of {pages}': '다이어그램 읽는 중 — {pages}쪽 중 {page}쪽',
   'Black to move': '흑 차례',
