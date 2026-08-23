@@ -146,10 +146,11 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   );
 
   const [zoom, setZoom] = useState(1);
-  // Where the next zoom holds still (a pinch's centre); the scroller
-  // reads it. Null: the viewport's centre, which is what a button means.
-  const zoomAnchor = useRef<PinchPoint | null>(null);
-  const bumpZoom = (f: number, at?: PinchPoint): void => {
+  // Where the next zoom holds still (a pinch's centre), with the scroll
+  // offsets as they were when it was asked for; the scroller reads it.
+  // Null: the viewport's centre at its current offsets.
+  const zoomAnchor = useRef<(PinchPoint & { top?: number; left?: number }) | null>(null);
+  const bumpZoom = (f: number, at?: PinchPoint & { top?: number; left?: number }): void => {
     zoomAnchor.current = at ?? null;
     setZoom((z) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * f)));
   };
@@ -664,9 +665,9 @@ function PdfPane({
   goTo: (n: number) => void;
   /** The page the scroller arrived at on its own. */
   onScrolledTo: (n: number) => void;
-  bumpZoom: (f: number, at?: PinchPoint) => void;
+  bumpZoom: (f: number, at?: PinchPoint & { top?: number; left?: number }) => void;
   setZoom: (z: number) => void;
-  zoomAnchor: React.RefObject<PinchPoint | null>;
+  zoomAnchor: React.RefObject<(PinchPoint & { top?: number; left?: number }) | null>;
   overlayFor: (page: number) => React.ReactNode;
   /** The diagram pass over this book, while it runs: a line over the page. */
   reading: { page: number; pages: number } | null;
@@ -686,7 +687,25 @@ function PdfPane({
   const [pinch, setPinch] = useState<PinchLive | null>(null);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
-  usePinchZoom(viewport, bumpZoom, doc, (p) => {
+  // Every zoom is asked for with the anchor AND the scroll offsets of the
+  // moment — captured here, before the commit, because a zoom out can
+  // shrink the column past the old scrollTop and the browser clamps it
+  // at relayout, before the scroller's own effect gets to read it.
+  const anchoredBump = (f: number, at?: PinchPoint): void => {
+    const el = viewport.current;
+    bumpZoom(
+      f,
+      el
+        ? {
+            x: at?.x ?? el.clientWidth / 2,
+            y: at?.y ?? el.clientHeight / 2,
+            top: el.scrollTop,
+            left: el.scrollLeft,
+          }
+        : at,
+    );
+  };
+  usePinchZoom(viewport, anchoredBump, doc, (p) => {
     if (!p) return setPinch(null);
     const z = zoomRef.current;
     const scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z * p.scale)) / z;
@@ -792,9 +811,9 @@ function PdfPane({
                     },
                   ]
                 : []),
-              { label: 'Zoom in', icon: ZoomIn, onSelect: () => bumpZoom(1.25) },
-              { label: 'Zoom out', icon: ZoomOut, onSelect: () => bumpZoom(1 / 1.25) },
-              { label: 'Reset zoom', icon: Percent, onSelect: () => setZoom(1) },
+              { label: 'Zoom in', icon: ZoomIn, onSelect: () => anchoredBump(1.25) },
+              { label: 'Zoom out', icon: ZoomOut, onSelect: () => anchoredBump(1 / 1.25) },
+              { label: 'Reset zoom', icon: Percent, onSelect: () => anchoredBump(1 / zoom) },
             ]
           : []),
         { label: 'Rotate the page', icon: RotateCw, onSelect: onRotate },
@@ -874,7 +893,7 @@ function PdfPane({
             more — the measured row overflowed the screen with them. */}
         {!fold && (
           <>
-            <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => bumpZoom(1 / 1.25)} title={t('Zoom out')}>
+            <Button variant="ghost" size={size} disabled={zoom <= ZOOM_MIN} onClick={() => anchoredBump(1 / 1.25)} title={t('Zoom out')}>
               <ZoomOut className={icon} />
             </Button>
             {width >= 420 && (
@@ -882,13 +901,13 @@ function PdfPane({
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground w-12 tabular-nums"
-                onClick={() => setZoom(1)}
+                onClick={() => anchoredBump(1 / zoom)}
                 title={t('Reset zoom')}
               >
                 {Math.round(zoom * 100)}%
               </Button>
             )}
-            <Button variant="ghost" size={size} disabled={zoom >= ZOOM_MAX} onClick={() => bumpZoom(1.25)} title={t('Zoom in')}>
+            <Button variant="ghost" size={size} disabled={zoom >= ZOOM_MAX} onClick={() => anchoredBump(1.25)} title={t('Zoom in')}>
               <ZoomIn className={icon} />
             </Button>
             <span className="bg-border mx-1 h-4 w-px" />

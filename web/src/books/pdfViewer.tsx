@@ -259,8 +259,12 @@ export function PdfScroller({
   overlayFor: (page: number) => ReactNode;
   viewportRef: React.RefObject<HTMLDivElement | null>;
   /** Where the next zoom change should hold still, relative to the
-      viewport; read and cleared when the zoom changes. Null: its centre. */
-  zoomAnchor?: React.RefObject<PinchPoint | null>;
+      viewport — with the scroll offsets AS THEY WERE when the zoom was
+      asked for, captured before the relayout: a zoom out shrinks the
+      column, and the browser clamps a scrollTop past the new end the
+      moment the style lands, before any effect can read it. Read and
+      cleared when the zoom changes. Null: the centre, current offsets. */
+  zoomAnchor?: React.RefObject<(PinchPoint & { top?: number; left?: number }) | null>;
   /** A pinch under way: the column is scaled about its centre by CSS,
       and nothing is re-rastered until the zoom itself changes. */
   pinch?: PinchLive | null;
@@ -286,17 +290,23 @@ export function PdfScroller({
   }, [doc, rotation]);
 
   const pageW = Math.max(1, Math.round(width * zoom));
-  const heightOf = (n: number): number =>
-    Math.round(pageW * (aspects.get(n) ?? baseAspect ?? 1.4142));
-  // Slot tops, cumulative. O(pages) per render; a thousand-page book is a
-  // thousand additions.
-  const tops: number[] = [];
-  let acc = PAGE_GAP;
-  for (let n = 1; n <= pages; n++) {
+  // The column's geometry at a given page width — the current one for the
+  // render, an old one for the zoom anchor below, which needs to know
+  // where a point WAS to keep it still. O(pages) per call; a
+  // thousand-page book is a thousand additions.
+  const layoutFor = (w: number): { tops: number[]; heightOf: (n: number) => number } => {
+    const heightOf = (n: number): number => Math.round(w * (aspects.get(n) ?? baseAspect ?? 1.4142));
+    const tops: number[] = [];
+    let acc = PAGE_GAP;
+    for (let n = 1; n <= pages; n++) {
+      tops.push(acc);
+      acc += heightOf(n) + PAGE_GAP;
+    }
     tops.push(acc);
-    acc += heightOf(n) + PAGE_GAP;
-  }
-  const total = acc;
+    return { tops, heightOf };
+  };
+  const { tops, heightOf } = layoutFor(pageW);
+  const total = tops[pages] ?? PAGE_GAP;
 
   // What the viewport shows, re-read on scroll and when the layout changes.
   const [view, setView] = useState({ top: 0, height: 0 });
@@ -357,6 +367,7 @@ export function PdfScroller({
     if (baseAspect !== null && reported.current !== null) target.current = reported.current;
   }, [baseAspect]);
   const lastZoom = useRef(zoom);
+  const lastPageW = useRef(pageW);
   // Before paint (layout effect): done after it, the browser showed one
   // frame at the new size but the old scroll offset — half the released
   // pinch's flicker.
@@ -366,17 +377,49 @@ export function PdfScroller({
     lastZoom.current = zoom;
     const el = viewportRef.current;
     if (!el) return;
-    // The column's slots are laid out at the new size by now; the point
-    // that was under the anchor is `ratio` times as far down the column.
-    // (The gaps between pages do not scale — a few pixels, not worth a
-    // second pass.) While a page is still being asked for, that wins.
+    // The column's slots are laid out at the new size by now. The point
+    // that was under the anchor is mapped through the SLOTS, not scaled
+    // wholesale: the gaps between pages do not scale with the zoom, and
+    // a plain ratio moves a point deep in a book by every gap above it —
+    // page 114 sits above 1,300 px of gaps, and a zoom there jumped the
+    // page by a few hundred pixels (the zoom-out flicker; zoom-in jumped
+    // too, into pages already on screen, which read as less wrong).
+    // While a page is still being asked for, that wins.
     if (target.current !== null) return;
     const a = zoomAnchor?.current ?? { x: el.clientWidth / 2, y: el.clientHeight / 2 };
     if (zoomAnchor) zoomAnchor.current = null;
-    el.scrollTop = (el.scrollTop + a.y) * ratio - a.y;
-    el.scrollLeft = (el.scrollLeft + a.x) * ratio - a.x;
+    const oldTop = a.top ?? el.scrollTop;
+    const oldLeft = a.left ?? el.scrollLeft;
+    // The width the old layout was actually built with — REMEMBERED, not
+    // reconstructed from the ratio: rounding `pageW / ratio` was 1 px off
+    // as often as not, and a 1 px width error compounds through every
+    // slot's height above the anchor — ~1.4 px a page, a triple-digit
+    // jump deep in a book, and exactly the zoom-out flicker that survived
+    // the first fix (zoom-in tended to land on the same rounding).
+    const old = layoutFor(lastPageW.current);
+    const oldY = oldTop + a.y;
+    // The slot the point was in, and how far through. The page scales,
+    // the 12 px gap under it does not — mapped as one span the gap's
+    // share skews the fraction, by more the smaller the page gets, which
+    // was the last of the zoom-out drift.
+    let n = 1;
+    while (n < pages && (old.tops[n] ?? Infinity) <= oldY) n++;
+    const into = oldY - (old.tops[n - 1] ?? 0);
+    const oldH = old.heightOf(n);
+    const newInto = into <= oldH ? (into / oldH) * heightOf(n) : heightOf(n) + (into - oldH);
+    el.scrollTop = (tops[n - 1] ?? 0) + newInto - a.y;
+    el.scrollLeft = (oldLeft + a.x) * ratio - a.x;
+    // The pages the smaller layout now shows were not all mounted at the
+    // old zoom — a zoom OUT uncovers slots that would sit blank until the
+    // scroll listener's next frame. Re-read the viewport now, before
+    // paint, so they mount in this same commit.
+    setView({ top: el.scrollTop, height: el.clientHeight });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom]);
+  // After the anchor has used it: what this render laid out with.
+  useLayoutEffect(() => {
+    lastPageW.current = pageW;
+  });
   // A rotation too: every slot changes height, and the page being read
   // must be asked for again at its new offset before the scroll reader
   // gets a word in.
