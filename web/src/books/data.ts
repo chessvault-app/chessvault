@@ -135,8 +135,9 @@ export async function replaceBookPdf(
   id: string,
   file: File,
   onProgress?: (sent: number, total: number) => void,
+  inspected?: { pages: number; cover: string | null },
 ): Promise<void> {
-  const { pages, cover } = await inspectPdf(file);
+  const { pages, cover } = inspected ?? (await inspectPdf(file));
   await apiUpload(
     `/api/books/${encodeURIComponent(id)}/pdf?${query({ name: file.name, pages: pages || null })}`,
     file,

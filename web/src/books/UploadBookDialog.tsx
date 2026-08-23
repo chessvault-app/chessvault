@@ -10,7 +10,7 @@ import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { inspectPdf } from '@/puzzles/ocr/pdfPage';
 
-import { MAX_PDF_BYTES, suggestTitle, uploadBook } from './data';
+import { MAX_PDF_BYTES, replaceBookPdf, suggestTitle, uploadBook } from './data';
 import { fileSize } from './BooksPage';
 
 /**
@@ -25,12 +25,16 @@ import { fileSize } from './BooksPage';
  */
 export function UploadBookDialog({
   initialFile,
+  replace,
   onClose,
   onUploaded,
 }: {
   initialFile?: File | null;
+  /** Replacing the file behind an existing book, rather than adding one:
+      the title is the book's and stays; the file goes where the old was. */
+  replace?: { id: string; title: string };
   onClose: () => void;
-  /** The new book's id, once it is on the shelf. */
+  /** The book's id, once the file is on the shelf. */
   onUploaded: (id: string) => void;
 }) {
   const [file, setFile] = useState<File | null>(initialFile ?? null);
@@ -51,7 +55,7 @@ export function UploadBookDialog({
       setFile(null);
       return;
     }
-    setTitle(suggestTitle(file) ?? t('Untitled book'));
+    setTitle(replace?.title ?? suggestTitle(file) ?? t('Untitled book'));
     void inspectPdf(file).then((got) => {
       if (!live) return;
       if (got.pages === 0) {
@@ -64,6 +68,8 @@ export function UploadBookDialog({
     return () => {
       live = false;
     };
+    // The replace target is fixed for the window's life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file]);
 
   const drop = useFileDrop({
@@ -75,11 +81,18 @@ export function UploadBookDialog({
   const upload = async (): Promise<void> => {
     if (!file || !looked) return;
     setProgress(0);
+    const onProgress = (sent: number, total: number): void =>
+      setProgress(Math.round((sent / total) * 100));
     try {
+      if (replace) {
+        await replaceBookPdf(replace.id, file, onProgress, looked);
+        onUploaded(replace.id);
+        return;
+      }
       const id = await uploadBook(file, {
         title: title.trim() || t('Untitled book'),
         inspected: looked,
-        onProgress: (sent, total) => setProgress(Math.round((sent / total) * 100)),
+        onProgress,
       });
       onUploaded(id);
     } catch (e) {
@@ -95,7 +108,7 @@ export function UploadBookDialog({
         if (!open && progress === null) onClose();
       }}
     >
-      <DialogContent title={t('Add a book')} icon={Upload}>
+      <DialogContent title={replace ? t('Replace PDF') : t('Add a book')} icon={Upload}>
         {!file ? (
           <label
             {...drop.handlers}
@@ -117,7 +130,11 @@ export function UploadBookDialog({
             <span className="text-muted-foreground text-base">
               {t('Choose the book’s PDF')}
               <span className="text-muted-foreground block text-sm">
-                {t('any chess book — it is kept in your vault and read here, beside a board')}
+                {replace
+                  ? t('a better file behind “{title}” — the old one is replaced, your page is kept', {
+                      title: replace.title,
+                    })
+                  : t('any chess book — it is kept in your vault and read here, beside a board')}
               </span>
             </span>
           </label>
@@ -139,16 +156,20 @@ export function UploadBookDialog({
               </span>
             )}
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <label className="flex flex-col gap-1">
-                <span className="text-muted-foreground text-sm">{t('Book title')}</span>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && looked && progress === null) void upload();
-                  }}
-                />
-              </label>
+              {replace ? (
+                <p className="text-foreground truncate text-base font-medium">{replace.title}</p>
+              ) : (
+                <label className="flex flex-col gap-1">
+                  <span className="text-muted-foreground text-sm">{t('Book title')}</span>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && looked && progress === null) void upload();
+                    }}
+                  />
+                </label>
+              )}
               <p className="text-muted-foreground truncate text-sm" title={file.name}>
                 {file.name}
               </p>
@@ -182,7 +203,7 @@ export function UploadBookDialog({
             disabled={!file || !looked || progress !== null}
             onClick={() => void upload()}
           >
-            {t('Add to library')}
+            {replace ? t('Replace PDF') : t('Add to library')}
           </Button>
         </div>
       </DialogContent>

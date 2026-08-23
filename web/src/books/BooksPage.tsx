@@ -2,13 +2,12 @@ import {
   BookOpen,
   BookText,
   FileUp,
-  Loader2,
   MoreHorizontal,
   Pencil,
   Trash2,
   Upload,
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { ActionMenu } from '@/components/action-menu';
 import { CreateControl, FabSpacer } from '@/components/fab';
@@ -27,13 +26,11 @@ import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 
 import {
-  MAX_PDF_BYTES,
   coverUrl,
   libraryMemory,
   loadBooks,
   removeBook,
   renameBook,
-  replaceBookPdf,
   type LibraryBook,
 } from './data';
 import { UploadBookDialog } from './UploadBookDialog';
@@ -212,8 +209,7 @@ function BookCard({
   const swipe = useSwipeRow({ onRemove });
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  const [replacing, setReplacing] = useState<number | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
+  const [replacing, setReplacing] = useState(false);
   const open = (): void => navigate('books', book.id);
 
   const rename = async (value: string): Promise<void> => {
@@ -225,24 +221,6 @@ function BookCard({
       onChanged();
     } catch (e) {
       onError(apiErrorMessage(e));
-    }
-  };
-
-  const replace = async (file: File): Promise<void> => {
-    if (file.size > MAX_PDF_BYTES) {
-      onError(t('{name} is too big — the limit is {mb} MB.', { name: file.name, mb: MAX_PDF_BYTES / (1024 * 1024) }));
-      return;
-    }
-    setReplacing(0);
-    try {
-      await replaceBookPdf(book.id, file, (sent, total) =>
-        setReplacing(Math.round((sent / total) * 100)),
-      );
-      onChanged();
-    } catch (e) {
-      onError(apiErrorMessage(e));
-    } finally {
-      setReplacing(null);
     }
   };
 
@@ -292,32 +270,13 @@ function BookCard({
                 {where ? ` · ${where}` : ''}
               </span>
             </span>
-            {replacing !== null ? (
-              <span className="text-primary flex items-center gap-1.5 text-sm">
-                <Loader2 className="size-3 shrink-0 animate-spin" />
-                {t('Uploading… {pct}%', { pct: replacing })}
-              </span>
-            ) : (
-              <span className="text-muted-foreground flex items-center gap-1.5 text-sm">
-                <BookOpen className="size-3 shrink-0" />
-                {book.lastPage ? t('Carry on reading') : t('Read')}
-              </span>
-            )}
+            <span className="text-muted-foreground flex items-center gap-1.5 text-sm">
+              <BookOpen className="size-3 shrink-0" />
+              {book.lastPage ? t('Carry on reading') : t('Read')}
+            </span>
           </span>
         </div>
 
-        <input
-          ref={fileInput}
-          type="file"
-          accept="application/pdf"
-          className="hidden"
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            e.target.value = '';
-            if (file) void replace(file);
-          }}
-        />
         <ActionMenu
           title={book.title}
           open={menuOpen}
@@ -325,7 +284,7 @@ function BookCard({
           actions={[
             { label: 'Read', icon: BookOpen, onSelect: open },
             { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
-            { label: 'Replace PDF…', icon: FileUp, onSelect: () => fileInput.current?.click() },
+            { label: 'Replace PDF…', icon: FileUp, onSelect: () => setReplacing(true) },
             { label: 'Remove from library', icon: Trash2, danger: true, onSelect: onRemove },
           ]}
         >
@@ -352,6 +311,16 @@ function BookCard({
             initial={book.title}
             onSubmit={(value) => void rename(value)}
             onClose={() => setRenaming(false)}
+          />
+        )}
+        {replacing && (
+          <UploadBookDialog
+            replace={{ id: book.id, title: book.title }}
+            onClose={() => setReplacing(false)}
+            onUploaded={() => {
+              setReplacing(false);
+              onChanged();
+            }}
           />
         )}
       </div>

@@ -40,18 +40,19 @@ const overlaps = (a: PageDiagramRecord['rect'], b: PageDiagramRecord['rect']): b
 const pause = (): Promise<void> => new Promise((r) => setTimeout(r, 0));
 
 /**
- * The diagrams on `pageNo`, from the server's cache when it has them and
- * read off the page when it does not. Reading happens after the page is
- * on screen (the caller mounts this once the page has rendered) and is
- * dropped, not awaited, when the page turns.
+ * The diagrams on the pages being shown, from the server's cache when it
+ * has them and read off the page when it does not. Reading happens after
+ * a page is on screen — the scroller says which pages are rendered — one
+ * page at a time, and is dropped, not awaited, when the page scrolls
+ * away. Returns a lookup: null for a page not yet read.
  */
 export function usePageDiagrams(
   id: string,
   doc: PDFDocumentProxy | null,
-  pageNo: number,
-): PageDiagramRecord[] | null {
+  shown: number[],
+): (page: number) => PageDiagramRecord[] | null {
   const cache = useRef<Map<number, PageDiagramRecord[]> | null>(null);
-  const [, bump] = useState(0);
+  const [version, bump] = useState(0);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
   // The cache, once per book.
@@ -71,10 +72,14 @@ export function usePageDiagrams(
     };
   }, [id]);
 
-  // The page, read when the cache has no answer for it.
+  // The first shown page the cache has no answer for, read now; the next
+  // one when this one lands (`version` moves and the effect runs again).
+  const shownKey = shown.join(',');
   useEffect(() => {
     const map = cache.current;
-    if (!doc || loadedFor !== id || !map || map.has(pageNo)) return;
+    if (!doc || loadedFor !== id || !map) return;
+    const pageNo = shown.find((n) => !map.has(n));
+    if (pageNo === undefined) return;
     let live = true;
     void (async () => {
       try {
@@ -110,9 +115,12 @@ export function usePageDiagrams(
     return () => {
       live = false;
     };
-  }, [doc, id, pageNo, loadedFor]);
+    // shownKey stands in for the array's contents.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, id, shownKey, loadedFor, version]);
 
-  return cache.current?.get(pageNo) ?? null;
+  const map = cache.current;
+  return (page: number) => map?.get(page) ?? null;
 }
 
 /** A known position on a page: where it is, and its full FEN. */
@@ -158,23 +166,19 @@ export function DiagramHotspots({
   return (
     <>
       {spots.map((s) => {
+        // Centred on the diagram's top-right corner: half over the board's
+        // edge squares, half over the margin beside it, so it covers as
+        // little of either as a button can — the corner cell is where the
+        // number and the side-to-move mark are printed.
         const style = {
-          left: `calc(${(s.rect.x + s.rect.w) * 100}% - 1.75rem)`,
-          top: `calc(${s.rect.y * 100}% + 0.25rem)`,
+          left: `calc(${(s.rect.x + s.rect.w) * 100}% - 0.875rem)`,
+          top: `calc(${s.rect.y * 100}% - 0.875rem)`,
         };
-        // See-through: the corner it sits in may hold the diagram's
-        // number, a side-to-move mark or a caption, and a solid button
-        // hid them. Opaque again under the pointer, when it is the thing
-        // being looked at.
         const button = (
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon-sm"
-            className={cn(
-              'absolute border border-foreground/15 bg-background/35 text-foreground/80 shadow-sm backdrop-blur-[1px]',
-              'hover:bg-background hover:text-foreground focus-visible:bg-background',
-              'pointer-coarse:size-9',
-            )}
+            className={cn('absolute shadow-md', 'pointer-coarse:size-9')}
             style={style}
             title={t('Set up this position')}
             onClick={s.sure ? () => set(s.fen) : undefined}

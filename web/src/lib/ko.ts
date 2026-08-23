@@ -1680,6 +1680,8 @@ export const ko: Record<string, string> = {
   'any chess book — it is kept in your vault and read here, beside a board':
     '어떤 체스 책이든 — 보관함에 보관되고 여기서 체스판 옆에 두고 읽습니다',
   'That file could not be read as a PDF.': 'PDF로 읽을 수 없는 파일입니다.',
+  'a better file behind “{title}” — the old one is replaced, your page is kept':
+    '“{title}”의 더 나은 파일 — 이전 파일은 바뀌고, 읽던 쪽은 그대로입니다',
   'Opening…': '여는 중…',
   'Book title': '책 제목',
   'Set up this position': '이 포지션을 판에 놓기',

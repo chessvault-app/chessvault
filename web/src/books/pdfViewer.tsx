@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 import { loadPdfjs, PDF_OPTIONS } from '@/puzzles/ocr/pdfPage';
@@ -166,6 +166,218 @@ export function PdfPage({
     >
       <canvas ref={canvasRef} className="block bg-white shadow-sm" />
       {size && overlay && <div className="absolute inset-0">{overlay}</div>}
+    </div>
+  );
+}
+
+/** Space between pages in the scroller, in CSS px. */
+const PAGE_GAP = 12;
+/** Pages kept rendered either side of the visible ones. */
+const RENDER_MARGIN = 1;
+
+/**
+ * The whole book as one scrolling column, the way a PDF reader scrolls:
+ * every page has its slot at its own height, and only the slots in and
+ * just around the viewport hold a rendered canvas — the rest are blank
+ * boxes of the right size, so a 600-page scan costs three pages of
+ * memory and a scrollbar that tells the truth.
+ *
+ * Heights come from the pages' own shapes: the first page's on open, each
+ * page's own once it has rendered. The page "being read" is the slot
+ * under the top third of the viewport; the caller hears of it as it
+ * changes, and can ask for a page, which scrolls the slot into place. A
+ * zoom keeps the page that was being read where it was.
+ */
+export function PdfScroller({
+  doc,
+  pages,
+  width,
+  zoom,
+  pageNo,
+  onPageChange,
+  overlayFor,
+  onVisible,
+  viewportRef,
+  onKeyDown,
+  className,
+}: {
+  doc: PDFDocumentProxy;
+  pages: number;
+  /** The page's width at zoom 1. */
+  width: number;
+  zoom: number;
+  /** The page the reader wants shown; a change scrolls there. */
+  pageNo: number;
+  /** The page under the reader's eyes changed by scrolling. */
+  onPageChange: (page: number) => void;
+  /** The hotspot layer for a rendered page. */
+  overlayFor: (page: number) => ReactNode;
+  /** Which pages are rendered right now — the diagram reader wants to
+      know which pages to read. */
+  onVisible?: (pages: number[]) => void;
+  viewportRef: React.RefObject<HTMLDivElement | null>;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  className?: string;
+}) {
+  const [aspects, setAspects] = useState<Map<number, number>>(() => new Map());
+  const [baseAspect, setBaseAspect] = useState<number | null>(null);
+  useEffect(() => {
+    let live = true;
+    void doc.getPage(1).then((p) => {
+      if (!live) return;
+      const v = p.getViewport({ scale: 1 });
+      setBaseAspect(v.height / v.width);
+    });
+    return () => {
+      live = false;
+    };
+  }, [doc]);
+
+  const pageW = Math.max(1, Math.round(width * zoom));
+  const heightOf = (n: number): number =>
+    Math.round(pageW * (aspects.get(n) ?? baseAspect ?? 1.4142));
+  // Slot tops, cumulative. O(pages) per render; a thousand-page book is a
+  // thousand additions.
+  const tops: number[] = [];
+  let acc = PAGE_GAP;
+  for (let n = 1; n <= pages; n++) {
+    tops.push(acc);
+    acc += heightOf(n) + PAGE_GAP;
+  }
+  const total = acc;
+
+  // What the viewport shows, re-read on scroll and when the layout changes.
+  const [view, setView] = useState({ top: 0, height: 0 });
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    let frame = 0;
+    const read = (): void => {
+      frame = 0;
+      setView({ top: el.scrollTop, height: el.clientHeight });
+    };
+    const onScroll = (): void => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    const ro = new ResizeObserver(onScroll);
+    ro.observe(el);
+    read();
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      ro.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [viewportRef]);
+
+  const slotAt = (y: number): number => {
+    // First slot whose bottom is below y.
+    let lo = 0;
+    let hi = pages - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (tops[mid]! + heightOf(mid + 1) < y) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo + 1;
+  };
+  const first = pages > 0 ? slotAt(view.top) : 1;
+  const last = pages > 0 ? slotAt(view.top + view.height) : 1;
+  const current = pages > 0 ? slotAt(view.top + view.height * 0.35) : 1;
+
+  // Tell the reader where it is — once per change, and never for a page
+  // the reader itself just asked for.
+  // null until the first page asked for has been scrolled to: the
+  // reader's opening page must win over the "page 1" a fresh viewport
+  // would otherwise report first.
+  const reported = useRef<number | null>(null);
+  useEffect(() => {
+    if (view.height === 0 || reported.current === null) return;
+    if (current !== reported.current) {
+      reported.current = current;
+      onPageChange(current);
+    }
+    // onPageChange is a setter; the page is what matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, view.height]);
+
+  // A page asked for from outside (route, buttons, go-to): scroll there.
+  useEffect(() => {
+    if (pageNo === reported.current || pages === 0) return;
+    reported.current = pageNo;
+    viewportRef.current?.scrollTo({ top: tops[pageNo - 1] ?? 0 });
+    // tops change with zoom/aspects; the page is the signal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageNo, pages]);
+
+  // The first page's shape arrives after the first scroll was placed by
+  // a guess; put the page being read back where it belongs.
+  useEffect(() => {
+    if (baseAspect === null || reported.current === null) return;
+    viewportRef.current?.scrollTo({ top: tops[reported.current - 1] ?? 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseAspect]);
+
+  // A zoom keeps the page being read in place.
+  const lastZoom = useRef(zoom);
+  useEffect(() => {
+    if (lastZoom.current === zoom) return;
+    lastZoom.current = zoom;
+    const el = viewportRef.current;
+    if (!el || reported.current === null) return;
+    el.scrollTo({ top: tops[reported.current - 1] ?? 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom]);
+
+  const from = Math.max(1, first - RENDER_MARGIN);
+  const to = Math.min(pages, last + RENDER_MARGIN);
+  const rendered = useMemo(() => {
+    const list: number[] = [];
+    for (let n = from; n <= to; n++) list.push(n);
+    return list;
+  }, [from, to]);
+  useEffect(() => {
+    onVisible?.(rendered);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rendered]);
+
+  return (
+    <div
+      ref={viewportRef}
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      className={cn(
+        'bg-muted/40 min-h-0 flex-1 overflow-auto overscroll-contain outline-none [touch-action:pan-x_pan-y]',
+        'focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:ring-inset',
+        className,
+      )}
+    >
+      <div className="relative mx-auto" style={{ height: total, width: pageW }}>
+        {rendered.map((n) => (
+          <div
+            key={n}
+            className="absolute left-0"
+            style={{ top: tops[n - 1], width: pageW, height: heightOf(n) }}
+          >
+            <PdfPage
+              doc={doc}
+              pageNo={n}
+              width={width}
+              zoom={zoom}
+              overlay={overlayFor(n)}
+              onSize={({ w, h }) => {
+                const a = h / w;
+                setAspects((prev) => {
+                  if (Math.abs((prev.get(n) ?? 0) - a) < 0.001) return prev;
+                  const next = new Map(prev);
+                  next.set(n, a);
+                  return next;
+                });
+              }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
