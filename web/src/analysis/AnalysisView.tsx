@@ -417,6 +417,7 @@ export function MovesOverflow({
   allowReset = true,
   allowClear = false,
   onLoadPosition,
+  extra = [],
 }: {
   allowReset?: boolean;
   /**
@@ -427,6 +428,8 @@ export function MovesOverflow({
   allowClear?: boolean;
   /** Opens the caller's Load position dialog; omitted where there is none. */
   onLoadPosition?: () => void;
+  /** A caller's own verbs, listed after the position loader. */
+  extra?: MenuAction[];
 }) {
   const [open, setOpen] = useState(false);
   // Every caller's own Load position button is `max-md:hidden`, so the menu
@@ -449,6 +452,7 @@ export function MovesOverflow({
     ...(onLoadPosition && phone
       ? [{ label: 'Load a position', icon: FolderInput, onSelect: onLoadPosition }]
       : []),
+    ...extra,
     // Offered only when there is a game to judge, and not while it is
     // already judging one.
     ...(hasMoves && !reviewing

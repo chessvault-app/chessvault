@@ -6,6 +6,7 @@ import {
   Grid3x3,
   Maximize2,
   MoveHorizontal,
+  RotateCcw,
   RotateCw,
   Search,
   SquarePen,
@@ -229,35 +230,34 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
         actions={
           <>
             <SidelinesToggle />
-            {/* Stacked only: at wide these live on the board's toolbar. */}
+            {/* The loader's dialog, opened from the ⋯ below; the trigger
+                itself is on the board's toolbar (wide) or in the menu. */}
             <LoadPositionButton
               open={loadOpen}
               onOpenChange={setLoadOpen}
-              triggerClassName="wide:hidden"
+              triggerClassName="hidden"
             />
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="wide:hidden"
-              title={t('Fix this position in the editor')}
-              onClick={() => setEditing(boardFen)}
-            >
-              <SquarePen className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="wide:hidden"
-              title={t('Open on the board page')}
-              onClick={() => {
-                useAnalysis.setState({ handoff: true });
-                navigate('board');
-              }}
-            >
-              <Grid3x3 className="size-3.5" />
-            </Button>
-            <MoveActions allowReset={false} />
-            <MovesOverflow allowReset={false} onLoadPosition={() => setLoadOpen(true)} />
+            <MoveActions allowReset={false} allowClear />
+            <MovesOverflow
+              allowReset={false}
+              allowClear
+              onLoadPosition={() => setLoadOpen(true)}
+              extra={[
+                {
+                  label: 'Fix this position in the editor',
+                  icon: SquarePen,
+                  onSelect: () => setEditing(boardFen),
+                },
+                {
+                  label: 'Open on the board page',
+                  icon: Grid3x3,
+                  onSelect: () => {
+                    useAnalysis.setState({ handoff: true });
+                    navigate('board');
+                  },
+                },
+              ]}
+            />
           </>
         }
       />
@@ -324,6 +324,14 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const boardBar = (
     <div className="flex h-9 shrink-0 items-center justify-center gap-0.5 px-4 md:px-6 wide:mt-4 wide:mb-3">
       <LoadPositionButton open={loadOpen} onOpenChange={setLoadOpen} />
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={t('Reset to the starting position')}
+        onClick={() => useAnalysis.getState().reset()}
+      >
+        <RotateCcw className="size-3.5" />
+      </Button>
       <Button
         variant="ghost"
         size="icon-sm"
