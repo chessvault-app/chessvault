@@ -433,11 +433,14 @@ export function booksApi(
   api.get('/books/:id/cover.jpg', (c) => {
     const id = c.req.param('id');
     if (!validBook(id) || !existsSync(coverPath(id))) return c.json({ error: 'no cover' }, 404);
-    // no-cache for the same reason as the PDF's: a replaced book brings a
-    // new cover, and the shelf should show it on the next visit.
+    // Cacheable, like the puzzle shelf's covers: the shelf decodes every
+    // cover before it draws, and a no-cache answer made each card's image
+    // revalidate after that, so the thumbnails trickled in one by one.
+    // The client's URL is versioned by the file's size, so a replaced book
+    // fetches its new cover regardless.
     return c.body(new Uint8Array(readFileSync(coverPath(id))), 200, {
       'content-type': 'image/jpeg',
-      'cache-control': 'private, no-cache',
+      'cache-control': 'private, max-age=3600',
     });
   });
 
