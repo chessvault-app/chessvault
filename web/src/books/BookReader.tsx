@@ -638,11 +638,16 @@ function PdfPane({
   const viewport = useRef<HTMLDivElement>(null);
   usePinchZoom(viewport, bumpZoom);
   const slow = useSlowLoad(doc === null && error === null);
-  // The page's width at zoom 1: the pane less the header's inset a side —
-  // none on a phone, where the pane is already inside the shell's padding
-  // and the page's edges should be the board's.
+  // The page's width at zoom 1: the pane less the header's inset a side.
+  // On a phone, the viewport's own content width — measured, so the
+  // scrollbar gutters it reserves on both edges (or does not, with
+  // overlay scrollbars) are out of it; sized to the pane, the page ran
+  // under the gutters and the viewport scrolled sideways.
   const md = useMediaQuery('(min-width: 48rem)');
-  const pageW = Math.max(0, width - (compact ? 0 : md ? 48 : 32));
+  const [vpW, setVpW] = useState(0);
+  // (The pane's width until the viewport exists to be measured — it is
+  // rendered only once a width is known — then the viewport's own.)
+  const pageW = compact ? vpW || width : Math.max(0, width - (md ? 48 : 32));
   // Fit the whole page: the zoom at which the first page's height fills
   // the viewport — never past the width fit ("the whole page" means all
   // of it on screen; a tall pane would otherwise zoom IN). Read from the
@@ -670,9 +675,13 @@ function PdfPane({
   useEffect(() => {
     const el = viewport.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setVpH(el.clientHeight));
+    const read = (): void => {
+      setVpH(el.clientHeight);
+      setVpW(el.clientWidth);
+    };
+    const ro = new ResizeObserver(read);
     ro.observe(el);
-    setVpH(el.clientHeight);
+    read();
     return () => ro.disconnect();
   }, [doc]);
   const fitPageZoom = fitZoomFor(vpH);
